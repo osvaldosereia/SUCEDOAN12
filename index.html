@@ -13,6 +13,36 @@
     <meta name="description" content="A melhor Cesta Básica de Cuiabá e Várzea Grande. Entregamos no CPA, Tijucal, Cristo Rei e região. Participe dos sorteios semanais da Dona Antônia!">
     <meta name="keywords" content="cesta básica cuiabá, cesta básica várzea grande, doação de alimentos cuiabá, mercado delivery cpa">
     
+    <!-- DADOS ESTRUTURADOS (SCHEMA.ORG) PARA O GOOGLE -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "Onde comprar cesta básica em Cuiabá?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Aqui na Dona Antônia! Temos o melhor preço e entregamos em todos os bairros como CPA, Tijucal e Pedra 90."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Vocês entregam cesta básica em Várzea Grande?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim! Atendemos toda a região de Várzea Grande, incluindo Cristo Rei, Centro e região do aeroporto."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Qual o valor da cesta básica hoje?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Temos cestas a partir de preços super econômicos. Clique em 'Pedir Agora' no nosso site para ver os valores atualizados no WhatsApp."
+        }
+      }]
+    }
+    </script>
+    
     <!-- Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -207,6 +237,44 @@
         }
         .btn-opcao.selecionado { background-color: var(--cor-primaria); color: white; }
 
+        /* --- NOVO: CARD AVALIAÇÃO GOOGLE --- */
+        .card-avaliacao {
+            background: linear-gradient(135deg, #ffffff, #e3f2fd);
+            border: 2px solid #4285F4; /* Azul Google */
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .card-avaliacao h3 {
+            color: #4285F4;
+            margin-top: 0;
+            font-size: 22px;
+        }
+        .estrelas {
+            color: #FBC02D; /* Amarelo Estrela */
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        .btn-google-review {
+            background-color: #4285F4;
+            color: white;
+            font-size: 18px;
+            padding: 15px;
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #0d47a1;
+        }
+        .btn-google-review:active { transform: scale(0.98); box-shadow: 0 2px 0 #0d47a1; }
+
         /* --- FORMULÁRIOS E AUTOCOMPLETE --- */
         input, select {
             width: 100%; padding: 15px; font-size: 18px; border: 2px solid #ccc;
@@ -233,20 +301,22 @@
         }
         .item-barra {
             text-align: center; text-decoration: none; color: #666;
-            font-size: 10px; 
+            font-size: 9px; /* Diminuí um pouco a fonte para caber 6 botões */
             flex: 1;
+            padding: 2px;
         }
         .icone-container {
-            width: 35px; height: 35px; 
+            width: 32px; height: 32px; /* Ícones levemente menores */
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 3px auto; color: white; font-size: 18px;
+            margin: 0 auto 3px auto; color: white; font-size: 16px;
         }
         .bg-zap { background: linear-gradient(45deg, #25D366, #128C7E); }
         .bg-grupo { background: linear-gradient(45deg, #075e54, #128C7E); }
         .bg-face { background: linear-gradient(45deg, #1877F2, #165EAB); }
         .bg-insta { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
         .bg-share { background: linear-gradient(45deg, #607D8B, #455A64); }
+        .bg-star { background: linear-gradient(45deg, #FFC107, #FF9800); } /* Novo estilo da estrela */
 
         /* --- AVISO FLUTUANTE DISCRETO (BANNER) --- */
         .aviso-instalar {
@@ -512,6 +582,16 @@
             </a>
         </div>
 
+        <!-- NOVO: CARD AVALIAÇÃO (FIM DA PÁGINA) -->
+        <div class="card-avaliacao">
+            <h3>⭐ Ajude a Dona Antônia!</h3>
+            <p>Se você gosta do nosso atendimento e preço baixo, nos dê 5 estrelas no Google!</p>
+            <div class="estrelas">★★★★★</div>
+            <button class="btn-google-review" onclick="avaliarNoGoogle()">
+                <i class="fab fa-google"></i> AVALIAR AGORA
+            </button>
+        </div>
+
         <!-- CARTÃO DE INSTALAÇÃO (FINAL DA PÁGINA) -->
         <div class="card-instalacao-fixo">
             <h3>📱 Baixe o Aplicativo!</h3>
@@ -615,6 +695,16 @@
             </ul>
         </div>
 
+        <!-- NOVO: CARD AVALIAÇÃO (EM RESULTADOS) -->
+        <div class="card-avaliacao">
+            <h3>⭐ Você é um cliente feliz?</h3>
+            <p>Ajude a Dona Antônia a crescer avaliando nosso atendimento com 5 estrelas!</p>
+            <div class="estrelas">★★★★★</div>
+            <button class="btn-google-review" onclick="avaliarNoGoogle()">
+                <i class="fab fa-google"></i> AVALIAR NO GOOGLE
+            </button>
+        </div>
+
         <!-- CARTÃO DE INSTALAÇÃO (FINAL DA PÁGINA) -->
         <div class="card-instalacao-fixo">
             <h3>📱 Não perca o próximo!</h3>
@@ -637,7 +727,7 @@
         </button>
     </div>
 
-    <!-- BARRA FIXA (Com 5 botões) -->
+    <!-- BARRA FIXA (Com 6 botões) -->
     <div class="barra-app">
         <a href="https://wa.me/5565998150975" class="item-barra">
             <div class="icone-container bg-zap"><i class="fab fa-whatsapp"></i></div>
@@ -659,6 +749,10 @@
             <div class="icone-container bg-share"><i class="fas fa-share-alt"></i></div>
             Compartilhar
         </a>
+        <a href="#" class="item-barra" onclick="avaliarNoGoogle(); return false;">
+            <div class="icone-container bg-star"><i class="fas fa-star"></i></div>
+            Avaliar
+        </a>
     </div>
 
     <!-- MODAL DE IMAGEM -->
@@ -677,6 +771,18 @@
             { nome: "Ana Paula", cidade: "Cuiabá", bairro: "Tijucal" },
             { nome: "Antônio Carlos", cidade: "Várzea Grande", bairro: "Cristo Rei" }
         ];
+
+        // --- LÓGICA DE AVALIAÇÃO GOOGLE ---
+        function avaliarNoGoogle() {
+            // ATENÇÃO: Você precisa trocar este link pelo link do SEU PERFIL
+            // Para pegar o link: Vá no Google Meu Negócio -> Início -> "Receber mais avaliações" -> Copiar Link
+            const linkGoogleMeuNegocio = "https://search.google.com/local/writereview?placeid=SEU_ID_AQUI"; 
+            
+            // Se não tiver o link ainda, manda para o Google Maps procurando pelo nome
+            const linkAlternativo = "https://www.google.com/maps/search/?api=1&query=Cestas+Dona+Antônia+Cuiabá";
+            
+            window.open(linkAlternativo, '_blank');
+        }
 
         // --- LÓGICA DE AUTOCOMPLETE ---
         const inputBusca = document.getElementById('busca-nome');
