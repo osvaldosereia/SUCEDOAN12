@@ -10,7 +10,7 @@
     <title>Cesta Básica em Cuiabá e Várzea Grande | Dona Antônia</title>
     <meta name="description" content="A melhor Cesta Básica de Cuiabá e Várzea Grande. Entregamos no CPA, Tijucal, Cristo Rei e região.">
     
-    <!-- Biblioteca de Confetes para o efeito de alegria -->
+    <!-- Biblioteca de Confetes -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <!-- DADOS ESTRUTURADOS (FAQ) -->
@@ -33,6 +33,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        /* --- CORREÇÃO GLOBAL DE TAMANHO (Isso resolve o botão estourado) --- */
+        * {
+            box-sizing: border-box;
+        }
+
         /* --- ESTILOS GERAIS --- */
         :root {
             --cor-primaria: #D32F2F; 
@@ -44,22 +49,20 @@
         }
 
         html {
-            background-color: #e0e0e0; /* Fundo cinza para desktop */
+            background-color: #e0e0e0;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--cor-fundo);
             color: var(--cor-texto);
-            margin: 0 auto; /* Centraliza no Desktop */
+            margin: 0 auto; 
             padding: 0;
-            padding-bottom: 120px; /* Espaço para a barra fixa */
+            padding-bottom: 120px; 
             font-size: 18px;
             line-height: 1.6;
             -webkit-user-select: none;
             user-select: none;
-            
-            /* Limita largura no Desktop para parecer App */
             max-width: 480px; 
             min-height: 100vh;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
@@ -74,23 +77,22 @@
             padding: 15px 10px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        /* Estilo da Logo (Horizontal) */
         .header-logo {
             max-width: 100%; 
             height: auto;    
-            max-height: 100px; /* Altura máxima controlada */
+            max-height: 100px;
             object-fit: contain;
             display: block;
             margin: 0 auto;
         }
 
-        /* --- NAVEGAÇÃO SUPERIOR (ABAS) --- */
+        /* --- NAVEGAÇÃO SUPERIOR --- */
         nav {
             background-color: var(--cor-primaria);
             position: sticky;
             top: 0;
             z-index: 100;
-            padding: 5px 10px 10px 10px; /* Um pouco mais de espaço embaixo */
+            padding: 5px 10px 10px 10px; 
         }
         .nav-tabs {
             display: flex;
@@ -98,16 +100,16 @@
             background-color: rgba(0,0,0,0.1);
             border-radius: 12px;
             padding: 5px;
-            gap: 8px; /* Mais espaço entre botões */
+            gap: 8px;
         }
         .nav-btn {
             flex: 1;
-            padding: 15px 2px; /* MAIS ALTO (Largos na altura) */
+            padding: 15px 2px;
             border: none;
-            background-color: rgba(255,255,255,0.15); /* Fundo sutil para ser visível */
+            background-color: rgba(255,255,255,0.15);
             color: rgba(255,255,255,0.9);
             font-weight: bold;
-            font-size: 16px; /* Fonte maior */
+            font-size: 16px;
             cursor: pointer;
             border-radius: 8px;
             transition: all 0.2s;
@@ -118,7 +120,7 @@
             background-color: white;
             color: var(--cor-primaria);
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transform: translateY(-2px); /* Efeito de elevação */
+            transform: translateY(-2px);
         }
 
         /* --- PÁGINAS --- */
@@ -128,9 +130,15 @@
             animation: fadeIn 0.4s;
         }
         .pagina.visivel { display: block; }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         h2 {
@@ -157,7 +165,7 @@
             border: 1px solid #eee;
         }
         
-        /* --- FAQ & PREÇOS --- */
+        /* --- CONTEÚDO --- */
         .faq-item {
             border-bottom: 1px solid #eee;
             padding: 15px 0;
@@ -181,7 +189,6 @@
             text-align: right;
         }
 
-        /* --- GALERIA --- */
         .galeria-fotos {
             display: flex;
             gap: 10px;
@@ -195,7 +202,7 @@
             background-color: #ddd;
         }
 
-        /* --- BOTÕES --- */
+        /* --- BOTÕES GERAIS --- */
         .btn {
             display: flex;
             align-items: center;
@@ -210,7 +217,6 @@
             text-decoration: none;
             margin-top: 10px;
             color: white;
-            box-sizing: border-box;
         }
         .btn:active { transform: scale(0.98); }
         .btn i { margin-right: 10px; font-size: 20px; }
@@ -229,7 +235,6 @@
             width: 100%; border: none; border-radius: 10px; margin-top: 10px;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
             font-weight: bold; box-shadow: 0 4px 0 #0d47a1; text-decoration: none;
-            box-sizing: border-box; 
         }
 
         .escolha-cadastro { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -243,7 +248,7 @@
         /* --- FORMULÁRIOS --- */
         input, select {
             width: 100%; padding: 15px; font-size: 18px; border: 2px solid #ccc;
-            border-radius: 10px; margin-bottom: 15px; box-sizing: border-box;
+            border-radius: 10px; margin-bottom: 15px;
         }
         .container-input { position: relative; }
         .lista-sugestoes {
@@ -254,7 +259,7 @@
         .sugestao-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
         .sugestao-item:hover { background-color: #f0f0f0; }
 
-        /* --- BARRA FIXA (3 BOTÕES GRANDES) --- */
+        /* --- BARRA FIXA (ÍCONES) --- */
         .barra-app {
             position: fixed; bottom: 0; 
             left: 50%; transform: translateX(-50%);
@@ -271,18 +276,62 @@
             justify-content: center; align-items: center;
             font-size: 11px; font-weight: bold;
             border-right: 1px solid #eee;
+            cursor: pointer; 
         }
         .item-barra:last-child { border-right: none; }
         .icone-container {
-            width: 32px; height: 32px; /* Ícones normais */
+            width: 32px; height: 32px; 
             display: flex; align-items: center; justify-content: center;
             color: #D32F2F; font-size: 24px; margin-bottom: 3px;
         }
         .item-barra:active { background-color: #f5f5f5; }
 
+        .bg-zap { background: linear-gradient(45deg, #25D366, #128C7E); }
+        .bg-face { background: linear-gradient(45deg, #1877F2, #165EAB); }
+        .bg-insta { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+        .bg-share { background: linear-gradient(45deg, #607D8B, #455A64); }
+
+        /* --- MODAIS GERAIS --- */
+        .modal-geral {
+            display: none; position: fixed; z-index: 3000; 
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center;
+            flex-direction: column; 
+            animation: fadeInModal 0.3s;
+        }
+        .modal-card {
+            background: white; width: 85%; max-width: 350px;
+            border-radius: 20px; padding: 25px; text-align: center;
+            position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-card h3 { margin-top: 0; color: #333; font-size: 22px; }
+        .modal-card p { color: #666; font-size: 16px; margin-bottom: 20px; }
+        
+        /* ESTILO DOS BOTÕES DO MODAL (CORRIGIDO) */
+        .btn-modal-acao {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; 
+            padding: 15px; 
+            border: none; border-radius: 10px;
+            font-size: 18px; font-weight: bold; margin-bottom: 10px;
+            cursor: pointer; color: white; text-decoration: none;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+        }
+        /* Cores explícitas para garantir que apareçam */
+        .btn-modal-acao.bg-zap { background: #25D366; }
+        .btn-modal-acao.bg-face { background: #1877F2; }
+        .btn-modal-acao.bg-insta { background: #E1306C; }
+        
+        .btn-fechar-modal-x {
+            position: absolute; top: 10px; right: 10px;
+            background: #eee; border: none; border-radius: 50%;
+            width: 30px; height: 30px; font-size: 20px; color: #333; cursor: pointer;
+        }
+
         /* --- AVISO FLUTUANTE (PWA) --- */
         .aviso-instalar {
-            position: fixed; bottom: 80px; /* Acima da barra */
+            position: fixed; bottom: 80px; 
             left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 460px;
             background: linear-gradient(135deg, #FF6B6B, #D32F2F); color: white;
@@ -326,35 +375,7 @@
         }
         .btn-instalacao-grande:active { transform: scale(0.98); box-shadow: 0 2px 0 #4a148c; }
 
-        /* --- MODAIS GERAIS (SALVAR, COMPARTILHAR, AVALIAR) --- */
-        .modal-geral {
-            display: none; position: fixed; z-index: 3000; 
-            left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center;
-            flex-direction: column; animation: fadeIn 0.3s;
-        }
-        .modal-card {
-            background: white; width: 85%; max-width: 350px;
-            border-radius: 20px; padding: 25px; text-align: center;
-            position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .modal-card h3 { margin-top: 0; color: #333; font-size: 22px; }
-        .modal-card p { color: #666; font-size: 16px; margin-bottom: 20px; }
-        
-        .btn-modal-acao {
-            display: flex; align-items: center; justify-content: center;
-            width: 100%; padding: 15px; border: none; border-radius: 10px;
-            font-size: 18px; font-weight: bold; margin-bottom: 10px;
-            cursor: pointer; color: white; text-decoration: none;
-            box-shadow: 0 3px 0 rgba(0,0,0,0.1);
-        }
-        .btn-fechar-modal-x {
-            position: absolute; top: 10px; right: 10px;
-            background: #eee; border: none; border-radius: 50%;
-            width: 30px; height: 30px; font-size: 20px; color: #333; cursor: pointer;
-        }
-
-        /* --- MODAL BRINDE (EXPLOSÃO) --- */
+        /* --- MODAL BRINDE --- */
         .modal-brinde {
             display: none; position: fixed; z-index: 2500; 
             left: 0; top: 0; width: 100%; height: 100%;
@@ -396,11 +417,9 @@
 <body>
 
     <header>
-        <!-- Logo Horizontal (535x167) -->
         <img src="img/logo.png" onerror="this.src='https://placehold.co/535x167/ffffff/D32F2F?text=DONA+ANTÔNIA'" alt="Logo Dona Antônia" class="header-logo">
     </header>
 
-    <!-- NAVEGAÇÃO POR ABAS -->
     <nav>
         <div class="nav-tabs">
             <button class="nav-btn ativo" id="btn-cestas" onclick="navegarPara('cestas')">Cestas</button>
@@ -417,7 +436,6 @@
             </p>
         </div>
 
-        <!-- 1. Cesta Grande -->
         <div class="card">
             <h3>1. Cesta Grande (R$ 390,00)</h3>
             <div class="galeria-fotos">
@@ -433,7 +451,6 @@
             </button>
         </div>
 
-        <!-- 2. Cesta Média -->
         <div class="card">
             <h3>2. Cesta Média (R$ 325,00)</h3>
             <div class="galeria-fotos">
@@ -449,7 +466,6 @@
             </button>
         </div>
 
-        <!-- 3. Cesta Pequena -->
         <div class="card">
             <h3>3. Cesta Pequena (R$ 220,00)</h3>
             <div class="galeria-fotos">
@@ -465,7 +481,6 @@
             </button>
         </div>
 
-        <!-- 4. Cesta Mini -->
         <div class="card">
             <h3>4. Cesta Mini (R$ 170,00)</h3>
             <div class="galeria-fotos">
@@ -481,7 +496,6 @@
             </button>
         </div>
 
-        <!-- 5. Cesta Econômica -->
         <div class="card">
             <h3>5. Cesta Econômica (R$ 85,00)</h3>
             <div class="galeria-fotos">
@@ -497,7 +511,6 @@
             </button>
         </div>
 
-        <!-- Forma de Pagamento Completa -->
         <div class="card" style="border-left: 5px solid var(--cor-whatsapp);">
             <h3>💳 Formas de Pagamento</h3>
             <ul style="list-style: none; padding: 0;">
@@ -508,7 +521,6 @@
             </ul>
         </div>
 
-        <!-- Contatos (3 Números) -->
         <div class="card" style="margin-top: 20px; background-color: #f5f5f5;">
             <h3>📞 Nossos Contatos</h3>
             <a href="tel:5565998150975" class="btn btn-agenda"><i class="fas fa-phone"></i> (65) 99815-0975 (Principal)</a>
@@ -516,7 +528,6 @@
             <a href="tel:5565888888888" class="btn btn-agenda"><i class="fas fa-phone"></i> (65) 98888-8888 (Loja)</a>
         </div>
 
-        <!-- CARTÃO INSTALAÇÃO -->
         <div class="card-instalacao-fixo">
             <h3>📱 Baixe o Aplicativo!</h3>
             <p>Para promoções e facilidade, instale nosso App.</p>
@@ -539,7 +550,6 @@
                 <button class="btn-opcao" id="btn-ja-tenho" onclick="mudarModoCadastro('antigo')">Já tenho cadastro</button>
             </div>
 
-            <!-- Formulário Novo (Com Cidade) -->
             <div id="form-novo">
                 <label>Seu Nome: <span style="color:red">*</span></label>
                 <input type="text" id="novo-nome" placeholder="Nome Completo" required>
@@ -560,7 +570,6 @@
                 <button class="btn btn-whatsapp" onclick="enviarNovoCadastro()"><i class="fab fa-whatsapp"></i> Confirmar</button>
             </div>
 
-            <!-- Formulário Antigo -->
             <div id="form-antigo" style="display: none;">
                 <label>Digite seu nome:</label>
                 <div class="container-input">
@@ -571,7 +580,6 @@
             </div>
         </div>
 
-        <!-- CARTÃO INSTALAÇÃO -->
         <div class="card-instalacao-fixo">
             <h3>📱 Obrigatório o App!</h3>
             <p>Garanta sua vaga no sorteio instalando o aplicativo.</p>
@@ -581,7 +589,7 @@
         </div>
     </div>
 
-    <!-- PÁGINA 4: AJUDA -->
+    <!-- PÁGINA 3: AJUDA -->
     <div id="pag-ajuda" class="pagina">
         <div class="card">
             <h2>ℹ️ Informações Importantes</h2>
@@ -658,7 +666,7 @@
     </div>
 
     <!-- MODAL SALVAR ZAP -->
-    <div id="modalSalvarZap" class="modal-geral">
+    <div id="modalSalvarZap" class="modal-geral" onclick="fecharModalAoClicarFora(event, 'modalSalvarZap')">
         <div class="modal-card">
             <button class="btn-fechar-modal-x" onclick="fecharModal('modalSalvarZap')">&times;</button>
             <h3 style="color:#D32F2F"><i class="fas fa-save"></i> Salvar Contato</h3>
@@ -677,7 +685,7 @@
     </div>
 
     <!-- MODAL COMPARTILHAR -->
-    <div id="modalCompartilhar" class="modal-geral">
+    <div id="modalCompartilhar" class="modal-geral" onclick="fecharModalAoClicarFora(event, 'modalCompartilhar')">
         <div class="modal-card">
             <button class="btn-fechar-modal-x" onclick="fecharModal('modalCompartilhar')">&times;</button>
             <h3 style="color:#0288D1"><i class="fas fa-share-alt"></i> Compartilhar Site</h3>
@@ -696,7 +704,7 @@
     </div>
 
     <!-- MODAL AVALIAR -->
-    <div id="modalAvaliar" class="modal-geral">
+    <div id="modalAvaliar" class="modal-geral" onclick="fecharModalAoClicarFora(event, 'modalAvaliar')">
         <div class="modal-card">
             <button class="btn-fechar-modal-x" onclick="fecharModal('modalAvaliar')">&times;</button>
             <h3 style="color:#FFC107"><i class="fas fa-star"></i> Avaliação 5 Estrelas</h3>
@@ -709,7 +717,7 @@
         </div>
     </div>
 
-    <!-- MODAL BRINDE (SURPRESA!) -->
+    <!-- MODAL BRINDE -->
     <div id="modalBrinde" class="modal-brinde">
         <div class="conteudo-brinde">
             <span class="icone-brinde">🎉</span>
@@ -728,9 +736,9 @@
     <script>
         const TELEFONE = "5565998150975";
         const LINK_SITE = "donaantonia.com.br/oferta";
-        const bancoDadosClientes = [{ nome: "Maria", bairro: "CPA" }]; // Simplificado
+        const bancoDadosClientes = [{ nome: "Maria", bairro: "CPA" }];
 
-        // --- SISTEMA DE NAVEGAÇÃO ---
+        // --- NAVEGAÇÃO ---
         function navegarPara(idPagina) {
             atualizarVisualPagina(idPagina);
             const novoCaminho = idPagina === 'cestas' ? '/' : '/' + idPagina;
@@ -764,13 +772,19 @@
             else atualizarVisualPagina('cestas');
         };
 
-        // --- MODAIS DA BARRA INFERIOR ---
+        // --- MODAIS ---
         function abrirModalSalvar() { document.getElementById('modalSalvarZap').style.display = 'flex'; }
         function abrirModalCompartilhar() { document.getElementById('modalCompartilhar').style.display = 'flex'; }
         function abrirModalAvaliar() { document.getElementById('modalAvaliar').style.display = 'flex'; }
         function fecharModal(idModal) { document.getElementById(idModal).style.display = 'none'; }
+        
+        function fecharModalAoClicarFora(event, idModal) {
+            if (event.target.id === idModal) {
+                fecharModal(idModal);
+            }
+        }
 
-        // --- FUNÇÕES DE COMPARTILHAMENTO ---
+        // --- AÇÕES ---
         function compartilharZap() {
             const texto = `Olha que legal essa oferta da Dona Antônia: ${LINK_SITE}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
@@ -779,14 +793,12 @@
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://" + LINK_SITE)}`, '_blank');
         }
 
-        // --- FUNÇÕES DE NEGÓCIO ---
         function enviarNovoCadastro() { 
             const nome = document.getElementById('novo-nome').value.trim();
             const tel = document.getElementById('novo-telefone').value.trim();
             const cidade = document.getElementById('novo-cidade').value; 
             const bairro = document.getElementById('novo-bairro').value.trim();
             
-            // Validação
             if (!nome || !tel || !cidade || !bairro) {
                 alert("Por favor, preencha TODOS os campos obrigatórios (*) para participar do sorteio!");
                 return;
@@ -803,7 +815,6 @@
         }
         function encomendar(produto) { window.open(`https://wa.me/${TELEFONE}?text=Quero encomendar a ${produto}`, '_blank'); }
         
-        // Compartilhar produto específico
         function compartilhar(produto) {
             const texto = `Dá uma olhada nessa ${produto} da Dona Antônia!`;
             if (navigator.share) {
@@ -814,12 +825,11 @@
         }
         
         function avaliarNoGoogle() { 
-            // Link de pesquisa genérica pois não temos ID
             const nomeEmpresa = "Cestas Dona Antônia Cuiabá";
             window.open(`https://www.google.com/search?q=${encodeURIComponent(nomeEmpresa)}`, '_blank'); 
         }
 
-        // --- LÓGICA DE INSTALAÇÃO (PWA) ---
+        // --- PWA ---
         const avisoInstalar = document.getElementById('aviso-instalar');
         let deferredPrompt;
 
