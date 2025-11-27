@@ -254,44 +254,39 @@
         .sugestao-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
         .sugestao-item:hover { background-color: #f0f0f0; }
 
-        /* --- BARRA FIXA (SÓ ÍCONES) --- */
+        /* --- BARRA FIXA (3 BOTÕES GRANDES) --- */
         .barra-app {
             position: fixed; bottom: 0; 
             left: 50%; transform: translateX(-50%);
             width: 100%; max-width: 480px; 
             background-color: white; border-top: 1px solid #ddd;
             display: flex; justify-content: space-around; 
-            padding: 15px 0; /* Padding maior para centralizar */
+            padding: 8px 0; 
             z-index: 2000; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
         .item-barra {
-            text-align: center; text-decoration: none; color: #666;
-            flex: 1; padding: 0;
-            display: flex; justify-content: center; align-items: center; /* Centraliza o ícone */
+            text-align: center; text-decoration: none; color: #555;
+            flex: 1; padding: 5px;
+            display: flex; flex-direction: column; 
+            justify-content: center; align-items: center;
+            font-size: 11px; font-weight: bold;
+            border-right: 1px solid #eee;
         }
+        .item-barra:last-child { border-right: none; }
         .icone-container {
-            width: 45px; height: 45px; /* Ícones Maiores */
-            border-radius: 50%;
+            width: 32px; height: 32px; /* Ícones normais */
             display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 22px; /* Fonte do ícone maior */
-            transition: transform 0.2s;
+            color: #D32F2F; font-size: 24px; margin-bottom: 3px;
         }
-        .item-barra:active .icone-container { transform: scale(0.9); }
+        .item-barra:active { background-color: #f5f5f5; }
 
-        .bg-zap { background: linear-gradient(45deg, #25D366, #128C7E); }
-        .bg-face { background: linear-gradient(45deg, #1877F2, #165EAB); }
-        .bg-insta { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
-        .bg-share { background: linear-gradient(45deg, #607D8B, #455A64); }
-
-        /* --- AVISO FLUTUANTE (PWA - MAIS ALTO) --- */
+        /* --- AVISO FLUTUANTE (PWA) --- */
         .aviso-instalar {
-            position: fixed; bottom: 90px; /* Altura ajustada para nova barra */
+            position: fixed; bottom: 80px; /* Acima da barra */
             left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 460px;
-            
             background: linear-gradient(135deg, #FF6B6B, #D32F2F); color: white;
-            padding: 25px 20px; 
-            border-radius: 15px; z-index: 1900;
+            padding: 15px; border-radius: 15px; z-index: 1900;
             box-shadow: 0 4px 20px rgba(211, 47, 47, 0.5);
             display: none; flex-direction: row; align-items: center;
             justify-content: space-between; gap: 15px; animation: piscarSuave 3s infinite;
@@ -301,18 +296,18 @@
             50% { box-shadow: 0 0 20px 10px rgba(211, 47, 47, 0); }
             100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
         }
-        .texto-instalar-banner { flex: 1; font-size: 16px; line-height: 1.3; } 
-        .texto-instalar-banner strong { display: block; font-size: 19px; color: #FFEB3B; }
+        .texto-instalar-banner { flex: 1; font-size: 15px; line-height: 1.3; } 
+        .texto-instalar-banner strong { display: block; font-size: 17px; color: #FFEB3B; }
         .btn-acao-banner {
             background: white; color: var(--cor-primaria); font-weight: bold;
-            padding: 15px 25px; border-radius: 30px; border: none;
-            font-size: 16px; cursor: pointer; white-space: nowrap;
+            padding: 10px 20px; border-radius: 30px; border: none;
+            font-size: 14px; cursor: pointer; white-space: nowrap;
             box-shadow: 0 3px 0 rgba(0,0,0,0.1);
         }
         .btn-fechar-aviso {
-            position: absolute; top: -12px; right: -8px; background: #333;
-            color: white; border: none; border-radius: 50%; width: 30px; height: 30px;
-            font-size: 16px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: absolute; top: -10px; right: -5px; background: #333;
+            color: white; border: none; border-radius: 50%; width: 25px; height: 25px;
+            font-size: 14px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         /* Cartão Fixo no Final das Páginas */
@@ -330,6 +325,34 @@
             box-shadow: 0 4px 0 #4a148c;
         }
         .btn-instalacao-grande:active { transform: scale(0.98); box-shadow: 0 2px 0 #4a148c; }
+
+        /* --- MODAIS GERAIS (SALVAR, COMPARTILHAR, AVALIAR) --- */
+        .modal-geral {
+            display: none; position: fixed; z-index: 3000; 
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center;
+            flex-direction: column; animation: fadeIn 0.3s;
+        }
+        .modal-card {
+            background: white; width: 85%; max-width: 350px;
+            border-radius: 20px; padding: 25px; text-align: center;
+            position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .modal-card h3 { margin-top: 0; color: #333; font-size: 22px; }
+        .modal-card p { color: #666; font-size: 16px; margin-bottom: 20px; }
+        
+        .btn-modal-acao {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; padding: 15px; border: none; border-radius: 10px;
+            font-size: 18px; font-weight: bold; margin-bottom: 10px;
+            cursor: pointer; color: white; text-decoration: none;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+        }
+        .btn-fechar-modal-x {
+            position: absolute; top: 10px; right: 10px;
+            background: #eee; border: none; border-radius: 50%;
+            width: 30px; height: 30px; font-size: 20px; color: #333; cursor: pointer;
+        }
 
         /* --- MODAL BRINDE (EXPLOSÃO) --- */
         .modal-brinde {
@@ -377,7 +400,7 @@
         <img src="img/logo.png" onerror="this.src='https://placehold.co/535x167/ffffff/D32F2F?text=DONA+ANTÔNIA'" alt="Logo Dona Antônia" class="header-logo">
     </header>
 
-    <!-- NAVEGAÇÃO POR ABAS (Ajustada: Mais visível e sem resultados) -->
+    <!-- NAVEGAÇÃO POR ABAS -->
     <nav>
         <div class="nav-tabs">
             <button class="nav-btn ativo" id="btn-cestas" onclick="navegarPara('cestas')">Cestas</button>
@@ -474,7 +497,7 @@
             </button>
         </div>
 
-        <!-- Forma de Pagamento Completa (Igual à Ajuda) -->
+        <!-- Forma de Pagamento Completa -->
         <div class="card" style="border-left: 5px solid var(--cor-whatsapp);">
             <h3>💳 Formas de Pagamento</h3>
             <ul style="list-style: none; padding: 0;">
@@ -518,20 +541,21 @@
 
             <!-- Formulário Novo (Com Cidade) -->
             <div id="form-novo">
-                <label>Seu Nome:</label>
-                <input type="text" id="novo-nome" placeholder="Nome Completo">
+                <label>Seu Nome: <span style="color:red">*</span></label>
+                <input type="text" id="novo-nome" placeholder="Nome Completo" required>
                 
-                <label>Telefone:</label>
-                <input type="tel" id="novo-telefone" placeholder="(65) 9...">
+                <label>Telefone: <span style="color:red">*</span></label>
+                <input type="tel" id="novo-telefone" placeholder="(65) 9..." required>
                 
-                <label>Cidade:</label>
-                <select id="novo-cidade">
+                <label>Cidade: <span style="color:red">*</span></label>
+                <select id="novo-cidade" required>
+                    <option value="">Selecione...</option>
                     <option value="Cuiabá">Cuiabá</option>
                     <option value="Várzea Grande">Várzea Grande</option>
                 </select>
 
-                <label>Bairro:</label>
-                <input type="text" id="novo-bairro" placeholder="Ex: Centro">
+                <label>Bairro: <span style="color:red">*</span></label>
+                <input type="text" id="novo-bairro" placeholder="Ex: Centro" required>
                 
                 <button class="btn btn-whatsapp" onclick="enviarNovoCadastro()"><i class="fab fa-whatsapp"></i> Confirmar</button>
             </div>
@@ -557,7 +581,7 @@
         </div>
     </div>
 
-    <!-- PÁGINA 3: AJUDA -->
+    <!-- PÁGINA 4: AJUDA -->
     <div id="pag-ajuda" class="pagina">
         <div class="card">
             <h2>ℹ️ Informações Importantes</h2>
@@ -605,7 +629,7 @@
         </div>
     </div>
 
-    <!-- BANNER FLUTUANTE (PWA - Mais Alto) -->
+    <!-- BANNER FLUTUANTE (PWA) -->
     <div id="aviso-instalar" class="aviso-instalar">
         <button class="btn-fechar-aviso" onclick="fecharInstalacao()">&times;</button>
         <div class="texto-instalar-banner">
@@ -617,25 +641,72 @@
         </button>
     </div>
 
-    <!-- BARRA FIXA (Limpa: 4 botões - SÓ ÍCONES) -->
+    <!-- NOVA BARRA FIXA (3 BOTOES COM MODAIS) -->
     <div class="barra-app">
-        <a href="https://wa.me/5565998150975" class="item-barra">
-            <div class="icone-container bg-zap"><i class="fab fa-whatsapp"></i></div>
-        </a>
-        
-        <!-- 👇👇 COLE O LINK DO FACEBOOK AQUI EMBAIXO 👇👇 -->
-        <a href="https://facebook.com/SEU_FACEBOOK_AQUI" class="item-barra">
-            <div class="icone-container bg-face"><i class="fab fa-facebook-f"></i></div>
-        </a>
-
-        <!-- 👇👇 COLE O LINK DO INSTAGRAM AQUI EMBAIXO 👇👇 -->
-        <a href="https://instagram.com/SEU_INSTAGRAM_AQUI" class="item-barra">
-            <div class="icone-container bg-insta"><i class="fab fa-instagram"></i></div>
-        </a>
-
-        <a href="#" class="item-barra" onclick="compartilharOfertaWhatsapp(); return false;">
+        <div class="item-barra" onclick="abrirModalSalvar()">
+            <div class="icone-container bg-zap"><i class="fas fa-address-book"></i></div>
+            SALVAR ZAP
+        </div>
+        <div class="item-barra" onclick="abrirModalCompartilhar()">
             <div class="icone-container bg-share"><i class="fas fa-share-alt"></i></div>
-        </a>
+            COMPARTILHAR
+        </div>
+        <div class="item-barra" onclick="abrirModalAvaliar()">
+            <div class="icone-container bg-zap" style="background: linear-gradient(45deg, #FFC107, #FF9800);"><i class="fas fa-star"></i></div>
+            AVALIAR
+        </div>
+    </div>
+
+    <!-- MODAL SALVAR ZAP -->
+    <div id="modalSalvarZap" class="modal-geral">
+        <div class="modal-card">
+            <button class="btn-fechar-modal-x" onclick="fecharModal('modalSalvarZap')">&times;</button>
+            <h3 style="color:#D32F2F"><i class="fas fa-save"></i> Salvar Contato</h3>
+            <p>Clique em um dos números abaixo para salvar na sua agenda como <strong>"Cesta Básica Dona Antônia"</strong>:</p>
+            
+            <a href="tel:5565998150975" class="btn-modal-acao bg-zap">
+                <i class="fas fa-phone-alt" style="margin-right:10px;"></i> (65) 99815-0975
+            </a>
+            <a href="tel:5565999999999" class="btn-modal-acao bg-zap">
+                <i class="fas fa-phone-alt" style="margin-right:10px;"></i> (65) 99999-9999
+            </a>
+            <a href="tel:5565988888888" class="btn-modal-acao bg-zap">
+                <i class="fas fa-phone-alt" style="margin-right:10px;"></i> (65) 98888-8888
+            </a>
+        </div>
+    </div>
+
+    <!-- MODAL COMPARTILHAR -->
+    <div id="modalCompartilhar" class="modal-geral">
+        <div class="modal-card">
+            <button class="btn-fechar-modal-x" onclick="fecharModal('modalCompartilhar')">&times;</button>
+            <h3 style="color:#0288D1"><i class="fas fa-share-alt"></i> Compartilhar Site</h3>
+            <p>Ajude a divulgar! Escolha onde quer enviar para seus amigos:</p>
+            
+            <a href="#" onclick="compartilharZap(); return false;" class="btn-modal-acao bg-zap">
+                <i class="fab fa-whatsapp" style="margin-right:10px;"></i> Enviar no WhatsApp
+            </a>
+            <a href="#" onclick="compartilharFace(); return false;" class="btn-modal-acao bg-face">
+                <i class="fab fa-facebook-f" style="margin-right:10px;"></i> Compartilhar Facebook
+            </a>
+            <a href="https://instagram.com/donaantoniacestas" target="_blank" class="btn-modal-acao bg-insta">
+                <i class="fab fa-instagram" style="margin-right:10px;"></i> Ir para Instagram
+            </a>
+        </div>
+    </div>
+
+    <!-- MODAL AVALIAR -->
+    <div id="modalAvaliar" class="modal-geral">
+        <div class="modal-card">
+            <button class="btn-fechar-modal-x" onclick="fecharModal('modalAvaliar')">&times;</button>
+            <h3 style="color:#FFC107"><i class="fas fa-star"></i> Avaliação 5 Estrelas</h3>
+            <p>Sua avaliação é muito importante para nós! Ajuda a Dona Antônia a crescer e atender mais famílias.</p>
+            <p style="font-size:14px;">(Ao clicar, você vai para o Google. Selecione 5 estrelas! ⭐⭐⭐⭐⭐)</p>
+            
+            <a href="#" onclick="avaliarNoGoogle(); return false;" class="btn-modal-acao" style="background-color: #4285F4;">
+                <i class="fab fa-google" style="margin-right:10px;"></i> AVALIAR AGORA
+            </a>
+        </div>
     </div>
 
     <!-- MODAL BRINDE (SURPRESA!) -->
@@ -656,9 +727,10 @@
 
     <script>
         const TELEFONE = "5565998150975";
+        const LINK_SITE = "donaantonia.com.br/oferta";
         const bancoDadosClientes = [{ nome: "Maria", bairro: "CPA" }]; // Simplificado
 
-        // --- SISTEMA DE NAVEGAÇÃO COM URL ---
+        // --- SISTEMA DE NAVEGAÇÃO ---
         function navegarPara(idPagina) {
             atualizarVisualPagina(idPagina);
             const novoCaminho = idPagina === 'cestas' ? '/' : '/' + idPagina;
@@ -691,6 +763,61 @@
             else if (caminho.includes('/ajuda')) atualizarVisualPagina('ajuda');
             else atualizarVisualPagina('cestas');
         };
+
+        // --- MODAIS DA BARRA INFERIOR ---
+        function abrirModalSalvar() { document.getElementById('modalSalvarZap').style.display = 'flex'; }
+        function abrirModalCompartilhar() { document.getElementById('modalCompartilhar').style.display = 'flex'; }
+        function abrirModalAvaliar() { document.getElementById('modalAvaliar').style.display = 'flex'; }
+        function fecharModal(idModal) { document.getElementById(idModal).style.display = 'none'; }
+
+        // --- FUNÇÕES DE COMPARTILHAMENTO ---
+        function compartilharZap() {
+            const texto = `Olha que legal essa oferta da Dona Antônia: ${LINK_SITE}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+        function compartilharFace() {
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://" + LINK_SITE)}`, '_blank');
+        }
+
+        // --- FUNÇÕES DE NEGÓCIO ---
+        function enviarNovoCadastro() { 
+            const nome = document.getElementById('novo-nome').value.trim();
+            const tel = document.getElementById('novo-telefone').value.trim();
+            const cidade = document.getElementById('novo-cidade').value; 
+            const bairro = document.getElementById('novo-bairro').value.trim();
+            
+            // Validação
+            if (!nome || !tel || !cidade || !bairro) {
+                alert("Por favor, preencha TODOS os campos obrigatórios (*) para participar do sorteio!");
+                return;
+            }
+
+            const msg = `Cadastro Sorteio:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cidade}\nBairro: ${bairro}`;
+            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+        
+        function buscarEEnviar() { 
+            const nome = document.getElementById('busca-nome').value;
+            const msg = `Já tenho cadastro:\nNome: ${nome}\nQuero participar do sorteio!`;
+            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+        function encomendar(produto) { window.open(`https://wa.me/${TELEFONE}?text=Quero encomendar a ${produto}`, '_blank'); }
+        
+        // Compartilhar produto específico
+        function compartilhar(produto) {
+            const texto = `Dá uma olhada nessa ${produto} da Dona Antônia!`;
+            if (navigator.share) {
+                navigator.share({ title: 'Dona Antônia', text: texto, url: window.location.href });
+            } else { 
+                window.open(`https://wa.me/?text=${encodeURIComponent(texto + ' ' + window.location.href)}`, '_blank');
+            }
+        }
+        
+        function avaliarNoGoogle() { 
+            // Link de pesquisa genérica pois não temos ID
+            const nomeEmpresa = "Cestas Dona Antônia Cuiabá";
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(nomeEmpresa)}`, '_blank'); 
+        }
 
         // --- LÓGICA DE INSTALAÇÃO (PWA) ---
         const avisoInstalar = document.getElementById('aviso-instalar');
@@ -728,19 +855,12 @@
             sessionStorage.setItem('bannerFechado', 'true');
         }
 
-        // --- LÓGICA DO BRINDE SURPRESA (CONFETES) ---
+        // --- BRINDE ---
         let brindeMostrado = false;
-
-        // Detecta rolagem na página
         window.onscroll = function() {
-            // Verifica se está na página de Cestas
             const paginaCestas = document.getElementById('pag-cestas');
             if (!paginaCestas.classList.contains('visivel')) return;
-
-            // Se já mostrou, não faz nada
             if (brindeMostrado || sessionStorage.getItem('brindeVisto')) return;
-
-            // Detecta se chegou perto do fim da página (altura total - altura da janela - 150px de margem)
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 250) {
                 mostrarBrinde();
             }
@@ -748,67 +868,22 @@
 
         function mostrarBrinde() {
             brindeMostrado = true;
-            sessionStorage.setItem('brindeVisto', 'true'); // Grava na sessão para não repetir
-            
+            sessionStorage.setItem('brindeVisto', 'true');
             document.getElementById('modalBrinde').style.display = 'flex';
-            
-            // Dispara Confetes!
             var duration = 3 * 1000;
             var animationEnd = Date.now() + duration;
             var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 3000 };
-
             function randomInRange(min, max) { return Math.random() * (max - min) + min; }
-
             var interval = setInterval(function() {
                 var timeLeft = animationEnd - Date.now();
-
                 if (timeLeft <= 0) { return clearInterval(interval); }
-
                 var particleCount = 50 * (timeLeft / duration);
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
             }, 250);
         }
+        function fecharBrinde() { document.getElementById('modalBrinde').style.display = 'none'; }
 
-        function fecharBrinde() {
-            document.getElementById('modalBrinde').style.display = 'none';
-        }
-
-        // --- FUNÇÕES DE NEGÓCIO ---
-        function enviarNovoCadastro() { 
-            const nome = document.getElementById('novo-nome').value;
-            const tel = document.getElementById('novo-telefone').value;
-            const cidade = document.getElementById('novo-cidade').value; 
-            const bairro = document.getElementById('novo-bairro').value;
-            const msg = `Cadastro Sorteio:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cidade}\nBairro: ${bairro}`;
-            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-        function buscarEEnviar() { 
-            const nome = document.getElementById('busca-nome').value;
-            const msg = `Já tenho cadastro:\nNome: ${nome}\nQuero participar do sorteio!`;
-            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-        function encomendar(produto) { window.open(`https://wa.me/${TELEFONE}?text=Quero encomendar a ${produto}`, '_blank'); }
-        
-        function compartilharOfertaWhatsapp() { 
-            const texto = "Olha que legal essa oferta da Dona Antônia: donaantonia.com.br/oferta";
-            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
-        }
-        
-        function compartilhar(produto) {
-            const texto = `Dá uma olhada nessa ${produto} da Dona Antônia!`;
-            if (navigator.share) {
-                navigator.share({ title: 'Dona Antônia', text: texto, url: window.location.href });
-            } else { 
-                window.open(`https://wa.me/?text=${encodeURIComponent(texto + ' ' + window.location.href)}`, '_blank');
-            }
-        }
-        
-        function avaliarNoGoogle() { 
-            // Substitua 'SEU_ID_AQUI' pelo Place ID real do Google Meu Negócio
-            const nomeEmpresa = "Cestas Dona Antônia Cuiabá";
-            window.open(`https://www.google.com/search?q=${encodeURIComponent(nomeEmpresa)}`, '_blank'); 
-        }
         function mudarModoCadastro(modo) {
             if(modo === 'novo') {
                 document.getElementById('form-novo').style.display = 'block';
