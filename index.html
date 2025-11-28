@@ -6,11 +6,9 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#D32F2F">
     
-    <!-- SEO E DADOS SOCIAIS (Melhorado) -->
+    <!-- SEO E DADOS SOCIAIS -->
     <title>Cesta Básica em Cuiabá e Várzea Grande | Dona Antônia</title>
-    
     <link rel="canonical" href="https://donaantonia.com.br/" />
-    
     <meta name="description" content="Compre Cesta Básica em Cuiabá e Várzea Grande na Dona Antônia. Melhor preço, entrega rápida no CPA, Tijucal, Cristo Rei e toda região. Confira!">
     <meta name="keywords" content="cesta básica cuiaba, cesta basica varzea grande, comprar alimentos, supermercado online, entrega de cesta, dona antonia">
     <meta name="robots" content="index, follow">
@@ -105,7 +103,7 @@
             --cor-fundo: #fafafa;
         }
 
-        html { background-color: #e0e0e0; }
+        html { background-color: #e0e0e0; scroll-behavior: smooth; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -113,21 +111,21 @@
             color: var(--cor-texto);
             margin: 0 auto; 
             padding: 0;
-            padding-top: 140px; /* AUMENTADO: Para compensar o Header Duplo */
-            padding-bottom: 20px; /* REDUZIDO: Sem barra inferior */
+            padding-top: 140px; 
+            padding-bottom: 20px;
             max-width: 480px; 
             min-height: 100vh;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             position: relative; 
         }
 
-        /* --- CABEÇALHO (NOVO LAYOUT DE DOIS ANDARES) --- */
+        /* --- CABEÇALHO --- */
         header {
             background-color: white;
-            height: 130px; /* Altura para caber Logo + Menu */
+            height: 130px; 
             padding: 0;
             display: flex;
-            flex-direction: column; /* Um item embaixo do outro */
+            flex-direction: column;
             box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             position: fixed;
             top: 0;
@@ -138,7 +136,6 @@
             z-index: 1000;
         }
 
-        /* Parte de Cima: Logo e Ícones */
         .header-top {
             display: flex;
             justify-content: space-between;
@@ -176,11 +173,11 @@
         .ic-face { color: #1877F2; }
         .ic-insta { color: #E1306C; }
 
-        /* --- NAVEGAÇÃO SUPERIOR (Top Bar - Parte de Baixo do Header) --- */
+        /* --- NAVEGAÇÃO --- */
         .top-nav {
             width: 100%;
             height: 60px;
-            background-color: #222; /* Fundo Escuro */
+            background-color: #222;
             display: flex; 
             justify-content: space-between;
         }
@@ -206,18 +203,30 @@
         
         .nav-item.ativo { 
             color: #ffffff; 
-            background-color: var(--cor-primaria); /* Vermelho Destaque */
+            background-color: var(--cor-primaria);
             font-size: 16px;
             font-weight: 900;
             text-shadow: 0 1px 3px rgba(0,0,0,0.3);
             box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
         }
         
-        /* --- PÁGINAS --- */
-        .pagina { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
-        .pagina.visivel { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+        /* --- SEÇÕES (PÁGINAS) --- */
+        .secao-conteudo { 
+            display: none; 
+            padding: 15px; 
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        .secao-conteudo.visivel { 
+            display: block; 
+        }
+
+        .secao-conteudo.animar {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
         /* --- CARTÕES --- */
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #f0f0f0; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -239,12 +248,18 @@
         h2, h3 { color: var(--cor-primaria); margin-top: 0; }
         h3 { font-size: 18px; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
 
-        /* SEO SECTION */
+        /* SEO SECTION - Agora com estilo ajustado para o final */
         .seo-text-block {
-            font-size: 12px; color: #888; text-align: center; margin-top: 20px; line-height: 1.5;
+            font-size: 12px; 
+            color: #888; 
+            text-align: center; 
+            margin-top: 30px; 
+            margin-bottom: 10px;
+            line-height: 1.5;
+            padding: 0 10px;
         }
 
-        /* --- GALERIA COM INDICADOR DE ZOOM --- */
+        /* --- GALERIA --- */
         .galeria-fotos { display: flex; gap: 10px; margin-bottom: 10px; }
         
         .img-wrapper {
@@ -276,12 +291,8 @@
             pointer-events: none;
         }
 
-        /* --- BOTÕES DE AÇÃO (CESTAS) --- */
-        .botoes-wrapper {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
+        /* --- BOTÕES --- */
+        .botoes-wrapper { display: flex; gap: 10px; margin-top: 15px; }
 
         .btn {
             display: flex; align-items: center; justify-content: center;
@@ -293,117 +304,158 @@
         .btn-whatsapp { background-color: #25D366; }
         .btn-compartilhar-produto { background-color: #0288D1; }
         
-        /* Formulários */
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 16px; }
 
-        /* --- MODAL GALERIA (FULL SCREEN) --- */
+        /* --- MODAIS --- */
         .modal-imagem {
             display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.95); 
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column; justify-content: center; align-items: center;
         }
         .modal-conteudo-wrapper {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
+            width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px;
         }
         .modal-conteudo { 
-            width: 100%; 
-            height: auto; 
-            max-height: 70vh;
-            object-fit: contain; 
-            border-top: 1px solid #333;
-            border-bottom: 1px solid #333; 
-            background-color: black;
+            width: 100%; height: auto; max-height: 70vh; object-fit: contain; 
+            border-top: 1px solid #333; border-bottom: 1px solid #333; background-color: black;
         }
         .modal-controles {
-            width: 100%; display: flex; justify-content: center;
-            align-items: center; gap: 60px; padding: 10px;
+            width: 100%; display: flex; justify-content: center; align-items: center; gap: 60px; padding: 10px;
         }
         .nav-seta {
             color: white; font-size: 40px; cursor: pointer; padding: 20px;
             background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%; width: 70px; height: 70px;
-            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;
         }
         .nav-seta:active { background: rgba(255,255,255,0.3); }
-        
         .btn-fechar-galeria {
-            position: absolute; top: 20px; right: 20px;
-            color: white; font-size: 35px; font-weight: bold;
-            cursor: pointer; z-index: 3001; background: rgba(0,0,0,0.5); 
-            border-radius: 50%; width: 50px; height: 50px;
+            position: absolute; top: 20px; right: 20px; color: white; font-size: 35px; font-weight: bold;
+            cursor: pointer; z-index: 3001; background: rgba(0,0,0,0.5); border-radius: 50%; width: 50px; height: 50px;
             border: none; display: flex; align-items: center; justify-content: center;
         }
         .contador-fotos { position: absolute; top: 25px; left: 25px; color: #ccc; font-size: 16px; }
 
-        /* --- LISTA PAGAMENTO --- */
         .lista-pagamento { list-style: none; padding: 0; }
         .lista-pagamento li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 16px; display: flex; align-items: center; }
         .lista-pagamento i { color: var(--cor-primaria); width: 30px; font-size: 18px; }
 
-        /* --- MODAL BRINDE --- */
         .modal-brinde { display: none; position: fixed; z-index: 2500; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); justify-content: center; align-items: center; animation: fadeInModal 0.3s; }
         .conteudo-brinde { background: linear-gradient(135deg, #FFEB3B, #FFF59D); width: 85%; max-width: 400px; border-radius: 20px; padding: 30px 20px; text-align: center; border: 4px solid #FBC02D; box-shadow: 0 0 50px rgba(255, 235, 59, 0.6); position: relative; }
         .titulo-brinde { color: #D32F2F; font-size: 26px; font-weight: 900; margin: 0; text-transform: uppercase; }
         .texto-brinde { font-size: 18px; color: #333; margin: 15px 0; font-weight: 500; }
         .btn-fechar-brinde { background: #D32F2F; color: white; border: none; padding: 12px 30px; font-size: 18px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 0 #b71c1c; }
         
-        /* --- AVISO FLUTUANTE (PWA - MAIS ALTO) --- */
+        /* --- AVISO FLUTUANTE (PWA - DISCRETO - Pílula) --- */
         .aviso-instalar {
-            position: fixed; bottom: 20px; /* Reduzido pois não tem menu embaixo */
-            left: 50%; transform: translateX(-50%);
-            width: 95%; max-width: 460px;
-            background: linear-gradient(135deg, #FF6B6B, #D32F2F); color: white;
-            padding: 15px 20px; border-radius: 15px; z-index: 1900;
-            box-shadow: 0 4px 20px rgba(211, 47, 47, 0.5);
-            display: none; flex-direction: row; align-items: center;
-            justify-content: space-between; gap: 15px; animation: piscarSuave 3s infinite;
+            position: fixed; 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: auto;
+            min-width: 280px;
+            max-width: 90%;
+            background-color: #333; /* Fundo escuro elegante */
+            color: white;
+            padding: 8px 15px; /* Bem menor e compacto */
+            border-radius: 50px; /* Formato Pílula */
+            z-index: 1900;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 12px;
         }
-        @keyframes piscarSuave {
-            0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
-            50% { box-shadow: 0 0 20px 10px rgba(211, 47, 47, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+        
+        .texto-instalar-banner { 
+            flex: 1; font-size: 12px; color: #ddd; line-height: 1.2;
+        } 
+        .texto-instalar-banner strong { 
+            display: inline; font-size: 13px; color: #fff; margin-right: 4px;
         }
-        .texto-instalar-banner { flex: 1; font-size: 16px; line-height: 1.3; } .texto-instalar-banner strong { display: block; font-size: 19px; color: #FFEB3B; }
-        .btn-acao-banner { background: white; color: var(--cor-primaria); font-weight: bold; padding: 10px 20px; border-radius: 30px; border: none; font-size: 14px; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
-        .btn-fechar-aviso { position: absolute; top: -10px; right: -5px; background: #333; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .card-instalacao-fixo { background: linear-gradient(135deg, #fff, #f3e5f5); border: 2px solid #7b1fa2; border-radius: 15px; padding: 20px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .btn-instalacao-grande { background-color: #7b1fa2; color: white; font-size: 20px; padding: 20px; width: 100%; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #4a148c; }
+        
+        .btn-acao-banner { 
+            background: var(--cor-primaria); color: white; font-weight: bold; 
+            padding: 6px 14px; border-radius: 20px; border: none; 
+            font-size: 11px; cursor: pointer; white-space: nowrap; box-shadow: none;
+        }
+        .btn-fechar-aviso { 
+            position: static; background: transparent; color: #777; 
+            border: none; width: auto; height: auto; font-size: 18px; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            margin-left: -5px; padding: 5px;
+        }
 
+        /* --- BANNERS EMBUTIDOS (NOVO DESIGN DISCRETO) --- */
+        .card-instalacao-fixo { 
+            background-color: #f9f9f9; 
+            border: 1px solid #eee; 
+            border-radius: 8px; 
+            padding: 10px 15px; /* Padding Reduzido */
+            margin-bottom: 20px; 
+            display: flex; /* Layout Horizontal */
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: none; /* Sem sombra pesada */
+        }
+        
+        .conteudo-banner-interno {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+        .conteudo-banner-interno strong {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        .conteudo-banner-interno span {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        /* Botão pequeno interno */
+        .btn-instalacao-inline { 
+            background-color: #444; /* Cor neutra */
+            color: white; 
+            font-size: 11px; 
+            padding: 8px 15px; 
+            border: none; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-weight: bold;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
 
     <!-- CABEÇALHO FIXO DUPLO -->
     <header>
-        <!-- Linha 1: Marca e Redes -->
         <div class="header-top">
             <div class="header-left">
                 <img src="img/logo1.png" onerror="this.src='https://placehold.co/180x60/ffffff/D32F2F?text=DONA+ANTÔNIA'" alt="Logo Dona Antônia" class="logo-pequena">
             </div>
             <div class="header-icons">
                 <a href="https://wa.me/5565998150975" class="icon-btn ic-zap" onclick="abrirLinkExterno(event, this)" aria-label="Fale conosco no WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                <a href="https://facebook.com/SEU_FACEBOOK" class="icon-btn ic-face" onclick="abrirLinkExterno(event, this)" aria-label="Visite nosso Facebook"><i class="fab fa-facebook"></i></a>
-                <a href="https://instagram.com/SEU_INSTA" class="icon-btn ic-insta" onclick="abrirLinkExterno(event, this)" aria-label="Siga-nos no Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://facebook.com/super.cestas.cuiaba/" class="icon-btn ic-face" onclick="abrirLinkExterno(event, this)" aria-label="Visite nosso Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="https://instagram.com/super.cestas.dona.antonia/" class="icon-btn ic-insta" onclick="abrirLinkExterno(event, this)" aria-label="Siga-nos no Instagram"><i class="fab fa-instagram"></i></a>
             </div>
         </div>
 
-        <!-- Linha 2: Navegação -->
         <nav class="top-nav">
-            <button class="nav-item ativo" id="btn-cestas" onclick="navegarPara('cestas')">CESTAS</button>
-            <button class="nav-item" id="btn-pagamento" onclick="navegarPara('pagamento')">PAGAMENTO</button>
-            <button class="nav-item" id="btn-sorteio" onclick="navegarPara('sorteio')">SORTEIO</button>
+            <button class="nav-item ativo" id="btn-cestas" onclick="rolarPara('cestas')">CESTAS</button>
+            <button class="nav-item" id="btn-pagamento" onclick="rolarPara('pagamento')">PAGAMENTO</button>
+            <button class="nav-item" id="btn-sorteio" onclick="rolarPara('sorteio')">SORTEIO</button>
         </nav>
     </header>
 
-    <!-- PÁGINA 1: CESTAS -->
-    <div id="pag-cestas" class="pagina visivel">
-        <!-- SEO H1: Título Principal Importante para o Google -->
+    <!-- CONTAINER DE SEÇÕES EM ROLAGEM ÚNICA -->
+    
+    <!-- SEÇÃO 1: CESTAS (Sempre visível inicialmente) -->
+    <div id="pag-cestas" class="secao-conteudo visivel animar">
         <div class="card" style="text-align: center; background-color: #fff3e0;">
             <h1 style="margin: 0; font-size: 1.1rem; font-weight: bold; color: #E65100;">
                 <i class="fas fa-truck"></i> Cesta Básica em Cuiabá e Várzea Grande
@@ -411,18 +463,17 @@
             <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #666;">Entregas rápidas no CPA, Tijucal, Cristo Rei e região.</p>
         </div>
 
-        <!-- Cesta 1 (PRINCIPAL - CARREGAMENTO RÁPIDO) -->
+        <!-- Cestas -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA GRANDE</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <!-- Esta imagem carrega normal pois é a primeira -->
-                        <img src="img/cesta-grande.jpg" alt="Cesta Básica Grande Completa em Cuiabá com Arroz e Feijão" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-grande.jpg" alt="Cesta Básica Grande" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-grande-2.jpg" alt="Itens da Cesta Básica Grande Dona Antônia" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-grande-2.jpg" alt="Cesta Básica Grande Detalhe" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -437,17 +488,16 @@
             </div>
         </div>
 
-        <!-- Cesta 2 (LAZY LOADING) -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA MÉDIA</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-media.jpg" alt="Cesta Básica Média em Várzea Grande e Cuiabá" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-media.jpg" alt="Cesta Média" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-media-2.jpg" alt="Produtos da Cesta Média Dona Antônia" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-media-2.jpg" alt="Cesta Média Detalhe" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -462,17 +512,16 @@
             </div>
         </div>
 
-        <!-- Cesta 3 -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA PEQUENA</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-pequena.jpg" alt="Cesta Básica Pequena Econômica Cuiabá" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-pequena.jpg" alt="Cesta Pequena" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-pequena-2.jpg" alt="Detalhes Cesta Pequena Dona Antônia" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-pequena-2.jpg" alt="Cesta Pequena Detalhe" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -487,17 +536,16 @@
             </div>
         </div>
 
-        <!-- Cesta 4 -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA MINI</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-mini.jpg" alt="Mini Cesta Básica Barata em Cuiabá" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-mini.jpg" alt="Cesta Mini" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-mini-2.jpg" alt="Kit de Alimentos Básico Cesta Mini" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-mini-2.jpg" alt="Cesta Mini Detalhe" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -512,17 +560,16 @@
             </div>
         </div>
 
-        <!-- Cesta 5 -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA ECONÔMICA</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-economica.jpg" alt="Cesta Econômica Melhor Preço VG" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-economica.jpg" alt="Cesta Econômica" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-economica-2.jpg" alt="Kit Econômico Dona Antônia" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-economica-2.jpg" alt="Cesta Econômica Detalhe" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -536,23 +583,20 @@
             </div>
         </div>
 
+        <!-- BANNER DISCRETO (SUBSTITUI O CARTÃO GRANDE) -->
         <div class="card-instalacao-fixo pwa-install-promo">
-            <h3>📱 Baixe o Aplicativo!</h3>
-            <p>Para promoções e facilidade, instale nosso App.</p>
-            <button class="btn-instalacao-grande" onclick="instalarApp()">
-                <i class="fas fa-download"></i> INSTALAR AGORA
+            <div class="conteudo-banner-interno">
+                <strong>📱 App Dona Antônia</strong>
+                <span>Baixe para ver ofertas e sorteios.</span>
+            </div>
+            <button class="btn-instalacao-inline" onclick="instalarApp()">
+                Instalar
             </button>
-        </div>
-
-        <!-- CONTEÚDO SEO - TEXTO FINAL -->
-        <div class="seo-text-block">
-            <p><strong>Cesta Básica Dona Antônia</strong> - A melhor opção em alimentos para sua família. Atendemos com rapidez e qualidade os bairros: CPA 1, 2, 3 e 4, Tijucal, Pedra 90, Osmar Cabral, Parque Cuiabá, Cristo Rei, Mapim e toda a Grande Cuiabá e Várzea Grande.</p>
-            <p>Aceitamos Pix, Cartão de Crédito e Alimentação (Alelo, Sodexo, Pluxee). Garanta sua cesta básica hoje mesmo!</p>
         </div>
     </div>
 
-    <!-- PÁGINA 2: PAGAMENTO -->
-    <div id="pag-pagamento" class="pagina">
+    <!-- SEÇÃO 2: PAGAMENTO (Inicialmente Oculta) -->
+    <div id="pag-pagamento" class="secao-conteudo">
         <div class="card">
             <h2>💳 Formas de Pagamento</h2>
             <p>Aceitamos as principais formas para facilitar sua vida:</p>
@@ -566,23 +610,25 @@
                 <li><i class="fas fa-utensils"></i> Pluxee</li>
                 <li><i class="fas fa-mobile-alt"></i> Ifood Benefícios</li>
             </ul>
-            <p style="color: red; font-size: 14px; text-align: center; margin-top: 20px;"><strong>⚠️ Atenção:</strong> NÃO VENDEMOS A PRAZO.</p>
+            <p style="color: red; font-size: 14px; text-align: center; margin-top: 20px;"><strong>⚠️ Atenção:</strong> Não vendemos a prazo para 30 dias.</p>
         </div>
 
-        <!-- BANNER PWA PAGAMENTO -->
+        <!-- BANNER DISCRETO -->
         <div class="card-instalacao-fixo pwa-install-promo">
-            <h3>📱 App Dona Antônia</h3>
-            <p>Instale para ver o sorteio toda semana!</p>
-            <button class="btn-instalacao-grande" onclick="instalarApp()">
-                <i class="fas fa-download"></i> INSTALAR APP
+            <div class="conteudo-banner-interno">
+                <strong>📱 App Dona Antônia</strong>
+                <span>Baixe para ver ofertas e sorteios.</span>
+            </div>
+            <button class="btn-instalacao-inline" onclick="instalarApp()">
+                Instalar
             </button>
         </div>
     </div>
 
-    <!-- PÁGINA 3: SORTEIO -->
-    <div id="pag-sorteio" class="pagina">
+    <!-- SEÇÃO 3: SORTEIO (Inicialmente Oculta) -->
+    <div id="pag-sorteio" class="secao-conteudo">
         <div class="card">
-            <h2>🍀 Sorteio todo Domingo</h2>
+            <h2>🍀 Sorteio todos Domingo</h2>
             <p>Preencha para concorrer. Serão 5 ganhadores de Kits de Limpeza e Higiêne!</p>
             <form onsubmit="event.preventDefault(); enviarNovoCadastro();">
                 <label>Nome Completo: <span style="color:red">*</span></label>
@@ -600,21 +646,33 @@
                 <button type="submit" class="btn btn-whatsapp"><i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar</button>
             </form>
         </div>
+        
+        <!-- BANNER DISCRETO -->
         <div class="card-instalacao-fixo pwa-install-promo">
-            <h3>📱 Obrigatório o App!</h3>
-            <p>Garanta sua vaga no sorteio instalando o aplicativo.</p>
-            <button class="btn-instalacao-grande" onclick="instalarApp()"><i class="fas fa-download"></i> INSTALAR AGORA</button>
+            <div class="conteudo-banner-interno">
+                <strong>📱 App Dona Antônia</strong>
+                <span>Baixe para ver ofertas e sorteios.</span>
+            </div>
+            <button class="btn-instalacao-inline" onclick="instalarApp()">
+                Instalar
+            </button>
+        </div>
+
+        <!-- TEXTO SEO RESTAURADO E POSICIONADO NO FIM -->
+        <div class="seo-text-block">
+            <p><strong>Cesta Básica Dona Antônia</strong> - A melhor opção em alimentos para sua família. Atendemos com rapidez e qualidade os bairros: CPA 1, 2, 3 e 4, Tijucal, Pedra 90, Osmar Cabral, Parque Cuiabá, Cristo Rei, Mapim e toda a Grande Cuiabá e Várzea Grande.</p>
+            <p>Aceitamos Pix, Cartão de Crédito e Alimentação (Alelo, Sodexo, Pluxee). Garanta sua cesta básica hoje mesmo!</p>
         </div>
     </div>
 
-    <!-- BANNER PWA FLUTUANTE -->
+    <!-- BANNERS E MODAIS -->
+    <!-- BANNER DISCRETO EM PÍLULA (FLUTUANTE) -->
     <div id="aviso-instalar" class="aviso-instalar pwa-install-promo">
-        <div class="texto-instalar-banner"><strong>Baixe nosso App!</strong>Para participar do sorteio.</div>
+        <div class="texto-instalar-banner"><strong>Baixe nosso App!</strong></div>
         <button class="btn-acao-banner" onclick="instalarApp()"><i class="fas fa-download"></i> INSTALAR</button>
         <button class="btn-fechar-aviso" onclick="fecharInstalacao()">&times;</button>
     </div>
 
-    <!-- MODAL IMAGEM -->
     <div id="modalVisualizador" class="modal-imagem" onclick="fecharImagem()">
         <button class="btn-fechar-galeria" onclick="fecharImagem()">&times;</button>
         <div class="modal-conteudo-wrapper" onclick="event.stopPropagation()">
@@ -627,7 +685,6 @@
         <div id="contadorFotos" class="contador-fotos">1 / 2</div>
     </div>
 
-    <!-- MODAL BRINDE -->
     <div id="modalBrinde" class="modal-brinde">
         <div class="conteudo-brinde">
             <h1>🎉 SURPRESA!</h1>
@@ -640,25 +697,97 @@
         const TELEFONE = "5565998150975";
         const LINK_SITE = "donaantonia.com.br/oferta";
 
-        function navegarPara(idPagina) {
-            document.querySelectorAll('.pagina').forEach(p => p.classList.remove('visivel'));
-            document.getElementById('pag-' + idPagina).classList.add('visivel');
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('ativo'));
-            document.getElementById('btn-' + idPagina).classList.add('ativo');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        // --- SISTEMA DE ROLAGEM INFINITA (NOVO) ---
+        let paginasReveladas = {
+            'cestas': true, // Sempre começa visível
+            'pagamento': false,
+            'sorteio': false
+        };
+
+        // Função para mostrar uma seção específica (e anteriores)
+        function revelarSecao(id, rolar = false) {
+            const el = document.getElementById('pag-' + id);
+            if (!el) return;
+            
+            // Marca como revelada e exibe
+            paginasReveladas[id] = true;
+            el.classList.add('visivel');
+            // Pequeno delay para a animação CSS funcionar (opacity)
+            setTimeout(() => {
+                el.classList.add('animar');
+            }, 50);
+
+            // Garante que as anteriores também apareçam (se clicar direto em Sorteio)
+            if (id === 'sorteio' && !paginasReveladas['pagamento']) {
+                revelarSecao('pagamento', false); 
+            }
+
+            if (rolar) {
+                // Ajusta o scroll considerando o header fixo
+                const headerOffset = 140; 
+                const elementPosition = el.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                window.scrollTo({
+                     top: offsetPosition,
+                     behavior: "smooth"
+                });
+            }
         }
 
-        // --- NOVA FUNÇÃO PARA LINKS SOCIAIS (CORREÇÃO DE ERRO) ---
-        function abrirLinkExterno(event, element) {
-            event.preventDefault(); // Impede o navegador de tentar abrir na mesma janela
-            let url = element.getAttribute('href');
+        // Função dos botões do menu (Agora rolam em vez de trocar)
+        function rolarPara(id) {
+            revelarSecao(id, true);
+        }
+
+        // Detecta rolagem para "Infinito Scroll" e Menu Ativo
+        window.onscroll = function() {
+            // 1. Lógica do Infinite Scroll (Revelar ao chegar no fundo)
+            const scrollTotal = document.documentElement.scrollHeight;
+            const scrollAtual = window.scrollY + window.innerHeight;
             
-            // Se o usuário esqueceu o https://, nós adicionamos para não dar erro
-            if (url && !url.startsWith('http') && !url.startsWith('//')) {
-                url = 'https://' + url;
+            // Se chegou perto do fundo (buffer de 100px)
+            if (scrollAtual >= scrollTotal - 150) {
+                if (!paginasReveladas['pagamento']) {
+                    revelarSecao('pagamento', false);
+                } else if (!paginasReveladas['sorteio']) {
+                    revelarSecao('sorteio', false);
+                }
             }
+
+            // 2. Lógica de destacar botão do menu
+            atualizarMenuAtivo();
             
-            // Abre em nova janela/aba de forma forçada
+            // 3. Brinde
+            checarBrinde();
+        };
+
+        function atualizarMenuAtivo() {
+            const ids = ['cestas', 'pagamento', 'sorteio'];
+            let atual = 'cestas';
+
+            // Verifica qual seção está ocupando o meio da tela
+            ids.forEach(id => {
+                const el = document.getElementById('pag-' + id);
+                if (el && el.classList.contains('visivel')) {
+                    const rect = el.getBoundingClientRect();
+                    // Se o topo da seção está na metade superior da tela ou visível
+                    if (rect.top < window.innerHeight / 2 && rect.bottom > 140) {
+                        atual = id;
+                    }
+                }
+            });
+
+            // Atualiza classes
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('ativo'));
+            const btnAtual = document.getElementById('btn-' + atual);
+            if(btnAtual) btnAtual.classList.add('ativo');
+        }
+
+        // --- MANTER LÓGICAS ANTIGAS ---
+        function abrirLinkExterno(event, element) {
+            event.preventDefault();
+            let url = element.getAttribute('href');
+            if (url && !url.startsWith('http') && !url.startsWith('//')) { url = 'https://' + url; }
             window.open(url, '_blank');
         }
 
@@ -666,13 +795,8 @@
             window.open(`https://wa.me/${TELEFONE}?text=Olá, quero encomendar a ${produto}`, '_blank'); 
         }
 
-        // --- CORREÇÃO 1: COMPARTILHAR DIRETO PRO WHATSAPP ---
         function compartilhar(produto) {
             const texto = `Olha essa ${produto} da Dona Antônia! Confira: ${LINK_SITE}`;
-            
-            // Lógica antiga tentava API nativa, mas você pediu "direto pro WhatsApp"
-            // Se preferir tentar nativo primeiro e depois WhatsApp, avise.
-            // Por enquanto, forçaremos o WhatsApp que é mais garantido para o seu público.
             window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
@@ -686,19 +810,13 @@
             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // --- GALERIA ---
+        // Galeria
         let currentImages = [];
         let currentIndex = 0;
-
         function abrirGaleria(imgElement) {
-            // Agora procuramos a imagem dentro do contexto correto
-            // Se o usuário clicar no ícone ou na div, garantimos pegar a tag IMG
             if (!imgElement) return;
-
-            // Encontrar o pai (galeria-fotos) para listar todas as imagens irmãs
             const container = imgElement.closest('.galeria-fotos');
             const imgs = container.querySelectorAll('img');
-            
             currentImages = [];
             imgs.forEach((img, index) => {
                 currentImages.push(img.src);
@@ -707,12 +825,10 @@
             atualizarModalImagem();
             document.getElementById('modalVisualizador').style.display = 'flex';
         }
-
         function atualizarModalImagem() {
             document.getElementById('imgAmpliada').src = currentImages[currentIndex];
             document.getElementById('contadorFotos').innerText = `${currentIndex + 1} / ${currentImages.length}`;
         }
-
         function mudarFoto(dir) {
             currentIndex += dir;
             if (currentIndex >= currentImages.length) currentIndex = 0;
@@ -721,52 +837,30 @@
         }
         function fecharImagem() { document.getElementById('modalVisualizador').style.display = 'none'; }
 
-        let touchStartX = 0;
-        let touchEndX = 0;
-        const modalEl = document.getElementById('modalVisualizador');
-        modalEl.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
-        modalEl.addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            if (touchEndX < touchStartX - 50) mudarFoto(1);
-            if (touchEndX > touchStartX + 50) mudarFoto(-1);
-        });
-
-        // PWA & BRINDE
+        // Brinde
         let brindeMostrado = false;
-        function mostrarBrinde() {
-            brindeMostrado = true;
-            document.getElementById('modalBrinde').style.display = 'flex';
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        }
-        window.onscroll = function() {
+        function checarBrinde() {
             if(brindeMostrado) return;
-            if(document.getElementById('pag-cestas').classList.contains('visivel')) {
-                if((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) mostrarBrinde();
+            // Mostra brinde se rolar bastante na página inicial ou se pagamento já estiver visível
+            if(window.scrollY > 1500 || paginasReveladas['pagamento']) {
+                 brindeMostrado = true;
+                 document.getElementById('modalBrinde').style.display = 'flex';
+                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             }
-        };
+        }
 
-        // --- CORREÇÃO PWA: LÓGICA DE INSTALAÇÃO ---
+        // PWA
         let deferredPrompt;
         const avisoPwa = document.getElementById('aviso-instalar');
-        const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-        // Se o navegador disser "Ei, dá pra instalar!", nós mostramos o banner,
-        // mesmo que o localStorage diga o contrário (pois o usuário pode ter desinstalado).
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); 
             deferredPrompt = e;
-            
-            // Se o evento disparou, significa que NÃO está instalado.
-            // Removemos a "memória" falsa de que está instalado.
             localStorage.removeItem('appInstalado'); 
-
-            // Mostra os banners se não tiverem sido fechados na sessão atual
             if(!sessionStorage.getItem('bannerFechado')) {
                 avisoPwa.style.display = 'flex';
                 document.querySelectorAll('.pwa-install-promo').forEach(el => el.style.display = 'block');
             }
         });
-
         function instalarApp() {
             if(deferredPrompt) {
                 deferredPrompt.prompt();
@@ -778,30 +872,16 @@
                     }
                     deferredPrompt = null;
                 });
-            } else { 
-                alert("Para instalar: Toque nos três pontinhos do navegador e escolha 'Adicionar à Tela Inicial' ou 'Instalar Aplicativo'."); 
-            }
+            } else { alert("Para instalar: Toque nos três pontinhos do navegador e escolha 'Adicionar à Tela Inicial'."); }
         }
-        function fecharInstalacao() { 
-            avisoPwa.style.display = 'none'; 
-            sessionStorage.setItem('bannerFechado', 'true');
-        }
+        function fecharInstalacao() { avisoPwa.style.display = 'none'; sessionStorage.setItem('bannerFechado', 'true'); }
 
-        window.onpopstate = function(event) {
-            if (event.state && event.state.pagina) navegarPara(event.state.pagina);
-            else navegarPara('cestas');
-        };
-        
         window.onload = function() {
-            const path = window.location.pathname;
-            if(path.includes('/sorteio')) navegarPara('sorteio');
-            else if(path.includes('/pagamento')) navegarPara('pagamento');
-            else navegarPara('cestas');
-            
-            // Verificação inicial: só esconde se tiver certeza absoluta
             if (localStorage.getItem('appInstalado')) {
                  document.querySelectorAll('.pwa-install-promo').forEach(el => el.style.display = 'none');
             }
+            // Revela primeira seção com animação
+            revelarSecao('cestas', false);
         };
     </script>
 </body>
