@@ -52,7 +52,7 @@
             color: var(--cor-texto);
             margin: 0 auto; 
             padding: 0;
-            padding-top: 70px;
+            padding-top: 100px; /* Aumentado para compensar o header mais alto */
             padding-bottom: 80px;
             max-width: 480px; 
             min-height: 100vh;
@@ -60,15 +60,15 @@
             position: relative; 
         }
 
-        /* --- CABEÇALHO --- */
+        /* --- CABEÇALHO (AJUSTADO: MAIS ALTO E MAIOR) --- */
         header {
             background-color: white;
-            height: 70px;
-            padding: 5px 15px;
+            height: 90px; /* Mais alto */
+            padding: 5px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             position: fixed;
             top: 0;
             left: 50%;
@@ -78,11 +78,19 @@
             z-index: 1000;
         }
         .header-left { display: flex; align-items: center; flex: 1; }
-        .logo-pequena { height: 50px; width: auto; max-width: 180px; object-fit: contain; }
-        .header-icons { display: flex; gap: 15px; align-items: center; }
+        
+        .logo-pequena { 
+            height: 70px; /* Logo Maior */
+            width: auto; 
+            max-width: 220px; 
+            object-fit: contain; 
+        }
+        
+        .header-icons { display: flex; gap: 20px; align-items: center; }
 
         .icon-btn {
-            font-size: 22px; color: var(--cor-primaria);
+            font-size: 34px; /* Ícones Maiores */
+            color: var(--cor-primaria);
             text-decoration: none; display: flex; align-items: center;
             justify-content: center; transition: transform 0.2s;
         }
@@ -90,7 +98,6 @@
         .ic-zap { color: #25D366; }
         .ic-face { color: #1877F2; }
         .ic-insta { color: #E1306C; }
-        .ic-phone { color: #333; font-size: 20px; }
 
         /* --- NAVEGAÇÃO --- */
         .bottom-nav {
@@ -105,7 +112,7 @@
             display: flex; flex-direction: column; align-items: center;
             gap: 5px; transition: color 0.3s;
         }
-        .nav-item i { font-size: 22px; margin-bottom: 2px; }
+        .nav-item i { font-size: 24px; margin-bottom: 2px; }
         .nav-item.ativo { color: #fff; }
         .nav-item.ativo i { color: var(--cor-primaria); }
         
@@ -138,7 +145,7 @@
         .galeria-fotos { display: flex; gap: 10px; margin-bottom: 10px; }
         .galeria-fotos img { width: 50%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; background: #eee; cursor: pointer; }
 
-        /* --- BOTÕES DE AÇÃO --- */
+        /* --- BOTÕES DE AÇÃO (CESTAS) --- */
         .botoes-wrapper {
             display: flex;
             gap: 10px;
@@ -147,17 +154,18 @@
 
         .btn {
             display: flex; align-items: center; justify-content: center;
-            width: 100%; padding: 12px 5px; border: none; border-radius: 8px;
-            font-size: 14px; font-weight: bold; cursor: pointer;
+            width: 100%; padding: 15px; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
             text-decoration: none; color: white; text-align: center;
+            flex: 1; 
         }
-        .btn-whatsapp { background-color: #25D366; flex: 1.5; }
-        .btn-compartilhar-produto { background-color: #0288D1; flex: 1; }
+        .btn-whatsapp { background-color: #25D366; }
+        .btn-compartilhar-produto { background-color: #0288D1; }
         
         /* Formulários */
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 16px; }
 
-        /* --- MODAL GALERIA --- */
+        /* --- MODAL GALERIA (FULL SCREEN) --- */
         .modal-imagem {
             display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.95); 
@@ -173,43 +181,34 @@
             margin-bottom: 20px;
         }
         .modal-conteudo { 
-            width: 100%; height: auto; max-height: 75vh;
-            object-fit: contain; border-top: 1px solid #333;
-            border-bottom: 1px solid #333; background-color: black;
+            width: 100%; /* Largura Total */
+            height: auto; 
+            max-height: 70vh;
+            object-fit: contain; 
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333; 
+            background-color: black;
         }
         .modal-controles {
             width: 100%; display: flex; justify-content: center;
-            align-items: center; gap: 40px; padding: 10px;
+            align-items: center; gap: 60px; padding: 10px;
         }
         .nav-seta {
-            color: white; font-size: 40px; cursor: pointer; padding: 15px;
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 50%; width: 60px; height: 60px;
+            color: white; font-size: 40px; cursor: pointer; padding: 20px;
+            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%; width: 70px; height: 70px;
             display: flex; align-items: center; justify-content: center;
         }
         .nav-seta:active { background: rgba(255,255,255,0.3); }
+        
         .btn-fechar-galeria {
-            position: absolute; top: 15px; right: 15px;
-            color: white; font-size: 30px; font-weight: bold;
+            position: absolute; top: 20px; right: 20px;
+            color: white; font-size: 35px; font-weight: bold;
             cursor: pointer; z-index: 3001; background: rgba(0,0,0,0.5); 
-            border-radius: 50%; width: 40px; height: 40px;
+            border-radius: 50%; width: 50px; height: 50px;
             border: none; display: flex; align-items: center; justify-content: center;
         }
-        .contador-fotos { position: absolute; top: 20px; left: 20px; color: #ccc; font-size: 14px; }
-
-        /* --- OUTROS MODAIS --- */
-        .modal-geral { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; animation: fadeInModal 0.3s; }
-        .modal-card { background: white; width: 85%; max-width: 350px; border-radius: 20px; padding: 25px; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
-        .modal-card h3 { margin-top: 0; color: #333; font-size: 22px; }
-        .modal-card p { color: #666; font-size: 16px; margin-bottom: 20px; }
-        
-        .btn-modal-acao { display: flex; align-items: center; justify-content: center; width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 10px; cursor: pointer; color: white; text-decoration: none; box-shadow: 0 3px 0 rgba(0,0,0,0.2); }
-        .btn-modal-acao.bg-zap { background: #25D366; }
-        .btn-modal-acao.bg-grupo { background: linear-gradient(45deg, #075e54, #128C7E); }
-        .btn-modal-acao.bg-face { background: #1877F2; }
-        .btn-modal-acao.bg-insta { background: #E1306C; }
-        
-        .btn-fechar-modal-x { position: absolute; top: 10px; right: 10px; background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; color: #333; cursor: pointer; }
+        .contador-fotos { position: absolute; top: 25px; left: 25px; color: #ccc; font-size: 16px; }
 
         /* --- LISTA PAGAMENTO --- */
         .lista-pagamento { list-style: none; padding: 0; }
@@ -223,26 +222,52 @@
         .texto-brinde { font-size: 18px; color: #333; margin: 15px 0; font-weight: 500; }
         .btn-fechar-brinde { background: #D32F2F; color: white; border: none; padding: 12px 30px; font-size: 18px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 0 #b71c1c; }
         
-        /* --- AVISO FLUTUANTE (PWA) --- */
-        .aviso-instalar { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 460px; background: linear-gradient(135deg, #FF6B6B, #D32F2F); color: white; padding: 25px 20px; border-radius: 15px; z-index: 1900; box-shadow: 0 4px 20px rgba(211, 47, 47, 0.5); display: none; flex-direction: row; align-items: center; justify-content: space-between; gap: 15px; animation: piscarSuave 3s infinite; }
-        @keyframes piscarSuave { 0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); } 50% { box-shadow: 0 0 20px 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); } }
+        /* --- AVISO FLUTUANTE (PWA - MAIS ALTO) --- */
+        .aviso-instalar {
+            position: fixed; bottom: 90px; 
+            left: 50%; transform: translateX(-50%);
+            width: 95%; max-width: 460px;
+            background: linear-gradient(135deg, #FF6B6B, #D32F2F); color: white;
+            padding: 15px 20px; border-radius: 15px; z-index: 1900;
+            box-shadow: 0 4px 20px rgba(211, 47, 47, 0.5);
+            display: none; flex-direction: row; align-items: center;
+            justify-content: space-between; gap: 15px; animation: piscarSuave 3s infinite;
+        }
+        @keyframes piscarSuave {
+            0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
+            50% { box-shadow: 0 0 20px 10px rgba(211, 47, 47, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+        }
         .texto-instalar-banner { flex: 1; font-size: 16px; line-height: 1.3; } .texto-instalar-banner strong { display: block; font-size: 19px; color: #FFEB3B; }
-        .btn-acao-banner { background: white; color: var(--cor-primaria); font-weight: bold; padding: 15px 25px; border-radius: 30px; border: none; font-size: 16px; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
-        .btn-fechar-aviso { position: absolute; top: -12px; right: -8px; background: #333; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .btn-acao-banner { background: white; color: var(--cor-primaria); font-weight: bold; padding: 10px 20px; border-radius: 30px; border: none; font-size: 14px; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
+        .btn-fechar-aviso { position: absolute; top: -10px; right: -5px; background: #333; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         .card-instalacao-fixo { background: linear-gradient(135deg, #fff, #f3e5f5); border: 2px solid #7b1fa2; border-radius: 15px; padding: 20px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .btn-instalacao-grande { background-color: #7b1fa2; color: white; font-size: 20px; padding: 20px; width: 100%; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #4a148c; }
+
+        /* --- MODAIS GERAIS --- */
+        .modal-geral { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; animation: fadeInModal 0.3s; }
+        .modal-card { background: white; width: 85%; max-width: 350px; border-radius: 20px; padding: 25px; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .modal-card h3 { margin-top: 0; color: #333; font-size: 22px; }
+        .modal-card p { color: #666; font-size: 16px; margin-bottom: 20px; }
+        .btn-modal-acao { display: flex; align-items: center; justify-content: center; width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 10px; cursor: pointer; color: white; text-decoration: none; box-shadow: 0 3px 0 rgba(0,0,0,0.2); }
+        .btn-modal-acao.bg-zap { background-color: #25D366; }
+        .btn-modal-acao.bg-grupo { background: linear-gradient(45deg, #075e54, #128C7E); }
+        .btn-modal-acao.bg-face { background-color: #1877F2; }
+        .btn-modal-acao.bg-insta { background-color: #E1306C; }
+        .btn-fechar-modal-x { position: absolute; top: 10px; right: 10px; background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; color: #333; cursor: pointer; }
 
     </style>
 </head>
 <body>
 
-    <!-- CABEÇALHO FIXO -->
+    <!-- CABEÇALHO FIXO (Ajustado) -->
     <header>
         <div class="header-left">
+            <!-- Logo Horizontal -->
             <img src="img/logo.png" onerror="this.src='https://placehold.co/180x60/ffffff/D32F2F?text=DONA+ANTÔNIA'" alt="Logo Dona Antônia" class="logo-pequena">
         </div>
         <div class="header-icons">
-            <a href="tel:5565998150975" class="icon-btn ic-phone" title="Ligar Agora"><i class="fas fa-phone"></i></a>
+            <!-- Redes Sociais Apenas (Sem telefone) -->
             <a href="https://wa.me/5565998150975" class="icon-btn ic-zap"><i class="fab fa-whatsapp"></i></a>
             <a href="https://facebook.com/SEU_FACEBOOK" target="_blank" class="icon-btn ic-face"><i class="fab fa-facebook"></i></a>
             <a href="https://instagram.com/SEU_INSTA" target="_blank" class="icon-btn ic-insta"><i class="fab fa-instagram"></i></a>
@@ -270,8 +295,8 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 390,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Grande')"><i class="fab fa-whatsapp"></i> Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Grande')"><i class="fas fa-share-alt"></i> Enviar</button>
+                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Grande')">Encomendar</button>
+                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Grande')">Compartilhar</button>
                 </div>
             </div>
         </div>
@@ -289,8 +314,8 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 325,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Média')"><i class="fab fa-whatsapp"></i> Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Média')"><i class="fas fa-share-alt"></i> Enviar</button>
+                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Média')">Encomendar</button>
+                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Média')">Compartilhar</button>
                 </div>
             </div>
         </div>
@@ -308,8 +333,8 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 220,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Pequena')"><i class="fab fa-whatsapp"></i> Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Pequena')"><i class="fas fa-share-alt"></i> Enviar</button>
+                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Pequena')">Encomendar</button>
+                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Pequena')">Compartilhar</button>
                 </div>
             </div>
         </div>
@@ -327,8 +352,8 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 170,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Mini')"><i class="fab fa-whatsapp"></i> Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Mini')"><i class="fas fa-share-alt"></i> Enviar</button>
+                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Mini')">Encomendar</button>
+                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Mini')">Compartilhar</button>
                 </div>
             </div>
         </div>
@@ -345,8 +370,8 @@
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 85,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Econômica')"><i class="fab fa-whatsapp"></i> Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Econômica')"><i class="fas fa-share-alt"></i> Enviar</button>
+                    <button class="btn btn-whatsapp" onclick="encomendar('Cesta Econômica')">Encomendar</button>
+                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Econômica')">Compartilhar</button>
                 </div>
             </div>
         </div>
@@ -354,7 +379,9 @@
         <div class="card-instalacao-fixo">
             <h3>📱 Baixe o Aplicativo!</h3>
             <p>Para promoções e facilidade, instale nosso App.</p>
-            <button class="btn-instalacao-grande" onclick="instalarApp()"><i class="fas fa-download"></i> INSTALAR AGORA</button>
+            <button class="btn-instalacao-grande" onclick="instalarApp()">
+                <i class="fas fa-download"></i> INSTALAR AGORA
+            </button>
         </div>
     </div>
 
@@ -405,62 +432,21 @@
         </div>
     </div>
 
-    <!-- BANNER PWA -->
+    <!-- BANNER PWA (Restaurado e Inteligente) -->
     <div id="aviso-instalar" class="aviso-instalar">
         <button class="btn-fechar-aviso" onclick="fecharInstalacao()">&times;</button>
         <div class="texto-instalar-banner"><strong>Baixe nosso App!</strong>Para participar do sorteio.</div>
         <button class="btn-acao-banner" onclick="instalarApp()"><i class="fas fa-download"></i> INSTALAR</button>
     </div>
 
-    <!-- NAVEGAÇÃO INFERIOR -->
+    <!-- NAVEGAÇÃO INFERIOR (DARK) -->
     <nav class="bottom-nav">
         <button class="nav-item ativo" id="btn-cestas" onclick="navegarPara('cestas')"><i class="fas fa-shopping-basket"></i>CESTAS</button>
         <button class="nav-item" id="btn-pagamento" onclick="navegarPara('pagamento')"><i class="fas fa-credit-card"></i>PAGAMENTO</button>
         <button class="nav-item" id="btn-sorteio" onclick="navegarPara('sorteio')"><i class="fas fa-gift"></i>SORTEIO</button>
     </nav>
 
-    <!-- MODAIS DA BARRA FIXA -->
-    <div class="barra-app">
-        <div class="item-barra" onclick="abrirModalSalvar()"><div class="icone-container"><i class="fas fa-address-book"></i></div>SALVAR ZAP</div>
-        <div class="item-barra" onclick="abrirModalCompartilhar()"><div class="icone-container"><i class="fas fa-share-alt"></i></div>COMPARTILHAR</div>
-        <div class="item-barra" onclick="abrirModalAvaliar()"><div class="icone-container" style="background-color: #FFC107;"><i class="fas fa-star"></i></div>AVALIAR</div>
-        <div class="item-barra" onclick="mostrarBrinde()"><div class="icone-container"><i class="fas fa-gift"></i></div>BRINDE</div>
-    </div>
-
-    <!-- MODAL SALVAR -->
-    <div id="modalSalvarZap" class="modal-geral" onclick="fecharModalAoClicarFora(event, 'modalSalvarZap')">
-        <div class="modal-card">
-            <button class="btn-fechar-modal-x" onclick="fecharModal('modalSalvarZap')">&times;</button>
-            <h3 style="color:#D32F2F"><i class="fas fa-save"></i> Salvar Contato</h3>
-            <a href="tel:5565998150975" class="btn-modal-acao bg-zap"><i class="fas fa-phone-alt"></i> (65) 99815-0975</a>
-            <a href="tel:5565999999999" class="btn-modal-acao bg-zap"><i class="fas fa-phone-alt"></i> (65) 99999-9999</a>
-            <a href="tel:5565988888888" class="btn-modal-acao bg-zap"><i class="fas fa-phone-alt"></i> (65) 98888-8888</a>
-        </div>
-    </div>
-
-    <!-- MODAL COMPARTILHAR -->
-    <div id="modalCompartilhar" class="modal-geral" onclick="fecharModalAoClicarFora(event, 'modalCompartilhar')">
-        <div class="modal-card">
-            <button class="btn-fechar-modal-x" onclick="fecharModal('modalCompartilhar')">&times;</button>
-            <h3 style="color:#0288D1"><i class="fas fa-share-alt"></i> Compartilhar Site</h3>
-            <a href="#" onclick="compartilharZap(); return false;" class="btn-modal-acao bg-zap"><i class="fab fa-whatsapp"></i> No WhatsApp</a>
-            <a href="https://chat.whatsapp.com/SEU_LINK_DO_GRUPO" target="_blank" class="btn-modal-acao bg-grupo"><i class="fas fa-users"></i> Grupo de Sorteio</a>
-            <a href="#" onclick="compartilharFace(); return false;" class="btn-modal-acao bg-face"><i class="fab fa-facebook-f"></i> No Facebook</a>
-            <a href="https://instagram.com/donaantoniacestas" target="_blank" class="btn-modal-acao bg-insta"><i class="fab fa-instagram"></i> Ir para Instagram</a>
-        </div>
-    </div>
-
-    <!-- MODAL AVALIAR -->
-    <div id="modalAvaliar" class="modal-geral" onclick="fecharModalAoClicarFora(event, 'modalAvaliar')">
-        <div class="modal-card">
-            <button class="btn-fechar-modal-x" onclick="fecharModal('modalAvaliar')">&times;</button>
-            <h3 style="color:#FFC107"><i class="fas fa-star"></i> 5 Estrelas</h3>
-            <p>Sua avaliação ajuda muito!</p>
-            <a href="#" onclick="avaliarNoGoogle(); return false;" class="btn-modal-acao" style="background-color: #4285F4;"><i class="fab fa-google"></i> AVALIAR AGORA</a>
-        </div>
-    </div>
-
-    <!-- MODAL IMAGEM (NOVA NAVEGAÇÃO) -->
+    <!-- MODAL IMAGEM (COM NAVEGAÇÃO) -->
     <div id="modalVisualizador" class="modal-imagem" onclick="fecharImagem()">
         <button class="btn-fechar-galeria" onclick="fecharImagem()">&times;</button>
         <div class="modal-conteudo-wrapper" onclick="event.stopPropagation()">
@@ -507,14 +493,6 @@
             }
         }
 
-        function compartilharZap() {
-            const texto = `Olha que legal essa oferta da Dona Antônia: ${LINK_SITE}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
-        }
-        function compartilharFace() {
-            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://" + LINK_SITE)}`, '_blank');
-        }
-
         function enviarNovoCadastro() {
             const nome = document.getElementById('novo-nome').value.trim();
             const tel = document.getElementById('novo-telefone').value.trim();
@@ -523,10 +501,6 @@
             if (!nome || !tel || !cid || !bai) { alert("Preencha todos os campos!"); return; }
             const msg = `CADASTRO SORTEIO:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cid}\nBairro: ${bai}`;
             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function avaliarNoGoogle() { 
-            window.open('https://www.google.com/search?q=Cestas+Dona+Antônia+Cuiabá', '_blank'); 
         }
 
         // --- GALERIA ---
@@ -568,13 +542,6 @@
             if (touchEndX > touchStartX + 50) mudarFoto(-1);
         });
 
-        // MODAIS FIXOS
-        function abrirModalSalvar() { document.getElementById('modalSalvarZap').style.display = 'flex'; }
-        function abrirModalCompartilhar() { document.getElementById('modalCompartilhar').style.display = 'flex'; }
-        function abrirModalAvaliar() { document.getElementById('modalAvaliar').style.display = 'flex'; }
-        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
-        function fecharModalAoClicarFora(e, id) { if(e.target.id === id) fecharModal(id); }
-
         // PWA & BRINDE
         let brindeMostrado = false;
         function mostrarBrinde() {
@@ -589,12 +556,24 @@
             }
         };
 
+        // PWA Logic
         let deferredPrompt;
         const avisoPwa = document.getElementById('aviso-instalar');
+        const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); deferredPrompt = e;
-            if(!localStorage.getItem('appInstalado')) avisoPwa.style.display = 'flex';
+            e.preventDefault(); 
+            deferredPrompt = e;
+            if(!isIos && !localStorage.getItem('appInstalado')) {
+                avisoPwa.style.display = 'flex';
+            }
         });
+
+        // Fallback para reaparecer sempre que não instalado (exceto iOS)
+        if (!isIos && !localStorage.getItem('appInstalado')) {
+             setTimeout(() => { avisoPwa.style.display = 'flex'; }, 3000);
+        }
+
         function instalarApp() {
             if(deferredPrompt) {
                 deferredPrompt.prompt();
