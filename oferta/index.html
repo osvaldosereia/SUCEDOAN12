@@ -1,402 +1,331 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabela de Preços - Dona Antônia</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <meta name="theme-color" content="#D32F2F">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lançamento de Pedidos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #D32F2F; /* Fundo vermelho da marca */
-            color: #333;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 10px;
-            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            padding-bottom: 100px; /* Espaço para o botão flutuante */
         }
 
-        .container-passos {
-            background: white;
-            width: 100%;
-            max-width: 400px;
-            border-radius: 20px;
-            padding: 25px 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            text-align: center;
-            position: relative;
+        .tap-highlight-transparent {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Animação suave ao selecionar */
+        .item-card {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .item-selected {
+            border-left: 5px solid #16a34a; /* Green-600 */
+            background-color: #f0fdf4; /* Green-50 */
+        }
+
+        /* Modal overlay */
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        body.modal-active {
             overflow: hidden;
-            /* Removemos altura fixa rígida para caber conteúdo, usamos min-height */
-            min-height: 600px; 
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start; /* Alinha ao topo para caber o texto longo */
         }
-
-        /* Animação dos passos */
-        .passo {
-            display: none;
-            animation: slideIn 0.4s ease;
-            height: 100%; /* Ocupa altura disponível */
-            flex-direction: column;
-        }
-        .passo.ativo {
-            display: flex; /* Flex para organizar layout */
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(30px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* Títulos e Textos */
-        h2 {
-            color: #D32F2F;
-            font-size: 22px;
-            margin-bottom: 10px;
-            margin-top: 0;
-        }
-        
-        h3 {
-            color: #333;
-            font-size: 18px;
-            margin: 15px 0 5px 0;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 5px;
-            text-align: left;
-        }
-
-        p {
-            font-size: 15px;
-            line-height: 1.4;
-            margin-bottom: 10px;
-            color: #555;
-            text-align: left;
-        }
-
-        /* Lista de Preços */
-        .lista-precos {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            text-align: left;
-        }
-        .lista-precos li {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px dotted #ccc;
-            font-size: 16px;
-        }
-        .lista-precos li strong {
-            color: #D32F2F;
-        }
-
-        /* Listas Gerais (Pagamento) */
-        .lista-info {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            text-align: left;
-            font-size: 14px;
-        }
-        .lista-info li {
-            margin-bottom: 5px;
-            padding-left: 20px;
-            position: relative;
-        }
-        .lista-info li::before {
-            content: '•';
-            color: #D32F2F;
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-        }
-
-        /* Imagens */
-        .logo-img {
-            width: 140px;
-            height: auto;
-            margin: 0 auto 10px auto;
-            display: block;
-        }
-
-        .galeria-preview {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 15px;
-        }
-        .galeria-preview img {
-            width: 48%;
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-            border-radius: 10px;
-            background-color: #eee;
-            border: 2px solid #eee;
-            cursor: pointer;
-        }
-        .aviso-clique {
-            font-size: 12px;
-            color: #999;
-            margin-top: -10px;
-            margin-bottom: 15px;
-            display: block;
-            text-align: center;
-        }
-
-        /* Botões */
-        .btn-proximo {
-            background-color: #25D366; /* Verde Zap */
-            color: white;
-            border: none;
-            padding: 15px;
-            width: 100%;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #1da851;
-            transition: transform 0.1s;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-sizing: border-box;
-            margin-top: 20px;
-        }
-        .btn-proximo:active {
-            transform: scale(0.98);
-            box-shadow: 0 2px 0 #1da851;
-        }
-        .btn-proximo i { margin-left: 10px; }
-
-        /* Barra de progresso */
-        .progresso {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 5px;
-            background-color: #eee;
-            width: 100%;
-        }
-        .barra-ativa {
-            height: 100%;
-            background-color: #FFC107;
-            width: 10%; /* Começa pouquinho */
-            transition: width 0.3s;
-        }
-        
-        /* Modal de Imagem (Lightbox) */
-        .modal-imagem {
-            display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.95); justify-content: center; align-items: center;
-            flex-direction: column;
-        }
-        .modal-conteudo { max-width: 95%; max-height: 80%; border: 2px solid white; border-radius: 5px; }
-        .btn-fechar-modal {
-            color: white; font-size: 40px; background: none; border: none; cursor: pointer;
-            position: absolute; top: 20px; right: 20px;
-        }
-        .texto-fechar { color: white; margin-top: 10px; font-size: 14px; }
-
-        /* Scroll no conteúdo se for muito grande */
-        .conteudo-scroll {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 5px; /* Espaço pro scroll */
-        }
-        /* Estilizar scrollbar fina */
-        .conteudo-scroll::-webkit-scrollbar { width: 5px; }
-        .conteudo-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 5px; }
-
     </style>
 </head>
-<body>
+<body class="text-gray-800">
 
-    <div class="container-passos">
-        <div class="progresso"><div class="barra-ativa" id="barraProgresso"></div></div>
-
-        <!-- PASSO 1: TABELA DE PREÇOS E INFORMAÇÕES (ATUALIZADO) -->
-        <div class="passo ativo" id="passo1">
-            <div class="conteudo-scroll">
-                <!-- Logomarca -->
-                <img src="https://placehold.co/300x150/ffffff/D32F2F?text=DONA+ANTÔNIA" alt="Logo Dona Antônia" class="logo-img">
-                
-                <h2>Olá! Sejam todos bem-vindos! 👋</h2>
-                <p style="text-align: center; margin-bottom: 20px;">Confira nossas opções e condições abaixo:</p>
-
-                <h3>📦 Temos 5 tamanhos</h3>
-                <ul class="lista-precos">
-                    <li>Cesta Grande <strong>R$ 390,00</strong></li>
-                    <li>Cesta Média <strong>R$ 325,00</strong></li>
-                    <li>Cesta Pequena <strong>R$ 220,00</strong></li>
-                    <li>Cesta Mini <strong>R$ 170,00</strong></li>
-                    <li>Cesta Econômica <strong>R$ 85,00</strong></li>
-                </ul>
-
-                <h3>🚚 Entrega</h3>
-                <p><i class="fas fa-map-marker-alt" style="color:#D32F2F"></i> Entregamos em <strong>Cuiabá</strong> e <strong>Várzea Grande</strong>.</p>
-
-                <h3>💳 Formas de Pagamento</h3>
-                <ul class="lista-info">
-                    <li>Dinheiro, Pix e Débito</li>
-                    <li>Cartão de crédito em até <strong>3x sem juros</strong></li>
-                    <li>Alimentação/Refeição: Alelo, Sodexo, Pluxee e Ifood</li>
-                    <li style="color: #d32f2f; font-weight: bold;">Não vendemos pra 30 dias (boleto/carnê)</li>
-                </ul>
+    <!-- Cabeçalho -->
+    <header class="bg-white shadow-sm sticky top-0 z-30">
+        <div class="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="bg-green-600 text-white p-2 rounded-lg mr-3">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-800">Meus Pedidos</h1>
+                    <p class="text-xs text-gray-500">Selecione as cestas abaixo</p>
+                </div>
             </div>
-            
-            <button class="btn-proximo" onclick="proximoPasso(2)">
-                VER AS CESTAS <i class="fas fa-arrow-right"></i>
+            <button onclick="resetCart()" class="text-gray-400 hover:text-red-500 text-sm">
+                <i class="fas fa-trash-alt"></i> Limpar
             </button>
         </div>
+    </header>
 
-        <!-- PASSO 2: CESTA GRANDE -->
-        <div class="passo" id="passo2">
-            <h2>1. Cesta Grande</h2>
-            <div class="galeria-preview">
-                <img src="https://placehold.co/400x400/ffebee/d32f2f?text=Cesta+G" onclick="abrirImagem(this.src)">
-                <img src="https://placehold.co/400x400/ffebee/d32f2f?text=Itens+G" onclick="abrirImagem(this.src)">
+    <!-- Lista de Produtos -->
+    <main class="max-w-md mx-auto p-4 space-y-6">
+        
+        <!-- Grupo Koblenz -->
+        <div>
+            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 ml-1">Linha Koblenz</h2>
+            <div id="list-koblenz" class="space-y-3"></div>
+        </div>
+
+        <!-- Grupo Alvino -->
+        <div>
+            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 ml-1">Linha Alvino</h2>
+            <div id="list-alvino" class="space-y-3"></div>
+        </div>
+
+        <!-- Outros -->
+        <div>
+            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 ml-1">Outros</h2>
+            <div id="list-outros" class="space-y-3"></div>
+        </div>
+
+    </main>
+
+    <!-- Botão Flutuante WhatsApp -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <div class="max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-600">Total de volumes:</span>
+                <span id="total-count" class="font-bold text-lg text-gray-800">0</span>
             </div>
-            <span class="aviso-clique">(Toque na foto para ampliar)</span>
-            
-            <p style="text-align: center;"><strong>R$ 390,00</strong></p>
-            <p><strong>A mais completa!</strong><br>Ideal para famílias grandes. Contém itens de limpeza pesada, higiene e alimentos reforçados.</p>
-            
-            <button class="btn-proximo" onclick="proximoPasso(3)">
-                Ver Média <i class="fas fa-arrow-right"></i>
+            <button onclick="sendToWhatsapp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg flex items-center justify-center transition tap-highlight-transparent active:scale-95">
+                <i class="fab fa-whatsapp text-2xl mr-2"></i>
+                Enviar Pedido
             </button>
         </div>
-
-        <!-- PASSO 3: CESTA MÉDIA -->
-        <div class="passo" id="passo3">
-            <h2>2. Cesta Média</h2>
-            <div class="galeria-preview">
-                <img src="https://placehold.co/400x400/e3f2fd/1565c0?text=Cesta+M" onclick="abrirImagem(this.src)">
-                <img src="https://placehold.co/400x400/e3f2fd/1565c0?text=Itens+M" onclick="abrirImagem(this.src)">
-            </div>
-            <span class="aviso-clique">(Toque na foto para ampliar)</span>
-            
-            <p style="text-align: center;"><strong>R$ 325,00</strong></p>
-            <p><strong>O melhor custo-benefício.</strong><br>Perfeita para o dia a dia. Alimentos essenciais e kit limpeza básico.</p>
-            
-            <button class="btn-proximo" onclick="proximoPasso(4)">
-                Ver Pequena <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
-
-        <!-- PASSO 4: CESTA PEQUENA -->
-        <div class="passo" id="passo4">
-            <h2>3. Cesta Pequena</h2>
-            <div class="galeria-preview">
-                <img src="https://placehold.co/400x400/fff3e0/e65100?text=Cesta+P" onclick="abrirImagem(this.src)">
-                <img src="https://placehold.co/400x400/fff3e0/e65100?text=Itens+P" onclick="abrirImagem(this.src)">
-            </div>
-            <span class="aviso-clique">(Toque na foto para ampliar)</span>
-            
-            <p style="text-align: center;"><strong>R$ 220,00</strong></p>
-            <p><strong>Compacta e Eficiente.</strong><br>Para casais ou quem mora sozinho. Não deixa faltar o essencial.</p>
-            
-            <button class="btn-proximo" onclick="proximoPasso(5)">
-                Ver Mini <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
-
-        <!-- PASSO 5: CESTA MINI -->
-        <div class="passo" id="passo5">
-            <h2>4. Cesta Mini</h2>
-            <div class="galeria-preview">
-                <img src="https://placehold.co/400x400/f3e5f5/7b1fa2?text=Cesta+Mini" onclick="abrirImagem(this.src)">
-                <img src="https://placehold.co/400x400/f3e5f5/7b1fa2?text=Itens+Mini" onclick="abrirImagem(this.src)">
-            </div>
-            <span class="aviso-clique">(Toque na foto para ampliar)</span>
-            
-            <p style="text-align: center;"><strong>R$ 170,00</strong></p>
-            <p><strong>O socorro rápido!</strong><br>Arroz, feijão, óleo e macarrão. Para garantir a mistura da semana.</p>
-            
-            <button class="btn-proximo" onclick="proximoPasso(6)">
-                Ver Econômica <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
-
-        <!-- PASSO 6: CESTA ECONÔMICA -->
-        <div class="passo" id="passo6">
-            <h2>5. Cesta Econômica</h2>
-            <div class="galeria-preview">
-                <img src="https://placehold.co/400x400/e0e0e0/333333?text=Cesta+Eco" onclick="abrirImagem(this.src)">
-                <img src="https://placehold.co/400x400/e0e0e0/333333?text=Itens+Eco" onclick="abrirImagem(this.src)">
-            </div>
-            <span class="aviso-clique">(Toque na foto para ampliar)</span>
-            
-            <p style="text-align: center;"><strong>R$ 85,00</strong></p>
-            <p><strong>Preço imbatível!</strong><br>A opção mais barata de Cuiabá. Qualidade Dona Antônia que cabe no bolso.</p>
-            
-            <button class="btn-proximo" style="background-color: #FFC107; color: #333;" onclick="proximoPasso(7)">
-                FORMAS DE PAGAMENTO <i class="fas fa-credit-card"></i>
-            </button>
-        </div>
-
-        <!-- PASSO 7: PAGAMENTO E SORTEIO (FINAL) -->
-        <div class="passo" id="passo7">
-            <h2>💳 Só para lembrar:</h2>
-            <ul class="lista-info" style="font-size: 16px;">
-                <li>Pix, Dinheiro ou Débito</li>
-                <li>Cartão de Crédito (até 3x sem juros)</li>
-                <li>Alimentação (Alelo, Sodexo, Pluxee, Ifood)</li>
-            </ul>
-            
-            <div style="background-color: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px; margin-top: 20px;">
-                <h3 style="color: #2e7d32; margin: 0 0 5px 0; border:none;">🎉 Sorteio Semanal</h3>
-                <p style="margin:0; font-size: 14px;">Cadastre-se agora e concorra a uma cesta grátis toda sexta-feira!</p>
-            </div>
-
-            <!-- Link que leva para o site principal já na aba do sorteio -->
-            <a href="index.html?aba=sorteio" class="btn-proximo">
-                PARTICIPAR DO SORTEIO <i class="fas fa-gift"></i>
-            </a>
-        </div>
-
     </div>
 
-    <!-- MODAL DE VISUALIZAÇÃO DE IMAGEM -->
-    <div id="modalVisualizador" class="modal-imagem" onclick="fecharImagem()">
-        <button class="btn-fechar-modal">&times;</button>
-        <img id="imgAmpliada" src="" class="modal-conteudo" alt="Imagem ampliada">
-        <span class="texto-fechar">Toque para fechar</span>
+    <!-- Modal de Observação -->
+    <div id="note-modal" class="modal fixed w-full h-full top-0 left-0 flex items-center justify-center z-50 opacity-0 pointer-events-none">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        
+        <div class="modal-container bg-white w-11/12 max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto transform scale-95 transition-transform duration-200" id="modal-content">
+            
+            <div class="modal-content py-4 text-left px-6">
+                <!--Title-->
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-lg font-bold text-gray-800" id="modal-title">Adicionar Observação</p>
+                    <div class="modal-close cursor-pointer z-50" onclick="closeModal()">
+                        <i class="fas fa-times text-gray-500"></i>
+                    </div>
+                </div>
+
+                <!--Body-->
+                <div class="my-5">
+                    <p class="text-sm text-gray-500 mb-2">Detalhes para: <span id="modal-product-name" class="font-semibold text-gray-700"></span></p>
+                    <textarea id="note-input" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 h-32 resize-none" placeholder="Ex: Entregar sem etiqueta, separar em duas caixas, etc..."></textarea>
+                </div>
+
+                <!--Footer-->
+                <div class="flex justify-end pt-2">
+                    <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 p-3 rounded-lg text-gray-600 hover:bg-gray-300 mr-2 font-medium">Cancelar</button>
+                    <button onclick="saveNote()" class="px-4 py-2 bg-green-600 p-3 rounded-lg text-white hover:bg-green-700 font-medium">Salvar Nota</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        function proximoPasso(numeroPasso) {
-            // Esconde todos os passos
-            document.querySelectorAll('.passo').forEach(div => div.classList.remove('ativo'));
+        // --- Dados dos Produtos ---
+        const productsData = [
+            { id: 'gk', name: 'Cesta Grande Koblenz', category: 'koblenz' },
+            { id: 'mk', name: 'Cesta Média Koblenz', category: 'koblenz' },
+            { id: 'pk', name: 'Cesta Pequena Koblenz', category: 'koblenz' },
+            { id: 'minik', name: 'Cesta Mini Koblenz', category: 'koblenz' },
             
-            // Mostra o passo desejado
-            document.getElementById('passo' + numeroPasso).classList.add('ativo');
+            { id: 'ga', name: 'Cesta Grande Alvino', category: 'alvino' },
+            { id: 'ma', name: 'Cesta Média Alvino', category: 'alvino' },
+            { id: 'pa', name: 'Cesta Pequena Alvino', category: 'alvino' },
+            { id: 'minia', name: 'Cesta Mini Alvino', category: 'alvino' },
             
-            // Atualiza a barra de progresso (Total de 7 passos)
-            const porcentagem = (numeroPasso / 7) * 100;
-            document.getElementById('barraProgresso').style.width = porcentagem + '%';
+            { id: 'eco', name: 'Cesta Econômica', category: 'outros' }
+        ];
+
+        // --- Estado da Aplicação ---
+        let cart = {}; // { 'gk': { qty: 0, note: '' } }
+        let currentEditingId = null;
+
+        // --- Inicialização ---
+        function init() {
+            renderList('koblenz');
+            renderList('alvino');
+            renderList('outros');
         }
 
-        // --- Funções para Ampliar Imagem ---
-        function abrirImagem(src) {
-            const modal = document.getElementById("modalVisualizador");
-            const imgGrande = document.getElementById("imgAmpliada");
+        // --- Renderização ---
+        function renderList(category) {
+            const container = document.getElementById(`list-${category}`);
+            const items = productsData.filter(p => p.category === category);
             
-            imgGrande.src = src;
-            modal.style.display = "flex";
+            container.innerHTML = items.map(product => {
+                const qty = cart[product.id]?.qty || 0;
+                const note = cart[product.id]?.note || '';
+                const isSelected = qty > 0;
+                const noteBtnColor = note.trim().length > 0 ? 'text-yellow-600 bg-yellow-100' : 'text-gray-400 hover:text-gray-600';
+
+                return `
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 item-card ${isSelected ? 'item-selected' : ''}" id="card-${product.id}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 cursor-pointer" onclick="toggleSelection('${product.id}')">
+                            <h3 class="font-medium text-gray-800">${product.name}</h3>
+                            ${note ? `<p class="text-xs text-gray-500 mt-1 truncate max-w-[200px]"><i class="fas fa-sticky-note text-yellow-500 mr-1"></i>${note}</p>` : ''}
+                        </div>
+
+                        ${!isSelected ? 
+                            `<button onclick="increment('${product.id}')" class="bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">
+                                <i class="fas fa-plus text-sm"></i>
+                            </button>` 
+                            : 
+                            `<div class="flex items-center space-x-2 animate-fade-in">
+                                <button onclick="openNoteModal('${product.id}')" class="rounded-full w-8 h-8 flex items-center justify-center transition ${noteBtnColor}">
+                                    <i class="fas fa-pen text-xs"></i>
+                                </button>
+                                
+                                <div class="flex items-center bg-gray-50 rounded-lg border border-gray-200">
+                                    <button onclick="decrement('${product.id}')" class="w-9 h-9 flex items-center justify-center text-red-500 active:bg-gray-200 rounded-l-lg tap-highlight-transparent">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <span class="w-8 text-center font-bold text-gray-800">${qty}</span>
+                                    <button onclick="increment('${product.id}')" class="w-9 h-9 flex items-center justify-center text-green-600 active:bg-gray-200 rounded-r-lg tap-highlight-transparent">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>`
+                        }
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            updateTotal();
         }
 
-        function fecharImagem() {
-            const modal = document.getElementById("modalVisualizador");
-            modal.style.display = "none";
+        // --- Lógica do Carrinho ---
+        function toggleSelection(id) {
+            if (!cart[id] || cart[id].qty === 0) {
+                increment(id);
+            }
         }
+
+        function increment(id) {
+            if (!cart[id]) cart[id] = { qty: 0, note: '' };
+            cart[id].qty++;
+            refreshProductCategory(id);
+        }
+
+        function decrement(id) {
+            if (cart[id] && cart[id].qty > 0) {
+                cart[id].qty--;
+                if (cart[id].qty === 0 && cart[id].note === '') {
+                    delete cart[id]; // Limpa se zerar e não tiver nota
+                }
+                refreshProductCategory(id);
+            }
+        }
+
+        function refreshProductCategory(id) {
+            const product = productsData.find(p => p.id === id);
+            renderList(product.category);
+        }
+
+        function updateTotal() {
+            let total = 0;
+            for (let id in cart) {
+                total += cart[id].qty;
+            }
+            document.getElementById('total-count').innerText = total;
+        }
+
+        function resetCart() {
+            if(confirm("Deseja limpar todos os itens selecionados?")) {
+                cart = {};
+                init();
+            }
+        }
+
+        // --- Lógica do Modal ---
+        const modal = document.getElementById('note-modal');
+        const modalContent = document.getElementById('modal-content');
+        const noteInput = document.getElementById('note-input');
+        const modalProductName = document.getElementById('modal-product-name');
+
+        function openNoteModal(id) {
+            currentEditingId = id;
+            const product = productsData.find(p => p.id === id);
+            
+            modalProductName.innerText = product.name;
+            noteInput.value = cart[id]?.note || '';
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.classList.add('modal-active');
+            
+            // Pequena animação de entrada
+            setTimeout(() => modalContent.classList.remove('scale-95'), 10);
+            
+            // Focar no final do texto
+            noteInput.focus();
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            document.body.classList.remove('modal-active');
+            modalContent.classList.add('scale-95');
+            currentEditingId = null;
+        }
+
+        function saveNote() {
+            if (currentEditingId) {
+                if (!cart[currentEditingId]) cart[currentEditingId] = { qty: 1, note: '' }; // Garante existência
+                cart[currentEditingId].note = noteInput.value;
+                refreshProductCategory(currentEditingId);
+                closeModal();
+            }
+        }
+
+        // --- Envio para WhatsApp ---
+        function sendToWhatsapp() {
+            const items = [];
+            let totalQty = 0;
+
+            // Percorre a ordem original para manter a lista organizada
+            productsData.forEach(p => {
+                if (cart[p.id] && cart[p.id].qty > 0) {
+                    const item = cart[p.id];
+                    let itemString = `*${item.qty}x* ${p.name}`;
+                    if (item.note.trim()) {
+                        itemString += `\n   _Obs: ${item.note.trim()}_`;
+                    }
+                    items.push(itemString);
+                    totalQty += item.qty;
+                }
+            });
+
+            if (items.length === 0) {
+                alert("Selecione pelo menos um item para enviar.");
+                return;
+            }
+
+            // Construção da mensagem
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR');
+            const timeStr = now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+            const message = 
+`*NOVO PEDIDO - ${dateStr} ${timeStr}*
+--------------------------------
+${items.join('\n\n')}
+--------------------------------
+*Total de Itens: ${totalQty}*`;
+
+            const phoneNumber = "5565998884599";
+            const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            
+            window.open(url, '_blank');
+        }
+
+        // Inicializar app
+        init();
+
     </script>
-
 </body>
 </html>
