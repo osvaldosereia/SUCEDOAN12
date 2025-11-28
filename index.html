@@ -6,9 +6,19 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#D32F2F">
     
+    <!-- SEO E DADOS SOCIAIS (Melhorado) -->
     <title>Cesta Básica em Cuiabá e Várzea Grande | Dona Antônia</title>
-    <meta name="description" content="A melhor Cesta Básica de Cuiabá e Várzea Grande. Entregamos no CPA, Tijucal, Cristo Rei e região.">
-    
+    <meta name="description" content="A melhor Cesta Básica de Cuiabá e Várzea Grande. Entregamos no CPA, Tijucal, Cristo Rei e região. Preço justo e qualidade garantida.">
+    <meta name="keywords" content="cesta básica, cuiabá, várzea grande, alimentos, entrega, supermercado, dona antônia">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook / WhatsApp (Para o card ficar bonito ao compartilhar) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://donaantonia.com.br/">
+    <meta property="og:title" content="Cesta Básica Dona Antônia - Entrega Rápida">
+    <meta property="og:description" content="Confira nossos preços e peça pelo WhatsApp. Qualidade e economia na sua mesa.">
+    <meta property="og:image" content="https://donaantonia.com.br/img/logo-social.jpg"> <!-- Coloque uma imagem quadrada aqui -->
+
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <!-- DADOS ESTRUTURADOS (FAQ) -->
@@ -52,7 +62,7 @@
             color: var(--cor-texto);
             margin: 0 auto; 
             padding: 0;
-            padding-top: 90px; /* Ajustado para o novo header */
+            padding-top: 90px;
             padding-bottom: 80px;
             max-width: 480px; 
             min-height: 100vh;
@@ -60,11 +70,11 @@
             position: relative; 
         }
 
-        /* --- CABEÇALHO (AJUSTADO: Logo menor, ícones próximos) --- */
+        /* --- CABEÇALHO --- */
         header {
             background-color: white;
-            height: 80px; /* Altura ajustada */
-            padding: 5px 15px; /* Padding lateral reduzido para logo ir p/ esquerda */
+            height: 80px;
+            padding: 5px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -80,21 +90,21 @@
         .header-left { display: flex; align-items: center; flex: 1; }
         
         .logo-pequena { 
-            height: 55px; /* Logo Menor */
+            height: 55px;
             width: auto; 
             max-width: 200px; 
             object-fit: contain; 
-            margin-left: -5px; /* Puxar um pouquinho mais pra esquerda */
+            margin-left: -5px;
         }
         
         .header-icons { 
             display: flex; 
-            gap: 10px; /* Ícones mais próximos */
+            gap: 15px; /* Aumentei um pouco o espaçamento para facilitar o toque */
             align-items: center; 
         }
 
         .icon-btn {
-            font-size: 32px; /* Ícones levemente ajustados */
+            font-size: 32px;
             color: var(--cor-primaria);
             text-decoration: none; display: flex; align-items: center;
             justify-content: center; transition: transform 0.2s;
@@ -147,8 +157,39 @@
         h2, h3 { color: var(--cor-primaria); margin-top: 0; }
         h3 { font-size: 18px; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
 
+        /* --- GALERIA COM INDICADOR DE ZOOM --- */
         .galeria-fotos { display: flex; gap: 10px; margin-bottom: 10px; }
-        .galeria-fotos img { width: 50%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; background: #eee; cursor: pointer; }
+        
+        /* Wrapper para a imagem e o ícone */
+        .img-wrapper {
+            position: relative;
+            width: 50%;
+            cursor: pointer;
+        }
+        .img-wrapper img { 
+            width: 100%; 
+            aspect-ratio: 1 / 1; 
+            object-fit: cover; 
+            border-radius: 8px; 
+            background: #eee; 
+            display: block;
+        }
+        /* Ícone de Lupa/Zoom no canto */
+        .zoom-indicator {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            pointer-events: none; /* Deixa o clique passar para a div/img */
+        }
 
         /* --- BOTÕES DE AÇÃO (CESTAS) --- */
         .botoes-wrapper {
@@ -186,7 +227,7 @@
             margin-bottom: 20px;
         }
         .modal-conteudo { 
-            width: 100%; /* Largura Total */
+            width: 100%; 
             height: auto; 
             max-height: 70vh;
             object-fit: contain; 
@@ -249,33 +290,23 @@
         .card-instalacao-fixo { background: linear-gradient(135deg, #fff, #f3e5f5); border: 2px solid #7b1fa2; border-radius: 15px; padding: 20px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .btn-instalacao-grande { background-color: #7b1fa2; color: white; font-size: 20px; padding: 20px; width: 100%; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #4a148c; }
 
-        /* --- MODAIS GERAIS --- */
-        .modal-geral { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; animation: fadeInModal 0.3s; }
-        .modal-card { background: white; width: 85%; max-width: 350px; border-radius: 20px; padding: 25px; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
-        .modal-card h3 { margin-top: 0; color: #333; font-size: 22px; }
-        .modal-card p { color: #666; font-size: 16px; margin-bottom: 20px; }
-        .btn-modal-acao { display: flex; align-items: center; justify-content: center; width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 10px; cursor: pointer; color: white; text-decoration: none; box-shadow: 0 3px 0 rgba(0,0,0,0.2); }
-        .btn-modal-acao.bg-zap { background-color: #25D366; }
-        .btn-modal-acao.bg-grupo { background: linear-gradient(45deg, #075e54, #128C7E); }
-        .btn-modal-acao.bg-face { background-color: #1877F2; }
-        .btn-modal-acao.bg-insta { background-color: #E1306C; }
-        .btn-fechar-modal-x { position: absolute; top: 10px; right: 10px; background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 20px; color: #333; cursor: pointer; }
-
     </style>
 </head>
 <body>
 
-    <!-- CABEÇALHO FIXO (Ajustado) -->
+    <!-- CABEÇALHO FIXO -->
     <header>
         <div class="header-left">
-            <!-- Logo Horizontal Menor e mais à esquerda -->
             <img src="img/logo.png" onerror="this.src='https://placehold.co/180x60/ffffff/D32F2F?text=DONA+ANTÔNIA'" alt="Logo Dona Antônia" class="logo-pequena">
         </div>
         <div class="header-icons">
-            <!-- Redes Sociais Apenas (Próximos) -->
-            <a href="https://wa.me/5565998150975" class="icon-btn ic-zap"><i class="fab fa-whatsapp"></i></a>
-            <a href="https://facebook.com/SEU_FACEBOOK" target="_blank" class="icon-btn ic-face"><i class="fab fa-facebook"></i></a>
-            <a href="https://instagram.com/SEU_INSTA" target="_blank" class="icon-btn ic-insta"><i class="fab fa-instagram"></i></a>
+            <!-- 
+               ATENÇÃO: Substitua "seu-usuario" pelo nome real da sua página
+               ex: https://facebook.com/donaantoniacestas 
+            -->
+            <a href="https://wa.me/5565998150975" class="icon-btn ic-zap" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+            <a href="https://facebook.com/SEU_FACEBOOK" class="icon-btn ic-face" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i></a>
+            <a href="https://instagram.com/SEU_INSTA" class="icon-btn ic-insta" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
         </div>
     </header>
 
@@ -292,8 +323,14 @@
             <div class="cesta-header"><h3>CESTA GRANDE</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
-                    <img src="img/cesta-grande.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'" onclick="abrirGaleria(this)">
-                    <img src="img/cesta-grande-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'" onclick="abrirGaleria(this)">
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-grande.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-grande-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 380,00</strong></div>
@@ -301,6 +338,7 @@
                 </div>
                 <div class="botoes-wrapper">
                     <button class="btn btn-whatsapp" onclick="encomendar('Cesta Grande')">Encomendar</button>
+                    <!-- Ajuste no botão compartilhar -->
                     <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Grande')">Compartilhar</button>
                 </div>
             </div>
@@ -311,8 +349,14 @@
             <div class="cesta-header"><h3>CESTA MÉDIA</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
-                    <img src="img/cesta-media.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'" onclick="abrirGaleria(this)">
-                    <img src="img/cesta-media-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'" onclick="abrirGaleria(this)">
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-media.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-media-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 320,00</strong></div>
@@ -330,8 +374,14 @@
             <div class="cesta-header"><h3>CESTA PEQUENA</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
-                    <img src="img/cesta-pequena.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'" onclick="abrirGaleria(this)">
-                    <img src="img/cesta-pequena-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'" onclick="abrirGaleria(this)">
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-pequena.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-pequena-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 215,00</strong></div>
@@ -349,8 +399,14 @@
             <div class="cesta-header"><h3>CESTA MINI</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
-                    <img src="img/cesta-mini.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'" onclick="abrirGaleria(this)">
-                    <img src="img/cesta-mini-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'" onclick="abrirGaleria(this)">
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-mini.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-mini-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 165,00</strong></div>
@@ -368,11 +424,16 @@
             <div class="cesta-header"><h3>CESTA ECONÔMICA</h3></div>
             <div class="cesta-body">
                 <div class="galeria-fotos">
-                    <img src="img/cesta-economica.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'" onclick="abrirGaleria(this)">
-                    <img src="img/cesta-economica-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'" onclick="abrirGaleria(this)">
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-economica.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
+                    <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
+                        <img src="img/cesta-economica-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
-                    <!-- Ajuste: Apenas Tio Alvino -->
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 85,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
@@ -499,13 +560,14 @@
             window.open(`https://wa.me/${TELEFONE}?text=Olá, quero encomendar a ${produto}`, '_blank'); 
         }
 
+        // --- CORREÇÃO 1: COMPARTILHAR DIRETO PRO WHATSAPP ---
         function compartilhar(produto) {
             const texto = `Olha essa ${produto} da Dona Antônia! Confira: ${LINK_SITE}`;
-            if (navigator.share) {
-                navigator.share({ title: 'Dona Antônia', text: texto, url: window.location.href });
-            } else {
-                window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
-            }
+            
+            // Lógica antiga tentava API nativa, mas você pediu "direto pro WhatsApp"
+            // Se preferir tentar nativo primeiro e depois WhatsApp, avise.
+            // Por enquanto, forçaremos o WhatsApp que é mais garantido para o seu público.
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
         function enviarNovoCadastro() {
@@ -523,8 +585,14 @@
         let currentIndex = 0;
 
         function abrirGaleria(imgElement) {
-            const parent = imgElement.parentElement;
-            const imgs = parent.querySelectorAll('img');
+            // Agora procuramos a imagem dentro do contexto correto
+            // Se o usuário clicar no ícone ou na div, garantimos pegar a tag IMG
+            if (!imgElement) return;
+
+            // Encontrar o pai (galeria-fotos) para listar todas as imagens irmãs
+            const container = imgElement.closest('.galeria-fotos');
+            const imgs = container.querySelectorAll('img');
+            
             currentImages = [];
             imgs.forEach((img, index) => {
                 currentImages.push(img.src);
@@ -571,28 +639,25 @@
             }
         };
 
-        // PWA Logic
+        // --- CORREÇÃO PWA: LÓGICA DE INSTALAÇÃO ---
         let deferredPrompt;
         const avisoPwa = document.getElementById('aviso-instalar');
         const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-        // Check install state on load
-        window.addEventListener('load', () => {
-             if (localStorage.getItem('appInstalado')) {
-                 document.querySelectorAll('.pwa-install-promo').forEach(el => el.style.display = 'none');
-             } else if (!isIos) {
-                 // If not installed and not iOS, ensure floating banner shows if not closed
-                 if (!sessionStorage.getItem('bannerFechado')) {
-                    avisoPwa.style.display = 'flex';
-                 }
-             }
-        });
-
+        // Se o navegador disser "Ei, dá pra instalar!", nós mostramos o banner,
+        // mesmo que o localStorage diga o contrário (pois o usuário pode ter desinstalado).
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); 
             deferredPrompt = e;
-            if(!isIos && !localStorage.getItem('appInstalado') && !sessionStorage.getItem('bannerFechado')) {
+            
+            // Se o evento disparou, significa que NÃO está instalado.
+            // Removemos a "memória" falsa de que está instalado.
+            localStorage.removeItem('appInstalado'); 
+
+            // Mostra os banners se não tiverem sido fechados na sessão atual
+            if(!sessionStorage.getItem('bannerFechado')) {
                 avisoPwa.style.display = 'flex';
+                document.querySelectorAll('.pwa-install-promo').forEach(el => el.style.display = 'block');
             }
         });
 
@@ -603,12 +668,12 @@
                     if(res.outcome === 'accepted') {
                         localStorage.setItem('appInstalado', 'true');
                         document.querySelectorAll('.pwa-install-promo').forEach(el => el.style.display = 'none');
+                        avisoPwa.style.display = 'none';
                     }
                     deferredPrompt = null;
                 });
             } else { 
-                // Fallback message
-                alert("Use o menu do navegador para adicionar à tela inicial."); 
+                alert("Para instalar: Toque nos três pontinhos do navegador e escolha 'Adicionar à Tela Inicial' ou 'Instalar Aplicativo'."); 
             }
         }
         function fecharInstalacao() { 
@@ -620,16 +685,17 @@
             if (event.state && event.state.pagina) navegarPara(event.state.pagina);
             else navegarPara('cestas');
         };
+        
         window.onload = function() {
             const path = window.location.pathname;
             if(path.includes('/sorteio')) navegarPara('sorteio');
             else if(path.includes('/pagamento')) navegarPara('pagamento');
             else navegarPara('cestas');
             
-            // Check PWA again on load to be safe
-             if (localStorage.getItem('appInstalado')) {
+            // Verificação inicial: só esconde se tiver certeza absoluta
+            if (localStorage.getItem('appInstalado')) {
                  document.querySelectorAll('.pwa-install-promo').forEach(el => el.style.display = 'none');
-             }
+            }
         };
     </script>
 </body>
