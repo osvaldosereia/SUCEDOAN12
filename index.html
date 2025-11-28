@@ -8,34 +8,69 @@
     
     <!-- SEO E DADOS SOCIAIS (Melhorado) -->
     <title>Cesta Básica em Cuiabá e Várzea Grande | Dona Antônia</title>
-    <meta name="description" content="A melhor Cesta Básica de Cuiabá e Várzea Grande. Entregamos no CPA, Tijucal, Cristo Rei e região. Preço justo e qualidade garantida.">
-    <meta name="keywords" content="cesta básica, cuiabá, várzea grande, alimentos, entrega, supermercado, dona antônia">
+    <meta name="description" content="Compre Cesta Básica em Cuiabá e Várzea Grande na Dona Antônia. Melhor preço, entrega rápida no CPA, Tijucal, Cristo Rei e toda região. Confira!">
+    <meta name="keywords" content="cesta básica cuiaba, cesta basica varzea grande, comprar alimentos, supermercado online, entrega de cesta, dona antonia">
     <meta name="robots" content="index, follow">
+    
+    <!-- GEO TAGS (SEO LOCAL - IMPORTANTE) -->
+    <meta name="geo.region" content="BR-MT" />
+    <meta name="geo.placename" content="Cuiabá" />
+    <meta name="geo.position" content="-15.6014;-56.0979" />
+    <meta name="ICBM" content="-15.6014, -56.0979" />
 
-    <!-- Open Graph / Facebook / WhatsApp (Para o card ficar bonito ao compartilhar) -->
+    <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://donaantonia.com.br/">
-    <meta property="og:title" content="Cesta Básica Dona Antônia - Entrega Rápida">
-    <meta property="og:description" content="Confira nossos preços e peça pelo WhatsApp. Qualidade e economia na sua mesa.">
-    <meta property="og:image" content="https://donaantonia.com.br/img/logo-social.jpg"> <!-- Coloque uma imagem quadrada aqui -->
+    <meta property="og:title" content="Cesta Básica Dona Antônia - Entrega Rápida em Cuiabá e VG">
+    <meta property="og:description" content="Arroz Tio Alvino ou Koblenz? Escolha sua cesta e receba em casa. Preço justo e qualidade.">
+    <meta property="og:image" content="https://donaantonia.com.br/img/logo-social.jpg"> 
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    <!-- DADOS ESTRUTURADOS (FAQ) -->
+    <!-- DADOS ESTRUTURADOS (JSON-LD) - O SEGREDO DO GOOGLE -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [{
-        "@type": "Question",
-        "name": "Onde comprar cesta básica em Cuiabá?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Na Dona Antônia! Temos o melhor preço e entregamos em todos os bairros." }
-      }, {
-        "@type": "Question",
-        "name": "Vocês entregam em Várzea Grande?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Sim! Atendemos toda a região de Várzea Grande." }
-      }]
-    }
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Dona Antônia Cestas Básicas",
+        "image": "https://donaantonia.com.br/img/logo.png",
+        "telephone": "+5565998150975",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Cuiabá",
+          "addressRegion": "MT",
+          "addressCountry": "BR"
+        },
+        "priceRange": "$$",
+        "url": "https://donaantonia.com.br/"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{
+          "@type": "Question",
+          "name": "Onde comprar cesta básica em Cuiabá?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Na Dona Antônia! Temos o melhor preço e entregamos no CPA, Tijucal, Pedra 90 e toda região." }
+        }, {
+          "@type": "Question",
+          "name": "Vocês entregam em Várzea Grande?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Sim! Atendemos Cristo Rei, Mapim e toda a região de Várzea Grande." }
+        }]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Cesta Básica Grande",
+        "description": "Cesta completa com Arroz Tio Alvino ou Koblenz, feijão, óleo e itens essenciais.",
+        "offers": {
+          "@type": "Offer",
+          "price": "380.00",
+          "priceCurrency": "BRL",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    ]
     </script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -99,7 +134,7 @@
         
         .header-icons { 
             display: flex; 
-            gap: 15px; /* Aumentei um pouco o espaçamento para facilitar o toque */
+            gap: 15px;
             align-items: center; 
         }
 
@@ -156,6 +191,11 @@
 
         h2, h3 { color: var(--cor-primaria); margin-top: 0; }
         h3 { font-size: 18px; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
+
+        /* SEO SECTION */
+        .seo-text-block {
+            font-size: 12px; color: #888; text-align: center; margin-top: 20px; line-height: 1.5;
+        }
 
         /* --- GALERIA COM INDICADOR DE ZOOM --- */
         .galeria-fotos { display: flex; gap: 10px; margin-bottom: 10px; }
@@ -299,24 +339,21 @@
         <div class="header-left">
             <img src="img/logo.png" onerror="this.src='https://placehold.co/180x60/ffffff/D32F2F?text=DONA+ANTÔNIA'" alt="Logo Dona Antônia" class="logo-pequena">
         </div>
-        <!-- CORREÇÃO: Adicionado onclick="abrirLinkExterno" para forçar abertura correta no celular -->
         <div class="header-icons">
-            <!-- 
-               ATENÇÃO: Substitua "seu-usuario" pelo nome real da sua página
-               ex: https://www.facebook.com/super.cestas.cuiaba/ 
-            -->
             <a href="https://wa.me/5565998150975" class="icon-btn ic-zap" onclick="abrirLinkExterno(event, this)"><i class="fab fa-whatsapp"></i></a>
-            <a href="https://www.facebook.com/super.cestas.cuiaba/" class="icon-btn ic-face" onclick="abrirLinkExterno(event, this)"><i class="fab fa-facebook"></i></a>
-            <a href="https://www.instagram.com/super.cestas.dona.antonia/" class="icon-btn ic-insta" onclick="abrirLinkExterno(event, this)"><i class="fab fa-instagram"></i></a>
+            <a href="https://facebook.com/SEU_FACEBOOK" class="icon-btn ic-face" onclick="abrirLinkExterno(event, this)"><i class="fab fa-facebook"></i></a>
+            <a href="https://instagram.com/SEU_INSTA" class="icon-btn ic-insta" onclick="abrirLinkExterno(event, this)"><i class="fab fa-instagram"></i></a>
         </div>
     </header>
 
     <!-- PÁGINA 1: CESTAS -->
     <div id="pag-cestas" class="pagina visivel">
+        <!-- SEO H1: Título Principal Importante para o Google -->
         <div class="card" style="text-align: center; background-color: #fff3e0;">
-            <p style="margin: 0; font-weight: bold; color: #E65100;">
-                <i class="fas fa-truck"></i> Entregas em Cuiabá e Várzea Grande
-            </p>
+            <h1 style="margin: 0; font-size: 1.1rem; font-weight: bold; color: #E65100;">
+                <i class="fas fa-truck"></i> Cesta Básica em Cuiabá e Várzea Grande
+            </h1>
+            <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #666;">Entregas rápidas no CPA, Tijucal, Cristo Rei e região.</p>
         </div>
 
         <!-- Cesta 1 -->
@@ -325,11 +362,12 @@
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-grande.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <!-- ALT TAG OTIMIZADA -->
+                        <img src="img/cesta-grande.jpg" alt="Cesta Básica Grande Completa em Cuiabá com Arroz e Feijão" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-grande-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-grande-2.jpg" alt="Itens da Cesta Básica Grande Dona Antônia" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -339,7 +377,6 @@
                 </div>
                 <div class="botoes-wrapper">
                     <button class="btn btn-whatsapp" onclick="encomendar('Cesta Grande')">Encomendar</button>
-                    <!-- Ajuste no botão compartilhar -->
                     <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Grande')">Compartilhar</button>
                 </div>
             </div>
@@ -351,11 +388,11 @@
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-media.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-media.jpg" alt="Cesta Básica Média em Várzea Grande e Cuiabá" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-media-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-media-2.jpg" alt="Produtos da Cesta Média Dona Antônia" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -376,11 +413,11 @@
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-pequena.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-pequena.jpg" alt="Cesta Básica Pequena Econômica Cuiabá" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-pequena-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-pequena-2.jpg" alt="Detalhes Cesta Pequena Dona Antônia" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -401,11 +438,11 @@
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-mini.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-mini.jpg" alt="Mini Cesta Básica Barata em Cuiabá" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-mini-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-mini-2.jpg" alt="Kit de Alimentos Básico Cesta Mini" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -426,11 +463,11 @@
             <div class="cesta-body">
                 <div class="galeria-fotos">
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-economica.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
+                        <img src="img/cesta-economica.jpg" alt="Cesta Econômica Melhor Preço VG" onerror="this.src='https://placehold.co/300x300?text=Foto1'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                     <div class="img-wrapper" onclick="abrirGaleria(this.querySelector('img'))">
-                        <img src="img/cesta-economica-2.jpg" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
+                        <img src="img/cesta-economica-2.jpg" alt="Kit Econômico Dona Antônia" onerror="this.src='https://placehold.co/300x300?text=Foto2'">
                         <div class="zoom-indicator"><i class="fas fa-search-plus"></i></div>
                     </div>
                 </div>
@@ -446,10 +483,16 @@
 
         <div class="card-instalacao-fixo pwa-install-promo">
             <h3>📱 Baixe o Aplicativo!</h3>
-            <p>PARA PARTICIPAR DOS SORTEIOS.</p>
+            <p>Para promoções e facilidade, instale nosso App.</p>
             <button class="btn-instalacao-grande" onclick="instalarApp()">
                 <i class="fas fa-download"></i> INSTALAR AGORA
             </button>
+        </div>
+
+        <!-- CONTEÚDO SEO - TEXTO FINAL -->
+        <div class="seo-text-block">
+            <p><strong>Cesta Básica Dona Antônia</strong> - A melhor opção em alimentos para sua família. Atendemos com rapidez e qualidade os bairros: CPA 1, 2, 3 e 4, Tijucal, Pedra 90, Osmar Cabral, Parque Cuiabá, Cristo Rei, Mapim e toda a Grande Cuiabá e Várzea Grande.</p>
+            <p>Aceitamos Pix, Cartão de Crédito e Alimentação (Alelo, Sodexo, Pluxee). Garanta sua cesta básica hoje mesmo!</p>
         </div>
     </div>
 
@@ -547,7 +590,7 @@
 
     <script>
         const TELEFONE = "5565998150975";
-        const LINK_SITE = "donaantonia.com.br";
+        const LINK_SITE = "donaantonia.com.br/oferta";
 
         function navegarPara(idPagina) {
             document.querySelectorAll('.pagina').forEach(p => p.classList.remove('visivel'));
@@ -555,6 +598,20 @@
             document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('ativo'));
             document.getElementById('btn-' + idPagina).classList.add('ativo');
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- NOVA FUNÇÃO PARA LINKS SOCIAIS (CORREÇÃO DE ERRO) ---
+        function abrirLinkExterno(event, element) {
+            event.preventDefault(); // Impede o navegador de tentar abrir na mesma janela
+            let url = element.getAttribute('href');
+            
+            // Se o usuário esqueceu o https://, nós adicionamos para não dar erro
+            if (url && !url.startsWith('http') && !url.startsWith('//')) {
+                url = 'https://' + url;
+            }
+            
+            // Abre em nova janela/aba de forma forçada
+            window.open(url, '_blank');
         }
 
         function encomendar(produto) { 
