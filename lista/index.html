@@ -292,16 +292,16 @@
             }
 
             let conteudoTexto = "";
-            conteudoTexto += "NOME | TELEFONE | CIDADE | BAIRRO\n";
-            conteudoTexto += "---------------------------------------------------\n";
+            // Cabeçalho removido conforme pedido
+            // conteudoTexto += "NOME | TELEFONE | CIDADE | BAIRRO\n";
+            // conteudoTexto += "---------------------------------------------------\n";
 
             selecionados.forEach(cliente => {
                 // 2. APLICA A FORMATAÇÃO
                 const nomeFormatado = formatarNomeBonito(cliente.nome);
-                const cidadeFormatada = cliente.cidade ? formatarNomeBonito(cliente.cidade) : '-';
-                const bairroFormatado = cliente.bairro ? formatarNomeBonito(cliente.bairro) : '-';
                 
-                conteudoTexto += `${nomeFormatado} | ${cliente.telefone} | ${cidadeFormatada} | ${bairroFormatado}\n`;
+                // Apenas o nome seguido de quebra de linha
+                conteudoTexto += `${nomeFormatado}\n`;
             });
 
             const blob = new Blob([conteudoTexto], { type: "text/plain" });
