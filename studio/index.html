@@ -3,64 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Studio Stories V17 - Optimized</title>
+    <title>Studio Stories V21 - Final</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Playfair+Display:ital,wght@0,700;1,400&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Biblioteca para processar GIFs Animados -->
+    <!-- Biblioteca GIF -->
     <script src="https://cdn.jsdelivr.net/gh/buzzfeed/libgif-js@master/libgif.js"></script>
 
     <style>
-        /* BASE */
+        /* --- ESTILOS DE SISTEMA --- */
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #000;
-            overflow: hidden; 
+            overflow: hidden; /* App mode */
             position: fixed; width: 100%; height: 100%;
-            touch-action: none;
+            touch-action: none; /* Gestos manuais */
         }
 
-        /* CANVAS */
+        /* ÁREA DE DESENHO */
         #canvas-container {
             position: absolute; inset: 0; z-index: 1;
             display: flex; align-items: center; justify-content: center;
-            background-color: #000;
+            background-color: #111;
         }
         canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* UI LAYERS */
+        /* INTERFACE (UI) */
         #ui-layer {
             position: absolute; inset: 0; z-index: 20; pointer-events: none;
             transition: opacity 0.3s;
         }
         body.preview-active #ui-layer { opacity: 0; pointer-events: none; }
 
-        /* BOTÃO SAIR PREVIEW */
+        /* Botão Sair Preview */
         #exit-preview-btn {
-            position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.9); color: black;
-            padding: 10px 20px; border-radius: 30px; font-weight: bold; font-size: 14px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100;
+            position: fixed; top: 40px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95); color: black;
+            padding: 12px 24px; border-radius: 30px; font-weight: 800; font-size: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 100;
             opacity: 0; pointer-events: none; transition: opacity 0.3s; cursor: pointer;
-            display: flex; align-items: center; gap: 8px;
+            display: flex; align-items: center; gap: 8px; pointer-events: auto;
         }
-        body.preview-active #exit-preview-btn { opacity: 1; pointer-events: auto; }
-        
+        body.preview-active #exit-preview-btn { opacity: 1; }
+
+        /* Menu Lateral */
         .floating-menu {
             position: absolute; right: 0; top: 50%; transform: translateY(-50%);
             display: flex; flex-direction: column; gap: 8px; pointer-events: auto;
         }
 
-        #drawer-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
-            z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            backdrop-filter: blur(2px);
-        }
-        #drawer-overlay.open { opacity: 1; pointer-events: auto; }
-
-        #drawers-layer { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
-
-        /* COMPONENTES */
+        /* Botões do Menu */
         .menu-btn {
             width: 50px; height: 48px; 
             border-top-left-radius: 12px; border-bottom-left-radius: 12px;
@@ -74,12 +66,23 @@
         .menu-btn.active { background: white; color: black; width: 55px; }
         .menu-btn.action-green { background: #22c55e; color: white; border: none; margin-top: 10px; }
 
-        /* DRAWER PANEL (COMPACTO) */
+        /* Overlay Escuro */
+        #drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
+            z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            backdrop-filter: blur(4px);
+        }
+        #drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* Camada de Gavetas */
+        #drawers-layer { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
+
+        /* Gaveta (Drawer) */
         .drawer-panel {
             position: absolute; left: 0; top: 50%;
             transform: translateY(-50%) translateX(-100%);
             width: 85%; max-width: 320px; 
-            height: 45vh; max-height: 400px; 
+            height: 55vh; max-height: 500px; 
             background: rgba(20, 20, 20, 0.98);
             border-radius: 0 20px 20px 0;
             border: 1px solid rgba(255,255,255,0.15); border-left: none;
@@ -89,35 +92,59 @@
         }
         .drawer-panel.open { opacity: 1; transform: translateY(-50%) translateX(0); }
 
+        /* Estilização de Inputs */
         .dark-input {
             width: 100%; background: rgba(0,0,0,0.4);
             border: 1px solid rgba(255,255,255,0.2); color: white;
             padding: 10px; border-radius: 8px; outline: none; font-size: 14px;
         }
         
+        /* Sliders */
+        input[type="range"] {
+            width: 100%; height: 20px; background: transparent;
+            -webkit-appearance: none; margin: 8px 0; touch-action: pan-x;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 20px; width: 20px; margin-top: -8px;
+            background: white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* Lista de Stickers e Botão Delete */
+        .sticker-thumb { 
+            aspect-ratio: 1; background: rgba(255,255,255,0.05); border-radius: 8px; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            border: 1px solid transparent; transition: 0.2s; overflow: hidden; position: relative;
+        }
+        .sticker-thumb img { max-width: 90%; max-height: 90%; object-fit: contain; pointer-events: none; }
+        
+        .active-stickers-list {
+            display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px;
+        }
+        .active-sticker-item {
+            width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 8px;
+            flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .active-sticker-item img { max-width: 80%; max-height: 80%; }
+        .btn-remove-sticker {
+            position: absolute; top: -5px; right: -5px; width: 20px; height: 20px;
+            background: #ef4444; color: white; border-radius: 50%; font-size: 12px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 2;
+        }
+        
+        /* Helpers */
+        .stickers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
         .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .filter-item { aspect-ratio: 16/9; background: #222; border-radius: 6px; position: relative; border: 2px solid transparent; overflow: hidden; }
         .filter-item.selected { border-color: white; box-shadow: 0 0 0 2px rgba(255,255,255,0.5); }
         .filter-name { position: absolute; bottom:0; width: 100%; background: rgba(0,0,0,0.7); font-size: 10px; text-align: center; padding: 4px; font-weight: bold; }
-
-        /* Stickers Grid */
-        .stickers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .sticker-thumb { 
-            aspect-ratio: 1; background: rgba(255,255,255,0.05); border-radius: 8px; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            border: 1px solid transparent; transition: 0.2s; overflow: hidden;
-        }
-        .sticker-thumb:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
-        .sticker-thumb img { max-width: 90%; max-height: 90%; object-fit: contain; pointer-events: none; }
-
-        #welcome-screen {
-            position: fixed; inset: 0; z-index: 200; background: #111;
-            display: flex; flex-col: column; align-items: center; justify-content: center;
-            transition: opacity 0.4s;
-        }
-        #welcome-screen.hidden { opacity: 0; pointer-events: none; }
-
+        .close-drawer { position: absolute; top: 15px; right: 15px; padding: 5px; color: #888; }
         .label-xs { font-size: 10px; text-transform: uppercase; color: #888; margin: 12px 0 4px 0; font-weight: 700; display: block; }
+        .label-section { font-size: 11px; color: #4ade80; margin: 15px 0 5px 0; font-weight: 800; border-bottom: 1px solid #4ade80; padding-bottom: 3px; display: inline-block; }
         .row { display: flex; gap: 10px; align-items: center; }
         .btn-select { 
             flex: 1; padding: 8px; font-size: 11px; border-radius: 6px; 
@@ -125,22 +152,12 @@
         }
         .btn-select.active { background: white; color: black; font-weight: 800; }
         .btn-select.inactive { background: rgba(255,255,255,0.05); color: #888; }
-        
-        .close-drawer { position: absolute; top: 15px; right: 15px; padding: 5px; color: #888; }
         .gesture-hint { position: absolute; bottom: 20px; width: 100%; text-align: center; font-size: 10px; color: rgba(255,255,255,0.4); pointer-events: none; text-shadow: 0 2px 4px black; }
-
-        input[type="range"] { width: 100%; height: 20px; background: transparent; -webkit-appearance: none; margin: 8px 0; touch-action: pan-x; }
-        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; margin-top: -8px; background: white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-
-        /* Giphy Link */
-        .giphy-link {
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-            background: linear-gradient(45deg, #9933ff, #ff6666);
-            color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 12px;
-            margin-bottom: 12px; text-decoration: none; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-        .giphy-link:hover { opacity: 0.9; }
+        
+        #welcome-screen { position: fixed; inset: 0; z-index: 200; background: #111; display: flex; flex-col: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
+        #welcome-screen.hidden { opacity: 0; pointer-events: none; }
+        
+        .giphy-link { display: flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(45deg, #9933ff, #ff6666); color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 12px; margin-bottom: 12px; text-decoration: none; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 
     </style>
 </head>
@@ -151,7 +168,7 @@
         <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar à Edição
     </div>
 
-    <!-- START SCREEN -->
+    <!-- TELA INICIAL -->
     <div id="welcome-screen">
         <div class="p-6 text-center">
             <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6">
@@ -174,7 +191,7 @@
         <canvas id="storyCanvas" width="1080" height="1920"></canvas>
     </div>
 
-    <!-- UI -->
+    <!-- UI LAYER -->
     <div id="ui-layer">
         <div class="gesture-hint">Toque e Arraste qualquer elemento • Pince para Zoom</div>
         <div class="floating-menu">
@@ -185,20 +202,19 @@
             <div onclick="toggleDrawer('filters')" class="menu-btn" id="btn-filters"><i data-lucide="wand-2"></i></div>
             <div onclick="toggleDrawer('text')" class="menu-btn" id="btn-text"><i data-lucide="type"></i></div>
             <div onclick="toggleDrawer('logo')" class="menu-btn" id="btn-logo"><i data-lucide="store"></i></div>
-            <!-- Botão Figurinhas -->
             <div onclick="toggleDrawer('stickers')" class="menu-btn" id="btn-stickers"><i data-lucide="smile"></i></div>
             
             <div class="h-[1px] bg-white/10 w-[30px] mx-auto my-1"></div>
             <!-- Download IMG -->
-            <div onclick="downloadStory()" class="menu-btn action-green" title="Imagem Otimizada"><i data-lucide="image-down"></i></div>
+            <div onclick="downloadStory()" class="menu-btn action-green"><i data-lucide="image-down"></i></div>
             <!-- Download VIDEO -->
-            <div onclick="downloadVideo()" class="menu-btn action-green mt-2" id="btn-video-dl" title="Vídeo Leve"><i data-lucide="video"></i></div>
+            <div onclick="downloadVideo()" class="menu-btn action-green mt-2" id="btn-video-dl"><i data-lucide="video"></i></div>
         </div>
     </div>
 
     <div id="drawer-overlay" onclick="closeAllDrawers()"></div>
 
-    <!-- MODAIS -->
+    <!-- GAVETAS -->
     <div id="drawers-layer">
         
         <!-- BG -->
@@ -238,7 +254,19 @@
                 <div class="w-1/3"><input type="text" id="inpUnit" class="dark-input text-center" placeholder="un"></div>
             </div>
 
-            <label class="label-xs">Fonte</label>
+            <label class="label-xs">Tamanho das Fontes</label>
+            <div class="bg-white/5 p-2 rounded-lg mb-4">
+                <div class="row"><span class="text-[10px] w-8">Título</span><input type="range" id="rangeTitleSize" min="20" max="120"></div>
+                <div class="row"><span class="text-[10px] w-8">Preço</span><input type="range" id="rangePriceSize" min="50" max="300"></div>
+            </div>
+
+            <label class="label-xs">Posição</label>
+            <div class="flex bg-white/5 p-1 rounded-lg gap-1">
+                <div onclick="setBoxPos('top')" class="btn-select" id="pos-top">Topo</div>
+                <div onclick="setBoxPos('bottom')" class="btn-select" id="pos-bottom">Base</div>
+            </div>
+            
+            <label class="label-xs mt-4">Estilo Fonte</label>
             <div class="flex bg-white/5 p-1 rounded-lg gap-1">
                 <div onclick="setFont('Inter')" class="btn-select" id="font-Inter">Modern</div>
                 <div onclick="setFont('Playfair Display')" class="btn-select" id="font-Playfair">Elegant</div>
@@ -252,6 +280,9 @@
                 <h3 class="font-bold text-base flex gap-2"><i data-lucide="store"></i> Logo</h3>
                 <i data-lucide="x" class="close-drawer" onclick="closeAllDrawers()"></i>
             </div>
+            <div class="p-2 mb-4 bg-green-900/30 border border-green-500/30 rounded text-[10px] text-green-200">
+                <i data-lucide="check-circle" class="w-3 h-3 inline mr-1"></i> Salvo automaticamente
+            </div>
             <label class="block w-full bg-white/5 p-3 rounded-lg text-center text-xs mb-4 cursor-pointer border border-white/10">
                 Carregar PNG
                 <input type="file" id="logoInput" accept="image/*" class="hidden">
@@ -261,8 +292,7 @@
                 <div onclick="setLogoFormat('horizontal')" class="btn-select" id="fmt-horizontal">Horiz.</div>
                 <div onclick="setLogoFormat('square')" class="btn-select" id="fmt-square">Quad.</div>
             </div>
-            
-            <label class="label-xs">Tamanho (Slider ou Pinça)</label>
+            <label class="label-xs">Tamanho</label>
             <div class="flex items-center gap-2 bg-white/5 p-2 rounded-lg mb-2">
                 <i data-lucide="minus" class="w-3 h-3 text-gray-400"></i>
                 <input type="range" id="logoScaleInput" oninput="adjustLogoScale(this.value)" min="0.2" max="3" step="0.1" value="1">
@@ -270,27 +300,34 @@
             </div>
         </div>
 
-        <!-- STICKERS (GIF/PNG) -->
+        <!-- STICKERS -->
         <div id="drawer-stickers" class="drawer-panel">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-base flex gap-2"><i data-lucide="smile"></i> GIFs & Figuras</h3>
+                <h3 class="font-bold text-base flex gap-2"><i data-lucide="smile"></i> Figuras & GIFs</h3>
                 <i data-lucide="x" class="close-drawer" onclick="closeAllDrawers()"></i>
             </div>
+            <a href="https://giphy.com/" target="_blank" class="giphy-link"><i data-lucide="search" class="w-4 h-4"></i> Buscar GIFs no GIPHY</a>
             
-            <!-- GIPHY LINK -->
-            <a href="https://giphy.com/" target="_blank" class="giphy-link">
-                <i data-lucide="search" class="w-4 h-4"></i> Buscar GIFs no GIPHY
-            </a>
-
             <label class="block w-full bg-white/5 p-3 rounded-lg text-center text-xs cursor-pointer border border-white/10 mb-4">
-                Carregar GIF/IMG do Dispositivo
+                Carregar GIF/IMG do PC
                 <input type="file" id="stickerInput" accept="image/gif, image/png, image/jpeg" class="hidden">
             </label>
 
-            <p class="text-[10px] text-gray-400 mb-2">Galeria (img1...img100)</p>
-            <div class="stickers-grid" id="stickersGrid">
-                <!-- Gerado via JS -->
+            <!-- Lista de Ativos -->
+            <div id="activeStickersContainer" style="display:none">
+                <span class="label-section">EM USO NA TELA (Remover)</span>
+                <div class="active-stickers-list" id="activeStickersList"></div>
             </div>
+
+            <!-- Uploads do User -->
+            <span class="label-section">SEUS UPLOADS</span>
+            <div class="stickers-grid" id="userStickersGrid">
+                <p class="text-[10px] text-gray-500 col-span-3 text-center py-4 italic" id="noUserStickers">Nenhum salvo</p>
+            </div>
+
+            <!-- Galeria Padrão -->
+            <span class="label-section">GALERIA (img1...img100)</span>
+            <div class="stickers-grid" id="stickersGrid"></div>
         </div>
     </div>
 
@@ -300,7 +337,6 @@
         const ctx = canvas.getContext('2d');
         const welcomeScreen = document.getElementById('welcome-screen');
 
-        // --- DADOS ---
         const FILTERS = [
             { id: 'normal', name: 'Normal', filter: 'none' },
             { id: 'vignette', name: 'Vinheta', filter: 'none', overlay: 'vignette_strong' },
@@ -308,109 +344,173 @@
             { id: 'sharp', name: 'Nitidez', filter: 'contrast(1.4) saturate(1.1)' },
         ];
 
+        // ESTADO GLOBAL
         let state = {
             bgImg: null, logoImg: null,
             name: 'Nome do Produto', price: '99,90', unit: 'un',
             
-            boxW: 800, boxH: 300, 
+            // Box Auto-Size
             boxManualX: null, boxManualY: null,
             boxScale: 1.0, isDarkMode: false,
+            // Computados
+            boxW: 800, boxH: 300, boxPos: 'bottom',
             
             fontFamily: 'Inter', titleSize: 50, priceSize: 140,
             bgScale: 1, bgX: 0, bgY: 0, currentFilterId: 'normal',
             logoFormat: 'horizontal', logoScale: 1, logoX: null, logoY: null,
             
-            stickers: [], 
-            
-            // Video Config
-            videoDuration: 5, // segundos
+            stickers: [], // { type, obj, x, y, scale }
+            savedStickersData: [],
+            videoDuration: 5
         };
 
-        // --- LOADERS PADRÃO ---
+        // --- STORAGE ---
+        const DB_LOGO_KEY = 'app_logo_data';
+        const DB_STICKERS_KEY = 'app_stickers_data';
+
+        function initStorage() {
+            try {
+                const savedLogo = localStorage.getItem(DB_LOGO_KEY);
+                if (savedLogo) {
+                    const img = new Image(); img.src = savedLogo; img.onload = () => { state.logoImg = img; };
+                } else {
+                    loadPlaceholderLogo();
+                }
+                const savedStickers = localStorage.getItem(DB_STICKERS_KEY);
+                if (savedStickers) state.savedStickersData = JSON.parse(savedStickers);
+            } catch(e) { console.warn(e); loadPlaceholderLogo(); }
+            renderUserStickers();
+        }
+
+        function loadPlaceholderLogo() {
+            const phLogo = new Image(); phLogo.crossOrigin = "anonymous";
+            phLogo.src = 'https://placehold.co/400x200/ffffff/000000.png?text=LOGO';
+            phLogo.onload = () => { if(!state.logoImg) state.logoImg = phLogo; };
+        }
+
+        function saveLogoToStorage(dataUrl) { try { localStorage.setItem(DB_LOGO_KEY, dataUrl); } catch(e){} }
+        
+        function saveStickerToStorage(dataUrl) {
+            if(!state.savedStickersData.includes(dataUrl)) {
+                if(state.savedStickersData.length >= 20) state.savedStickersData.shift(); 
+                state.savedStickersData.push(dataUrl);
+                try { localStorage.setItem(DB_STICKERS_KEY, JSON.stringify(state.savedStickersData)); renderUserStickers(); } catch(e){}
+            }
+        }
+
+        function deleteUserSticker(index, event) {
+            event.stopPropagation();
+            state.savedStickersData.splice(index, 1);
+            localStorage.setItem(DB_STICKERS_KEY, JSON.stringify(state.savedStickersData));
+            renderUserStickers();
+        }
+
+        function renderUserStickers() {
+            const container = document.getElementById('userStickersGrid');
+            if(!container) return;
+            container.innerHTML = '';
+            if(state.savedStickersData.length === 0) {
+                container.innerHTML = '<p class="text-[10px] text-gray-500 col-span-3 text-center py-4 italic">Nenhum salvo</p>'; return;
+            }
+            state.savedStickersData.forEach((src, idx) => {
+                const div = document.createElement('div'); div.className = 'sticker-thumb';
+                const img = new Image(); img.src = src;
+                const btnDel = document.createElement('div'); btnDel.className = 'del-sticker-btn'; btnDel.innerHTML = 'x';
+                btnDel.onclick = (e) => deleteUserSticker(idx, e);
+                div.appendChild(img); div.appendChild(btnDel);
+                div.onclick = () => loadSticker(src, false);
+                container.appendChild(div);
+            });
+        }
+
+        // --- STICKERS MANAGEMENT ---
+        function updateActiveStickersList() {
+            const container = document.getElementById('activeStickersList');
+            const wrapper = document.getElementById('activeStickersContainer');
+            if(state.stickers.length === 0) { wrapper.style.display = 'none'; return; }
+            wrapper.style.display = 'block';
+            container.innerHTML = '';
+
+            state.stickers.forEach((s, idx) => {
+                const item = document.createElement('div'); item.className = 'active-sticker-item';
+                const btn = document.createElement('div'); btn.className = 'btn-remove-sticker';
+                btn.innerHTML = '<i data-lucide="x" style="width:12px"></i>';
+                btn.onclick = () => removeActiveSticker(idx);
+
+                let thumb;
+                if(s.type === 'gif' && s.obj.get_canvas) {
+                    const c = s.obj.get_canvas();
+                    thumb = document.createElement('img'); thumb.src = c.toDataURL();
+                } else if(s.obj.cloneNode) {
+                    thumb = s.obj.cloneNode();
+                } else { thumb = document.createElement('div'); }
+                item.appendChild(thumb); item.appendChild(btn); container.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        function removeActiveSticker(index) {
+            state.stickers.splice(index, 1);
+            updateActiveStickersList();
+        }
+
         const phBg = new Image(); phBg.crossOrigin = "anonymous";
         phBg.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1080&auto=format&fit=crop';
-        const phLogo = new Image(); phLogo.crossOrigin = "anonymous";
-        phLogo.src = 'https://placehold.co/400x200/ffffff/000000.png?text=LOGO';
-
         phBg.onload = () => { if(!state.bgImg) { state.bgImg = phBg; } };
-        phLogo.onload = () => { if(!state.logoImg) { state.logoImg = phLogo; } };
 
-        // --- STICKERS LOADER (Local + Upload) ---
+        // Galeria Padrão
         const stickersGrid = document.getElementById('stickersGrid');
-        
-        // Carrega 100 GIFs presumidos (Expandido)
         for(let i=1; i<=100; i++) {
-            const div = document.createElement('div');
-            div.className = 'sticker-thumb';
-            // Caminho da imagem
+            const div = document.createElement('div'); div.className = 'sticker-thumb';
             const src = `img/img${i}.gif`;
-            
-            const img = new Image();
-            img.src = src;
+            const img = new Image(); img.src = src;
             img.onerror = () => { div.style.display = 'none'; }; 
             img.onload = () => {
                 div.appendChild(img);
-                div.onclick = () => loadSticker(src); // Carrega a URL
+                div.onclick = () => loadSticker(src, false);
             };
             stickersGrid.appendChild(div);
         }
 
-        // Upload Manual de Sticker
         document.getElementById('stickerInput').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if(file) {
                 const reader = new FileReader();
-                reader.onload = (evt) => loadSticker(evt.target.result);
+                reader.onload = (evt) => loadSticker(evt.target.result, true);
                 reader.readAsDataURL(file);
             }
         });
 
-        // Lógica Unificada de Carregamento de Sticker (GIF vs IMG)
-        function loadSticker(src) {
-            // Verifica se é GIF (pela extensão ou dataURI)
+        function loadSticker(src, shouldSave) {
+            if(shouldSave) saveStickerToStorage(src);
             const isGif = src.toLowerCase().includes('.gif') || src.startsWith('data:image/gif');
+            const imgEl = document.createElement('img'); imgEl.src = src;
             
-            // Cria elemento de imagem temporário
-            const imgEl = document.createElement('img');
-            imgEl.src = src;
-            
-            if(isGif) {
-                // Configura SuperGif
+            if(isGif && typeof SuperGif !== 'undefined') {
                 const wrapper = document.createElement('div');
-                // Atributo rel:auto_play é necessário para libgif iniciar
-                imgEl.setAttribute('rel:auto_play', '1'); 
-                imgEl.setAttribute('rel:rubbable', '0');
+                imgEl.setAttribute('rel:auto_play', '1'); imgEl.setAttribute('rel:rubbable', '0');
                 wrapper.appendChild(imgEl);
-                
-                const gifObj = new SuperGif({ gif: imgEl, auto_play: true });
-                
-                gifObj.load(() => {
-                    // Loaded!
-                    state.stickers.push({
-                        type: 'gif',
-                        obj: gifObj,
-                        x: 1080/2 - 150,
-                        y: 1920/2 - 150,
-                        scale: 1.0
+                try {
+                    const gifObj = new SuperGif({ gif: imgEl, auto_play: true });
+                    gifObj.load(() => {
+                        state.stickers.push({ type: 'gif', obj: gifObj, x: 1080/2 - 150, y: 1920/2 - 150, scale: 1.0 });
+                        updateActiveStickersList(); closeAllDrawers();
                     });
-                    closeAllDrawers();
-                });
+                } catch(e) {
+                    console.log("GIF load error", e);
+                    // Fallback
+                    state.stickers.push({ type: 'img', obj: imgEl, x: 1080/2 - 150, y: 1920/2 - 150, scale: 1.0 });
+                    updateActiveStickersList(); closeAllDrawers();
+                }
             } else {
-                // Imagem Normal
                 imgEl.onload = () => {
-                    state.stickers.push({
-                        type: 'img',
-                        obj: imgEl,
-                        x: 1080/2 - 150,
-                        y: 1920/2 - 150,
-                        scale: 1.0
-                    });
-                    closeAllDrawers();
+                    state.stickers.push({ type: 'img', obj: imgEl, x: 1080/2 - 150, y: 1920/2 - 150, scale: 1.0 });
+                    updateActiveStickersList(); closeAllDrawers();
                 };
             }
         }
 
-        // --- UI RENDER ---
+        // UI RENDER HELPERS
         const filterListEl = document.getElementById('filterList');
         FILTERS.forEach(f => {
             const div = document.createElement('div');
@@ -420,12 +520,13 @@
             filterListEl.appendChild(div);
         });
 
-        // --- SYNC ---
         function syncUI() {
             document.getElementById('inpName').value = state.name;
             document.getElementById('inpPrice').value = state.price;
             document.getElementById('inpUnit').value = state.unit;
             document.getElementById('logoScaleInput').value = state.logoScale;
+            document.getElementById('rangeTitleSize').value = state.titleSize;
+            document.getElementById('rangePriceSize').value = state.priceSize;
             updateClasses();
         }
 
@@ -436,10 +537,12 @@
             });
             document.getElementById('fmt-horizontal').className = state.logoFormat === 'horizontal' ? 'btn-select active' : 'btn-select inactive';
             document.getElementById('fmt-square').className = state.logoFormat === 'square' ? 'btn-select active' : 'btn-select inactive';
+            
+            document.getElementById('pos-top').className = state.boxPos === 'top' ? 'btn-select active' : 'btn-select inactive';
+            document.getElementById('pos-bottom').className = state.boxPos === 'bottom' ? 'btn-select active' : 'btn-select inactive';
         }
-        syncUI();
 
-        // --- HANDLERS ---
+        // HANDLERS
         const handleUpload = (file, key) => {
             if(!file) return;
             const r = new FileReader();
@@ -448,7 +551,7 @@
                 img.onload = () => {
                     state[key] = img;
                     if(key==='bgImg'){ state.bgX=0; state.bgY=0; state.bgScale=1; }
-                    if(key==='logoImg'){ state.logoX=null; state.logoY=null; }
+                    if(key==='logoImg'){ state.logoX=null; state.logoY=null; saveLogoToStorage(e.target.result); }
                 };
                 img.src = e.target.result;
             };
@@ -462,6 +565,8 @@
         document.getElementById('inpName').addEventListener('input', e=>{state.name=e.target.value;});
         document.getElementById('inpPrice').addEventListener('input', e=>{state.price=e.target.value;});
         document.getElementById('inpUnit').addEventListener('input', e=>{state.unit=e.target.value;});
+        document.getElementById('rangeTitleSize').addEventListener('input', e=>{state.titleSize=parseInt(e.target.value);});
+        document.getElementById('rangePriceSize').addEventListener('input', e=>{state.priceSize=parseInt(e.target.value);});
 
         window.setFont = f => {state.fontFamily=f; updateClasses();}
         window.setFilter = id => {
@@ -472,6 +577,7 @@
         window.toggleInvert = () => { state.isDarkMode=!state.isDarkMode; updateClasses(); }
         window.setLogoFormat = f => { state.logoFormat=f; updateClasses(); }
         window.adjustLogoScale = v => { state.logoScale=parseFloat(v); }
+        window.setBoxPos = p => { state.boxPos=p; updateClasses(); }
 
         window.togglePreview = () => {
             document.body.classList.toggle('preview-active');
@@ -492,8 +598,8 @@
         };
         window.closeAllDrawers = () => toggleDrawer(null);
 
-        // --- SISTEMA DE GESTOS MULTITOUCH ---
-        let dragTarget = null; // 'bg', 'logo', 'box', 'sticker-N'
+        // --- SISTEMA DE GESTOS ---
+        let dragTarget = null;
         let pointers = {};
         let initialDist = 0;
         let initialScale = 1;
@@ -501,7 +607,6 @@
         let initialPos = { x:0, y:0 };
 
         const cContainer = document.getElementById('canvas-container');
-
         const getCanvasCoords = (clientX, clientY) => {
             const r = canvas.getBoundingClientRect();
             const sx = canvas.width / r.width;
@@ -510,21 +615,16 @@
         };
 
         const hitTest = (x, y) => {
-            // Check Stickers (Top down)
+            // Check Stickers
             for(let i=state.stickers.length-1; i>=0; i--) {
                 const s = state.stickers[i];
                 let w = 300, h = 300;
-                if(s.type === 'gif') {
-                    const c = s.obj.get_canvas();
-                    if(c) { w=c.width; h=c.height; }
-                } else {
-                    w = s.obj.width; h = s.obj.height;
-                }
+                if(s.type === 'gif' && s.obj.get_canvas) { const c = s.obj.get_canvas(); if(c) { w=c.width; h=c.height; } } 
+                else if (s.obj.width) { w = s.obj.width; h = s.obj.height; }
                 w *= s.scale; h *= s.scale;
-                
                 if(x >= s.x && x <= s.x + w && y >= s.y && y <= s.y + h) return `sticker-${i}`;
             }
-
+            // Check Logo
             if(state.logoImg) {
                 let lw=state.logoFormat==='horizontal'?400:300, lh=state.logoFormat==='horizontal'?200:300;
                 lw*=state.logoScale; lh*=state.logoScale;
@@ -532,11 +632,11 @@
                 let ly = state.logoY!==null ? state.logoY : 100;
                 if(x>=lx && x<=lx+lw && y>=ly && y<=ly+lh) return 'logo';
             }
-            let bw = state.boxW * state.boxScale;
-            let bh = state.boxH * state.boxScale;
-            let bx = state.boxManualX !== null ? state.boxManualX : (1080 - bw)/2;
-            let by = state.boxManualY !== null ? state.boxManualY : 1920 - bh - 120;
-            if(x>=bx && x<=bx+bw && y>=by && y<=by+bh) return 'box';
+            // Check Box (Usa dimensões calculadas)
+            let bx = state.boxManualX !== null ? state.boxManualX : (1080 - state.boxW)/2;
+            let by = state.boxManualY !== null ? state.boxManualY : 1920 - state.boxH - 120;
+            if(x>=bx && x<=bx+state.boxW && y>=by && y<=by+state.boxH) return 'box';
+            
             return 'bg';
         };
 
@@ -555,22 +655,18 @@
                 
                 if(dragTarget.startsWith('sticker-')) {
                     const idx = parseInt(dragTarget.split('-')[1]);
-                    const s = state.stickers[idx];
-                    initialPos = { x: s.x, y: s.y };
+                    initialPos = { x: state.stickers[idx].x, y: state.stickers[idx].y };
                 }
                 else if(dragTarget === 'logo') {
-                    let lw=state.logoFormat==='horizontal'?400:300; 
-                    lw*=state.logoScale; 
+                    let lw=state.logoFormat==='horizontal'?400:300; lw*=state.logoScale; 
                     initialPos = { x: state.logoX!==null?state.logoX : (1080-lw)/2, y: state.logoY!==null?state.logoY : 100 };
                 } 
                 else if(dragTarget === 'box') {
-                    let bw = state.boxW * state.boxScale;
-                    let bh = state.boxH * state.boxScale;
-                    initialPos = { x: state.boxManualX!==null?state.boxManualX : (1080-bw)/2, y: state.boxManualY!==null?state.boxManualY : 1920-bh-120 };
+                    // Safety check
+                    let bw = state.boxW || 800;
+                    initialPos = { x: state.boxManualX!==null?state.boxManualX : (1080-bw)/2, y: state.boxManualY!==null?state.boxManualY : 1920-(state.boxH||300)-120 };
                 }
-                else if(dragTarget === 'bg') {
-                    initialPos = { x: state.bgX, y: state.bgY };
-                }
+                else if(dragTarget === 'bg') { initialPos = { x: state.bgX, y: state.bgY }; }
             } 
             else if (pts.length === 2) {
                 const p1 = pts[0]; const p2 = pts[1];
@@ -604,18 +700,9 @@
                     state.stickers[idx].x = initialPos.x + dx;
                     state.stickers[idx].y = initialPos.y + dy;
                 }
-                else if(dragTarget === 'logo') {
-                    state.logoX = initialPos.x + dx;
-                    state.logoY = initialPos.y + dy;
-                }
-                else if(dragTarget === 'box') {
-                    state.boxManualX = initialPos.x + dx;
-                    state.boxManualY = initialPos.y + dy;
-                }
-                else if(dragTarget === 'bg') {
-                    state.bgX = initialPos.x + dx;
-                    state.bgY = initialPos.y + dy;
-                }
+                else if(dragTarget === 'logo') { state.logoX = initialPos.x + dx; state.logoY = initialPos.y + dy; }
+                else if(dragTarget === 'box') { state.boxManualX = initialPos.x + dx; state.boxManualY = initialPos.y + dy; }
+                else if(dragTarget === 'bg') { state.bgX = initialPos.x + dx; state.bgY = initialPos.y + dy; }
             }
             else if(pts.length === 2) {
                 const p1 = pts[0]; const p2 = pts[1];
@@ -636,8 +723,7 @@
         };
 
         const handlePointerUp = (e) => {
-            delete pointers[e.pointerId];
-            delete startPoints[e.pointerId];
+            delete pointers[e.pointerId]; delete startPoints[e.pointerId];
             if(Object.keys(pointers).length === 0) dragTarget = null;
             else if(Object.keys(pointers).length === 1) {
                 const remaining = Object.values(pointers)[0];
@@ -651,27 +737,29 @@
         cContainer.addEventListener('pointercancel', handlePointerUp);
         cContainer.addEventListener('pointerout', handlePointerUp);
 
+        // --- DRAW LOOP ---
+        function animate() { draw(); requestAnimationFrame(animate); }
+        initStorage(); syncUI(); requestAnimationFrame(animate);
 
-        // --- ANIMAÇÃO LOOP (Necessário para GIFs) ---
-        function animate() {
-            draw();
-            requestAnimationFrame(animate);
-        }
-        requestAnimationFrame(animate);
-
-        function draw() {
+        function draw(timestamp) {
             ctx.clearRect(0,0,1080,1920); ctx.fillStyle='#000'; ctx.fillRect(0,0,1080,1920);
             
-            // 1. BG (Sem animação de motion, apenas estático escalável)
+            // Motion (Loop 5s)
+            if (!timestamp) timestamp = performance.now();
+            const loop = (timestamp % (state.videoDuration*1000))/(state.videoDuration*1000);
+            const bgBreath = Math.sin(loop*Math.PI*2)*0.01;
+            const floatY = Math.sin(loop*Math.PI*2)*3;
+
+            // 1. BG
             if(state.bgImg) {
-                const i=state.bgImg; const f=FILTERS.find(x=>x.id===state.currentFilterId);
+                const i=state.bgImg; const f=FILTERS.find(x=>x.id===state.currentFilterId) || FILTERS[0];
                 const r=i.width/i.height, cr=1080/1920;
                 let dw,dh; 
                 if(r > cr) { dh=1920; dw=i.width*(1920/i.height); }
                 else { dw=1080; dh=i.height*(1080/i.width); }
                 
                 ctx.save(); ctx.filter=f.filter;
-                ctx.translate(540,960); ctx.scale(state.bgScale, state.bgScale); ctx.translate(-540,-960);
+                ctx.translate(540,960); ctx.scale(state.bgScale+bgBreath, state.bgScale+bgBreath); ctx.translate(-540,-960);
                 ctx.translate(state.bgX,state.bgY);
                 ctx.drawImage(i, (1080-dw)/2, (1920-dh)/2, dw, dh);
                 ctx.restore();
@@ -681,70 +769,88 @@
                     g.addColorStop(0,'transparent'); g.addColorStop(0.4, 'rgba(0,0,0,0.2)'); g.addColorStop(1,'rgba(0,0,0,0.95)');
                     ctx.fillStyle=g; ctx.fillRect(0,0,1080,1920);
                 }
+            } else {
+                ctx.fillStyle = "#222"; ctx.fillRect(0,0,1080,1920);
+                ctx.fillStyle = "#444"; ctx.textAlign="center"; ctx.font="40px Inter"; ctx.fillText("Carregue uma Foto", 540, 960);
             }
 
-            // 2. GLASS BOX
-            let finalBoxW = state.boxW * state.boxScale;
-            let finalBoxH = state.boxH * state.boxScale;
-            let bx = state.boxManualX !== null ? state.boxManualX : (1080 - finalBoxW)/2;
-            let by = state.boxManualY !== null ? state.boxManualY : 1920 - finalBoxH - 120;
+            // 2. AUTO SIZE GLASS BOX CALC
+            const safeName = state.name || "";
+            const safePrice = state.price ? String(state.price) : "0,00";
             
+            // Fonts
+            let tw='600'; if(state.fontFamily==='Oswald') tw='700';
+            const titleFont = `${tw} ${state.titleSize * state.boxScale}px '${state.fontFamily}'`;
+            
+            let pw='800'; if(state.fontFamily==='Playfair Display') pw='700';
+            const priceFont = `${pw} ${state.priceSize * state.boxScale}px '${state.fontFamily}'`;
+            const currencyFont = `${pw} ${(state.priceSize * 0.4) * state.boxScale}px '${state.fontFamily}'`;
+            const centsFont = `${pw} ${(state.priceSize * 0.5) * state.boxScale}px '${state.fontFamily}'`;
+            const unitFont = `400 ${(state.priceSize * 0.4 * 0.7) * state.boxScale}px '${state.fontFamily}'`;
+
+            // Parsing Price
+            let mainPrice = safePrice; let cents = "";
+            if(safePrice.includes(',')) { let p = safePrice.split(','); mainPrice = p[0]; cents = "," + p[1]; } 
+            else if(safePrice.includes('.')) { let p = safePrice.split('.'); mainPrice = p[0]; cents = "." + p[1]; }
+
+            // Measuring
+            ctx.font = titleFont; const wTitle = ctx.measureText(safeName).width;
+            ctx.font = currencyFont; const wR = ctx.measureText("R$").width;
+            ctx.font = priceFont; const wMain = ctx.measureText(mainPrice).width;
+            ctx.font = centsFont; const wCents = cents ? ctx.measureText(cents).width : 0;
+            ctx.font = unitFont; const wUnit = state.unit ? ctx.measureText("/" + state.unit).width : 0;
+
+            const wRow2 = wR + (10*state.boxScale) + wMain + (cents ? wCents : 0) + (state.unit ? (10*state.boxScale) + wUnit : 0);
+            
+            const paddingH = 60 * state.boxScale;
+            const paddingV = 40 * state.boxScale;
+            const gap = 5 * state.boxScale;
+            
+            // Update State Dimensions
+            const contentW = Math.max(wTitle, wRow2);
+            const contentH = (state.titleSize * state.boxScale) + gap + (state.priceSize * state.boxScale * 0.85); 
+            state.boxW = contentW + (paddingH * 2);
+            state.boxH = contentH + (paddingV * 2);
+
+            // Coordinates
+            let bx = state.boxManualX !== null ? state.boxManualX : (1080 - state.boxW)/2;
+            let by = state.boxManualY !== null ? state.boxManualY : 1920 - state.boxH - 120;
+            by += floatY; // Animate
+
+            // Draw Box
             const dm=state.isDarkMode;
             ctx.save(); 
             ctx.shadowColor="rgba(0,0,0,0.5)"; ctx.shadowBlur=40; ctx.shadowOffsetY=15; ctx.shadowOffsetX=5;
             ctx.fillStyle=dm?"rgba(0,0,0,0.85)":"rgba(255,255,255,0.85)";
-            ctx.beginPath(); ctx.roundRect(bx,by,finalBoxW,finalBoxH,30); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(bx,by,state.boxW,state.boxH,30); ctx.fill();
             ctx.strokeStyle=dm?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.4)"; ctx.lineWidth=1.5; ctx.stroke(); 
             ctx.restore();
 
-            // 3. TEXTO
-            const titleS = state.titleSize * state.boxScale;
-            const priceS = state.priceSize * state.boxScale;
-            const gap = 5 * state.boxScale;
-
-            const contentH = titleS + gap + priceS;
-            const startY = by + (finalBoxH - contentH)/2 + titleS;
-            const sx = bx + (60 * state.boxScale);
+            // Draw Text
+            const startX = bx + paddingH;
+            const startY = by + paddingV + (state.titleSize * state.boxScale * 0.8); 
 
             ctx.fillStyle=dm?"#fff":"#1e293b"; ctx.textAlign="left";
-            let tw='600'; if(state.fontFamily==='Oswald') tw='700';
-            ctx.font=`${tw} ${titleS}px '${state.fontFamily}'`; ctx.fillText(state.name,sx,startY);
             
-            const py = startY + gap + priceS;
-            let pw='800'; if(state.fontFamily==='Playfair Display') pw='700';
-            const cs=priceS*0.4; // Tamanho moeda
-            const centsSize = priceS * 0.5; // Tamanho centavos
-
-            // R$
-            ctx.font=`${pw} ${cs}px '${state.fontFamily}'`; 
-            ctx.fillText("R$",sx,py);
+            ctx.font = titleFont; ctx.fillText(safeName, startX, startY);
             
-            // Separar Preço
-            let fullPrice = state.price;
-            let mainPrice = fullPrice; 
-            let cents = "";
-            if(fullPrice.includes(',')) { let p = fullPrice.split(','); mainPrice = p[0]; cents = "," + p[1]; } 
-            else if(fullPrice.includes('.')) { let p = fullPrice.split('.'); mainPrice = p[0]; cents = "." + p[1]; }
-
-            const cw=ctx.measureText("R$").width;
-            const px = sx + cw + (10*state.boxScale);
-
-            // Inteiro
-            ctx.font=`${pw} ${priceS}px '${state.fontFamily}'`; 
-            ctx.fillText(mainPrice, px, py);
+            const py = startY + gap + (state.priceSize * state.boxScale * 0.85);
             
-            // Centavos
-            const mainW = ctx.measureText(mainPrice).width;
+            let cursorX = startX;
+            ctx.font = currencyFont; ctx.fillText("R$", cursorX, py);
+            cursorX += wR + (10*state.boxScale);
+            
+            ctx.font = priceFont; ctx.fillText(mainPrice, cursorX, py);
+            cursorX += wMain;
+
             if(cents) {
-                ctx.font=`${pw} ${centsSize}px '${state.fontFamily}'`;
-                ctx.fillText(cents, px + mainW, py);
+                ctx.font = centsFont; ctx.fillText(cents, cursorX, py);
+                cursorX += wCents;
             }
 
-            // Unidade
             if(state.unit){
-                const centsW = ctx.measureText(cents).width;
-                ctx.font=`400 ${cs*0.7}px '${state.fontFamily}'`; ctx.fillStyle=dm?"#999":"#555";
-                ctx.fillText(`/${state.unit}`, px + mainW + centsW + (10*state.boxScale), py);
+                ctx.font = unitFont; ctx.fillStyle=dm?"#999":"#555";
+                ctx.fillText(`/${state.unit}`, cursorX + (10*state.boxScale), py);
             }
 
             // 4. LOGO
@@ -753,7 +859,7 @@
                 lw*=state.logoScale; lh*=state.logoScale;
                 let lx = state.logoX!==null ? state.logoX : (1080-lw)/2;
                 let ly = state.logoY!==null ? state.logoY : 100;
-
+                ly += (floatY * 0.5); // Animate
                 const lr=state.logoImg.width/state.logoImg.height, tr=lw/lh;
                 let fw,fh; if(lr>tr){fw=lw;fh=lw/lr;}else{fh=lh;fw=lh*lr;}
                 ctx.save(); 
@@ -762,50 +868,31 @@
                 ctx.restore();
             }
 
-            // 5. STICKERS (Desenhados por último)
+            // 5. STICKERS
             state.stickers.forEach(s => {
                 let w, h, imgDraw;
-                
-                if (s.type === 'gif') {
-                    const canvasGif = s.obj.get_canvas(); // LibGif Canvas
+                if (s.type === 'gif' && typeof SuperGif !== 'undefined' && s.obj.get_canvas) {
+                    const canvasGif = s.obj.get_canvas();
                     if(!canvasGif) return;
-                    imgDraw = canvasGif;
-                    w = canvasGif.width;
-                    h = canvasGif.height;
-                } else {
-                    imgDraw = s.obj;
-                    w = s.obj.width;
-                    h = s.obj.height;
-                }
+                    imgDraw = canvasGif; w = canvasGif.width; h = canvasGif.height;
+                } else if(s.obj.width) { 
+                    imgDraw = s.obj; w = s.obj.width; h = s.obj.height; 
+                } else return; // Skip invalid
 
-                // Ajuste de escala do sticker (se muito grande inicialmente, reduzir)
-                // Vamos usar um tamanho base de 300px se não definido
                 if(!s.baseScaleSet) {
                     const maxDim = Math.max(w, h);
-                    if(maxDim > 400) {
-                        const ratio = 400 / maxDim;
-                        w *= ratio; h *= ratio;
-                        // Ajusta escala interna para refletir isso no futuro
-                        // Na verdade, melhor desenhar com w/h ajustados pelo scale state
-                    }
+                    if(maxDim > 400) { const ratio = 400 / maxDim; w *= ratio; h *= ratio; }
                     s.baseW = w; s.baseH = h; s.baseScaleSet = true;
                 }
-
-                const drawW = s.baseW * s.scale;
-                const drawH = s.baseH * s.scale;
-
-                ctx.save();
-                ctx.shadowColor="rgba(0,0,0,0.2)"; ctx.shadowBlur=15; ctx.shadowOffsetY=5;
-                ctx.drawImage(imgDraw, s.x, s.y, drawW, drawH);
-                ctx.restore();
+                const drawW = s.baseW * s.scale; const drawH = s.baseH * s.scale;
+                ctx.save(); ctx.shadowColor="rgba(0,0,0,0.2)"; ctx.shadowBlur=15; ctx.shadowOffsetY=5;
+                ctx.drawImage(imgDraw, s.x, s.y, drawW, drawH); ctx.restore();
             });
         }
         
         window.downloadStory = () => {
             const l=document.createElement('a'); l.download=`story_${Date.now()}.jpg`;
-            draw(); 
-            // QUALIDADE REDUZIDA (0.85)
-            l.href=canvas.toDataURL('image/jpeg',0.85); l.click();
+            draw(0); l.href=canvas.toDataURL('image/jpeg',0.90); l.click();
         }
 
         async function downloadVideo() {
@@ -815,7 +902,6 @@
             btn.style.pointerEvents = 'none';
             
             const stream = canvas.captureStream(30);
-            // BITRATE REDUZIDO (2.5 Mbps)
             const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 2500000 });
             const chunks = [];
             
@@ -830,7 +916,7 @@
             };
             
             mediaRecorder.start();
-            setTimeout(() => { mediaRecorder.stop(); }, 5000); // 5 Segundos de gravação
+            setTimeout(() => { mediaRecorder.stop(); }, 5000); // Grava 5 segundos
         }
     </script>
 </body>
