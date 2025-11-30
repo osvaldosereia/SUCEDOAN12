@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Studio Stories Mobile V6</title>
+    <title>Studio Stories Mobile V7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Playfair+Display:ital,wght@0,700;1,400&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Ícones Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { 
@@ -16,109 +15,111 @@
             touch-action: none;
         }
 
-        /* O Canvas ocupa tudo */
+        /* Canvas Container */
         #canvas-container {
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 1;
-            display: flex; align-items: center; justify-content: center;
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 1; display: flex; align-items: center; justify-content: center;
             background-color: #000;
         }
+        canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        canvas {
-            max-width: 100%; max-height: 100%;
-            object-fit: contain;
-        }
-
-        /* Tela Inicial */
+        /* Welcome Screen */
         #welcome-screen {
             position: fixed; inset: 0; z-index: 50;
             background: linear-gradient(to bottom right, #000000, #1a1a1a);
             display: flex; flex-col: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.4s ease;
         }
         #welcome-screen.hidden { opacity: 0; pointer-events: none; }
 
-        /* Interface UI Container (Para esconder no preview) */
-        #ui-layer {
-            transition: opacity 0.3s ease;
-        }
-        body.preview-active #ui-layer {
-            opacity: 0;
-            pointer-events: none;
-        }
+        /* UI Layer */
+        #ui-layer { transition: opacity 0.3s ease; pointer-events: none; position: fixed; inset: 0; z-index: 10; }
+        body.preview-active #ui-layer { opacity: 0; }
 
-        /* Menu Flutuante */
+        /* Menu Lateral (Direita - Encostado) */
         .floating-menu {
-            position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
-            z-index: 20; display: flex; flex-direction: column; gap: 12px;
+            position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+            z-index: 20; display: flex; flex-direction: column; gap: 8px;
             pointer-events: auto;
         }
 
         .menu-btn {
-            width: 46px; height: 46px; border-radius: 50%;
-            background: rgba(30, 30, 30, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
+            width: 50px; height: 48px; 
+            border-top-left-radius: 12px; border-bottom-left-radius: 12px;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(8px);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -4px 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            cursor: pointer;
         }
         .menu-btn:active { transform: scale(0.95); }
-        .menu-btn.active { background: white; color: black; transform: scale(1.1); }
-        .menu-btn.action-green { background: #22c55e; border-color: #22c55e; }
+        .menu-btn.active { 
+            background: white; color: black; width: 55px;
+            box-shadow: -4px 0 15px rgba(255,255,255,0.2);
+        }
+        .menu-btn.action-green { 
+            background: #22c55e; color: white; border: none;
+            margin-top: 10px;
+        }
 
-        /* Gavetas (Drawers) - MODIFICADO: Centralizadas e Menores */
+        /* Drawers (Gavetas - Esquerda) */
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 15;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
         .drawer-panel {
-            position: fixed; 
-            left: 50%; 
-            top: 50%;
-            transform: translate(-50%, -50%) scale(0.9); /* Centralizado */
-            width: 90%; 
-            max-width: 320px; /* Largura fixa compacta */
-            max-height: 50vh; /* Máximo 50% da altura da tela */
-            background: rgba(15, 15, 15, 0.95);
+            position: fixed; left: 20px; top: 50%;
+            transform: translateY(-50%) translateX(-120%); /* Começa fora na esquerda */
+            width: 85%; max-width: 300px;
+            max-height: 70vh; /* Menor altura */
+            background: rgba(18, 18, 18, 0.95);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 24px;
-            padding: 20px;
-            z-index: 100; /* Acima de tudo */
-            opacity: 0; 
-            pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto; /* Barra de rolagem */
-            color: white;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 16px;
+            z-index: 100;
+            opacity: 0; pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            overflow-y: auto; color: white;
+            box-shadow: 10px 20px 40px rgba(0,0,0,0.5);
         }
-        
         .drawer-panel.open { 
-            opacity: 1; 
-            pointer-events: auto; 
-            transform: translate(-50%, -50%) scale(1); 
+            opacity: 1; pointer-events: auto; 
+            transform: translateY(-50%) translateX(0); 
         }
 
-        /* Custom Scrollbar for Drawer */
-        .drawer-panel::-webkit-scrollbar { width: 4px; }
-        .drawer-panel::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
-        .drawer-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+        /* Close Button inside Drawer */
+        .close-drawer {
+            position: absolute; top: 12px; right: 12px;
+            padding: 4px; border-radius: 50%;
+            color: #888; cursor: pointer;
+        }
+        .close-drawer:hover { background: rgba(255,255,255,0.1); color: white; }
 
         /* Custom Inputs */
         .dark-input {
             width: 100%; background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.1); color: white;
-            padding: 10px; border-radius: 8px; outline: none; font-size: 13px;
+            padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px;
         }
         .dark-input:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
         
         /* Range Sliders */
         input[type="range"] {
             width: 100%; height: 4px; background: rgba(255,255,255,0.2);
-            border-radius: 2px; outline: none; -webkit-appearance: none;
+            border-radius: 2px; outline: none; -webkit-appearance: none; margin: 10px 0;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 16px; height: 16px;
+            -webkit-appearance: none; width: 18px; height: 18px;
             background: white; border-radius: 50%; cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
         /* Filter Grid */
@@ -127,30 +128,28 @@
             aspect-ratio: 1; border-radius: 8px; overflow: hidden; position: relative;
             cursor: pointer; border: 2px solid transparent;
         }
-        .filter-item.selected { border-color: white; }
-        .filter-item img { width: 100%; height: 100%; object-fit: cover; }
+        .filter-item.selected { border-color: white; box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
         .filter-name {
             position: absolute; bottom: 0; left: 0; right: 0;
             background: rgba(0,0,0,0.6); color: white; font-size: 9px;
             text-align: center; padding: 2px;
         }
 
-        .label-xs { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 6px; display: block; margin-top: 12px; }
+        .label-xs { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 4px; display: block; margin-top: 10px; }
         .row { display: flex; gap: 8px; align-items: center; }
         
+        /* Helpers */
         .gesture-hint {
-            position: fixed; bottom: 30px; left: 0; width: 100%;
-            text-align: center; color: rgba(255,255,255,0.4); font-size: 11px;
-            pointer-events: none; z-index: 10;
+            position: fixed; bottom: 20px; left: 0; width: 100%;
+            text-align: center; color: rgba(255,255,255,0.3); font-size: 10px;
+            pointer-events: none; z-index: 5;
         }
         
-        /* Preview Overlay Hint */
-        #preview-hint {
-            position: fixed; top: 20px; left: 0; width: 100%; text-align: center;
-            color: white; background: rgba(0,0,0,0.5); padding: 5px;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 60;
-        }
-        body.preview-active #preview-hint { opacity: 1; }
+        /* Botões de Seleção */
+        .btn-select { flex: 1; padding: 6px; font-size: 11px; border-radius: 6px; transition: all 0.2s; text-align: center; cursor: pointer; }
+        .btn-select.active { background: white; color: black; font-weight: bold; }
+        .btn-select.inactive { background: rgba(255,255,255,0.05); color: #aaa; hover:bg-white/10; }
+
     </style>
 </head>
 <body>
@@ -162,12 +161,12 @@
                 <i data-lucide="camera" class="w-10 h-10 text-black"></i>
             </div>
             <h1 class="text-3xl font-bold text-white mb-2">Studio Stories</h1>
-            <p class="text-gray-400 mb-8 text-sm">V6 • Filtros & Ajustes Finos</p>
+            <p class="text-gray-400 mb-8 text-sm">V7 • Profissional</p>
             
             <label class="block w-full">
                 <div class="w-full bg-white text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition">
                     <i data-lucide="image-plus" class="w-5 h-5"></i>
-                    Começar
+                    Carregar Foto
                 </div>
                 <input type="file" id="startInput" accept="image/*" class="hidden">
             </label>
@@ -178,45 +177,49 @@
     <div id="canvas-container">
         <canvas id="storyCanvas" width="1080" height="1920"></canvas>
     </div>
-    
-    <div id="preview-hint">Toque na tela para editar</div>
 
-    <!-- CAMADA UI (Escondida no Preview) -->
+    <!-- OVERLAY CLICK TO CLOSE -->
+    <div id="drawer-overlay" class="drawer-overlay" onclick="closeAllDrawers()"></div>
+
+    <!-- CAMADA UI -->
     <div id="ui-layer">
-        <div class="gesture-hint">✌️ Arraste o fundo • Pinça Zoom</div>
+        <div class="gesture-hint">Toque e arraste para mover Fundo ou Logo • Pinça para Zoom</div>
 
-        <!-- MENU LATERAL -->
+        <!-- MENU LATERAL (Direita) -->
         <div class="floating-menu">
             <button onclick="togglePreview()" class="menu-btn" title="Visualizar">
-                <i data-lucide="eye"></i>
+                <i data-lucide="eye" class="w-5 h-5"></i>
             </button>
-            <div class="h-[1px] bg-white/10 w-full my-1"></div>
+            <div class="h-[1px] bg-white/10 w-full my-1 mx-auto w-[30px]"></div>
             
             <button onclick="toggleDrawer('bg')" class="menu-btn" id="btn-bg">
-                <i data-lucide="image"></i>
+                <i data-lucide="image" class="w-5 h-5"></i>
             </button>
             <button onclick="toggleDrawer('filters')" class="menu-btn" id="btn-filters">
-                <i data-lucide="wand-2"></i> <!-- Ícone Filtros -->
+                <i data-lucide="wand-2" class="w-5 h-5"></i>
             </button>
             <button onclick="toggleDrawer('text')" class="menu-btn" id="btn-text">
-                <i data-lucide="type"></i>
+                <i data-lucide="type" class="w-5 h-5"></i>
             </button>
             <button onclick="toggleDrawer('logo')" class="menu-btn" id="btn-logo">
-                <i data-lucide="store"></i>
+                <i data-lucide="store" class="w-5 h-5"></i>
             </button>
             
-            <div class="h-[1px] bg-white/10 w-full my-1"></div>
+            <div class="h-[1px] bg-white/10 w-full my-1 mx-auto w-[30px]"></div>
             <button onclick="downloadStory()" class="menu-btn action-green">
-                <i data-lucide="download"></i>
+                <i data-lucide="download" class="w-5 h-5"></i>
             </button>
         </div>
 
         <!-- DRAWER 1: FUNDO -->
         <div id="drawer-bg" class="drawer-panel">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2 text-white"><i data-lucide="image" class="w-4 h-4"></i> Fundo</h3>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-base flex items-center gap-2 text-white"><i data-lucide="image" class="w-4 h-4"></i> Fundo</h3>
+                <i data-lucide="x" class="close-drawer w-5 h-5" onclick="closeAllDrawers()"></i>
+            </div>
             
             <label class="label-xs">Trocar Imagem</label>
-            <label class="block w-full bg-white/10 p-3 rounded-lg text-center text-xs mb-4 cursor-pointer border border-white/20 hover:bg-white/20 transition">
+            <label class="block w-full bg-white/5 p-3 rounded-lg text-center text-xs mb-4 cursor-pointer border border-white/10 hover:bg-white/10 transition">
                 Selecionar Nova Foto
                 <input type="file" id="bgInputDrawer" accept="image/*" class="hidden">
             </label>
@@ -229,25 +232,34 @@
             </div>
         </div>
 
-        <!-- DRAWER 2: FILTROS (NOVO) -->
+        <!-- DRAWER 2: FILTROS -->
         <div id="drawer-filters" class="drawer-panel">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2 text-white"><i data-lucide="wand-2" class="w-4 h-4"></i> Filtros</h3>
-            
-            <div class="filter-grid" id="filterList">
-                <!-- Gerado via JS -->
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-base flex items-center gap-2 text-white"><i data-lucide="wand-2" class="w-4 h-4"></i> Filtros</h3>
+                <i data-lucide="x" class="close-drawer w-5 h-5" onclick="closeAllDrawers()"></i>
             </div>
             
+            <div class="filter-grid" id="filterList"></div>
+            
             <div class="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
-                <p class="text-[10px] text-gray-400">Dica: O filtro "Vinheta" escurece as bordas para destacar o produto no centro.</p>
+                <p class="text-[10px] text-gray-400">A vinheta ajuda a destacar o texto central escurecendo as bordas.</p>
             </div>
         </div>
 
-        <!-- DRAWER 3: TEXTO (ATUALIZADO) -->
+        <!-- DRAWER 3: TEXTO -->
         <div id="drawer-text" class="drawer-panel">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2 text-white"><i data-lucide="type" class="w-4 h-4"></i> Texto</h3>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-base flex items-center gap-2 text-white"><i data-lucide="type" class="w-4 h-4"></i> Texto</h3>
+                <i data-lucide="x" class="close-drawer w-5 h-5" onclick="closeAllDrawers()"></i>
+            </div>
+
+            <!-- Inverter Cores -->
+            <button onclick="toggleInvert()" id="btnInvert" class="w-full py-2 mb-4 rounded-lg bg-white text-black font-bold text-xs flex items-center justify-center gap-2">
+                <i data-lucide="sun-moon" class="w-4 h-4"></i> Inverter Cores (Preto/Branco)
+            </button>
 
             <!-- Conteúdo -->
-            <label class="label-xs mt-0">Conteúdo</label>
+            <label class="label-xs">Conteúdo</label>
             <input type="text" id="inpName" class="dark-input mb-2" placeholder="Nome do Produto">
             <div class="row mb-4">
                 <div class="w-2/3"><input type="text" id="inpPrice" class="dark-input font-bold" placeholder="0,00"></div>
@@ -257,10 +269,10 @@
             <!-- Tipografia -->
             <div class="border-t border-white/10 pt-2">
                 <label class="label-xs">Fonte</label>
-                <div class="flex bg-white/10 p-1 rounded-lg mb-4">
-                    <button onclick="setFont('Inter')" class="flex-1 py-1 text-[10px] rounded hover:bg-white/10" id="font-Inter">Modern</button>
-                    <button onclick="setFont('Playfair Display')" class="flex-1 py-1 text-[10px] rounded hover:bg-white/10" id="font-Playfair">Elegant</button>
-                    <button onclick="setFont('Oswald')" class="flex-1 py-1 text-[10px] rounded hover:bg-white/10" id="font-Oswald">Bold</button>
+                <div class="flex bg-white/5 p-1 rounded-lg mb-4">
+                    <div onclick="setFont('Inter')" class="btn-select" id="font-Inter">Modern</div>
+                    <div onclick="setFont('Playfair Display')" class="btn-select" id="font-Playfair">Elegant</div>
+                    <div onclick="setFont('Oswald')" class="btn-select" id="font-Oswald">Bold</div>
                 </div>
 
                 <label class="label-xs">Tamanho Título</label>
@@ -272,7 +284,7 @@
 
             <!-- Box Config -->
             <div class="border-t border-white/10 pt-2">
-                <label class="label-xs">Glass Box (Tamanho)</label>
+                <label class="label-xs">Glass Box</label>
                 <div class="row mb-2">
                     <span class="text-[10px] w-8">Larg.</span>
                     <input type="range" id="rangeBoxW" min="400" max="1000" step="10">
@@ -281,59 +293,42 @@
                     <span class="text-[10px] w-8">Alt.</span>
                     <input type="range" id="rangeBoxH" min="200" max="800" step="10">
                 </div>
-            </div>
 
-            <!-- Posição -->
-            <div class="border-t border-white/10 pt-2">
                 <label class="label-xs">Posição Vertical</label>
-                <div class="flex bg-white/10 p-1 rounded-lg mb-2">
-                    <button onclick="setBoxPos('top')" class="flex-1 py-1 text-xs rounded hover:bg-white/10" id="pos-top">Topo</button>
-                    <button onclick="setBoxPos('bottom')" class="flex-1 py-1 text-xs rounded bg-white text-black font-bold" id="pos-bottom">Base</button>
-                </div>
-                
-                <label class="label-xs">Mover Texto (Ajuste Fino)</label>
-                <!-- D-Pad -->
-                <div class="grid grid-cols-3 gap-1 w-[120px] mx-auto mt-2">
-                    <div></div>
-                    <button onclick="moveText(0,-10)" class="bg-white/10 p-1 rounded hover:bg-white/20 flex justify-center"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
-                    <div></div>
-                    <button onclick="moveText(-10,0)" class="bg-white/10 p-1 rounded hover:bg-white/20 flex justify-center"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                    <button onclick="moveText(0,10)" class="bg-white/10 p-1 rounded hover:bg-white/20 flex justify-center"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
-                    <button onclick="moveText(10,0)" class="bg-white/10 p-1 rounded hover:bg-white/20 flex justify-center"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                <div class="flex bg-white/5 p-1 rounded-lg mb-2">
+                    <div onclick="setBoxPos('top')" class="btn-select" id="pos-top">Topo</div>
+                    <div onclick="setBoxPos('bottom')" class="btn-select" id="pos-bottom">Base</div>
                 </div>
             </div>
         </div>
 
-        <!-- DRAWER 4: LOGO (ATUALIZADO) -->
+        <!-- DRAWER 4: LOGO -->
         <div id="drawer-logo" class="drawer-panel">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2 text-white"><i data-lucide="store" class="w-4 h-4"></i> Logo</h3>
-            <label class="block w-full bg-white/10 p-3 rounded-lg text-center text-xs mb-4 cursor-pointer border border-white/20">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-base flex items-center gap-2 text-white"><i data-lucide="store" class="w-4 h-4"></i> Logo</h3>
+                <i data-lucide="x" class="close-drawer w-5 h-5" onclick="closeAllDrawers()"></i>
+            </div>
+            
+            <label class="block w-full bg-white/5 p-3 rounded-lg text-center text-xs mb-4 cursor-pointer border border-white/10 hover:bg-white/10 transition">
                 Carregar PNG
                 <input type="file" id="logoInput" accept="image/*" class="hidden">
             </label>
             
             <label class="label-xs">Formato</label>
-            <div class="flex gap-2 mb-4">
-                <button onclick="setLogoFormat('horizontal')" class="flex-1 p-2 text-xs bg-white text-black rounded font-bold">Horiz.</button>
-                <button onclick="setLogoFormat('square')" class="flex-1 p-2 text-xs bg-white/10 rounded">Quad.</button>
-            </div>
-
-            <!-- NOVA CONFIGURAÇÃO DE POSIÇÃO (IGUAL AO GLASS BOX) -->
-            <label class="label-xs">Posição Vertical</label>
-            <div class="flex bg-white/10 p-1 rounded-lg mb-4">
-                <button onclick="setLogoVert('top')" class="flex-1 py-1 text-xs rounded hover:bg-white/10" id="logo-v-top">Topo</button>
-                <button onclick="setLogoVert('bottom')" class="flex-1 py-1 text-xs rounded bg-white text-black font-bold" id="logo-v-bottom">Base</button>
-            </div>
-
-            <label class="label-xs">Alinhamento Horizontal</label>
-            <div class="flex bg-white/10 p-1 rounded-lg mb-4">
-                <button onclick="setLogoAlign('left')" class="flex-1 py-1 text-xs rounded hover:bg-white/10" id="logo-h-left">Esq</button>
-                <button onclick="setLogoAlign('center')" class="flex-1 py-1 text-xs rounded bg-white text-black font-bold" id="logo-h-center">Centro</button>
-                <button onclick="setLogoAlign('right')" class="flex-1 py-1 text-xs rounded hover:bg-white/10" id="logo-h-right">Dir</button>
+            <div class="flex bg-white/5 p-1 rounded-lg mb-4">
+                <div onclick="setLogoFormat('horizontal')" class="btn-select" id="fmt-horizontal">Horiz.</div>
+                <div onclick="setLogoFormat('square')" class="btn-select" id="fmt-square">Quad.</div>
             </div>
 
             <label class="label-xs">Tamanho</label>
-            <input type="range" oninput="adjustLogoScale(this.value)" min="0.5" max="2" step="0.1" value="1">
+            <input type="range" oninput="adjustLogoScale(this.value)" min="0.5" max="2.5" step="0.1" value="1" class="mb-4">
+
+            <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <p class="text-[10px] text-blue-200 flex gap-2">
+                    <i data-lucide="move" class="w-3 h-3 mt-0.5"></i> 
+                    Dica: Arraste a logo na tela para posicionar onde quiser.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -342,21 +337,19 @@
         const canvas = document.getElementById('storyCanvas');
         const ctx = canvas.getContext('2d');
         
-        // --- CONFIGURAÇÃO DE FILTROS ---
+        // --- FILTROS ---
         const FILTERS = [
             { id: 'normal', name: 'Normal', filter: 'none' },
-            { id: 'vignette', name: 'Vinheta', filter: 'none', overlay: 'vignette' }, // Vinheta especial
+            { id: 'vignette', name: 'Vinheta', filter: 'none', overlay: 'vignette' },
             { id: 'bw', name: 'P&B', filter: 'grayscale(100%)' },
             { id: 'sepia', name: 'Sépia', filter: 'sepia(80%)' },
             { id: 'vivid', name: 'Vívido', filter: 'saturate(150%) contrast(110%)' },
-            { id: 'cold', name: 'Frio', filter: 'hue-rotate(180deg) saturate(60%)' }, // Simulação simples
-            { id: 'warm', name: 'Quente', filter: 'sepia(30%) saturate(120%)' },
             { id: 'dark', name: 'Dark', filter: 'brightness(70%)' },
-            { id: 'contrast', name: 'Contraste', filter: 'contrast(140%)' },
-            { id: 'soft', name: 'Suave', filter: 'brightness(110%) saturate(80%) blur(0.5px)' },
+            { id: 'contrast', name: 'Contraste', filter: 'contrast(130%) brightness(110%)' },
+            { id: 'soft', name: 'Suave', filter: 'brightness(110%) saturate(80%)' },
         ];
 
-        // --- ESTADO INICIAL ---
+        // --- ESTADO ---
         let state = {
             bgImg: null,
             logoImg: null,
@@ -365,17 +358,15 @@
             name: 'Nome do Produto',
             price: '99,90',
             unit: 'un',
-            
             boxW: 800,
-            boxH: 350,
-            boxPos: 'bottom',
-            
-            textOffX: 0, textOffY: 0,
+            boxH: 300,
+            boxPos: 'bottom', // 'top' ou 'bottom'
+            isDarkMode: false, // Inverter cores
             
             // Tipografia
             fontFamily: 'Inter',
-            titleSize: 45,
-            priceSize: 130,
+            titleSize: 50,
+            priceSize: 140,
 
             // Fundo
             bgScale: 1, bgX: 0, bgY: 0,
@@ -384,34 +375,36 @@
             // Logo
             logoFormat: 'horizontal', 
             logoScale: 1,
-            // Novos estados de posição da logo
-            logoVert: 'top', 
-            logoAlign: 'center' 
+            // Logo Manual Drag
+            logoX: null, logoY: null, // Posição absoluta se arrastado
         };
 
         // --- INICIALIZAÇÃO ---
         const welcomeScreen = document.getElementById('welcome-screen');
-        const phBg = new Image(); phBg.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1080&auto=format&fit=crop';
-        const phLogo = new Image(); phLogo.src = 'https://placehold.co/400x200/ffffff/000000?text=LOGO';
+        
+        // Imagens Iniciais (CORS Anonymous para permitir download)
+        const phBg = new Image(); 
+        phBg.crossOrigin = "anonymous";
+        phBg.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1080&auto=format&fit=crop';
+        
+        const phLogo = new Image(); 
+        phLogo.crossOrigin = "anonymous";
+        phLogo.src = 'https://placehold.co/400x200/ffffff/000000.png?text=LOGO';
         
         phBg.onload = () => { if(!state.bgImg) { state.bgImg = phBg; draw(); }};
-        phLogo.onload = () => { if(!state.logoImg) { state.logoImg = phLogo; draw(); }};
+        phLogo.onload = () => { if(!state.logoImg) { state.logoImg = phLogo; resetLogoPos(); draw(); }};
 
-        // Gerar Grid de Filtros
+        // Grid Filtros
         const filterListEl = document.getElementById('filterList');
         FILTERS.forEach(f => {
             const div = document.createElement('div');
             div.className = `filter-item ${f.id === 'normal' ? 'selected' : ''}`;
             div.onclick = () => setFilter(f.id);
-            // Thumb preview (usamos cor sólida ou thumb se tivesse)
-            div.innerHTML = `
-                <div style="width:100%; height:100%; background: #333; filter: ${f.filter}"></div>
-                <div class="filter-name">${f.name}</div>
-            `;
+            div.innerHTML = `<div style="width:100%;height:100%;background:#333;filter:${f.filter}"></div><div class="filter-name">${f.name}</div>`;
             filterListEl.appendChild(div);
         });
 
-        // Sync Inputs com Estado Inicial
+        // Sync Inputs
         document.getElementById('inpName').value = state.name;
         document.getElementById('inpPrice').value = state.price;
         document.getElementById('inpUnit').value = state.unit;
@@ -419,13 +412,11 @@
         document.getElementById('rangePriceSize').value = state.priceSize;
         document.getElementById('rangeBoxW').value = state.boxW;
         document.getElementById('rangeBoxH').value = state.boxH;
-        updateFontButtons();
-        // Sync Logo buttons
-        updateLogoButtons();
+        updateUIClasses();
 
-        // --- FUNÇÕES DE INTERAÇÃO ---
+        // --- FUNÇÕES ---
 
-        // Uploads
+        // Upload
         const handleUpload = (file, key) => {
             if(!file) return;
             const r = new FileReader();
@@ -434,6 +425,7 @@
                 img.onload = () => {
                     state[key] = img;
                     if(key === 'bgImg') { state.bgX = 0; state.bgY = 0; state.bgScale = 1; document.getElementById('bgScale').value=1; }
+                    if(key === 'logoImg') { resetLogoPos(); }
                     draw();
                 };
                 img.src = e.target.result;
@@ -449,141 +441,182 @@
         document.getElementById('bgInputDrawer').addEventListener('change', e => handleUpload(e.target.files[0], 'bgImg'));
         document.getElementById('logoInput').addEventListener('change', e => handleUpload(e.target.files[0], 'logoImg'));
 
-        // Preview Mode
+        // Preview
         window.togglePreview = () => {
             document.body.classList.toggle('preview-active');
-            if(document.body.classList.contains('preview-active')) {
-                toggleDrawer(null); // Fecha tudo
-            }
+            if(document.body.classList.contains('preview-active')) closeAllDrawers();
         };
-        // Sair do preview ao clicar no canvas
-        document.getElementById('canvas-container').addEventListener('click', () => {
+        document.getElementById('canvas-container').addEventListener('click', (e) => {
             if(document.body.classList.contains('preview-active')) {
                 document.body.classList.remove('preview-active');
+            } else {
+                // Se clicar fora (no container preto e nao no canvas), fecha drawers
+                if(e.target.id === 'canvas-container') closeAllDrawers();
             }
         });
 
-        // Filtros
+        // Setters
         window.setFilter = (id) => {
             state.currentFilterId = id;
             document.querySelectorAll('.filter-item').forEach(el => el.classList.remove('selected'));
             event.currentTarget.classList.add('selected');
             draw();
         };
-
-        // Texto & Box Inputs
+        
+        // Text Inputs
         document.getElementById('inpName').addEventListener('input', e => { state.name = e.target.value; draw(); });
         document.getElementById('inpPrice').addEventListener('input', e => { state.price = e.target.value; draw(); });
         document.getElementById('inpUnit').addEventListener('input', e => { state.unit = e.target.value; draw(); });
         
         document.getElementById('rangeTitleSize').addEventListener('input', e => { state.titleSize = parseInt(e.target.value); draw(); });
         document.getElementById('rangePriceSize').addEventListener('input', e => { state.priceSize = parseInt(e.target.value); draw(); });
-        
         document.getElementById('rangeBoxW').addEventListener('input', e => { state.boxW = parseInt(e.target.value); draw(); });
         document.getElementById('rangeBoxH').addEventListener('input', e => { state.boxH = parseInt(e.target.value); draw(); });
 
-        window.setFont = (font) => {
-            state.fontFamily = font;
-            updateFontButtons();
-            draw();
-        };
+        window.setFont = (font) => { state.fontFamily = font; updateUIClasses(); draw(); };
+        window.setBoxPos = (pos) => { state.boxPos = pos; updateUIClasses(); draw(); };
+        window.toggleInvert = () => { state.isDarkMode = !state.isDarkMode; updateUIClasses(); draw(); };
 
-        function updateFontButtons() {
-            ['Inter', 'Playfair Display', 'Oswald'].forEach(f => {
-                const btn = document.getElementById(`font-${f.split(' ')[0]}`);
-                if (state.fontFamily.includes(f.split(' ')[0])) {
-                    btn.classList.add('bg-white', 'text-black', 'font-bold');
-                    btn.classList.remove('hover:bg-white/10');
-                } else {
-                    btn.classList.remove('bg-white', 'text-black', 'font-bold');
-                    btn.classList.add('hover:bg-white/10');
-                }
-            });
-        }
-
-        window.setBoxPos = (pos) => {
-            state.boxPos = pos;
-            document.getElementById('pos-top').className = pos === 'top' ? "flex-1 py-1 text-xs rounded bg-white text-black font-bold" : "flex-1 py-1 text-xs rounded hover:bg-white/10";
-            document.getElementById('pos-bottom').className = pos === 'bottom' ? "flex-1 py-1 text-xs rounded bg-white text-black font-bold" : "flex-1 py-1 text-xs rounded hover:bg-white/10";
-            draw();
-        }
-
-        window.moveText = (x, y) => { state.textOffX += x; state.textOffY += y; draw(); }
-
-        // Fundo Scale
-        document.getElementById('bgScale').addEventListener('input', e => { state.bgScale = parseFloat(e.target.value); draw(); });
-
-        // Logo Functions
-        window.setLogoFormat = f => { state.logoFormat = f; draw(); };
+        // Logo
+        window.setLogoFormat = f => { state.logoFormat = f; updateUIClasses(); draw(); };
         window.adjustLogoScale = v => { state.logoScale = v; draw(); };
         
-        // Novas Funções de Posição da Logo
-        window.setLogoVert = (v) => { state.logoVert = v; updateLogoButtons(); draw(); };
-        window.setLogoAlign = (a) => { state.logoAlign = a; updateLogoButtons(); draw(); };
+        function resetLogoPos() { state.logoX = null; state.logoY = null; }
 
-        function updateLogoButtons() {
-            // Update Vert
-            document.getElementById('logo-v-top').className = state.logoVert === 'top' ? "flex-1 py-1 text-xs rounded bg-white text-black font-bold" : "flex-1 py-1 text-xs rounded hover:bg-white/10";
-            document.getElementById('logo-v-bottom').className = state.logoVert === 'bottom' ? "flex-1 py-1 text-xs rounded bg-white text-black font-bold" : "flex-1 py-1 text-xs rounded hover:bg-white/10";
-            
-            // Update Horiz
-            const aligns = ['left', 'center', 'right'];
-            const labels = {'left': 'Esq', 'center': 'Centro', 'right': 'Dir'};
-            aligns.forEach(a => {
-                document.getElementById(`logo-h-${a}`).className = state.logoAlign === a ? "flex-1 py-1 text-xs rounded bg-white text-black font-bold" : "flex-1 py-1 text-xs rounded hover:bg-white/10";
+        function updateUIClasses() {
+            // Fontes
+            ['Inter', 'Playfair Display', 'Oswald'].forEach(f => {
+                const el = document.getElementById(`font-${f.split(' ')[0]}`);
+                if(state.fontFamily.includes(f.split(' ')[0])) { el.classList.add('active'); el.classList.remove('inactive'); }
+                else { el.classList.remove('active'); el.classList.add('inactive'); }
             });
+            // Box Pos
+            document.getElementById('pos-top').className = state.boxPos === 'top' ? 'btn-select active' : 'btn-select inactive';
+            document.getElementById('pos-bottom').className = state.boxPos === 'bottom' ? 'btn-select active' : 'btn-select inactive';
+            // Logo Format
+            document.getElementById('fmt-horizontal').className = state.logoFormat === 'horizontal' ? 'btn-select active' : 'btn-select inactive';
+            document.getElementById('fmt-square').className = state.logoFormat === 'square' ? 'btn-select active' : 'btn-select inactive';
+            // Invert Button
+            const btnInv = document.getElementById('btnInvert');
+            if(state.isDarkMode) { btnInv.style.background = "#333"; btnInv.style.color = "white"; }
+            else { btnInv.style.background = "white"; btnInv.style.color = "black"; }
         }
 
-        // UI Drawer Toggle
+        // Drawers Logic
         let currentDrawer = null;
         window.toggleDrawer = (id) => {
             document.querySelectorAll('.drawer-panel').forEach(d => d.classList.remove('open'));
             document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('drawer-overlay').classList.remove('open');
+
             if(id && currentDrawer !== id) {
                 document.getElementById(`drawer-${id}`).classList.add('open');
                 document.getElementById(`btn-${id}`).classList.add('active');
+                document.getElementById('drawer-overlay').classList.add('open');
                 currentDrawer = id;
             } else {
                 currentDrawer = null;
             }
         };
+        window.closeAllDrawers = () => toggleDrawer(null);
 
-        // --- GESTOS (FUNDO) ---
-        let isDragging = false, startX, startY, initBgX, initBgY;
-        const container = document.getElementById('canvas-container');
+        // Scale
+        document.getElementById('bgScale').addEventListener('input', e => { state.bgScale = parseFloat(e.target.value); draw(); });
 
-        const onStart = (x, y) => {
-            if(document.body.classList.contains('preview-active')) return;
-            isDragging = true; startX = x; startY = y; initBgX = state.bgX; initBgY = state.bgY;
+
+        // --- DRAG & DROP SYSTEM (Background vs Logo) ---
+        let isDragging = false, dragTarget = null;
+        let startX, startY, initX, initY; // Para BG
+        let initLogoX, initLogoY; // Para Logo
+
+        const getCanvasCoords = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
         };
-        const onMove = (x, y) => {
+
+        const onStart = (e) => {
+            if(document.body.classList.contains('preview-active')) return;
+            
+            const coords = getCanvasCoords(e);
+            
+            // 1. Checar se tocou na logo (Hit Test)
+            if(state.logoImg) {
+                // Calcular retangulo atual da logo
+                let lw = state.logoFormat==='horizontal'?400:300, lh = state.logoFormat==='horizontal'?200:300;
+                lw *= state.logoScale; lh *= state.logoScale;
+                
+                // Posicao atual (manual ou automatica)
+                let lx, ly;
+                if(state.logoX !== null) { lx = state.logoX; ly = state.logoY; }
+                else { lx = (1080 - lw)/2; ly = 100; } // Padrão simples se nao moveu
+
+                // Margem de erro para toque
+                if(coords.x >= lx && coords.x <= lx + lw && coords.y >= ly && coords.y <= ly + lh) {
+                    isDragging = true;
+                    dragTarget = 'logo';
+                    startX = coords.x; startY = coords.y;
+                    initLogoX = lx; initLogoY = ly;
+                    return; // Sai, pois pegou a logo
+                }
+            }
+
+            // 2. Se não pegou logo, move fundo
+            isDragging = true;
+            dragTarget = 'bg';
+            // Para fundo usamos clientX puro para delta, pois scale é diferente
+            startX = e.touches ? e.touches[0].clientX : e.clientX;
+            startY = e.touches ? e.touches[0].clientY : e.clientY;
+            initX = state.bgX; initY = state.bgY;
+        };
+
+        const onMove = (e) => {
             if(!isDragging) return;
-            const ratio = 1080 / window.innerWidth;
-            state.bgX = initBgX + (x - startX) * ratio;
-            state.bgY = initBgY + (y - startY) * ratio;
+            e.preventDefault();
+
+            if(dragTarget === 'logo') {
+                const coords = getCanvasCoords(e);
+                const dx = coords.x - startX;
+                const dy = coords.y - startY;
+                state.logoX = initLogoX + dx;
+                state.logoY = initLogoY + dy;
+            } 
+            else if (dragTarget === 'bg') {
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const ratio = 1080 / window.innerWidth; 
+                state.bgX = initX + (clientX - startX) * ratio;
+                state.bgY = initY + (clientY - startY) * ratio;
+            }
             draw();
         };
-        const onEnd = () => { isDragging = false; };
 
-        container.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
-        window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+        const onEnd = () => { isDragging = false; dragTarget = null; };
+
+        container.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
         window.addEventListener('mouseup', onEnd);
-        container.addEventListener('touchstart', e => { if(e.touches.length === 1) onStart(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
-        container.addEventListener('touchmove', e => { if(isDragging) { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); }}, {passive: false});
+        container.addEventListener('touchstart', onStart, {passive: false});
+        container.addEventListener('touchmove', onMove, {passive: false});
         container.addEventListener('touchend', onEnd);
 
 
-        // --- DRAW LOOP ---
+        // --- RENDERIZAÇÃO ---
         function draw() {
             ctx.clearRect(0, 0, 1080, 1920);
             ctx.fillStyle = '#000'; ctx.fillRect(0,0,1080,1920);
 
-            // 1. FUNDO & FILTROS
+            // 1. FUNDO
             if(state.bgImg) {
                 const img = state.bgImg;
                 const filterConfig = FILTERS.find(f => f.id === state.currentFilterId) || FILTERS[0];
 
-                // Renderizar Imagem
                 const imgR = img.width/img.height;
                 const cvR = 1080/1920;
                 let dw, dh;
@@ -591,49 +624,54 @@
                 const cx = (1080-dw)/2, cy = (1920-dh)/2;
 
                 ctx.save();
-                // Aplica filtro CSS
                 ctx.filter = filterConfig.filter;
-                
-                // Zoom & Pan
                 ctx.translate(540, 960); ctx.scale(state.bgScale, state.bgScale); ctx.translate(-540, -960);
                 ctx.translate(state.bgX, state.bgY);
-                
                 ctx.drawImage(img, cx, cy, dw, dh);
                 ctx.restore();
 
-                // Overlay Vinheta (Desenhado manualmente se selecionado)
                 if(filterConfig.overlay === 'vignette') {
                     const grad = ctx.createRadialGradient(540, 960, 300, 540, 960, 1200);
-                    grad.addColorStop(0, 'transparent');
-                    grad.addColorStop(1, 'rgba(0,0,0,0.85)');
-                    ctx.fillStyle = grad;
-                    ctx.fillRect(0,0,1080,1920);
+                    grad.addColorStop(0, 'transparent'); grad.addColorStop(1, 'rgba(0,0,0,0.85)');
+                    ctx.fillStyle = grad; ctx.fillRect(0,0,1080,1920);
                 }
             }
 
-            // 2. GLASS BOX
-            const bx = (1080 - state.boxW) / 2; // Centralizado X
+            // 2. GLASS BOX (Auto Vertical Center)
+            const bx = (1080 - state.boxW) / 2;
             const by = state.boxPos === 'top' ? 100 : 1920 - state.boxH - 120;
             
+            // Cores baseadas no modo
+            const boxColor = state.isDarkMode ? "rgba(0, 0, 0, 0.85)" : "rgba(255, 255, 255, 0.85)";
+            const boxBorder = state.isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.4)";
+            const textColor = state.isDarkMode ? "#ffffff" : "#1e293b";
+            const subTextColor = state.isDarkMode ? "#ccc" : "#555";
+
             ctx.save();
             ctx.shadowColor = "rgba(0,0,0,0.25)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 10;
-            ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+            ctx.fillStyle = boxColor;
             ctx.beginPath(); ctx.roundRect(bx, by, state.boxW, state.boxH, 30); ctx.fill();
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)"; ctx.lineWidth = 1; ctx.stroke();
+            ctx.strokeStyle = boxBorder; ctx.lineWidth = 1; ctx.stroke();
             ctx.restore();
 
-            // 3. TEXTO
-            ctx.fillStyle = "#1e293b"; ctx.textAlign = "left";
-            const sx = bx + 60 + state.textOffX;
-            const sy = by + 60 + state.textOffY;
+            // 3. TEXTO (Calculo para Centralizar Verticalmente)
+            // Altura aproximada do bloco de texto = TitleSize + Gap(20) + PriceSize
+            // Vamos centralizar esse bloco dentro do state.boxH
+            const contentH = state.titleSize + 20 + state.priceSize;
+            const startY = by + (state.boxH - contentH) / 2 + state.titleSize; // +titleSize porque fillText desenha da base para cima
+            
+            // Padding esquerdo fixo de 60px
+            const sx = bx + 60;
+
+            ctx.fillStyle = textColor; ctx.textAlign = "left";
 
             // Titulo
             let tW = '600'; if(state.fontFamily==='Oswald') tW='700';
             ctx.font = `${tW} ${state.titleSize}px '${state.fontFamily}'`;
-            ctx.fillText(state.name, sx, sy + state.titleSize);
+            ctx.fillText(state.name, sx, startY);
 
             // Preço
-            const py = sy + state.titleSize + 20 + state.priceSize;
+            const py = startY + 20 + state.priceSize;
             let pW = '800'; if(state.fontFamily==='Playfair Display') pW='700';
             
             const currSize = state.priceSize * 0.4;
@@ -647,25 +685,26 @@
             if(state.unit) {
                 const pw = ctx.measureText(state.price).width;
                 ctx.font = `400 ${currSize * 0.7}px '${state.fontFamily}'`;
-                ctx.fillStyle = "#555";
+                ctx.fillStyle = subTextColor;
                 ctx.fillText(`/${state.unit}`, sx + cw + 10 + pw + 10, py);
             }
 
-            // 4. LOGO (ATUALIZADO LÓGICA)
+            // 4. LOGO
             if(state.logoImg) {
                 const limg = state.logoImg;
                 let lw = state.logoFormat==='horizontal'?400:300, lh = state.logoFormat==='horizontal'?200:300;
                 lw *= state.logoScale; lh *= state.logoScale;
                 
-                // Posição Vertical
-                let ly = state.logoVert === 'top' ? 100 : 1920 - lh - 100;
-
-                // Posição Horizontal
-                let lx = 60; // default left
-                if(state.logoAlign === 'center') lx = (1080 - lw) / 2;
-                if(state.logoAlign === 'right') lx = 1080 - lw - 60;
-
-                // Aspect Ratio Contain
+                let lx, ly;
+                if(state.logoX !== null) {
+                    // Posicao Manual (Arrastou)
+                    lx = state.logoX; ly = state.logoY;
+                } else {
+                    // Posicao Automatica padrao (Topo Centro)
+                    lx = (1080 - lw)/2; ly = 100;
+                }
+                
+                // Aspect Ratio
                 const lr = limg.width/limg.height, tr = lw/lh;
                 let fw, fh; if(lr>tr){fw=lw;fh=lw/lr;}else{fh=lh;fw=lh*lr;}
                 
@@ -678,8 +717,8 @@
 
         window.downloadStory = () => {
             const l = document.createElement('a');
-            l.download = `story_v6_${Date.now()}.jpg`;
-            l.href = canvas.toDataURL('image/jpeg', 0.92);
+            l.download = `story_v7_${Date.now()}.jpg`;
+            l.href = canvas.toDataURL('image/jpeg', 0.95);
             l.click();
         }
     </script>
