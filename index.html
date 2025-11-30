@@ -623,6 +623,53 @@
                 width: 100%; /* Botão full width em telas muito pequenas */
             }
         }
+
+        /* --- ESTILOS ABAS DE CADASTRO (NOVO) --- */
+        .tabs-cadastro {
+            display: flex;
+            background-color: #eee;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.ativo {
+            background-color: white;
+            color: var(--cor-primaria);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .area-resultado-busca {
+            background-color: #f0f9f0;
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .nome-encontrado {
+            display: block;
+            font-size: 18px;
+            color: #2e7d32;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -831,26 +878,54 @@
         </div>
     </div>
 
-    <!-- SEÇÃO 3: SORTEIO (Inicialmente Oculta) -->
+    <!-- SEÇÃO 3: SORTEIO (ALTERADA) -->
     <div id="pag-sorteio" class="secao-conteudo">
         <div class="card">
             <h2>🍀 Sorteio todo Domingo</h2>
             <p>Preencha para concorrer. Serão 5 ganhadores de Kits de Limpeza e Higiêne! Próximo Sorteio dia 30 do de Novembro.</p>
-            <form onsubmit="event.preventDefault(); enviarNovoCadastro();">
-                <label>Nome Completo: <span style="color:red">*</span></label>
-                <input type="text" id="novo-nome" placeholder="Seu nome" required>
+            
+            <!-- ABAS DE NAVEGAÇÃO DO CADASTRO -->
+            <div class="tabs-cadastro">
+                <button class="tab-btn ativo" id="tab-primeira" onclick="alternarAbaSorteio('primeira')">Primeira Vez</button>
+                <button class="tab-btn" id="tab-ja-tenho" onclick="alternarAbaSorteio('ja-tenho')">Já tenho cadastro</button>
+            </div>
+
+            <!-- FORMULÁRIO PRIMEIRA VEZ -->
+            <div id="conteudo-primeira-vez">
+                <form onsubmit="event.preventDefault(); enviarNovoCadastro();">
+                    <label>Nome Completo: <span style="color:red">*</span></label>
+                    <input type="text" id="novo-nome" placeholder="Seu nome" required>
+                    <label>Telefone (Whatsapp): <span style="color:red">*</span></label>
+                    <input type="tel" id="novo-telefone" placeholder="(65) 9..." required>
+                    <label>Cidade: <span style="color:red">*</span></label>
+                    <select id="novo-cidade" required>
+                        <option value="">Selecione...</option>
+                        <option value="Cuiabá">Cuiabá</option>
+                        <option value="Várzea Grande">Várzea Grande</option>
+                    </select>
+                    <label>Bairro: <span style="color:red">*</span></label>
+                    <input type="text" id="novo-bairro" placeholder="Seu bairro" required>
+                    <button type="submit" class="btn btn-whatsapp"><i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar</button>
+                </form>
+            </div>
+
+            <!-- FORMULÁRIO JÁ TENHO CADASTRO -->
+            <div id="conteudo-ja-tenho" style="display: none;">
                 <label>Telefone (Whatsapp): <span style="color:red">*</span></label>
-                <input type="tel" id="novo-telefone" placeholder="(65) 9..." required>
-                <label>Cidade: <span style="color:red">*</span></label>
-                <select id="novo-cidade" required>
-                    <option value="">Selecione...</option>
-                    <option value="Cuiabá">Cuiabá</option>
-                    <option value="Várzea Grande">Várzea Grande</option>
-                </select>
-                <label>Bairro: <span style="color:red">*</span></label>
-                <input type="text" id="novo-bairro" placeholder="Seu bairro" required>
-                <button type="submit" class="btn btn-whatsapp"><i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar</button>
-            </form>
+                <input type="tel" id="busca-telefone" placeholder="(65) 9..." required>
+                <button onclick="buscarCadastro()" class="btn" style="background-color: #555; margin-top: 5px;">
+                    <i class="fas fa-search" style="margin-right: 8px;"></i> Buscar
+                </button>
+
+                <!-- ÁREA DE RESULTADO (ESCONDIDA INICIALMENTE) -->
+                <div id="area-resultado-busca" class="area-resultado-busca" style="display: none;">
+                    <span class="nome-encontrado" id="nome-cliente-encontrado"></span>
+                    <button onclick="confirmarJaCadastrado()" class="btn btn-whatsapp">
+                        <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar
+                    </button>
+                </div>
+            </div>
+
         </div>
         
         <!-- BANNER INTERNO ORGANIZADO -->
@@ -941,6 +1016,9 @@
             <button class="btn-fechar-brinde" onclick="document.getElementById('modalBrinde').style.display='none'">EU QUERO!</button>
         </div>
     </div>
+
+    <!-- SCRIPT DE DADOS EXTERNO (Inserido antes do script principal) -->
+    <script src="clientes.js"></script>
 
     <script>
         const TELEFONE = "5565998150975";
@@ -1113,15 +1191,100 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
+        // --- LÓGICA DE SORTEIO (ALTERADA) ---
+        
+        // 1. Alternar Abas
+        function alternarAbaSorteio(aba) {
+            // Remove classe ativo dos botões
+            document.getElementById('tab-primeira').classList.remove('ativo');
+            document.getElementById('tab-ja-tenho').classList.remove('ativo');
+            
+            // Esconde conteúdos
+            document.getElementById('conteudo-primeira-vez').style.display = 'none';
+            document.getElementById('conteudo-ja-tenho').style.display = 'none';
+
+            // Ativa a aba selecionada
+            if (aba === 'primeira') {
+                document.getElementById('tab-primeira').classList.add('ativo');
+                document.getElementById('conteudo-primeira-vez').style.display = 'block';
+            } else {
+                document.getElementById('tab-ja-tenho').classList.add('ativo');
+                document.getElementById('conteudo-ja-tenho').style.display = 'block';
+            }
+        }
+
+        // 2. Enviar Novo Cadastro (Primeira Vez)
         function enviarNovoCadastro() {
             const nome = document.getElementById('novo-nome').value.trim();
             const tel = document.getElementById('novo-telefone').value.trim();
             const cid = document.getElementById('novo-cidade').value;
             const bai = document.getElementById('novo-bairro').value.trim();
             if (!nome || !tel || !cid || !bai) { alert("Preencha todos os campos!"); return; }
-            const msg = `CADASTRO SORTEIO:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cid}\nBairro: ${bai}`;
+            
+            // Adicionado texto obrigatório no final
+            const msg = `CADASTRO SORTEIO:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cid}\nBairro: ${bai}\n\nSorteio do Dia 7 de Dezembro`;
+            
             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
         }
+
+        // 3. Buscar Cadastro (Já Tenho) - ATUALIZADO
+        function buscarCadastro() {
+            // Pega o valor e remove tudo que não for número para comparar
+            const inputTel = document.getElementById('busca-telefone').value;
+            const telLimpo = inputTel.replace(/\D/g, ''); // Remove ( ) - e espaços
+
+            if (!telLimpo || telLimpo.length < 8) {
+                alert("Por favor, digite um telefone válido para buscar.");
+                return;
+            }
+
+            const btnBuscar = document.querySelector('#conteudo-ja-tenho button');
+            const textoOriginal = btnBuscar.innerHTML;
+            btnBuscar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+            btnBuscar.disabled = true;
+
+            // Busca no array de clientes (AGORA VEM DO ARQUIVO EXTERNO)
+            // Usamos 'includes' para ser flexível caso o cadastro tenha DDD e a pessoa digite sem, ou vice-versa
+            // Mas para ser preciso, idealmente comparamos o número exato. Vamos tentar encontrar correspondência.
+            
+            let clienteEncontrado = null;
+            if(typeof clientes !== 'undefined') {
+                 clienteEncontrado = clientes.find(c => {
+                    const cTelLimpo = c.telefone.replace(/\D/g, '');
+                    return cTelLimpo === telLimpo || cTelLimpo.endsWith(telLimpo) || telLimpo.endsWith(cTelLimpo);
+                });
+            } else {
+                console.error("Arquivo clientes.js não carregado ou variável não definida.");
+            }
+
+            setTimeout(() => {
+                btnBuscar.innerHTML = textoOriginal;
+                btnBuscar.disabled = false;
+
+                if (clienteEncontrado) {
+                    document.getElementById('area-resultado-busca').style.display = 'block';
+                    document.getElementById('nome-cliente-encontrado').innerText = clienteEncontrado.nome;
+                    // Salva o telefone encontrado no input para garantir que o envio use o dado correto
+                    document.getElementById('busca-telefone').setAttribute('data-nome-encontrado', clienteEncontrado.nome);
+                } else {
+                    document.getElementById('area-resultado-busca').style.display = 'none';
+                    alert("Ops! Não encontramos seu cadastro com este número. Verifique se digitou corretamente ou faça o cadastro na aba 'Primeira Vez'.");
+                }
+            }, 600); // Pequeno delay para UX
+        }
+
+        // 4. Confirmar Cadastro Existente - ATUALIZADO
+        function confirmarJaCadastrado() {
+            const inputTel = document.getElementById('busca-telefone').value;
+            const nomeEncontrado = document.getElementById('busca-telefone').getAttribute('data-nome-encontrado') || "Cliente";
+            
+            // Adicionado texto obrigatório no final
+            const msg = `JÁ SOU CADASTRADO:\nNome: ${nomeEncontrado}\nConfirmo minha participação com o telefone: ${inputTel}\n\nSorteio do Dia 7 de Dezembro`;
+            
+            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // ------------------------------------
 
         let currentImages = [];
         let currentIndex = 0;
