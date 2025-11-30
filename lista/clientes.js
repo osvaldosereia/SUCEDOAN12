@@ -12,7 +12,7 @@ const clientes = [
     "bairro": "Residencial Sao Carlos"
   },
   {
-    "nome": " Rosalina mara cristina de  lima silva",
+    "nome": "Rosalina mara cristina de  lima silva",
     "telefone": "65992910757",
     "cidade": "CUIABÁ",
     "bairro": "Praeiro"
