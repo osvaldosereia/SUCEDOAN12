@@ -30,7 +30,7 @@
                 <h1 class="text-2xl font-bold">Gerenciador de Clientes</h1>
                 <p class="text-blue-100 text-sm">Clique nos títulos da tabela para ordenar a lista.</p>
                 
-                <!-- NOVO: Área do Contador -->
+                <!-- Área do Contador -->
                 <div class="mt-2 bg-blue-700 bg-opacity-50 inline-block px-3 py-1 rounded-lg">
                     <p id="info-contagem" class="text-sm font-semibold text-white">
                         Carregando contagem...
@@ -38,6 +38,21 @@
                 </div>
             </div>
             <i data-lucide="users" class="w-8 h-8"></i>
+        </div>
+
+        <!-- Barra de Busca -->
+        <div class="bg-gray-50 p-4 border-b border-gray-200 flex items-center gap-3">
+            <div class="relative w-full max-w-md">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                </div>
+                <input type="text" 
+                       id="campoBusca" 
+                       oninput="renderizarTabela()" 
+                       class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5" 
+                       placeholder="Buscar por nome ou telefone...">
+            </div>
+            <span class="text-sm text-gray-500">Digite para filtrar automaticamente</span>
         </div>
 
         <!-- Área da Tabela -->
@@ -104,45 +119,55 @@
 
         // --- PARTE 2: RENDERIZAÇÃO (Mostrar na tela) ---
         function renderizarTabela() {
-            // Verifica se a lista foi carregada corretamente do arquivo clientes.js
+            // Verifica se a lista foi carregada corretamente
             if (typeof clientes === 'undefined') {
-                alert("Erro: O arquivo 'clientes.js' não foi encontrado ou não carregou corretamente. Verifique se ele está na mesma pasta que este arquivo.");
+                alert("Erro: O arquivo 'clientes.js' não foi encontrado.");
                 return;
             }
 
-            // --- NOVO: ATUALIZAÇÃO DOS CONTADORES ---
+            const tbody = document.getElementById('tabela-clientes');
+            tbody.innerHTML = ''; // Limpa a tabela
+
+            // Captura o texto da busca
+            const inputBusca = document.getElementById('campoBusca');
+            const termoBusca = inputBusca ? inputBusca.value.toLowerCase() : '';
+
+            // ATUALIZAÇÃO DOS CONTADORES
             const totalCadastros = clientes.length;
-            // Conta quantos têm a propriedade selecionado = true
             const totalSelecionados = clientes.filter(c => c.selecionado).length;
             
             const elementoContador = document.getElementById('info-contagem');
             if (elementoContador) {
                 elementoContador.innerHTML = `Total: <strong>${totalCadastros}</strong> | Selecionados: <strong>${totalSelecionados}</strong>`;
             }
-            // ----------------------------------------
 
-            const tbody = document.getElementById('tabela-clientes');
-            tbody.innerHTML = ''; // Limpa a tabela antes de renderizar
-
+            // Loop principal
             clientes.forEach((cliente, index) => {
+                
+                // Lógica de Filtro
+                if (termoBusca) {
+                    const nome = cliente.nome ? cliente.nome.toLowerCase() : '';
+                    const telefone = cliente.telefone ? cliente.telefone.toString() : '';
+                    
+                    if (!nome.includes(termoBusca) && !telefone.includes(termoBusca)) {
+                        return; 
+                    }
+                }
+
+                // Criação da linha
                 const tr = document.createElement('tr');
-                // Define a cor baseada no estado salvo no objeto (cliente.selecionado)
                 const isSelecionado = cliente.selecionado === true;
                 
                 tr.className = isSelecionado 
                     ? "bg-blue-100 transition" 
                     : "hover:bg-blue-50 transition";
 
-                // Formatando o telefone para o Link (apenas números)
                 const apenasNumeros = cliente.telefone ? cliente.telefone.replace(/\D/g, '') : '';
                 const linkZap = apenasNumeros ? `https://wa.me/55${apenasNumeros}` : '#';
-
-                // Tratamento para campos vazios
                 const cidade = cliente.cidade ? cliente.cidade : '-';
                 const bairro = cliente.bairro ? cliente.bairro : '-';
                 const telefoneVisual = cliente.telefone ? cliente.telefone : '-';
                 
-                // Texto e estilo do Status
                 const textoStatus = isSelecionado ? "Participando" : "Não participando";
                 const classeStatus = isSelecionado 
                     ? "bg-green-100 text-green-700 py-1 px-2 rounded text-xs font-semibold tag-status"
@@ -159,7 +184,6 @@
                     <td class="p-3 font-medium text-gray-900 capitalize">${cliente.nome.toLowerCase()}</td>
                     <td class="p-3 text-gray-500">${telefoneVisual}</td>
                     
-                    <!-- Botão do WhatsApp -->
                     <td class="p-3 text-center">
                         ${apenasNumeros ? `
                         <a href="${linkZap}" target="_blank" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 hover:bg-green-500 hover:text-white transition" title="Enviar WhatsApp">
@@ -176,78 +200,59 @@
                 tbody.appendChild(tr);
             });
 
-            lucide.createIcons(); // Atualiza ícones
-            atualizarCheckboxMestre(); // Atualiza o "selecionar todos" se necessário
+            lucide.createIcons(); 
+            atualizarCheckboxMestre(); 
         }
 
         // --- FUNÇÕES DE LÓGICA ---
 
-        // Atualiza o estado de um único cliente e re-renderiza para manter consistência
         function alternarStatusCliente(index) {
-            // Atualiza o dado REAL na memória
             clientes[index].selecionado = !clientes[index].selecionado;
-            // Redesenha para aplicar cores
             renderizarTabela(); 
         }
 
-        // Função de Ordenação
         function ordenar(criterio) {
-            // Se clicar na mesma coluna, inverte a ordem
             if (colunaAtual === criterio) {
                 ordemAscendente = !ordemAscendente;
             } else {
                 colunaAtual = criterio;
-                ordemAscendente = true; // Novo critério começa ascendente
+                ordemAscendente = true; 
             }
 
             clientes.sort((a, b) => {
                 let valorA, valorB;
-
                 if (criterio === 'status') {
-                    // Ordena por boolean (true/false)
                     valorA = a.selecionado ? 1 : 0;
                     valorB = b.selecionado ? 1 : 0;
                 } else {
-                    // Pega o valor ou string vazia se não existir
                     valorA = a[criterio] ? a[criterio].toString().toLowerCase() : '';
                     valorB = b[criterio] ? b[criterio].toString().toLowerCase() : '';
                 }
-
                 if (valorA < valorB) return ordemAscendente ? -1 : 1;
                 if (valorA > valorB) return ordemAscendente ? 1 : -1;
                 return 0;
             });
-
             renderizarTabela();
         }
 
-        // Função para selecionar/deselecionar todos (Via Checkbox do Cabeçalho)
         function alternarTodos() {
             const masterCheckbox = document.getElementById('selectAll');
             const novoEstado = masterCheckbox.checked;
-
-            // Atualiza todos os dados
             clientes.forEach(cliente => {
                 cliente.selecionado = novoEstado;
             });
-            
             renderizarTabela();
         }
 
-        // Botão "Marcar/Desmarcar Todos" (Lógica inteligente)
         function acaoBotaoAlternar() {
-            // Verifica se TODOS já estão marcados
             const todosMarcados = clientes.every(c => c.selecionado);
             const novoEstado = !todosMarcados;
-
             clientes.forEach(cliente => {
                 cliente.selecionado = novoEstado;
             });
-
             renderizarTabela();
         }
 
-        // Mantém o checkbox do cabeçalho sincronizado
         function atualizarCheckboxMestre() {
             const masterCheckbox = document.getElementById('selectAll');
             if(clientes.length > 0) {
@@ -257,27 +262,46 @@
             }
         }
 
-        // --- EXPORTAÇÃO ---
+        // --- EXPORTAÇÃO (ATUALIZADA) ---
         function baixarLista() {
-            // Filtra usando a propriedade do objeto, não o DOM
-            const selecionados = clientes.filter(c => c.selecionado);
+            // Cria uma cópia da lista apenas com os selecionados
+            let selecionados = clientes.filter(c => c.selecionado);
             
             if (selecionados.length === 0) {
                 alert("Por favor, selecione pelo menos um cliente para participar.");
                 return;
             }
 
+            // 1. ORDENAÇÃO ALFABÉTICA
+            // Forçamos a ordem A-Z pelo nome antes de exportar
+            selecionados.sort((a, b) => {
+                const nomeA = a.nome ? a.nome.toLowerCase() : '';
+                const nomeB = b.nome ? b.nome.toLowerCase() : '';
+                return nomeA.localeCompare(nomeB); // localeCompare é bom para acentos
+            });
+
+            // Função auxiliar para capitalizar (Ex: "JOAO SILVA" -> "Joao Silva")
+            function formatarNomeBonito(texto) {
+                if (!texto) return '';
+                // 1. Converte tudo para minúsculas
+                // 2. Divide em palavras
+                // 3. Coloca a primeira letra de cada palavra em maiúscula
+                return texto.toLowerCase().split(' ').map(palavra => {
+                    return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+                }).join(' ');
+            }
+
             let conteudoTexto = "";
-            // Cabeçalho opcional no arquivo
             conteudoTexto += "NOME | TELEFONE | CIDADE | BAIRRO\n";
             conteudoTexto += "---------------------------------------------------\n";
 
             selecionados.forEach(cliente => {
-                const cidade = cliente.cidade ? cliente.cidade : '-';
-                const bairro = cliente.bairro ? cliente.bairro : '-';
+                // 2. APLICA A FORMATAÇÃO
+                const nomeFormatado = formatarNomeBonito(cliente.nome);
+                const cidadeFormatada = cliente.cidade ? formatarNomeBonito(cliente.cidade) : '-';
+                const bairroFormatado = cliente.bairro ? formatarNomeBonito(cliente.bairro) : '-';
                 
-                // Formato completo com todos os campos
-                conteudoTexto += `${cliente.nome} | ${cliente.telefone} | ${cidade} | ${bairro}\n`;
+                conteudoTexto += `${nomeFormatado} | ${cliente.telefone} | ${cidadeFormatada} | ${bairroFormatado}\n`;
             });
 
             const blob = new Blob([conteudoTexto], { type: "text/plain" });
