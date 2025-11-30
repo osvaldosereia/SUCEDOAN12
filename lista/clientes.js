@@ -6,6 +6,18 @@ const clientes = [
     "bairro": "Cristo rei Maringá"
   },
   {
+    "nome": "Noelvis Castillo Chavez",
+    "telefone": "9584257073",
+    "cidade": "Cuiabá",
+    "bairro": "Vela Vista"
+  },
+  {
+    "nome": "Ariane Moreira de barros",
+    "telefone": "65998178271",
+    "cidade": "Várzea Grande",
+    "bairro": "Marajoara"
+  },
+  {
     "nome": "Makeila dos santos",
     "telefone": "65984051713",
     "cidade": "Cuiabá",
