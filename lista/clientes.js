@@ -5,6 +5,12 @@ const clientes = [
     "cidade": "Várzea Grande",
     "bairro": "Cristo rei Maringá"
   },
+   {
+    "nome": "Ivete vitoriano vitorino",
+    "telefone": "06692345531",
+    "cidade": "Várzea Grande",
+    "bairro": "mARAJOARA"
+  }, 
   {
     "nome": "Noelvis Castillo Chavez",
     "telefone": "9584257073",
