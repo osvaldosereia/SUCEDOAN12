@@ -298,10 +298,11 @@
         function saveData() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
             console.log('Dados salvos no localStorage.');
-            renderReminders();
+            // CORREÇÃO CRÍTICA: Removido o call a 'renderReminders()' que não existe e causava a falha.
+            // updateRemindersCount() já chama a função correta.
             renderTags();
             renderCalendar();
-            updateRemindersCount();
+            updateRemindersCount(); 
         }
 
         // =======================================================
@@ -864,6 +865,7 @@
                     const importedData = JSON.parse(e.target.result);
                     
                     if (importedData && importedData.notes && importedData.reminders && importedData.customTags) {
+                        // NOTE: Usamos 'confirm' aqui pois estamos em um ambiente de desenvolvimento sem modal UI.
                         if (!confirm('ATENÇÃO: A importação irá SOBRESCRER todos os seus dados atuais. Deseja continuar?')) {
                             return;
                         }
