@@ -7,8 +7,7 @@
     <!-- Carrega o Tailwind CSS para estilização rápida e moderna -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- NOVO: Carrega o TinyMCE para o editor de texto rico -->
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- TinyMCE e todo o código de edição complexo foram REMOVIDOS -->
     <style>
         /* Estilos globais para layout iOS/Apple (desktop-like) */
         body {
@@ -117,14 +116,20 @@
             padding-top: 16px; /* Espaço entre a barra fixa e o título */
         }
 
-        /* Estilo para a área de edição (contenteditable div) */
-        /* O TinyMCE será inicializado aqui */
+        /* Editor de Conteúdo - Agora um div contenteditable simples */
         #noteContent {
             line-height: 1.6;
             min-height: 400px;
             padding: 12px 0; /* Aumenta o padding interno verticalmente */
             border: none;
             background-color: transparent;
+            /* Estilo para placeholder em contenteditable */
+            content: attr(placeholder);
+            color: gray;
+        }
+        #noteContent:empty:before {
+            content: attr(placeholder);
+            color: #9ca3af; /* gray-400 */
         }
         
         /* Estilo para o botão de IA Inativo (apenas ícone) */
@@ -160,22 +165,6 @@
             }
         }
         
-        /* Ajuste do TinyMCE para usar 100% da largura e remover o padding/margem extra */
-        .tox-tinymce {
-            border: none !important;
-            min-height: 400px; /* Garante que a altura mínima seja respeitada */
-        }
-
-        /* Ajustes para o TinyMCE Toolbar */
-        /* Oculta o TinyMCE toolbar quando não há seleção para manter a estética limpa */
-        .tox-tinymce-inline:not(.tox-fullscreen) > .tox.tox-tinymce-inline-toolbar {
-            opacity: 0;
-            transition: opacity 0.15s ease-in-out;
-        }
-        .tox-tinymce-inline:not(.tox-fullscreen) > .tox.tox-tinymce-inline-toolbar:hover,
-        .tox-tinymce-inline.tox-editor-focus:not(.tox-fullscreen) > .tox.tox-tinymce-inline-toolbar {
-            opacity: 1;
-        }
     </style>
 </head>
 <body>
@@ -251,16 +240,13 @@
 
             <div id="noteEditor" class="h-full flex flex-col hidden">
                 
-                <!-- Barra de Ferramentas Fixa (STICKY) -->
+                <!-- Barra de Ferramentas Fixa (STICKY) - SOMENTE ESSENCIAIS -->
                 <div id="fixedToolbar" class="flex flex-wrap items-center justify-between">
                     
                     <!-- 1. Controles de Edição e Categoria (Esquerda) -->
                     <div class="flex space-x-3 items-center">
-                        <h3 class="text-lg font-semibold text-gray-800 hidden sm:block">Editor:</h3>
                         
-                        <!-- REMOVIDOS OS BOTÕES MANUAIS (Bold, List, Heading, Separator, Link) -->
-                        <!-- Eles serão fornecidos pelo menu flutuante nativo do TinyMCE -->
-                        
+                        <!-- Seletor de Categoria -->
                         <select id="noteCategory" class="ios-input text-sm p-1 max-w-[120px]">
                             <option value="Geral">Geral</option>
                             <option value="Ideias">Ideias</option>
@@ -268,16 +254,16 @@
                             <option value="Pessoal">Pessoal</option>
                             <!-- Categorias do JS serão adicionadas aqui -->
                         </select>
+
+                        <!-- Botão IA (Foguete) -->
+                         <button id="iaFloatingButton" 
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold py-1 px-2 rounded-full shadow-lg transition duration-150 transform hover:scale-105 ia-button-inactive"
+                            title="Enviar texto selecionado para o Google IA (udm=50)">
+                            🚀
+                        </button>
                     </div>
 
-                    <!-- 2. Botão IA (Centro/Esquerda) - ÍCONE SOMENTE -->
-                    <button id="iaFloatingButton" 
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold py-1 px-2 rounded-full shadow-lg transition duration-150 transform hover:scale-105 ia-button-inactive"
-                        title="Enviar texto selecionado para o Google IA (udm=50)">
-                        🚀 <!-- Apenas o Foguete -->
-                    </button>
-
-                    <!-- 3. Botões de Ação (Direita) -->
+                    <!-- 2. Botões de Ação (Direita) -->
                     <div class="flex space-x-2 items-center">
                         <!-- Botão Imprimir -->
                         <button id="printBtn" class="ios-button-secondary font-normal py-1 px-3 rounded-lg text-sm" title="Imprimir Nota">
@@ -305,17 +291,14 @@
                         <p id="noteDate" class="text-sm text-gray-500 mb-4"></p>
                     </div>
                     
-                    <!-- CONTEÚDO DA NOTA (O TinyMCE será inicializado aqui) -->
+                    <!-- CONTEÚDO DA NOTA - Contenteditable Simples (Aceita HTML/formatação de cola) -->
                     <div id="noteContent" 
                         contenteditable="true" 
                         placeholder="Comece a escrever a sua nota aqui... (Cole texto formatado ou selecione texto para usar a funcionalidade de IA!)" 
-                        class="w-full ios-input overflow-y-auto border-none shadow-none bg-transparent">
+                        class="w-full ios-input overflow-y-auto border-none shadow-none bg-transparent"
+                        onmouseup="checkSelection()" onkeyup="checkSelection()" onblur="setTimeout(checkSelection, 100)">
                     </div>
                 </div>
-
-                <!-- O botão de salvar/deletar foi movido para o fixedToolbar, esta div está vazia, mas mantemos para referência futura se precisar de rodapé -->
-                <div class="hidden"></div>
-                
             </div>
         </div>
     </div>
@@ -325,56 +308,14 @@
         
         // --- Constantes e Variáveis de Configuração ---
         
-        // Chave de armazenamento local para as notas
         const LOCAL_STORAGE_KEY = 'notebook_personal_notes';
-        
-        // Prompt predefinido para a funcionalidade de IA (Mantenha o espaço no final!)
         const IA_PROMPT = "Analise e explique este conceito: "; 
-
-        // Lista das categorias disponíveis (para o editor e filtro)
         const DEFAULT_CATEGORIES = ["Geral", "Ideias", "Trabalho", "Pessoal", "Estudo", "Rascunho"];
 
-        // Variáveis globais de estado
-        let allNotes = []; // Armazena todas as notas carregadas
-        let currentNoteId = null; // ID da nota atualmente em edição
+        let allNotes = [];
+        let currentNoteId = null;
 
-        // --- Configuração e Inicialização TinyMCE ---
-
-        let editorInstance = null;
-
-        const initTinyMCE = () => {
-            tinymce.init({
-                selector: '#noteContent',
-                inline: true, // Modo inline para usar nosso div contenteditable
-                menubar: false, // Remove menu bar
-                statusbar: false, // Remove status bar
-                plugins: 'lists link hr', // Plugins necessários: listas, links e linha horizontal
-                
-                // NOVO: Toolbar Nativo, Minimalista e Funcional
-                toolbar: 'bold bullist numlist | formatselect | link hr', 
-                
-                // Opções formatselect (Título)
-                block_formats: 'Paragraph=p; Heading 2=h2; Heading 3=h3; Heading 4=h4',
-
-                setup: function (editor) {
-                    editorInstance = editor;
-                    
-                    // Garante que o estado do botão IA seja verificado em eventos chave do editor
-                    editor.on('SelectionChange', checkSelection);
-                    editor.on('KeyUp', checkSelection);
-
-                    editor.on('init', function () {
-                        // Aplica o placeholder CSS nativo do TinyMCE
-                        const contentDiv = document.getElementById('noteContent');
-                        if (contentDiv.innerHTML.trim() === '') {
-                             contentDiv.setAttribute('data-mce-placeholder', contentDiv.getAttribute('placeholder'));
-                        }
-                    });
-                }
-            });
-        };
-
-        // --- Funções de Manipulação do LocalStorage (Ocultas para brevidade) ---
+        // --- Funções de Manipulação do LocalStorage (Inalteradas) ---
 
         const loadNotesFromLocalStorage = () => {
             try {
@@ -394,8 +335,6 @@
                 alertMessage("Erro ao salvar dados localmente. O navegador pode estar cheio.", 'red');
             }
         };
-
-        // --- Funções de Exportação e Importação (Ocultas para brevidade) ---
 
         const handleExport = () => {
             if (allNotes.length === 0) {
@@ -455,7 +394,7 @@
         };
 
 
-        // --- Funções Auxiliares de UI (Ocultas para brevidade) ---
+        // --- Funções Auxiliares de UI ---
 
         const populateCategories = () => {
             const filterEl = document.getElementById('categoryFilter');
@@ -479,12 +418,8 @@
             currentNoteId = null;
             document.getElementById('noteTitle').value = '';
             
-            if (editorInstance) {
-                 editorInstance.setContent('');
-                 editorInstance.focus();
-            } else {
-                 document.getElementById('noteContent').innerHTML = ''; 
-            }
+            // Revertido para manipulação direta do innerHTML
+            document.getElementById('noteContent').innerHTML = ''; 
             
             document.getElementById('noteCategory').value = 'Geral';
             document.getElementById('noteDate').textContent = 'Nova Nota (não gravada)';
@@ -502,12 +437,9 @@
             currentNoteId = note.id;
             document.getElementById('noteTitle').value = note.title;
             
-            if (editorInstance) {
-                editorInstance.setContent(note.content);
-            } else {
-                 document.getElementById('noteContent').innerHTML = note.content;
-            }
-
+            // Revertido para manipulação direta do innerHTML
+            document.getElementById('noteContent').innerHTML = note.content;
+            
             document.getElementById('noteCategory').value = note.category || 'Geral';
             document.getElementById('noteDate').textContent = `Criada em: ${formatDate(note.createdAt)}`;
             document.getElementById('deleteNoteBtn').classList.remove('hidden');
@@ -528,7 +460,7 @@
             return new Date().toLocaleDateString('pt-PT');
         };
         
-        // --- Funções de Renderização e Lógica da Aplicação (Ocultas para brevidade) ---
+        // --- Funções de Renderização e Lógica da Aplicação (Inalteradas) ---
         
         const renderNotes = () => {
             const listEl = document.getElementById('notesList');
@@ -591,12 +523,8 @@
         const saveNote = () => {
             const title = document.getElementById('noteTitle').value.trim() || 'Nota Sem Título';
             
-            let content = '';
-            if (editorInstance) {
-                content = editorInstance.getContent().trim();
-            } else {
-                content = document.getElementById('noteContent').innerHTML.trim(); 
-            }
+            // Revertido para manipulação direta do innerHTML
+            const content = document.getElementById('noteContent').innerHTML.trim(); 
 
             const category = document.getElementById('noteCategory').value;
             
@@ -658,7 +586,7 @@
         };
 
 
-        // --- Funcionalidade de IA e Mensagens Personalizadas (Ocultas para brevidade) ---
+        // --- Funcionalidade de IA e Mensagens Personalizadas (CORRIGIDA) ---
 
         const alertMessage = (message, color) => {
              console.log(`[Mensagem ${color.toUpperCase()}]: ${message}`);
@@ -683,29 +611,12 @@
             return window.confirm(message); 
         }
         
-        // --- Funções de Formatação de Texto (REMOVIDAS - AGORA NATIVO TINYMCE) ---
-        
-        // A função focusEditor() e todos os manipuladores de formatação manual foram removidos
-        // porque o TinyMCE agora fornece e gerencia sua própria barra de ferramentas flutuante
-        // que é inerentemente mais confiável para comandos de formatação.
-
-        // Função de Impressão (Inalterada)
-        const handlePrint = () => {
-            window.print();
-        };
-
-
         // Trata o texto selecionado e abre a pesquisa do Google AI
         const handleIaSearch = (event) => {
-            let selectedText = '';
+            // Usa a API de seleção de texto nativa (corrigida)
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
             
-            if (editorInstance) {
-                // Obtém o texto selecionado do editor TinyMCE
-                selectedText = editorInstance.selection.getContent({format: 'text'}).trim();
-            } else {
-                 selectedText = window.getSelection().toString().trim();
-            }
-
             if (!selectedText || document.getElementById('iaFloatingButton').classList.contains('ia-button-inactive')) {
                 alertMessage("Selecione um texto antes de usar a IA.", 'yellow');
                 return;
@@ -718,36 +629,48 @@
             
             window.open(googleUrl, '_blank');
             
+            // Oculta o botão IA após o uso
             document.getElementById('iaFloatingButton').classList.add('ia-button-inactive');
+            selection.removeAllRanges(); // Desmarca a seleção após o clique
         };
 
-        // Exibe ou move o botão flutuante com base na seleção de texto
+        // Exibe ou desativa o botão IA com base na seleção de texto
         const checkSelection = () => {
             const iaButton = document.getElementById('iaFloatingButton');
-            let selectedTextLength = 0;
+            const selection = window.getSelection();
+            const selectedTextLength = selection.toString().trim().length;
+            const editor = document.getElementById('noteContent');
 
-            if (editorInstance) {
-                // Usa a API de seleção do TinyMCE
-                selectedTextLength = editorInstance.selection.getContent({format: 'text'}).trim().length;
-            } else {
-                selectedTextLength = window.getSelection().toString().trim().length;
-            }
+            // Verifica se a seleção ocorreu dentro do editor de notas
+            const isSelectionInEditor = editor && selection.anchorNode && editor.contains(selection.anchorNode);
             
-            if (selectedTextLength > 0) {
+            if (selectedTextLength > 0 && isSelectionInEditor) {
                 iaButton.classList.remove('ia-button-inactive');
             } else {
                 iaButton.classList.add('ia-button-inactive');
             }
         };
 
-        // --- Inicialização e Event Listeners (Ocultas para brevidade) ---
+        // Função de Impressão (Inalterada)
+        const handlePrint = () => {
+            window.print();
+        };
+
+        // --- Inicialização e Event Listeners ---
 
         const initializeApp = () => {
             loadNotesFromLocalStorage();
             populateCategories();
             renderNotes();
 
-            initTinyMCE(); 
+            // Adiciona listeners de seleção ao editor de conteúdo
+            const noteContentEl = document.getElementById('noteContent');
+            if (noteContentEl) {
+                noteContentEl.addEventListener('mouseup', checkSelection);
+                noteContentEl.addEventListener('keyup', checkSelection);
+                // Adiciona um pequeno atraso para reverter o estado após o blur/desfocar
+                noteContentEl.addEventListener('blur', () => setTimeout(checkSelection, 100));
+            }
             
             document.getElementById('iaFloatingButton').classList.add('ia-button-inactive');
             document.getElementById('loading').classList.add('hidden');
