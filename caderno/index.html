@@ -132,6 +132,31 @@
             pointer-events: none; /* Impede cliques */
             transform: none !important; /* Remove o hover effect quando inativo */
         }
+
+        /* Estilos de impressão - Oculta tudo, exceto o painel de notas, ao imprimir */
+        @media print {
+            body > div.flex {
+                display: block !important;
+                padding: 0 !important;
+                height: auto !important;
+            }
+            .w-1/5 {
+                display: none !important; /* Oculta sidebar e lista de notas */
+            }
+            .w-3/5 {
+                width: 100% !important; /* Editor ocupa a largura total */
+                padding: 20px !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            #fixedToolbar, #editorPlaceholder {
+                display: none !important; /* Oculta a barra de ferramentas e placeholder */
+            }
+            .note-header-info, #noteContent {
+                background: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -207,17 +232,38 @@
 
             <div id="noteEditor" class="h-full flex flex-col hidden">
                 
-                <!-- NOVO: Barra de Ferramentas Fixa (STICKY) -->
+                <!-- Barra de Ferramentas Fixa (STICKY) -->
                 <div id="fixedToolbar" class="flex flex-wrap items-center justify-between">
                     
                     <!-- 1. Controles de Edição e Categoria (Esquerda) -->
                     <div class="flex space-x-3 items-center">
                         <h3 class="text-lg font-semibold text-gray-800 hidden sm:block">Editor:</h3>
 
-                        <button id="boldBtn" class="ios-button-secondary text-sm py-1 px-3">
+                        <!-- Botão Negrito -->
+                        <button id="boldBtn" class="ios-button-secondary text-sm py-1 px-3" title="Negrito">
                             <span class="font-bold">B</span>
                         </button>
                         
+                        <!-- Botão Lista -->
+                        <button id="listBtn" class="ios-button-secondary text-sm py-1 px-3 font-bold" title="Lista (Não Ordenada)">
+                            &#x2261;
+                        </button>
+                        
+                        <!-- Botão Título -->
+                        <button id="headingBtn" class="ios-button-secondary text-sm py-1 px-3" title="Título (H2)">
+                            <span class="font-bold">H2</span>
+                        </button>
+                        
+                        <!-- NOVO: Botão Linha Separadora -->
+                        <button id="separatorBtn" class="ios-button-secondary text-sm py-1 px-3 font-bold" title="Linha Separadora">
+                            &mdash;
+                        </button>
+
+                         <!-- NOVO: Botão Link -->
+                        <button id="linkBtn" class="ios-button-secondary text-sm py-1 px-3 font-bold" title="Inserir Link">
+                            <span class="text-blue-500">🔗</span>
+                        </button>
+
                         <select id="noteCategory" class="ios-input text-sm p-1 max-w-[120px]">
                             <option value="Geral">Geral</option>
                             <option value="Ideias">Ideias</option>
@@ -229,13 +275,18 @@
 
                     <!-- 2. Botão IA (Centro/Esquerda) - Sempre visível, estado inativo por padrão -->
                     <button id="iaFloatingButton" 
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1 px-2 rounded-full shadow-lg transition duration-150 transform hover:scale-105"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1 px-2 rounded-full shadow-lg transition duration-150 transform hover:scale-105 ia-button-inactive"
                         title="Enviar texto selecionado para o Google IA (udm=50)">
                         🚀 Perguntar à IA
                     </button>
 
                     <!-- 3. Botões de Ação (Direita) -->
                     <div class="flex space-x-2 items-center">
+                        <!-- NOVO: Botão Imprimir -->
+                        <button id="printBtn" class="ios-button-secondary font-normal py-1 px-3 rounded-lg text-sm" title="Imprimir Nota">
+                            &#x2399; <!-- Ícone de impressora ou similar -->
+                        </button>
+
                         <button id="cancelEditBtn" class="ios-button-secondary font-normal py-1 px-3 rounded-lg text-sm">
                             Cancelar
                         </button>
@@ -618,15 +669,73 @@
         };
 
         const confirmAction = (message) => {
+            // Usa o alert/confirm nativo, pois a implementação de modal é complexa
             return window.confirm(message); 
         }
         
         // --- Funções de Formatação de Texto (Editor Básico) ---
-        const handleBold = () => {
-            // Usa o comando execCommand para aplicar negrito no texto selecionado
-            document.execCommand('bold', false, null);
-            // Re-foca o editor para que o usuário possa continuar a escrever
+        
+        // Função utilitária para focar o editor após a execução do comando
+        const focusEditor = () => {
             document.getElementById('noteContent').focus();
+        };
+
+        const handleBold = () => {
+            document.execCommand('bold', false, null);
+            focusEditor();
+        };
+
+        const handleList = () => {
+            document.execCommand('insertUnorderedList', false, null);
+            focusEditor();
+        };
+
+        const handleHeading = () => {
+            // Usa formatBlock para aplicar H2
+            document.execCommand('formatBlock', false, 'H2');
+            focusEditor();
+        };
+
+        // NOVO: Aplica linha separadora
+        const handleSeparator = () => {
+            document.execCommand('insertHorizontalRule', false, null);
+            focusEditor();
+        };
+
+        // NOVO: Aplica link (hyperlink)
+        const handleLink = () => {
+            const url = window.prompt("Insira o URL para o link:");
+            
+            if (url && url.trim() !== "") {
+                // Adiciona 'http://' se não houver protocolo
+                const fullUrl = url.startsWith('http') ? url : `http://${url}`;
+                
+                // Cria o link
+                document.execCommand('createLink', false, fullUrl);
+                
+                // Como document.execCommand não define target="_blank" nativamente,
+                // vamos tentar selecionar o link recém-criado e adicionar o atributo.
+                // Isso é complexo e não 100% garantido, mas é a melhor tentativa em contenteditable.
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    // Procura o elemento <a> pai da seleção/range
+                    let linkElement = range.commonAncestorContainer;
+                    while (linkElement && linkElement.tagName !== 'A') {
+                        linkElement = linkElement.parentNode;
+                    }
+                    if (linkElement && linkElement.tagName === 'A') {
+                        linkElement.setAttribute('target', '_blank');
+                    }
+                }
+            }
+            focusEditor();
+        };
+
+        // NOVO: Função de Impressão
+        const handlePrint = () => {
+            // Usa a função nativa de impressão do navegador
+            window.print();
         };
 
 
@@ -704,20 +813,20 @@
         document.getElementById('categoryFilter').addEventListener('change', renderNotes);
         document.getElementById('dateSearch').addEventListener('change', renderNotes);
         
-        // Listener para o botão de Negrito
-        document.getElementById('boldBtn').addEventListener('click', (e) => {
-            e.preventDefault(); // Impede o foco de sair completamente do editor
-            handleBold();
-        });
+        // Listeners para os botões de formatação (agora no JS)
+        document.getElementById('boldBtn').addEventListener('click', (e) => { e.preventDefault(); handleBold(); });
+        document.getElementById('listBtn').addEventListener('click', (e) => { e.preventDefault(); handleList(); });
+        document.getElementById('headingBtn').addEventListener('click', (e) => { e.preventDefault(); handleHeading(); });
+        
+        // NOVO: Listeners para as novas funções
+        document.getElementById('separatorBtn').addEventListener('click', (e) => { e.preventDefault(); handleSeparator(); });
+        document.getElementById('linkBtn').addEventListener('click', (e) => { e.preventDefault(); handleLink(); });
+        document.getElementById('printBtn').addEventListener('click', (e) => { e.preventDefault(); handlePrint(); });
 
         // Listeners para a funcionalidade IA:
-        // mouseup e keyup são usados para detetar a seleção de texto e alternar o estado do botão
         document.getElementById('noteContent').addEventListener('mouseup', checkSelection);
         document.getElementById('noteContent').addEventListener('keyup', checkSelection);
-        // Também verifica quando o foco sai do editor, mas com um pequeno atraso
         document.getElementById('noteContent').addEventListener('blur', () => { setTimeout(checkSelection, 100); });
-        
-        // O botão IA agora está sempre visível na barra de ferramentas
         document.getElementById('iaFloatingButton').addEventListener('click', handleIaSearch);
         
         // Listeners para Exportar/Importar
