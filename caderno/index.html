@@ -8,34 +8,94 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos globais e cores CLARAS para conforto visual */
+        /* Estilos globais para layout iOS/Apple (desktop-like) */
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Fundo claro (Tailwind gray-100) */
-            color: #1f2937; /* Texto escuro (Tailwind gray-800) */
+            /* Prioriza a fonte do sistema iOS/macOS e fallback para Inter */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Fundo muito leve, típico do iOS/macOS */
+            color: #1c1c1e; /* Texto quase preto para contraste */
         }
-        /* Estilo para a área de edição (textarea) */
+        
+        /* Estilo base para painéis/cartões no estilo iOS */
+        .ios-panel {
+            background-color: #ffffff; 
+            border-radius: 16px; /* Cantos generosamente arredondados */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03); /* Sombra sutil para efeito flutuante */
+            border: 1px solid rgba(220, 220, 220, 0.5); /* Borda muito suave */
+            transition: all 0.2s;
+        }
+
+        /* Estilo para inputs e selects (iOS look) */
+        .ios-input {
+            border-radius: 10px;
+            background-color: #f7f7f7; /* Fundo levemente cinza */
+            border: 1px solid #d1d1d6; /* Cinza claro */
+            color: #1c1c1e;
+            padding: 8px 12px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); /* Sombra interna sutil */
+        }
+        .ios-input:focus {
+            border-color: #007aff; /* Azul iOS ao focar */
+            ring: none;
+            outline: none;
+        }
+
+        /* Botões de Ação Principal (iOS Blue) */
+        .ios-button-primary {
+            background-color: #007aff; 
+            color: white;
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 10px 16px;
+            transition: background-color 0.15s ease-in-out;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .ios-button-primary:hover {
+            background-color: #005fcc; 
+        }
+        
+        /* Botões Secundários/Neutros */
+        .ios-button-secondary {
+            background-color: #e5e5ea; /* Cinza suave */
+            color: #1c1c1e;
+            border-radius: 12px;
+            font-weight: 500;
+            padding: 10px 16px;
+            transition: background-color 0.15s ease-in-out;
+        }
+        .ios-button-secondary:hover {
+            background-color: #d1d1d6;
+        }
+        
+        /* Corrigir o botão de IA flutuante para o estilo iOS */
+        #iaFloatingButton {
+            background-color: #1c1c1e; /* Cor escura para destaque */
+            color: #ffffff;
+            border-radius: 16px; 
+            padding: 6px 12px; 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Estilo para a área de edição (contenteditable div) */
         #noteContent {
             line-height: 1.6;
-            min-height: 400px; /* Simula o rows="25" */
-            /* Garante que o conteúdo seja relativo para o botão flutuante */
+            min-height: 400px;
+            padding: 12px; /* Aumenta o padding interno */
         }
-        /* Estilo para o placeholder do div contenteditable */
-        #noteContent[placeholder]:empty:before {
-            content: attr(placeholder);
-            color: #9ca3af; /* Tailwind gray-400 */
+
+        /* Estilo da lista de notas */
+        .note-card-ios {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: none;
+            border: 1px solid #e0e0e0;
         }
-        #noteContent[placeholder]:empty:focus:before {
-            content: "";
+        .note-card-ios:hover {
+            background-color: #f0f0f5;
         }
-        /* Estilo para o botão flutuante da IA */
-        #iaFloatingButton {
-            position: absolute;
-            z-index: 100;
-            display: none;
-            transition: opacity 0.2s;
-            cursor: pointer;
-        }
+
         /* Esconder a barra de rolagem horizontal em telas largas, se necessário */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -54,20 +114,20 @@
         </div>
     </div>
 
-    <!-- Layout Principal: 3 Colunas (Tema Claro) -->
-    <div class="flex h-screen overflow-hidden">
+    <!-- Layout Principal: 3 Colunas (Estilo iOS) -->
+    <div class="flex h-screen p-4 space-x-4 overflow-hidden">
         
         <!-- Coluna de Navegação/Filtros (Sidebar) -->
-        <div class="w-1/4 bg-white p-4 border-r border-gray-200 overflow-y-auto no-scrollbar">
-            <h2 class="text-xl font-bold mb-4 text-indigo-600">Filtros & Categorias</h2>
+        <div class="w-1/4 ios-panel p-4 overflow-y-auto no-scrollbar">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Filtros & Categorias</h2>
             
-            <button id="newNoteBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 mb-4">
+            <button id="newNoteBtn" class="w-full ios-button-primary mb-4">
                 + Nova Nota
             </button>
             
             <div class="mb-6">
                 <label for="categoryFilter" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Categoria</label>
-                <select id="categoryFilter" class="w-full p-2 bg-gray-50 border border-gray-300 text-gray-800 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                <select id="categoryFilter" class="w-full ios-input text-sm">
                     <option value="">Todas as Categorias</option>
                     <!-- Opções de categorias serão preenchidas via JS -->
                 </select>
@@ -75,17 +135,17 @@
             
             <div class="mb-6">
                 <label for="dateSearch" class="block text-sm font-medium text-gray-700 mb-1">Buscar por Data (Início)</label>
-                <input type="date" id="dateSearch" class="w-full p-2 bg-gray-50 border border-gray-300 text-gray-800 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                <input type="date" id="dateSearch" class="w-full ios-input text-sm">
                 <p class="text-xs text-gray-500 mt-1">Busca notas criadas a partir desta data.</p>
             </div>
             
-            <!-- NOVO: Gestão de Dados -->
+            <!-- Gestão de Dados -->
             <div class="mt-8 pt-4 border-t border-gray-200">
                 <h3 class="text-lg font-semibold mb-2 text-gray-700">Gestão de Dados</h3>
-                <button id="exportBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 mb-2 text-sm">
+                <button id="exportBtn" class="w-full ios-button-secondary text-sm mb-2">
                     Exportar Notas (JSON)
                 </button>
-                <label for="importFile" class="w-full block text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg cursor-pointer shadow-md transition duration-200 text-sm">
+                <label for="importFile" class="w-full block text-center ios-button-secondary cursor-pointer text-sm">
                     Importar Notas (JSON)
                 </label>
                 <!-- Campo de input de ficheiro escondido -->
@@ -94,17 +154,17 @@
             
             <div class="mt-8 pt-4 border-t border-gray-200">
                 <p class="text-xs text-gray-500">
-                    <span class="font-semibold text-indigo-600">Armazenamento Local.</span>
+                    <span class="font-semibold text-gray-700">Armazenamento Local.</span>
                 </p>
                 <p class="text-xs text-gray-500 mt-2">
-                    As suas notas são salvas no seu navegador e não são sincronizadas online.
+                    As suas notas são salvas no seu navegador.
                 </p>
             </div>
         </div>
 
         <!-- Coluna da Lista de Notas -->
-        <div class="w-1/4 bg-gray-100 p-4 border-r border-gray-200 overflow-y-auto no-scrollbar">
-            <h2 class="text-xl font-bold mb-4 text-indigo-600">Minhas Notas</h2>
+        <div class="w-1/4 ios-panel p-4 overflow-y-auto no-scrollbar">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Minhas Notas</h2>
             <div id="notesList" class="space-y-3">
                 <!-- Notas serão carregadas aqui -->
                 <p class="text-center text-gray-500" id="listPlaceholder">Nenhuma nota ainda. Crie uma!</p>
@@ -112,16 +172,16 @@
         </div>
 
         <!-- Coluna do Editor/Visualizador de Notas -->
-        <div class="flex-1 bg-white p-6 overflow-y-auto relative">
+        <div class="flex-1 ios-panel p-6 overflow-y-auto relative">
             <div id="editorPlaceholder" class="flex items-center justify-center h-full text-gray-400 text-lg">
                 Selecione uma nota ou crie uma nova para começar a escrever.
             </div>
 
             <div id="noteEditor" class="hidden">
-                <input type="text" id="noteTitle" placeholder="Título da Nota" class="w-full text-2xl font-bold mb-4 p-2 bg-gray-100 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <input type="text" id="noteTitle" placeholder="Título da Nota" class="w-full text-2xl font-bold mb-4 ios-input border-none bg-transparent shadow-none p-0 focus:border-none focus:ring-0">
                 
                 <div class="flex space-x-4 mb-4">
-                    <select id="noteCategory" class="p-2 bg-gray-100 border border-gray-300 text-gray-800 rounded-lg text-sm">
+                    <select id="noteCategory" class="ios-input text-sm">
                         <option value="Geral">Geral</option>
                         <option value="Ideias">Ideias</option>
                         <option value="Trabalho">Trabalho</option>
@@ -134,7 +194,7 @@
                 <div id="noteContent" 
                     contenteditable="true" 
                     placeholder="Comece a escrever a sua nota aqui... (Cole texto formatado ou selecione texto para usar a funcionalidade de IA!)" 
-                    class="w-full p-3 bg-gray-100 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 overflow-y-auto">
+                    class="w-full ios-input overflow-y-auto border-none shadow-none bg-transparent">
                 </div>
 
                 <div class="flex justify-between mt-4">
@@ -142,7 +202,7 @@
                         <button id="saveNoteBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
                             Guardar Nota
                         </button>
-                        <button id="cancelEditBtn" class="ml-3 bg-gray-400 hover:bg-gray-500 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                        <button id="cancelEditBtn" class="ml-3 ios-button-secondary font-normal py-2 px-4 rounded-lg shadow-md transition duration-200">
                             Cancelar
                         </button>
                     </div>
@@ -383,13 +443,14 @@
 
             filteredNotes.forEach(note => {
                 const noteCard = document.createElement('div');
-                noteCard.className = `p-3 bg-white hover:bg-indigo-50 rounded-lg cursor-pointer transition duration-150 shadow-md ${note.id === currentNoteId ? 'ring-2 ring-indigo-500' : ''}`;
+                // Aplica o estilo de cartão iOS para as notas na lista
+                noteCard.className = `p-3 note-card-ios cursor-pointer transition duration-150 shadow-md ${note.id === currentNoteId ? 'ring-2 ring-indigo-500' : ''}`;
                 
                 // Extrai texto puro da nota para pré-visualização, removendo tags HTML
                 const previewText = note.content.replace(/<[^>]*>/g, '').substring(0, 100).trim();
 
                 noteCard.innerHTML = `
-                    <h3 class="text-base font-semibold truncate text-indigo-700">${note.title || 'Nota Sem Título'}</h3>
+                    <h3 class="text-base font-semibold truncate text-gray-800">${note.title || 'Nota Sem Título'}</h3>
                     <p class="text-xs text-gray-500 mt-1">
                         ${note.category} • ${formatDate(note.createdAt)}
                     </p>
@@ -547,7 +608,7 @@
                     
                     // Obtém a posição do contêiner da coluna (pai da notaEditor) no ecrã
                     // .flex-1.bg-white é o contêiner de coluna com position: relative
-                    const containerRect = document.querySelector('.flex-1.bg-white').getBoundingClientRect(); 
+                    const containerRect = document.querySelector('.flex-1.ios-panel').getBoundingClientRect(); 
 
                     // Calcula a posição (top/right) do botão *relativo* ao contêiner da coluna.
                     const topPositionRelativeToContainer = editorRect.top - containerRect.top;
