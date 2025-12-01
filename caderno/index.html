@@ -7,6 +7,8 @@
     <!-- Carrega o Tailwind CSS para estilização rápida e moderna -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- NOVO: Carrega o TinyMCE para o editor de texto rico -->
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
     <style>
         /* Estilos globais para layout iOS/Apple (desktop-like) */
         body {
@@ -88,7 +90,7 @@
             scrollbar-width: none; /* Firefox */
         }
         
-        /* NOVO: Estilos para a Barra de Ferramentas Fixa e Editor */
+        /* Estilos para a Barra de Ferramentas Fixa e Editor */
         
         /* Container principal do editor deve permitir rolagem e ter espaço para a barra fixa */
         .editor-scroll-container {
@@ -108,7 +110,6 @@
             border-bottom: 1px solid #f0f0f5;
             border-top-left-radius: 16px;
             border-top-right-radius: 16px;
-            /* Garante que o painel de edição tenha padding-top para não ser coberto pela barra */
         }
         
         /* Estilo da barra de título e data logo abaixo da barra fixa */
@@ -117,6 +118,7 @@
         }
 
         /* Estilo para a área de edição (contenteditable div) */
+        /* O TinyMCE será inicializado aqui */
         #noteContent {
             line-height: 1.6;
             min-height: 400px;
@@ -125,12 +127,12 @@
             background-color: transparent;
         }
         
-        /* Estilo para o botão de IA Inativo (sempre visível, mas desativado) */
+        /* Estilo para o botão de IA Inativo (apenas ícone) */
         .ia-button-inactive {
             opacity: 0.5;
             cursor: not-allowed;
             pointer-events: none; /* Impede cliques */
-            transform: none !important; /* Remove o hover effect quando inativo */
+            transform: none !important;
         }
 
         /* Estilos de impressão - Oculta tudo, exceto o painel de notas, ao imprimir */
@@ -141,21 +143,38 @@
                 height: auto !important;
             }
             .w-1/5 {
-                display: none !important; /* Oculta sidebar e lista de notas */
+                display: none !important;
             }
             .w-3/5 {
-                width: 100% !important; /* Editor ocupa a largura total */
+                width: 100% !important;
                 padding: 20px !important;
                 margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
             }
             #fixedToolbar, #editorPlaceholder {
-                display: none !important; /* Oculta a barra de ferramentas e placeholder */
+                display: none !important;
             }
             .note-header-info, #noteContent {
                 background: none !important;
             }
+        }
+        
+        /* Ajuste do TinyMCE para usar 100% da largura e remover o padding/margem extra */
+        .tox-tinymce {
+            border: none !important;
+            min-height: 400px; /* Garante que a altura mínima seja respeitada */
+        }
+
+        /* Ajustes para o TinyMCE Toolbar */
+        /* Oculta o TinyMCE toolbar quando não há seleção para manter a estética limpa */
+        .tox-tinymce-inline:not(.tox-fullscreen) > .tox.tox-tinymce-inline-toolbar {
+            opacity: 0;
+            transition: opacity 0.15s ease-in-out;
+        }
+        .tox-tinymce-inline:not(.tox-fullscreen) > .tox.tox-tinymce-inline-toolbar:hover,
+        .tox-tinymce-inline.tox-editor-focus:not(.tox-fullscreen) > .tox.tox-tinymce-inline-toolbar {
+            opacity: 1;
         }
     </style>
 </head>
@@ -238,51 +257,29 @@
                     <!-- 1. Controles de Edição e Categoria (Esquerda) -->
                     <div class="flex space-x-3 items-center">
                         <h3 class="text-lg font-semibold text-gray-800 hidden sm:block">Editor:</h3>
-
-                        <!-- Botão Negrito -->
-                        <button id="boldBtn" class="ios-button-secondary text-sm py-1 px-3" title="Negrito">
-                            <span class="font-bold">B</span>
-                        </button>
                         
-                        <!-- Botão Lista -->
-                        <button id="listBtn" class="ios-button-secondary text-sm py-1 px-3 font-bold" title="Lista (Não Ordenada)">
-                            &#x2261;
-                        </button>
+                        <!-- REMOVIDOS OS BOTÕES MANUAIS (Bold, List, Heading, Separator, Link) -->
+                        <!-- Eles serão fornecidos pelo menu flutuante nativo do TinyMCE -->
                         
-                        <!-- Botão Título -->
-                        <button id="headingBtn" class="ios-button-secondary text-sm py-1 px-3" title="Título (H2)">
-                            <span class="font-bold">H2</span>
-                        </button>
-                        
-                        <!-- NOVO: Botão Linha Separadora -->
-                        <button id="separatorBtn" class="ios-button-secondary text-sm py-1 px-3 font-bold" title="Linha Separadora">
-                            &mdash;
-                        </button>
-
-                         <!-- NOVO: Botão Link -->
-                        <button id="linkBtn" class="ios-button-secondary text-sm py-1 px-3 font-bold" title="Inserir Link">
-                            <span class="text-blue-500">🔗</span>
-                        </button>
-
                         <select id="noteCategory" class="ios-input text-sm p-1 max-w-[120px]">
                             <option value="Geral">Geral</option>
                             <option value="Ideias">Ideias</option>
                             <option value="Trabalho">Trabalho</option>
                             <option value="Pessoal">Pessoal</option>
-                            <!-- Categorias do JS são adicionadas aqui -->
+                            <!-- Categorias do JS serão adicionadas aqui -->
                         </select>
                     </div>
 
-                    <!-- 2. Botão IA (Centro/Esquerda) - Sempre visível, estado inativo por padrão -->
+                    <!-- 2. Botão IA (Centro/Esquerda) - ÍCONE SOMENTE -->
                     <button id="iaFloatingButton" 
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1 px-2 rounded-full shadow-lg transition duration-150 transform hover:scale-105 ia-button-inactive"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold py-1 px-2 rounded-full shadow-lg transition duration-150 transform hover:scale-105 ia-button-inactive"
                         title="Enviar texto selecionado para o Google IA (udm=50)">
-                        🚀 Perguntar à IA
+                        🚀 <!-- Apenas o Foguete -->
                     </button>
 
                     <!-- 3. Botões de Ação (Direita) -->
                     <div class="flex space-x-2 items-center">
-                        <!-- NOVO: Botão Imprimir -->
+                        <!-- Botão Imprimir -->
                         <button id="printBtn" class="ios-button-secondary font-normal py-1 px-3 rounded-lg text-sm" title="Imprimir Nota">
                             &#x2399; <!-- Ícone de impressora ou similar -->
                         </button>
@@ -308,7 +305,7 @@
                         <p id="noteDate" class="text-sm text-gray-500 mb-4"></p>
                     </div>
                     
-                    <!-- CONTEÚDO DA NOTA (Contenteditable) -->
+                    <!-- CONTEÚDO DA NOTA (O TinyMCE será inicializado aqui) -->
                     <div id="noteContent" 
                         contenteditable="true" 
                         placeholder="Comece a escrever a sua nota aqui... (Cole texto formatado ou selecione texto para usar a funcionalidade de IA!)" 
@@ -341,54 +338,81 @@
         let allNotes = []; // Armazena todas as notas carregadas
         let currentNoteId = null; // ID da nota atualmente em edição
 
-        // --- Funções de Manipulação do LocalStorage ---
+        // --- Configuração e Inicialização TinyMCE ---
 
-        // Carrega todas as notas do localStorage
+        let editorInstance = null;
+
+        const initTinyMCE = () => {
+            tinymce.init({
+                selector: '#noteContent',
+                inline: true, // Modo inline para usar nosso div contenteditable
+                menubar: false, // Remove menu bar
+                statusbar: false, // Remove status bar
+                plugins: 'lists link hr', // Plugins necessários: listas, links e linha horizontal
+                
+                // NOVO: Toolbar Nativo, Minimalista e Funcional
+                toolbar: 'bold bullist numlist | formatselect | link hr', 
+                
+                // Opções formatselect (Título)
+                block_formats: 'Paragraph=p; Heading 2=h2; Heading 3=h3; Heading 4=h4',
+
+                setup: function (editor) {
+                    editorInstance = editor;
+                    
+                    // Garante que o estado do botão IA seja verificado em eventos chave do editor
+                    editor.on('SelectionChange', checkSelection);
+                    editor.on('KeyUp', checkSelection);
+
+                    editor.on('init', function () {
+                        // Aplica o placeholder CSS nativo do TinyMCE
+                        const contentDiv = document.getElementById('noteContent');
+                        if (contentDiv.innerHTML.trim() === '') {
+                             contentDiv.setAttribute('data-mce-placeholder', contentDiv.getAttribute('placeholder'));
+                        }
+                    });
+                }
+            });
+        };
+
+        // --- Funções de Manipulação do LocalStorage (Ocultas para brevidade) ---
+
         const loadNotesFromLocalStorage = () => {
             try {
                 const storedNotes = localStorage.getItem(LOCAL_STORAGE_KEY);
                 allNotes = storedNotes ? JSON.parse(storedNotes) : [];
-                console.log(`Notas carregadas: ${allNotes.length}`);
             } catch (error) {
                 console.error("Erro ao carregar notas do LocalStorage:", error);
                 allNotes = [];
             }
         };
 
-        // Salva o array 'allNotes' completo no localStorage
         const saveNotesToLocalStorage = () => {
             try {
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allNotes));
-                console.log(`Notas salvas: ${allNotes.length}`);
             } catch (error) {
                 console.error("Erro ao salvar notas no LocalStorage:", error);
                 alertMessage("Erro ao salvar dados localmente. O navegador pode estar cheio.", 'red');
             }
         };
 
-        // --- Funções de Exportação e Importação ---
+        // --- Funções de Exportação e Importação (Ocultas para brevidade) ---
 
-        // Função para exportar todas as notas para um ficheiro JSON
         const handleExport = () => {
             if (allNotes.length === 0) {
                 alertMessage("Não há notas para exportar.", 'yellow');
                 return;
             }
 
-            // 1. Prepara o conteúdo
             const dataStr = JSON.stringify(allNotes, null, 2);
             const blob = new Blob([dataStr], { type: "application/json" });
             
-            // 2. Cria o URL de download temporário
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             
-            // 3. Define o nome do ficheiro
             const date = new Date().toISOString().slice(0, 10);
             a.download = `caderno_notas_export_${date}.json`;
             a.href = url;
             
-            // 4. Dispara o download e limpa
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -397,13 +421,11 @@
             alertMessage(`Exportação de ${allNotes.length} notas concluída!`, 'green');
         };
 
-        // Função para importar notas de um ficheiro JSON
         const handleImport = (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
             if (!confirmAction("Importar substituirá todas as notas existentes. Tem certeza que deseja continuar?")) {
-                // Se o usuário cancelar, limpa o input de arquivo para permitir nova seleção
                 event.target.value = null; 
                 return;
             }
@@ -417,7 +439,6 @@
                         throw new Error("Formato de ficheiro JSON inválido para notas.");
                     }
 
-                    // Substitui o array de notas
                     allNotes = importedNotes; 
                     saveNotesToLocalStorage();
                     renderNotes();
@@ -427,7 +448,6 @@
                     console.error("Erro ao processar ficheiro de importação:", error);
                     alertMessage("Erro na importação. Ficheiro corrompido ou formato inválido.", 'red');
                 } finally {
-                    // Limpa o input de arquivo
                     event.target.value = null; 
                 }
             };
@@ -435,17 +455,13 @@
         };
 
 
-        // --- Funções Auxiliares de UI ---
+        // --- Funções Auxiliares de UI (Ocultas para brevidade) ---
 
-        // Preenche as opções de categoria no filtro e no editor
         const populateCategories = () => {
             const filterEl = document.getElementById('categoryFilter');
             const editorEl = document.getElementById('noteCategory');
             
-            // Limpa e adiciona a opção "Todas" no filtro
             filterEl.innerHTML = '<option value="">Todas as Categorias</option>';
-            
-            // Limpa e preenche as opções
             editorEl.innerHTML = ''; 
 
             DEFAULT_CATEGORIES.forEach(cat => {
@@ -459,12 +475,17 @@
             });
         };
 
-        // Reseta o editor para o estado de "nova nota"
         const resetEditor = () => {
             currentNoteId = null;
             document.getElementById('noteTitle').value = '';
-            // USO DE .innerHTML para limpar o conteúdo formatado
-            document.getElementById('noteContent').innerHTML = ''; 
+            
+            if (editorInstance) {
+                 editorInstance.setContent('');
+                 editorInstance.focus();
+            } else {
+                 document.getElementById('noteContent').innerHTML = ''; 
+            }
+            
             document.getElementById('noteCategory').value = 'Geral';
             document.getElementById('noteDate').textContent = 'Nova Nota (não gravada)';
             document.getElementById('deleteNoteBtn').classList.add('hidden');
@@ -472,31 +493,31 @@
             document.getElementById('editorPlaceholder').classList.add('hidden');
             document.getElementById('noteEditor').classList.remove('hidden');
             
-            // Garante que o botão IA esteja inativo ao criar nova nota
             document.getElementById('iaFloatingButton').classList.add('ia-button-inactive');
             
-            renderNotes(); // Limpa qualquer destaque na lista
+            renderNotes();
         };
 
-        // Preenche o editor com os dados de uma nota
         const loadNoteToEditor = (note) => {
             currentNoteId = note.id;
             document.getElementById('noteTitle').value = note.title;
-            // USO DE .innerHTML para carregar o conteúdo formatado
-            document.getElementById('noteContent').innerHTML = note.content;
+            
+            if (editorInstance) {
+                editorInstance.setContent(note.content);
+            } else {
+                 document.getElementById('noteContent').innerHTML = note.content;
+            }
+
             document.getElementById('noteCategory').value = note.category || 'Geral';
-            // 'createdAt' é um timestamp em milissegundos
             document.getElementById('noteDate').textContent = `Criada em: ${formatDate(note.createdAt)}`;
             document.getElementById('deleteNoteBtn').classList.remove('hidden');
 
             document.getElementById('editorPlaceholder').classList.add('hidden');
             document.getElementById('noteEditor').classList.remove('hidden');
             
-            // Garante que o botão IA esteja inativo ao carregar nota (apenas ativa ao selecionar)
             document.getElementById('iaFloatingButton').classList.add('ia-button-inactive');
         };
 
-        // Formata o timestamp (milisegundos) para uma string legível
         const formatDate = (timestamp) => {
             if (timestamp) {
                 const date = new Date(timestamp);
@@ -507,9 +528,8 @@
             return new Date().toLocaleDateString('pt-PT');
         };
         
-        // --- Funções de Renderização e Lógica da Aplicação ---
+        // --- Funções de Renderização e Lógica da Aplicação (Ocultas para brevidade) ---
         
-        // Renderiza a lista de notas com base nos filtros
         const renderNotes = () => {
             const listEl = document.getElementById('notesList');
             const categoryFilter = document.getElementById('categoryFilter').value;
@@ -519,26 +539,22 @@
 
             let filteredNotes = allNotes;
 
-            // 1. Filtrar por Categoria
             if (categoryFilter) {
                 filteredNotes = filteredNotes.filter(note => note.category === categoryFilter);
             }
 
-            // 2. Filtrar por Data (A partir de...)
             if (dateSearch) {
                 const searchDate = new Date(dateSearch);
-                searchDate.setHours(0, 0, 0, 0); // Início do dia
+                searchDate.setHours(0, 0, 0, 0);
                 const searchTimestamp = searchDate.getTime();
 
                 filteredNotes = filteredNotes.filter(note => {
-                    // note.createdAt é um timestamp em milissegundos (Date.now())
                     return note.createdAt && note.createdAt >= searchTimestamp;
                 });
             }
             
             if (filteredNotes.length === 0) {
                 listEl.innerHTML = `<p class="text-center text-gray-500">Nenhuma nota encontrada.</p>`;
-                // Certifica-se de que o placeholder está escondido se houver notas, ou visível se não houver
                 if (allNotes.length > 0) {
                      document.getElementById('listPlaceholder').textContent = 'Nenhuma nota correspondente aos filtros.';
                 } else {
@@ -547,15 +563,12 @@
                 return;
             }
 
-            // 3. Ordenar (Mais recente primeiro) e Renderizar
-            filteredNotes.sort((a, b) => b.createdAt - a.createdAt); // Ordena pelo timestamp
+            filteredNotes.sort((a, b) => b.createdAt - a.createdAt);
 
             filteredNotes.forEach(note => {
                 const noteCard = document.createElement('div');
-                // Aplica o estilo de cartão iOS para as notas na lista
                 noteCard.className = `p-3 note-card-ios cursor-pointer transition duration-150 shadow-md ${note.id === currentNoteId ? 'ring-2 ring-indigo-500' : ''}`;
                 
-                // Extrai texto puro da nota para pré-visualização, removendo tags HTML
                 const previewText = note.content.replace(/<[^>]*>/g, '').substring(0, 100).trim();
 
                 noteCard.innerHTML = `
@@ -567,7 +580,7 @@
                 `;
                 noteCard.onclick = () => {
                     loadNoteToEditor(note);
-                    renderNotes(); // Atualiza o destaque na lista
+                    renderNotes(); 
                 };
                 listEl.appendChild(noteCard);
             });
@@ -575,14 +588,18 @@
             document.getElementById('listPlaceholder').textContent = allNotes.length === 0 ? 'Nenhuma nota ainda. Crie uma!' : '';
         };
 
-        // Guarda ou Atualiza a nota no array e no LocalStorage
         const saveNote = () => {
             const title = document.getElementById('noteTitle').value.trim() || 'Nota Sem Título';
-            // USO DE .innerHTML para obter o conteúdo formatado
-            const content = document.getElementById('noteContent').innerHTML.trim(); 
+            
+            let content = '';
+            if (editorInstance) {
+                content = editorInstance.getContent().trim();
+            } else {
+                content = document.getElementById('noteContent').innerHTML.trim(); 
+            }
+
             const category = document.getElementById('noteCategory').value;
             
-            // Verifica se o conteúdo está realmente vazio (pode conter tags HTML, então verifica o texto puro)
             const textContent = content.replace(/<[^>]*>/g, '').trim();
 
             if (!textContent) {
@@ -593,7 +610,6 @@
             const now = Date.now();
             
             if (currentNoteId) {
-                // Atualiza nota existente
                 const index = allNotes.findIndex(n => n.id === currentNoteId);
                 if (index !== -1) {
                     allNotes[index] = {
@@ -606,7 +622,6 @@
                 }
                 alertMessage("Nota atualizada com sucesso!", 'green');
             } else {
-                // Cria nova nota
                 const newNote = {
                     id: crypto.randomUUID(),
                     title: title,
@@ -616,15 +631,14 @@
                     updatedAt: now,
                 };
                 allNotes.push(newNote);
-                currentNoteId = newNote.id; // Define o ID da nota recém-criada
+                currentNoteId = newNote.id;
                 alertMessage("Nota criada com sucesso!", 'green');
             }
 
             saveNotesToLocalStorage();
-            renderNotes(); // Recarrega e ordena a lista
+            renderNotes();
         };
 
-        // Exclui a nota do array e do LocalStorage
         const deleteNote = () => {
             if (!currentNoteId) return;
 
@@ -632,11 +646,9 @@
                 return;
             }
 
-            // Filtra todas as notas, mantendo apenas as que não têm o ID atual
             allNotes = allNotes.filter(n => n.id !== currentNoteId);
             saveNotesToLocalStorage();
             
-            // Limpa o editor e mostra o placeholder
             resetEditor();
             document.getElementById('noteEditor').classList.add('hidden');
             document.getElementById('editorPlaceholder').classList.remove('hidden');
@@ -646,9 +658,8 @@
         };
 
 
-        // --- Funcionalidade de IA e Mensagens Personalizadas ---
+        // --- Funcionalidade de IA e Mensagens Personalizadas (Ocultas para brevidade) ---
 
-        // Substitui o alert/confirm nativo por uma função customizada
         const alertMessage = (message, color) => {
              console.log(`[Mensagem ${color.toUpperCase()}]: ${message}`);
              const statusEl = document.getElementById('noteDate');
@@ -669,131 +680,76 @@
         };
 
         const confirmAction = (message) => {
-            // Usa o alert/confirm nativo, pois a implementação de modal é complexa
             return window.confirm(message); 
         }
         
-        // --- Funções de Formatação de Texto (Editor Básico) ---
+        // --- Funções de Formatação de Texto (REMOVIDAS - AGORA NATIVO TINYMCE) ---
         
-        // Função utilitária para focar o editor após a execução do comando
-        const focusEditor = () => {
-            document.getElementById('noteContent').focus();
-        };
+        // A função focusEditor() e todos os manipuladores de formatação manual foram removidos
+        // porque o TinyMCE agora fornece e gerencia sua própria barra de ferramentas flutuante
+        // que é inerentemente mais confiável para comandos de formatação.
 
-        const handleBold = () => {
-            focusEditor(); // CRÍTICO: Foca antes de executar
-            document.execCommand('bold', false, null);
-        };
-
-        const handleList = () => {
-            focusEditor(); // CRÍTICO: Foca antes de executar
-            document.execCommand('insertUnorderedList', false, null);
-        };
-
-        const handleHeading = () => {
-            focusEditor(); // CRÍTICO: Foca antes de executar
-            // Usa formatBlock para aplicar H2
-            document.execCommand('formatBlock', false, 'H2');
-        };
-
-        // Aplica linha separadora
-        const handleSeparator = () => {
-            focusEditor(); // CRÍTICO: Foca antes de executar
-            document.execCommand('insertHorizontalRule', false, null);
-        };
-
-        // Aplica link (hyperlink)
-        const handleLink = () => {
-            const url = window.prompt("Insira o URL para o link:");
-            
-            if (url && url.trim() !== "") {
-                // Adiciona 'http://' se não houver protocolo
-                const fullUrl = url.startsWith('http') ? url : `http://${url}`;
-                
-                // CRÍTICO: Re-foca DEPOIS do prompt, mas ANTES de execCommand
-                focusEditor(); 
-                
-                // Cria o link
-                document.execCommand('createLink', false, fullUrl);
-                
-                // Lógica para adicionar target="_blank"
-                const selection = window.getSelection();
-                if (selection.rangeCount > 0) {
-                    const range = selection.getRangeAt(0);
-                    let linkElement = range.commonAncestorContainer;
-                    // Move para cima até encontrar um <a> dentro de #noteContent
-                    while (linkElement && linkElement.tagName !== 'A' && linkElement !== document.getElementById('noteContent')) {
-                        linkElement = linkElement.parentNode;
-                    }
-                    if (linkElement && linkElement.tagName === 'A') {
-                        linkElement.setAttribute('target', '_blank');
-                    }
-                }
-            }
-            focusEditor(); // Garante que o cursor esteja ativo no editor no final.
-        };
-
-        // Função de Impressão
+        // Função de Impressão (Inalterada)
         const handlePrint = () => {
-            // Usa a função nativa de impressão do navegador
             window.print();
         };
 
 
         // Trata o texto selecionado e abre a pesquisa do Google AI
         const handleIaSearch = (event) => {
-            const selection = window.getSelection();
-            const selectedText = selection.toString().trim();
+            let selectedText = '';
             
+            if (editorInstance) {
+                // Obtém o texto selecionado do editor TinyMCE
+                selectedText = editorInstance.selection.getContent({format: 'text'}).trim();
+            } else {
+                 selectedText = window.getSelection().toString().trim();
+            }
+
             if (!selectedText || document.getElementById('iaFloatingButton').classList.contains('ia-button-inactive')) {
-                // Previne a execução se o botão estiver inativo/não houver seleção válida
                 alertMessage("Selecione um texto antes de usar a IA.", 'yellow');
                 return;
             }
             
-            // O prompt predefinido + o texto selecionado
             const query = IA_PROMPT + selectedText;
             const encodedQuery = encodeURIComponent(query);
             
-            // URL com o modo IA (udm=50)
             const googleUrl = `https://www.google.com/search?udm=50&q=${encodedQuery}`;
             
             window.open(googleUrl, '_blank');
             
-            // Oculta o botão flutuante após a ação
             document.getElementById('iaFloatingButton').classList.add('ia-button-inactive');
         };
 
         // Exibe ou move o botão flutuante com base na seleção de texto
         const checkSelection = () => {
-            const editor = document.getElementById('noteContent');
             const iaButton = document.getElementById('iaFloatingButton');
-            const selection = window.getSelection();
+            let selectedTextLength = 0;
 
-            // 1. Verifica se há seleção e se ela está dentro do editor
-            if (selection.rangeCount > 0 && editor.contains(selection.anchorNode)) {
-                const selectedText = selection.toString().trim();
-
-                if (selectedText.length > 0) {
-                    // Texto selecionado: Ativa o botão
-                    iaButton.classList.remove('ia-button-inactive');
-                    return;
-                }
+            if (editorInstance) {
+                // Usa a API de seleção do TinyMCE
+                selectedTextLength = editorInstance.selection.getContent({format: 'text'}).trim().length;
+            } else {
+                selectedTextLength = window.getSelection().toString().trim().length;
             }
-
-            // Sem seleção válida: Desativa o botão
-            iaButton.classList.add('ia-button-inactive');
+            
+            if (selectedTextLength > 0) {
+                iaButton.classList.remove('ia-button-inactive');
+            } else {
+                iaButton.classList.add('ia-button-inactive');
+            }
         };
 
-        // --- Inicialização e Event Listeners ---
+        // --- Inicialização e Event Listeners (Ocultas para brevidade) ---
 
         const initializeApp = () => {
             loadNotesFromLocalStorage();
             populateCategories();
             renderNotes();
-            // Garante que o botão IA comece inativo
+
+            initTinyMCE(); 
+            
             document.getElementById('iaFloatingButton').classList.add('ia-button-inactive');
-            // Remove o indicador de loading, pois o carregamento é instantâneo
             document.getElementById('loading').classList.add('hidden');
         };
 
@@ -814,21 +770,11 @@
         document.getElementById('categoryFilter').addEventListener('change', renderNotes);
         document.getElementById('dateSearch').addEventListener('change', renderNotes);
         
-        // Listeners para os botões de formatação (agora com focus garantido)
-        document.getElementById('boldBtn').addEventListener('click', (e) => { e.preventDefault(); handleBold(); });
-        document.getElementById('listBtn').addEventListener('click', (e) => { e.preventDefault(); handleList(); });
-        document.getElementById('headingBtn').addEventListener('click', (e) => { e.preventDefault(); handleHeading(); });
-        
-        // Listeners para as novas funções
-        document.getElementById('separatorBtn').addEventListener('click', (e) => { e.preventDefault(); handleSeparator(); });
-        document.getElementById('linkBtn').addEventListener('click', (e) => { e.preventDefault(); handleLink(); });
-        document.getElementById('printBtn').addEventListener('click', (e) => { e.preventDefault(); handlePrint(); });
-
-        // Listeners para a funcionalidade IA:
-        document.getElementById('noteContent').addEventListener('mouseup', checkSelection);
-        document.getElementById('noteContent').addEventListener('keyup', checkSelection);
-        document.getElementById('noteContent').addEventListener('blur', () => { setTimeout(checkSelection, 100); });
+        // Listener único para o botão IA (que está na barra fixa)
         document.getElementById('iaFloatingButton').addEventListener('click', handleIaSearch);
+        
+        // Listeners para Ações
+        document.getElementById('printBtn').addEventListener('click', (e) => { e.preventDefault(); handlePrint(); });
         
         // Listeners para Exportar/Importar
         document.getElementById('exportBtn').addEventListener('click', handleExport);
