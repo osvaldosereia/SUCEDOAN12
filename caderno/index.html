@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caderno Digital de Aula</title>
+    <!-- Carrega o Tailwind CSS para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carrega o TinyMCE para o Editor de Texto Rico -->
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
+    <!-- Carrega o Day.js para manipulação de datas -->
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isBetween.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/pt-br.js"></script>
+    
+    <!-- Define a fonte Inter e o layout geral -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e5e7eb; /* Cinza claro */
+            overflow: hidden; 
+        }
+        /* Estilos personalizados para o editor (TinyMCE) */
+        .tox-tinymce {
+            border-radius: 0.5rem !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Sombra mais discreta */
+        }
+        /* Garante que o conteúdo do editor tenha altura total na coluna */
+        #editor-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Estilo para simular um grifo simples (Mark) */
+        mark {
+            background-color: #fcd34d; /* Amarelo da anotação */
+            padding: 1px 0;
+            border-radius: 2px;
+        }
+        .container-height {
+            height: calc(100vh - 2rem); /* Altura total menos margem superior/inferior */
+        }
+        /* Estilo para realçar a data selecionada no calendário */
+        .selected-day {
+            background-color: #10b981 !important; /* Verde Esmeralda */
+            color: white !important;
+            font-weight: 600;
+        }
+        /* Oculta scrollbar mas permite rolagem */
+        .scrollbar-hide {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        /* Estilo para a área de conteúdo da anotação editável */
+        .note-content[contenteditable="true"]:focus {
+            outline: 2px solid #34d399; /* Cor de foco discreta (verde esmeralda) */
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        /* Estilos de impressão (Oculta tudo exceto o card de nota a ser impresso) */
+        @media print {
+            body > * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 1rem;
+            }
+            /* Oculta botões de controle na impressão */
+            .print-hide {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- Estrutura Principal: 3 Colunas (1/6 | 4/6 | 1/6) -->
+    <div class="flex container-height gap-4">
+        
+        <!-- Coluna Esquerda (1/6): Calendário e Etiquetas -->
+        <div class="w-1/6 flex flex-col gap-4">
+            <!-- Calendário -->
+            <div id="calendar" class="bg-white p-3 rounded-xl shadow-lg flex-shrink-0 text-sm">
+                <h2 class="text-lg font-bold mb-2 text-gray-800">Calendário</h2>
+                <div class="flex justify-between items-center mb-2">
+                    <button onclick="changeMonth(-1)" class="p-1 rounded-full hover:bg-gray-200 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <span id="current-month-year" class="font-semibold text-base text-gray-700"></span>
+                    <button onclick="changeMonth(1)" class="p-1 rounded-full hover:bg-gray-200 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-7 text-center text-xs font-medium text-gray-500 mb-1">
+                    <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+                </div>
+                <div id="calendar-days" class="grid grid-cols-7 gap-0.5">
+                    <!-- Dias do calendário serão injetados aqui -->
+                </div>
+            </div>
+
+            <!-- Etiquetas de Matéria (Tags) -->
+            <div class="bg-white p-3 rounded-xl shadow-lg flex-grow overflow-y-auto scrollbar-hide text-sm">
+                <h2 class="text-lg font-bold mb-2 text-gray-800">Gerenciar Etiquetas</h2>
+                <div id="tag-list" class="flex flex-wrap gap-1 mb-3">
+                    <!-- Etiquetas serão injetadas aqui -->
+                </div>
+                <div class="flex">
+                    <input type="text" id="new-tag-input" placeholder="Nova etiqueta..." class="flex-grow p-1 border border-gray-300 rounded-l-lg focus:ring-emerald-500 focus:border-emerald-500 text-xs">
+                    <button onclick="addTag()" class="bg-emerald-600 text-white px-2 py-1 rounded-r-lg hover:bg-emerald-700 transition text-xs">Adicionar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Central (4/6): Novo Editor e Anotações Salvas -->
+        <div id="editor-container" class="w-4/6 flex flex-col gap-3">
+            <div class="bg-white p-3 rounded-xl shadow-lg flex-shrink-0 flex justify-between items-center">
+                <h1 class="text-xl font-extrabold text-gray-800">Dia: <span id="current-date-display" class="text-emerald-600"></span></h1>
+            </div>
+            
+            <!-- NOVO CAMPO DE ENTRADA (TinyMCE) -->
+            <div class="bg-white p-3 rounded-xl shadow-lg flex-shrink-0">
+                <textarea id="new-note-input" class="w-full"></textarea>
+                <div class="flex justify-between items-center mt-3">
+                    <!-- Input de Etiquetas por texto -->
+                    <input type="text" id="new-note-tags-input" placeholder="Etiquetas (ex: Matemática, C3)" class="w-2/3 p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm">
+
+                    <button onclick="launchNote()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition font-medium text-sm shadow-md">
+                        Lançar Anotação
+                    </button>
+                </div>
+            </div>
+
+            <!-- LISTA DE ANOTAÇÕES SALVAS -->
+            <div class="flex-grow overflow-y-auto scrollbar-hide">
+                <h2 class="text-xl font-bold mb-2 text-gray-800">Anotações Salvas</h2>
+                <div id="saved-notes-list" class="space-y-3">
+                    <!-- Anotações salvas serão injetadas aqui -->
+                    <p id="no-notes-message" class="text-center text-gray-500 mt-5 hidden text-sm">Nenhuma anotação neste dia. Comece uma nova acima!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Direita (1/6): Lembretes -->
+        <div class="w-1/6 flex flex-col gap-4">
+            <div class="bg-white p-3 rounded-xl shadow-lg flex-grow flex flex-col overflow-hidden text-sm">
+                <h2 class="text-lg font-bold mb-2 text-gray-800 flex-shrink-0">Lembretes (<span id="reminders-count">0</span>)</h2>
+                
+                <!-- Adicionar Novo Lembrete -->
+                <div class="border-b pb-3 mb-3 flex-shrink-0">
+                    <input type="text" id="reminder-text" placeholder="O que devo lembrar?" class="w-full p-1 border border-gray-300 rounded-t-lg focus:ring-emerald-500 focus:border-emerald-500 text-xs">
+                    <div class="flex gap-1 mt-1">
+                        <input type="date" id="reminder-date" class="flex-grow p-1 border border-gray-300 focus:ring-emerald-500 focus:border-emerald-500 text-xs">
+                        <input type="time" id="reminder-time" value="10:00" class="w-1/3 p-1 border border-gray-300 focus:ring-emerald-500 focus:border-emerald-500 text-xs">
+                    </div>
+                    <button onclick="addReminder()" class="w-full bg-emerald-500 text-white p-1 mt-1 rounded-b-lg hover:bg-emerald-600 transition font-medium text-xs">
+                        Criar Lembrete
+                    </button>
+                </div>
+
+                <!-- Lista de Lembretes -->
+                <div id="reminders-list" class="flex-grow overflow-y-auto scrollbar-hide space-y-2">
+                    <!-- Lembretes serão injetados aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações e Variáveis Globais
+        dayjs.locale('pt-br');
+        dayjs.extend(dayjs_plugin_isBetween);
+        const STORAGE_KEY = 'classroomNotebookData';
+        let inputEditorInstance = null;
+        let selectedDate = dayjs();
+        let currentMonth = dayjs();
+        
+        // Estrutura de dados principal (será carregada do localStorage)
+        let appData = {
+            notes: {}, 
+            reminders: [],
+            customTags: ['Matemática', 'História', 'Português', 'Ciências']
+        };
+
+        // =======================================================
+        // 1. GESTÃO DE DADOS (localStorage)
+        // =======================================================
+
+        /**
+         * Carrega os dados do localStorage ou inicializa a estrutura.
+         */
+        function loadData() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    appData.notes = parsed.notes || {};
+                    appData.reminders = parsed.reminders || [];
+                    appData.customTags = parsed.customTags || ['Matemática', 'História', 'Português', 'Ciências'];
+                    console.log('Dados carregados do localStorage.');
+                } catch (e) {
+                    console.error('Erro ao analisar os dados do localStorage:', e);
+                }
+            }
+            dayjs.extend(dayjs_plugin_isBetween);
+            dayjs.locale('pt-br');
+        }
+
+        /**
+         * Salva toda a estrutura de dados no localStorage.
+         */
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            console.log('Dados salvos no localStorage.');
+            renderReminders();
+            renderTags();
+            renderCalendar();
+        }
+
+        // =======================================================
+        // 2. EDITOR DE ANOTAÇÕES (TinyMCE)
+        // =======================================================
+
+        /**
+         * Inicializa o editor TinyMCE para a nova anotação.
+         */
+        function initEditor() {
+            tinymce.init({
+                selector: '#new-note-input',
+                height: 120, // Altura reduzida
+                menubar: false,
+                plugins: 'autoresize lists link code',
+                toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | bullist numlist | link | code',
+                setup: (editor) => {
+                    inputEditorInstance = editor;
+                },
+                content_style: 'body { font-family:Inter,sans-serif; font-size:14px; } mark { background-color: #fcd34d; padding: 1px 0; border-radius: 2px; }',
+            });
+        }
+
+        /**
+         * Lança a nova anotação, salva no array do dia e atualiza a lista.
+         */
+        function launchNote() {
+            if (!inputEditorInstance) return;
+
+            const content = inputEditorInstance.getContent({ format: 'html' }).trim();
+            const tagsInput = document.getElementById('new-note-tags-input').value.trim();
+            
+            if (content.length === 0) {
+                console.warn('O conteúdo da anotação não pode estar vazio.');
+                return; 
+            }
+            
+            const dateKey = selectedDate.format('YYYY-MM-DD');
+            
+            // Processa as tags (separadas por vírgula)
+            const newTags = tagsInput 
+                ? tagsInput.split(',').map(tag => tag.trim())
+                    .filter(tag => tag.length > 0)
+                    .map(tag => tag.charAt(0).toUpperCase() + tag.slice(1)) // Capitaliza
+                : [];
+            
+            // Cria o novo objeto de anotação
+            const newNote = {
+                id: crypto.randomUUID(),
+                content: content,
+                iaResponse: '', 
+                tags: newTags, 
+                timestamp: dayjs().toISOString()
+            };
+
+            // Adiciona a anotação ao array do dia
+            if (!appData.notes[dateKey]) {
+                appData.notes[dateKey] = [];
+            }
+            appData.notes[dateKey].unshift(newNote); // Adiciona no início (mais recente primeiro)
+
+            // Limpa o editor e o campo de tags
+            inputEditorInstance.setContent('');
+            document.getElementById('new-note-tags-input').value = '';
+
+            saveData(); 
+            renderDailyNotes(); // Atualiza a lista de anotações salvas
+        }
+
+        /**
+         * Carrega as anotações para a data selecionada.
+         */
+        function loadNoteForSelectedDate() {
+            // Atualiza o display da data
+            document.getElementById('current-date-display').textContent = selectedDate.format('DD [de] MMMM [de] YYYY');
+            
+            // Renderiza a lista de anotações salvas
+            renderDailyNotes();
+        }
+        
+        // =======================================================
+        // 3. CALENDÁRIO E NAVEGAÇÃO
+        // =======================================================
+
+        /**
+         * Renderiza o calendário para o mês atual. (Função inalterada)
+         */
+        function renderCalendar() {
+            const monthStart = currentMonth.startOf('month');
+            const monthEnd = currentMonth.endOf('month');
+            const startDate = monthStart.startOf('week');
+            const today = dayjs().startOf('day');
+            
+            document.getElementById('current-month-year').textContent = currentMonth.format('MMMM [de] YYYY');
+            const calendarDaysEl = document.getElementById('calendar-days');
+            calendarDaysEl.innerHTML = '';
+            
+            let date = startDate;
+            
+            while (date.isBefore(monthEnd) || date.isSame(monthEnd) || date.isBefore(monthEnd.endOf('week'))) {
+                const dayEl = document.createElement('div');
+                const dateKey = date.format('YYYY-MM-DD');
+                
+                dayEl.className = 'p-1.5 rounded-lg text-center cursor-pointer text-gray-700 transition hover:bg-emerald-100 text-xs'; // Tamanho ajustado
+                
+                // Estilo para dias de outros meses
+                if (!date.isBetween(monthStart.subtract(1, 'day'), monthEnd.add(1, 'day'))) {
+                    dayEl.classList.add('opacity-50', 'pointer-events-none');
+                }
+
+                // Estilo para o dia atual
+                if (date.isSame(today, 'day')) {
+                    dayEl.classList.add('border', 'border-emerald-500', 'font-bold');
+                }
+
+                // Estilo para a data selecionada
+                if (date.isSame(selectedDate, 'day')) {
+                    dayEl.classList.add('selected-day', 'hover:bg-emerald-600');
+                }
+                
+                // Marca dias com anotações
+                if (appData.notes[dateKey] && appData.notes[dateKey].length > 0) {
+                    dayEl.classList.add('bg-emerald-50');
+                    dayEl.title = 'Dia com anotação';
+                }
+
+                dayEl.textContent = date.format('D');
+                dayEl.dataset.date = dateKey;
+                dayEl.onclick = () => selectDate(dayjs(dateKey));
+                
+                calendarDaysEl.appendChild(dayEl);
+                date = date.add(1, 'day');
+            }
+        }
+
+        /**
+         * Seleciona uma nova data e carrega as anotações. (Função inalterada)
+         */
+        function selectDate(newDate) {
+            selectedDate = newDate;
+            
+            if (!selectedDate.isSame(currentMonth, 'month')) {
+                currentMonth = selectedDate.startOf('month');
+            }
+            
+            renderCalendar();
+            loadNoteForSelectedDate();
+        }
+
+        /**
+         * Altera o mês do calendário e o renderiza. (Função inalterada)
+         */
+        function changeMonth(delta) {
+            currentMonth = currentMonth.add(delta, 'month');
+            renderCalendar();
+        }
+        
+        /**
+         * Renderiza a lista de anotações salvas para a data selecionada, permitindo edição in-place.
+         */
+        function renderDailyNotes() {
+            const listEl = document.getElementById('saved-notes-list');
+            const noNotesMessage = document.getElementById('no-notes-message');
+            const dateKey = selectedDate.format('YYYY-MM-DD');
+            const dailyNotes = appData.notes[dateKey] || [];
+
+            listEl.innerHTML = '';
+
+            if (dailyNotes.length === 0) {
+                noNotesMessage.classList.remove('hidden');
+                return;
+            } else {
+                noNotesMessage.classList.add('hidden');
+            }
+
+            dailyNotes.forEach(note => {
+                const noteEl = document.createElement('div');
+                noteEl.id = `note-card-${note.id}`;
+                noteEl.className = 'bg-white p-4 rounded-xl shadow-lg border-l-4 border-emerald-500 space-y-3 print-area';
+                
+                const time = dayjs(note.timestamp).format('HH:mm');
+                
+                // Injeta o HTML da anotação
+                noteEl.innerHTML = `
+                    <div class="flex justify-between items-center border-b pb-2 print-hide">
+                        <span class="text-xs text-gray-500 font-semibold">${time}</span>
+                        <div class="flex gap-1">
+                            ${note.tags.map(tag => `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Conteúdo Principal Editável -->
+                    <div id="content-${note.id}" 
+                         class="note-content text-gray-800 break-words text-sm p-1" 
+                         contenteditable="true"
+                         oninput="showSaveButton('${note.id}')">
+                        ${note.content}
+                    </div>
+
+                    <!-- Botões de Ação e Campo IA -->
+                    <div class="pt-3 border-t print-hide">
+                        <!-- Área de botões de controle -->
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button onclick="exportNoteToIA('${note.id}')" class="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition font-medium text-xs">
+                                Enviar Seleção p/ IA
+                            </button>
+                            <button onclick="printNote('${note.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 transition font-medium text-xs">
+                                Imprimir Anotação
+                            </button>
+                            <button onclick="deleteNote('${note.id}')" class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition font-medium text-xs">
+                                Excluir
+                            </button>
+                            <!-- Botão Salvar Edição (Escondido por padrão) -->
+                            <button id="save-btn-${note.id}" onclick="saveEditedNote('${note.id}')" 
+                                class="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition font-medium text-xs hidden">
+                                Salvar Edição
+                            </button>
+                        </div>
+                        
+                        <!-- Campo de Resposta da IA -->
+                        <div class="mt-4">
+                            <label for="ia-response-${note.id}" class="block text-xs font-medium text-gray-700 mb-1">Resposta da IA (Copie e Cole Aqui):</label>
+                            <textarea id="ia-response-${note.id}" 
+                                onchange="saveIaResponse('${note.id}', this.value)"
+                                class="w-full p-2 border border-gray-300 rounded-lg text-xs focus:ring-emerald-500 focus:border-emerald-500" 
+                                rows="3" placeholder="Cole a resposta da IA aqui para ligar ao seu texto...">
+                                ${note.iaResponse || ''}
+                            </textarea>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(noteEl);
+            });
+        }
+        
+        /**
+         * Mostra o botão Salvar Edição quando o conteúdo da nota é alterado.
+         * @param {string} noteId - ID da anotação.
+         */
+        function showSaveButton(noteId) {
+            document.getElementById(`save-btn-${noteId}`).classList.remove('hidden');
+        }
+
+        /**
+         * Salva o conteúdo editado in-place.
+         * @param {string} noteId - ID da anotação.
+         */
+        function saveEditedNote(noteId) {
+            const dateKey = selectedDate.format('YYYY-MM-DD');
+            const dailyNotes = appData.notes[dateKey];
+            const newContent = document.getElementById(`content-${noteId}`).innerHTML;
+            
+            if (dailyNotes) {
+                const noteIndex = dailyNotes.findIndex(n => n.id === noteId);
+                if (noteIndex !== -1) {
+                    appData.notes[dateKey][noteIndex].content = newContent;
+                    saveData();
+                    document.getElementById(`save-btn-${noteId}`).classList.add('hidden');
+                    console.log(`Nota ${noteId} editada e salva.`);
+                }
+            }
+        }
+        
+        /**
+         * Exclui uma anotação.
+         * @param {string} noteId - ID da anotação.
+         */
+        function deleteNote(noteId) {
+            const dateKey = selectedDate.format('YYYY-MM-DD');
+            appData.notes[dateKey] = (appData.notes[dateKey] || []).filter(n => n.id !== noteId);
+            saveData();
+            renderDailyNotes();
+        }
+
+        /**
+         * Imprime o card de anotação específico.
+         * @param {string} noteId - ID da anotação a ser impressa.
+         */
+        function printNote(noteId) {
+            const noteCard = document.getElementById(`note-card-${noteId}`);
+            if (noteCard) {
+                // Adiciona uma classe temporária para isolar a impressão
+                noteCard.classList.add('is-printing');
+                window.print();
+                // A classe é removida após a impressão (ou timeout)
+                setTimeout(() => noteCard.classList.remove('is-printing'), 500); 
+            }
+        }
+
+        /**
+         * Salva a resposta da IA para uma anotação específica. (Função inalterada)
+         */
+        function saveIaResponse(noteId, responseText) {
+            const dateKey = selectedDate.format('YYYY-MM-DD');
+            const dailyNotes = appData.notes[dateKey];
+            
+            if (dailyNotes) {
+                const noteIndex = dailyNotes.findIndex(n => n.id === noteId);
+                if (noteIndex !== -1) {
+                    appData.notes[dateKey][noteIndex].iaResponse = responseText.trim();
+                    saveData();
+                }
+            }
+        }
+
+        // =======================================================
+        // 4. ETIQUETAS (TAGS)
+        // =======================================================
+
+        /**
+         * Renderiza a lista de todas as etiquetas personalizadas (painel lateral). (Função inalterada)
+         */
+        function renderTags() {
+            const tagListEl = document.getElementById('tag-list');
+            tagListEl.innerHTML = '';
+
+            appData.customTags.forEach(tag => {
+                const tagEl = document.createElement('span');
+                tagEl.innerHTML = `<span class="bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">${tag}</span>`;
+                tagListEl.appendChild(tagEl);
+            });
+        }
+        
+        /**
+         * Adiciona uma nova etiqueta personalizada. (Função inalterada)
+         */
+        function addTag() {
+            const input = document.getElementById('new-tag-input');
+            let tagName = input.value.trim();
+            if (tagName && !appData.customTags.includes(tagName)) {
+                tagName = tagName.charAt(0).toUpperCase() + tagName.slice(1).toLowerCase(); 
+                appData.customTags.push(tagName);
+                input.value = '';
+                saveData();
+                renderTags();
+            }
+        }
+        
+        // =======================================================
+        // 5. INTEGRAÇÃO COM IA (Função inalterada)
+        // =======================================================
+
+        /**
+         * Exporta o texto da anotação selecionada para o link externo da IA.
+         */
+        function exportNoteToIA(noteId) {
+            const dateKey = selectedDate.format('YYYY-MM-DD');
+            const dailyNotes = appData.notes[dateKey] || [];
+            
+            const note = dailyNotes.find(n => n.id === noteId);
+            if (!note) return;
+
+            // Pega o conteúdo da DIV editável (que reflete o conteúdo atual)
+            const editableContentEl = document.getElementById(`content-${note.id}`);
+            let noteContent = '';
+
+            // Se o usuário selecionou algum texto, usa a seleção, se não, usa o texto puro da anotação
+            const selection = window.getSelection();
+            if (selection.toString().length > 0 && editableContentEl.contains(selection.anchorNode)) {
+                noteContent = selection.toString();
+            } else {
+                 // Limpa o HTML para obter apenas o texto puro da anotação
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = editableContentEl.innerHTML;
+                noteContent = tempDiv.textContent || tempDiv.innerText || '';
+            }
+
+            if (noteContent.trim().length === 0) {
+                console.warn('Conteúdo da anotação vazio ou nada selecionado. Nada para enviar.');
+                return;
+            }
+            
+            // Prompt predefinido
+            const predefinedPrompt = "Analise e crie 5 perguntas de prova sobre este conteúdo de aula:";
+            
+            // Codifica o texto para ser seguro na URL
+            const fullQuery = `${predefinedPrompt} \n\n --- Conteúdo da Anotação ---\n${noteContent}`;
+            const encodedQuery = encodeURIComponent(fullQuery);
+
+            // Abre o novo separador com o link da IA
+            const iaUrl = `https://gemini.google.com/app/50#prompt=${encodedQuery}`;
+            
+            window.open(iaUrl, '_blank');
+        }
+
+        // =======================================================
+        // 6. LEMBRETES (Funções inalteradas)
+        // =======================================================
+
+        /**
+         * Adiciona um novo lembrete à lista.
+         */
+        function addReminder() {
+            const textInput = document.getElementById('reminder-text');
+            const dateInput = document.getElementById('reminder-date');
+            const timeInput = document.getElementById('reminder-time');
+
+            const text = textInput.value.trim();
+            const date = dateInput.value;
+            const time = timeInput.value;
+
+            if (!text || !date || !time) {
+                console.warn('Preencha o texto, data e hora do lembrete.');
+                return;
+            }
+
+            const newReminder = {
+                id: crypto.randomUUID(),
+                text: text,
+                date: date,
+                time: time,
+                isCompleted: false
+            };
+
+            appData.reminders.push(newReminder);
+            saveData();
+            
+            textInput.value = '';
+        }
+
+        /**
+         * Renderiza a lista de lembretes.
+         */
+        function renderReminders() {
+            const listEl = document.getElementById('reminders-list');
+            listEl.innerHTML = '';
+
+            const sortedReminders = appData.reminders
+                .sort((a, b) => {
+                    if (a.isCompleted !== b.isCompleted) {
+                        return a.isCompleted ? 1 : -1;
+                    }
+                    const dateTimeA = dayjs(`${a.date} ${a.time}`);
+                    const dateTimeB = dayjs(`${b.date} ${b.time}`);
+                    return dateTimeA.diff(dateTimeB);
+                });
+
+            document.getElementById('reminders-count').textContent = sortedReminders.length;
+
+            if (sortedReminders.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-gray-500 mt-5 text-xs">Nenhum lembrete agendado.</p>';
+                return;
+            }
+
+            sortedReminders.forEach(reminder => {
+                const dateTime = dayjs(`${reminder.date} ${reminder.time}`);
+                const isPast = dateTime.isBefore(dayjs());
+                
+                const reminderEl = document.createElement('div');
+                reminderEl.className = `p-2 rounded-lg flex items-start justify-between ${
+                    reminder.isCompleted ? 'bg-green-100 line-through text-gray-500' : isPast ? 'bg-red-100 border-l-4 border-red-500' : 'bg-gray-50 hover:bg-gray-100 transition'
+                } shadow-sm`;
+
+                reminderEl.innerHTML = `
+                    <div class="flex-grow">
+                        <span class="text-xs font-semibold block ${reminder.isCompleted ? 'text-gray-400' : isPast ? 'text-red-600' : 'text-emerald-600'}">
+                            ${dateTime.format('DD/MM [às] HH:mm')} ${isPast && !reminder.isCompleted ? '(Atrasado)' : ''}
+                        </span>
+                        <p class="mt-0.5 text-xs font-medium">${reminder.text}</p>
+                    </div>
+                    <div class="flex items-center space-x-1 ml-2 flex-shrink-0">
+                        <!-- Botão de Concluir -->
+                        <button onclick="toggleReminderCompletion('${reminder.id}')" title="${reminder.isCompleted ? 'Marcar como Pendente' : 'Marcar como Concluído'}"
+                            class="p-0.5 rounded-full ${reminder.isCompleted ? 'bg-white' : 'bg-emerald-500 hover:bg-emerald-600'} text-white border border-gray-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ${reminder.isCompleted ? 'text-gray-400' : 'text-white'}" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <!-- Botão de Deletar -->
+                         <button onclick="deleteReminder('${reminder.id}')" title="Excluir Lembrete"
+                            class="p-0.5 rounded-full bg-gray-200 hover:bg-red-400 text-gray-500 hover:text-white transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                listEl.appendChild(reminderEl);
+            });
+        }
+
+        /**
+         * Marca um lembrete como concluído/pendente.
+         */
+        function toggleReminderCompletion(id) {
+            const reminder = appData.reminders.find(r => r.id === id);
+            if (reminder) {
+                reminder.isCompleted = !reminder.isCompleted;
+                saveData();
+            }
+        }
+        
+        /**
+         * Deleta um lembrete.
+         */
+        function deleteReminder(id) {
+            appData.reminders = appData.reminders.filter(r => r.id !== id);
+            saveData();
+        }
+
+        // =======================================================
+        // 7. INICIALIZAÇÃO (Função inalterada)
+        // =======================================================
+
+        window.onload = function() {
+            dayjs.extend(dayjs_plugin_isBetween);
+            dayjs.locale('pt-br');
+            
+            loadData();
+            
+            selectedDate = dayjs().startOf('day');
+            currentMonth = selectedDate.startOf('month');
+            renderCalendar();
+            
+            renderTags();
+            renderReminders();
+            
+            initEditor();
+
+            loadNoteForSelectedDate();
+
+            document.getElementById('reminder-date').value = dayjs().format('YYYY-MM-DD');
+        }
+    </script>
+</body>
+</html>
