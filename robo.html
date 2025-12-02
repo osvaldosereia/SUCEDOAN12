@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Disparador Seguro PC</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; display: flex; justify-content: center; padding: 20px; }
+        .painel { background: white; width: 600px; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #075e54; text-align: center; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
+        textarea { width: 100%; border: 1px solid #ddd; border-radius: 4px; padding: 10px; box-sizing: border-box; font-family: monospace; }
+        button { width: 100%; padding: 15px; background: #25d366; color: white; border: none; border-radius: 4px; font-size: 18px; margin-top: 20px; cursor: pointer; }
+        button:hover { background: #1ebc57; }
+        .log-box { background: #333; color: #0f0; padding: 10px; height: 200px; overflow-y: scroll; font-family: monospace; margin-top: 20px; border-radius: 4px; font-size: 12px; }
+        .status { text-align: center; font-weight: bold; color: orange; margin-bottom: 10px; }
+        .dica { font-size: 12px; color: #666; background: #f0f0f0; padding: 8px; border-left: 4px solid #075e54; margin-top: 5px; }
+        .progresso-bar { width: 100%; height: 20px; background-color: #f3f3f3; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        .progresso-fill { height: 100%; background-color: #075e54; width: 0%; text-align: center; color: white; line-height: 20px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="painel">
+    <h2>🤖 Disparador PC Seguro</h2>
+    <div id="statusConexao" class="status">🔴 Aguardando Conexão...</div>
+
+    <label>Lista de Números (Um por linha, com 55 + DDD):</label>
+    <textarea id="numeros" rows="5" placeholder="5511999999999&#10;5521988888888"></textarea>
+
+    <label>Mensagem (Use {a|b|c} para variar):</label>
+    <div class="dica">
+        Dica Anti-Spam: Use <b>{Olá|Oi|E aí}</b> para o robô sortear uma palavra.<br>
+        Ex: "{Olá|Oi}, tudo {bem|joia}? {Confira|Veja} a oferta!"
+    </div>
+    <textarea id="mensagem" rows="4" placeholder="{Olá|Oi}, tudo bem?"></textarea>
+
+    <button onclick="iniciar()">INICIAR DISPAROS</button>
+    
+    <div class="progresso-bar"><div class="progresso-fill" id="progressoFill">0%</div></div>
+
+    <label>Log de Eventos:</label>
+    <div class="log-box" id="logs"></div>
+</div>
+
+<script>
+    const socket = io();
+
+    socket.on('status', (msg) => {
+        const el = document.getElementById('statusConexao');
+        el.innerText = msg;
+        el.style.color = msg.includes('Conectado') ? 'green' : 'orange';
+    });
+
+    socket.on('log', (msg) => {
+        const logBox = document.getElementById('logs');
+        const novaLinha = document.createElement('div');
+        novaLinha.innerText = `> ${msg}`;
+        logBox.appendChild(novaLinha);
+        logBox.scrollTop = logBox.scrollHeight;
+    });
+
+    socket.on('progresso', (data) => {
+        const percent = Math.round((data.atual / data.total) * 100);
+        const fill = document.getElementById('progressoFill');
+        fill.style.width = percent + '%';
+        fill.innerText = `${data.atual}/${data.total} (${percent}%)`;
+    });
+
+    function iniciar() {
+        const numeros = document.getElementById('numeros').value;
+        const mensagem = document.getElementById('mensagem').value;
+
+        if(!numeros || !mensagem) {
+            alert('Preencha os números e a mensagem!');
+            return;
+        }
+
+        if(confirm('Tem certeza? O intervalo será de aprox. 80 segundos entre mensagens, para segurança.')) {
+            socket.emit('iniciar_envio', { numeros, mensagem });
+        }
+    }
+</script>
+
+</body>
+</html>
