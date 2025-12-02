@@ -101,6 +101,11 @@
             --cor-whatsapp: #25D366;
             --cor-texto: #222;
             --cor-fundo: #fafafa;
+            /* CORES PARA OS ÍCONES */
+            --cor-cestas: #FF9800; /* Laranja */
+            --cor-pagamento: #2196F3; /* Azul */
+            --cor-sorteio: #4CAF50; /* Verde */
+            --cor-aniversario: #E91E63; /* Rosa/Solidariedade */
         }
 
         html { background-color: #e0e0e0; scroll-behavior: smooth; }
@@ -210,6 +215,17 @@
                 left: 50%;
                 transform: translateX(-50%);
             }
+
+            /* Ícones no desktop voltam a ser texto */
+            .nav-item i {
+                display: none;
+            }
+            .nav-item span {
+                display: inline;
+            }
+            .nav-item.ativo {
+                font-size: 16px; 
+            }
         }
         
         /* Media Query para layout de 2 colunas MAX (768px+) */
@@ -298,13 +314,33 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: flex; 
+            flex-direction: column; /* Para empilhar ícone e texto */
             align-items: center; 
             justify-content: center;
             transition: all 0.3s ease;
             border-right: 1px solid #333;
+            /* Adicionado padding para acomodar o ícone */
+            padding: 5px 2px; 
         }
         .nav-item:last-child { border-right: none; }
+
+        /* Estilos dos Ícones e Texto no Menu */
+        .nav-item i {
+            font-size: 20px; /* Tamanho maior para o ícone */
+            margin-bottom: 2px; /* Espaço entre ícone e texto */
+            transition: color 0.3s;
+            display: inline; /* Ícones visíveis por padrão (mobile) */
+        }
+        .nav-item span {
+            display: none; /* Texto escondido por padrão (mobile) */
+        }
         
+        /* Cores Específicas dos Ícones */
+        #btn-cestas i { color: var(--cor-cestas); }
+        #btn-pagamento i { color: var(--cor-pagamento); }
+        #btn-sorteio i { color: var(--cor-sorteio); }
+        #btn-aniversario i { color: var(--cor-aniversario); }
+
         .nav-item.ativo { 
             color: #ffffff; 
             background-color: var(--cor-primaria);
@@ -312,6 +348,10 @@
             font-weight: 900;
             text-shadow: 0 1px 3px rgba(0,0,0,0.3);
             box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
+        /* No estado ativo, os ícones ficam brancos */
+        .nav-item.ativo i {
+            color: white !important; 
         }
         
         /* --- SEÇÕES (PÁGINAS) --- */
@@ -438,8 +478,21 @@
 
         /* --- MODAIS --- */
         .lista-pagamento { list-style: none; padding: 0; }
-        .lista-pagamento li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 16px; display: flex; align-items: center; }
-        .lista-pagamento i { color: var(--cor-primaria); width: 30px; font-size: 18px; }
+        /* NOVO: Estilo para emojis */
+        .lista-pagamento li { 
+            padding: 10px 0; 
+            border-bottom: 1px solid #eee; 
+            font-size: 16px; 
+            display: flex; 
+            align-items: center; 
+        }
+        .lista-pagamento li span.emoji-icon {
+            font-size: 20px; 
+            width: 30px;
+            text-align: center;
+            line-height: 1;
+            margin-right: 5px;
+        }
         
         .modal-variacao {
             display: none;
@@ -707,10 +760,19 @@
         </div>
 
         <nav class="top-nav">
-            <button class="nav-item ativo" id="btn-cestas" onclick="rolarPara('cestas')">CESTAS</button>
-            <button class="nav-item" id="btn-pagamento" onclick="rolarPara('pagamento')">PAGAMENTO</button>
-            <button class="nav-item" id="btn-sorteio" onclick="rolarPara('sorteio')">SORTEIO</button>
-            <button class="nav-item" id="btn-aniversario" onclick="rolarPara('aniversario')">ANIVERSÁRIO</button>
+            <!-- MENU COM ÍCONES NO MOBILE E TEXTO NO DESKTOP -->
+            <button class="nav-item ativo" id="btn-cestas" onclick="rolarPara('cestas')">
+                <i class="fas fa-shopping-basket"></i><span>CESTAS</span>
+            </button>
+            <button class="nav-item" id="btn-pagamento" onclick="rolarPara('pagamento')">
+                <i class="fas fa-wallet"></i><span>PAGAMENTO</span>
+            </button>
+            <button class="nav-item" id="btn-sorteio" onclick="rolarPara('sorteio')">
+                <i class="fas fa-ticket-alt"></i><span>SORTEIO</span>
+            </button>
+            <button class="nav-item" id="btn-aniversario" onclick="rolarPara('aniversario')">
+                <i class="fas fa-hand-holding-heart"></i><span>ANIVERSÁRIO</span>
+            </button>
         </nav>
     </header>
 
@@ -722,7 +784,7 @@
             <!-- BANNER H1 (Sempre full width dentro do Grid) -->
             <div class="card" style="text-align: center; background-color: #fff3e0;">
                 <h1 style="margin: 0; font-size: 1.1rem; font-weight: bold; color: #E65100;">
-                    <i class="fas fa-crown"></i> 8 anos de tradição em Cuiabá e VG
+                    👑 8 anos de tradição em Cuiabá e VG
                 </h1>
                 <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #666;">Cestas básicas com preço justo e qualidade garantida.</p>
             </div>
@@ -899,14 +961,15 @@
                 <h2>💳 Formas de Pagamento</h2>
                 <p>Aceitamos as principais formas para facilitar sua vida:</p>
                 <ul class="lista-pagamento">
-                    <li><i class="fas fa-money-bill-wave"></i> Dinheiro</li>
-                    <li><i class="fas fa-qrcode"></i> Pix</li>
-                    <li><i class="fas fa-credit-card"></i> Cartão de Débito</li>
-                    <li><i class="fas fa-credit-card"></i> Cartão de Crédito (até 3x sem juros)</li>
-                    <li><i class="fas fa-utensils"></i> Alelo Alimentação/Refeição</li>
-                    <li><i class="fas fa-utensils"></i> Sodexo Alimentação/Refeição</li>
-                    <li><i class="fas fa-utensils"></i> Pluxee</li>
-                    <li><i class="fas fa-mobile-alt"></i> Ifood Benefícios</li>
+                    <!-- NOVO: EMOJIS -->
+                    <li><span class="emoji-icon">💵</span> Dinheiro</li>
+                    <li><span class="emoji-icon">✨</span> Pix</li>
+                    <li><span class="emoji-icon">💳</span> Cartão de Débito</li>
+                    <li><span class="emoji-icon">💳</span> Cartão de Crédito (até 3x sem juros)</li>
+                    <li><span class="emoji-icon">🥗</span> Alelo Alimentação/Refeição</li>
+                    <li><span class="emoji-icon">🥗</span> Sodexo Alimentação/Refeição</li>
+                    <li><span class="emoji-icon">🥗</span> Pluxee</li>
+                    <li><span class="emoji-icon">📱</span> Ifood Benefícios</li>
                 </ul>
                 <p style="color: red; font-size: 14px; text-align: center; margin-top: 20px;"><strong>⚠️ Atenção:</strong> Não vendemos a prazo para 30 dias.</p>
             </div>
@@ -915,12 +978,12 @@
         <!-- SEÇÃO 3: SORTEIO (FLUXO CONTÍNUO) -->
         <div id="pag-sorteio" class="secao-conteudo">
             <div class="card">
-                <h2>🍀 Sorteio todo Domingo. Válido para moradores de Cuiabá e VG</h2>
+                <h2>🎉 Sorteio todo Domingo. Válido para moradores de Cuiabá e VG</h2>
                 <p>Preencha para concorrer. Serão 5 ganhadores de Kits de Limpeza e Higiêne! Próximo Sorteio dia 7 de Dezembro as 18h.</p>
                 
                 <!-- ETAPA 1: BUSCA POR TELEFONE (VISÍVEL SEMPRE) -->
                 <div id="area-busca-telefone" class="card" style="margin-bottom: 15px;">
-                    <h2>📞 Busque seu Cadastro</h2>
+                    <h2>🔎 Busque seu Cadastro</h2>
                     <p>Digite seu telefone para verificar sua participação:</p>
                     <label>Telefone (Whatsapp): <span style="color:red">*</span></label>
                     <input type="tel" id="busca-telefone" placeholder="Digite seu telefone..." required>
@@ -931,7 +994,7 @@
 
                 <!-- ETAPA 2A: CADASTRO ENCONTRADO (Escondido inicialmente) -->
                 <div id="cadastro-encontrado" class="area-resultado-busca" style="display: none;">
-                    <h2>🥳 Cadastro Encontrado!</h2>
+                    <h2>✅ Cadastro Encontrado!</h2>
                     <p style="margin-bottom: 10px;">Confira seus dados:</p>
                     
                     <div style="text-align: left;">
@@ -947,7 +1010,7 @@
                 
                 <!-- ETAPA 2B: NOVO CADASTRO (Escondido inicialmente) -->
                 <div id="cadastro-novo" class="card" style="display: none; background-color: #fff3e0; border: 1px solid #ffcc80;">
-                    <h2>✍️ Novo Cadastro</h2>
+                    <h2>📝 Novo Cadastro</h2>
                     <p style="margin-bottom: 15px; color: #D32F2F;">Não encontramos seu número. Preencha seus dados para participar:</p>
                     
                     <form onsubmit="event.preventDefault(); enviarNovoCadastro();">
@@ -972,7 +1035,7 @@
 
         <!-- NOVO CARD: ANIVERSÁRIO SOLIDÁRIO -->
         <div id="pag-aniversario" class="secao-conteudo card" style="background-color: #e3f2fd;">
-            <h2>🎁 Aniversário Solidário (Em Breve)</h2>
+            <h2>❤️ Aniversário Solidário (Em Breve)</h2>
             <p>Prepare-se para fazer a diferença! Em breve, lançaremos a campanha "Aniversário Solidário". Cada cesta comprada ajudará a montar kits para famílias carentes.</p>
             <p style="text-align: center; margin-top: 20px; font-weight: bold; color: #1e88e5;">Acompanhe nossas redes sociais para mais detalhes!</p>
             <div class="botoes-wrapper">
@@ -1077,6 +1140,8 @@
             if (!galeria || !CestaImages[cestaTipo] || CestaImages[cestaTipo] < 2) return;
 
             const totalImages = CestaImages[cestaTipo];
+            // O erro estava aqui, onde a direção não era aplicada corretamente. 
+            // Como o botão sempre alterna, basta usar (índice + 1) % total.
             let newIndex = (currentPhotoIndex[cestaTipo] + 1) % totalImages;
             
             const currentWrapper = galeria.querySelector(`.img-wrapper.active`);
@@ -1099,6 +1164,11 @@
             cestas.forEach(cesta => {
                 const indicator = document.querySelector(`#galeria-${cesta} .swipe-indicator`);
                 if (indicator) {
+                    // O clique já estava chamando mudarFotoNoCard('tipo', 1) no HTML,
+                    // mas reconfirmamos o listener de segurança aqui (embora o do HTML seja suficiente).
+                    /* O listener no HTML é: onclick="event.stopPropagation(); mudarFotoNoCard('economica', 1)" */
+                    
+                    // Adicionando um listener direto ao DOM para garantir.
                     indicator.addEventListener('click', (event) => {
                         event.stopPropagation();
                         mudarFotoNoCard(cesta, 1); 
@@ -1110,9 +1180,6 @@
 
         // --- SISTEMA DE ROLAGEM ÚNICA (REVISADO) ---
         
-        // Remove a necessidade do array 'paginasReveladas' e de reveal por scroll.
-        // As seções estão sempre visíveis no fluxo.
-
         function verificarHash() {
             const hash = window.location.hash.replace('#', '');
             const secoes = ['cestas', 'pagamento', 'sorteio', 'aniversario'];
