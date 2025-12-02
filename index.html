@@ -322,7 +322,7 @@
             padding: 0 10px;
         }
 
-        /* --- GALERIA - NOVO ESTILO (FOTO ÚNICA COM SETAS) --- */
+        /* --- GALERIA - NOVO ESTILO (FOTO ÚNICA COM BOTÃO) --- */
         .galeria-fotos { 
             position: relative; 
             margin-bottom: 15px; 
@@ -331,7 +331,8 @@
             width: 100%; 
             aspect-ratio: 1 / 1; 
             background: #eee;
-            cursor: pointer; /* Indica que a área é clicável/arrastável */
+            /* CURSOR PADRÃO, POIS O CLIQUE É NO BOTÃO DISCRETO */
+            cursor: default; 
         }
         .img-wrapper {
             position: absolute; 
@@ -344,57 +345,44 @@
         }
         .img-wrapper.active {
             opacity: 1;
-            position: relative; /* Ativa a imagem no fluxo para dar altura ao .galeria-fotos */
+            position: relative; 
         }
         .img-wrapper img { 
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            border-radius: 12px; /* Aplica arredondamento na imagem, herdada do pai */
+            border-radius: 12px; 
             display: block;
         }
-        /* REMOVIDO: Setas de Navegação .nav-arrow */
-
-        /* NOVO ESTILO: INDICADOR DE ARRASTAR */
+        
+        /* NOVO ESTILO: BOTÃO VER PRODUTOS/FOTO */
         .swipe-indicator {
             position: absolute;
-            bottom: 15px; /* Perto da base */
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 60; 
             color: white; 
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            cursor: grab; /* Indica que pode ser arrastado */
-            /* CORREÇÃO APLICADA AQUI: Remove a animação pulse, mantém swipeMove 2x */
-            animation: swipeMove 1.5s 2 1s; 
-            opacity: 1;
-            transition: opacity 0.5s ease;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer; 
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            display: block; 
+            text-align: center;
+            width: auto;
+            min-width: 120px;
+            transition: opacity 0.3s ease, background 0.2s;
+            /* REMOVENDO TODAS AS ANIMAÇÕES RELACIONADAS AO SWIPE */
+            animation: none; 
         }
 
-        .swipe-indicator.hidden {
-            opacity: 0;
-            pointer-events: none; /* Desabilita o clique quando escondido */
+        .swipe-indicator:active {
+            background: rgba(0, 0, 0, 0.9);
         }
-
-        /* Animações de Destaque */
-        /* REMOVIDA A ANIMAÇÃO PULSE QUE É INVASIVA */
-        
-        /* CORREÇÃO APLICADA AQUI: Animação de Movimento para a Esquerda e Volta */
-        @keyframes swipeMove {
-            0% { transform: translateX(-50%); } 
-            25% { transform: translateX(-65%); } /* Movimento para a Esquerda */
-            50% { transform: translateX(-50%); } 
-            75% { transform: translateX(-35%); } /* Movimento para a Direita (Simulação de Volta) */
-            100% { transform: translateX(-50%); }
-        }
-        /* FIM NOVO ESTILO GALERIA */
+        /* REMOVIDO: .swipe-indicator.hidden e @keyframes swipeMove */
 
         /* --- BOTÕES --- */
         .botoes-wrapper { display: flex; gap: 10px; margin-top: 15px; }
@@ -631,44 +619,27 @@
         }
 
         /* --- ESTILOS ABAS DE CADASTRO (NOVO) --- */
-        .tabs-cadastro {
-            display: flex;
-            background-color: #eee;
-            border-radius: 8px;
-            padding: 4px;
-            margin-bottom: 20px;
-            /* CORREÇÃO APLICADA AQUI */
-            min-height: 50px; 
-            align-items: center; 
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: transparent;
-            border-radius: 6px;
-            font-weight: 700; /* Mais negrito */
-            color: #444; /* Mais escuro para melhor contraste */
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase; /* Mais legível */
-            line-height: 1.2; 
-        }
-        .tab-btn.ativo {
-            background-color: white;
-            color: var(--cor-primaria);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
+        /* REMOVIDO: .tabs-cadastro e .tab-btn, já que as abas foram removidas */
+
+        /* Novo estilo para os resultados da busca no Sorteio */
         .area-resultado-busca {
-            background-color: #f0f9f0;
-            border: 1px solid #c8e6c9;
+            background-color: #e8f5e9; /* Fundo mais suave para resultado positivo */
+            border: 1px solid #a5d6a7;
             border-radius: 8px;
             padding: 15px;
             margin-top: 15px;
             text-align: center;
             animation: fadeIn 0.3s ease;
         }
+        .area-resultado-busca h2 { color: #388e3c; } /* Título verde para sucesso */
+
+        /* Estilo para a área de Novo Cadastro */
+        #cadastro-novo {
+            background-color: #fff3e0; /* Fundo amarelo suave para novo cadastro */
+            border: 1px solid #ffcc80;
+        }
+        #cadastro-novo h2 { color: #e65100; } /* Título laranja para atenção/novo */
+
         .nome-encontrado {
             display: block;
             font-size: 18px;
@@ -680,227 +651,6 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- MODAIS --- */
-        /* REMOVIDO: ESTILO MODAL IMAGEM E CONTROLES */
-
-        .lista-pagamento { list-style: none; padding: 0; }
-        .lista-pagamento li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 16px; display: flex; align-items: center; }
-        .lista-pagamento i { color: var(--cor-primaria); width: 30px; font-size: 18px; }
-
-        /* REMOVIDO: ESTILO MODAL BRINDE */
-        
-        /* --- NOVO: ESTILO MODAL VARIAÇÃO (MINI MODAL) --- */
-        .modal-variacao {
-            display: none;
-            position: fixed;
-            z-index: 4000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.6);
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal-variacao-content {
-            background-color: white;
-            width: 90%;
-            max-width: 350px;
-            border-radius: 16px;
-            padding: 20px;
-            position: relative;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            animation: zoomIn 0.2s ease-out;
-            text-align: center;
-        }
-
-        @keyframes zoomIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .titulo-modal-var {
-            color: var(--cor-primaria);
-            margin: 0 0 15px 0;
-            font-size: 20px;
-            text-transform: uppercase;
-        }
-        
-        .subtitulo-modal-var {
-            color: #666;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        .btn-fechar-modal-var {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #999;
-            cursor: pointer;
-        }
-
-        .opcao-select {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: left;
-        }
-        
-        .opcao-select:active {
-            transform: scale(0.98);
-        }
-
-        .opcao-select.selected {
-            border-color: var(--cor-primaria);
-            background-color: #ffebee;
-        }
-        
-        .opcao-info {
-            display: flex;
-            flex-direction: column;
-        }
-        
-.opcao-nome { font-weight: bold; color: #333; }
-        .opcao-preco { color: var(--cor-primaria); font-weight: 900; }
-
-        .radio-custom {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #ccc;
-            border-radius: 50%;
-            position: relative;
-        }
-        
-        .selected .radio-custom {
-            border-color: var(--cor-primaria);
-        }
-        
-        .selected .radio-custom::after {
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 10px; height: 10px;
-            background-color: var(--cor-primaria);
-            border-radius: 50%;
-        }
-
-        .btn-confirmar-pedido {
-            width: 100%;
-            padding: 15px;
-            background-color: #25D366; /* WhatsApp green */
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 10px;
-            cursor: pointer;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .btn-confirmar-pedido:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        /* --- AVISO FLUTUANTE (PWA - ESTILO BOTTOM SHEET PROFISSIONAL) --- */
-        .aviso-instalar {
-            position: fixed; 
-            bottom: 0; 
-            left: 0;
-            width: 100%;
-            background-color: white; 
-            color: #333;
-            padding: 15px;
-            z-index: 2900;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15); /* Sombra suave para cima */
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
-            display: none; 
-            flex-direction: row; 
-            align-items: center; 
-            justify-content: space-between; 
-            gap: 15px;
-            animation: slideUp 0.4s ease-out;
-        }
-        
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        /* Logo do App no Banner */
-        .app-icon-banner {
-            /* AJUSTE: Usar a imagem logo1.png */
-            content: url('img/logo1.png');
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .texto-instalar-banner { 
-            flex: 1; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            /* Container para o texto FIXO */
-            min-height: 40px; 
-            overflow: hidden;
-            position: relative;
-            padding-top: 5px; 
-        } 
-        .texto-instalar-banner strong { 
-            font-size: 15px; 
-            color: #222;
-            margin-bottom: 2px;
-        }
-        /* REMOVIDO: Estilos para .carousel-text e seus modificadores */
-        
-        .btn-acao-banner { 
-            background-color: var(--cor-primaria); /* Vermelho Marca */
-            color: white; 
-            font-weight: bold; 
-            padding: 10px 20px; 
-            border-radius: 30px; 
-            border: none; 
-            font-size: 14px; 
-            cursor: pointer; 
-            white-space: nowrap; 
-            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
-            transition: transform 0.2s;
-        }
-        .btn-acao-banner:active { transform: scale(0.95); }
-
-        .btn-fechar-aviso { 
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: transparent; 
-            color: #999; 
-            border: none; 
-            font-size: 20px; 
-            cursor: pointer;
-            padding: 5px;
-            line-height: 1;
         }
 </style>
 </head>
@@ -947,7 +697,7 @@
 
         <!-- Cestas (REORDENADAS para: economica, mini, pequena, media, grande) -->
         
-        <!-- CESTA ECONÔMICA (PRIMEIRA) - AGORA COM 2 FOTOS E CARROSSEL -->
+        <!-- CESTA ECONÔMICA (PRIMEIRA) -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA ECONÔMICA</h3></div>
             <div class="cesta-body">
@@ -956,21 +706,20 @@
                     <div class="img-wrapper active" data-img-index="0">
                         <img src="img/cesta-economica1.jpg" alt="Cesta Econômica" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+1'">
                     </div>
-                    <!-- Imagem 2 (NOVO) -->
+                    <!-- Imagem 2 -->
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-economica2.jpg" alt="Cesta Econômica Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+2'">
                     </div>
-                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
                     <div class="swipe-indicator" onclick="event.stopPropagation();">
-                        <i class="fas fa-hand-pointer"></i>
-                        <span>Arraste ou Toque</span>
+                        <span id="btn-foto-economica">VER PRODUTOS</span>
                     </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 85,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <!-- BOTÕES DE AÇÃO -->
                     <button class="btn btn-whatsapp" onclick="encomendar('Cesta Econômica')">Encomendar</button>
                     <button class="btn btn-agendar" onclick="agendar('Cesta Econômica')">Agendar</button>
                 </div>
@@ -981,7 +730,7 @@
             </div>
         </div>
 
-        <!-- CESTA MINI (SEGUNDA) - 2 FOTOS (COM CARROSSEL) -->
+        <!-- CESTA MINI (SEGUNDA) -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA MINI</h3></div>
             <div class="cesta-body">
@@ -992,10 +741,9 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-mini2.jpg" alt="Cesta Mini Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+2'">
                     </div>
-                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
                     <div class="swipe-indicator" onclick="event.stopPropagation();">
-                        <i class="fas fa-hand-pointer"></i>
-                        <span>Arraste ou Toque</span>
+                        <span id="btn-foto-mini">VER PRODUTOS</span>
                     </div>
                 </div>
                 <div class="lista-precos-cesta">
@@ -1003,7 +751,7 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 170,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <!-- BOTÕES DE AÇÃO COM MODAL -->
                     <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00', 'encomendar')">Encomendar</button>
                     <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00', 'agendar')">Agendar</button>
                 </div>
@@ -1014,7 +762,7 @@
             </div>
         </div>
 
-        <!-- CESTA PEQUENA (TERCEIRA) - 2 FOTOS (COM CARROSSEL) -->
+        <!-- CESTA PEQUENA (TERCEIRA) -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA PEQUENA</h3></div>
             <div class="cesta-body">
@@ -1025,10 +773,9 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-pequena2.jpg" alt="Cesta Pequena Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+2'">
                     </div>
-                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
                     <div class="swipe-indicator" onclick="event.stopPropagation();">
-                        <i class="fas fa-hand-pointer"></i>
-                        <span>Arraste ou Toque</span>
+                        <span id="btn-foto-pequena">VER PRODUTOS</span>
                     </div>
                 </div>
                 <div class="lista-precos-cesta">
@@ -1036,7 +783,7 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 220,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <!-- BOTÕES DE AÇÃO COM MODAL -->
                     <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00', 'encomendar')">Encomendar</button>
                     <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00', 'agendar')">Agendar</button>
                 </div>
@@ -1047,7 +794,7 @@
             </div>
         </div>
 
-        <!-- CESTA MÉDIA (QUARTA) - 2 FOTOS (COM CARROSSEL) -->
+        <!-- CESTA MÉDIA (QUARTA) -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA MÉDIA</h3></div>
             <div class="cesta-body">
@@ -1058,10 +805,9 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-media2.jpg" alt="Cesta Média Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+2'">
                     </div>
-                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
                     <div class="swipe-indicator" onclick="event.stopPropagation();">
-                        <i class="fas fa-hand-pointer"></i>
-                        <span>Arraste ou Toque</span>
+                        <span id="btn-foto-media">VER PRODUTOS</span>
                     </div>
                 </div>
                 <div class="lista-precos-cesta">
@@ -1069,7 +815,7 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 325,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <!-- BOTÕES DE AÇÃO COM MODAL -->
                     <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00', 'encomendar')">Encomendar</button>
                     <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00', 'agendar')">Agendar</button>
                 </div>
@@ -1080,7 +826,7 @@
             </div>
         </div>
 
-        <!-- CESTA GRANDE (ÚLTIMA) - 2 FOTOS (COM CARROSSEL) -->
+        <!-- CESTA GRANDE (ÚLTIMA) -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA GRANDE</h3></div>
             <div class="cesta-body">
@@ -1091,10 +837,9 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-grande2.jpg" alt="Cesta Básica Grande Detalhe" onerror="this.src='https://placehold.co/400x400?text=GRANDE+2'">
                     </div>
-                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
                     <div class="swipe-indicator" onclick="event.stopPropagation();">
-                        <i class="fas fa-hand-pointer"></i>
-                        <span>Arraste ou Toque</span>
+                        <span id="btn-foto-grande">VER PRODUTOS</span>
                     </div>
                 </div>
                 <div class="lista-precos-cesta">
@@ -1102,7 +847,7 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 390,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <!-- BOTÕES DE AÇÃO COM MODAL -->
                     <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00', 'encomendar')">Encomendar</button>
                     <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00', 'agendar')">Agendar</button>
                 </div>
@@ -1112,8 +857,6 @@
                 </p>
             </div>
         </div>
-
-        <!-- REMOVIDO: BANNER INTERNO ORGANIZADO E RESPONSIVO (PWA) -->
     </div>
 
     <!-- SEÇÃO 2: PAGAMENTO (Inicialmente Oculta) -->
@@ -1133,29 +876,51 @@
             </ul>
             <p style="color: red; font-size: 14px; text-align: center; margin-top: 20px;"><strong>⚠️ Atenção:</strong> Não vendemos a prazo para 30 dias.</p>
         </div>
-
-        <!-- REMOVIDO: BANNER INTERNO ORGANIZADO (PWA) -->
     </div>
 
-    <!-- SEÇÃO 3: SORTEIO (ALTERADA) -->
+    <!-- SEÇÃO 3: SORTEIO (ALTERADA COM LÓGICA DE BUSCA ÚNICA) -->
     <div id="pag-sorteio" class="secao-conteudo">
         <div class="card">
             <h2>🍀 Sorteio todo Domingo. Válido para moradores de Cuiabá e VG</h2>
             <p>Preencha para concorrer. Serão 5 ganhadores de Kits de Limpeza e Higiêne! Próximo Sorteio dia 7 de Dezembro as 18h.</p>
             
-            <!-- ABAS DE NAVEGAÇÃO DO CADASTRO -->
-            <div class="tabs-cadastro">
-                <button class="tab-btn ativo" id="tab-primeira" onclick="alternarAbaSorteio('primeira')">Primeira Vez</button>
-                <button class="tab-btn" id="tab-ja-tenho" onclick="alternarAbaSorteio('ja-tenho')">Já tenho cadastro</button>
+            <!-- ETAPA 1: BUSCA POR TELEFONE (VISÍVEL SEMPRE) -->
+            <div id="area-busca-telefone" class="card" style="margin-bottom: 15px;">
+                <h2>📞 Busque seu Cadastro</h2>
+                <p>Digite seu telefone para verificar sua participação:</p>
+                <label>Telefone (Whatsapp): <span style="color:red">*</span></label>
+                <input type="tel" id="busca-telefone" placeholder="Digite seu telefone..." required>
+                <button onclick="buscarCadastro()" class="btn" style="background-color: var(--cor-primaria); margin-top: 5px;">
+                    <i class="fas fa-search" style="margin-right: 8px;"></i> Buscar
+                </button>
             </div>
 
-            <!-- FORMULÁRIO PRIMEIRA VEZ -->
-            <div id="conteudo-primeira-vez">
+            <!-- ETAPA 2A: CADASTRO ENCONTRADO (Escondido inicialmente) -->
+            <div id="cadastro-encontrado" class="area-resultado-busca" style="display: none;">
+                <h2>🥳 Cadastro Encontrado!</h2>
+                <p style="margin-bottom: 10px;">Confira seus dados:</p>
+                
+                <div style="text-align: left;">
+                    <p><strong>Nome:</strong> <span id="nome-cliente-encontrado"></span></p>
+                    <p><strong>Cidade:</strong> <span id="cidade-cliente-encontrado"></span></p>
+                    <p><strong>Bairro:</strong> <span id="bairro-cliente-encontrado"></span></p>
+                </div>
+                
+                <button onclick="confirmarJaCadastrado()" class="btn btn-whatsapp" style="margin-top: 15px;">
+                    <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar e Participar
+                </button>
+            </div>
+            
+            <!-- ETAPA 2B: NOVO CADASTRO (Escondido inicialmente) -->
+            <div id="cadastro-novo" class="card" style="display: none; background-color: #fff3e0; border: 1px solid #ffcc80;">
+                <h2>✍️ Novo Cadastro</h2>
+                <p style="margin-bottom: 15px; color: #D32F2F;">Não encontramos seu número. Preencha seus dados para participar:</p>
+                
                 <form onsubmit="event.preventDefault(); enviarNovoCadastro();">
                     <label>Nome Completo: <span style="color:red">*</span></label>
                     <input type="text" id="novo-nome" placeholder="Seu nome" required>
                     <label>Telefone (Whatsapp): <span style="color:red">*</span></label>
-                    <input type="tel" id="novo-telefone" placeholder="(65) 9..." required>
+                    <input type="tel" id="novo-telefone" placeholder="(65) 9..." required disabled> 
                     <label>Cidade: <span style="color:red">*</span></label>
                     <select id="novo-cidade" required>
                         <option value="">Selecione...</option>
@@ -1164,30 +929,11 @@
                     </select>
                     <label>Bairro: <span style="color:red">*</span></label>
                     <input type="text" id="novo-bairro" placeholder="Seu bairro" required>
-                    <button type="submit" class="btn btn-whatsapp"><i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Participar</button>
+                    <button type="submit" class="btn btn-whatsapp"><i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Cadastrar e Participar</button>
                 </form>
             </div>
 
-            <!-- FORMULÁRIO JÁ TENHO CADASTRO -->
-            <div id="conteudo-ja-tenho" style="display: none;">
-                <label>Telefone (Whatsapp): <span style="color:red">*</span></label>
-                <input type="tel" id="busca-telefone" placeholder="Digite seu telefone..." required>
-                <button onclick="buscarCadastro()" class="btn" style="background-color: #555; margin-top: 5px;">
-                    <i class="fas fa-search" style="margin-right: 8px;"></i> Buscar
-                </button>
-
-                <!-- ÁREA DE RESULTADO (ESCONDIDA INICIALMENTE) -->
-                <div id="area-resultado-busca" class="area-resultado-busca" style="display: none;">
-                    <span class="nome-encontrado" id="nome-cliente-encontrado"></span>
-                    <button onclick="confirmarJaCadastrado()" class="btn btn-whatsapp">
-                        <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Participar
-                    </button>
-                </div>
-            </div>
-
         </div>
-        
-        <!-- REMOVIDO: BANNER INTERNO ORGANIZADO (PWA) -->
 
         <!-- TEXTO SEO RESTAURADO E POSICIONADO NO FIM -->
         <div class="seo-text-block">
@@ -1255,13 +1001,10 @@
         const TELEFONE = "5565998150975";
         const LINK_SITE = "donaantonia.com.br/oferta";
 
-        // NOVO: Mapa para rastrear os timeouts de auto-hide dos indicadores
-        let autoHideTimeouts = {}; 
-
         // --- NAVEGAÇÃO DE IMAGENS NOS CARDS (NOVO) ---
         // Dados de Imagens (Cesta Econômica agora tem 2 fotos)
         const CestaImages = {
-            'economica': 2, // NOVO
+            'economica': 2, 
             'mini': 2,
             'pequena': 2,
             'media': 2,
@@ -1269,27 +1012,22 @@
         };
         // Armazena o índice da foto atual para cada cesta
         let currentPhotoIndex = {
-            'economica': 0, // NOVO
+            'economica': 0, 
             'mini': 0,
             'pequena': 0,
             'media': 0,
             'grande': 0
         };
         
-        // Função auxiliar para esconder o indicador de swipe (AGORA LIMPA O TIMEOUT)
-        function hideSwipeIndicator(cestaTipo) {
-            const indicator = document.querySelector(`#galeria-${cestaTipo} .swipe-indicator`);
-            if (indicator && !indicator.classList.contains('hidden')) {
-                // 1. Limpa o timeout de auto-hide se o usuário interagiu
-                if (autoHideTimeouts[cestaTipo]) {
-                    clearTimeout(autoHideTimeouts[cestaTipo]);
-                    delete autoHideTimeouts[cestaTipo];
+        // Função auxiliar para esconder o indicador de swipe (removida a lógica de timeout e swipe)
+        function updatePhotoIndicator(cestaTipo, newIndex) {
+            const indicatorSpan = document.querySelector(`#galeria-${cestaTipo} .swipe-indicator span`);
+            if (indicatorSpan) {
+                if (newIndex === 0) {
+                    indicatorSpan.innerText = 'VER PRODUTOS';
+                } else {
+                    indicatorSpan.innerText = 'VER FOTO';
                 }
-
-                // 2. Adiciona a classe hidden
-                indicator.classList.add('hidden');
-                // 3. Remove a animação do CSS para garantir que ela não seja reiniciada
-                indicator.style.animation = 'none';
             }
         }
 
@@ -1298,13 +1036,9 @@
             if (!galeria || !CestaImages[cestaTipo] || CestaImages[cestaTipo] < 2) return;
 
             const totalImages = CestaImages[cestaTipo];
-            let newIndex = (currentPhotoIndex[cestaTipo] + direcao) % totalImages;
+            // Direção fixada para 1 (sempre próxima foto/alternância)
+            let newIndex = (currentPhotoIndex[cestaTipo] + 1) % totalImages;
             
-            // Ajustar o índice para que seja sempre positivo (navegação circular)
-            if (newIndex < 0) {
-                newIndex = totalImages - 1;
-            }
-
             // Esconder foto atual
             const currentWrapper = galeria.querySelector(`.img-wrapper.active`);
             if (currentWrapper) {
@@ -1320,57 +1054,22 @@
             // Atualizar o índice armazenado
             currentPhotoIndex[cestaTipo] = newIndex;
             
-            // Esconde o indicador após o primeiro swipe/clique (agora limpa o timeout)
-            hideSwipeIndicator(cestaTipo);
+            // Atualiza o texto do botão
+            updatePhotoIndicator(cestaTipo, newIndex);
         }
         
-        // NOVO: Adiciona listeners de toque/clique e swipe na área da foto
+        // Adiciona listeners de clique APENAS no botão indicador
         function addPhotoClickListeners() {
             const cestas = ['economica', 'mini', 'pequena', 'media', 'grande'];
             cestas.forEach(cesta => {
-                const galeria = document.getElementById(`galeria-${cesta}`);
                 const indicator = document.querySelector(`#galeria-${cesta} .swipe-indicator`);
                 
-                if (galeria) {
-                    
-                    // 1. Listener de Clique/Toque (para avançar)
-                    galeria.addEventListener('click', (event) => {
-                        // Garante que o clique não foi no indicador de swipe
-                        if (!event.target.closest('.swipe-indicator') && CestaImages[cesta] > 1) {
-                            mudarFotoNoCard(cesta, 1); 
-                        }
+                if (indicator) {
+                    // Adiciona o listener de clique no botão indicador
+                    indicator.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        mudarFotoNoCard(cesta, 1); 
                     });
-
-                    // 2. Listener de Swipe (para mobile)
-                    let touchstartX = 0;
-                    let touchendX = 0;
-                    const SWIPE_THRESHOLD = 50; // Mínimo de 50px para ser considerado um swipe
-
-                    const handleGesture = () => {
-                        if (touchendX < touchstartX - SWIPE_THRESHOLD) { // Swipe Left (Próxima)
-                            mudarFotoNoCard(cesta, 1);
-                        }
-                        if (touchendX > touchstartX + SWIPE_THRESHOLD) { // Swipe Right (Anterior)
-                            mudarFotoNoCard(cesta, -1);
-                        }
-                    }
-
-                    galeria.addEventListener('touchstart', e => {
-                        touchstartX = e.changedTouches[0].screenX;
-                    }, false);
-
-                    galeria.addEventListener('touchend', e => {
-                        touchendX = e.changedTouches[0].screenX;
-                        handleGesture();
-                    }, false);
-
-                    // NOVO: 3. Define um timeout para esconder o indicador automaticamente após a animação (4.5s)
-                    // 1s delay + (1.5s * 2 ciclos) + margem de segurança
-                    if (indicator) {
-                        autoHideTimeouts[cesta] = setTimeout(() => {
-                            hideSwipeIndicator(cesta);
-                        }, 4500); 
-                    }
                 }
             });
         }
@@ -1538,86 +1237,102 @@
             document.getElementById('modalVariacao').style.display = 'none';
         }
         
-        // REMOVIDA: function compartilhar (substituída por agendar)
+        // --- LÓGICA DE SORTEIO (REESCRITA) ---
         
-        // --- LÓGICA DE SORTEIO ---
-        function alternarAbaSorteio(aba) {
-            document.getElementById('tab-primeira').classList.remove('ativo');
-            document.getElementById('tab-ja-tenho').classList.remove('ativo');
-            
-            document.getElementById('conteudo-primeira-vez').style.display = 'none';
-            document.getElementById('conteudo-ja-tenho').style.display = 'none';
-
-            if (aba === 'primeira') {
-                document.getElementById('tab-primeira').classList.add('ativo');
-                document.getElementById('conteudo-primeira-vez').style.display = 'block';
-            } else {
-                document.getElementById('tab-ja-tenho').classList.add('ativo');
-                document.getElementById('conteudo-ja-tenho').style.display = 'block';
-            }
-        }
-
-        function enviarNovoCadastro() {
-            const nome = document.getElementById('novo-nome').value.trim();
-            const tel = document.getElementById('novo-telefone').value.trim();
-            const cid = document.getElementById('novo-cidade').value;
-            const bai = document.getElementById('novo-bairro').value.trim();
-            if (!nome || !tel || !cid || !bai) { alert("Preencha todos os campos!"); return; }
-            
-            const msg = `CADASTRO SORTEIO:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cid}\nBairro: ${bai}\n\nSorteio do Dia 7 de Dezembro`;
-            
-            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
+        // Variáveis globais para rastrear o estado do sorteio
+        const cadastroEncontradoDiv = document.getElementById('cadastro-encontrado');
+        const cadastroNovoDiv = document.getElementById('cadastro-novo');
+        const buscaTelefoneInput = document.getElementById('busca-telefone');
+        const areaBuscaTelefoneDiv = document.getElementById('area-busca-telefone');
+        
+        // FUNÇÕES ANTIGAS REMOVIDAS: alternarAbaSorteio, enviarNovoCadastro, buscarCadastro, confirmarJaCadastrado
+        
         function buscarCadastro() {
-            const inputTel = document.getElementById('busca-telefone').value;
-            const telLimpo = inputTel.replace(/\D/g, ''); 
+            // Esconde todos os resultados anteriores
+            cadastroEncontradoDiv.style.display = 'none';
+            cadastroNovoDiv.style.display = 'none';
 
+            // Pega e limpa o telefone
+            const inputTel = buscaTelefoneInput.value;
+            const telLimpo = inputTel.replace(/\D/g, ''); 
+            
             if (!telLimpo || telLimpo.length < 6) {
                 alert("Por favor, digite pelo menos os últimos 6 números do seu telefone.");
                 return;
             }
 
-            const btnBuscar = document.querySelector('#conteudo-ja-tenho button');
+            // Atualiza o estado visual do botão
+            const btnBuscar = areaBuscaTelefoneDiv.querySelector('.btn');
             const textoOriginal = btnBuscar.innerHTML;
             btnBuscar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
             btnBuscar.disabled = true;
 
-            let clienteEncontrado = null;
-            if(typeof clientes !== 'undefined') {
-                 const inputSuffix = telLimpo.slice(-6);
-
-                 clienteEncontrado = clientes.find(c => {
-                    const cTelLimpo = c.telefone.replace(/\D/g, '');
-                    if (cTelLimpo.length < 6) return false;
-                    
-                    const clientSuffix = cTelLimpo.slice(-6);
-                    return clientSuffix === inputSuffix;
-                });
-            } else {
-                console.error("Arquivo clientes.js não carregado ou variável não definida.");
-            }
-
+            // Simulação de busca no array de clientes (SUPONDO QUE clientes.js ESTEJA CARREGADO)
             setTimeout(() => {
                 btnBuscar.innerHTML = textoOriginal;
                 btnBuscar.disabled = false;
+                
+                let clienteEncontrado = null;
+                if(typeof clientes !== 'undefined') {
+                     const inputSuffix = telLimpo.slice(-6);
+                     clienteEncontrado = clientes.find(c => {
+                        const cTelLimpo = c.telefone.replace(/\D/g, '');
+                        if (cTelLimpo.length < 6) return false;
+                        
+                        const clientSuffix = cTelLimpo.slice(-6);
+                        return clientSuffix === inputSuffix;
+                    });
+                } else {
+                    console.error("Arquivo clientes.js não carregado ou variável não definida.");
+                }
 
                 if (clienteEncontrado) {
-                    document.getElementById('area-resultado-busca').style.display = 'block';
+                    // CENÁRIO 1: CADASTRO ENCONTRADO
                     document.getElementById('nome-cliente-encontrado').innerText = clienteEncontrado.nome;
-                    document.getElementById('busca-telefone').setAttribute('data-nome-encontrado', clienteEncontrado.nome);
+                    document.getElementById('cidade-cliente-encontrado').innerText = clienteEncontrado.cidade;
+                    document.getElementById('bairro-cliente-encontrado').innerText = clienteEncontrado.bairro;
+                    
+                    buscaTelefoneInput.setAttribute('data-nome-encontrado', clienteEncontrado.nome);
+                    buscaTelefoneInput.setAttribute('data-cidade-encontrada', clienteEncontrado.cidade);
+                    buscaTelefoneInput.setAttribute('data-bairro-encontrado', clienteEncontrado.bairro);
+                    
+                    cadastroEncontradoDiv.style.display = 'block';
+                    
                 } else {
-                    document.getElementById('area-resultado-busca').style.display = 'none';
-                    alert("Ops! Não encontramos seu cadastro com este número. Tente digitar de outra forma ou faça o cadastro na aba 'Primeira Vez'.");
+                    // CENÁRIO 2: NOVO CADASTRO
+                    const novoTelefoneInput = document.getElementById('novo-telefone');
+                    novoTelefoneInput.value = inputTel; // Preenche o campo de telefone buscado
+                    // novoTelefoneInput.disabled = true; // Mantém desabilitado para edição, já está no HTML
+                    
+                    cadastroNovoDiv.style.display = 'block';
                 }
+                
             }, 600); 
         }
 
-        function confirmarJaCadastrado() {
-            const inputTel = document.getElementById('busca-telefone').value;
-            const nomeEncontrado = document.getElementById('busca-telefone').getAttribute('data-nome-encontrado') || "Cliente";
+        // Função de envio de novo cadastro (Cenário 2)
+        function enviarNovoCadastro() {
+            const nome = document.getElementById('novo-nome').value.trim();
+            // O telefone é pego do campo desabilitado
+            const tel = document.getElementById('novo-telefone').value.trim(); 
+            const cid = document.getElementById('novo-cidade').value;
+            const bai = document.getElementById('novo-bairro').value.trim();
             
-            const msg = `JÁ SOU CADASTRADO:\nNome: ${nomeEncontrado}\nConfirmo minha participação com o telefone: ${inputTel}\n\nSorteio do Dia 7 de Dezembro`;
+            if (!nome || !tel || !cid || !bai) { alert("Preencha todos os campos!"); return; }
+            
+            const msg = `CADASTRO SORTEIO:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cid}\nBairro: ${bai}\n\nSorteio do Dia 7 de Dezembro (Novo Cadastro)`;
+            
+            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // Função de confirmação (Cenário 1)
+        function confirmarJaCadastrado() {
+            const tel = buscaTelefoneInput.value;
+            const nome = buscaTelefoneInput.getAttribute('data-nome-encontrado') || "Cliente";
+            const cidade = buscaTelefoneInput.getAttribute('data-cidade-encontrada') || "N/A";
+            const bairro = buscaTelefoneInput.getAttribute('data-bairro-encontrado') || "N/A";
+            
+            const msg = `JÁ SOU CADASTRADO:\nNome: ${nome}\nTelefone: ${tel}\nCidade: ${cidade}\nBairro: ${bairro}\n\nConfirmo minha participação no Sorteio do Dia 7 de Dezembro.`;
             
             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
         }
@@ -1653,18 +1368,17 @@
         }
 
         window.onload = function() {
-            // Se estiver instalado, esconde o aviso flutuante
+            // Lógica PWA
             if (localStorage.getItem('appInstalado')) {
                  document.getElementById('aviso-instalar').style.display = 'none';
             } else {
-                // Se não estiver instalado E não tiver sido fechado, mostra o aviso flutuante.
                 if (!localStorage.getItem('bannerFlutuanteFechado')) {
                      document.getElementById('aviso-instalar').style.display = 'flex';
                 }
             }
-            // NOVO: Inicializa listeners de clique/swipe
+            // Inicializa listeners de clique para as fotos
             addPhotoClickListeners(); 
-            // NOVO: Verifica o link ao carregar a página
+            // Verifica o link ao carregar a página
             verificarHash();
         };
     </script>
