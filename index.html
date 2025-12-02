@@ -372,7 +372,9 @@
             flex: 1; 
         }
         .btn-whatsapp { background-color: #25D366; }
-        .btn-compartilhar-produto { background-color: #0288D1; }
+        /* NOVO: Estilo para o botão Agendar (verde igual ao WhatsApp para manter familiaridade) */
+        .btn-agendar { background-color: #25D366; opacity: 0.85; }
+        .btn-agendar:hover { opacity: 1; }
         
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 16px; }
 
@@ -554,38 +556,18 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            /* Container para o texto rotativo */
+            /* Container para o texto FIXO */
             min-height: 40px; 
             overflow: hidden;
             position: relative;
-            padding-top: 5px; /* Adicionado para afastar o texto do topo */
+            padding-top: 5px; 
         } 
         .texto-instalar-banner strong { 
             font-size: 15px; 
             color: #222;
             margin-bottom: 2px;
         }
-        /* O span do carrossel será posicionado absolutamente */
-        .carousel-text {
-            font-size: 13px;
-            color: #666;
-            position: absolute;
-            width: 100%;
-            top: 25px; /* AUMENTADO para 25px para afastar do título */
-            opacity: 0;
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
-        .carousel-text.active {
-            opacity: 1;
-            transform: translateY(-5px); /* Ajuste fino para alinhar visualmente */
-        }
-        .carousel-text.next {
-            transform: translateY(100%);
-        }
-        .carousel-text.prev {
-            transform: translateY(-100%);
-        }
-
+        /* REMOVIDO: Estilos para .carousel-text e seus modificadores */
         
         .btn-acao-banner { 
             background-color: var(--cor-primaria); /* Vermelho Marca */
@@ -642,24 +624,18 @@
             display: flex;
             flex-direction: column;
             text-align: left;
-            /* Container para o texto rotativo no card fixo */
+            /* Container para o texto FIXO no card fixo */
             min-height: 40px; 
             overflow: hidden;
             position: relative;
-            padding-top: 5px; /* Adicionado para afastar o texto do topo */
+            padding-top: 5px; 
         }
         .conteudo-banner-interno strong {
             font-size: 15px;
             color: #333;
             margin-bottom: 3px;
         }
-        .conteudo-banner-interno .carousel-text {
-            position: absolute;
-            width: 100%;
-            top: 25px; /* AUMENTADO para 25px para afastar do título */
-            opacity: 0;
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
+        /* REMOVIDO: Estilos para .carousel-text no banner interno */
         
         /* Botão interno */
         .btn-instalacao-inline { 
@@ -781,24 +757,35 @@
 
         <!-- Cestas (REORDENADAS para: economica, mini, pequena, media, grande) -->
         
-        <!-- CESTA ECONÔMICA (PRIMEIRA) - 1 FOTO (SEM CARROSSEL) -->
+        <!-- CESTA ECONÔMICA (PRIMEIRA) - AGORA COM 2 FOTOS E CARROSSEL -->
         <div class="card card-cesta">
             <div class="cesta-header"><h3>CESTA ECONÔMICA</h3></div>
             <div class="cesta-body">
-                <div class="galeria-fotos" id="galeria-economica" style="aspect-ratio: 1/1; position: relative;">
-                    <!-- Apenas a primeira imagem, sem navegação lateral -->
-                    <div class="img-wrapper active" data-img-index="0" style="position: static; opacity: 1;">
-                        <img src="img/cesta-economica.jpg" alt="Cesta Econômica" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA'">
+                <div class="galeria-fotos" id="galeria-economica">
+                    <!-- Imagem 1 (ativa) -->
+                    <div class="img-wrapper active" data-img-index="0">
+                        <img src="img/cesta-economica1.jpg" alt="Cesta Econômica" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+1'">
                     </div>
+                    <!-- Imagem 2 (NOVO) -->
+                    <div class="img-wrapper" data-img-index="1">
+                        <img src="img/cesta-economica2.jpg" alt="Cesta Econômica Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+2'">
+                    </div>
+                    <!-- Setas de Navegação (NOVO) -->
+                    <div class="nav-arrow left" onclick="mudarFotoNoCard('economica', -1)"><i class="fas fa-chevron-left"></i></div>
+                    <div class="nav-arrow right" onclick="mudarFotoNoCard('economica', 1)"><i class="fas fa-chevron-right"></i></div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 85,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- CESTA ECONÔMICA MANTÉM O BOTÃO DIRETO (SEM MODAL) -->
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
                     <button class="btn btn-whatsapp" onclick="encomendar('Cesta Econômica')">Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Econômica')">Compartilhar</button>
+                    <button class="btn btn-agendar" onclick="agendar('Cesta Econômica')">Agendar</button>
                 </div>
+                <!-- NOVO AVISO DE BRINDE -->
+                <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
+                    Encomende ou Agende sua cesta e garanta o Amaciante Ype de 2 Litros de Brinde.
+                </p>
             </div>
         </div>
 
@@ -808,10 +795,10 @@
             <div class="cesta-body">
                 <div class="galeria-fotos" id="galeria-mini">
                     <div class="img-wrapper active" data-img-index="0">
-                        <img src="img/cesta-mini.jpg" alt="Cesta Mini" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+1'">
+                        <img src="img/cesta-mini1.jpg" alt="Cesta Mini" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+1'">
                     </div>
                     <div class="img-wrapper" data-img-index="1">
-                        <img src="img/cesta-mini-2.jpg" alt="Cesta Mini Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+2'">
+                        <img src="img/cesta-mini2.jpg" alt="Cesta Mini Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+2'">
                     </div>
                     <!-- Setas de Navegação -->
                     <div class="nav-arrow left" onclick="mudarFotoNoCard('mini', -1)"><i class="fas fa-chevron-left"></i></div>
@@ -822,9 +809,14 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 170,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00')">Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Mini')">Compartilhar</button>
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00', 'encomendar')">Encomendar</button>
+                    <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00', 'agendar')">Agendar</button>
                 </div>
+                <!-- NOVO AVISO DE BRINDE -->
+                <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
+                    Encomende ou Agende sua cesta e garanta o Amaciante Ype de 2 Litros de Brinde.
+                </p>
             </div>
         </div>
 
@@ -834,10 +826,10 @@
             <div class="cesta-body">
                 <div class="galeria-fotos" id="galeria-pequena">
                     <div class="img-wrapper active" data-img-index="0">
-                        <img src="img/cesta-pequena.jpg" alt="Cesta Pequena" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+1'">
+                        <img src="img/cesta-pequena1.jpg" alt="Cesta Pequena" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+1'">
                     </div>
                     <div class="img-wrapper" data-img-index="1">
-                        <img src="img/cesta-pequena-2.jpg" alt="Cesta Pequena Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+2'">
+                        <img src="img/cesta-pequena2.jpg" alt="Cesta Pequena Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+2'">
                     </div>
                     <!-- Setas de Navegação -->
                     <div class="nav-arrow left" onclick="mudarFotoNoCard('pequena', -1)"><i class="fas fa-chevron-left"></i></div>
@@ -848,9 +840,14 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 220,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00')">Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Pequena')">Compartilhar</button>
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00', 'encomendar')">Encomendar</button>
+                    <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00', 'agendar')">Agendar</button>
                 </div>
+                <!-- NOVO AVISO DE BRINDE -->
+                <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
+                    Encomende ou Agende sua cesta e garanta o Amaciante Ype de 2 Litros de Brinde.
+                </p>
             </div>
         </div>
 
@@ -860,10 +857,10 @@
             <div class="cesta-body">
                 <div class="galeria-fotos" id="galeria-media">
                     <div class="img-wrapper active" data-img-index="0">
-                        <img src="img/cesta-media.jpg" alt="Cesta Média" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+1'">
+                        <img src="img/cesta-media1.jpg" alt="Cesta Média" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+1'">
                     </div>
                     <div class="img-wrapper" data-img-index="1">
-                        <img src="img/cesta-media-2.jpg" alt="Cesta Média Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+2'">
+                        <img src="img/cesta-media2.jpg" alt="Cesta Média Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+2'">
                     </div>
                     <!-- Setas de Navegação -->
                     <div class="nav-arrow left" onclick="mudarFotoNoCard('media', -1)"><i class="fas fa-chevron-left"></i></div>
@@ -874,9 +871,14 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 325,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00')">Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Média')">Compartilhar</button>
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00', 'encomendar')">Encomendar</button>
+                    <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00', 'agendar')">Agendar</button>
                 </div>
+                <!-- NOVO AVISO DE BRINDE -->
+                <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
+                    Encomende ou Agende sua cesta e garanta o Amaciante Ype de 2 Litros de Brinde.
+                </p>
             </div>
         </div>
 
@@ -900,9 +902,14 @@
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 390,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00')">Encomendar</button>
-                    <button class="btn btn-compartilhar-produto" onclick="compartilhar('Cesta Grande')">Compartilhar</button>
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
+                    <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00', 'encomendar')">Encomendar</button>
+                    <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00', 'agendar')">Agendar</button>
                 </div>
+                <!-- NOVO AVISO DE BRINDE -->
+                <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
+                    Encomende ou Agende sua cesta e garanta o Amaciante Ype de 2 Litros de Brinde.
+                </p>
             </div>
         </div>
 
@@ -912,8 +919,8 @@
                 <img src="img/icon-192.png" onerror="this.src='https://placehold.co/50x50/D32F2F/ffffff?text=DA'" class="app-icon-banner">
                 <div class="conteudo-banner-interno">
                     <strong>App Dona Antônia</strong>
-                    <!-- ELEMENTO DE CARROSSEL DE TEXTO -->
-                    <span id="pwa-text-carousel-fixo" class="carousel-text"></span>
+                    <!-- NOVO TEXTO FIXO -->
+                    <span>Baixe agora e ganhe Amaciante Ypê 2L.</span>
                 </div>
             </div>
             <button class="btn-instalacao-inline" onclick="instalarApp()">
@@ -946,8 +953,8 @@
                 <img src="img/icon-192.png" onerror="this.src='https://placehold.co/50x50/D32F2F/ffffff?text=DA'" class="app-icon-banner">
                 <div class="conteudo-banner-interno">
                     <strong>App Dona Antônia</strong>
-                    <!-- ELEMENTO DE CARROSSEL DE TEXTO -->
-                    <span id="pwa-text-carousel-fixo-2" class="carousel-text"></span>
+                    <!-- NOVO TEXTO FIXO -->
+                    <span>Baixe agora e ganhe Amaciante Ypê 2L.</span>
                 </div>
             </div>
             <button class="btn-instalacao-inline" onclick="instalarApp()">
@@ -1012,8 +1019,8 @@
                 <img src="img/icon-192.png" onerror="this.src='https://placehold.co/50x50/D32F2F/ffffff?text=DA'" class="app-icon-banner">
                 <div class="conteudo-banner-interno">
                     <strong>App Dona Antônia</strong>
-                    <!-- ELEMENTO DE CARROSSEL DE TEXTO -->
-                    <span id="pwa-text-carousel-fixo-3" class="carousel-text"></span>
+                    <!-- NOVO TEXTO FIXO -->
+                    <span>Baixe agora e ganhe Amaciante Ypê 2L.</span>
                 </div>
             </div>
             <button class="btn-instalacao-inline" onclick="instalarApp()">
@@ -1054,8 +1061,8 @@
                 <div class="radio-custom"></div>
             </div>
 
-            <button class="btn-confirmar-pedido" id="btnConfirmarPedido" onclick="confirmarEncomenda()" disabled>
-                <i class="fab fa-whatsapp"></i> Enviar Pedido
+            <button class="btn-confirmar-pedido" id="btnConfirmarPedido" onclick="confirmarAcao()" disabled>
+                <i class="fab fa-whatsapp"></i> <span id="textoConfirmarPedido">Enviar Pedido</span>
             </button>
         </div>
     </div>
@@ -1068,8 +1075,8 @@
         
         <div class="texto-instalar-banner">
             <strong>Instalar App Dona Antônia</strong>
-            <!-- ELEMENTO DE CARROSSEL DE TEXTO -->
-            <span id="pwa-text-carousel-flutuante" class="carousel-text"></span>
+            <!-- NOVO TEXTO FIXO -->
+            <span>Ganhe Amaciante Ypê 2L de brinde!</span>
         </div>
         
         <button class="btn-acao-banner" onclick="instalarApp()">
@@ -1086,51 +1093,13 @@
         const TELEFONE = "5565998150975";
         const LINK_SITE = "donaantonia.com.br/oferta";
 
-        // --- CARROSSEL DE TEXTO PWA ---
-        const carouselMessages = [
-            '<i class="fas fa-magic" style="color:#00BCD4;"></i> Baixe o App e Ganhe Amaciante Ypê 2L!',
-            'Baixe para ver ofertas exclusivas.',
-            'Participe dos sorteios semanais.'
-        ];
-        let currentCarouselIndex = 0;
-
-        function updateCarouselText() {
-            const elements = [
-                document.getElementById('pwa-text-carousel-fixo'),
-                document.getElementById('pwa-text-carousel-fixo-2'),
-                document.getElementById('pwa-text-carousel-fixo-3'),
-                document.getElementById('pwa-text-carousel-flutuante')
-            ];
-
-            const nextMessage = carouselMessages[currentCarouselIndex];
-
-            elements.forEach(el => {
-                if (el) {
-                    el.classList.remove('active');
-                    el.classList.add('next');
-                    
-                    setTimeout(() => {
-                        el.innerHTML = nextMessage;
-                        el.classList.remove('next');
-                        el.classList.add('active');
-                    }, 500); 
-                }
-            });
-
-            currentCarouselIndex = (currentCarouselIndex + 1) % carouselMessages.length;
-        }
-
-        function iniciarCarouselPWA() {
-            currentCarouselIndex = carouselMessages.length - 1; 
-            updateCarouselText(); 
-
-            setInterval(updateCarouselText, 4000); 
-        }
-        // FIM CARROSSEL DE TEXTO PWA
+        // --- CARROSSEL DE TEXTO PWA (REMOVIDO E SIMPLIFICADO) ---
+        // Variáveis e funções de carrossel foram removidas.
 
         // --- NAVEGAÇÃO DE IMAGENS NOS CARDS (NOVO) ---
-        // Dados de Imagens (Apenas para Cestas com 2 fotos)
+        // Dados de Imagens (Cesta Econômica agora tem 2 fotos)
         const CestaImages = {
+            'economica': 2, // NOVO
             'mini': 2,
             'pequena': 2,
             'media': 2,
@@ -1138,6 +1107,7 @@
         };
         // Armazena o índice da foto atual para cada cesta
         let currentPhotoIndex = {
+            'economica': 0, // NOVO
             'mini': 0,
             'pequena': 0,
             'media': 0,
@@ -1268,15 +1238,21 @@
             window.open(url, '_blank');
         }
 
+        // FUNÇÕES DE AÇÃO PRINCIPAIS
         function encomendar(produto) { 
-            window.open(`https://wa.me/${TELEFONE}?text=Olá, quero encomendar a ${produto}`, '_blank'); 
+            window.open(`https://wa.me/${TELEFONE}?text=Olá, quero encomendar a ${produto} (Com Amaciante Ypê de brinde).`, '_blank'); 
         }
 
-        let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '' };
+        function agendar(produto) {
+            window.open(`https://wa.me/${TELEFONE}?text=Olá, gostaria de agendar a ${produto} (Com Amaciante Ypê de brinde).`, '_blank'); 
+        }
+
+        // --- LÓGICA DO MODAL DE VARIAÇÃO ---
+        let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '', acao: '' }; // Adicionado 'acao'
         let opcaoEscolhida = ''; 
 
-        function abrirModalVariacao(nome, pAlvino, pKoblenz) {
-            dadosCestaAtual = { nome, precoAlvino: pAlvino, precoKoblenz: pKoblenz };
+        function abrirModalVariacao(nome, pAlvino, pKoblenz, acao) { // acao: 'encomendar' ou 'agendar'
+            dadosCestaAtual = { nome, precoAlvino: pAlvino, precoKoblenz: pKoblenz, acao };
             opcaoEscolhida = '';
             
             document.getElementById('tituloCestaModal').innerText = nome;
@@ -1286,6 +1262,9 @@
             document.getElementById('optAlvino').classList.remove('selected');
             document.getElementById('optKoblenz').classList.remove('selected');
             document.getElementById('btnConfirmarPedido').disabled = true;
+
+            // Define o texto do botão de confirmação
+            document.getElementById('textoConfirmarPedido').innerText = acao === 'agendar' ? 'Agendar' : 'Encomendar';
 
             document.getElementById('modalVariacao').style.display = 'flex';
         }
@@ -1305,14 +1284,17 @@
             document.getElementById('btnConfirmarPedido').disabled = false;
         }
 
-        function confirmarEncomenda() {
-            if(!opcaoEscolhida) return;
+        function confirmarAcao() { // Função unificada para Encomendar ou Agendar do modal
+            if(!opcaoEscolhida || !dadosCestaAtual.acao) return;
 
             let marca = opcaoEscolhida === 'alvino' ? 'Arroz Tio Alvino' : 'Arroz Koblenz';
             let preco = opcaoEscolhida === 'alvino' ? dadosCestaAtual.precoAlvino : dadosCestaAtual.precoKoblenz;
             let nomeCesta = dadosCestaAtual.nome;
+            let acao = dadosCestaAtual.acao;
 
-            let textoZap = `Olá, quero encomendar a *${nomeCesta}* com *${marca}* (Valor: R$ ${preco}).`;
+            let acaoTexto = acao === 'agendar' ? 'agendar' : 'encomendar';
+            
+            let textoZap = `Olá, gostaria de ${acaoTexto} a *${nomeCesta}* com *${marca}* (Valor: R$ ${preco}). Com Amaciante Ypê de 2L de brinde.`;
             
             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(textoZap)}`, '_blank');
             fecharModalVariacao();
@@ -1321,11 +1303,8 @@
         function fecharModalVariacao() {
             document.getElementById('modalVariacao').style.display = 'none';
         }
-
-        function compartilhar(produto) {
-            const texto = `Olha essa ${produto} da Dona Antônia! Confira: ${LINK_SITE}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
-        }
+        
+        // REMOVIDA: function compartilhar (substituída por agendar)
         
         // --- LÓGICA DE SORTEIO ---
         function alternarAbaSorteio(aba) {
@@ -1445,7 +1424,7 @@
             if (localStorage.getItem('appInstalado')) {
                  document.querySelectorAll('.pwa-install-promo').forEach(el => el.style.display = 'none');
             } else {
-                iniciarCarouselPWA();
+                // REMOVIDO: iniciarCarouselPWA();
                 document.querySelectorAll('.card-instalacao-fixo').forEach(el => el.style.display = 'flex');
 
                 if (!localStorage.getItem('bannerFlutuanteFechado')) {
