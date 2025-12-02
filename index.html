@@ -220,6 +220,10 @@
             .nav-item i {
                 display: none;
             }
+            /* NOVO: Esconde a imagem do ícone no desktop e mostra o texto */
+            .nav-item img {
+                display: none;
+            }
             .nav-item span {
                 display: inline;
             }
@@ -324,23 +328,25 @@
         }
         .nav-item:last-child { border-right: none; }
 
-        /* Estilos dos Ícones e Texto no Menu */
+        /* NOVO ESTILO: ÍCONES PNG NO MENU */
+        .nav-item img {
+            width: 28px; /* Tamanho do PNG */
+            height: 28px;
+            object-fit: contain;
+            margin-bottom: -2px; /* Ajusta o espaçamento com a barra inferior */
+            display: inline;
+        }
+
+        /* Oculta o Ícone Font Awesome e mostra o PNG/Texto */
         .nav-item i {
-            font-size: 20px; /* Tamanho maior para o ícone */
-            margin-bottom: 2px; /* Espaço entre ícone e texto */
-            transition: color 0.3s;
-            display: inline; /* Ícones visíveis por padrão (mobile) */
+            display: none; 
         }
         .nav-item span {
-            display: none; /* Texto escondido por padrão (mobile) */
+            display: none; 
         }
         
-        /* Cores Específicas dos Ícones */
-        #btn-cestas i { color: var(--cor-cestas); }
-        #btn-pagamento i { color: var(--cor-pagamento); }
-        #btn-sorteio i { color: var(--cor-sorteio); }
-        #btn-aniversario i { color: var(--cor-aniversario); }
-
+        /* Cores Específicas dos Ícones (Removidas já que são PNGs) */
+        
         .nav-item.ativo { 
             color: #ffffff; 
             background-color: var(--cor-primaria);
@@ -350,8 +356,13 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
         }
         /* No estado ativo, os ícones ficam brancos */
-        .nav-item.ativo i {
-            color: white !important; 
+        .nav-item.ativo img {
+            /* Opção: Usar um filtro para dar um efeito de cor ativa, se o PNG for preto. 
+               Se o PNG já for colorido, pode-se remover este filtro, ou aplicar um filtro de brilho. */
+            filter: brightness(1.2); 
+        }
+        .nav-item.ativo span {
+            color: white; 
         }
         
         /* --- SEÇÕES (PÁGINAS) --- */
@@ -760,18 +771,24 @@
         </div>
 
         <nav class="top-nav">
-            <!-- MENU COM ÍCONES NO MOBILE E TEXTO NO DESKTOP -->
+            <!-- MENU COM IMAGENS PNG NO MOBILE E TEXTO NO DESKTOP -->
             <button class="nav-item ativo" id="btn-cestas" onclick="rolarPara('cestas')">
-                <i class="fas fa-shopping-basket"></i><span>CESTAS</span>
+                <!-- Ícone PNG para Mobile -->
+                <img src="img/cesta.png" alt="Cestas Icone" onerror="this.onerror=null;this.src='https://placehold.co/28x28/FF9800/ffffff?text=C'">
+                <!-- Texto para Desktop -->
+                <span>CESTAS</span>
             </button>
             <button class="nav-item" id="btn-pagamento" onclick="rolarPara('pagamento')">
-                <i class="fas fa-wallet"></i><span>PAGAMENTO</span>
+                <img src="img/pagamento.png" alt="Pagamento Icone" onerror="this.onerror=null;this.src='https://placehold.co/28x28/2196F3/ffffff?text=P'">
+                <span>PAGAMENTO</span>
             </button>
             <button class="nav-item" id="btn-sorteio" onclick="rolarPara('sorteio')">
-                <i class="fas fa-ticket-alt"></i><span>SORTEIO</span>
+                <img src="img/sorteio.png" alt="Sorteio Icone" onerror="this.onerror=null;this.src='https://placehold.co/28x28/4CAF50/ffffff?text=S'">
+                <span>SORTEIO</span>
             </button>
             <button class="nav-item" id="btn-aniversario" onclick="rolarPara('aniversario')">
-                <i class="fas fa-hand-holding-heart"></i><span>ANIVERSÁRIO</span>
+                <img src="img/aniversario.png" alt="Aniversário Icone" onerror="this.onerror=null;this.src='https://placehold.co/28x28/E91E63/ffffff?text=A'">
+                <span>ANIVERSÁRIO</span>
             </button>
         </nav>
     </header>
@@ -806,7 +823,7 @@
                                 <img src="img/cesta-economica2.jpg" alt="Cesta Econômica Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+2'">
                             </div>
                             <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
-                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('economica', 1)">
+                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('economica')">
                                 <span id="btn-foto-economica">VER PRODUTOS</span>
                             </div>
                         </div>
@@ -837,7 +854,7 @@
                                 <img src="img/cesta-mini2.jpg" alt="Cesta Mini Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+2'">
                             </div>
                             <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
-                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('mini', 1)">
+                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('mini')">
                                 <span id="btn-foto-mini">VER PRODUTOS</span>
                             </div>
                         </div>
@@ -869,7 +886,7 @@
                                 <img src="img/cesta-pequena2.jpg" alt="Cesta Pequena Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+2'">
                             </div>
                             <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
-                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('pequena', 1)">
+                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('pequena')">
                                 <span id="btn-foto-pequena">VER PRODUTOS</span>
                             </div>
                         </div>
@@ -901,7 +918,7 @@
                                 <img src="img/cesta-media2.jpg" alt="Cesta Média Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+2'">
                             </div>
                             <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
-                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('media', 1)">
+                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('media')">
                                 <span id="btn-foto-media">VER PRODUTOS</span>
                             </div>
                         </div>
@@ -933,7 +950,7 @@
                                 <img src="img/cesta-grande2.jpg" alt="Cesta Básica Grande Detalhe" onerror="this.src='https://placehold.co/400x400?text=GRANDE+2'">
                             </div>
                             <!-- NOVO BOTÃO DE NAVEGAÇÃO -->
-                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('grande', 1)">
+                            <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('grande')">
                                 <span id="btn-foto-grande">VER PRODUTOS</span>
                             </div>
                         </div>
@@ -1135,49 +1152,38 @@
             }
         }
 
-        function mudarFotoNoCard(cestaTipo, direcao) {
+        function mudarFotoNoCard(cestaTipo) {
             const galeria = document.getElementById(`galeria-${cestaTipo}`);
             if (!galeria || !CestaImages[cestaTipo] || CestaImages[cestaTipo] < 2) return;
 
             const totalImages = CestaImages[cestaTipo];
-            // O erro estava aqui, onde a direção não era aplicada corretamente. 
-            // Como o botão sempre alterna, basta usar (índice + 1) % total.
             let newIndex = (currentPhotoIndex[cestaTipo] + 1) % totalImages;
             
+            // 1. Remove a classe 'active' do elemento ativo atual
             const currentWrapper = galeria.querySelector(`.img-wrapper.active`);
             if (currentWrapper) {
                 currentWrapper.classList.remove('active');
             }
 
+            // 2. Adiciona a classe 'active' ao novo elemento (newIndex)
             const newWrapper = galeria.querySelector(`.img-wrapper[data-img-index="${newIndex}"]`);
             if (newWrapper) {
                 newWrapper.classList.add('active');
+            } else {
+                // Fallback de segurança caso a nova imagem não seja encontrada
+                galeria.querySelector(`.img-wrapper[data-img-index="0"]`).classList.add('active');
+                newIndex = 0;
             }
 
+            // 3. Atualiza o estado
             currentPhotoIndex[cestaTipo] = newIndex;
             
+            // 4. Atualiza o texto do botão
             updatePhotoIndicator(cestaTipo, newIndex);
         }
         
-        function addPhotoClickListeners() {
-            const cestas = ['economica', 'mini', 'pequena', 'media', 'grande'];
-            cestas.forEach(cesta => {
-                const indicator = document.querySelector(`#galeria-${cesta} .swipe-indicator`);
-                if (indicator) {
-                    // O clique já estava chamando mudarFotoNoCard('tipo', 1) no HTML,
-                    // mas reconfirmamos o listener de segurança aqui (embora o do HTML seja suficiente).
-                    /* O listener no HTML é: onclick="event.stopPropagation(); mudarFotoNoCard('economica', 1)" */
-                    
-                    // Adicionando um listener direto ao DOM para garantir.
-                    indicator.addEventListener('click', (event) => {
-                        event.stopPropagation();
-                        mudarFotoNoCard(cesta, 1); 
-                    });
-                }
-            });
-        }
-
-
+        // A função addPhotoClickListeners foi removida já que o evento está no HTML (onclick)
+        
         // --- SISTEMA DE ROLAGEM ÚNICA (REVISADO) ---
         
         function verificarHash() {
@@ -1443,7 +1449,7 @@
                      document.getElementById('aviso-instalar').style.display = 'flex';
                 }
             }
-            addPhotoClickListeners(); 
+            // addPhotoClickListeners() removida, pois o listener está no HTML
             verificarHash();
         };
     </script>
