@@ -192,22 +192,47 @@
 
         .header-icons { 
             display: flex; 
-            gap: 15px;
+            gap: 8px; /* Reduzido o gap para os botões de texto */
             align-items: center; 
             flex: 1; 
             justify-content: flex-end; 
         }
 
-        .icon-btn {
-            font-size: 28px;
-            color: var(--cor-primaria);
-            text-decoration: none; display: flex; align-items: center;
-            justify-content: center; transition: transform 0.2s;
+        /* NOVO ESTILO: BOTÃO DE TEXTO NO CABEÇALHO */
+        .header-btn {
+            padding: 6px 10px; /* Preenchimento menor para botões de texto */
+            border-radius: 6px;
+            font-size: 13px; /* Fonte menor */
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-flex; /* Usa flex para alinhamento interno */
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.2s;
+            white-space: nowrap; /* Impede quebra de linha do texto */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            color: white; 
         }
-        .icon-btn:active { transform: scale(0.9); }
-        .ic-zap { color: #25D366; }
-        .ic-face { color: #1877F2; }
-        .ic-insta { color: #E1306C; }
+        .header-btn:active { 
+            transform: scale(0.95); 
+        }
+
+        /* Estilo Específico para WhatsApp */
+        .btn-whatsapp-save { 
+            background-color: #25D366; 
+        }
+
+        /* Estilo Específico para Instagram (com degradê simulado) */
+        .btn-insta-follow {
+            background: linear-gradient(45deg, #f09433, #dc2743, #bc1888);
+            background-color: #E1306C; /* Fallback */
+        }
+        
+        /* Oculta o estilo antigo dos ícones para o novo uso */
+        .icon-btn {
+            display: none; 
+        }
+        /* FIM NOVOS ESTILOS */
 
         /* --- NAVEGAÇÃO --- */
         .top-nav {
@@ -306,6 +331,7 @@
             width: 100%; 
             aspect-ratio: 1 / 1; 
             background: #eee;
+            cursor: pointer; /* Indica que a área é clicável/arrastável */
         }
         .img-wrapper {
             position: absolute; 
@@ -326,35 +352,50 @@
             object-fit: cover; 
             border-radius: 12px; /* Aplica arredondamento na imagem, herdada do pai */
             display: block;
-            /* Não precisa de cursor: pointer, pois não abre modal */
         }
-        /* Setas de Navegação */
-        .nav-arrow {
+        /* REMOVIDO: Setas de Navegação .nav-arrow */
+
+        /* NOVO ESTILO: INDICADOR DE ARRASTAR */
+        .swipe-indicator {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.4);
-            color: white;
-            padding: 10px;
-            font-size: 20px;
-            cursor: pointer;
-            z-index: 50;
-            border-radius: 8px;
-            transition: background 0.2s;
-            height: 40px;
-            width: 40px;
+            bottom: 15px; /* Perto da base */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 60; 
+            color: white; 
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            cursor: grab; /* Indica que pode ser arrastado */
+            animation: pulse 2s infinite, swipeHint 2.5s infinite 1s; /* Animação visual */
+            opacity: 1;
+            transition: opacity 0.5s ease;
         }
-        .nav-arrow:hover {
-            background: rgba(0, 0, 0, 0.7);
-        }
-        .nav-arrow.left { left: 10px; }
-        .nav-arrow.right { right: 10px; }
-        /* FIM NOVO ESTILO GALERIA */
 
-        /* REMOVIDO: ZOOM INDICATOR */
+        .swipe-indicator.hidden {
+            opacity: 0;
+            pointer-events: none; /* Desabilita o clique quando escondido */
+        }
+
+        /* Animações de Destaque */
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        /* Animação de Movimento para a Esquerda */
+        @keyframes swipeHint {
+            0%, 20% { opacity: 1; transform: translateX(-50%); }
+            50% { opacity: 0.5; transform: translateX(-60%); } /* Move e esmaece */
+            100% { opacity: 1; transform: translateX(-50%); }
+        }
+        /* FIM NOVO ESTILO GALERIA */
 
         /* --- BOTÕES --- */
         .botoes-wrapper { display: flex; gap: 10px; margin-top: 15px; }
@@ -367,11 +408,334 @@
             flex: 1; 
         }
         .btn-whatsapp { background-color: #25D366; }
-        /* NOVO: Estilo para o botão Reservar (verde igual ao WhatsApp para manter familiaridade) */
-        .btn-Reservar { background-color: #25D366; opacity: 0.85; }
-        .btn-Reservar:hover { opacity: 1; }
+        /* NOVO: Estilo para o botão Agendar (verde igual ao WhatsApp para manter familiaridade) */
+        .btn-agendar { background-color: #25D366; opacity: 0.85; }
+        .btn-agendar:hover { opacity: 1; }
         
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 16px; }
+
+        /* --- MODAIS --- */
+        .lista-pagamento { list-style: none; padding: 0; }
+        .lista-pagamento li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 16px; display: flex; align-items: center; }
+        .lista-pagamento i { color: var(--cor-primaria); width: 30px; font-size: 18px; }
+        
+        /* --- NOVO: ESTILO MODAL VARIAÇÃO (MINI MODAL) --- */
+        .modal-variacao {
+            display: none;
+            position: fixed;
+            z-index: 4000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-variacao-content {
+            background-color: white;
+            width: 90%;
+            max-width: 350px;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: zoomIn 0.2s ease-out;
+            text-align: center;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .titulo-modal-var {
+            color: var(--cor-primaria);
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+        
+        .subtitulo-modal-var {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .btn-fechar-modal-var {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+        }
+
+        .opcao-select {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .opcao-select:active {
+            transform: scale(0.98);
+        }
+
+        .opcao-select.selected {
+            border-color: var(--cor-primaria);
+            background-color: #ffebee;
+        }
+        
+        .opcao-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+.opcao-nome { font-weight: bold; color: #333; }
+        .opcao-preco { color: var(--cor-primaria); font-weight: 900; }
+
+        .radio-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .selected .radio-custom {
+            border-color: var(--cor-primaria);
+        }
+        
+        .selected .radio-custom::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px; height: 10px;
+            background-color: var(--cor-primaria);
+            border-radius: 50%;
+        }
+
+        .btn-confirmar-pedido {
+            width: 100%;
+            padding: 15px;
+            background-color: #25D366; /* WhatsApp green */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-confirmar-pedido:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* --- AVISO FLUTUANTE (PWA - ESTILO BOTTOM SHEET PROFISSIONAL) --- */
+        .aviso-instalar {
+            position: fixed; 
+            bottom: 0; 
+            left: 0;
+            width: 100%;
+            background-color: white; 
+            color: #333;
+            padding: 15px;
+            z-index: 2900;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15); /* Sombra suave para cima */
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            display: none; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 15px;
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Logo do App no Banner */
+        .app-icon-banner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .texto-instalar-banner { 
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Container para o texto FIXO */
+            min-height: 40px; 
+            overflow: hidden;
+            position: relative;
+            padding-top: 5px; 
+        } 
+        .texto-instalar-banner strong { 
+            font-size: 15px; 
+            color: #222;
+            margin-bottom: 2px;
+        }
+        /* REMOVIDO: Estilos para .carousel-text e seus modificadores */
+        
+        .btn-acao-banner { 
+            background-color: var(--cor-primaria); /* Vermelho Marca */
+            color: white; 
+            font-weight: bold; 
+            padding: 10px 20px; 
+            border-radius: 30px; 
+            border: none; 
+            font-size: 14px; 
+            cursor: pointer; 
+            white-space: nowrap; 
+            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-acao-banner:active { transform: scale(0.95); }
+
+        .btn-fechar-aviso { 
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent; 
+            color: #999; 
+            border: none; 
+            font-size: 20px; 
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+
+        /* --- BANNERS EMBUTIDOS (CORREÇÃO DE TEXTO ENCAVALADO) --- */
+        /* REMOVIDOS OS ESTILOS PARA .card-instalacao-fixo */
+        
+        .banner-content-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1; /* Ocupa espaço disponível */
+            min-width: 200px; /* Garante que não esmague */
+        }
+
+        .conteudo-banner-interno {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            /* Container para o texto FIXO no card fixo */
+            min-height: 40px; 
+            overflow: hidden;
+            position: relative;
+            padding-top: 5px; 
+        }
+        .conteudo-banner-interno strong {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        /* REMOVIDO: Estilos para .carousel-text no banner interno */
+        
+        /* Botão interno */
+        .btn-instalacao-inline { 
+            background-color: #222; /* Preto/Cinza Escuro Profissional */
+            color: white; 
+            font-size: 13px; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0; /* Impede o botão de encolher */
+        }
+        
+        /* Ajuste Mobile para Banners Internos */
+        @media (max-width: 360px) {
+            .card-instalacao-fixo {
+                justify-content: center;
+                text-align: center;
+            }
+            .banner-content-wrapper {
+                flex-direction: column;
+                text-align: center;
+                min-width: 100%;
+            }
+            .conteudo-banner-interno {
+                align-items: center;
+            }
+            .btn-instalacao-inline {
+                width: 100%; /* Botão full width em telas muito pequenas */
+            }
+        }
+
+        /* --- ESTILOS ABAS DE CADASTRO (NOVO) --- */
+        .tabs-cadastro {
+            display: flex;
+            background-color: #eee;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.ativo {
+            background-color: white;
+            color: var(--cor-primaria);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .area-resultado-busca {
+            background-color: #f0f9f0;
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .nome-encontrado {
+            display: block;
+            font-size: 18px;
+            color: #2e7d32;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         /* --- MODAIS --- */
         /* REMOVIDO: ESTILO MODAL IMAGEM E CONTROLES */
@@ -699,7 +1063,553 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-    </style>
+
+        /* --- MODAIS --- */
+        /* REMOVIDO: ESTILO MODAL IMAGEM E CONTROLES */
+
+        .lista-pagamento { list-style: none; padding: 0; }
+        .lista-pagamento li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 16px; display: flex; align-items: center; }
+        .lista-pagamento i { color: var(--cor-primaria); width: 30px; font-size: 18px; }
+
+        /* REMOVIDO: ESTILO MODAL BRINDE */
+        
+        /* --- NOVO: ESTILO MODAL VARIAÇÃO (MINI MODAL) --- */
+        .modal-variacao {
+            display: none;
+            position: fixed;
+            z-index: 4000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-variacao-content {
+            background-color: white;
+            width: 90%;
+            max-width: 350px;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: zoomIn 0.2s ease-out;
+            text-align: center;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .titulo-modal-var {
+            color: var(--cor-primaria);
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+        
+        .subtitulo-modal-var {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .btn-fechar-modal-var {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+        }
+
+        .opcao-select {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .opcao-select:active {
+            transform: scale(0.98);
+        }
+
+        .opcao-select.selected {
+            border-color: var(--cor-primaria);
+            background-color: #ffebee;
+        }
+        
+        .opcao-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+.opcao-nome { font-weight: bold; color: #333; }
+        .opcao-preco { color: var(--cor-primaria); font-weight: 900; }
+
+        .radio-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .selected .radio-custom {
+            border-color: var(--cor-primaria);
+        }
+        
+        .selected .radio-custom::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px; height: 10px;
+            background-color: var(--cor-primaria);
+            border-radius: 50%;
+        }
+
+        .btn-confirmar-pedido {
+            width: 100%;
+            padding: 15px;
+            background-color: #25D366; /* WhatsApp green */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-confirmar-pedido:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* --- AVISO FLUTUANTE (PWA - ESTILO BOTTOM SHEET PROFISSIONAL) --- */
+        .aviso-instalar {
+            position: fixed; 
+            bottom: 0; 
+            left: 0;
+            width: 100%;
+            background-color: white; 
+            color: #333;
+            padding: 15px;
+            z-index: 2900;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15); /* Sombra suave para cima */
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            display: none; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 15px;
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Logo do App no Banner */
+        .app-icon-banner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .texto-instalar-banner { 
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Container para o texto FIXO */
+            min-height: 40px; 
+            overflow: hidden;
+            position: relative;
+            padding-top: 5px; 
+        } 
+        .texto-instalar-banner strong { 
+            font-size: 15px; 
+            color: #222;
+            margin-bottom: 2px;
+        }
+        /* REMOVIDO: Estilos para .carousel-text e seus modificadores */
+        
+        .btn-acao-banner { 
+            background-color: var(--cor-primaria); /* Vermelho Marca */
+            color: white; 
+            font-weight: bold; 
+            padding: 10px 20px; 
+            border-radius: 30px; 
+            border: none; 
+            font-size: 14px; 
+            cursor: pointer; 
+            white-space: nowrap; 
+            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-acao-banner:active { transform: scale(0.95); }
+
+        .btn-fechar-aviso { 
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent; 
+            color: #999; 
+            border: none; 
+            font-size: 20px; 
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+
+        /* --- BANNERS EMBUTIDOS (CORREÇÃO DE TEXTO ENCAVALADO) --- */
+        /* REMOVIDOS OS ESTILOS PARA .card-instalacao-fixo */
+        
+        .banner-content-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1; /* Ocupa espaço disponível */
+            min-width: 200px; /* Garante que não esmague */
+        }
+
+        .conteudo-banner-interno {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            /* Container para o texto FIXO no card fixo */
+            min-height: 40px; 
+            overflow: hidden;
+            position: relative;
+            padding-top: 5px; 
+        }
+        .conteudo-banner-interno strong {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        /* REMOVIDO: Estilos para .carousel-text no banner interno */
+        
+        /* Botão interno */
+        .btn-instalacao-inline { 
+            background-color: #222; /* Preto/Cinza Escuro Profissional */
+            color: white; 
+            font-size: 13px; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0; /* Impede o botão de encolher */
+        }
+        
+        /* Ajuste Mobile para Banners Internos */
+        @media (max-width: 360px) {
+            .card-instalacao-fixo {
+                justify-content: center;
+                text-align: center;
+            }
+            .banner-content-wrapper {
+                flex-direction: column;
+                text-align: center;
+                min-width: 100%;
+            }
+            .conteudo-banner-interno {
+                align-items: center;
+            }
+            .btn-instalacao-inline {
+                width: 100%; /* Botão full width em telas muito pequenas */
+            }
+        }
+
+        /* --- ESTILOS ABAS DE CADASTRO (NOVO) --- */
+        .tabs-cadastro {
+            display: flex;
+            background-color: #eee;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.ativo {
+            background-color: white;
+            color: var(--cor-primaria);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .area-resultado-busca {
+            background-color: #f0f9f0;
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .nome-encontrado {
+            display: block;
+            font-size: 18px;
+            color: #2e7d32;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- MODAIS --- */
+        /* REMOVIDO: ESTILO MODAL IMAGEM E CONTROLES */
+
+        .lista-pagamento { list-style: none; padding: 0; }
+        .lista-pagamento li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 16px; display: flex; align-items: center; }
+        .lista-pagamento i { color: var(--cor-primaria); width: 30px; font-size: 18px; }
+
+        /* REMOVIDO: ESTILO MODAL BRINDE */
+        
+        /* --- NOVO: ESTILO MODAL VARIAÇÃO (MINI MODAL) --- */
+        .modal-variacao {
+            display: none;
+            position: fixed;
+            z-index: 4000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-variacao-content {
+            background-color: white;
+            width: 90%;
+            max-width: 350px;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: zoomIn 0.2s ease-out;
+            text-align: center;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .titulo-modal-var {
+            color: var(--cor-primaria);
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+        
+        .subtitulo-modal-var {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .btn-fechar-modal-var {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+        }
+
+        .opcao-select {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .opcao-select:active {
+            transform: scale(0.98);
+        }
+
+        .opcao-select.selected {
+            border-color: var(--cor-primaria);
+            background-color: #ffebee;
+        }
+        
+        .opcao-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+.opcao-nome { font-weight: bold; color: #333; }
+        .opcao-preco { color: var(--cor-primaria); font-weight: 900; }
+
+        .radio-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .selected .radio-custom {
+            border-color: var(--cor-primaria);
+        }
+        
+        .selected .radio-custom::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px; height: 10px;
+            background-color: var(--cor-primaria);
+            border-radius: 50%;
+        }
+
+        .btn-confirmar-pedido {
+            width: 100%;
+            padding: 15px;
+            background-color: #25D366; /* WhatsApp green */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-confirmar-pedido:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* --- AVISO FLUTUANTE (PWA - ESTILO BOTTOM SHEET PROFISSIONAL) --- */
+        .aviso-instalar {
+            position: fixed; 
+            bottom: 0; 
+            left: 0;
+            width: 100%;
+            background-color: white; 
+            color: #333;
+            padding: 15px;
+            z-index: 2900;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15); /* Sombra suave para cima */
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            display: none; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 15px;
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Logo do App no Banner */
+        .app-icon-banner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .texto-instalar-banner { 
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Container para o texto FIXO */
+            min-height: 40px; 
+            overflow: hidden;
+            position: relative;
+            padding-top: 5px; 
+        } 
+        .texto-instalar-banner strong { 
+            font-size: 15px; 
+            color: #222;
+            margin-bottom: 2px;
+        }
+        /* REMOVIDO: Estilos para .carousel-text e seus modificadores */
+        
+        .btn-acao-banner { 
+            background-color: var(--cor-primaria); /* Vermelho Marca */
+            color: white; 
+            font-weight: bold; 
+            padding: 10px 20px; 
+            border-radius: 30px; 
+            border: none; 
+            font-size: 14px; 
+            cursor: pointer; 
+            white-space: nowrap; 
+            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-acao-banner:active { transform: scale(0.95); }
+
+        .btn-fechar-aviso { 
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent; 
+            color: #999; 
+            border: none; 
+            font-size: 20px; 
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+</style>
 </head>
 <body>
 
@@ -713,9 +1623,13 @@
                 <!-- A logo foi movida para fora do header -->
             </div>
             <div class="header-icons">
-                <a href="https://wa.me/5565998150975" class="icon-btn ic-zap" onclick="abrirLinkExterno(event, this)" aria-label="Fale conosco no WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                <a href="https://facebook.com/super.cestas.cuiaba/" class="icon-btn ic-face" onclick="abrirLinkExterno(event, this)" aria-label="Visite nosso Facebook"><i class="fab fa-facebook"></i></a>
-                <a href="https://instagram.com/super.cestas.dona.antonia/" class="icon-btn ic-insta" onclick="abrirLinkExterno(event, this)" aria-label="Siga-nos no Instagram"><i class="fab fa-instagram"></i></a>
+                <!-- BOTÕES DE TEXTO DE REDES SOCIAIS -->
+                <a href="https://wa.me/5565998150975" class="header-btn btn-whatsapp-save" onclick="abrirLinkExterno(event, this)" aria-label="Salvar contato do WhatsApp">
+                    <i class="fab fa-whatsapp" style="margin-right: 5px;"></i> Salvar WhatsApp
+                </a>
+                <a href="https://instagram.com/super.cestas.dona.antonia/" class="header-btn btn-insta-follow" onclick="abrirLinkExterno(event, this)" aria-label="Seguir no Instagram">
+                    <i class="fab fa-instagram" style="margin-right: 5px;"></i> Seguir no Insta
+                </a>
             </div>
         </div>
 
@@ -753,17 +1667,19 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-economica2.jpg" alt="Cesta Econômica Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+2'">
                     </div>
-                    <!-- Setas de Navegação (NOVO) -->
-                    <div class="nav-arrow left" onclick="mudarFotoNoCard('economica', -1)"><i class="fas fa-chevron-left"></i></div>
-                    <div class="nav-arrow right" onclick="mudarFotoNoCard('economica', 1)"><i class="fas fa-chevron-right"></i></div>
+                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <div class="swipe-indicator" onclick="event.stopPropagation();">
+                        <i class="fas fa-hand-pointer"></i>
+                        <span>Arraste ou Toque</span>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 85,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA Reservar -->
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
                     <button class="btn btn-whatsapp" onclick="encomendar('Cesta Econômica')">Encomendar</button>
-                    <button class="btn btn-Reservar" onclick="Reservar('Cesta Econômica')">Reservar</button>
+                    <button class="btn btn-agendar" onclick="agendar('Cesta Econômica')">Agendar</button>
                 </div>
                 <!-- NOVO AVISO DE BRINDE -->
                 <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
@@ -783,22 +1699,24 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-mini2.jpg" alt="Cesta Mini Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+2'">
                     </div>
-                    <!-- Setas de Navegação -->
-                    <div class="nav-arrow left" onclick="mudarFotoNoCard('mini', -1)"><i class="fas fa-chevron-left"></i></div>
-                    <div class="nav-arrow right" onclick="mudarFotoNoCard('mini', 1)"><i class="fas fa-chevron-right"></i></div>
+                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <div class="swipe-indicator" onclick="event.stopPropagation();">
+                        <i class="fas fa-hand-pointer"></i>
+                        <span>Arraste ou Toque</span>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 165,00</strong></div>
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 170,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA Reservar -->
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
                     <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00', 'encomendar')">Encomendar</button>
-                    <button class="btn btn-Reservar" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00', 'Reservar')">Reservar</button>
+                    <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00', 'agendar')">Agendar</button>
                 </div>
                 <!-- NOVO AVISO DE BRINDE -->
                 <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
-                    Encomende ou Reserve sua cesta e garanta o Amaciante Ype de 2 Litros de Brinde.
+                    Encomende ou Agende sua cesta e garanta o Amaciante Ype de 2 Litros de Brinde.
                 </p>
             </div>
         </div>
@@ -814,18 +1732,20 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-pequena2.jpg" alt="Cesta Pequena Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+2'">
                     </div>
-                    <!-- Setas de Navegação -->
-                    <div class="nav-arrow left" onclick="mudarFotoNoCard('pequena', -1)"><i class="fas fa-chevron-left"></i></div>
-                    <div class="nav-arrow right" onclick="mudarFotoNoCard('pequena', 1)"><i class="fas fa-chevron-right"></i></div>
+                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <div class="swipe-indicator" onclick="event.stopPropagation();">
+                        <i class="fas fa-hand-pointer"></i>
+                        <span>Arraste ou Toque</span>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 215,00</strong></div>
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 220,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA Reservar -->
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
                     <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00', 'encomendar')">Encomendar</button>
-                    <button class="btn btn-Reservar" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00', 'Reservar')">Reservar</button>
+                    <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00', 'agendar')">Agendar</button>
                 </div>
                 <!-- NOVO AVISO DE BRINDE -->
                 <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
@@ -845,18 +1765,20 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-media2.jpg" alt="Cesta Média Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+2'">
                     </div>
-                    <!-- Setas de Navegação -->
-                    <div class="nav-arrow left" onclick="mudarFotoNoCard('media', -1)"><i class="fas fa-chevron-left"></i></div>
-                    <div class="nav-arrow right" onclick="mudarFotoNoCard('media', 1)"><i class="fas fa-chevron-right"></i></div>
+                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <div class="swipe-indicator" onclick="event.stopPropagation();">
+                        <i class="fas fa-hand-pointer"></i>
+                        <span>Arraste ou Toque</span>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 320,00</strong></div>
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 325,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA Reservar -->
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
                     <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00', 'encomendar')">Encomendar</button>
-                    <button class="btn btn-Reservar" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00', 'Reservar')">Reservar</button>
+                    <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00', 'agendar')">Agendar</button>
                 </div>
                 <!-- NOVO AVISO DE BRINDE -->
                 <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
@@ -876,18 +1798,20 @@
                     <div class="img-wrapper" data-img-index="1">
                         <img src="img/cesta-grande2.jpg" alt="Cesta Básica Grande Detalhe" onerror="this.src='https://placehold.co/400x400?text=GRANDE+2'">
                     </div>
-                    <!-- Setas de Navegação -->
-                    <div class="nav-arrow left" onclick="mudarFotoNoCard('grande', -1)"><i class="fas fa-chevron-left"></i></div>
-                    <div class="nav-arrow right" onclick="mudarFotoNoCard('grande', 1)"><i class="fas fa-chevron-right"></i></div>
+                    <!-- NOVO INDICADOR DE ARRASTAR -->
+                    <div class="swipe-indicator" onclick="event.stopPropagation();">
+                        <i class="fas fa-hand-pointer"></i>
+                        <span>Arraste ou Toque</span>
+                    </div>
                 </div>
                 <div class="lista-precos-cesta">
                     <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 380,00</strong></div>
                     <div class="item-preco"><span>Com Arroz Koblenz:</span><strong>R$ 390,00</strong></div>
                 </div>
                 <div class="botoes-wrapper">
-                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA Reservar -->
+                    <!-- BOTÕES: MUDAR CLASSE/TEXTO COMPARTILHAR PARA AGENDAR -->
                     <button class="btn btn-whatsapp" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00', 'encomendar')">Encomendar</button>
-                    <button class="btn btn-Reservar" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00', 'Reservar')">Reservar</button>
+                    <button class="btn btn-agendar" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00', 'agendar')">Agendar</button>
                 </div>
                 <!-- NOVO AVISO DE BRINDE -->
                 <p style="text-align: center; font-size: 13px; color: #555; margin-top: 10px;">
@@ -1054,6 +1978,14 @@
             'media': 0,
             'grande': 0
         };
+        
+        // Função auxiliar para esconder o indicador de swipe
+        function hideSwipeIndicator(cestaTipo) {
+            const indicator = document.querySelector(`#galeria-${cestaTipo} .swipe-indicator`);
+            if (indicator && !indicator.classList.contains('hidden')) {
+                indicator.classList.add('hidden');
+            }
+        }
 
         function mudarFotoNoCard(cestaTipo, direcao) {
             const galeria = document.getElementById(`galeria-${cestaTipo}`);
@@ -1081,7 +2013,52 @@
 
             // Atualizar o índice armazenado
             currentPhotoIndex[cestaTipo] = newIndex;
+            
+            // Esconde o indicador após o primeiro swipe/clique
+            hideSwipeIndicator(cestaTipo);
         }
+        
+        // NOVO: Adiciona listeners de toque/clique e swipe na área da foto
+        function addPhotoClickListeners() {
+            const cestas = ['economica', 'mini', 'pequena', 'media', 'grande'];
+            cestas.forEach(cesta => {
+                const galeria = document.getElementById(`galeria-${cesta}`);
+                if (galeria) {
+                    
+                    // 1. Listener de Clique/Toque (para avançar)
+                    galeria.addEventListener('click', (event) => {
+                        // Garante que o clique não foi no indicador de swipe
+                        if (!event.target.closest('.swipe-indicator') && CestaImages[cesta] > 1) {
+                            mudarFotoNoCard(cesta, 1); 
+                        }
+                    });
+
+                    // 2. Listener de Swipe (para mobile)
+                    let touchstartX = 0;
+                    let touchendX = 0;
+                    const SWIPE_THRESHOLD = 50; // Mínimo de 50px para ser considerado um swipe
+
+                    const handleGesture = () => {
+                        if (touchendX < touchstartX - SWIPE_THRESHOLD) { // Swipe Left (Próxima)
+                            mudarFotoNoCard(cesta, 1);
+                        }
+                        if (touchendX > touchstartX + SWIPE_THRESHOLD) { // Swipe Right (Anterior)
+                            mudarFotoNoCard(cesta, -1);
+                        }
+                    }
+
+                    galeria.addEventListener('touchstart', e => {
+                        touchstartX = e.changedTouches[0].screenX;
+                    }, false);
+
+                    galeria.addEventListener('touchend', e => {
+                        touchendX = e.changedTouches[0].screenX;
+                        handleGesture();
+                    }, false);
+                }
+            });
+        }
+
 
         // --- SISTEMA DE ROLAGEM INFINITA (RESTANTE) ---
         let paginasReveladas = {
@@ -1184,15 +2161,15 @@
             window.open(`https://wa.me/${TELEFONE}?text=Olá, quero encomendar a ${produto} (Com Amaciante Ypê de brinde).`, '_blank'); 
         }
 
-        function Reservar(produto) {
-            window.open(`https://wa.me/${TELEFONE}?text=Olá, gostaria de Reservar a ${produto} (Com Amaciante Ypê de brinde).`, '_blank'); 
+        function agendar(produto) {
+            window.open(`https://wa.me/${TELEFONE}?text=Olá, gostaria de agendar a ${produto} (Com Amaciante Ypê de brinde).`, '_blank'); 
         }
 
         // --- LÓGICA DO MODAL DE VARIAÇÃO ---
         let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '', acao: '' }; // Adicionado 'acao'
         let opcaoEscolhida = ''; 
 
-        function abrirModalVariacao(nome, pAlvino, pKoblenz, acao) { // acao: 'encomendar' ou 'Reservar'
+        function abrirModalVariacao(nome, pAlvino, pKoblenz, acao) { // acao: 'encomendar' ou 'agendar'
             dadosCestaAtual = { nome, precoAlvino: pAlvino, precoKoblenz: pKoblenz, acao };
             opcaoEscolhida = '';
             
@@ -1205,7 +2182,7 @@
             document.getElementById('btnConfirmarPedido').disabled = true;
 
             // Define o texto do botão de confirmação
-            document.getElementById('textoConfirmarPedido').innerText = acao === 'Reservar' ? 'Reservar' : 'Encomendar';
+            document.getElementById('textoConfirmarPedido').innerText = acao === 'agendar' ? 'Agendar' : 'Encomendar';
 
             document.getElementById('modalVariacao').style.display = 'flex';
         }
@@ -1225,7 +2202,7 @@
             document.getElementById('btnConfirmarPedido').disabled = false;
         }
 
-        function confirmarAcao() { // Função unificada para Encomendar ou Reservar do modal
+        function confirmarAcao() { // Função unificada para Encomendar ou Agendar do modal
             if(!opcaoEscolhida || !dadosCestaAtual.acao) return;
 
             let marca = opcaoEscolhida === 'alvino' ? 'Arroz Tio Alvino' : 'Arroz Koblenz';
@@ -1233,7 +2210,7 @@
             let nomeCesta = dadosCestaAtual.nome;
             let acao = dadosCestaAtual.acao;
 
-            let acaoTexto = acao === 'Reservar' ? 'Reservar' : 'encomendar';
+            let acaoTexto = acao === 'agendar' ? 'agendar' : 'encomendar';
             
             let textoZap = `Olá, gostaria de ${acaoTexto} a *${nomeCesta}* com *${marca}* (Valor: R$ ${preco}). Com Amaciante Ypê de 2L de brinde.`;
             
@@ -1245,7 +2222,7 @@
             document.getElementById('modalVariacao').style.display = 'none';
         }
         
-        // REMOVIDA: function compartilhar (substituída por Reservar)
+        // REMOVIDA: function compartilhar (substituída por agendar)
         
         // --- LÓGICA DE SORTEIO ---
         function alternarAbaSorteio(aba) {
@@ -1369,6 +2346,8 @@
                      document.getElementById('aviso-instalar').style.display = 'flex';
                 }
             }
+            // NOVO: Inicializa listeners de clique/swipe
+            addPhotoClickListeners(); 
             // NOVO: Verifica o link ao carregar a página
             verificarHash();
         };
