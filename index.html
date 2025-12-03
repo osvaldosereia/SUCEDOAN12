@@ -300,17 +300,17 @@
         .btn-confirmar-pedido { width: 100%; padding: 15px; background-color: var(--cor-whatsapp); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-confirmar-pedido:disabled { background-color: #ccc; cursor: not-allowed; }
 
-        /* --- RESPONSIVIDADE DESKTOP --- */
+        /* --- RESPONSIVIDADE DESKTOP (AJUSTADA PARA 700PX) --- */
         @media (min-width: 481px) {
             .main-content-wrapper {
-                max-width: 1000px; 
+                max-width: 700px; /* NOVO: Reduzido para ser mais parecido com o mobile */
                 box-shadow: 0 0 25px rgba(0,0,0,0.15); 
             }
             header {
-                max-width: 1000px; 
+                max-width: 700px; /* NOVO: Header acompanha o novo limite */
             }
             .header-background-bar {
-                max-width: 1000px;
+                max-width: 700px; /* NOVO: Barra de fundo acompanha o novo limite */
                 left: 50%;
                 transform: translateX(-50%);
             }
@@ -340,7 +340,7 @@
                 display: grid;
                 grid-template-columns: 1fr 1fr; 
                 gap: 20px;
-                padding: 0 30px; /* Alinha com o padding da seção */
+                padding: 0 30px; 
             }
             /* Remove o padding interno da seção se o grid for usado */
             #pag-pagamento, #pag-sorteio {
@@ -360,7 +360,7 @@
 
     <!-- LOGO FIXA: Usa a imagem enviada (icon-512.jpg) -->
     <img src="uploaded:icon-512.jpg-e6b1d93e-bd40-4cbe-8eb9-1ce2d7412765" 
-         onerror="this.src='https://placehold.co/120x120/D32F2F/ffffff?text=LOGO'" 
+         onerror="this.src='img/logo1.png'" 
          alt="Logo Dona Antônia" 
          class="logo-pequena">
 
@@ -404,13 +404,13 @@
                     <div class="cesta-body">
                         <!-- Galeria de 2 Fotos Quadradas -->
                         <div class="galeria-fotos" id="galeria-economica">
-                            <!-- Imagem 1 (CONECTADO: cesta-economica1.jpg) -->
+                            <!-- Imagem 1 (CONECTADO: img/cesta-economica1.jpg) -->
                             <div class="img-wrapper active" data-img-index="0">
-                                <img src="cesta-economica1.jpg" alt="Cesta Econômica" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+1'">
+                                <img src="img/cesta-economica1.jpg" alt="Cesta Econômica" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+1'">
                             </div>
-                            <!-- Imagem 2 (CONECTADO: cesta-economica2.jpg) -->
+                            <!-- Imagem 2 (CONECTADO: img/cesta-economica2.jpg) -->
                             <div class="img-wrapper" data-img-index="1">
-                                <img src="cesta-economica2.jpg" alt="Cesta Econômica Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+2'">
+                                <img src="img/cesta-economica2.jpg" alt="Cesta Econômica Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+2'">
                             </div>
                             <!-- Botão de Navegação entre fotos -->
                             <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('economica')">
@@ -438,13 +438,13 @@
                     <div class="cesta-body">
                         <!-- Galeria de 2 Fotos Quadradas -->
                         <div class="galeria-fotos" id="galeria-mini">
-                            <!-- Imagem 1 (CONECTADO: cesta-mini1.jpg) -->
+                            <!-- Imagem 1 (CONECTADO: img/cesta-mini1.jpg) -->
                             <div class="img-wrapper active" data-img-index="0">
-                                <img src="cesta-mini1.jpg" alt="Cesta Mini" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+1'">
+                                <img src="img/cesta-mini1.jpg" alt="Cesta Mini" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+1'">
                             </div>
-                            <!-- Imagem 2 (CONECTADO: cesta-mini2.jpg) -->
+                            <!-- Imagem 2 (CONECTADO: img/cesta-mini2.jpg) -->
                             <div class="img-wrapper" data-img-index="1">
-                                <img src="cesta-mini2.jpg" alt="Cesta Mini Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+2'">
+                                <img src="img/cesta-mini2.jpg" alt="Cesta Mini Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MINI+2'">
                             </div>
                             <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('mini')">
                                 <span id="btn-foto-mini">VER PRODUTOS</span>
@@ -472,13 +472,13 @@
                     <div class="cesta-body">
                         <!-- Galeria de 2 Fotos Quadradas -->
                         <div class="galeria-fotos" id="galeria-pequena">
-                            <!-- Imagem 1 (CONECTADO: cesta-pequena1.jpg) -->
+                            <!-- Imagem 1 (CONECTADO: img/cesta-pequena1.jpg) -->
                             <div class="img-wrapper active" data-img-index="0">
-                                <img src="cesta-pequena1.jpg" alt="Cesta Pequena" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+1'">
+                                <img src="img/cesta-pequena1.jpg" alt="Cesta Pequena" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+1'">
                             </div>
-                            <!-- Imagem 2 (CONECTADO: cesta-pequena2.jpg) -->
+                            <!-- Imagem 2 (CONECTADO: img/cesta-pequena2.jpg) -->
                             <div class="img-wrapper" data-img-index="1">
-                                <img src="cesta-pequena2.jpg" alt="Cesta Pequena Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+2'">
+                                <img src="img/cesta-pequena2.jpg" alt="Cesta Pequena Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=PEQUENA+2'">
                             </div>
                             <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('pequena')">
                                 <span id="btn-foto-pequena">VER PRODUTOS</span>
@@ -506,13 +506,13 @@
                     <div class="cesta-body">
                         <!-- Galeria de 2 Fotos Quadradas -->
                         <div class="galeria-fotos" id="galeria-media">
-                            <!-- Imagem 1 (CONECTADO: cesta-media1.jpg) -->
+                            <!-- Imagem 1 (CONECTADO: img/cesta-media1.jpg) -->
                             <div class="img-wrapper active" data-img-index="0">
-                                <img src="cesta-media1.jpg" alt="Cesta Média" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+1'">
+                                <img src="img/cesta-media1.jpg" alt="Cesta Média" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+1'">
                             </div>
-                            <!-- Imagem 2 (CONECTADO: cesta-media2.jpg) -->
+                            <!-- Imagem 2 (CONECTADO: img/cesta-media2.jpg) -->
                             <div class="img-wrapper" data-img-index="1">
-                                <img src="cesta-media2.jpg" alt="Cesta Média Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+2'">
+                                <img src="img/cesta-media2.jpg" alt="Cesta Média Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=MÉDIA+2'">
                             </div>
                             <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('media')">
                                 <span id="btn-foto-media">VER PRODUTOS</span>
@@ -540,13 +540,13 @@
                     <div class="cesta-body">
                         <!-- Galeria de 2 Fotos Quadradas -->
                         <div class="galeria-fotos" id="galeria-grande">
-                            <!-- Imagem 1 (CONECTADO: cesta-grande1.jpg) -->
+                            <!-- Imagem 1 (CONECTADO: img/cesta-grande1.jpg) -->
                             <div class="img-wrapper active" data-img-index="0">
-                                <img src="cesta-grande1.jpg" alt="Cesta Básica Grande" onerror="this.src='https://placehold.co/400x400?text=GRANDE+1'">
+                                <img src="img/cesta-grande1.jpg" alt="Cesta Básica Grande" onerror="this.src='https://placehold.co/400x400?text=GRANDE+1'">
                             </div>
-                            <!-- Imagem 2 (CONECTADO: cesta-grande2.jpg) -->
+                            <!-- Imagem 2 (CONECTADO: img/cesta-grande2.jpg) -->
                             <div class="img-wrapper" data-img-index="1">
-                                <img src="cesta-grande2.jpg" alt="Cesta Básica Grande Detalhe" onerror="this.src='https://placehold.co/400x400?text=GRANDE+2'">
+                                <img src="img/cesta-grande2.jpg" alt="Cesta Básica Grande Detalhe" onerror="this.src='https://placehold.co/400x400?text=GRANDE+2'">
                             </div>
                             <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('grande')">
                                 <span id="btn-foto-grande">VER PRODUTOS</span>
@@ -576,8 +576,8 @@
             <!-- CARD 1: FORMAS DE PAGAMENTO (EXTRAÍDO DO ANEXO) -->
             <div id="pag-pagamento" class="secao-conteudo">
                 <div class="section-icon-header">
-                    <!-- ÍCONE PAGAMENTO (CONECTADO: pagamento.png) -->
-                    <img src="pagamento.png" alt="Pagamento Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/2196F3/ffffff?text=P'">
+                    <!-- ÍCONE PAGAMENTO (CONECTADO: img/pagamento.png) -->
+                    <img src="img/pagamento.png" alt="Pagamento Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/2196F3/ffffff?text=P'">
                 </div>
                 <div class="card">
                     <h2>💳 Formas de Pagamento</h2>
@@ -598,8 +598,8 @@
             <!-- CARD 2: CADASTRO PARA SORTEIO (EXTRAÍDO DO ANEXO) -->
             <div id="pag-sorteio" class="secao-conteudo">
                 <div class="section-icon-header">
-                    <!-- ÍCONE SORTEIO (CONECTADO: cesta.png) -->
-                    <img src="cesta.png" alt="Sorteio Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
+                    <!-- ÍCONE SORTEIO (CONECTADO: img/cesta.png) -->
+                    <img src="img/cesta.png" alt="Sorteio Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
                 </div>
                 <div class="card">
                     <h2>🎉 Sorteio todo Domingo.</h2>
@@ -978,29 +978,30 @@
          */
         function ajustarPosicaoLogo() {
             const logo = document.querySelector('.logo-pequena');
-            const wrapper = document.querySelector('.main-content-wrapper');
             const header = document.querySelector('header');
             const bar = document.querySelector('.header-background-bar');
 
-            if (!logo || !wrapper || !header || !bar) return;
+            if (!logo || !header || !bar) return;
 
+            // O CSS já garante o max-width e a centralização
             if (window.innerWidth > 480) {
-                 // Configurações Desktop (max-width: 1000px)
-                 const wrapperWidth = 1000; 
-                 // Centraliza a logo e a barra no limite de 1000px
+                 // Configurações Desktop: garante a centralização de elementos fixos
                  logo.style.left = '50%';
                  logo.style.transform = 'translateX(-50%)'; 
-                 bar.style.maxWidth = `${wrapperWidth}px`;
-                 bar.style.left = '50%';
-                 bar.style.transform = 'translateX(-50%)';
-                 header.style.maxWidth = `${wrapperWidth}px`;
+                 
+                 if(bar) {
+                     bar.style.left = '50%';
+                     bar.style.transform = 'translateX(-50%)';
+                 }
 
             } else {
-                // Configurações Mobile (max-width: 480px)
+                // Configurações Mobile
                  logo.style.left = '50%';
                  logo.style.transform = 'translateX(-50%)';
-                 bar.style.maxWidth = '480px';
-                 header.style.maxWidth = '480px';
+                 if(bar) {
+                    bar.style.left = '50%';
+                    bar.style.transform = 'translateX(-50%)';
+                 }
             }
         }
 
