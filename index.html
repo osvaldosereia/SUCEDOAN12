@@ -1114,8 +1114,8 @@
             // REMOVIDO SCROLL: A remoção dessa linha garante que o usuário permaneça no atalho (#)
             // document.getElementById('pag-cestas').scrollIntoView({ behavior: 'smooth' });
             
-            // NOVO: Inicia o timer de 20 segundos para o popup de retenção PWA
-            iniciarPopupPWAComTimer(20);
+            // NOVO: Inicia o timer de 15 segundos para o popup de retenção PWA
+            iniciarPopupPWAComTimer(15);
         }
         
         /**
@@ -1179,7 +1179,7 @@
          * NOVO: Envia um "oi" simples para o WhatsApp
          */
         function enviarOiWhatsApp() {
-            const textoZap = `Olá, vim do site e quero saber mais sobre as cestas!`;
+            const textoZap = `Olá, gostei das cestas e vou salvar seu contato. 🙏 !`;
             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(textoZap)}`, '_blank'); 
             fecharModalPWA();
         }
