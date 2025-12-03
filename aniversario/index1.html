@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aniversário Solidário | Dona Antônia</title>
+    
+    <!-- Metatags Open Graph - Adaptados para Aniversário -->
+    <meta property="og:title" content="Aniversário Solidário Dona Antônia: Faça sua doação!">
+    <meta property="og:description" content="Contribua para a doação de cestas básicas em nome da aniversariante.">
+    <meta property="og:image" content="uploaded:icon-512.jpg-e6b1d93e-bd40-4cbe-8eb9-1ce2d7412765">
+    <meta property="og:url" content="https://donaantonia.com.br/aniversario/">
+
+    <!-- Link para ícones (Font Awesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ==================================================================== */
+        /* === ESTILOS GLOBAIS E ESTRUTURA (COPIADOS E ADAPTADOS) ==== */
+        /* ==================================================================== */
+        * { box-sizing: border-box; }
+
+        :root {
+            --cor-primaria: #D32F2F; /* Vermelho Principal */
+            --cor-whatsapp: #25D366;
+            --cor-compartilhar: #1E88E5; /* Azul mais escuro/distinto para Compartilhar */
+            --cor-doar: #ff9800; /* Laranja para Doação */
+            --cor-texto: #222;
+            --cor-fundo: #fafafa;
+            --cor-header-fundo: #f5f5f5;
+            --altura-aviso: 30px; 
+            --altura-header: 80px; 
+            --cor-cadastro: #1E88E5; /* Azul para Cadastro */
+        }
+
+        /* Mantendo a estrutura fixa de header */
+        html { 
+            background-color: #e0e0e0; 
+            scroll-behavior: smooth;
+            scroll-padding-top: calc(var(--altura-header) + var(--altura-aviso) + 5px); 
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e0e0e0; 
+            color: var(--cor-texto);
+            margin: 0; 
+            padding: 0;
+            padding-top: calc(var(--altura-header) + var(--altura-aviso) + 5px); 
+            padding-bottom: 20px;
+            min-height: 10vh;
+            position: relative; 
+            width: 100%;
+        }
+
+        /* --- BARRA DE AVISO AMARELA --- */
+        #barra-aviso-topo {
+            background-color: #FFEB3B; 
+            color: var(--cor-texto);
+            font-size: 14px;
+            text-align: center;
+            padding: 5px 10px;
+            height: var(--altura-aviso);
+            position: fixed;
+            top: 0;
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 100%;
+            max-width: 480px; /* Padrão Mobile */
+            z-index: 2100; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .main-content-wrapper {
+            max-width: 480px; /* Padrão mobile */
+            margin: 0 auto; 
+            background-color: var(--cor-fundo); 
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* --- CABEÇALHO FIXO --- */
+        header {
+            background-color: white;
+            height: var(--altura-header); 
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            position: fixed;
+            top: var(--altura-aviso); 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 100%;
+            max-width: 480px; /* Padrão Mobile */
+            z-index: 1000;
+        }
+
+        .header-background-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--altura-header); 
+            background-color: var(--cor-header-fundo);
+            z-index: 999;
+        }
+        
+        /* CORREÇÃO TOP BAR: Estilos da Top Bar restaurados para index(20).html */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            height: var(--altura-header); 
+            padding: 5px 15px;
+        }
+        
+        .header-left, .header-icons { 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+            align-items: flex-start; 
+            flex: 1; 
+            z-index: 1001; 
+            gap: 5px; 
+        }
+
+        .header-icons { 
+            align-items: flex-end; 
+            justify-content: center;
+        }
+        
+        /* Logo (FIXA e CENTRALIZADA) */
+        .logo-pequena { 
+            height: 120px; 
+            width: 120px; 
+            object-fit: cover; 
+            border-radius: 50%; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+            position: fixed;
+            top: calc(var(--altura-aviso) + 8px); 
+            z-index: 2000; 
+            left: 50%; 
+            transform: translateX(-50%);
+            background-color: white; 
+            padding: 2px; 
+        }
+
+        .header-btn {
+            padding: 6px 10px; 
+            border-radius: 6px;
+            font-size: 11px; 
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.2s;
+            white-space: nowrap; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            color: white; 
+            width: 100px; 
+        }
+        .header-btn:active { transform: scale(0.95); }
+        .btn-whatsapp-save { background-color: var(--cor-whatsapp); }
+        .btn-ligar { background-color: #008000; }
+        .btn-insta-follow { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); }
+        .btn-app-header { background-color: #2196F3; } /* REATIVADO */
+        
+        /* --- CARDS E SEÇÕES --- */
+        .secao-conteudo { padding: 15px; }
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border: 1px solid #f0f0f0; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02); 
+        }
+        
+        h2 { color: var(--cor-primaria); margin-top: 0; font-size: 1.2rem; }
+        
+        /* Estilo global para Inputs e Selects */
+        input:not([type="submit"]), select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            font-size: 16px; 
+        }
+        
+        /* Estilos do Botão principal */
+        .btn {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; padding: 15px; border: none; border-radius: 8px;
+            font-size: 15px; 
+            font-weight: bold; cursor: pointer;
+            text-decoration: none; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        
+        /* --- ESTILOS ESPECÍFICOS DA NOVA PÁGINA --- */
+        
+        /* CONTAINER DE DETALHES DO ANIVERSÁRIO (para a foto lateral) */
+        .aniversario-details-container {
+             display: flex;
+             flex-direction: column; /* Mobile: empilhado */
+             gap: 15px;
+             margin-bottom: 15px;
+        }
+
+        /* Foto de capa horizontal (Banner) */
+        .aniversario-banner-img {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Card de Informação do Aniversário */
+        .card-aniversario {
+            background-color: #fce4ec; /* Rosa claro */
+            border: 2px solid var(--cor-primaria);
+            text-align: center;
+            display: none; /* Escondido inicialmente */
+            animation: fadeIn 0.5s ease;
+            padding: 15px; /* Adiciona padding para o conteúdo interno */
+        }
+        /* Sub-container para alinhamento no desktop */
+        .aniversario-info-text {
+            flex-grow: 1;
+        }
+
+        /* Card de Doação (Cesta Econômica adaptada) */
+        .card-doacao {
+            padding: 0; 
+            overflow: hidden; 
+            border: 1px solid #eee; 
+            margin-top: 15px;
+        }
+        .cesta-header-doacao { 
+            background-color: var(--cor-doar); 
+            padding: 15px; 
+            text-align: center; 
+            color: white; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cesta-header-doacao h3 { margin: 0; color: white; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Lista de Preços (Quantidade) */
+        .lista-doacao-preco {
+            background-color: #f9f9f9; border-radius: 8px; padding: 12px;
+            margin: 15px 0; border: 1px solid #eee;
+        }
+        .item-doacao-preco { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 16px; color: #444; }
+        .item-doacao-preco:last-child { margin-bottom: 0; }
+        .item-doacao-preco strong { color: var(--cor-doar); font-size: 24px; }
+        .seletor-qtd { width: 80px; padding: 5px; border-radius: 4px; text-align: center; }
+        .btn-doar { background-color: var(--cor-doar); box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4); }
+
+        /* Estilos para a seção de Apresentação (Passos) */
+        .passos-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Mobile: 1 coluna */
+            gap: 20px;
+        }
+        .passo-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .passo-card h3 { color: var(--cor-primaria); margin-top: 0; }
+        .passo-card img {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            cursor: pointer; /* Indica que é clicável */
+            transition: transform 0.2s;
+        }
+        .passo-card img:active { transform: scale(0.98); }
+
+        /* Estilos do Lightbox (Ampliação da Imagem) */
+        #lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 6000;
+            padding-top: 50px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.9);
+            backdrop-filter: blur(5px);
+        }
+        #lightbox-content {
+            margin: auto;
+            display: block;
+            width: 90%;
+            max-width: 700px;
+            animation: zoomIn 0.3s ease-out;
+            border-radius: 12px;
+        }
+        #lightbox-caption {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+            text-align: center;
+            color: #ccc;
+            padding: 10px 0;
+            height: 150px;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .lightbox-close:hover,
+        .lightbox-close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Animações e Utilidades */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .area-resultado-busca {
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* --- ESTILOS GERAIS DE MODAL (Modal Info, Modal Cadastro e Modal Cesta usam) --- */
+        .modal-base {
+            display: none;
+            position: fixed;
+            z-index: 5000; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 16px;
+            padding: 25px;
+            position: relative; 
+            text-align: left;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-fechar-modal-var { 
+            position: absolute; 
+            top: 15px; 
+            right: 20px; 
+            background: none; 
+            border: none; 
+            font-size: 24px; 
+            color: #999; 
+            cursor: pointer;
+        }
+        
+        /* Estilo do Modal de Informação (antes do pagamento) */
+        #modalInfoImportante .modal-content h3 { color: var(--cor-doar); text-align: center; }
+        #modalInfoImportante .modal-content ul { list-style: disc; padding-left: 20px; margin-top: 15px; }
+        #modalInfoImportante .modal-content li { margin-bottom: 8px; font-size: 15px; line-height: 1.3; }
+        #modalInfoImportante .modal-content li strong { color: var(--cor-primaria); }
+        .btn-modal-ok { 
+            background-color: var(--cor-doar); 
+            margin-top: 20px; 
+            font-size: 16px;
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+        }
+        
+        /* Estilo do Modal de Cadastro */
+        #modalCadastro h3 { color: var(--cor-cadastro); text-align: center; }
+        #modalCadastro p { text-align: center; color: #555; }
+        .btn-modal-cadastro {
+            background-color: var(--cor-cadastro); 
+            box-shadow: 0 4px 10px rgba(30, 136, 229, 0.4);
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        /* Estilo do Modal da Cesta (apenas visualização) */
+        #modalCesta {
+            display: none;
+        }
+        #modalCesta .modal-content {
+             padding: 0; /* Remove padding do content para que o card preencha */
+             max-width: 350px;
+        }
+        .card-cesta-modal {
+             padding: 0; 
+             margin: 0; 
+             border: none;
+             box-shadow: none;
+        }
+        .cesta-header { 
+            background-color: var(--cor-primaria); 
+            padding: 15px; 
+            text-align: center; 
+            color: white; 
+        }
+        .cesta-header h3 { margin: 0; color: white; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .cesta-body { padding: 15px; }
+        .cesta-modal-btn-fechar {
+            background-color: var(--cor-primaria);
+            margin-top: 15px;
+        }
+
+
+        /* --- RESPONSIVIDADE DESKTOP --- */
+        @media (min-width: 481px) {
+            .main-content-wrapper {
+                max-width: 900px; 
+                box-shadow: 0 0 25px rgba(0,0,0,0.15); 
+            }
+            #barra-aviso-topo, header {
+                 max-width: 900px; 
+            }
+            .header-background-bar {
+                max-width: 900px; 
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .secao-conteudo {
+                padding: 20px 30px; 
+            }
+            /* CORREÇÃO 2: Responsividade dos 4 Passos */
+             .passos-grid {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                gap: 30px;
+            }
+            /* NOVO ESTILO 4: Foto lateral no Desktop */
+            .aniversario-details-container {
+                 flex-direction: row; /* Desktop: lado a lado */
+                 align-items: flex-start;
+                 text-align: left;
+            }
+            .aniversario-banner-img {
+                 width: 300px; /* Largura fixa para a imagem lateral */
+                 height: 200px;
+                 object-fit: cover;
+                 flex-shrink: 0; /* Não encolhe */
+                 border-radius: 12px;
+            }
+            .aniversario-info-text {
+                 text-align: left;
+            }
+            .aniversario-info-text h2 {
+                 margin-top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- BARRA FIXA AMARELA -->
+    <div id="barra-aviso-topo">
+        <strong style="font-weight: 700;">Aniversário Solidário:</strong> Doe uma cesta e faça a diferença!
+    </div>
+
+    <!-- BARRA DE FUNDO CINZA CLARA -->
+    <div class="header-background-bar"></div>
+
+    <!-- LOGO FIXA: Reuso da logo existente -->
+    <img src="uploaded:icon-512.jpg-e6b1d93e-bd40-4cbe-8eb9-1ce2d7412765" 
+         onerror="this.src='img/logo1.png'" 
+         alt="Logo Dona Antônia" 
+         class="logo-pequena">
+
+    <!-- CABEÇALHO FIXO (RESTAURADO PARA VERSÃO COMPLETA DE INDEX(20).HTML) -->
+    <header>
+        <div class="header-top">
+            <!-- WHATSAPP E LIGAR NA ESQUERDA -->
+            <div class="header-left">
+                 <!-- Botão WhatsApp -->
+                 <a href="https://wa.me/5565998150975?text=Ola,%20gostaria%20de%20saber%20mais%20sobre%20o%20Aniversário%20Solidário" class="header-btn btn-whatsapp-save" target="_blank" aria-label="Falar com o WhatsApp">
+                    <i class="fab fa-whatsapp" style="margin-right: 5px;"></i> WhatsApp
+                </a>
+                <!-- Botão Ligar -->
+                <a href="tel:+5565998150975" class="header-btn btn-ligar" aria-label="Ligar para o número (65) 99815-0975">
+                    <i class="fas fa-phone" style="margin-right: 5px;"></i> Ligar
+                </a>
+            </div>
+            
+            <!-- INSTAGRAM E INSTALAR APP NA DIREITA -->
+            <div class="header-icons">
+                 <!-- Botão Instagram -->
+                <a href="https://instagram.com/super.cestas.dona.antonia/" class="header-btn btn-insta-follow" target="_blank" aria-label="Seguir no Instagram">
+                    <i class="fab fa-instagram" style="margin-right: 5px;"></i> Instagram
+                </a>
+                <!-- Botão Instalar App (PWA) - RESTAURADO -->
+                 <button class="header-btn btn-app-header" onclick="mostrarMensagemBusca('Funcionalidade PWA indisponível na página do Aniversário Solidário. Volte à página principal para instalar.', true)" aria-label="Instalar aplicativo (PWA)">
+                    <i class="fas fa-mobile-alt" style="margin-right: 5px;"></i> Instalar App
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTAINER DE CONTEÚDO PRINCIPAL -->
+    <div class="main-content-wrapper">
+        
+        <!-- SEÇÃO 1: ACESSO E DOAÇÃO -->
+        <div id="pag-doacao" class="secao-conteudo">
+            <h1 style="text-align: center; color: var(--cor-doar); font-size: 1.4rem; margin-bottom: 20px;">
+                🎁 Acesse o Aniversário Solidário
+            </h1>
+
+            <!-- ETAPA 1: BUSCA POR CÓDIGO -->
+            <div id="area-busca-codigo" class="card">
+                <h2>🔑 Código de Convite</h2>
+                <label for="codigo-convite">Digite o código que você recebeu:</label>
+                <input type="text" id="codigo-convite" placeholder="Ex: COD123" required style="text-transform: uppercase;">
+                <button onclick="buscarAniversario()" class="btn" style="background-color: var(--cor-primaria); margin-top: 5px;">
+                    <i class="fas fa-search" style="margin-right: 8px;"></i> Buscar Aniversário
+                </button>
+                <div id="msg-temporaria" class="area-resultado-busca" style="display:none; margin-bottom: 0;"></div>
+            </div>
+
+            <!-- ETAPA 2: INFORMAÇÕES DO ANIVERSÁRIO (Escondido inicialmente) -->
+            <div id="aniversario-encontrado" class="card card-aniversario">
+                
+                <!-- NOVO: CONTAINER PARA FOTO HORIZONTAL E TEXTO -->
+                <div class="aniversario-details-container">
+                    <!-- Foto Horizontal -->
+                    <img id="aniversario-foto" 
+                         class="aniversario-banner-img"
+                         src="https://placehold.co/400x200/D32F2F/ffffff?text=FOTO+DO+ANIVERSARIANTE" 
+                         alt="Foto de capa do aniversário"
+                         onerror="this.src='https://placehold.co/400x200/D32F2F/ffffff?text=FOTO+DO+ANIVERSARIANTE'">
+
+                    <div class="aniversario-info-text">
+                        <h2 id="aniversario-titulo" style="color: #D32F2F;"></h2>
+                        <p id="aniversario-subtitulo" style="color: #555; margin-bottom: 15px;"></p>
+                        
+                        <div style="font-size: 1.1rem; color: #444;">
+                            <p style="margin: 5px 0;">Aniversariante: <strong id="aniversario-nome"></strong></p>
+                            <p style="margin: 5px 0;">Data do Evento: <strong id="aniversario-data"></strong></p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- CARD DE DOAÇÃO -->
+                <div class="card card-doacao">
+                    <div class="cesta-header-doacao">
+                        <h3><i class="fas fa-gifts" style="margin-right: 8px;"></i> Cesta Econômica</h3>
+                        <span id="valor-unitario" style="font-weight: 700;">R$ 85,00</span>
+                    </div>
+                    <div class="cesta-body">
+                        <p style="font-size: 14px; color: #777; margin-bottom: 15px;">
+                            Uma doação de 1 cesta (R$ 85,00) será convertida em alimentos para quem precisa.
+                        </p>
+                        
+                        <!-- BOTÃO PARA VER CESTA -->
+                        <button class="btn" onclick="abrirModalCesta()" style="background-color: var(--cor-compartilhar); margin-bottom: 15px;">
+                            <i class="fas fa-eye" style="margin-right: 8px;"></i> Ver o que vem na Cesta
+                        </button>
+
+                        <div class="lista-doacao-preco">
+                            <div class="item-doacao-preco">
+                                <span>Quantidade de Cestas:</span>
+                                <select id="seletor-quantidade" class="seletor-qtd" onchange="atualizarValorTotal()">
+                                    <option value="1">1 Cesta</option>
+                                    <option value="2">2 Cestas</option>
+                                    <option value="3">3 Cestas</option>
+                                    <option value="4">4 Cestas</option>
+                                    <option value="5">5 Cestas</option>
+                                </select>
+                            </div>
+                            <div class="item-doacao-preco">
+                                <span>Valor Total da Doação:</span>
+                                <strong id="valor-total-doacao">R$ 85,00</strong>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-doar" onclick="abrirModalInfo()">
+                            <i class="fas fa-hand-holding-heart" style="margin-right: 8px;"></i> DOAR E PAGAR
+                        </button>
+                    </div>
+                </div>
+
+            </div><!-- FIM INFORMAÇÕES ANIVERSÁRIO -->
+            
+            <div class="seo-text-block" style="text-align: center; font-size: 12px; color: #888; padding: 15px 30px;">
+                <p style="margin-top: 15px;">Ao doar, você concorda com os <a href="#" onclick="mostrarMensagemBusca('Funcionalidade não implementada: Termos e Condições', true); return false;">Termos e Condições</a> do Aniversário Solidário Dona Antônia.</p>
+            </div>
+
+        </div><!-- FIM SEÇÃO DOAÇÃO -->
+        
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 15px;">
+
+        <!-- SEÇÃO 2: APRESENTAÇÃO ANIVERSÁRIO SOLIDÁRIO -->
+        <div id="pag-apresentacao" class="secao-conteudo">
+            <h1 style="text-align: center; color: var(--cor-primaria); font-size: 1.8rem; font-weight: 800; margin-bottom: 10px;">
+                O que é o Aniversário Solidário?
+            </h1>
+            <p style="text-align: center; font-size: 1.1rem; color: #666; margin-bottom: 30px;">
+                Transforme a sua festa em um gesto de amor e ajude centenas de famílias.
+            </p>
+            
+            <!-- CORREÇÃO 2: Responsividade dos 4 Passos garantida no CSS -->
+            <div class="passos-grid">
+                
+                <!-- PASSO 1 -->
+                <div class="passo-card">
+                    <img src="https://placehold.co/400x400/D32F2F/ffffff?text=1.%20CONVITE" alt="Aniversariante comemorando" onclick="abrirLightbox(this)" data-caption="O aniversariante escolhe doar as cestas.">
+                    <h3>1. O CONVITE</h3>
+                    <p style="font-size: 0.9rem; color: #555;">O aniversariante escolhe o tema Solidário e convida os amigos com um código de acesso.</p>
+                </div>
+                
+                <!-- PASSO 2 -->
+                <div class="passo-card">
+                    <img src="https://placehold.co/400x400/25D366/ffffff?text=2.%20DOACAO" alt="Pessoa fazendo doação online" onclick="abrirLightbox(this)" data-caption="Os convidados doam o valor de 1 ou mais cestas.">
+                    <h3>2. A DOAÇÃO</h3>
+                    <p style="font-size: 0.9rem; color: #555;">Os convidados acessam a página, usam o código e doam o valor de 1 ou mais cestas básicas.</p>
+                </div>
+                
+                <!-- PASSO 3 -->
+                <div class="passo-card">
+                    <img src="https://placehold.co/400x400/FF9800/ffffff?text=3.%20CONVERSAO" alt="Cestas básicas empilhadas" onclick="abrirLightbox(this)" data-caption="As doações se transformam em cestas.">
+                    <h3>3. A CONVERSÃO</h3>
+                    <p style="font-size: 0.9rem; color: #555;">A Dona Antônia converte 100% do valor arrecadado em Cestas Básicas Econômicas.</p>
+                </div>
+                
+                <!-- PASSO 4 -->
+                <div class="passo-card">
+                    <img src="https://placehold.co/400x400/1E88E5/ffffff?text=4.%20ENTREGA" alt="Entrega de cestas básicas" onclick="abrirLightbox(this)" data-caption="As cestas são entregues em nome do aniversariante.">
+                    <h3>4. A ENTREGA</h3>
+                    <p style="font-size: 0.9rem; color: #555;">As cestas são entregues diretamente às famílias carentes, em nome do aniversariante e convidados.</p>
+                </div>
+                
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                 <!-- Botão que abre o modal de cadastro -->
+                 <button onclick="abrirModalCadastro()" class="btn" style="background-color: var(--cor-cadastro); max-width: 300px; margin: 0 auto;">
+                    <i class="fas fa-calendar-check" style="margin-right: 8px;"></i> Quero organizar o meu!
+                </button>
+            </div>
+
+        </div><!-- FIM SEÇÃO APRESENTAÇÃO -->
+        
+    </div><!-- FIM MAIN-CONTENT-WRAPPER -->
+
+    <!-- MODAL DE INFORMAÇÃO IMPORTANTE (Antes do Pagamento) -->
+    <div id="modalInfoImportante" onclick="if(event.target === this) fecharModalInfo()" class="modal-base">
+        <div class="modal-content">
+            <button class="btn-fechar-modal-var" onclick="fecharModalInfo()">&times;</button>
+            
+            <h3>⚠️ Informações Importantes</h3>
+            <p style="text-align: center; color: #777;">Leia atentamente antes de prosseguir com a doação:</p>
+            
+            <ul id="lista-info-modal">
+                <!-- Preenchido pelo JS -->
+            </ul>
+
+            <button class="btn btn-modal-ok" onclick="finalizarDoacao()">
+                <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Confirmar e Pagar
+            </button>
+        </div>
+    </div>
+    
+    <!-- NOVO MODAL DE CADASTRO PARA ORGANIZAÇÃO -->
+    <div id="modalCadastro" onclick="if(event.target === this) fecharModalCadastro()" class="modal-base">
+        <div class="modal-content">
+            <button class="btn-fechar-modal-var" onclick="fecharModalCadastro()">&times;</button>
+            
+            <h3>🎉 Quero Organizar Meu Aniversário Solidário</h3>
+            <p>Preencha os dados abaixo e entraremos em contato via WhatsApp para te ajudar a planejar a sua doação!</p>
+            
+            <form onsubmit="event.preventDefault(); enviarCadastroOrganizacao();">
+                <label for="org-nome">Seu Nome Completo:</label>
+                <input type="text" id="org-nome" placeholder="Seu nome" required>
+                
+                <label for="org-telefone">Seu WhatsApp:</label>
+                <input type="tel" id="org-telefone" placeholder="(65) 9xxxx-xxxx" required>
+
+                <label for="org-data">Data Estimada do Evento:</label>
+                <input type="date" id="org-data" required>
+                
+                <button type="submit" class="btn btn-modal-cadastro">
+                    <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Enviar Pedido de Contato
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- NOVO MODAL DE VISUALIZAÇÃO DA CESTA ECONÔMICA -->
+    <div id="modalCesta" onclick="if(event.target === this) fecharModalCesta()" class="modal-base">
+        <div class="modal-content">
+            <!-- Card da Cesta (Cópia do index(20).html, simplificado) -->
+            <div class="card card-cesta-modal">
+                <div class="cesta-header"><h3>CESTA ECONÔMICA - CONTEÚDO</h3></div>
+                <div class="cesta-body">
+                     <!-- Simulação da galeria de fotos -->
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <img src="https://placehold.co/300x300/F09090/ffffff?text=CONTEÚDO+DA+CESTA" 
+                            alt="Conteúdo da Cesta Econômica" 
+                            style="width: 100%; max-width: 250px; height: auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    </div>
+
+                    <ul style="list-style: disc; padding-left: 20px; font-size: 15px; color: #444;">
+                         <li>5kg de Arroz Tio Alvino</li>
+                         <li>2kg de Feijão</li>
+                         <li>2 und. Macarrão (500g)</li>
+                         <li>2 und. Óleo de Soja (900ml)</li>
+                         <li>1kg de Açúcar</li>
+                         <li>1 und. Café (250g)</li>
+                         <li>1 und. Molho de Tomate</li>
+                         <li>1 und. Sal (1kg)</li>
+                         <li>1 und. Biscoito Cream Cracker</li>
+                    </ul>
+                    <p style="text-align: center; font-size: 13px; color: var(--cor-primaria); margin-top: 15px;">
+                        **Itens e marcas podem sofrer alterações conforme disponibilidade.**
+                    </p>
+                    <button class="btn cesta-modal-btn-fechar" onclick="fecharModalCesta()">
+                        <i class="fas fa-check" style="margin-right: 8px;"></i> Entendi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL LIGHTBOX (Para ampliação de Imagem) -->
+    <div id="lightbox-modal" onclick="fecharLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightbox-content">
+        <div id="lightbox-caption"></div>
+    </div>
+
+    
+    <!-- SCRIPT JS PRINCIPAL -->
+    <script>
+        // Número de telefone para contato via WhatsApp
+        const TELEFONE = "5565998150975"; 
+        
+        // Simulação de Banco de Dados de Aniversários
+        const aniversarios = {
+            "COD123": {
+                titulo: "Aniversário Solidário da Maria",
+                subtitulo: "Ajude a realizar o sonho de doar cestas!",
+                nome: "Maria Fernanda",
+                data: "15 de Dezembro",
+                foto: "https://placehold.co/400x200/F09090/ffffff?text=FOTO+DA+MARIA", // Nova URL de foto
+                precoBaseCesta: 85.00, 
+                // Links Stone simulados para 1 a 5 cestas
+                linksPagamento: {
+                    1: "https://pay.stone.com.br/doacao-maria-cesta1",
+                    2: "https://pay.stone.com.br/doacao-maria-cesta2",
+                    3: "https://pay.stone.com.br/doacao-maria-cesta3",
+                    4: "https://pay.stone.com.br/doacao-maria-cesta4",
+                    5: "https://pay.stone.com.br/doacao-maria-cesta5",
+                },
+                infoImportante: [
+                    "Os valores doados serão convertidos integralmente em <strong style='color:var(--cor-primaria)'>Cestas Básicas Econômicas</strong>.",
+                    "O comprovante de doação será enviado para o seu WhatsApp cadastrado.",
+                    "Sua doação será registrada como presente de aniversário para a aniversariante.",
+                    "Após o pagamento, você receberá um email de confirmação da Stone e será direcionado à página de agradecimento."
+                ]
+            },
+            "JOS456": {
+                titulo: "Festa de 30 Anos do José",
+                subtitulo: "Traga sua alegria e sua doação!",
+                nome: "José Roberto",
+                data: "20 de Janeiro",
+                foto: "https://placehold.co/400x200/1E88E5/ffffff?text=FOTO+DO+JOSÉ", // Nova URL de foto
+                precoBaseCesta: 85.00,
+                linksPagamento: {
+                    1: "https://pay.stone.com.br/doacao-jose-cesta1",
+                    2: "https://pay.stone.com.br/doacao-jose-cesta2",
+                    3: "https://pay.stone.com.br/doacao-jose-cesta3",
+                    4: "https://pay.stone.com.br/doacao-jose-cesta4",
+                    5: "https://pay.stone.com.br/doacao-jose-cesta5",
+                },
+                infoImportante: [
+                    "Sua contribuição é muito valiosa para o projeto social.",
+                    "O José fará a doação das cestas arrecadadas no final do mês.",
+                    "Dúvidas sobre o pagamento? Fale conosco via WhatsApp."
+                ]
+            }
+        };
+
+        let aniversarioAtual = null;
+        let quantidadeSelecionada = 1;
+        
+        /**
+         * Exibe uma mensagem de atenção/sucesso temporária no topo da área de busca.
+         */
+        function mostrarMensagemBusca(msg, isError = true) {
+            // Usa o div de mensagem temporária que fica dentro da área de busca
+            const msgDiv = document.getElementById('msg-temporaria');
+            
+            if (!msgDiv) { console.error('Elemento de mensagem temporária não encontrado.'); return; }
+
+            msgDiv.className = 'area-resultado-busca';
+            msgDiv.style.backgroundColor = isError ? '#ffebee' : '#e8f5e9';
+            msgDiv.style.borderColor = isError ? '#ffcdd2' : '#a5d6a7';
+            // Usa innerHTML para permitir que a função seja usada para o link de Termos
+            msgDiv.innerHTML = `<h2 style="color:${isError ? 'var(--cor-primaria)' : 'var(--cor-whatsapp)'}">${isError ? '⚠️ Atenção!' : '🎉 Sucesso!'}</h2><p style="margin:0">${msg}</p>`;
+            msgDiv.style.display = 'block';
+
+            setTimeout(() => { 
+                msgDiv.style.display = 'none'; 
+            }, 3000);
+        }
+
+        /**
+         * 1. Busca o aniversário pelo código e exibe as informações.
+         */
+        function buscarAniversario() {
+            const codigoInput = document.getElementById('codigo-convite');
+            const codigo = codigoInput.value.toUpperCase().trim();
+            const infoDiv = document.getElementById('aniversario-encontrado');
+            
+            infoDiv.style.display = 'none';
+            aniversarioAtual = null;
+
+            if (!codigo) {
+                mostrarMensagemBusca("Por favor, insira o código de convite.", true);
+                return;
+            }
+            
+            const btnBuscar = document.querySelector('#area-busca-codigo .btn');
+            const textoOriginal = btnBuscar.innerHTML;
+            btnBuscar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+            btnBuscar.disabled = true;
+
+            // Simulação de delay de busca
+            setTimeout(() => {
+                btnBuscar.innerHTML = textoOriginal;
+                btnBuscar.disabled = false;
+                
+                const encontrado = aniversarios[codigo];
+                
+                if (encontrado) {
+                    aniversarioAtual = encontrado;
+                    
+                    // Preenche os dados
+                    document.getElementById('aniversario-titulo').innerText = encontrado.titulo;
+                    document.getElementById('aniversario-subtitulo').innerText = encontrado.subtitulo;
+                    document.getElementById('aniversario-nome').innerText = encontrado.nome;
+                    document.getElementById('aniversario-data').innerText = encontrado.data;
+                    document.getElementById('aniversario-foto').src = encontrado.foto; // Atualiza a foto
+                    document.getElementById('valor-unitario').innerText = `R$ ${encontrado.precoBaseCesta.toFixed(2).replace('.', ',')}`;
+
+                    // Reseta e atualiza a quantidade e o valor total
+                    document.getElementById('seletor-quantidade').value = '1';
+                    atualizarValorTotal();
+                    
+                    infoDiv.style.display = 'block';
+                    mostrarMensagemBusca(`Aniversário de ${encontrado.nome} encontrado! Prossiga com sua doação.`, false);
+                    // Rola para o card de doação
+                    infoDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                } else {
+                    mostrarMensagemBusca("Código não encontrado. Verifique se o código está correto (Ex: COD123) ou entre em contato.", true);
+                }
+                
+            }, 800); 
+        }
+
+        /**
+         * 2. Atualiza o valor total da doação ao mudar a quantidade.
+         */
+        function atualizarValorTotal() {
+            if (!aniversarioAtual) return;
+            
+            const seletor = document.getElementById('seletor-quantidade');
+            quantidadeSelecionada = parseInt(seletor.value);
+            
+            const total = aniversarioAtual.precoBaseCesta * quantidadeSelecionada;
+            document.getElementById('valor-total-doacao').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        }
+        
+        /**
+         * 3. Abre o modal de informações importantes (antes do pagamento).
+         */
+        function abrirModalInfo() {
+            if (!aniversarioAtual) {
+                mostrarMensagemBusca("Erro: Aniversário não selecionado.", true);
+                return;
+            }
+            
+            const listaUl = document.getElementById('lista-info-modal');
+            listaUl.innerHTML = ''; // Limpa a lista
+            
+            aniversarioAtual.infoImportante.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = item;
+                listaUl.appendChild(li);
+            });
+            
+            // Atualiza o botão para refletir a quantidade
+            const btnPagar = document.querySelector('#modalInfoImportante .btn-modal-ok');
+            btnPagar.innerHTML = `<i class="fas fa-check-circle" style="margin-right: 8px;"></i> Confirmar e Pagar ${quantidadeSelecionada} Cesta(s)`;
+
+            document.getElementById('modalInfoImportante').style.display = 'flex';
+        }
+
+        /**
+         * 4. Fecha o modal de informações importantes.
+         */
+        function fecharModalInfo() {
+            document.getElementById('modalInfoImportante').style.display = 'none';
+        }
+        
+        /**
+         * 5. Redireciona para o link de pagamento Stone correto.
+         */
+        function finalizarDoacao() {
+            if (!aniversarioAtual || !aniversarioAtual.linksPagamento[quantidadeSelecionada]) {
+                mostrarMensagemBusca("Erro no link de pagamento. Tente novamente ou entre em contato.", true);
+                return;
+            }
+            
+            const linkPagamento = aniversarioAtual.linksPagamento[quantidadeSelecionada];
+            
+            // Fecha o modal antes de redirecionar
+            fecharModalInfo();
+            
+            // Redireciona para a Stone
+            window.open(linkPagamento, '_blank');
+        }
+
+        // ===============================
+        // === LÓGICA DO MODAL DE VISUALIZAÇÃO DA CESTA ===
+        // ===============================
+        
+        /**
+         * Abre o modal para visualizar o conteúdo da cesta econômica.
+         */
+        function abrirModalCesta() {
+            document.getElementById('modalCesta').style.display = 'flex';
+        }
+
+        /**
+         * Fecha o modal de visualização da cesta.
+         */
+        function fecharModalCesta() {
+            document.getElementById('modalCesta').style.display = 'none';
+        }
+
+
+        // ===============================
+        // === LÓGICA DO NOVO MODAL DE CADASTRO PARA ORGANIZAÇÃO ===
+        // ===============================
+
+        /**
+         * Abre o modal de cadastro para quem quer organizar o evento.
+         */
+        function abrirModalCadastro() {
+            document.getElementById('modalCadastro').style.display = 'flex';
+        }
+
+        /**
+         * Fecha o modal de cadastro.
+         */
+        function fecharModalCadastro() {
+            document.getElementById('modalCadastro').style.display = 'none';
+        }
+        
+        /**
+         * Envia os dados do formulário de organização para o WhatsApp.
+         */
+        function enviarCadastroOrganizacao() {
+            const nome = document.getElementById('org-nome').value.trim();
+            const tel = document.getElementById('org-telefone').value.trim(); 
+            const data = document.getElementById('org-data').value;
+            
+            if (!nome || !tel || !data) { mostrarMensagemBusca("Preencha todos os campos do formulário de contato!", true); return; }
+            
+            const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
+            
+            const msg = `SOLICITAÇÃO DE ORGANIZAÇÃO DE ANIVERSÁRIO SOLIDÁRIO:\nNome: ${nome}\nTelefone: ${tel}\nData Estimada: ${dataFormatada}\n\nPor favor, entre em contato para iniciarmos a organização.`;
+            
+            fecharModalCadastro();
+            mostrarMensagemBusca("Sua solicitação foi enviada! Entraremos em contato em breve pelo WhatsApp.", false);
+            
+            // Redireciona para o WhatsApp
+            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+
+        // ===============================
+        // === LÓGICA DO LIGHTBOX (Ampliação de Imagem) ===
+        // ===============================
+        
+        /**
+         * Abre o modal lightbox com a imagem clicada.
+         */
+        function abrirLightbox(imgElement) {
+            const modal = document.getElementById('lightbox-modal');
+            const modalImg = document.getElementById('lightbox-content');
+            const captionText = document.getElementById('lightbox-caption');
+            
+            modal.style.display = "block";
+            modalImg.src = imgElement.src;
+            captionText.innerHTML = imgElement.getAttribute('data-caption') || imgElement.alt;
+        }
+
+        /**
+         * Fecha o modal lightbox.
+         */
+        function fecharLightbox() {
+            document.getElementById('lightbox-modal').style.display = "none";
+        }
+        
+        // ===============================
+        // === FUNÇÕES GERAIS (Reaproveitadas do index original) ===
+        // ===============================
+        
+        /**
+         * Ajusta a posição da logo e do cabeçalho no desktop para ficarem centralizados
+         * com a área de conteúdo principal.
+         */
+        function ajustarPosicaoLogo() {
+            const logo = document.querySelector('.logo-pequena');
+            const bar = document.querySelector('.header-background-bar');
+            const aviso = document.getElementById('barra-aviso-topo');
+
+            if (!logo) return;
+
+            if (window.innerWidth > 480) {
+                 logo.style.left = '50%';
+                 logo.style.transform = 'translateX(-50%)'; 
+                 
+                 if(bar) {
+                    bar.style.maxWidth = '900px'; 
+                    bar.style.left = '50%';
+                    bar.style.transform = 'translateX(-50%)';
+                 }
+                 if (aviso) {
+                    aviso.style.maxWidth = '900px';
+                 }
+            } else {
+                 logo.style.left = '50%';
+                 logo.style.transform = 'translateX(-50%)';
+                 if(bar) {
+                    bar.style.left = '50%';
+                    bar.style.transform = 'translateX(-50%)';
+                 }
+                 if (aviso) {
+                    aviso.style.maxWidth = '480px';
+                 }
+            }
+        }
+
+
+        window.onload = function() {
+            ajustarPosicaoLogo();
+            // Adiciona um placeholder para simular a busca rápida se houver código na URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialCode = urlParams.get('codigo');
+            if (initialCode) {
+                 document.getElementById('codigo-convite').value = initialCode.toUpperCase();
+                 buscarAniversario();
+            }
+        };
+        
+        window.addEventListener('resize', ajustarPosicaoLogo);
+        // Garante que clicar no lightbox fecha apenas a imagem, e não o modal de info
+        document.getElementById('lightbox-content').onclick = function(e) { e.stopPropagation(); }
+
+    </script>
+</body>
+</html>
