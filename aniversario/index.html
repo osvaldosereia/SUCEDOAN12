@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aniversário Solidário | Dona Antônia</title>
+    
+    <!-- Links para ícones (Swiper removido por não ser mais necessário) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+
+    <style>
+        /* ==================================================================== */
+        /* === ESTILOS GLOBAIS E ESTRUTURA (Minimalista e Leve) === */
+        /* ==================================================================== */
+        * { box-sizing: border-box; }
+
+        :root {
+            --cor-primaria: #D32F2F; /* Vermelho Principal */
+            --cor-aniversario: #E91E63; /* Rosa/Solidariedade (Main Accent) */
+            --cor-whatsapp: #25D366;
+            --cor-texto: #222;
+            --cor-cinza-claro: #f7f7f7; 
+            --cor-header-fundo: #f5f5f5;
+            --font-base: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        }
+
+        html { background-color: #e0e0e0; scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-base); 
+            background-color: #e0e0e0; 
+            color: var(--cor-texto);
+            margin: 0; 
+            padding-top: 100px; 
+            padding-bottom: 90px; /* Garante que o conteúdo não fique sob o fixed-footer-bar */
+            min-height: 100vh;
+        }
+
+        .main-content-wrapper {
+            max-width: 700px; 
+            margin: 0 auto; 
+            background-color: white; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            padding: 40px 25px;
+            border-radius: 0 0 12px 12px;
+            width: 100%; /* Garante que o wrapper use a largura máxima definida */
+        }
+        
+        /* --- HEADER FIXO --- */
+        header {
+            background-color: white; height: 70px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%); 
+            width: 100%; max-width: 700px; z-index: 2000;
+        }
+        .header-background-bar {
+            position: absolute; top: 0; left: 0; width: 100%; height: 65px; background-color: var(--cor-cinza-claro); z-index: 1999;
+        }
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; height: 70px; padding: 5px 15px; }
+        
+        /* Logo (FIXA e CENTRALIZADA) */
+        .logo-pequena { 
+            height: 120px; width: 120px; object-fit: cover; border-radius: 50%; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: fixed; top: 8px; 
+            z-index: 3000; left: 50%; transform: translateX(-50%);
+            background-color: white; padding: 2px; 
+        }
+        
+        /* --- ESTILO BOTÕES TOPBAR (CORRIGIDO) --- */
+        .header-btn {
+            padding: 6px 10px; border-radius: 6px; font-size: 13px; font-weight: bold;
+            text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+            transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            color: white; /* Corrigido: Garante texto branco */
+        }
+        .btn-whatsapp-save { background-color: var(--cor-whatsapp); }
+        .btn-insta-follow { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); }
+        
+        /* --- FAB ANIVERSÁRIO --- */
+        .fab-btn {
+            position: fixed; right: 20px; top: 85px; width: 45px; height: 45px; 
+            border-radius: 50%; background-color: white; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); display: flex; align-items: center;
+            justify-content: center; z-index: 3000; cursor: pointer; transition: transform 0.2s;
+        }
+        .fab-btn img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+        /* --- BANNER HERO INICIAL --- */
+        .header-solidario {
+            background-color: white; color: var(--cor-texto);
+            padding: 50px 20px 30px; text-align: center;
+            margin-bottom: 40px; 
+            border-bottom: 4px solid var(--cor-aniversario);
+        }
+        .header-solidario h1 {
+            font-size: 2.5rem; font-weight: 700; line-height: 1.1; margin: 0 0 10px 0;
+            color: var(--cor-aniversario);
+        }
+        .header-solidario p {
+            font-size: 1.2rem; margin: 10px 0 0 0; font-weight: 400; color: #555;
+        }
+
+        /* --- SEÇÕES GERAIS --- */
+        .secao { padding: 30px 0; margin-bottom: 0; border-bottom: 1px solid #eee; }
+        .secao:last-child { border-bottom: none; }
+        .secao h2 {
+            color: var(--cor-aniversario); font-size: 1.8rem; font-weight: 600;
+            margin-top: 0; margin-bottom: 25px; text-align: center;
+        }
+
+        /* --- SEÇÃO CESTA DE DOAÇÃO --- */
+        .cesta-doacao {
+            display: grid; grid-template-columns: 1fr; align-items: center;
+            text-align: center; padding: 25px; background-color: var(--cor-cinza-claro);
+            border-radius: 12px; border: 1px solid #ddd;
+        }
+        .cesta-doacao-imagem {
+            width: 100%; max-width: 250px; aspect-ratio: 1 / 1; 
+            margin: 0 auto 20px auto; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .cesta-doacao h3 { color: var(--cor-primaria); margin: 0 0 5px 0; font-size: 1.6rem; }
+        .cesta-doacao p { font-size: 1.3rem; font-weight: 700; color: var(--cor-aniversario); margin: 0; }
+
+        /* --- IMAGEM DA EMPRESA (Substitui Carrossel) --- */
+        .empresa-imagem {
+            width: 100%; 
+            aspect-ratio: 16 / 9; 
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-top: 15px;
+        }
+        .empresa-imagem img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+
+        /* --- TESTEMUNHOS (Mobile 1 Coluna / Desktop 3 Colunas) --- */
+        .testemunho-grid {
+            display: flex; flex-direction: column; gap: 25px;
+        }
+        .card-testemunho {
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05); 
+            border-left: 4px solid var(--cor-aniversario);
+        }
+        .card-testemunho p { font-style: italic; margin-bottom: 12px; color: #444; font-size: 1rem; line-height: 1.6; }
+        .testemunho-perfil { padding-top: 10px; border-top: 1px solid #f0f0f0; }
+
+        /* --- AVALIAÇÃO GOOGLE --- */
+        .avaliacao-google {
+            text-align: center; padding: 25px; border: 1px solid #ddd;
+            border-radius: 12px; background-color: var(--cor-cinza-claro);
+        }
+
+        /* --- BARRA DE BOTÕES FIXA (CORRIGIDO DEFINITIVAMENTE) --- */
+        .fixed-footer-bar {
+            /* Técnica robusta de centralização */
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            margin: 0 auto; /* Centraliza o bloco dentro do 100% de width */
+            
+            width: 100%; 
+            max-width: 700px; 
+            background: white; 
+            padding: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex; 
+            gap: 10px; 
+            z-index: 9999; /* Z-INDEX MÁXIMO PARA GARANTIR VISIBILIDADE */
+        }
+        .btn-footer { 
+            flex: 1; padding: 14px 10px; border-radius: 8px; font-size: 15px; 
+            font-weight: 700; 
+            text-align: center; cursor: pointer; text-decoration: none;
+            color: white; /* GARANTIDO: Cor do texto branca */
+            transition: transform 0.2s;
+        }
+        .btn-cadastrar { background-color: var(--cor-aniversario); }
+        .btn-aniversariante { background-color: var(--cor-whatsapp); }
+
+        /* --- ESTILOS DO MODAL (ESTÁVEIS E FORMATADOS) --- */
+        .modal-variacao {
+            display: none; position: fixed; z-index: 4000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); 
+            justify-content: center; align-items: center; 
+            overflow-y: auto; padding: 20px;
+        }
+        .modal-variacao-content {
+            background-color: white; width: 90%; max-width: 400px; border-radius: 12px;
+            padding: 30px 25px; position: relative; 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            text-align: center; margin: auto; 
+        }
+        .titulo-modal-var { color: var(--cor-aniversario); margin: 0 0 15px 0; font-size: 22px; font-weight: 600;}
+        .btn-fechar-modal-var {
+            background: none; border: none; font-size: 28px; color: #999; cursor: pointer; position: absolute; top: 10px; right: 15px;
+        }
+
+        /* --- RESPONSIVIDADE DESKTOP --- */
+        @media (min-width: 701px) {
+            .main-content-wrapper { padding: 40px; }
+            .cesta-doacao { grid-template-columns: 280px 1fr; gap: 40px; text-align: left; }
+            .testemunho-grid { flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
+            .card-testemunho { flex: 0 0 calc(33.333% - 17px); } 
+            .fixed-footer-bar { padding: 15px 40px; }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- HEADER FIXO (Topo da página principal) -->
+    <div class="header-background-bar"></div>
+    <!-- Logo e FAB são fixos, fora do wrapper para alinhamento -->
+    <img src="../icon-512.jpg" 
+         onerror="this.src='../img/logo1.png'" 
+         alt="Logo Dona Antônia" 
+         class="logo-pequena">
+
+    <header>
+        <div class="header-top">
+            <!-- WHATSAPP NA ESQUERDA -->
+            <div class="header-left">
+                 <a href="https://wa.me/5565998150975" class="header-btn btn-whatsapp-save" target="_blank" aria-label="Fazer Pedido por WhatsApp">
+                    <i class="fab fa-whatsapp" style="margin-right: 5px;"></i> WhatsApp
+                </a>
+            </div>
+            
+            <!-- INSTAGRAM NA DIREITA -->
+            <div class="header-icons">
+                <a href="https://instagram.com/super.cestas.dona.antonia/" class="header-btn btn-insta-follow" target="_blank" aria-label="Seguir no Instagram">
+                    <i class="fab fa-instagram" style="margin-right: 5px;"></i> Instagram
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- FAB ANIVERSÁRIO (Volta para a Loja Principal) -->
+    <a href="../index.html" class="fab-btn" id="fabButton" aria-label="Voltar para a Loja Principal">
+        <img src="../img/aniversario.png" alt="Voltar" onerror="this.onerror=null;this.src='https://placehold.co/45x45/E91E63/ffffff?text=HOME'">
+    </a>
+    
+    <!-- CONTAINER DE CONTEÚDO PRINCIPAL -->
+    <div class="main-content-wrapper">
+        
+        <!-- BANNER HERO INICIAL (MINIMALISTA E IMPACTANTE) -->
+        <div class="header-solidario">
+            <h1>Sua Celebração, Nosso Impacto: Aniversário Solidário Dona Antônia</h1>
+            <p>Transforme presentes em Doação de Cestas Básicas. Uma causa nobre, com a credibilidade da Dona Antônia.</p>
+        </div>
+
+        <!-- SEÇÃO 1: A CAUSA (CESTA ECONÔMICA) -->
+        <div class="secao">
+            <h2>✨ Doação Simples, Impacto Gigante</h2>
+            <p style="text-align: center; margin-bottom: 30px; color: #555; max-width: 500px; margin-left: auto; margin-right: auto;">Ao invés de presentes, seus convidados podem comprar a **Cesta Econômica**, que será entregue à instituição de sua escolha com o nosso selo de qualidade.</p>
+
+            <div class="cesta-doacao">
+                <!-- Imagem da Cesta Econômica (Quadrada) -->
+                <div class="cesta-doacao-imagem">
+                    <img src="../img/cesta-economica1.jpg" alt="Cesta Econômica - Cesta de Doação" onerror="this.src='https://placehold.co/250x250/D32F2F/ffffff?text=CESTA+DOAÇÃO'">
+                </div>
+                <!-- Detalhes da Cesta -->
+                <div>
+                    <h3>Cesta Econômica (Valor Fixo para Doação)</h3>
+                    <p>R$ 85,00</p>
+                    <small style="color:#999; display: block; margin-top: 5px;">*O valor de doação é fixo por cesta, garantindo transparência e facilidade para os convidados.</small>
+                    <p style="font-size: 1rem; margin-top: 15px; color: var(--cor-aniversario); font-weight: 600;">Cada cesta completa pode alimentar uma família carente por vários dias!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 2: NOSSA EMPRESA (IMAGEM ÚNICA) -->
+        <div class="secao">
+            <h2>🤝 Comprometimento e Transparência</h2>
+            <p style="text-align: center; margin-bottom: 25px; color: #555;">8 anos de tradição em Cuiabá e Várzea Grande. Entregamos qualidade e transparência em cada doação.</p>
+            
+            <!-- IMAGEM ÚNICA DA EMPRESA (Formato deitado) -->
+            <div class="empresa-imagem">
+                <img src="https://placehold.co/700x394/E91E63/ffffff?text=NOSSA+EMPRESA+(16:9)" alt="Foto da equipe ou loja" onerror="this.src='https://placehold.co/700x394/E91E63/ffffff?text=NOSSA+EMPRESA+(16:9)'">
+            </div>
+        </div>
+
+        <!-- SEÇÃO 3: TESTEMUNHOS (Mobile 1 Coluna / Desktop 3 Colunas) -->
+        <div class="secao">
+            <h2>💬 O que nossos Aniversariantes Dizem</h2>
+            <div class="testemunho-grid">
+                
+                <!-- Testemunho 1 -->
+                <div class="card-testemunho">
+                    <p>"Excelente iniciativa! Consegui arrecadar 15 cestas para o asilo da minha cidade. Foi o aniversário mais gratificante da minha vida!"</p>
+                    <div class="testemunho-perfil">
+                        <img src="https://placehold.co/45x45/ccc/fff?text=A1" alt="Foto Testemunha 1">
+                        <strong>Ana Carolina, Cuiabá</strong>
+                    </div>
+                </div>
+
+                <!-- Testemunho 2 -->
+                <div class="card-testemunho">
+                    <p>"Fácil de participar e a Dona Antônia cuidou de toda a logística. Recomendo a todos que querem fazer a diferença de forma prática."</p>
+                    <div class="testemunho-perfil">
+                        <img src="https://placehold.co/45x45/ccc/fff?text=B1" alt="Foto Testemunha 2">
+                        <strong>Bruno V., Várzea Grande</strong>
+                    </div>
+                </div>
+                
+                <!-- Testemunho 3 -->
+                <div class="card-testemunho">
+                    <p>"Nossa igreja foi beneficiada. O processo é transparente e a qualidade das cestas é inquestionável. Parabéns pela ação!"</p>
+                    <div class="testemunho-perfil">
+                        <img src="https://placehold.co/45x45/ccc/fff?text=P1" alt="Foto Testemunha 3">
+                        <strong>Priscila F., Cuiabá</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SEÇÃO 4: AVALIAÇÃO GOOGLE -->
+        <div class="secao" style="border-bottom: none;">
+            <h2>⭐ Confiabilidade e Qualidade</h2>
+            <div class="avaliacao-google">
+                <div class="estrelas">★★★★★</div>
+                <p style="font-weight: bold;">4.9 de 5 estrelas</p>
+                <p>Baseado em 157 avaliações no Google</p>
+                <p class="aviso-api">
+                    ⚠️ *Nota: Esta avaliação é estática. A conexão em tempo real com o Google requer uma API de backend.*
+                </p>
+            </div>
+        </div>
+        
+    </div><!-- FIM MAIN-CONTENT-WRAPPER -->
+
+    <!-- BARRA DE BOTÕES FIXA -->
+    <div class="fixed-footer-bar">
+        <!-- BOTÃO 1: CADASTRAR -->
+        <a href="#" class="btn-footer btn-cadastrar" onclick="abrirModalCadastro(event)">
+            <i class="fas fa-hand-holding-heart"></i> Quero Cadastrar Meu Aniversário
+        </a>
+        <!-- BOTÃO 2: ANIVERSARIANTE -->
+        <a href="#" class="btn-footer btn-aniversariante" onclick="abrirModalAniversariante(event)">
+            <i class="fas fa-birthday-cake"></i> Sou Convidado
+        </a>
+    </div>
+
+    <!-- MODAL 1: CADASTRO DE INTERESSADO -->
+    <div id="modalCadastro" class="modal-variacao" onclick="if(event.target === this) fecharModalCadastro()">
+        <div class="modal-variacao-content">
+            <button class="btn-fechar-modal-var" onclick="fecharModalCadastro()">&times;</button>
+            <h3 class="titulo-modal-var">🎉 Cadastre Seu Aniversário</h3>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Preencha seus dados para conversarmos sobre a sua ação solidária!</p>
+            
+            <form onsubmit="event.preventDefault(); enviarCadastroInteressado();">
+                <input type="text" id="cad-nome" placeholder="Seu Nome Completo" required>
+                <input type="tel" id="cad-whatsapp" placeholder="Seu WhatsApp (apenas números)" required>
+                <button type="submit" class="btn-confirmar-pedido" style="background-color: var(--cor-aniversario);">
+                    <i class="fab fa-whatsapp"></i> Enviar Meu Interesse
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- MODAL 2: BUSCA POR ANIVERSARIANTE (CONVIDADO) -->
+    <div id="modalAniversariante" class="modal-variacao" onclick="if(event.target === this) fecharModalAniversariante()">
+        <div class="modal-variacao-content">
+            <button class="btn-fechar-modal-var" onclick="fecharModalAniversariante()">&times;</button>
+            <h3 class="titulo-modal-var">🎂 Encontre o Aniversariante</h3>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Digite os **8 últimos dígitos** do WhatsApp do aniversariante para acessar o link de doação dele:</p>
+            
+            <input type="tel" id="busca-aniversariante-tel" placeholder="Ex: 12345678" required maxlength="8" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0, 8)">
+            <p id="erro-aniversariante" class="mensagem-erro">Aniversariante não encontrado. Verifique o número.</p>
+            
+            <button onclick="buscarAniversariante()" class="btn-confirmar-pedido" style="background-color: var(--cor-aniversario);">
+                <i class="fas fa-search"></i> Buscar Aniversariante
+            </button>
+        </div>
+    </div>
+
+    <!-- NOVO MODAL 3: RESULTADO DA BUSCA DO ANIVERSARIANTE -->
+    <div id="modalResultadoAniversariante" class="modal-variacao resultado" onclick="if(event.target === this) fecharModalResultado()">
+        <div class="modal-variacao-content">
+            <button class="btn-fechar-modal-var" onclick="fecharModalResultado()">&times;</button>
+            <h3 class="titulo-modal-var" style="margin-bottom: 25px;">🎉 Aniversariante Encontrado!</h3>
+            
+            <div class="modal-resultado-info">
+                <p><strong>Nome:</strong> <span id="res-nome"></span></p>
+                <p><strong>Data do Aniversário:</strong> <span id="res-data"></span></p>
+            </div>
+            
+            <div style="margin-top: 25px;">
+                <p style="font-size: 0.9rem; color: #555;">Você pode doar a cesta básica através do link de pagamento da campanha da(o) <strong id="res-nome-curto"></strong>, ou tirar dúvidas diretamente no WhatsApp dela(e).</p>
+            </div>
+
+            <div class="botoes-wrapper" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <!-- Botão 1: Link de Pagamento (Doar Cesta) -->
+                <a href="#" id="btnDoarCesta" class="btn-footer" target="_blank" style="background-color: var(--cor-aniversario); width: 100%; padding: 12px; font-weight: 700;">
+                    <i class="fas fa-shopping-basket" style="margin-right: 5px;"></i> Doar Cesta
+                </a>
+                <!-- Botão 2: WhatsApp da Aniversariante -->
+                <a href="#" id="btnZapAniversariante" class="btn-footer" target="_blank" style="background-color: var(--cor-whatsapp); width: 100%; padding: 12px; font-weight: 700;">
+                    <i class="fab fa-whatsapp" style="margin-right: 5px;"></i> WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Removido: Swiper JS -->
+    <!-- <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> -->
+
+    <script>
+        // =======================================================
+        // === CONFIGURAÇÕES GLOBAIS E BANCO DE DADOS (MANUAL) ===
+        // =======================================================
+        
+        // Número de telefone para contato via WhatsApp (998150975)
+        const TELEFONE_DONA_ANTONIA = "5565998150975"; 
+        
+        // ESTRUTURA ATUALIZADA DO BANCO DE DADOS DE ANIVERSARIANTES
+        const ANIVERSARIANTES_DB = {
+            // Chave: 8 últimos dígitos do WhatsApp
+            "98150001": {
+                nome: "Felipe Mendes",
+                data_aniversario: "15/Dezembro",
+                link_pagamento: "https://pay.felipe.com/doe", 
+                whatsapp_aniversariante: "5565998150001" // WhatsApp completo para o link
+            },
+            "91234567": {
+                nome: "Camila Santos",
+                data_aniversario: "03/Janeiro",
+                link_pagamento: "https://pay.camila.com/solidario", 
+                whatsapp_aniversariante: "5565991234567"
+            },
+            // Adicione aqui outros aniversariantes:
+            // "XXXXXXXX": { nome: "Nome Aniversariante", data_aniversario: "DD/Mês", link_pagamento: "URL", whatsapp_aniversariante: "55659XXXXXXXX" },
+        };
+        
+        // ===========================================
+        // === LÓGICA DE MODAIS DE AÇÃO ===
+        // ===========================================
+        
+        function abrirModalCadastro(event) {
+            event.preventDefault();
+            document.getElementById('modalCadastro').style.display = 'flex';
+        }
+        
+        function fecharModalCadastro() {
+            document.getElementById('modalCadastro').style.display = 'none';
+        }
+        
+        function enviarCadastroInteressado() {
+            const nome = document.getElementById('cad-nome').value.trim();
+            const whatsapp = document.getElementById('cad-whatsapp').value.trim(); 
+            
+            if (!nome || !whatsapp) {
+                console.error("Por favor, preencha todos os campos.");
+                return;
+            }
+            
+            const msg = `SOLICITAÇÃO DE ADESÃO:\nNome: ${nome}\nWhatsApp: ${whatsapp}\n\nGostaria de transformar meu aniversário em uma ação solidária!`;
+            
+            window.open(`https://wa.me/${TELEFONE_DONA_ANTONIA}?text=${encodeURIComponent(msg)}`, '_blank');
+            fecharModalCadastro();
+        }
+
+        function abrirModalAniversariante(event) {
+            event.preventDefault();
+            document.getElementById('modalAniversariante').style.display = 'flex';
+            document.getElementById('erro-aniversariante').style.display = 'none';
+        }
+        
+        function fecharModalAniversariante() {
+            document.getElementById('modalAniversariante').style.display = 'none';
+        }
+        
+        function fecharModalResultado() {
+             document.getElementById('modalResultadoAniversariante').style.display = 'none';
+        }
+
+        function buscarAniversariante() {
+            const input = document.getElementById('busca-aniversariante-tel');
+            const tel8Digitos = input.value.replace(/\D/g, '').slice(-8); 
+            const erroDiv = document.getElementById('erro-aniversariante');
+            
+            if (tel8Digitos.length !== 8) {
+                erroDiv.innerText = "Por favor, digite exatamente os 8 últimos dígitos do WhatsApp.";
+                erroDiv.style.display = 'block';
+                return;
+            }
+            
+            const aniversariante = ANIVERSARIANTES_DB[tel8Digitos];
+            
+            if (aniversariante) {
+                fecharModalAniversariante();
+                
+                // Preenche o novo modal de resultado
+                document.getElementById('res-nome').innerText = aniversariante.nome;
+                document.getElementById('res-nome-curto').innerText = aniversariante.nome.split(' ')[0]; // Pega o primeiro nome
+                document.getElementById('res-data').innerText = aniversariante.data_aniversario;
+                
+                // Configura os botões de ação
+                const mensagemZap = encodeURIComponent(`Olá, ${aniversariante.nome.split(' ')[0]}! Vi que é seu aniversário. Gostaria de doar uma cesta básica para sua campanha solidária.`);
+                const linkZap = `https://wa.me/${aniversariante.whatsapp_aniversariante}?text=${mensagemZap}`;
+                
+                document.getElementById('btnDoarCesta').href = aniversariante.link_pagamento;
+                document.getElementById('btnZapAniversariante').href = linkZap;
+
+                // Exibe o modal de resultado
+                document.getElementById('modalResultadoAniversariante').style.display = 'flex';
+                
+            } else {
+                erroDiv.innerText = `Aniversariante não encontrado com o final *${tel8Digitos}*. Verifique e tente novamente.`;
+                erroDiv.style.display = 'block';
+            }
+        }
+        
+        // ===========================================
+        // === LÓGICA DE RESPONSIVIDADE ===
+        // ===========================================
+
+        function ajustarPosicaoElementosFixos() {
+            const fab = document.querySelector('.fab-btn');
+
+            if (!fab) return;
+
+            // Ajuste do FAB para a borda direita do wrapper no desktop
+            if (window.innerWidth > 480) {
+                 // 50% - (700px/2) + 20px
+                 fab.style.right = `calc(50% - 350px + 20px)`; 
+            } else {
+                 fab.style.right = '20px';
+            }
+        }
+
+        window.addEventListener('load', () => {
+            // Removido inicializarSwiper()
+            ajustarPosicaoElementosFixos();
+        });
+        
+        window.addEventListener('resize', ajustarPosicaoElementosFixos);
+
+    </script>
+    
+</body>
+</html>
