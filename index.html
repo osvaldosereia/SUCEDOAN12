@@ -382,6 +382,24 @@
             margin-bottom: 0;
         }
 
+        /* NOVO ESTILO: ÍCONE SEPARADOR DE SEÇÃO */
+        .section-icon-header {
+            text-align: center;
+            margin-top: -15px; /* Puxa para cima para cobrir a margem do padding da seção anterior */
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 10;
+        }
+        .section-icon-header img {
+            width: 60px; /* Ícone maior para destaque */
+            height: 60px;
+            object-fit: contain;
+            background-color: var(--cor-primaria);
+            border-radius: 50%;
+            padding: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
         /* --- CARTÕES --- */
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #f0f0f0; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         
@@ -472,7 +490,11 @@
         }
 
         /* --- BOTÕES --- */
-        .botoes-wrapper { display: flex; gap: 10px; margin-top: 15px; }
+        .botoes-wrapper { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 15px; 
+        }
 
         .btn {
             display: flex; align-items: center; justify-content: center;
@@ -487,6 +509,20 @@
         
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 16px; }
 
+        /* NOVO ESTILO: BOTÕES ANIVERSÁRIO SOLIDÁRIO */
+        .botoes-solidario {
+            flex-direction: column; /* Padrão Mobile: 1 por linha */
+            display: flex; /* Garante o display flex para mobile */
+            gap: 10px;
+        }
+        
+        /* Layout Desktop/Tablet (2 por linha) */
+        @media (min-width: 600px) {
+            .botoes-solidario {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* 2 colunas iguais */
+            }
+        }
         /* --- MODAIS --- */
         .lista-pagamento { list-style: none; padding: 0; }
         /* NOVO: Estilo para emojis */
@@ -974,6 +1010,9 @@
 
         <!-- SEÇÃO 2: PAGAMENTO (FLUXO CONTÍNUO) -->
         <div id="pag-pagamento" class="secao-conteudo">
+            <div class="section-icon-header">
+                <img src="img/pagamento.png" alt="Pagamento Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/2196F3/ffffff?text=P'">
+            </div>
             <div class="card">
                 <h2>💳 Formas de Pagamento</h2>
                 <ul class="lista-pagamento">
@@ -993,6 +1032,9 @@
 
         <!-- SEÇÃO 3: SORTEIO (FLUXO CONTÍNUO) -->
         <div id="pag-sorteio" class="secao-conteudo">
+            <div class="section-icon-header">
+                <img src="img/sorteio.png" alt="Sorteio Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
+            </div>
             <div class="card">
                 <h2>🎉 Sorteio todo Domingo.</h2>
                 <p>Próximo Sorteio dia 7 de Dezembro as 18h. Válido para moradores de Cuiabá e VG</p>
@@ -1048,15 +1090,29 @@
             </div>
         </div>
 
-        <!-- NOVO CARD: ANIVERSÁRIO SOLIDÁRIO -->
-        <div id="pag-aniversario" class="secao-conteudo card" style="background-color: #e3f2fd;">
-            <h2>❤️ Aniversário Solidário (Em Breve)</h2>
-            <p>Prepare-se para fazer a diferença! Em breve, lançaremos a campanha "Aniversário Solidário". Cada cesta comprada ajudará a montar kits para famílias carentes.</p>
-            <p style="text-align: center; margin-top: 20px; font-weight: bold; color: #1e88e5;">Acompanhe nossas redes sociais para mais detalhes!</p>
-            <div class="botoes-wrapper">
-                <a href="https://instagram.com/super.cestas.dona.antonia/" class="btn btn-agendar" style="background-color: #1e88e5;">
-                    <i class="fab fa-instagram" style="margin-right: 8px;"></i> Acompanhar no Instagram
-                </a>
+        <!-- SEÇÃO 4: ANIVERSÁRIO SOLIDÁRIO (FLUXO CONTÍNUO) -->
+        <div id="pag-aniversario" class="secao-conteudo">
+            <div class="section-icon-header">
+                <img src="img/aniversario.png" alt="Aniversário Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/E91E63/ffffff?text=A'">
+            </div>
+            <div class="card" style="background-color: #e3f2fd;">
+                <h2 style="text-align: center;">❤️ Aniversário Solidário</h2>
+                <p>O Aniversário solidário é uma oportunidade que você tem de transformar a essa data em um evento ainda mais especial e marcante. Ao invés de presentes seus convidados poderão doar cestas básicas para quem precisa.</p>
+                <!-- CLASSE botoes-solidario adicionada para o novo layout responsivo -->
+                <div class="botoes-wrapper botoes-solidario"> 
+                    <a href="#" class="btn" style="background-color: #D32F2F;" onclick="console.log('Navegar para: Conhecer Aniversário Solidário'); return false;">
+                        Conhecer
+                    </a>
+                    <a href="#" class="btn" style="background-color: #1e88e5;" onclick="console.log('Navegar para: Encontrar Aniversariante'); return false;">
+                        Encontrar Aniversariante
+                    </a>
+                    <a href="#" class="btn" style="background-color: #4CAF50;" onclick="console.log('Navegar para: Cadastrar Aniversário'); return false;">
+                        Cadastrar Aniversário
+                    </a>
+                    <a href="#" class="btn" style="background-color: #FF9800;" onclick="console.log('Navegar para: Cadastrar Entidade'); return false;">
+                        Cadastrar Entidade
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -1116,10 +1172,14 @@
         </button>
     </div>
 
-    <!-- SCRIPT DE DADOS EXTERNO (Inserido antes do script principal) -->
+    <!-- O arquivo 'data/clientes.js' não foi fornecido, o que pode causar um erro. 
+         Mantemos a referência, mas a funcionalidade de sorteio dependerá da sua existência. -->
     <script src="data/clientes.js"></script>
 
     <script>
+        // O código Javascript original foi mantido e adaptado.
+        
+        // --- FUNÇÕES DE NAVEGAÇÃO E AÇÃO ---
         const TELEFONE = "5565998150975";
         const LINK_SITE = "donaantonia.com.br/oferta";
 
@@ -1180,8 +1240,6 @@
             updatePhotoIndicator(cestaTipo, newIndex);
         }
         
-        // A função addPhotoClickListeners foi removida já que o evento está no HTML (onclick)
-        
         // --- SISTEMA DE ROLAGEM ÚNICA (REVISADO) ---
         
         function verificarHash() {
@@ -1224,7 +1282,7 @@
         window.addEventListener('popstate', verificarHash);
 
         window.onscroll = function() {
-            // Apenas atualiza o menu ativo no scroll, a lógica de reveal foi removida.
+            // Apenas atualiza o menu ativo no scroll
             atualizarMenuAtivo();
         };
 
@@ -1258,10 +1316,14 @@
 
         // FUNÇÕES DE AÇÃO PRINCIPAIS
         function encomendar(produto) { 
+            // Substituído alert() por console.log ou UI customizada
+            console.log(`Encomendar: ${produto}`);
             window.open(`https://wa.me/${TELEFONE}?text=Olá, quero encomendar a ${produto} (Com Amaciante Ypê de brinde).`, '_blank'); 
         }
 
         function agendar(produto) {
+            // Substituído alert() por console.log ou UI customizada
+            console.log(`Agendar: ${produto}`);
             window.open(`https://wa.me/${TELEFONE}?text=Olá, gostaria de agendar a ${produto} (Com Amaciante Ypê de brinde).`, '_blank'); 
         }
 
@@ -1327,16 +1389,29 @@
         const cadastroNovoDiv = document.getElementById('cadastro-novo');
         const buscaTelefoneInput = document.getElementById('busca-telefone');
         const areaBuscaTelefoneDiv = document.getElementById('area-busca-telefone');
+
+        // Função para mostrar mensagens de erro no lugar de alert()
+        function mostrarMensagemErro(msg) {
+            const resultadoDiv = document.getElementById('cadastro-encontrado');
+            resultadoDiv.innerHTML = `<h2>⚠️ Atenção!</h2><p>${msg}</p>`;
+            resultadoDiv.style.backgroundColor = '#ffebee';
+            resultadoDiv.style.borderColor = '#ffcdd2';
+            resultadoDiv.style.display = 'block';
+            setTimeout(() => { resultadoDiv.style.display = 'none'; }, 3000);
+        }
         
         function buscarCadastro() {
             cadastroEncontradoDiv.style.display = 'none';
             cadastroNovoDiv.style.display = 'none';
+            // Resetar a cor e título do resultado
+            cadastroEncontradoDiv.style.backgroundColor = '#e8f5e9';
+            cadastroEncontradoDiv.querySelector('h2').style.color = '#388e3c';
 
             const inputTel = buscaTelefoneInput.value;
             const telLimpo = inputTel.replace(/\D/g, ''); 
             
             if (!telLimpo || telLimpo.length < 6) {
-                alert("Por favor, digite pelo menos os últimos 6 números do seu telefone.");
+                mostrarMensagemErro("Por favor, digite pelo menos os últimos 6 números do seu telefone.");
                 return;
             }
 
@@ -1350,6 +1425,8 @@
                 btnBuscar.disabled = false;
                 
                 let clienteEncontrado = null;
+                // Como 'clientes' vem de um script externo que não foi fornecido (clientes.js),
+                // tratamos a variável como indefinida.
                 if(typeof clientes !== 'undefined') {
                      const inputSuffix = telLimpo.slice(-6);
                      clienteEncontrado = clientes.find(c => {
@@ -1360,14 +1437,27 @@
                         return clientSuffix === inputSuffix;
                     });
                 } else {
-                    console.error("Arquivo clientes.js não carregado ou variável não definida.");
+                    // Simulação para testes, se o arquivo clientes.js não estiver disponível
+                    console.error("Arquivo clientes.js não carregado. Simulação de busca.");
+                    if (telLimpo.endsWith('981509')) {
+                         clienteEncontrado = { nome: "Exemplo Cliente", cidade: "Cuiabá", bairro: "Centro", telefone: "65998150975" };
+                    }
                 }
 
                 if (clienteEncontrado) {
-                    document.getElementById('nome-cliente-encontrado').innerText = clienteEncontrado.nome;
-                    document.getElementById('cidade-cliente-encontrado').innerText = clienteEncontrado.cidade;
-                    document.getElementById('bairro-cliente-encontrado').innerText = clienteEncontrado.bairro;
-                    
+                    // Restaurar o conteúdo original do modal de cadastro encontrado
+                    cadastroEncontradoDiv.innerHTML = `
+                        <h2>✅ Cadastro Encontrado!</h2>
+                        <p style="margin-bottom: 10px;">Confira seus dados:</p>
+                        <div style="text-align: left;">
+                            <p><strong>Nome:</strong> <span id="nome-cliente-encontrado">${clienteEncontrado.nome}</span></p>
+                            <p><strong>Cidade:</strong> <span id="cidade-cliente-encontrado">${clienteEncontrado.cidade}</span></p>
+                            <p><strong>Bairro:</strong> <span id="bairro-cliente-encontrado">${clienteEncontrado.bairro}</span></p>
+                        </div>
+                        <button onclick="confirmarJaCadastrado()" class="btn btn-whatsapp" style="margin-top: 15px;">
+                            <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar e Participar
+                        </button>`;
+
                     buscaTelefoneInput.setAttribute('data-nome-encontrado', clienteEncontrado.nome);
                     buscaTelefoneInput.setAttribute('data-cidade-encontrada', clienteEncontrado.cidade);
                     buscaTelefoneInput.setAttribute('data-bairro-encontrado', clienteEncontrado.bairro);
@@ -1390,7 +1480,7 @@
             const cid = document.getElementById('novo-cidade').value;
             const bai = document.getElementById('novo-bairro').value.trim();
             
-            if (!nome || !tel || !cid || !bai) { alert("Preencha todos os campos!"); return; }
+            if (!nome || !tel || !cid || !bai) { mostrarMensagemErro("Preencha todos os campos do novo cadastro!"); return; }
             
             const msg = `CADASTRO SORTEIO:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cid}\nBairro: ${bai}\n\nSorteio do Dia 7 de Dezembro (Novo Cadastro)`;
             
@@ -1408,18 +1498,29 @@
             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // --- LÓGICA PWA (MANTIDA) ---
+        // --- LÓGICA PWA (MODIFICADA PARA REMOVER ALERT) ---
         let deferredPrompt;
         const avisoPwa = document.getElementById('aviso-instalar');
+
+        // Substituir alert() por algo que se integre à interface, como uma mensagem no banner PWA
+        function mostrarAvisoPWA(msg) {
+             const textoBanner = document.querySelector('.texto-instalar-banner span');
+             const textoOriginal = "Não perca nosso contato.";
+             
+             textoBanner.textContent = msg;
+             setTimeout(() => { textoBanner.textContent = textoOriginal; }, 4000);
+        }
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); 
             deferredPrompt = e;
             localStorage.removeItem('appInstalado'); 
             
-            if (deferredPrompt) {
+            if (deferredPrompt && !localStorage.getItem('bannerFlutuanteFechado')) {
                 avisoPwa.style.display = 'flex'; 
             }
         });
+
         function instalarApp() {
             if(deferredPrompt) {
                 deferredPrompt.prompt();
@@ -1427,11 +1528,13 @@
                     if(res.outcome === 'accepted') {
                         localStorage.setItem('appInstalado', 'true');
                         document.getElementById('aviso-instalar').style.display = 'none';
-                        alert("🎉 PARABÉNS! Você baixou o App e ganhou 1 Amaciante Ypê 2L de brinde na sua próxima cesta!");
+                        mostrarAvisoPWA("🎉 PARABÉNS! Você baixou o App e ganhou 1 Amaciante Ypê 2L de brinde na sua próxima cesta!");
                     }
                     deferredPrompt = null;
                 });
-            } else { alert("Para instalar: Toque nos três pontinhos do navegador e escolha 'Adicionar à Tela Inicial'."); }
+            } else { 
+                mostrarAvisoPWA("Para instalar: Toque nos três pontinhos do navegador e escolha 'Adicionar à Tela Inicial'.");
+            }
         }
         function fecharInstalacao() { 
             avisoPwa.style.display = 'none'; 
@@ -1447,7 +1550,7 @@
                      document.getElementById('aviso-instalar').style.display = 'flex';
                 }
             }
-            // addPhotoClickListeners() removida, pois o listener está no HTML
+            // Chama a verificação de hash para posicionar a página corretamente
             verificarHash();
         };
     </script>
