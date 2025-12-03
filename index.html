@@ -37,13 +37,16 @@
             --cor-sorteio: #4CAF50; /* Verde */
             --cor-header-fundo: #f5f5f5;
             --cor-pwa: #4CAF50; /* Verde para o Banner PWA */
+            --altura-aviso: 30px; /* Altura da nova barra amarela */
+            --altura-header: 80px; /* Nova altura do header fixo (Aumentada de 70px) */
         }
 
         /* CORREÇÃO 1: Adiciona padding para evitar que o header fixe cubra o conteúdo ancorado */
         html { 
             background-color: #e0e0e0; 
             scroll-behavior: smooth;
-            scroll-padding-top: 100px; /* A altura do header é 70px + margem */
+            /* Nova altura total para scroll: 80px (header) + 30px (aviso) = 110px */
+            scroll-padding-top: calc(var(--altura-header) + var(--altura-aviso) + 5px); 
         }
 
         body {
@@ -52,12 +55,30 @@
             color: var(--cor-texto);
             margin: 0; 
             padding: 0;
-            /* Padding para acomodar o cabeçalho fixo */
-            padding-top: 100px; 
+            /* Novo padding superior para acomodar a barra de aviso e o header */
+            padding-top: calc(var(--altura-header) + var(--altura-aviso) + 5px); 
             padding-bottom: 20px;
             min-height: 10vh;
             position: relative; 
             width: 100%;
+        }
+
+        /* --- BARRA DE AVISO AMARELA (NOVA) --- */
+        #barra-aviso-topo {
+            background-color: #FFEB3B; /* Amarelo Ovo */
+            color: var(--cor-texto);
+            font-size: 14px;
+            text-align: center;
+            padding: 5px 10px;
+            height: var(--altura-aviso);
+            position: fixed;
+            top: 0;
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 100%;
+            max-width: 480px; 
+            z-index: 2100; /* Mais alto que o header */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .main-content-wrapper {
@@ -70,13 +91,14 @@
         /* --- CABEÇALHO FIXO --- */
         header {
             background-color: white;
-            height: 70px; 
+            height: var(--altura-header); /* NOVA ALTURA: 80px */
             padding: 0;
             display: flex;
             flex-direction: column;
             box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             position: fixed;
-            top: 0;
+            /* POSIÇÃO: Abaixo da barra de aviso */
+            top: var(--altura-aviso); 
             left: 50%; 
             transform: translateX(-50%); 
             width: 100%;
@@ -89,7 +111,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 65px; 
+            height: var(--altura-header); /* NOVA ALTURA: 80px */
             background-color: var(--cor-header-fundo);
             z-index: 999;
         }
@@ -99,7 +121,7 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            height: 70px; 
+            height: var(--altura-header); /* NOVA ALTURA: 80px */
             padding: 5px 15px;
         }
         
@@ -126,7 +148,8 @@
             border-radius: 50%; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
             position: fixed;
-            top: 8px; 
+            /* Posição da logo deve estar centralizada entre a barra de aviso e o header */
+            top: calc(var(--altura-aviso) + 8px); 
             z-index: 2000; 
             left: 50%; 
             transform: translateX(-50%);
@@ -135,7 +158,7 @@
         }
 
         .header-btn {
-            padding: 4px 8px; /* Ajustado para menor tamanho */
+            padding: 6px 10px; /* Aumentado um pouco o padding dos botões */
             border-radius: 6px;
             font-size: 11px; /* Ajustado para caber 2 botões */
             font-weight: bold;
@@ -258,7 +281,7 @@
             width: 100%; padding: 15px; border: none; border-radius: 8px;
             font-size: 15px; 
             font-weight: bold; cursor: pointer;
-            text-decoration: none; color: white; text-align: center;
+            text-decoration: none; color: white;
             
             box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4);
             transition: transform 0.2s;
@@ -629,6 +652,11 @@
 </head>
 <body>
     
+    <!-- BARRA FIXA AMARELA (NOVA) -->
+    <div id="barra-aviso-topo">
+        <strong style="font-weight: 700;">Salve nosso contato.</strong> Aqui compensa muito!
+    </div>
+
     <!-- BARRA DE FUNDO CINZA CLARA -->
     <div class="header-background-bar"></div>
 
@@ -698,6 +726,7 @@
                             <div class="img-wrapper" data-img-index="1">
                                 <img src="img/cesta-economica2.jpg" alt="Cesta Econômica Detalhe" loading="lazy" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA+2'">
                             </div>
+                            <!-- Botão de Navegação entre fotos -->
                             <div class="swipe-indicator" onclick="event.stopPropagation(); mudarFotoNoCard('economica')">
                                 <span id="btn-foto-economica">VER PRODUTOS</span>
                             </div>
@@ -1045,7 +1074,6 @@
     </div>
     
     <!-- O POPUP DE RETENÇÃO FOI REMOVIDO PARA MANTER APENAS OS DOIS POPUPS INICIAIS -->
-    <!-- (Bloco #modalPWAContainer removido) -->
     
     <!-- SCRIPT JS PRINCIPAL -->
     <script>
@@ -1068,21 +1096,17 @@
         let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '' };
         let opcaoEscolhida = ''; 
         
-        // Variável de controle para o novo popup de retenção (MANTIDA APENAS PARA LIMPEZA DE ESCOPO)
+        // Variável de controle para o novo popup de retenção
         const PWA_PROMPT_KEY = 'pwaPromptShown';
         let isPwaPromptShown = false; 
         
-        // Timer global para o novo gatilho (MANTIDO APENAS PARA LIMPEZA DE ESCOPO)
+        // Timer global para o novo gatilho
         let popupTimer;
         
         /**
          * NOVO: Função para o botão LIGAR na header
          */
         function ligarDireto(event) {
-            // Evita a ação padrão do link se não houver um target específico
-            if (event) {
-                event.preventDefault();
-            }
             // O link tel:... no HTML garante a chamada direta
         }
 
@@ -1110,8 +1134,8 @@
             // Marca a sessão como visitada para controle (se fosse em produção)
             localStorage.setItem(MODAL_RECEPTIVO_KEY, 'sim');
             
-            // REMOVIDO: A chamada ao iniciarPopupPWAComTimer (porque o popup 2 foi removido)
-            // A rolagem para o topo também foi removida, mantendo a posição do atalho.
+            // NOVO: A chamada ao iniciarPopupPWAComTimer (porque o popup 2 foi removido)
+            // foi removida para manter apenas o popup inicial.
         }
         
         /**
@@ -1134,31 +1158,6 @@
             fecharModalReceptivo();
         }
 
-        // ===============================
-        // === LÓGICA DO POPUP PWA DE RETENÇÃO (REMOVIDA) ===
-        // ===============================
-        
-        /*
-         * As funções mostrarModalPWA(), fecharModalPWA(), iniciarPopupPWAComTimer(),
-         * e enviarOiWhatsApp() foram removidas para atender à solicitação de 
-         * manter apenas o popup inicial.
-         */
-        
-        /**
-         * NOVO: Função de compartilhamento com URL/link de atalho
-         * @param {string} nomeCesta - Nome da cesta.
-         * @param {string} hash - O hash do link de atalho (#cestagrande, #cestamini, etc).
-         */
-        function compartilharCesta(nomeCesta, hash) {
-            // Monta o link do site + hash. Assumindo que o domínio é donaantonia.com.br
-            const linkCompartilhamento = `https://donaantonia.com.br/${hash}`;
-            
-            const textoCompartilhar = `Olá, veja essa cesta básica da empresa Cestas Básicas Dona Antônia: ${nomeCesta}. Preço e detalhes aqui: ${linkCompartilhamento}`;
-            
-            // Abre o WhatsApp com o texto pré-definido.
-            window.open(`https://wa.me/?text=${encodeURIComponent(textoCompartilhar)}`, '_blank');
-        }
-        
         // ===============================
         // === LÓGICA DE INSTALAÇÃO PWA (SIMPLIFICADA) ===
         // ===============================
@@ -1195,6 +1194,8 @@
          */
         function instalarPWA() {
             if (deferredPrompt) {
+                mostrarMensagemBusca("Iniciando instalação...", false);
+
                 // Chama o prompt de instalação do navegador
                 deferredPrompt.prompt();
                 
@@ -1213,7 +1214,7 @@
 
         // ===============================
         // === LÓGICA DE PRODUTOS/MODAL (MANTIDA) ===
-        // ===============================
+        // ===================================
         
         /**
          * Envia o pedido direto para o WhatsApp (para produtos sem variação).
