@@ -1083,7 +1083,7 @@
          * NOVO: Inicia o temporizador para exibir o popup PWA após um delay.
          * @param {number} delaySeconds - Atraso em segundos.
          */
-        function iniciarPopupPWAComTimer(delaySeconds = 15) {
+        function iniciarPopupPWAComTimer(delaySeconds = 45) {
             // Só inicia o timer se o app puder ser instalado e o popup não tiver sido visto
              if (deferredPrompt && !isPwaPromptShown) {
                 popupTimer = setTimeout(mostrarModalPWA, delaySeconds * 1000);
