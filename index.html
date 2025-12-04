@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cesta Básica em Cuiabá e Várzea Grande | Dona Antônia</title>
     
-    <!-- PWA & Manifest (RESTAURADO) -->
+    <!-- PWA & Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#D32F2F">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,14 +29,15 @@
             --cor-whatsapp: #25D366;
             --cor-telegram: #0088cc;
             --cor-facebook: #1877F2; 
-            --cor-info: #1E88E5; /* Azul para Informações */
+            --cor-info: #1E88E5; 
             --cor-texto: #222;
             --cor-fundo: #fafafa;
             --cor-pagamento: #2196F3; 
             --cor-sorteio: #4CAF50; 
+            --cor-entrega: #FF9800; /* Cor Laranja para Entrega */
             --cor-header-fundo: #f5f5f5;
             --altura-header: 90px;
-            --largura-logo: 115px; /* Variável para controle */
+            --largura-logo: 115px; 
         }
 
         html { 
@@ -65,17 +66,17 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
-        /* --- TOAST NOTIFICATION (NOVO - PARA MENSAGENS VISÍVEIS) --- */
+        /* --- TOAST NOTIFICATION --- */
         #toast-container {
             position: fixed;
-            bottom: 20px; /* Aparece embaixo para não cobrir o header */
+            bottom: 20px; 
             left: 50%;
             transform: translateX(-50%);
             z-index: 6000;
             width: 90%;
             max-width: 400px;
             text-align: center;
-            pointer-events: none; /* Permite clicar através se não tiver msg */
+            pointer-events: none; 
         }
         .toast-message {
             background-color: #333;
@@ -145,7 +146,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
             position: fixed;
             top: 5px; 
-            left: 15px; /* Posição fixa à esquerda */
+            left: 15px; 
             margin-left: 0;
             z-index: 2000; 
             background-color: white;
@@ -153,7 +154,7 @@
             transition: all 0.3s ease;
         }
 
-        /* --- BOTÃO CONTATO (COM LÓGICA ANTI-SOBREPOSIÇÃO) --- */
+        /* --- BOTÃO CONTATO --- */
         .btn-contato-principal {
             display: flex;
             flex-direction: row;
@@ -170,9 +171,6 @@
             transition: all 0.2s;
             margin-left: auto;
             text-align: left;
-            
-            /* LÓGICA CRÍTICA: Largura máxima calculada para nunca tocar na logo */
-            /* 100% do container - largura da logo - margem de segurança (30px) */
             max-width: calc(100% - var(--largura-logo) - 20px); 
         }
         .btn-contato-principal:active { transform: scale(0.96); }
@@ -181,7 +179,7 @@
             font-size: 24px;
             margin-right: 12px;
             color: var(--cor-primaria);
-            flex-shrink: 0; /* Impede que o ícone amasse */
+            flex-shrink: 0; 
         }
         .btn-contato-text-main {
             display: block;
@@ -196,32 +194,16 @@
             color: #444;
         }
 
-        /* --- MEDIA QUERY PARA CELULARES PEQUENOS (< 380px) --- */
         @media (max-width: 380px) {
             :root {
-                --largura-logo: 90px; /* Reduz logo automaticamente */
+                --largura-logo: 90px; 
                 --altura-header: 85px;
             }
-            
-            .logo-pequ {
-                left: 10px; /* Ajusta margem esquerda */
-            }
-
-            .btn-contato-principal {
-                padding: 8px 12px;
-                /* O max-width se ajusta sozinho graças à variável --largura-logo */
-            }
-            
-            .btn-contato-icon {
-                font-size: 20px;
-                margin-right: 8px;
-            }
-            .btn-contato-text-main {
-                font-size: 12px; /* Fonte reduzida para caber */
-            }
-            .btn-contato-text-sub {
-                font-size: 10px;
-            }
+            .logo-pequ { left: 10px; }
+            .btn-contato-principal { padding: 8px 12px; }
+            .btn-contato-icon { font-size: 20px; margin-right: 8px; }
+            .btn-contato-text-main { font-size: 12px; }
+            .btn-contato-text-sub { font-size: 10px; }
         }
 
         /* --- CARDS --- */
@@ -242,7 +224,6 @@
         .cesta-header h3 { margin: 0; color: white; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
         .cesta-body { padding: 15px; }
 
-        /* IMAGEM ÚNICA (SEM GALERIA) */
         .foto-cesta-unica { 
             width: 100%; 
             aspect-ratio: 1 / 1; 
@@ -253,7 +234,6 @@
             background: #eee;
         }
 
-        /* PREÇOS */
         .lista-precos-cesta {
             background-color: #f9f9f9; border-radius: 8px; padding: 12px; margin: 15px 0; border: 1px solid #eee;
         }
@@ -261,7 +241,6 @@
         .item-preco:last-child { margin-bottom: 0; }
         .item-preco strong { color: var(--cor-primaria); font-size: 18px; }
 
-        /* BOTÕES */
         .botoes-wrapper { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;
         }
@@ -272,7 +251,7 @@
             word-break: break-word; 
         }
         .btn-encomendar { background-color: var(--cor-whatsapp); }
-        .btn-info { background-color: var(--cor-info); } /* Botão Info Azul */
+        .btn-info { background-color: var(--cor-info); } 
         .btn:active { transform: scale(0.98); }
         
         /* --- EXTRAS --- */
@@ -290,23 +269,21 @@
             background-color: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 15px; margin-top: 15px; text-align: center;
         }
         .area-resultado-busca h2 { color: #388e3c; } 
-        #cadastro-novo { background-color: #fff3e0; border: 1px solid #ffcc80; }
-        #cadastro-novo h2 { color: #e65100; } 
+        .cadastro-novo-style { background-color: #fff3e0; border: 1px solid #ffcc80; }
+        .cadastro-novo-style h2 { color: #e65100; } 
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 16px; }
         
         /* --- MODAIS (GERAL) --- */
-        .modal-variacao, #modalReceptivo, #modalContatos, #modalInformacoes {
+        .modal-variacao, #modalContatos, #modalInformacoes {
             display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; backdrop-filter: blur(2px);
         }
-        #modalReceptivo { z-index: 5000; background-color: rgba(0,0,0,0.7); }
         #modalContatos { z-index: 4500; }
         #modalInformacoes { z-index: 4600; }
 
-        /* ESTILO DO MODAL DE ABAS */
         .modal-info-content {
             background-color: white; width: 90%; max-width: 420px; border-radius: 12px; 
-            overflow: hidden; display: flex; flex-direction: column; max-height: 85vh; /* Limite de altura */
+            overflow: hidden; display: flex; flex-direction: column; max-height: 85vh; 
             box-shadow: 0 5px 25px rgba(0,0,0,0.3); animation: zoomIn 0.2s;
         }
         
@@ -317,53 +294,30 @@
         .btn-fechar-modal-info { background: none; border: none; font-size: 28px; color: #999; cursor: pointer; padding: 0 10px; }
 
         /* ABAS */
-        .tabs { display: flex; background-color: white; border-bottom: 2px solid #eee; }
+        .tabs { display: flex; background-color: white; border-bottom: 2px solid #eee; overflow-x: auto;}
         .tab-btn {
-            flex: 1; padding: 15px 5px; border: none; background: none; font-size: 14px; 
+            flex: 1; padding: 15px 5px; border: none; background: none; font-size: 13px; 
             font-weight: 600; color: #666; cursor: pointer; transition: all 0.2s; text-transform: uppercase;
-            border-bottom: 3px solid transparent;
+            border-bottom: 3px solid transparent; min-width: 70px;
         }
         .tab-btn.active { color: var(--cor-primaria); border-bottom-color: var(--cor-primaria); background-color: #fff8f8; }
         
         /* CONTEÚDO DAS ABAS */
         .tab-content-area {
-            padding: 20px; overflow-y: auto; /* SCROLL PARA LISTAS GRANDES */
-            flex: 1; /* Ocupa o resto do modal */
+            padding: 20px; overflow-y: auto; 
+            flex: 1; 
         }
         .tab-pane { display: none; }
         .tab-pane.active { display: block; animation: fadeIn 0.3s; }
         
-        /* Lista de Produtos no Modal */
         .lista-produtos-modal { list-style: none; padding: 0; margin: 0; }
         .lista-produtos-modal li { padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 14px; color: #444; }
         .lista-produtos-modal li:last-child { border-bottom: none; }
         .lista-produtos-modal li i { color: var(--cor-whatsapp); margin-right: 8px; font-size: 10px; }
         .section-title { font-weight: bold; color: var(--cor-primaria); margin-top: 15px; margin-bottom: 5px; font-size: 15px; display: block; background: #ffebee; padding: 5px; border-radius: 4px; }
 
-        /* --- OUTROS MODAIS --- */
-        .modal-receptivo-content {
-            background-color: white; width: 90%; max-width: 380px; border-radius: 16px; padding: 25px; padding-top: 60px;
-            position: relative; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.4); animation: zoomIn 0.3s;
-        }
-        .modal-logo-receptivo {
-            position: absolute; top: -40px; left: 50%; transform: translateX(-50%); width: 80px; height: 80px;
-            border-radius: 50%; background-color: white; padding: 3px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 5001; 
-        }
-        .modal-logo-receptivo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-
         @keyframes zoomIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .titulo-receptivo { color: var(--cor-primaria); font-size: 1.5rem; margin-bottom: 10px; font-weight: 700; }
-        .subtitulo-receptivo { color: #555; font-size: 1.1rem; margin-bottom: 25px; line-height: 1.4; }
-        .btn-receptivo {
-            padding: 15px 25px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer;
-            display: block; width: 100%; border: none; transition: transform 0.2s;
-        }
-        .btn-ver-cestas { background-color: var(--cor-primaria); color: white; }
-        .btn-eu-quero { background-color: var(--cor-whatsapp); color: white; }
-        .etapa-modal { display: none; }
-        .etapa-modal.ativa { display: block; }
         
         .modal-variacao-content {
             background-color: white; width: 90%; max-width: 350px; border-radius: 16px; padding: 20px;
@@ -416,7 +370,7 @@
 </head>
 <body>
     
-    <div id="toast-container"></div> <!-- Container para os Toasts -->
+    <div id="toast-container"></div> 
 
     <div class="header-background-bar"></div>
 
@@ -446,7 +400,6 @@
                 <div class="card card-cesta" id="cestaeconomica">
                     <div class="cesta-header"><h3>CESTA ECONÔMICA</h3></div>
                     <div class="cesta-body">
-                        <!-- Imagem Única -->
                         <img src="img/cesta-economica1.jpg" class="foto-cesta-unica" alt="Cesta Econômica" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA'">
                         <div class="lista-precos-cesta">
                             <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 85,00</strong></div>
@@ -455,7 +408,6 @@
                             <button class="btn btn-encomendar" onclick="encomendarDireto('Cesta Econômica', '85,00', false)">
                                 <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Encomendar
                             </button>
-                            <!-- Botão Informações (substitui Compartilhar) -->
                             <button class="btn btn-info" onclick="abrirModalInfo('economica')">
                                 <i class="fas fa-info-circle" style="margin-right: 8px;"></i> Informações
                             </button>
@@ -545,27 +497,10 @@
             </div>
         </div>
         
-        <!-- SEÇÕES EXTRAS -->
+        <!-- SEÇÕES EXTRAS (ORDEM: Sorteio, Pagamento, Entrega) -->
         <div class="secoes-extras-grid">
-            <div id="pag-pagamento" class="secao-conteudo">
-                <div class="section-icon-header">
-                    <img src="img/pagamento.png" alt="Pagamento Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/2196F3/ffffff?text=P'">
-                </div>
-                <div class="card">
-                    <h2>💳 Formas de Pagamento</h2>
-                    <!-- Adicionei ID para facilitar a cópia para o modal -->
-                    <ul class="lista-pagamento" id="lista-pagamento-original">
-                        <li><span class="emoji-icon">💵</span> Dinheiro</li>
-                        <li><span class="emoji-icon">✨</span> Pix</li>
-                        <li><span class="emoji-icon">💳</span> Cartão de Débito</li>
-                        <li><span class="emoji-icon">💳</span> Cartão de Crédito (até 3x sem juros)</li>
-                        <li><span class="emoji-icon">🥗</span> Alelo, Sodexo, Pluxee</li>
-                        <li><span class="emoji-icon">📱</span> Ifood, Caju e Flash</li>
-                    </ul>
-                    <p style="color: red; font-size: 18px; text-align: center; margin-top: 20px;"><strong>⚠️ Atenção:</strong> Não vendemos a prazo.</p>
-                </div>
-            </div>
-
+            
+            <!-- 1. SORTEIO -->
             <div id="pag-sorteio" class="secao-conteudo">
                 <div class="section-icon-header">
                     <img src="img/cesta.png" alt="Sorteio Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
@@ -578,7 +513,7 @@
                         <h2>🍀 Participe</h2>
                         <label>Telefone (Whatsapp): <span style="color:red">*</span></label>
                         <input type="tel" id="busca-telefone" placeholder="Digite seu telefone..." required>
-                        <button onclick="buscarCadastro()" class="btn" style="background-color: var(--cor-primaria); margin-top: 5px;">
+                        <button onclick="buscarCadastro('')" class="btn" style="background-color: var(--cor-primaria); margin-top: 5px;">
                             <i class="fas fa-search" style="margin-right: 8px;"></i> Participar
                         </button>
                     </div>
@@ -591,15 +526,15 @@
                             <p><strong>Cidade:</strong> <span id="cidade-cliente-encontrado"></span></p>
                             <p><strong>Bairro:</strong> <span id="bairro-cliente-encontrado"></span></p>
                         </div>
-                        <button onclick="confirmarJaCadastrado()" class="btn" style="background-color: var(--cor-whatsapp); margin-top: 15px;">
+                        <button onclick="confirmarJaCadastrado('')" class="btn" style="background-color: var(--cor-whatsapp); margin-top: 15px;">
                             <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar e Participar
                         </button>
                     </div>
                     
-                    <div id="cadastro-novo" class="card" style="display: none;">
+                    <div id="cadastro-novo" class="card cadastro-novo-style" style="display: none;">
                         <h2>📝 Novo Cadastro</h2>
                         <p style="margin-bottom: 15px; color: #D32F2F;">Não encontramos seu número. Preencha seus dados:</p>
-                        <form onsubmit="event.preventDefault(); enviarNovoCadastro();">
+                        <form onsubmit="event.preventDefault(); enviarNovoCadastro('');">
                             <label>Nome Completo: <span style="color:red">*</span></label>
                             <input type="text" id="novo-nome" placeholder="Seu nome" required>
                             <label>Telefone: <span style="color:red">*</span></label>
@@ -617,6 +552,45 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 2. PAGAMENTO -->
+            <div id="pag-pagamento" class="secao-conteudo">
+                <div class="section-icon-header">
+                    <img src="img/pagamento.png" alt="Pagamento Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/2196F3/ffffff?text=P'">
+                </div>
+                <div class="card">
+                    <h2>💳 Formas de Pagamento</h2>
+                    <ul class="lista-pagamento" id="lista-pagamento-original">
+                        <li><span class="emoji-icon">💵</span> Dinheiro</li>
+                        <li><span class="emoji-icon">✨</span> Pix</li>
+                        <li><span class="emoji-icon">💳</span> Cartão de Débito</li>
+                        <li><span class="emoji-icon">💳</span> Cartão de Crédito (até 3x sem juros)</li>
+                        <li><span class="emoji-icon">🥗</span> Alelo, Sodexo, Pluxee</li>
+                        <li><span class="emoji-icon">📱</span> Ifood, Caju e Flash</li>
+                    </ul>
+                    <p style="color: red; font-size: 18px; text-align: center; margin-top: 20px;"><strong>⚠️ Atenção:</strong> Não vendemos a prazo.</p>
+                </div>
+            </div>
+
+            <!-- 3. ENTREGA (NOVO NA PÁGINA PRINCIPAL) -->
+            <div id="pag-entrega" class="secao-conteudo">
+                <div class="section-icon-header">
+                    <img src="img/caminhao.png" alt="Entrega Icone" onerror="this.onerror=null;this.src='https://placehold.co/60x60/FF9800/ffffff?text=E'">
+                </div>
+                <div class="card">
+                    <h2 style="color: #F57C00;">🚚 Entrega Grátis</h2>
+                    <div id="conteudo-entrega-original">
+                        <p>Entregamos em <strong>Cuiabá</strong> e <strong>Várzea Grande</strong> (área urbana).</p>
+                        <hr style="border:0; border-top:1px dashed #eee; margin: 15px 0;">
+                        <p><i class="fas fa-clock" style="color:#666; margin-right:5px;"></i> <strong>Horários:</strong></p>
+                        <p>As entregas são realizadas por rota.</p>
+                        <p style="background-color: #e8f5e9; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                            Encomende até as <strong>10h da manhã</strong> para receber no mesmo dia!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <div class="seo-text-block" style="text-align: center; font-size: 12px; color: #888; padding: 15px 30px;">
@@ -644,7 +618,7 @@
         </div>
     </div>
 
-    <!-- NOVO MODAL: INFORMAÇÕES (3 ABAS) -->
+    <!-- MODAL: INFORMAÇÕES (COM NOVA ABA SORTEIO) -->
     <div id="modalInformacoes" class="modal-variacao" onclick="if(event.target === this) fecharModalInfo()">
         <div class="modal-info-content">
             <!-- Header Modal -->
@@ -658,6 +632,7 @@
                 <button class="tab-btn active" onclick="mudarAba('produtos')">Produtos</button>
                 <button class="tab-btn" onclick="mudarAba('pagamento')">Pagamento</button>
                 <button class="tab-btn" onclick="mudarAba('entrega')">Entrega</button>
+                <button class="tab-btn" onclick="mudarAba('sorteio')" style="color: var(--cor-sorteio);">Sorteio</button>
             </div>
 
             <!-- Conteúdo Abas -->
@@ -675,44 +650,53 @@
             </div>
 
             <div id="aba-entrega" class="tab-content-area tab-pane">
-                <h4 style="color: var(--cor-whatsapp); margin-top:0;">🚚 Entrega Grátis</h4>
-                <p>Entregamos em <strong>Cuiabá</strong> e <strong>Várzea Grande</strong> (área urbana).</p>
-                <hr style="border:0; border-top:1px dashed #eee; margin: 15px 0;">
-                <p><i class="fas fa-clock" style="color:#666; margin-right:5px;"></i> <strong>Horários:</strong></p>
-                <p>As entregas são realizadas por rota.</p>
-                <p style="background-color: #e8f5e9; padding: 10px; border-radius: 6px; margin-top: 10px;">
-                    Encomende até as <strong>10h da manhã</strong> para receber no mesmo dia!
-                </p>
+                 <!-- Será copiado do site principal -->
+                 <div id="conteudoEntregaModal"></div>
             </div>
-        </div>
-    </div>
 
-    <!-- POPUP RECEPTIVO -->
-    <div id="modalReceptivo" onclick="if(event.target === this) fecharModalReceptivo()" class="modal-variacao">
-        <div class="modal-receptivo-content">
-            <div class="modal-logo-receptivo">
-                 <img src="img/logo1.png" alt="Logo Dona Antônia" onerror="this.src='https://placehold.co/80x80/808080/ffffff?text=D.A'">
-            </div>
-            <div id="etapa1" class="etapa-modal ativa">
-                <h3 class="titulo-receptivo">BEM-VINDO! 👋</h3>
-                <p class="subtitulo-receptivo">Entregamos em Cuiabá e Várzea Grande.</p>
-                <button class="btn-receptivo btn-ver-cestas" onclick="mudarEtapaPopup()">
-                    <i class="fas fa-box" style="margin-right: 8px;"></i> Ver as Cestas
-                </button>
-                <button onclick="fecharModalReceptivo()" style="background: none; border: none; color: #999; margin-top: 10px; font-size: 14px; cursor: pointer;">
-                    Prefiro continuar navegando
-                </button>
-            </div>
-            <div id="etapa2" class="etapa-modal">
-                <i class="fas fa-gift" style="font-size: 50px; color: var(--cor-whatsapp); margin-bottom: 15px;"></i>
-                <h3 class="titulo-receptivo" style="color: var(--cor-whatsapp);">🎉 Brinde!</h3>
-                <p class="subtitulo-receptivo">Na sua primeira compra, vamos te dar um Amaciante Ypê de 2 Litros de Brinde!</p>
-                <button class="btn-receptivo btn-eu-quero" onclick="confirmarBrindeEFecar()">
-                    <i class="fas fa-arrow-down" style="margin-right: 8px;"></i> EU QUERO!
-                </button>
-                <button onclick="fecharModalReceptivo()" style="background: none; border: none; color: #999; margin-top: 10px; font-size: 14px; cursor: pointer;">
-                    Prefiro continuar navegando
-                </button>
+            <!-- NOVA ABA SORTEIO NO MODAL -->
+            <div id="aba-sorteio" class="tab-content-area tab-pane">
+                <h4 style="color: var(--cor-sorteio); margin-top:0; text-align: center;">🍀 Participe do Sorteio</h4>
+                <p style="text-align: center; font-size: 14px; margin-bottom: 15px;">Digite seu Whatsapp para verificar seu cadastro ou se cadastrar.</p>
+                
+                <div id="area-busca-telefone-modal" class="card" style="margin-bottom: 15px; border: 1px solid #ddd;">
+                    <label>Telefone (Whatsapp):</label>
+                    <input type="tel" id="busca-telefone-modal" placeholder="Digite seu telefone..." required>
+                    <button onclick="buscarCadastro('-modal')" class="btn" style="background-color: var(--cor-primaria); margin-top: 5px;">
+                        <i class="fas fa-search" style="margin-right: 8px;"></i> Participar
+                    </button>
+                </div>
+
+                <div id="cadastro-encontrado-modal" class="area-resultado-busca" style="display: none;">
+                    <h2>✅ Encontrado!</h2>
+                    <div style="text-align: left; font-size: 14px;">
+                        <p><strong>Nome:</strong> <span id="nome-cliente-encontrado-modal"></span></p>
+                        <p><strong>Cidade:</strong> <span id="cidade-cliente-encontrado-modal"></span></p>
+                        <p><strong>Bairro:</strong> <span id="bairro-cliente-encontrado-modal"></span></p>
+                    </div>
+                    <button onclick="confirmarJaCadastrado('-modal')" class="btn" style="background-color: var(--cor-whatsapp); margin-top: 15px;">
+                        <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar
+                    </button>
+                </div>
+                
+                <div id="cadastro-novo-modal" class="card cadastro-novo-style" style="display: none;">
+                    <h2>📝 Novo Cadastro</h2>
+                    <form onsubmit="event.preventDefault(); enviarNovoCadastro('-modal');">
+                        <label>Nome:</label>
+                        <input type="text" id="novo-nome-modal" placeholder="Nome" required>
+                        <label>Telefone:</label>
+                        <input type="tel" id="novo-telefone-modal" disabled> 
+                        <label>Cidade:</label>
+                        <select id="novo-cidade-modal" required>
+                            <option value="">Selecione...</option>
+                            <option value="Cuiabá">Cuiabá</option>
+                            <option value="Várzea Grande">Várzea Grande</option>
+                        </select>
+                        <label>Bairro:</label>
+                        <input type="text" id="novo-bairro-modal" placeholder="Bairro" required>
+                        <button type="submit" class="btn"><i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Cadastrar</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -725,7 +709,6 @@
             <p style="margin-bottom: 20px; font-size: 14px; color: #666;">Escolha como prefere ser atendido:</p>
             
             <div class="lista-botoes-contato">
-                <!-- Adicionado rel="noopener noreferrer" em todos os links externos para evitar bloqueio -->
                 <a href="https://wa.me/5565998150975" class="btn-contato-modal bg-whatsapp" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i> Falar no WhatsApp</a>
                 
                 <a href="tel:+5565998150975" class="btn-contato-modal bg-ligar"><i class="fas fa-phone"></i> Ligar: (65) 99815-0975</a>
@@ -734,8 +717,10 @@
                 <a href="https://t.me/+5565998150975" class="btn-contato-modal bg-telegram" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram-plane"></i> Falar no Telegram</a>
                 <a href="https://instagram.com/super.cestas.dona.antonia/" class="btn-contato-modal bg-instagram" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i> Ver Instagram</a>
                 
-                <!-- CORREÇÃO FACEBOOK: Adicionado www. e rel="noopener noreferrer" -->
-                <a href="https://www.facebook.com/super.cestas.cuiaba" class="btn-contato-modal bg-facebook" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i> Ver Facebook</a>
+                <!-- BOTÃO GRUPO DE SORTEIO (SUBSTITUIU FACEBOOK) -->
+                <a href="https://www.facebook.com/super.cestas.cuiaba" class="btn-contato-modal bg-facebook" target="_blank" rel="noopener noreferrer">
+                    <i class="fas fa-users"></i> Participar do Grupo de Sorteio
+                </a>
                 
                 <button onclick="instalarPWA(); fecharModalContatos();" class="btn-contato-modal btn-destaque-app" style="border:none; width:100%; cursor:pointer;"><i class="fas fa-mobile-alt"></i> Baixar o Aplicativo</button>
             </div>
@@ -758,7 +743,6 @@
         let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '' };
         let opcaoEscolhida = ''; 
         
-        // --- DADOS DOS PRODUTOS (ATUALIZADOS CONFORME IMAGENS) ---
         const listasCestas = {
             'economica': [
                 "<span class='section-title'>Alimentos:</span>",
@@ -824,33 +808,18 @@
             alternarLogo();
         }
 
-        // --- FUNÇÕES POPUP ---
-        const MODAL_RECEPTIVO_KEY = 'donaAntoniaVisitou';
-        function iniciarPopupReceptivo() { document.getElementById('modalReceptivo').style.display = 'flex'; }
-        function fecharModalReceptivo() {
-            document.getElementById('modalReceptivo').style.display = 'none';
-            localStorage.setItem(MODAL_RECEPTIVO_KEY, 'sim');
-            document.getElementById('pag-cestas').scrollIntoView({ behavior: 'smooth' });
-        }
-        function mudarEtapaPopup() {
-            document.getElementById('etapa1').classList.remove('ativa');
-            document.getElementById('etapa2').classList.add('ativa');
-        }
-        function confirmarBrindeEFecar() { fecharModalReceptivo(); }
-
-        // --- FUNÇÕES MODAL INFORMAÇÕES (NOVO) ---
+        // --- FUNÇÕES MODAL INFORMAÇÕES (ATUALIZADO) ---
         function abrirModalInfo(cestaTipo) {
             // 1. Popula Produtos
             const listaEl = document.getElementById('listaProdutosContent');
-            listaEl.innerHTML = ''; // Limpa
+            listaEl.innerHTML = ''; 
             
             const itens = listasCestas[cestaTipo] || ["Lista de produtos não disponível."];
             itens.forEach(item => {
                 const li = document.createElement('li');
-                // Se o item contém a classe section-title, não põe ícone
                 if(item.includes('section-title')) {
                     li.innerHTML = item;
-                    li.style.borderBottom = "none"; // Remove borda do título
+                    li.style.borderBottom = "none"; 
                 } else {
                     li.innerHTML = `<i class="fas fa-check"></i> ${item}`;
                 }
@@ -865,29 +834,38 @@
                 pagDestino.appendChild(pagOrigem.cloneNode(true));
             }
 
-            // 3. Define Título
+            // 3. Popula Entrega (Clona da página principal - NOVO)
+            const entOrigem = document.getElementById('conteudo-entrega-original');
+            const entDestino = document.getElementById('conteudoEntregaModal');
+            if(entOrigem) {
+                entDestino.innerHTML = '';
+                // Copia o conteúdo interno e coloca o título H4 no modal
+                entDestino.innerHTML = `<h4 style="color: var(--cor-whatsapp); margin-top:0;">🚚 Entrega Grátis</h4>` + entOrigem.innerHTML;
+            }
+
+            // 4. Define Título
             const nomes = {'economica': 'Cesta Econômica', 'mini': 'Cesta Mini', 'pequena': 'Cesta Pequena', 'media': 'Cesta Média', 'grande': 'Cesta Grande'};
             document.getElementById('tituloModalInfo').innerText = nomes[cestaTipo] || 'Informações';
 
-            // 4. Reseta para aba produtos
+            // 5. Reseta para aba produtos
             mudarAba('produtos');
 
-            // 5. Abre
+            // 6. Abre
             document.getElementById('modalInformacoes').style.display = 'flex';
         }
 
         function fecharModalInfo() { document.getElementById('modalInformacoes').style.display = 'none'; }
 
         function mudarAba(abaNome) {
-            // Remove active de todos os botões e panes
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             
-            // Ativa o correto
             const btns = document.querySelectorAll('.tab-btn');
+            // Índices: 0=Produtos, 1=Pagamento, 2=Entrega, 3=Sorteio
             if(abaNome === 'produtos') btns[0].classList.add('active');
             if(abaNome === 'pagamento') btns[1].classList.add('active');
             if(abaNome === 'entrega') btns[2].classList.add('active');
+            if(abaNome === 'sorteio') btns[3].classList.add('active');
 
             document.getElementById('aba-' + abaNome).classList.add('active');
         }
@@ -904,16 +882,11 @@
         }
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
         function instalarPWA() {
-            // 1. Detectar iOS
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            
-            // 2. Se for iOS, mostra instruções manuais (já que o prompt não existe)
             if (isIOS) {
                 mostrarMensagemToast("Para instalar no iPhone: Toque no botão 'Compartilhar' abaixo e depois em 'Adicionar à Tela de Início'.", "info");
                 return;
             }
-
-            // 3. Tenta o fluxo padrão (Android/Desktop)
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
@@ -923,7 +896,6 @@
                     }
                 });
             } else { 
-                // 4. Fallback se não houver prompt (já instalado ou não suportado)
                 mostrarMensagemToast("Para instalar, abra o menu do navegador e escolha 'Adicionar à tela inicial' ou 'Instalar aplicativo'.", "info"); 
             }
         }
@@ -967,49 +939,43 @@
 
         function fecharModalVariacao() { document.getElementById('modalVariacao').style.display = 'none'; }
         
-        // --- SORTEIO ---
-        const cadastroEncontradoDiv = document.getElementById('cadastro-encontrado');
-        const cadastroNovoDiv = document.getElementById('cadastro-novo');
-        const buscaTelefoneInput = document.getElementById('busca-telefone');
-        
-        // Substituindo a antiga mostrarMensagemBusca pela nova Toast
+        // --- FUNÇÕES DE SORTEIO E CADASTRO (REFATORADAS PARA SUPORTAR MODAL E MAIN) ---
         function mostrarMensagemToast(msg, type = "info") {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            
-            // Define a classe base e a de tipo
             let typeClass = "toast-info";
             if(type === "success") typeClass = "toast-success";
             if(type === "error") typeClass = "toast-error";
-            
             toast.className = `toast-message ${typeClass}`;
             toast.innerText = msg;
-            
             container.appendChild(toast);
-            
-            // Animação de entrada
             setTimeout(() => { toast.classList.add('show'); }, 10);
-            
-            // Remove após 4 segundos
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => { toast.remove(); }, 300);
             }, 4000);
         }
         
-        // Mantendo a compatibilidade com chamadas antigas, redirecionando para Toast
         function mostrarMensagemBusca(msg, isError = true) {
             mostrarMensagemToast(msg, isError ? "error" : "success");
         }
         
-        function buscarCadastro() {
+        // Parâmetro 'sufixoId' é string vazia '' para main ou '-modal' para o modal
+        function buscarCadastro(sufixoId) {
+            const cadastroEncontradoDiv = document.getElementById('cadastro-encontrado' + sufixoId);
+            const cadastroNovoDiv = document.getElementById('cadastro-novo' + sufixoId);
+            const buscaTelefoneInput = document.getElementById('busca-telefone' + sufixoId);
+            
             cadastroEncontradoDiv.style.display = 'none';
             cadastroNovoDiv.style.display = 'none';
             const inputTel = buscaTelefoneInput.value.replace(/\D/g, ''); 
             
             if (inputTel.length < 6) { mostrarMensagemBusca("Digite seu telefone completo.", true); return; }
 
-            const btn = document.querySelector('#area-busca-telefone .btn');
+            // Encontrar botão dentro do container correto
+            const containerBusca = sufixoId === '' ? document.getElementById('area-busca-telefone') : document.getElementById('area-busca-telefone-modal');
+            const btn = containerBusca.querySelector('.btn');
+            
             const txtOriginal = btn.innerHTML;
             btn.innerHTML = 'Buscando...'; btn.disabled = true;
 
@@ -1019,30 +985,32 @@
                 if(typeof clientes !== 'undefined') cliente = clientes.find(c => c.telefone.replace(/\D/g, '').endsWith(inputTel.slice(-6)));
                 
                 if (cliente) {
-                    document.getElementById('nome-cliente-encontrado').innerText = cliente.nome;
-                    document.getElementById('cidade-cliente-encontrado').innerText = cliente.cidade;
-                    document.getElementById('bairro-cliente-encontrado').innerText = cliente.bairro;
+                    document.getElementById('nome-cliente-encontrado' + sufixoId).innerText = cliente.nome;
+                    document.getElementById('cidade-cliente-encontrado' + sufixoId).innerText = cliente.cidade;
+                    document.getElementById('bairro-cliente-encontrado' + sufixoId).innerText = cliente.bairro;
+                    // Salvar dados no input para uso posterior
                     buscaTelefoneInput.setAttribute('data-nome', cliente.nome);
                     buscaTelefoneInput.setAttribute('data-cidade', cliente.cidade);
                     buscaTelefoneInput.setAttribute('data-bairro', cliente.bairro);
                     cadastroEncontradoDiv.style.display = 'block';
                 } else {
-                    document.getElementById('novo-telefone').value = buscaTelefoneInput.value; 
+                    document.getElementById('novo-telefone' + sufixoId).value = buscaTelefoneInput.value; 
                     cadastroNovoDiv.style.display = 'block';
                 }
             }, 600); 
         }
 
-        function enviarNovoCadastro() {
-            const nome = document.getElementById('novo-nome').value.trim();
-            const tel = document.getElementById('novo-telefone').value.trim(); 
-            const cid = document.getElementById('novo-cidade').value;
-            const bai = document.getElementById('novo-bairro').value.trim();
+        function enviarNovoCadastro(sufixoId) {
+            const nome = document.getElementById('novo-nome' + sufixoId).value.trim();
+            const tel = document.getElementById('novo-telefone' + sufixoId).value.trim(); 
+            const cid = document.getElementById('novo-cidade' + sufixoId).value;
+            const bai = document.getElementById('novo-bairro' + sufixoId).value.trim();
             if (!nome || !tel) return;
             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(`CADASTRO SORTEIO:\nNome: ${nome}\nTel: ${tel}\nCidade: ${cid}\nBairro: ${bai}`)}`, '_blank');
         }
 
-        function confirmarJaCadastrado() {
+        function confirmarJaCadastrado(sufixoId) {
+            const buscaTelefoneInput = document.getElementById('busca-telefone' + sufixoId);
             const tel = buscaTelefoneInput.value;
             const nome = buscaTelefoneInput.getAttribute('data-nome') || "Cliente";
             const cid = buscaTelefoneInput.getAttribute('data-cidade') || "";
@@ -1051,7 +1019,6 @@
         }
 
         window.onload = function() {
-            iniciarPopupReceptivo(); 
             iniciarLoopLogoAnimada(); 
         };
     </script>
