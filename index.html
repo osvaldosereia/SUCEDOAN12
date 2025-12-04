@@ -30,7 +30,7 @@
     
     <!-- PWA & Manifest -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#D32F2F">
+    <meta name="theme-color" content="#0F2546"> <!-- Atualizado para o Azul da Logo -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -42,7 +42,12 @@
         * { box-sizing: border-box; }
 
         :root {
-            --cor-primaria: #D32F2F; 
+            /* --- PALETA DE CORES DA LOGO --- */
+            --cor-primaria: #0F2546; /* Azul Marinho Profundo (Base da Logo) */
+            --cor-destaque-vermelho: #D92328; /* Vermelho do Coração da Logo */
+            --cor-destaque-dourado: #FFC107; /* Amarelo/Dourado do Texto da Logo */
+            
+            /* Cores Funcionais */
             --cor-whatsapp: #25D366;
             --cor-telegram: #0088cc;
             --cor-facebook: #1877F2; 
@@ -55,7 +60,7 @@
             --cor-header-fundo: #f5f5f5;
             --altura-header: 90px;
             --largura-logo: 115px; 
-            --altura-bottom-nav: 60px; /* Altura da nova barra inferior */
+            --altura-bottom-nav: 60px; 
         }
 
         html { 
@@ -71,7 +76,7 @@
             margin: 0; 
             padding: 0;
             padding-top: calc(var(--altura-header) + 5px); 
-            padding-bottom: calc(var(--altura-bottom-nav) + 20px); /* Espaço para a barra inferior não cobrir conteúdo */
+            padding-bottom: calc(var(--altura-bottom-nav) + 20px); 
             min-height: 10vh;
             position: relative; 
             width: 100%;
@@ -88,7 +93,7 @@
         /* --- TOAST NOTIFICATION --- */
         #toast-container {
             position: fixed;
-            bottom: 80px; /* Subi um pouco por causa da barra inferior */
+            bottom: 80px; 
             left: 50%;
             transform: translateX(-50%);
             z-index: 6000;
@@ -112,7 +117,7 @@
         }
         .toast-message.show { opacity: 1; transform: translateY(0); }
         .toast-success { background-color: var(--cor-whatsapp); }
-        .toast-error { background-color: var(--cor-primaria); }
+        .toast-error { background-color: var(--cor-destaque-vermelho); }
         .toast-info { background-color: #333; }
 
         /* --- CABEÇALHO --- */
@@ -178,9 +183,9 @@
             flex-direction: column; 
             align-items: center;    
             justify-content: center;
-            background-color: #FFFde7; 
+            background-color: #FFFde7; /* Mantive o fundo claro amarelado, combina com o dourado */
             color: #333;
-            border: 2px solid #FFD600; 
+            border: 2px solid var(--cor-destaque-dourado); /* Borda Dourada da Logo */
             border-radius: 8px;
             padding: 8px 12px; 
             cursor: pointer;
@@ -198,13 +203,13 @@
         }
 
         @keyframes animacao-pulsar {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 214, 0, 0.7); }
-            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(255, 214, 0, 0); } 
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 214, 0, 0); }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); } 
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
         }
 
         .linha-destaque-vermelho {
-            color: #D50000; 
+            color: var(--cor-destaque-vermelho); /* Vermelho da Logo */
             font-weight: 900;
             font-size: 13px; 
             text-transform: uppercase;
@@ -243,10 +248,10 @@
         h2 { color: var(--cor-primaria); margin-top: 0; font-size: 1.2rem; }
         
         .card-cesta { padding: 0; overflow: hidden; border: 1px solid #eee; display: flex; flex-direction: column; }
+        /* Header da Cesta agora usa o Azul da Marca */
         .cesta-header { background-color: var(--cor-primaria); padding: 10px; text-align: center; color: white; }
         .cesta-header h3 { margin: 0; color: white; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* CORREÇÃO: Menos respiro (padding reduzido) */
         .cesta-body { padding: 10px; display: flex; flex-direction: column; flex-grow: 1; }
 
         .foto-cesta-unica { 
@@ -255,24 +260,25 @@
             object-fit: cover; 
             display: block;
             border-radius: 8px;
-            margin-bottom: 5px; /* Super compacto */
+            margin-bottom: 5px;
             background: #eee;
         }
 
         .lista-precos-cesta {
             background-color: #f9f9f9; border-radius: 8px; 
             padding: 8px 10px; 
-            margin: 5px 0 10px 0; /* Compacto */
+            margin: 5px 0 10px 0; 
             border: 1px solid #eee; margin-top: auto;
         }
         .item-preco { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 15px; color: #444; }
         .item-preco:last-child { margin-bottom: 0; }
+        /* Preço em destaque usa o Azul para ser sério ou Vermelho para urgência? Vamos de Azul para consistência */
         .item-preco strong { color: var(--cor-primaria); font-size: 18px; }
 
-        /* --- NOVO LAYOUT DE BOTÕES: HIERARQUIA INVERTIDA --- */
+        /* --- BOTÕES --- */
         .botoes-wrapper { 
             display: grid; 
-            grid-template-columns: 3fr 1fr; /* 75% Info, 25% Share */
+            grid-template-columns: 3fr 1fr; 
             grid-template-rows: auto auto;
             grid-template-areas: 
                 "hero hero"
@@ -288,7 +294,6 @@
             word-break: break-word; 
         }
         
-        /* Botão Hero: Pedir no WhatsApp */
         .btn-encomendar { 
             grid-area: hero;
             background-color: var(--cor-whatsapp); 
@@ -299,18 +304,16 @@
             margin-bottom: 4px;
         }
         
-        /* Botão Secundário: Ver Itens */
         .btn-info { 
             grid-area: info;
-            background-color: #4fc3f7; /* Azul claro para diferenciar */
-            color: #01579b; /* Texto escuro para contraste */
+            background-color: #4fc3f7; 
+            color: #01579b; 
             font-size: 14px;
         } 
         
-        /* Botão Secundário: Compartilhar */
         .btn-share {
             grid-area: share;
-            background-color: #0277bd; /* Azul escuro */
+            background-color: #0277bd; 
             padding: 0; 
             font-size: 18px;
         }
@@ -383,7 +386,7 @@
             100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
         }
         
-        /* --- MODAIS (GERAL) --- */
+        /* --- MODAIS --- */
         .modal-variacao, #modalContatos, #modalInformacoes {
             display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; backdrop-filter: blur(2px);
@@ -405,7 +408,6 @@
         .modal-info-header h3 { margin: 0; color: var(--cor-primaria); font-size: 20px; margin-left: 10px; font-weight: 800;}
         .btn-fechar-modal-info { background: none; border: none; font-size: 28px; color: #999; cursor: pointer; padding: 0 10px; }
 
-        /* CONTEÚDO MODAL LIMPO (SEM ABAS) */
         .modal-body-scroll {
             padding: 20px; overflow-y: auto;
             flex: 1; 
@@ -419,7 +421,6 @@
 
         @keyframes zoomIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
-        /* MODAL VARIAÇÃO / CONTATOS */
         .modal-variacao-content {
             background-color: white; width: 100%; max-width: 350px; border-radius: 16px; padding: 20px;
             position: relative; text-align: center;
@@ -461,7 +462,7 @@
         }
         .btn-confirmar-pedido:disabled { background-color: #ccc; cursor: not-allowed; }
 
-        /* ESTILOS NOVOS PARA O MODAL DE CONTATO OTIMIZADO */
+        /* MODAL CONTATO OTIMIZADO */
         .btn-whatsapp-hero {
             background-color: var(--cor-whatsapp);
             color: white;
@@ -552,7 +553,7 @@
         .bg-instagram { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); }
         .bg-facebook { background-color: var(--cor-facebook); }
 
-        /* --- NOVA BARRA DE NAVEGAÇÃO INFERIOR --- */
+        /* --- BARRA INFERIOR --- */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -578,7 +579,7 @@
             color: #666;
             font-size: 10px;
             text-decoration: none;
-            width: 20%; /* Ajustado para 5 itens */
+            width: 20%; 
             height: 100%;
             transition: color 0.2s;
         }
@@ -593,7 +594,7 @@
             background-color: #f9f9f9;
         }
 
-        /* --- RESPONSIVIDADE AVANÇADA PARA DESKTOP --- */
+        /* --- RESPONSIVIDADE --- */
         @media (min-width: 481px) {
             .main-content-wrapper, header, .header-background-bar { max-width: 900px; }
             .bottom-nav { max-width: 900px; }
@@ -604,7 +605,6 @@
             .cesta-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; } 
         }
 
-        /* --- NOVO: LAYOUT DE 3 COLUNAS PARA DESKTOP GRANDE --- */
         @media (min-width: 1024px) {
             .main-content-wrapper, header, .header-background-bar { max-width: 900px; }
             .bottom-nav { max-width: 900px; } 
@@ -624,7 +624,7 @@
     <div class="header-background-bar"></div>
 
     <!-- LOGO FIXA -->
-    <img src="img/logo1.png" id="logo-principal" onerror="this.src='https://placehold.co/120x120?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
+    <img src="img/logo2.png" id="logo-principal" onerror="this.src='https://placehold.co/120x120?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
 
     <header>
         <div class="header-top">
