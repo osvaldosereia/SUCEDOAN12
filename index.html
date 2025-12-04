@@ -77,10 +77,11 @@
         }
 
         .main-content-wrapper {
-            max-width: 480px;
+            max-width: 480px; /* Padrão Mobile */
             margin: 0 auto; 
             background-color: var(--cor-fundo); 
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            transition: max-width 0.3s ease; /* Transição suave ao redimensionar */
         }
 
         /* --- TOAST NOTIFICATION --- */
@@ -126,18 +127,22 @@
             left: 50%; 
             transform: translateX(-50%); 
             width: 100%;
-            max-width: 480px;
+            max-width: 480px; /* Padrão Mobile */
             z-index: 1000;
+            transition: max-width 0.3s ease;
         }
 
         .header-background-bar {
             position: absolute;
             top: 0;
-            left: 0;
+            left: 50%; /* Centralizado */
+            transform: translateX(-50%);
             width: 100%;
+            max-width: 480px; /* Padrão Mobile */
             height: var(--altura-header);
             background-color: var(--cor-header-fundo);
             z-index: 999;
+            transition: max-width 0.3s ease;
         }
         
         .header-top {
@@ -168,52 +173,59 @@
         }
 
         .btn-contato-principal {
+            /* Mantendo a base anterior mas ajustando para a nova estratégia */
             display: flex;
-            flex-direction: row;
-            align-items: center;
+            flex-direction: column; /* Texto um embaixo do outro */
+            align-items: center;    /* Centralizado */
             justify-content: center;
-            background-color: #FFEB3B;
+            background-color: #FFFde7; /* Amarelo bem clarinho no fundo */
             color: #333;
-            border: 1px solid #fdd835;
+            border: 2px solid #FFD600; /* Borda amarela forte */
             border-radius: 8px;
-            padding: 10px 18px; 
+            padding: 8px 12px; 
             cursor: pointer;
             text-decoration: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-left: auto;
-            text-align: left;
-            max-width: calc(100% - var(--largura-logo) - 20px); 
+            text-align: center;
+            max-width: calc(100% - var(--largura-logo) - 10px);
+            
+            /* A MÁGICA DA RETENÇÃO: */
+            animation: animacao-pulsar 2s infinite;
         }
-        .btn-contato-principal:active { transform: scale(0.96); }
-        
-        .btn-contato-icon {
-            font-size: 24px;
-            margin-right: 12px;
-            color: var(--cor-primaria);
-            flex-shrink: 0; 
+
+        .btn-contato-principal:active { 
+            transform: scale(0.95); 
+            animation: none; /* Para de pulsar ao clicar */
         }
-        .btn-contato-text-main {
-            display: block;
-            font-weight: 800;
-            font-size: 14px;
-            line-height: 1.2;
-            color: var(--cor-primaria); /* Cor Vermelha Adicionada */
+
+        @keyframes animacao-pulsar {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 214, 0, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(255, 214, 0, 0); } /* Efeito de onda */
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 214, 0, 0); }
         }
-        .btn-contato-text-sub {
-            display: block;
-            font-size: 12px;
-            font-weight: 500;
-            color: #444;
+
+        .linha-destaque-vermelho {
+            color: #D50000; /* Vermelho forte */
+            font-weight: 900;
+            font-size: 13px; /* Tamanho bom para mobile */
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            line-height: 1.1;
+        }
+
+        .linha-localizacao {
+            color: #555;
+            font-weight: 600;
+            font-size: 11px;
         }
 
         @media (max-width: 380px) {
             :root { --largura-logo: 90px; --altura-header: 85px; }
             .logo-pequ { left: 10px; }
-            .btn-contato-principal { padding: 8px 12px; }
-            /* Icon style removed from media query since icon is gone */
-            .btn-contato-text-main { font-size: 12px; }
-            .btn-contato-text-sub { font-size: 10px; }
+            .linha-destaque-vermelho { font-size: 12px; }
+            .linha-localizacao { font-size: 10px; }
         }
 
         /* --- CARDS --- */
@@ -225,14 +237,17 @@
             margin-bottom: 15px; 
             border: 1px solid #f0f0f0; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.02); 
+            height: 100%; /* Para que os cards tenham a mesma altura no grid */
+            display: flex;
+            flex-direction: column;
         }
         
         h2 { color: var(--cor-primaria); margin-top: 0; font-size: 1.2rem; }
         
-        .card-cesta { padding: 0; overflow: hidden; border: 1px solid #eee; }
+        .card-cesta { padding: 0; overflow: hidden; border: 1px solid #eee; display: flex; flex-direction: column; }
         .cesta-header { background-color: var(--cor-primaria); padding: 15px; text-align: center; color: white; }
         .cesta-header h3 { margin: 0; color: white; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        .cesta-body { padding: 15px; }
+        .cesta-body { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; }
 
         .foto-cesta-unica { 
             width: 100%; 
@@ -245,7 +260,7 @@
         }
 
         .lista-precos-cesta {
-            background-color: #f9f9f9; border-radius: 8px; padding: 12px; margin: 15px 0; border: 1px solid #eee;
+            background-color: #f9f9f9; border-radius: 8px; padding: 12px; margin: 15px 0; border: 1px solid #eee; margin-top: auto;
         }
         .item-preco { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 15px; color: #444; }
         .item-preco:last-child { margin-bottom: 0; }
@@ -493,13 +508,51 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-weight: 700; margin-top: 5px; justify-content: center; text-transform: uppercase; font-size: 14px;
         }
 
+        /* --- RESPONSIVIDADE AVANÇADA PARA DESKTOP --- */
         @media (min-width: 481px) {
             .main-content-wrapper, header, .header-background-bar { max-width: 900px; }
-            .header-background-bar { left: 50%; transform: translateX(-50%); }
             .secao-conteudo { padding: 20px 30px; }
         }
         @media (min-width: 940px) { .logo-pequ { left: 50%; margin-left: calc(-450px + 20px); } }
-        @media (min-width: 768px) { .cesta-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; } }
+        @media (min-width: 768px) { 
+            .cesta-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; } 
+        }
+
+        /* --- NOVO: LAYOUT DE 3 COLUNAS PARA DESKTOP GRANDE --- */
+        @media (min-width: 1024px) {
+            /* 1. Aumenta a largura máxima do site */
+            .main-content-wrapper, header, .header-background-bar { 
+                max-width: 1200px; 
+            }
+            .logo-pequ { margin-left: calc(-600px + 20px); } /* Ajuste logo */
+            
+            /* 2. Cestas em 3 colunas */
+            .cesta-cards-grid { 
+                display: grid; 
+                grid-template-columns: repeat(3, 1fr); 
+                gap: 20px; 
+            }
+
+            /* 3. Seções Extras (Sorteio, Pagamento, Entrega) em 3 colunas */
+            .secoes-extras-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+                padding: 0 15px; /* Alinhamento visual */
+            }
+            
+            /* Ajuste para que o grid funcione bem */
+            .secoes-extras-grid .secao-conteudo {
+                padding: 0; /* Remove padding duplo pois o grid já tem gap */
+                margin-bottom: 0;
+            }
+            .secoes-extras-grid .card {
+                height: 100%; /* Garante altura igual */
+            }
+            .secoes-extras-grid .section-icon-header {
+                margin-top: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -512,11 +565,13 @@
 
     <header>
         <div class="header-top">
+            <!-- Botão com estratégia de Pulso/Heartbeat -->
             <button class="btn-contato-principal" onclick="abrirModalContatos()">
-                <!-- Ícone removido conforme pedido -->
-                <div>
-                    <span class="btn-contato-text-main">📞 Clique aqui e salve nosso contato</span>
-                    <span class="btn-contato-text-sub">Somos de Cuiabá e VG.</span>
+                <div class="linha-destaque-vermelho">
+                    <i class="fas fa-save"></i> CLIQUE P/ SALVAR O CONTATO
+                </div>
+                <div class="linha-localizacao">
+                    Somos de Cuiabá e Várzea Grande
                 </div>
             </button>
         </div>
