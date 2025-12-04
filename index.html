@@ -59,6 +59,39 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
+        /* --- TOAST NOTIFICATION (NOVO - PARA MENSAGENS VISÍVEIS) --- */
+        #toast-container {
+            position: fixed;
+            bottom: 20px; /* Aparece embaixo para não cobrir o header */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 6000;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            pointer-events: none; /* Permite clicar através se não tiver msg */
+        }
+        .toast-message {
+            background-color: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: auto;
+        }
+        .toast-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast-success { background-color: var(--cor-whatsapp); }
+        .toast-error { background-color: var(--cor-primaria); }
+        .toast-info { background-color: #333; }
+
         /* --- CABEÇALHO --- */
         header {
             background-color: white;
@@ -377,6 +410,8 @@
 </head>
 <body>
     
+    <div id="toast-container"></div> <!-- Container para os Toasts -->
+
     <div class="header-background-bar"></div>
 
     <img src="img/logo2.gif" id="logo-principal" onerror="this.src='https://placehold.co/120x120?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
@@ -663,7 +698,8 @@
                 </button>
             </div>
             <div id="etapa2" class="etapa-modal">
-                <h3 class="titulo-receptivo" style="color: var(--cor-whatsapp);">🎉 Brinde do Mês!</h3>
+                <i class="fas fa-gift" style="font-size: 50px; color: var(--cor-whatsapp); margin-bottom: 15px;"></i>
+                <h3 class="titulo-receptivo" style="color: var(--cor-whatsapp);">🎉 Brinde!</h3>
                 <p class="subtitulo-receptivo">Na sua primeira compra, vamos te dar um Amaciante Ypê de 2 Litros de Brinde!</p>
                 <button class="btn-receptivo btn-eu-quero" onclick="confirmarBrindeEFecar()">
                     <i class="fas fa-arrow-down" style="margin-right: 8px;"></i> EU QUERO!
@@ -861,7 +897,7 @@
             
             // 2. Se for iOS, mostra instruções manuais (já que o prompt não existe)
             if (isIOS) {
-                mostrarMensagemBusca("Para instalar no iPhone: Toque no botão 'Compartilhar' abaixo e depois em 'Adicionar à Tela de Início'.", false);
+                mostrarMensagemToast("Para instalar no iPhone: Toque no botão 'Compartilhar' abaixo e depois em 'Adicionar à Tela de Início'.", "info");
                 return;
             }
 
@@ -871,12 +907,12 @@
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') { 
                         deferredPrompt = null; 
-                        mostrarMensagemBusca("Instalado com sucesso!", false); 
+                        mostrarMensagemToast("Instalado com sucesso!", "success"); 
                     }
                 });
             } else { 
                 // 4. Fallback se não houver prompt (já instalado ou não suportado)
-                mostrarMensagemBusca("Para instalar, abra o menu do navegador e escolha 'Adicionar à tela inicial' ou 'Instalar aplicativo'.", true); 
+                mostrarMensagemToast("Para instalar, abra o menu do navegador e escolha 'Adicionar à tela inicial' ou 'Instalar aplicativo'.", "info"); 
             }
         }
 
@@ -924,17 +960,34 @@
         const cadastroNovoDiv = document.getElementById('cadastro-novo');
         const buscaTelefoneInput = document.getElementById('busca-telefone');
         
+        // Substituindo a antiga mostrarMensagemBusca pela nova Toast
+        function mostrarMensagemToast(msg, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            // Define a classe base e a de tipo
+            let typeClass = "toast-info";
+            if(type === "success") typeClass = "toast-success";
+            if(type === "error") typeClass = "toast-error";
+            
+            toast.className = `toast-message ${typeClass}`;
+            toast.innerText = msg;
+            
+            container.appendChild(toast);
+            
+            // Animação de entrada
+            setTimeout(() => { toast.classList.add('show'); }, 10);
+            
+            // Remove após 4 segundos
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => { toast.remove(); }, 300);
+            }, 4000);
+        }
+        
+        // Mantendo a compatibilidade com chamadas antigas, redirecionando para Toast
         function mostrarMensagemBusca(msg, isError = true) {
-            const originalContent = cadastroEncontradoDiv.innerHTML;
-            cadastroEncontradoDiv.style.pointerEvents = 'none'; 
-            cadastroEncontradoDiv.innerHTML = `<h2>${isError ? '⚠️ Atenção!' : '🎉 Sucesso!'}</h2><p>${msg}</p>`;
-            cadastroEncontradoDiv.style.backgroundColor = isError ? '#ffebee' : '#e8f5e9';
-            cadastroEncontradoDiv.style.display = 'block';
-            setTimeout(() => { 
-                cadastroEncontradoDiv.style.display = 'none'; 
-                cadastroEncontradoDiv.innerHTML = originalContent; 
-                cadastroEncontradoDiv.style.pointerEvents = 'auto'; 
-            }, 3000);
+            mostrarMensagemToast(msg, isError ? "error" : "success");
         }
         
         function buscarCadastro() {
@@ -942,7 +995,7 @@
             cadastroNovoDiv.style.display = 'none';
             const inputTel = buscaTelefoneInput.value.replace(/\D/g, ''); 
             
-            if (inputTel.length < 6) { mostrarMensagemBusca("Digite seu telefone completo."); return; }
+            if (inputTel.length < 6) { mostrarMensagemBusca("Digite seu telefone completo.", true); return; }
 
             const btn = document.querySelector('#area-busca-telefone .btn');
             const txtOriginal = btn.innerHTML;
