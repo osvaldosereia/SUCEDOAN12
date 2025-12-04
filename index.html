@@ -344,7 +344,7 @@
         
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            to { transform: translateY(0); }
         }
 
         /* --- ESTILOS DO MODAL VARIAÇÃO (BACKDROP) --- */
@@ -661,8 +661,9 @@
     <!-- BARRA DE FUNDO CINZA CLARA -->
     <div class="header-background-bar"></div>
 
-    <!-- LOGO FIXA: Usa a imagem GIF do utilizador (logo1.png) -->
-    <img src="img/logo1.gif" 
+    <!-- LOGO FIXA: ALTERADO para img/logo1.png (PNG Estático) e adicionado o ID para controle JS -->
+    <img src="img/logo1.png" 
+         id="logo-principal" 
          onerror="this.src='https://placehold.co/120x120/808080/ffffff?text=D.A'" 
          alt="Logo Dona Antônia" 
          class="logo-pequena">
@@ -1035,9 +1036,9 @@
     <div id="modalReceptivo" onclick="if(event.target === this) fecharModalReceptivo()" class="modal-variacao">
         <div class="modal-receptivo-content">
             
-            <!-- LOGO SOBREPOSTA (AJUSTADA COM ONERROR) -->
+            <!-- LOGO SOBREPOSTA (ALTERADO para img/logo1.png) -->
             <div class="modal-logo-receptivo">
-                 <img src="img/logo1.gif" 
+                 <img src="img/logo1.png" 
                      alt="Logo Dona Antônia" 
                      onerror="this.src='https://placehold.co/80x80/808080/ffffff?text=D.A'"
                      >
@@ -1086,6 +1087,18 @@
     <script src="data/clientes.js" onerror="console.warn('Arquivo data/clientes.js não encontrado. Usando dados de simulação.')"></script>
 
     <script>
+        // Caminhos das imagens
+        const LOGO_ESTATICA_SRC = 'img/logo1.png';
+        const LOGO_ANIMADA_SRC = 'img/logo1.gif'; // Usaremos este caminho para forçar o loop
+
+        // ID do elemento da logo principal
+        const LOGO_ELEMENT_ID = 'logo-principal';
+
+        // Intervalo de tempo para o loop (20 segundos)
+        const INTERVALO_LOOP_MS = 20000; 
+        // Duração da reprodução do GIF animado (2 segundos)
+        const DURACAO_ANIMACAO_MS = 2000; 
+        
         // Instruções Detalhadas e Documentação
         
         // Número de telefone para contato via WhatsApp (998150975)
@@ -1106,6 +1119,37 @@
         // Timer global para o novo gatilho (não usado, mas mantido)
         let popupTimer;
         
+        /**
+         * NOVO: Controla a reprodução do GIF animado a cada 20 segundos.
+         * A logo principal deve ter o ID 'logo-principal'.
+         */
+        function iniciarLoopLogoAnimada() {
+            const logo = document.getElementById(LOGO_ELEMENT_ID);
+            if (!logo) return;
+
+            // Função que alterna entre PNG e GIF
+            const alternarLogo = () => {
+                // 1. Inicia a animação (muda para o GIF forçando o recarregamento)
+                // Adicionar um timestamp força o navegador a recarregar a imagem e iniciar a animação.
+                logo.src = LOGO_ANIMADA_SRC + `?t=${new Date().getTime()}`;
+                
+                // 2. Agenda a volta para a imagem estática (após a duração da animação)
+                setTimeout(() => {
+                    logo.src = LOGO_ESTATICA_SRC; // Volta para o PNG estático
+                }, DURACAO_ANIMACAO_MS);
+            };
+
+            // Define o loop inicial para garantir que começa no PNG
+            logo.src = LOGO_ESTATICA_SRC; 
+
+            // 3. Inicia o loop para repetir a cada 20 segundos
+            // O intervalo começa após 20 segundos, permitindo a primeira execução do GIF.
+            setInterval(alternarLogo, INTERVALO_LOOP_MS);
+            
+            // Opcional: Executa a primeira animação imediatamente
+            alternarLogo();
+        }
+
         /**
          * NOVO: Função para o botão LIGAR na header
          * O link tel:... no HTML garante a chamada direta
@@ -1224,7 +1268,7 @@
          * Envia o pedido direto para o WhatsApp (para produtos sem variação).
          * @param {string} produto - Nome da cesta.
          * @param {string} preco - Preço formatado da cesta.
-         * @param {boolean} [incluirBrinde=true] - NOVO: Se deve incluir a mensagem do brinde.
+         * @param {boolean} [incluirBrinde=true] - Se deve incluir a mensagem do brinde.
          */
         function encomendarDireto(produto, preco, incluirBrinde = true) { 
             let brindeTexto = incluirBrinde ? ". Com Amaciante Ypê de 2L de brinde." : ".";
@@ -1578,7 +1622,8 @@
             ajustarPosicaoLogo();
             // Dispara o popup receptivo
             iniciarPopupReceptivo(); 
-            // PWA logic is now handled by the 'load' listener inside the script tag
+            // Inicia o loop animado da logo após o carregamento inicial da página
+            iniciarLoopLogoAnimada(); 
         };
         
         // Adiciona um listener de resize para garantir a correção no desktop
