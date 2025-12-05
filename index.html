@@ -150,7 +150,7 @@
             --cor-header-fundo: #f5f5f5;
             --altura-header: 80px; 
             --largura-logo: 100px; 
-            --altura-bottom-nav: 55px; 
+            --altura-bottom-nav: 72px; /* AUMENTADO PARA DAR DESTAQUE */
         }
 
         html { 
@@ -364,7 +364,7 @@
         /* Ajuste de Respiro para Mobile - Evita que a logo tampe o banner */
         @media (max-width: 480px) {
             .trust-bar {
-                margin-top: 20px; /* Garante que o banner inicie abaixo da área da logo */
+                margin-top: 40px; /* Garante que o banner inicie abaixo da área da logo */
             }
         }
         
@@ -835,9 +835,9 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.15); /* Sombra mais forte */
             z-index: 5000;
-            border-top: 1px solid #eee;
+            border-top: none; 
         }
 
         .nav-item {
@@ -845,8 +845,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #666;
-            font-size: 0.65rem; 
+            color: #444; /* Mais escuro */
+            font-size: 0.75rem; /* Maior */
+            font-weight: 700; /* Negrito */
             text-decoration: none;
             width: 20%; 
             height: 100%;
@@ -854,8 +855,8 @@
         }
 
         .nav-item i {
-            font-size: 1.1rem;
-            margin-bottom: 3px;
+            font-size: 1.6rem; /* Ícone bem maior */
+            margin-bottom: 5px;
         }
 
         .nav-item:active, .nav-item:hover {
