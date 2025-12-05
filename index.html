@@ -156,7 +156,7 @@
         html { 
             background-color: #e0e0e0; 
             scroll-behavior: smooth;
-            scroll-padding-top: calc(var(--altura-header) + 5px); 
+            scroll-padding-top: calc(var(--altura-header) + 20px); /* Ajustado para compensar a aba de navegação */
             font-size: 14.5px; 
         }
 
@@ -181,6 +181,49 @@
             background-color: var(--cor-fundo); 
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             transition: max-width 0.3s ease; 
+        }
+
+        /* --- MENU DE ANCORAS (NOVO) --- */
+        .menu-ancoras-cestas {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 5px 15px 5px;
+            margin-bottom: 10px;
+            white-space: nowrap;
+            /* Esconde a barra de rolagem mas mantém funcional */
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+            position: sticky;
+            top: var(--altura-header);
+            background: var(--cor-fundo);
+            z-index: 90; /* Abaixo do header, acima do conteudo */
+            border-bottom: 1px solid #eee;
+        }
+        .menu-ancoras-cestas::-webkit-scrollbar { 
+            display: none; 
+        }
+
+        .chip-ancora {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--cor-primaria);
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .chip-ancora:hover, .chip-ancora:active {
+            background: var(--cor-primaria);
+            color: white;
+            border-color: var(--cor-primaria);
+            transform: translateY(-2px);
         }
 
         /* --- TOAST NOTIFICATION --- */
@@ -843,6 +886,15 @@
                     <i class="fas fa-truck"></i>
                     <span>Entrega<br>Grátis</span>
                 </div>
+            </div>
+
+            <!-- === MENU DE ÂNCORAS RÁPIDO === -->
+            <div class="menu-ancoras-cestas">
+                <a href="#cestaeconomica" class="chip-ancora">Econômica</a>
+                <a href="#cestamini" class="chip-ancora">Mini</a>
+                <a href="#cestapequena" class="chip-ancora">Pequena</a>
+                <a href="#cestamedia" class="chip-ancora">Média</a>
+                <a href="#cestagrande" class="chip-ancora">Grande</a>
             </div>
 
             <div class="cesta-cards-grid">
