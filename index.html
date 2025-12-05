@@ -156,7 +156,7 @@
         html { 
             background-color: #e0e0e0; 
             scroll-behavior: smooth;
-            scroll-padding-top: calc(var(--altura-header) + 40px); /* Ajustado para compensar a aba de navegação dupla */
+            scroll-padding-top: calc(var(--altura-header) + 40px); 
             font-size: 14.5px; 
         }
 
@@ -183,44 +183,58 @@
             transition: max-width 0.3s ease; 
         }
 
-        /* === MENU DE ANCORAS (ATUALIZADO) === */
+        /* === MENU DE ANCORAS (AJUSTE FINAL) === */
         .menu-ancoras-cestas {
             display: flex;
-            gap: 6px; /* Mais próximos no mobile */
+            gap: 6px; 
             padding: 8px 5px;
             margin-bottom: 5px;
-            
-            /* Configuração Mobile: Wrap para ajustar à tela sem scroll */
             flex-wrap: wrap; 
-            justify-content: center; /* Centraliza em mobile e desktop */
+            justify-content: center; 
             
             position: sticky;
-            top: var(--altura-header);
+            top: var(--altura-header); /* Cola logo abaixo do header */
             background: var(--cor-fundo);
             z-index: 90; 
             border-bottom: 1px solid #eee;
             box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            
+            /* Animação suave para quando a posição mudar */
+            transition: top 0.3s ease, padding 0.3s ease;
+        }
+
+        /* FIX MOBILE: Ajuste para NÃO cobrir botões, mas encostar na top bar */
+        @media (max-width: 768px) {
+            .menu-ancoras-cestas {
+                /* A barra fica colada no header */
+                top: 75px; 
+                
+                /* Adicionamos padding na esquerda para "pular" a logo redonda */
+                /* Assim a barra cinza toca o topo, mas o conteúdo (botões) não fica embaixo da logo */
+                padding-left: 90px; 
+                padding-right: 10px;
+                justify-content: flex-start; /* Alinha botões à esquerda após o padding */
+                
+                /* Garante que a barra cinza tenha altura suficiente */
+                min-height: 50px;
+                align-items: center;
+            }
         }
 
         .chip-ancora {
             background: #fff;
             border: 1px solid #ddd;
-            
-            /* Mobile Style: Compacto e menos arredondado */
             padding: 6px 12px;
             border-radius: 8px; 
             font-size: 0.8rem;
-            
             text-decoration: none;
             color: var(--cor-primaria);
             font-weight: 600;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             transition: all 0.2s ease;
-            
-            /* Flex para ajustar tamanhos uniformes se necessário */
             flex: 1 1 auto;
             text-align: center;
-            max-width: 120px; /* Impede que fiquem gigantes ao quebrar linha */
+            max-width: 120px; 
         }
 
         .chip-ancora:hover {
@@ -228,7 +242,6 @@
             border-color: var(--cor-primaria);
         }
 
-        /* Estado ATIVO (Clicado ou Scroll) */
         .chip-ancora.active {
             background-color: var(--cor-primaria);
             color: white;
@@ -324,7 +337,6 @@
             transition: all 0.3s ease;
         }
 
-        /* --- BOTÃO TOP BAR ELEGANTE --- */
         .btn-contato-principal {
             display: flex;
             align-items: center;    
@@ -366,7 +378,7 @@
             .linha-destaque-top { font-size: 0.75rem; }
         }
 
-        /* --- BARRA DE CONFIANÇA (TRUST BAR) --- */
+        /* --- BARRA DE CONFIANÇA (ANIMADA) --- */
         .trust-bar {
             display: flex;
             justify-content: space-between;
@@ -376,6 +388,9 @@
             border-radius: 8px;
             padding: 10px 5px;
             margin-bottom: 15px;
+            position: relative;
+            z-index: 101; /* Fica acima do overlay escuro */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Destaque extra */
         }
         
         .trust-item {
@@ -390,6 +405,20 @@
             font-weight: 600;
             line-height: 1.2;
             padding: 0 2px;
+            
+            /* INÍCIO DA ANIMAÇÃO: Invisível e deslocado para baixo */
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUpFade 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        
+        /* Delays para efeito cascata */
+        .trust-item:nth-child(1) { animation-delay: 0.3s; }
+        .trust-item:nth-child(3) { animation-delay: 0.5s; } /* Pula o divider */
+        .trust-item:nth-child(5) { animation-delay: 0.7s; }
+
+        @keyframes slideUpFade {
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .trust-item i {
@@ -403,6 +432,34 @@
             height: 25px;
             background-color: #BBDEFB;
         }
+
+        /* --- OVERLAY FOSCO (INTRO) --- */
+        #intro-overlay {
+            position: fixed;
+            top: var(--altura-header); /* Começa abaixo do header */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px; /* Segue o layout mobile */
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.65); /* Escuro fosco */
+            z-index: 95; /* Acima do conteúdo, abaixo da trust-bar (z-101) */
+            pointer-events: none; /* Permite scroll mesmo se visível (opcional, mas melhor travar visualmente) */
+            
+            /* Animação de saída */
+            animation: fadeOutOverlay 0.8s ease forwards;
+            animation-delay: 2.2s; /* Fica escuro por 2.2s enquanto a animação acontece */
+        }
+
+        @keyframes fadeOutOverlay {
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        /* Responsive Overlay */
+        @media (min-width: 481px) {
+            #intro-overlay { max-width: 1100px; }
+        }
+
 
         /* --- CARDS --- */
         .secao-conteudo { padding: 15px; }
@@ -876,6 +933,9 @@
     <div id="toast-container"></div> 
 
     <div class="header-background-bar"></div>
+
+    <!-- OVERLAY FOSCO (INTRO) -->
+    <div id="intro-overlay"></div>
 
     <!-- LOGO FIXA -->
     <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.png" id="logo-principal" onerror="this.src='https://placehold.co/120x120?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
