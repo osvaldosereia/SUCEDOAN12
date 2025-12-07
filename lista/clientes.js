@@ -6,6 +6,12 @@ const clientes = [
     "bairro": "Areao"
   },
   {
+  "nome": "LUCIMARA FERREIRA DA ROSA",
+  "telefone": "65999927053",
+  "cidade": "Cuiabá",
+  "bairro": "Cidade alta"
+},
+  {
   "nome": "TALITA GOMES MORAES",
   "telefone": "65981133911",
   "cidade": "Várzea Grande",
