@@ -6,6 +6,12 @@ const clientes = [
     "bairro": "Areao"
   },
   {
+  "nome": "TALITA GOMES MORAES",
+  "telefone": "65981133911",
+  "cidade": "Várzea Grande",
+  "bairro": "Cristo rei"
+},
+  {
   "nome": "DANIELA RODRIGUES REI",
   "telefone": "65993584085",
   "cidade": "Cuiabá",
