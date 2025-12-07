@@ -6,6 +6,12 @@ const clientesLimpos = [
     "bairro": "Areao"
   },
   {
+  "nome": "HUDEMBERG DE SOUZA LIMA",
+  "telefone": "65998139915",
+  "cidade": "Cuiabá",
+  "bairro": "jardim vitória"
+},
+  {
     "nome": "Jéssica da Silva",
     "telefone": "65992656308",
     "cidade": "Várzea Grande",
