@@ -6,6 +6,24 @@ const clientes = [
     "bairro": "Areao"
   },
   {
+  "nome": "ALCIONE AUGUSTA GOMES FERREIRA CUIABÁ",
+  "telefone": "65992586859",
+  "cidade": "Cuiabá",
+  "bairro": "Doutor fabio"
+},
+  {
+  "nome": "BARTOLO MARTÍNEZ RICARDO",
+  "telefone": "65981003175",
+  "cidade": "Cuiabá",
+  "bairro": "Planalto"
+},
+  {
+  "nome": "PATRICIA PEDROSA FIGUEIREDO",
+  "telefone": "65981421299",
+  "cidade": "Várzea Grande",
+  "bairro": "Jardim Esmeralda"
+},
+  {
     "nome": "HUDEMBERG DE SOUZA LIMA",
     "telefone": "65998139915",
     "cidade": "Cuiabá",
