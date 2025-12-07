@@ -1306,7 +1306,7 @@
             { nome: "Maria Silva", telefone: "65988885678", cidade: "Várzea Grande", bairro: "Cristo Rei" }
         ];
     </script>
-    <script src="data/clientes.js" onerror="console.warn('Usando dados mockados para preview.')"></script>
+    <script src="lista/clientes.js" onerror="console.warn('Usando dados mockados para preview.')"></script>
 
     <script>
         const TELEFONE = "5565998150975"; 
@@ -1508,7 +1508,7 @@
         async function carregarDadosClientes() {
             // REMOVIDO: A verificação de clientes.length > 0 foi retirada para forçar o carregamento do arquivo
             try {
-                const response = await fetch('data/clientes.js');
+                const response = await fetch('lista/clientes.js');
                 if (response.ok) {
                     const text = await response.text();
                     try {
