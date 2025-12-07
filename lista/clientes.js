@@ -6,6 +6,24 @@ const clientes = [
     "bairro": "Areao"
   },
   {
+    "nome": "Marianny Ferreira",
+    "telefone": "65684012599",
+    "cidade": "Cuiabá",
+    "bairro": "Três barras"
+  },
+  {
+    "nome": "EDIMARA DA SILVA BISPO",
+    "telefone": "65992056010",
+    "cidade": "Cuiabá",
+    "bairro": "Novo Terceiro N° 315"
+  },
+  {
+    "nome": "Marilsa Santana do Amaral",
+    "telefone": "65993375982",
+    "cidade": "Cuiabá",
+    "bairro": "Nova Esperança 3"
+  },
+  {
     "nome": "Michelly thainara da Silva Almeida",
     "telefone": "65993384574",
     "cidade": "Cuiabá",
