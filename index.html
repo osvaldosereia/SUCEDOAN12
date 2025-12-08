@@ -1,32 +1,34 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9XS8B8Z8BV"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-9XS8B8Z8BV');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- === VERIFICAÇÃO GOOGLE === -->
     <meta name="google-site-verification" content="3ZRbONhUpXBxKWeUipMsxm6RTeJQI2__ffqSzozOCNY" />
 
-    <!-- === SEO LOCAL & GERAL (OTIMIZADO) === -->
     <title>Cesta Básica em Cuiabá e VG | Entrega Grátis | Dona Antônia</title>
     
-    <!-- Descrição focada em intenção de compra local e clique -->
     <meta name="description" content="Procurando Cesta Básica em Cuiabá e Várzea Grande? Entrega Grátis e Rápida. Arroz Tio Alvino, Óleo, Feijão e Brindes. Peça no Zap e pague na entrega. Confira!">
     
-    <!-- Keywords expandidas para bairros e variações locais -->
     <meta name="keywords" content="cesta básica cuiabá, cesta básica várzea grande, comprar alimentos vg, sacolão cuiabá, arroz tio alvino, supermercado delivery, disk entrega alimentos, cpa, coxipó, cristo rei, dona antônia cestas">
     
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://donaantonia.com.br/">
     <meta name="author" content="Dona Antônia Cestas e Alimentos">
     
-    <!-- Geo Tags (Crucial para o Google Maps "Pin") -->
     <meta name="geo.region" content="BR-MT">
     <meta name="geo.placename" content="Cuiabá">
     <meta name="geo.position" content="-15.6014;-56.0979">
     <meta name="ICBM" content="-15.6014, -56.0979">
     
-    <!-- Open Graph (Para ficar bonito no WhatsApp e Facebook) -->
     <meta property="og:locale" content="pt_BR">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Cestas Básicas Dona Antônia | Cuiabá e VG">
@@ -35,7 +37,6 @@
     <meta property="og:url" content="https://donaantonia.com.br/">
     <meta property="og:site_name" content="Dona Antônia Alimentos">
     
-    <!-- SCHEMA.ORG JSON-LD (A "Língua" do Google) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -118,13 +119,11 @@
     }
     </script>
     
-    <!-- PWA & Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0F2546"> 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -911,10 +910,8 @@
 
     <div class="header-background-bar"></div>
 
-    <!-- OVERLAY FOSCO (INTRO) -->
     <div id="intro-overlay"></div>
 
-    <!-- LOGO FIXA -->
     <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.png" id="logo-principal" onerror="this.src='https://placehold.co/120x120?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
 
     <header>
@@ -930,7 +927,6 @@
     <div class="main-content-wrapper">
         <div id="pag-cestas" class="secao-conteudo">
             
-            <!-- BARRA DE CONFIANÇA (TRUST BAR) -->
             <div class="trust-bar">
                 <div class="trust-item">
                     <i class="fas fa-map-marker-alt"></i>
@@ -948,7 +944,6 @@
                 </div>
             </div>
 
-            <!-- === MENU DE ÂNCORAS RÁPIDO (COM SCROLL SPY) === -->
             <div class="menu-ancoras-cestas">
                 <a href="#cestaeconomica" class="chip-ancora" onclick="ativarChip(this)">Econômica</a>
                 <a href="#cestamini" class="chip-ancora" onclick="ativarChip(this)">Mini</a>
@@ -958,11 +953,9 @@
             </div>
 
             <div class="cesta-cards-grid">
-                <!-- CESTA ECONÔMICA -->
                 <div class="card card-cesta" id="cestaeconomica">
                     <div class="cesta-header"><h3>Cesta Econômica</h3></div>
                     <div class="cesta-body">
-                        <!-- ALT ATUALIZADO PARA SEO -->
                         <img src="img/cesta-basica-cuiaba-varzea-grande-economica.jpg" class="foto-cesta-unica" alt="Cesta Básica Econômica Entrega Rápida Cuiabá - Dona Antônia" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA'">
                         <div class="lista-precos-cesta">
                             <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 85,00</strong></div>
@@ -971,7 +964,6 @@
                             <button class="btn btn-encomendar" onclick="encomendarDireto('Cesta Econômica', '85,00', false)">
                                 <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> ENCOMENDAR AGORA
                             </button>
-                            <!-- BOTÕES CORRIGIDOS: 50% CADA -->
                             <button class="btn btn-info" onclick="abrirModalInfo('economica')">
                                 <i class="fas fa-list" style="margin-right: 5px;"></i> VER PRODUTOS
                             </button>
@@ -982,11 +974,9 @@
                     </div>
                 </div>
 
-                <!-- CESTA MINI -->
                 <div class="card card-cesta" id="cestamini">
                     <div class="cesta-header"><h3>Cesta Mini</h3></div>
                     <div class="cesta-body">
-                        <!-- ALT ATUALIZADO PARA SEO -->
                         <img src="img/cesta-basica-cuiaba-varzea-grande-mini.jpg" class="foto-cesta-unica" alt="Cesta Básica Mini Completa em Várzea Grande - Dona Antônia" onerror="this.src='https://placehold.co/400x400?text=MINI'">
                         <div class="lista-precos-cesta">
                             <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 165,00</strong></div>
@@ -1006,11 +996,9 @@
                     </div>
                 </div>
 
-                <!-- CESTA PEQUENA -->
                 <div class="card card-cesta" id="cestapequena">
                     <div class="cesta-header"><h3>Cesta Pequena</h3></div>
                     <div class="cesta-body">
-                        <!-- ALT ATUALIZADO PARA SEO -->
                         <img src="img/cesta-basica-cuiaba-varzea-grande-pequena.jpg" class="foto-cesta-unica" alt="Cesta Básica Pequena com Entrega Grátis no CPA e Coxipó" onerror="this.src='https://placehold.co/400x400?text=PEQUENA'">
                         <div class="lista-precos-cesta">
                             <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 215,00</strong></div>
@@ -1030,11 +1018,9 @@
                     </div>
                 </div>
 
-                <!-- CESTA MÉDIA -->
                 <div class="card card-cesta" id="cestamedia">
                     <div class="cesta-header"><h3>Cesta Média</h3></div>
                     <div class="cesta-body">
-                        <!-- ALT ATUALIZADO PARA SEO -->
                         <img src="img/cesta-basica-cuiaba-varzea-grande-media.jpg" class="foto-cesta-unica" alt="Cesta Básica Média em Oferta Cuiabá e VG - Dona Antônia" onerror="this.src='https://placehold.co/400x400?text=MÉDIA'">
                         <div class="lista-precos-cesta">
                             <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 320,00</strong></div>
@@ -1054,11 +1040,9 @@
                     </div>
                 </div>
 
-                <!-- CESTA GRANDE -->
                 <div class="card card-cesta" id="cestagrande">
                     <div class="cesta-header"><h3>Cesta Grande</h3></div>
                     <div class="cesta-body">
-                        <!-- ALT ATUALIZADO PARA SEO -->
                         <img src="img/cesta-basica-cuiaba-varzea-grande-grande.jpg" class="foto-cesta-unica" alt="Cesta Básica Grande Família Completa Cuiabá - Dona Antônia" onerror="this.src='https://placehold.co/400x400?text=GRANDE'">
                         <div class="lista-precos-cesta">
                             <div class="item-preco"><span>Com Arroz Tio Alvino:</span><strong>R$ 380,00</strong></div>
@@ -1080,10 +1064,8 @@
             </div>
         </div>
         
-        <!-- SEÇÕES EXTRAS (COM IDS PARA NAVEGAÇÃO) -->
         <div class="secoes-extras-grid">
             
-            <!-- 1. SORTEIO -->
             <div id="pag-sorteio" class="secao-conteudo">
                 <div class="section-icon-header">
                     <img src="img/cesta.png" alt="Sorteio Cesta Básica" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
@@ -1145,7 +1127,6 @@
                 </div>
             </div>
 
-            <!-- 2. PAGAMENTO -->
             <div id="pag-pagamento" class="secao-conteudo">
                 <div class="section-icon-header">
                     <img src="img/pagamento.png" alt="Formas de Pagamento" onerror="this.onerror=null;this.src='https://placehold.co/60x60/2196F3/ffffff?text=P'">
@@ -1164,7 +1145,6 @@
                 </div>
             </div>
 
-            <!-- 3. ENTREGA -->
             <div id="pag-entrega" class="secao-conteudo">
                 <div class="section-icon-header">
                     <img src="img/entrega.png" alt="Entrega de Cesta Básica" onerror="this.onerror=null;this.src='https://placehold.co/60x60/FF9800/ffffff?text=E'">
@@ -1191,7 +1171,6 @@
         </footer>
     </div>
 
-    <!-- NOVA BARRA DE NAVEGAÇÃO INFERIOR -->
     <nav class="bottom-nav">
         <a href="#pag-cestas" class="nav-item">
             <i class="fas fa-home"></i>
@@ -1209,14 +1188,12 @@
             <i class="fas fa-truck" style="color: var(--cor-entrega);"></i>
             <span>Entrega</span>
         </a>
-        <!-- Novo Botão de Contato -->
         <a href="#" onclick="event.preventDefault(); abrirModalContatos();" class="nav-item">
             <i class="fas fa-comments" style="color: var(--cor-primaria);"></i>
             <span>Contato</span>
         </a>
     </nav>
 
-    <!-- MODAL DE ESCOLHA -->
     <div id="modalVariacao" class="modal-variacao" onclick="if(event.target === this) fecharModalVariacao()">
         <div class="modal-variacao-content">
             <button class="btn-fechar-modal-var" onclick="fecharModalVariacao()">&times;</button>
@@ -1236,39 +1213,31 @@
         </div>
     </div>
 
-    <!-- MODAL: INFORMAÇÕES (SIMPLIFICADO) -->
     <div id="modalInformacoes" class="modal-variacao" onclick="if(event.target === this) fecharModalInfo()">
         <div class="modal-info-content">
-            <!-- Header Modal -->
             <div class="modal-info-header">
                 <h3 id="tituloModalInfo">Itens da Cesta</h3>
                 <button class="btn-fechar-modal-info" onclick="fecharModalInfo()">&times;</button>
             </div>
             
-            <!-- Conteúdo Único (Sem Abas) -->
             <div class="modal-body-scroll">
-                <!-- Div do Brinde injetada via JS aqui -->
                 <div id="brindeArea"></div>
                 <ul class="lista-produtos-modal" id="listaProdutosContent">
-                    <!-- Preenchido via JS -->
-                </ul>
+                    </ul>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE CONTATOS (OTIMIZADO) -->
     <div id="modalContatos" class="modal-variacao" onclick="if(event.target === this) fecharModalContatos()">
         <div class="modal-variacao-content" style="padding-top: 40px;">
             <button class="btn-fechar-modal-var" onclick="fecharModalContatos()">&times;</button>
             
-            <!-- HERO: WHATSAPP -->
             <a href="https://wa.me/5565998150975" class="btn-whatsapp-hero" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-whatsapp"></i> 
                 FALAR NO WHATSAPP
                 <span>Resposta Rápida</span>
             </a>
 
-            <!-- SECUNDÁRIO: TELEFONES -->
             <div class="modal-section-title">Ligar para Nós</div>
             <div class="grid-botoes-modal">
                 <a href="tel:+5565998150975" class="btn-secundario-modal">
@@ -1279,7 +1248,6 @@
                 </a>
             </div>
 
-            <!-- TERCIÁRIO: REDES SOCIAIS (ICONES) -->
             <div class="modal-section-title">Redes Sociais</div>
             <div class="social-buttons-row">
                 <a href="https://instagram.com/super.cestas.dona.antonia/" class="btn-social-icon bg-instagram" target="_blank">
@@ -1299,7 +1267,6 @@
         </div>
     </div>
     
-    <!-- MOCK DE DADOS PARA PREVIEW -->
     <script>
         var clientes = [
             { nome: "Cliente Teste", telefone: "65999991234", cidade: "Cuiabá", bairro: "Centro" },
