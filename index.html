@@ -1047,7 +1047,8 @@
             /* --- NOVO LAYOUT COM SIDEBAR --- */
             .main-content-wrapper {
                 display: grid;
-                grid-template-columns: 280px 1fr; /* Coluna Sidebar fixa | Coluna Conteúdo flexível */
+                /* MODIFICADO: Sidebar mais larga (350px) */
+                grid-template-columns: 350px 1fr; /* Coluna Sidebar fixa | Coluna Conteúdo flexível */
                 gap: 20px;
                 padding: 20px 30px;
                 background-color: transparent;
@@ -1075,6 +1076,9 @@
                 display: grid; 
                 grid-template-columns: repeat(2, 1fr) !important; /* Força 2 colunas */
                 gap: 15px; 
+                /* MODIFICADO: Max-width para limitar o tamanho dos cards */
+                max-width: 800px;
+                margin: 0 auto; /* Centralizar se sobrar espaço */
             }
 
             /* Esconder elementos que não fazem sentido no layout novo */
