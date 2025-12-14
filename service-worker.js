@@ -1,43 +1,1165 @@
-const CACHE_NAME = 'dona-antonia-cache-v2';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  './img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif'
-  // Adicione aqui outros arquivos que deseja que funcionem offline
-];
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <!-- OTIMIZAÇÃO: Preconnect para adiantar a conexão com servidores externos -->
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    <!-- PWA: Link para o Manifesto (ESSENCIAL PARA INSTALAÇÃO) -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- PWA: Meta tags para iOS (Apple) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dona Antônia">
+    <link rel="apple-touch-icon" href="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif">
 
-// 1. Instalação do SW e cache dos arquivos
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Caching files');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-});
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-979692776"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'AW-979692776');
+    </script>
+    
+    <!-- Event snippet for Website lead conversion page -->
+    <script>
+    function gtag_report_conversion(url) {
+      var callback = function () {
+        if (typeof(url) != 'undefined') {
+          window.location = url;
+        }
+      };
+      gtag('event', 'conversion', {
+          'send_to': 'AW-979692776/OzcWCNb7tIACEOjZk9MD',
+          'event_callback': callback
+      });
+      return false;
+    }
+    </script>
 
-// 2. Ativação e limpeza de caches antigos
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('Service Worker: Removing old cache', key);
-            return caches.delete(key);
+    <!-- OTIMIZAÇÃO JS -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9XS8B8Z8BV"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-9XS8B8Z8BV');
+    </script>
+
+    <!-- OTIMIZAÇÃO SEO LOCAL: Dados Estruturados com foco em Local e Sacolão -->
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "GroceryStore",
+        "name": "Dona Antônia Cestas Básicas e Sacolão",
+        "image": "https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif",
+        "description": "Distribuidora de Cestas Básicas e Sacolão com entrega grátis em Cuiabá e Várzea Grande. O melhor preço em atacado e varejo de alimentos.",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Cuiabá",
+          "addressRegion": "MT",
+          "addressCountry": "BR"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": -15.6014,
+          "longitude": -56.0979
+        },
+        "url": "https://donaantonia.com.br/",
+        "telephone": "+5565996813588",
+        "priceRange": "$$",
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+            "opens": "07:00",
+            "closes": "18:00"
           }
-        })
-      );
-    })
-  );
-});
+        ],
+        "areaServed": ["Cuiabá", "Várzea Grande", "Coxipó", "CPA", "Cristo Rei"]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Cesta Básica Econômica",
+        "image": "https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif",
+        "description": "Cesta básica econômica com itens essenciais: Arroz 5kg, Feijão, Óleo e mais. Entrega Grátis Cuiabá e VG.",
+        "sku": "CESTA-ECO",
+        "offers": {
+          "@type": "Offer",
+          "price": "85.00",
+          "priceCurrency": "BRL",
+          "availability": "https://schema.org/InStock",
+          "url": "https://donaantonia.com.br/#cestaeconomica",
+          "priceValidUntil": "2025-12-31"
+        }
+      }
+    ]
+    </script>
 
-// 3. Interceptação de requisições (Offline First)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
-});
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    
+    <title>Cesta Básica e Sacolão em Cuiabá e VG | Dona Antônia | Entrega Grátis</title>
+    <meta name="description" content="Sacolão e Cesta Básica em Cuiabá e Várzea Grande é na Dona Antônia. Arroz, óleo, feijão e limpeza com entrega grátis. Atacado e varejo de alimentos. Peça no Zap!">
+    <meta name="keywords" content="cesta básica cuiabá, sacolão cuiabá, cesta básica várzea grande, sacolão delivery vg, comprar alimentos atacado, arroz tio alvino, supermercado delivery, disk entrega alimentos, cpa, coxipó, cristo rei, dona antônia cestas">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Dona Antônia Cestas e Alimentos">
+    <meta name="theme-color" content="#0F2546"> 
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    
+    <style>
+        /* === ESTILOS GLOBAIS E TIPOGRAFIA PROFISSIONAL === */
+        * { box-sizing: border-box; }
+
+        :root {
+            --cor-primaria: #0F2546; 
+            --cor-destaque-vermelho: #D32F2F; 
+            --cor-destaque-dourado: #FFC107; 
+            --cor-whatsapp: #128C7E; 
+            --cor-telegram: #0088cc;
+            --cor-facebook: #1877F2; 
+            --cor-info: #1565C0; 
+            --cor-texto: #333; 
+            --cor-fundo: #fafafa;
+            --cor-pagamento: #0277BD; 
+            --cor-sorteio: #2E7D32; 
+            --cor-entrega: #EF6C00; 
+            --cor-header-fundo: #f5f5f5;
+            --altura-header: 80px; 
+            --largura-logo: 100px; 
+            
+            /* VARIAVEIS DE ESPAÇAMENTO PARA BOTÕES FLUTUANTES */
+            --altura-floating-bar: 70px;
+        }
+
+        html { 
+            background-color: #e0e0e0; 
+            scroll-behavior: smooth;
+            scroll-padding-top: calc(var(--altura-header) + 40px); 
+            font-size: 15px; /* Fonte base um pouco mais legível */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; /* Fonte moderna padrão do sistema */
+            background-color: #e0e0e0; 
+            color: var(--cor-texto);
+            margin: 0; 
+            padding: 0;
+            padding-top: calc(var(--altura-header) + 10px); 
+            padding-bottom: 90px; /* Espaço seguro para botões flutuantes */
+            min-height: 10vh;
+            position: relative; 
+            width: 100%;
+            line-height: 1.5; 
+        }
+
+        /* === MELHORIAS VISUAIS GERAIS === */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--cor-primaria);
+            margin-top: 0;
+            line-height: 1.2;
+        }
+
+        .main-content-wrapper {
+            max-width: 480px; 
+            margin: 0 auto; 
+            background-color: var(--cor-fundo); 
+            box-shadow: 0 0 20px rgba(0,0,0,0.05); /* Sombra mais suave */
+            transition: max-width 0.3s ease; 
+        }
+        
+        .desktop-only { display: none !important; }
+
+        /* === TITULO H1 SEO (POLIDO) === */
+        .seo-main-title {
+            text-align: center;
+            padding: 20px 15px 10px 15px;
+            background: #fff;
+        }
+        .seo-main-title h1 {
+            font-size: 1.25rem; /* Tamanho equilibrado */
+            font-weight: 700; /* Negrito padrão, não extra-pesado */
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+        .seo-main-title p {
+            font-size: 0.95rem;
+            color: #666;
+            margin: 6px 0 0 0;
+            font-weight: 400;
+        }
+
+        /* === MENU DE ANCORAS === */
+        .menu-ancoras-cestas { display: none !important; }
+
+        .chip-ancora {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 6px 14px;
+            border-radius: 20px; 
+            font-size: 0.85rem;
+            text-decoration: none;
+            color: var(--cor-primaria);
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .chip-ancora.active {
+            background-color: var(--cor-primaria);
+            color: white;
+            border-color: var(--cor-primaria);
+        }
+
+        /* --- CABEÇALHO --- */
+        header {
+            background-color: white;
+            height: var(--altura-header);
+            padding: 0;
+            display: flex;
+            flex-direction: row; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            position: fixed;
+            top: 0;
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 100%;
+            max-width: 480px; 
+            z-index: 1000;
+            transition: max-width 0.3s ease;
+        }
+
+        .header-background-bar {
+            position: absolute;
+            top: 0;
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px; 
+            height: var(--altura-header);
+            background-color: var(--cor-header-fundo);
+            z-index: 999;
+            transition: max-width 0.3s ease;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: flex-end; 
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 5px 15px;
+            position: relative;
+            z-index: 1002;
+        }
+
+        .logo-pequ { 
+            height: var(--largura-logo);
+            width: var(--largura-logo); 
+            object-fit: cover; 
+            border-radius: 50%; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            position: fixed;
+            top: 5px; 
+            left: 15px; 
+            z-index: 2000; 
+            background-color: white;
+            padding: 0; 
+        }
+
+        .btn-contato-principal {
+            display: flex;
+            align-items: center;    
+            justify-content: center;
+            background-color: var(--cor-primaria);
+            color: var(--cor-destaque-dourado); 
+            border: 1px solid var(--cor-destaque-dourado); 
+            border-radius: 50px; 
+            padding: 8px 20px; 
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px rgba(15, 37, 70, 0.2);
+            margin-left: auto;
+            text-align: center;
+            max-width: calc(100% - var(--largura-logo) - 10px);
+        }
+
+        .linha-destaque-top {
+            font-weight: 700;
+            font-size: 0.85rem; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 380px) {
+            :root { --largura-logo: 85px; --altura-header: 75px; }
+            .logo-pequ { left: 10px; }
+            .linha-destaque-top { font-size: 0.75rem; }
+        }
+
+        /* --- CARDS E CONTEÚDO --- */
+        .secao-conteudo { padding: 15px; }
+        
+        .card { 
+            background: white; 
+            border-radius: 12px; /* Cantos um pouco mais arredondados */
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border: 1px solid #f0f0f0; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
+            height: 100%; 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Ajuste fino nos H2 dos cards para tirar o "Pesadíssimo" */
+        .card h2 { 
+            font-size: 1.2rem; 
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 10px;
+        }
+
+        /* === CARD CESTA HORIZONTAL (VISUAL LIMPO) === */
+        .card-cesta-horizontal {
+            display: flex;
+            flex-direction: row;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #f0f0f0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            overflow: hidden;
+            min-height: 130px;
+            transition: box-shadow 0.2s;
+        }
+
+        /* Lado da Imagem */
+        .cesta-img-container {
+            width: 110px;
+            min-width: 110px;
+            position: relative;
+            background-color: #fff;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .cesta-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .zoom-overlay-icon {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            pointer-events: none; 
+        }
+
+        /* Lado das Informações */
+        .cesta-info-container {
+            flex-grow: 1;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .cesta-title-row h2 {
+            font-size: 1.15rem; /* Ajustado para não ser gigante */
+            margin: 0;
+            color: var(--cor-primaria);
+            font-weight: 700; 
+            line-height: 1.2;
+            text-transform: none; /* Removido uppercase forçado */
+        }
+
+        .cesta-price-tag {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+        
+        .cesta-price-highlight {
+            color: var(--cor-destaque-vermelho);
+            font-weight: 800; /* Aqui sim, extra bold para o preço */
+            font-size: 1.1rem;
+        }
+
+        /* Botões */
+        .cesta-actions-row {
+            display: flex;
+            flex-wrap: wrap; 
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-cta-small {
+            background-color: var(--cor-whatsapp);
+            color: white !important;
+            border: none;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%; 
+            flex-basis: 100%; 
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .btn-ver-produtos {
+            background-color: #E3F2FD;
+            color: #1565C0 !important;
+            border: 1px solid #BBDEFB;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            flex-grow: 1; 
+            cursor: pointer;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-share-small {
+            background-color: #E8F5E9;
+            color: #2E7D32 !important;
+            border: 1px solid #C8E6C9;
+            border-radius: 6px;
+            padding: 8px;
+            width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0; 
+        }
+        
+        /* === BOTÕES FLUTUANTES INFERIORES (MODERNO) === */
+        .floating-buttons-container {
+            position: fixed;
+            bottom: 10px; /* Bem próximo da borda */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5000;
+            display: flex;
+            gap: 12px;
+            width: 92%;
+            max-width: 460px;
+        }
+
+        .btn-float-action {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px; /* Levemente quadrado, estilo app moderno */
+            border: none;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white !important;
+            transition: transform 0.2s;
+        }
+        .btn-float-action:active { transform: scale(0.96); }
+
+        .btn-float-sorteio { 
+            background: linear-gradient(135deg, #2E7D32, #1B5E20); /* Verde Profundo */
+        } 
+        .btn-float-app { 
+            background: linear-gradient(135deg, #1565C0, #0D47A1); /* Azul Profundo */
+        }
+
+        /* === MODAIS & LIGHTBOX === */
+        .modal-variacao, #modalContatos, #modalInformacoes, #modalSorteio {
+            display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.65); justify-content: center; align-items: center; backdrop-filter: blur(3px);
+            padding: 20px;
+        }
+        #modalContatos { z-index: 4500; }
+        #modalInformacoes { z-index: 4600; }
+        #modalSorteio { z-index: 4700; }
+
+        .modal-info-content, .modal-variacao-content {
+            background-color: white; 
+            width: 100%; 
+            max-width: 400px; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            /* ALTURA CONTROLADA: Evita encostar nos botões flutuantes */
+            max-height: calc(100vh - 140px); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
+            animation: zoomIn 0.2s;
+            position: relative;
+        }
+        
+        .modal-info-header {
+            background-color: var(--cor-fundo); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        .modal-info-header h3 { margin: 0; color: var(--cor-primaria); font-size: 1.1rem; font-weight: 700;}
+        
+        .btn-fechar-modal-info, .btn-fechar-modal-var { 
+            background: none; border: none; font-size: 1.5rem; color: #888; cursor: pointer; padding: 0 10px; line-height: 1;
+        }
+        .btn-fechar-modal-var { position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(255,255,255,0.8); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;}
+
+        .modal-body-scroll {
+            padding: 20px; overflow-y: auto;
+            flex: 1; 
+        }
+        
+        /* BRINDE */
+        .brinde-container {
+            display: flex;
+            align-items: center;
+            background: #E3F2FD;
+            border: 1px solid #BBDEFB;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+        .brinde-label {
+            font-size: 0.7rem;
+            color: #1565C0;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .brinde-desc { font-weight: 600; color: #333; }
+
+        /* LISTA PRODUTOS */
+        .lista-produtos-modal li { padding: 10px 0; border-bottom: 1px dashed #eee; font-size: 0.95rem; color: #444; display: flex; align-items: flex-start;}
+        .section-title { font-weight: 700; color: var(--cor-primaria); margin-top: 15px; margin-bottom: 5px; font-size: 0.9rem; display: block; background: #f5f5f5; padding: 6px 10px; border-radius: 6px; text-transform: uppercase;}
+
+        /* ZOOM */
+        #modalZoomImagem {
+            display: none; position: fixed; z-index: 9000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.92); justify-content: center; align-items: center; flex-direction: column;
+        }
+        .zoom-img-container { max-width: 100%; max-height: 100%; position: relative; display: flex; justify-content: center; align-items: center;}
+        .img-zoom-full { max-width: 95%; max-height: 80vh; object-fit: contain; }
+        .btn-fechar-zoom { position: absolute; top: -50px; right: 20px; color: white; font-size: 36px; background: none; border: none; cursor: pointer; }
+        .zoom-caption { color: white; margin-top: 15px; font-size: 1.1rem; font-weight: 500; }
+
+        /* PAGINA PAGAMENTO & ENTREGA - VISUAL LIMPO */
+        .section-icon-header { text-align: center; margin-bottom: 15px; }
+        .section-icon-header img {
+            width: 50px; height: 50px; object-fit: contain; background-color: var(--cor-primaria);
+            border-radius: 50%; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .lista-pagamento li { padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; display: flex; align-items: center; color: #555; }
+
+        /* OPÇÕES MODAL VARIACAO */
+        .titulo-modal-var { margin-top: 15px; font-size: 1.3rem; font-weight: 700; color: var(--cor-primaria); }
+        .subtitulo-modal-var { color: #666; margin-bottom: 20px; font-size: 0.95rem; }
+        
+        .opcao-select {
+            display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 2px solid #eee; 
+            border-radius: 10px; margin-bottom: 10px; cursor: pointer; text-align: left; transition: all 0.2s;
+        }
+        .opcao-select.selected { border-color: var(--cor-primaria); background-color: #E3F2FD; }
+        .opcao-nome { font-weight: 600; color: #333; font-size: 1rem; }
+        .opcao-preco { color: var(--cor-destaque-vermelho); font-weight: 700; font-size: 1rem; }
+        .btn-confirmar-pedido { 
+            width: 100%; padding: 14px; background-color: var(--cor-whatsapp); color: white !important; border: none; 
+            border-radius: 10px; font-weight: 700; font-size: 1rem; margin-top: 15px; cursor: pointer; 
+            text-transform: uppercase;
+        }
+        .btn-confirmar-pedido:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* RESPONSIVIDADE DESKTOP */
+        @media (min-width: 481px) {
+            .main-content-wrapper, header, .header-background-bar { max-width: 1100px; } 
+            .secao-conteudo { padding: 25px 40px; }
+            html { font-size: 16px; } 
+            
+            .menu-ancoras-cestas {
+                gap: 15px; padding: 15px; flex-wrap: nowrap; display: flex !important;
+                overflow-x: auto; -webkit-overflow-scrolling: touch;
+            }
+            
+            .cesta-img-container { width: 160px; min-width: 160px; }
+            
+            .floating-buttons-container {
+                max-width: 1100px; width: auto; right: 40px; left: auto; transform: none; gap: 20px;
+            }
+            .btn-float-action { width: auto; min-width: 160px; }
+        }
+        
+        @media (min-width: 1024px) {
+            .main-content-wrapper, header, .header-background-bar { max-width: 1200px; } 
+            body { padding-bottom: 20px; } 
+            .logo-pequ { display: none !important; }
+            .header-top { max-width: 1200px; margin: 0 auto; justify-content: space-between; padding: 5px 30px; }
+            .desktop-only { display: flex !important; }
+            .desktop-logo-wrapper { position: relative; width: 60px; }
+            .big-logo-desktop { width: 120px; height: 120px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 4px solid white; position: absolute; top: -25px; left: 0; z-index: 3000; transition: transform 0.3s ease; }
+            .big-logo-desktop:hover { transform: scale(1.05); }
+            .desktop-nav { display: flex; gap: 30px; align-items: center; height: 100%; margin-left: 120px; }
+            .desktop-nav a { text-decoration: none; color: var(--cor-primaria); font-weight: 700; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 5px 0; position: relative; transition: color 0.3s; }
+            .desktop-nav a:hover { color: var(--cor-destaque-vermelho); }
+            .btn-contato-principal { margin-left: 0; width: auto; }
+            .main-content-wrapper { display: grid; grid-template-columns: 320px 1fr; gap: 30px; padding: 30px 40px; background-color: transparent; box-shadow: none; align-items: start; }
+            .seo-text-block { grid-column: 1 / -1; margin-top: 40px; background: white; border-radius: 12px; padding: 30px; }
+            #pag-cestas { grid-column: 2; grid-row: 1; background: transparent; }
+            .cesta-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr) !important; gap: 20px; max-width: 900px; margin: 0 auto; }
+            .menu-ancoras-cestas { display: none !important; }
+            .secoes-extras-grid { grid-column: 1; grid-row: 1; display: flex !important; flex-direction: column; gap: 20px; padding: 0; }
+            .secoes-extras-grid .secao-conteudo { padding: 0; margin-bottom: 0; }
+            .sidebar-menu-list { list-style: none; padding: 0; margin: 0; }
+            .sidebar-menu-list li { border-bottom: 1px solid #eee; }
+            .sidebar-menu-list a { display: block; padding: 12px 10px; text-decoration: none; color: #555; font-weight: 600; font-size: 0.95rem; transition: all 0.2s; }
+            .sidebar-menu-list a:hover { color: var(--cor-primaria); padding-left: 15px; background-color: #f9f9f9; }
+        }
+        
+        /* TOAST */
+        .toast-message { background-color: #333; color: white; padding: 12px 20px; border-radius: 8px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    
+    <div id="toast-container"></div> 
+
+    <div class="header-background-bar"></div>
+
+    <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" width="100" height="100" id="logo-principal" onerror="this.src='https://placehold.co/120x120?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
+
+    <header>
+        <div class="header-top">
+            <div class="desktop-only desktop-logo-wrapper">
+                <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="big-logo-desktop" alt="Logo Dona Antônia Grande">
+            </div>
+
+            <nav class="desktop-nav desktop-only">
+                <a href="#pag-cestas">Início</a>
+                <a href="#" onclick="event.preventDefault(); abrirModalSorteio();">Sorteio</a>
+                <a href="#pag-pagamento">Pagamento</a>
+                <a href="#pag-entrega">Entrega</a>
+            </nav>
+
+            <button class="btn-contato-principal" onclick="abrirModalContatos()" aria-label="Abrir opções de contato">
+                <div class="linha-destaque-top">
+                    <i class="fab fa-whatsapp"></i> <span class="desktop-only" style="display: inline !important;">&nbsp;FALE CONOSCO</span><span style="display: inline;" class="mobile-text">SALVAR CONTATO</span>
+                </div>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-content-wrapper">
+        <div id="pag-cestas">
+            <div class="seo-main-title">
+                <h1>Cestas Básicas em Cuiabá e VG</h1>
+                <p>Qualidade, preço baixo e entrega rápida.</p>
+            </div>
+
+            <div class="secao-conteudo">
+                <div class="menu-ancoras-cestas">
+                    <a href="#cestaeconomica" class="chip-ancora" onclick="ativarChip(this)">Econômica</a>
+                    <a href="#cestamini" class="chip-ancora" onclick="ativarChip(this)">Mini</a>
+                    <a href="#cestapequena" class="chip-ancora" onclick="ativarChip(this)">Pequena</a>
+                    <a href="#cestamedia" class="chip-ancora" onclick="ativarChip(this)">Média</a>
+                    <a href="#cestagrande" class="chip-ancora" onclick="ativarChip(this)">Grande</a>
+                </div>
+
+                <div class="cesta-cards-grid">
+                    <!-- Cards -->
+                    <div class="card-cesta-horizontal" id="cestaeconomica">
+                        <div class="cesta-img-container" onclick="abrirZoom('img/cesta-basica-cuiaba-varzea-grande-economica.avif', 'Cesta Econômica')">
+                            <img src="img/cesta-basica-cuiaba-varzea-grande-economica.avif" alt="Cesta Básica Econômica" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA'">
+                            <div class="zoom-overlay-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>
+                        <div class="cesta-info-container">
+                            <div>
+                                <div class="cesta-title-row"><h2>Cesta Econômica</h2></div>
+                                <div class="cesta-price-tag">A partir de <span class="cesta-price-highlight">R$ 85,00</span></div>
+                            </div>
+                            <div class="cesta-actions-row">
+                                <button class="btn-cta-small" onclick="encomendarDireto('Cesta Econômica', '85,00', false)">
+                                    <i class="fab fa-whatsapp"></i> Encomendar
+                                </button>
+                                <button class="btn-ver-produtos" onclick="abrirModalInfo('economica')">
+                                    <i class="fas fa-list"></i> Ver Itens
+                                </button>
+                                <button class="btn-share-small" onclick="compartilharCesta('Cesta Econômica', '85,00')">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-cesta-horizontal" id="cestamini">
+                        <div class="cesta-img-container" onclick="abrirZoom('img/cesta-basica-cuiaba-varzea-grande-mini.avif', 'Cesta Mini')">
+                            <img src="img/cesta-basica-cuiaba-varzea-grande-mini.avif" loading="lazy" alt="Cesta Básica Mini" onerror="this.src='https://placehold.co/400x400?text=MINI'">
+                            <div class="zoom-overlay-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>
+                        <div class="cesta-info-container">
+                            <div>
+                                <div class="cesta-title-row"><h2>Cesta Mini</h2></div>
+                                <div class="cesta-price-tag">A partir de <span class="cesta-price-highlight">R$ 165,00</span></div>
+                            </div>
+                            <div class="cesta-actions-row">
+                                <button class="btn-cta-small" onclick="abrirModalVariacao('Cesta Mini', '165,00', '170,00')">
+                                    <i class="fab fa-whatsapp"></i> Encomendar
+                                </button>
+                                <button class="btn-ver-produtos" onclick="abrirModalInfo('mini')">
+                                    <i class="fas fa-list"></i> Ver Itens
+                                </button>
+                                <button class="btn-share-small" onclick="compartilharCesta('Cesta Mini', '165,00')">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-cesta-horizontal" id="cestapequena">
+                        <div class="cesta-img-container" onclick="abrirZoom('img/cesta-basica-cuiaba-varzea-grande-pequena.avif', 'Cesta Pequena')">
+                            <img src="img/cesta-basica-cuiaba-varzea-grande-pequena.avif" loading="lazy" alt="Cesta Básica Pequena" onerror="this.src='https://placehold.co/400x400?text=PEQUENA'">
+                            <div class="zoom-overlay-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>
+                        <div class="cesta-info-container">
+                            <div>
+                                <div class="cesta-title-row"><h2>Cesta Pequena</h2></div>
+                                <div class="cesta-price-tag">A partir de <span class="cesta-price-highlight">R$ 215,00</span></div>
+                            </div>
+                            <div class="cesta-actions-row">
+                                <button class="btn-cta-small" onclick="abrirModalVariacao('Cesta Pequena', '215,00', '220,00')">
+                                    <i class="fab fa-whatsapp"></i> Encomendar
+                                </button>
+                                <button class="btn-ver-produtos" onclick="abrirModalInfo('pequena')">
+                                    <i class="fas fa-list"></i> Ver Itens
+                                </button>
+                                <button class="btn-share-small" onclick="compartilharCesta('Cesta Pequena', '215,00')">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-cesta-horizontal" id="cestamedia">
+                        <div class="cesta-img-container" onclick="abrirZoom('img/cesta-basica-cuiaba-varzea-grande-media.avif', 'Cesta Média')">
+                            <img src="img/cesta-basica-cuiaba-varzea-grande-media.avif" loading="lazy" alt="Cesta Básica Média" onerror="this.src='https://placehold.co/400x400?text=MÉDIA'">
+                            <div class="zoom-overlay-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>
+                        <div class="cesta-info-container">
+                            <div>
+                                <div class="cesta-title-row"><h2>Cesta Média</h2></div>
+                                <div class="cesta-price-tag">A partir de <span class="cesta-price-highlight">R$ 320,00</span></div>
+                            </div>
+                            <div class="cesta-actions-row">
+                                <button class="btn-cta-small" onclick="abrirModalVariacao('Cesta Média', '320,00', '325,00')">
+                                    <i class="fab fa-whatsapp"></i> Encomendar
+                                </button>
+                                <button class="btn-ver-produtos" onclick="abrirModalInfo('media')">
+                                    <i class="fas fa-list"></i> Ver Itens
+                                </button>
+                                <button class="btn-share-small" onclick="compartilharCesta('Cesta Média', '320,00')">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-cesta-horizontal" id="cestagrande">
+                        <div class="cesta-img-container" onclick="abrirZoom('img/cesta-basica-cuiaba-varzea-grande-grande.avif', 'Cesta Grande')">
+                            <img src="img/cesta-basica-cuiaba-varzea-grande-grande.avif" loading="lazy" alt="Cesta Básica Grande" onerror="this.src='https://placehold.co/400x400?text=GRANDE'">
+                            <div class="zoom-overlay-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>
+                        <div class="cesta-info-container">
+                            <div>
+                                <div class="cesta-title-row"><h2>Cesta Grande</h2></div>
+                                <div class="cesta-price-tag">A partir de <span class="cesta-price-highlight">R$ 380,00</span></div>
+                            </div>
+                            <div class="cesta-actions-row">
+                                <button class="btn-cta-small" onclick="abrirModalVariacao('Cesta Grande', '380,00', '390,00')">
+                                    <i class="fab fa-whatsapp"></i> Encomendar
+                                </button>
+                                <button class="btn-ver-produtos" onclick="abrirModalInfo('grande')">
+                                    <i class="fas fa-list"></i> Ver Itens
+                                </button>
+                                <button class="btn-share-small" onclick="compartilharCesta('Cesta Grande', '380,00')">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="secoes-extras-grid">
+            <!-- SIDEBAR DESKTOP -->
+            <div class="card desktop-only" id="menu-lateral-produtos">
+                <h3 style="color:var(--cor-primaria); margin-top:0; font-size:1.1rem; border-bottom:1px solid #eee; padding-bottom:8px;">
+                    <i class="fas fa-shopping-basket"></i> Nossas Cestas
+                </h3>
+                <ul class="sidebar-menu-list">
+                    <li><a href="#cestaeconomica">Cesta Econômica</a></li>
+                    <li><a href="#cestamini">Cesta Mini</a></li>
+                    <li><a href="#cestapequena">Cesta Pequena</a></li>
+                    <li><a href="#cestamedia">Cesta Média</a></li>
+                    <li><a href="#cestagrande">Cesta Grande</a></li>
+                </ul>
+            </div>
+
+            <!-- BLOCOS DE INFO -->
+            <div id="pag-pagamento" class="secao-conteudo">
+                <div class="card">
+                    <div class="section-icon-header">
+                        <img src="img/pagamento.png" alt="Pagamento" onerror="this.src='https://placehold.co/60x60/2196F3/ffffff?text=P'">
+                    </div>
+                    <h2 style="text-align: center;">Formas de Pagamento</h2>
+                    <ul class="lista-pagamento">
+                        <li><span class="emoji-icon">💵</span> Dinheiro</li>
+                        <li><span class="emoji-icon">✨</span> Pix</li>
+                        <li><span class="emoji-icon">💳</span> Cartão de Débito e Crédito (até 3x)</li>
+                        <li><span class="emoji-icon">🥗</span> Alimentação: Alelo, Sodexo, Pluxee</li>
+                        <li><span class="emoji-icon">📱</span> Digitais: Ifood, Caju, Flash</li>
+                    </ul>
+                    <p style="color: #D32F2F; font-size: 0.9rem; text-align: center; margin-top: 15px; font-weight: 600;">⚠️ Não vendemos a prazo.</p>
+                </div>
+            </div>
+
+            <div id="pag-entrega" class="secao-conteudo">
+                <div class="card">
+                    <div class="section-icon-header">
+                        <img src="img/entrega.png" alt="Entrega" onerror="this.src='https://placehold.co/60x60/FF9800/ffffff?text=E'">
+                    </div>
+                    <h2 style="text-align: center; color: var(--cor-entrega);">Entrega Grátis</h2>
+                    <div style="text-align: center;">
+                        <p style="font-size: 0.95rem; color: #555;">Atendemos toda área urbana de <strong>Cuiabá</strong> e <strong>Várzea Grande</strong>.</p>
+                        <hr style="border:0; border-top:1px dashed #eee; margin: 15px 0;">
+                        <p style="background-color: #FFF3E0; color: #E65100; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;">
+                            <i class="fas fa-clock"></i> Pedindo até as 10h, recebe hoje!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="seo-text-block" style="text-align: center; font-size: 0.85rem; color: #888; padding: 20px;">
+            <p><strong>Cesta Básica Dona Antônia</strong> - Qualidade para sua família.</p>
+            <p style="margin-top: 5px;">Cuiabá - MT &bull; Várzea Grande - MT</p>
+        </footer>
+    </main>
+
+    <!-- BOTÕES FLUTUANTES INFERIORES -->
+    <div class="floating-buttons-container">
+        <button onclick="abrirModalSorteio()" class="btn-float-action btn-float-sorteio">
+            <i class="fas fa-gift"></i> Sorteio
+        </button>
+        <button onclick="instalarPWA()" class="btn-float-action btn-float-app">
+            <i class="fas fa-download"></i> Aplicativo
+        </button>
+    </div>
+
+    <!-- MODAIS -->
+    <div id="modalVariacao" class="modal-variacao" onclick="if(event.target === this) fecharModalVariacao()">
+        <div class="modal-variacao-content">
+            <button class="btn-fechar-modal-var" onclick="fecharModalVariacao()">&times;</button>
+            <div style="padding: 20px;">
+                <h3 class="titulo-modal-var" id="tituloCestaModal">Cesta X</h3>
+                <p class="subtitulo-modal-var">Escolha a marca do arroz:</p>
+                <div class="opcao-select" id="optAlvino" onclick="selecionarOpcao('alvino')">
+                    <div class="opcao-info"><span class="opcao-nome">Arroz Tio Alvino</span><span class="opcao-preco" id="precoAlvinoDisplay">R$ 0,00</span></div>
+                    <div class="radio-custom"></div>
+                </div>
+                <div class="opcao-select" id="optKoblenz" onclick="selecionarOpcao('koblenz')">
+                    <div class="opcao-info"><span class="opcao-nome">Arroz Koblenz</span><span class="opcao-preco" id="precoKoblenzDisplay">R$ 0,00</span></div>
+                    <div class="radio-custom"></div>
+                </div>
+                <button class="btn-confirmar-pedido" id="btnConfirmarPedido" onclick="confirmarAcao()" disabled>
+                    <i class="fab fa-whatsapp"></i> Enviar Pedido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalInformacoes" class="modal-variacao" onclick="if(event.target === this) fecharModalInfo()">
+        <div class="modal-info-content">
+            <div class="modal-info-header">
+                <h3 id="tituloModalInfo">Itens da Cesta</h3>
+                <button class="btn-fechar-modal-info" onclick="fecharModalInfo()">&times;</button>
+            </div>
+            <div class="modal-body-scroll">
+                <div id="brindeArea"></div>
+                <ul class="lista-produtos-modal" id="listaProdutosContent"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SORTEIO (REVISADO E COM CONTRASTE) -->
+    <div id="modalSorteio" class="modal-variacao" onclick="if(event.target === this) fecharModalSorteio()">
+        <div class="modal-variacao-content">
+            <button class="btn-fechar-modal-var" onclick="fecharModalSorteio()">&times;</button>
+            <div style="padding: 25px 20px;">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <img src="img/cesta.png" width="60" height="60" loading="lazy" alt="Sorteio" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
+                    <h3 style="margin: 10px 0 5px; font-size: 1.4rem; color: var(--cor-primaria); font-weight: 700;">Sorteio Semanal</h3>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Participe todo domingo!</p>
+                </div>
+                
+                <div id="area-busca-telefone-modal" style="background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px solid #eee;">
+                    <label style="display:block; font-weight:700; font-size: 0.85rem; color: #444; margin-bottom: 8px;">Seu WhatsApp:</label>
+                    <input type="tel" id="busca-telefone-modal" placeholder="(65) 99999-9999" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 12px; font-size: 1rem;" required>
+                    <!-- BOTÃO COM CONTRASTE CORRIGIDO: TEXTO BRANCO -->
+                    <button onclick="buscarCadastro('-modal')" style="background-color: var(--cor-primaria); color: white !important; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                        <i class="fas fa-search" style="margin-right: 8px;"></i> Verificar Cadastro
+                    </button>
+                </div>
+
+                <div id="cadastro-encontrado-modal" style="display: none; text-align: center; background-color: #E8F5E9; border: 1px solid #C8E6C9; padding: 15px; border-radius: 12px; margin-top: 15px;">
+                    <div style="color: #2E7D32; font-size: 2.5rem; margin-bottom: 5px;"><i class="fas fa-check-circle"></i></div>
+                    <h2 style="font-size: 1.1rem; color: #2E7D32; margin: 0 0 10px 0; font-weight: 700;">Cadastro Encontrado!</h2>
+                    <div style="text-align: left; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem;">
+                        <p style="margin: 4px 0;"><strong>Nome:</strong> <span id="nome-cliente-encontrado-modal"></span></p>
+                        <p style="margin: 4px 0;"><strong>Cidade:</strong> <span id="cidade-cliente-encontrado-modal"></span></p>
+                    </div>
+                    <button onclick="confirmarJaCadastrado('-modal')" style="background-color: var(--cor-whatsapp); color: white !important; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar
+                    </button>
+                </div>
+                
+                <div id="cadastro-novo-modal" style="display: none; margin-top: 15px; text-align: left;">
+                    <div style="background-color: #FFF3E0; border: 1px solid #FFE0B2; padding: 15px; border-radius: 12px;">
+                        <h3 style="font-size: 1rem; color: #E65100; margin: 0 0 10px 0; font-weight: 700;">Novo Cadastro</h3>
+                        <form onsubmit="event.preventDefault(); enviarNovoCadastro('-modal');">
+                            <input type="text" id="novo-nome-modal" placeholder="Nome Completo" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px;">
+                            <input type="tel" id="novo-telefone-modal" disabled style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background:#eee; color:#777; margin-bottom: 8px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                                <select id="novo-cidade-modal" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                    <option value="">Cidade...</option>
+                                    <option value="Cuiabá">Cuiabá</option>
+                                    <option value="Várzea Grande">VG</option>
+                                </select>
+                                <input type="text" id="novo-bairro-modal" placeholder="Bairro" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                            </div>
+                            <button type="submit" id="btn-enviar-cadastro-modal" style="background-color: #E65100; color: white !important; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                                Finalizar Cadastro
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalContatos" class="modal-variacao" onclick="if(event.target === this) fecharModalContatos()">
+        <div class="modal-variacao-content" style="padding-top: 40px; padding-bottom: 20px;">
+            <button class="btn-fechar-modal-var" onclick="fecharModalContatos()">&times;</button>
+            <div style="padding: 20px;">
+                <a href="https://wa.me/5565996813588?text=Ol%C3%A1%2C%20estou%20salvando%20seu%20contato." class="btn-whatsapp-hero" target="_blank">
+                    <i class="fab fa-whatsapp"></i> Mande um Oi
+                </a>
+                <div class="modal-section-title">Ou ligue para nós</div>
+                <div class="grid-botoes-modal">
+                    <a href="tel:+5565996813588" class="btn-secundario-modal"><i class="fas fa-phone-alt"></i> (65) 99681-3588</a>
+                    <a href="tel:+5565996813588" class="btn-secundario-modal"><i class="fas fa-phone-alt"></i> Ligar Agora</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ZOOM -->
+    <div id="modalZoomImagem" onclick="if(event.target === this) fecharZoom()">
+        <div class="zoom-img-container">
+            <button class="btn-fechar-zoom" onclick="fecharZoom()">&times;</button>
+            <img id="imgZoomAlvo" src="" class="img-zoom-full" alt="Zoom">
+            <div id="captionZoom" class="zoom-caption"></div>
+        </div>
+    </div>
+    
+    <!-- Scripts (Mantidos) -->
+    <script>
+        var clientes = [
+            { nome: "Cliente Teste", telefone: "65999991234", cidade: "Cuiabá", bairro: "Centro" },
+            { nome: "Maria Silva", telefone: "65988885678", cidade: "Várzea Grande", bairro: "Cristo Rei" }
+        ];
+        const TELEFONE = "5565996813588"; 
+        let deferredPrompt; 
+        let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '' };
+        
+        // Dados das Cestas (Listas)
+        const listasCestas = {
+            'economica': ["<span class='section-title'>Alimentos:</span>", "1 Arroz de 5kg", "1 Açúcar Cristal de 2kg", "1 Óleo de Soja 900ml", "1 Feijão 1kg", "1 Café 250g", "1 Espaguete 400g", "1 Trigo 1kg", "1 Farinha Mandioca 1kg", "1 Sal 1kg", "1 Molho Tomate", "1 Milho", "1 Bolacha Recheada", "1 Miojo", "1 Suco Pó"],
+            'mini': ["<span class='section-title'>Alimentos:</span>", "1 Arroz 5kg", "1 Açúcar 2kg", "2 Óleo 900ml", "2 Feijão 1kg", "1 Café 250g", "1 Espaguete", "1 Sal 1kg", "1 Molho Tomate", "1 Milho", "1 Bolacha", "1 Miojo", "2 Suco Pó", "<span class='section-title'>Limpeza:</span>", "1 Sabão Barra (5un)", "1 Creme Dental", "1 Papel Higiênico (4un)", "1 Amaciante 2L", "1 Desinfetante 2L", "1 Sabão Pó", "1 Detergente", "1 Qboa 1L", "2 Sabonete", "1 Bombril", "1 Bucha"],
+            'pequena': ["<span class='section-title'>Alimentos:</span>", "2 Arroz 5kg", "1 Açúcar 2kg", "2 Óleo", "2 Feijão", "1 Café 250g", "12 Ovos", "1 Mistura Bolo", "1 Espaguete", "1 Trigo", "1 Sal", "1 Molho", "1 Milho", "1 Tempero", "2 Bolacha", "2 Miojo", "2 Suco", "<span class='section-title'>Limpeza:</span>", "1 Sabão Barra", "1 Creme Dental", "1 Papel Higiênico", "1 Amaciante 2L", "1 Desinfetante 2L", "1 Sabão Pó", "2 Detergente", "1 Qboa", "2 Sabonete", "1 Bombril", "1 Bucha"],
+            'media': ["<span class='section-title'>Alimentos:</span>", "3 Arroz 5kg", "2 Açúcar 2kg", "3 Óleo", "3 Feijão", "1 Café 500g", "12 Ovos", "1 Mistura Bolo", "2 Espaguete", "1 Trigo", "1 Sal", "2 Molho", "1 Milho", "1 Tempero", "2 Bolacha", "2 Miojo", "3 Suco", "<span class='section-title'>Limpeza:</span>", "1 Sabão Barra", "2 Creme Dental", "2 Papel Higiênico", "1 Amaciante 2L", "1 Desinfetante 2L", "1 Sabão Pó", "2 Detergente", "1 Qboa", "3 Sabonete", "1 Bombril", "1 Bucha"],
+            'grande': ["<span class='section-title'>Alimentos:</span>", "4 Arroz 5kg", "3 Açúcar 2kg", "4 Óleo", "4 Feijão", "1 Café 500g", "3 Espaguete", "12 Ovos", "1 Mistura Bolo", "1 Trigo", "1 Sal", "2 Molho", "1 Milho", "1 Tempero", "2 Bolacha", "2 Miojo", "4 Suco", "<span class='section-title'>Limpeza:</span>", "1 Sabão Barra", "2 Creme Dental", "2 Papel Higiênico", "1 Amaciante 2L", "1 Desinfetante 2L", "1 Sabão Pó", "2 Detergente", "1 Qboa", "4 Sabonete", "1 Bombril", "1 Bucha"]
+        };
+
+        // Funções de Interação
+        function compartilharCesta(nome, preco) {
+            window.open(`https://wa.me/?text=${encodeURIComponent(`Olha essa ${nome} por R$ ${preco} na Dona Antônia: https://donaantonia.com.br/`)}`, '_blank');
+        }
+        function abrirZoom(src, titulo) {
+            document.getElementById('imgZoomAlvo').src = src;
+            document.getElementById('imgZoomAlvo').onerror = function() { this.src = 'https://placehold.co/800x600?text=Imagem'; };
+            document.getElementById('captionZoom').innerText = titulo;
+            document.getElementById('modalZoomImagem').style.display = 'flex';
+        }
+        function fecharZoom() { document.getElementById('modalZoomImagem').style.display = 'none'; }
+        
+        function abrirModalInfo(tipo) {
+            const el = document.getElementById('listaProdutosContent');
+            const brinde = document.getElementById('brindeArea');
+            el.innerHTML = ''; brinde.innerHTML = '';
+            
+            if (['mini','pequena','media','grande'].includes(tipo)) {
+                brinde.innerHTML = `<div class="brinde-container"><img src="img/amaciante.png" class="brinde-img" onerror="this.style.display='none'"><div class="brinde-text"><span class="brinde-label">🎁 BRINDE</span><span class="brinde-desc">Amaciante Ypê 2L</span></div></div>`;
+            }
+            (listasCestas[tipo]||[]).forEach(item => {
+                const li = document.createElement('li');
+                if(item.includes('section-title')) { li.innerHTML = item; li.style.border='none'; li.style.paddingTop='15px'; }
+                else { li.innerHTML = `<i class="fas fa-check" style="color:var(--cor-whatsapp); margin-right:10px;"></i> ${item}`; }
+                el.appendChild(li);
+            });
+            document.getElementById('modalInformacoes').style.display = 'flex';
+        }
+        
+        function encomendarDireto(prod, preco, brinde) {
+            const txt = `Olá, quero encomendar a *${prod}* (R$ ${preco})${brinde ? '. Com brinde.' : '.'}`;
+            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(txt)}`, '_blank');
+        }
+        
+        function abrirModalVariacao(nome, pA, pK) {
+            dadosCestaAtual = {nome, pA, pK};
+            document.getElementById('tituloCestaModal').innerText = nome;
+            document.getElementById('precoAlvinoDisplay').innerText = 'R$ '+pA;
+            document.getElementById('precoKoblenzDisplay').innerText = 'R$ '+pK;
+            document.getElementById('btnConfirmarPedido').disabled = true;
+            document.querySelectorAll('.opcao-select').forEach(e => e.classList.remove('selected'));
+            document.getElementById('modalVariacao').style.display = 'flex';
+        }
+        
+        function selecionarOpcao(tipo) {
+            dadosCestaAtual.tipo = tipo;
+            document.querySelectorAll('.opcao-select').forEach(e => e.classList.remove('selected'));
+            document.getElementById(tipo === 'alvino' ? 'optAlvino' : 'optKoblenz').classList.add('selected');
+            document.getElementById('btnConfirmarPedido').disabled = false;
+        }
+        
+        function confirmarAcao() {
+            const marca = dadosCestaAtual.tipo === 'alvino' ? 'Arroz Tio Alvino' : 'Arroz Koblenz';
+            const preco = dadosCestaAtual.tipo === 'alvino' ? dadosCestaAtual.pA : dadosCestaAtual.pK;
+            const txt = `Olá, quero a *${dadosCestaAtual.nome}* com *${marca}* (R$ ${preco}). Com brinde.`;
+            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(txt)}`, '_blank');
+            fecharModalVariacao();
+        }
+
+        // Funções Genéricas de Modal
+        function fecharModalInfo() { document.getElementById('modalInformacoes').style.display = 'none'; }
+        function fecharModalVariacao() { document.getElementById('modalVariacao').style.display = 'none'; }
+        function fecharModalContatos() { document.getElementById('modalContatos').style.display = 'none'; }
+        function abrirModalContatos() { document.getElementById('modalContatos').style.display = 'flex'; }
+        function fecharModalSorteio() { document.getElementById('modalSorteio').style.display = 'none'; }
+        function abrirModalSorteio() { document.getElementById('modalSorteio').style.display = 'flex'; }
+
+        // Sorteio Logic
+        async function buscarCadastro(sufix) {
+            const inp = document.getElementById('busca-telefone'+sufix);
+            if(inp.value.replace(/\D/g,'').length < 8) return alert("Digite o telefone completo.");
+            
+            // Simulação
+            const found = clientes.find(c => c.telefone.includes(inp.value.replace(/\D/g,'').slice(-4)));
+            document.getElementById('area-busca-telefone'+sufix).style.display = 'none';
+            
+            if(found) {
+                document.getElementById('nome-cliente-encontrado'+sufix).innerText = found.nome;
+                document.getElementById('cidade-cliente-encontrado'+sufix).innerText = found.cidade;
+                document.getElementById('cadastro-encontrado'+sufix).style.display = 'block';
+            } else {
+                document.getElementById('novo-telefone'+sufix).value = inp.value;
+                document.getElementById('cadastro-novo'+sufix).style.display = 'block';
+            }
+        }
+        
+        function enviarNovoCadastro(sufix) {
+            const n = document.getElementById('novo-nome'+sufix).value;
+            const t = document.getElementById('novo-telefone'+sufix).value;
+            const c = document.getElementById('novo-cidade'+sufix).value;
+            const b = document.getElementById('novo-bairro'+sufix).value;
+            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(`CADASTRO SORTEIO:\nNome: ${n}\nTel: ${t}\nLocal: ${c} - ${b}`)}`, '_blank');
+        }
+        
+        function confirmarJaCadastrado(sufix) {
+             const n = document.getElementById('nome-cliente-encontrado'+sufix).innerText;
+             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(`CONFIRMAR PARTICIPAÇÃO:\nSou ${n}, já tenho cadastro.`)}`, '_blank');
+        }
+
+        function verificarPreenchimento(sufix) {
+            // Lógica simples de validação visual se necessário
+        }
+
+        // PWA
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+        function instalarPWA() {
+            if(deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
+            else { alert("Para instalar: Toque em Compartilhar > Adicionar à Tela de Início (iOS) ou Menu > Instalar App (Android)."); }
+        }
+
+        // Observer
+        window.addEventListener('load', () => {
+            const obs = new IntersectionObserver((entries) => {
+                entries.forEach(e => {
+                    if(e.isIntersecting) {
+                        document.querySelectorAll('.chip-ancora').forEach(c => {
+                            c.classList.toggle('active', c.getAttribute('href') === '#'+e.target.id);
+                        });
+                    }
+                });
+            }, {rootMargin: '-40% 0px -60% 0px'});
+            document.querySelectorAll('.card-cesta-horizontal').forEach(s => obs.observe(s));
+        });
+        
+        function ativarChip(el) {
+            document.querySelectorAll('.chip-ancora').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+</body>
+</html>
