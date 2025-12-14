@@ -91,7 +91,7 @@
           "longitude": -56.0979
         },
         "url": "https://donaantonia.com.br/",
-        "telephone": "+5565998150975",
+        "telephone": "+5565996813588",
         "priceRange": "$$",
         "openingHoursSpecification": [
           {
@@ -593,9 +593,9 @@
         }
         .btn-float-action:active { transform: scale(0.96); }
 
-        /* Botão Sorteio: Escondido no navegador, visível na App */
+        /* Botão Sorteio: Sempre Visível (agora com o estilo de flex) */
         .btn-float-sorteio { 
-            display: none !important; 
+            display: flex; 
             background: linear-gradient(135deg, #2E7D32, #1B5E20); 
         } 
         
@@ -1108,8 +1108,8 @@
             <div style="padding: 25px 20px;">
                 <div style="text-align: center; margin-bottom: 15px;">
                     <img src="img/cesta.png" width="60" height="60" loading="lazy" alt="Sorteio" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
-                    <h3 style="margin: 10px 0 5px; font-size: 1.4rem; color: var(--cor-primaria); font-weight: 700;">Sorteio das 20 Cestas</h3>
-                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Dia 22 de Dezembro. Participe!</p>
+                    <h3 style="margin: 10px 0 5px; font-size: 1.4rem; color: var(--cor-primaria); font-weight: 700;">Sorteio Semanal</h3>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Participe todo domingo!</p>
                 </div>
                 
                 <!-- Busca -->
@@ -1164,14 +1164,14 @@
         <div class="modal-variacao-content" style="padding-top: 40px; padding-bottom: 20px;">
             <button class="btn-fechar-modal-var" onclick="fecharModalContatos()">&times;</button>
             <div style="padding: 20px;">
-                <a href="https://wa.me/5565998150975?text=Ol%C3%A1%2C%20estou%20salvando%20seu%20contato." class="btn-whatsapp-hero" target="_blank">
+                <a href="https://wa.me/5565996813588?text=Ol%C3%A1%2C%20estou%20salvando%20seu%20contato." class="btn-whatsapp-hero" target="_blank">
                     <i class="fab fa-whatsapp" style="font-size: 2rem; margin-bottom: 8px;"></i> 
                     <span>Mande um Oi</span>
                 </a>
                 <div class="modal-section-title">Ou ligue para nós</div>
                 <div class="grid-botoes-modal">
-                    <a href="tel:+5565998150975" class="btn-secundario-modal"><i class="fas fa-phone-alt"></i> (65) 99815-0975</a>
-                    <a href="tel:+5565998150975" class="btn-secundario-modal"><i class="fas fa-phone-alt"></i> Ligar Agora</a>
+                    <a href="tel:+5565996813588" class="btn-secundario-modal"><i class="fas fa-phone-alt"></i> (65) 99681-3588</a>
+                    <a href="tel:+5565996813588" class="btn-secundario-modal"><i class="fas fa-phone-alt"></i> Ligar Agora</a>
                 </div>
             </div>
         </div>
@@ -1195,7 +1195,7 @@
             { nome: "Cliente Teste", telefone: "65999991234", cidade: "Cuiabá", bairro: "Centro" },
             { nome: "Maria Silva", telefone: "65988885678", cidade: "Várzea Grande", bairro: "Cristo Rei" }
         ];
-        const TELEFONE = "5565998150975"; 
+        const TELEFONE = "5565996813588"; 
         let deferredPrompt; 
         let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '' };
         
@@ -1415,13 +1415,15 @@
 
             // VERIFICAÇÃO DE ESTADO PWA
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-            const isInstalledStorage = localStorage.getItem('appInstalled') === 'true';
-
+            
+            // AGORA VERIFICA SE JÁ FOI INSTALADO PELO LOCALSTORAGE TAMBÉM
             // Se estiver em standalone OU já tiver sido instalado antes -> Mostra Sorteio
-            if (isStandalone || isInstalledStorage) {
+            /* LÓGICA REVERTIDA PARA MOSTRAR OS DOIS BOTÕES, EXCETO NO APP ONDE O BOTÃO DE APP SOME */
+             if (isStandalone) {
                 document.getElementById('btnInstallApp').style.setProperty('display', 'none', 'important');
-                document.getElementById('btnSorteio').style.setProperty('display', 'flex', 'important');
             }
+            // Sorteio sempre visível
+            document.getElementById('btnSorteio').style.setProperty('display', 'flex', 'important');
         });
 
         // Evento que dispara se a app NÃO estiver instalada (ou se o navegador permitir instalar)
@@ -1430,11 +1432,10 @@
             deferredPrompt = e;
             
             // Se este evento disparou, significa que o navegador acha que NÃO está instalado.
-            // Por segurança, removemos a flag de localStorage e mostramos o botão de instalar.
-            localStorage.removeItem('appInstalled');
+            // Mas o usuário pediu para manter os botões visíveis.
+            // Apenas garantimos que o botão de instalar está visível.
             
             document.getElementById('btnInstallApp').style.setProperty('display', 'flex', 'important');
-            document.getElementById('btnSorteio').style.setProperty('display', 'none', 'important');
         });
         
         async function instalarPWA() {
@@ -1469,15 +1470,9 @@
             console.log('PWA foi instalado com sucesso');
             deferredPrompt = null;
             
-            // Salva na memória persistente
-            localStorage.setItem('appInstalled', 'true');
-            
-            // 1. Esconde botão de instalar
+            // 1. Esconde botão de instalar (pois agora está instalado)
+            // A pessoa ainda está no navegador, mas já instalou.
             document.getElementById('btnInstallApp').style.setProperty('display', 'none', 'important');
-            
-            // 2. Mostra botão de sorteio
-            const btnSorteio = document.getElementById('btnSorteio');
-            btnSorteio.style.setProperty('display', 'flex', 'important');
             
             // 3. Feedback visual
             mostrarMensagemToast("🎉 App Instalado! Você já pode participar.", "success");
