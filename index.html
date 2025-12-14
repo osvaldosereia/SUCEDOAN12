@@ -1126,12 +1126,32 @@
         </div>
     </div>
     
-    <!-- Scripts (Mantidos) -->
+    <!-- Scripts -->
     <script>
+        // Dados de teste iniciais (agora incluem a cliente que pediu)
         var clientes = [
             { nome: "Cliente Teste", telefone: "65999991234", cidade: "Cuiabá", bairro: "Centro" },
-            { nome: "Maria Silva", telefone: "65988885678", cidade: "Várzea Grande", bairro: "Cristo Rei" }
+            { nome: "Maria Silva", telefone: "65988885678", cidade: "Várzea Grande", bairro: "Cristo Rei" },
+            { nome: "ALESSANDRA PEREIRA RODRIGUES", telefone: "65999742889", cidade: "Cuiabá", bairro: "Areao" }
         ];
+
+        // Função para carregar dados do arquivo externo
+        async function carregarClientesExternos() {
+            try {
+                // Tenta buscar o arquivo. Assume que é um JSON puro ou arquivo de texto com JSON.
+                const response = await fetch('data/clientes.js');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data)) {
+                        clientes = data; // Substitui os dados de teste pelos reais
+                        console.log("Sucesso: Clientes carregados do arquivo externo.", clientes.length);
+                    }
+                }
+            } catch (error) {
+                console.warn("Aviso: Não foi possível carregar 'data/clientes.js'. Usando dados de exemplo.", error);
+            }
+        }
+
         const TELEFONE = "5565996813588"; 
         let deferredPrompt; 
         let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '' };
@@ -1215,10 +1235,19 @@
         // Sorteio Logic
         async function buscarCadastro(sufix) {
             const inp = document.getElementById('busca-telefone'+sufix);
-            if(inp.value.replace(/\D/g,'').length < 8) return alert("Digite o telefone completo.");
+            // Limpa formatação para pegar apenas números
+            const telefoneLimpo = inp.value.replace(/\D/g,'');
             
-            // Simulação
-            const found = clientes.find(c => c.telefone.includes(inp.value.replace(/\D/g,'').slice(-4)));
+            if(telefoneLimpo.length < 8) return alert("Digite o telefone completo.");
+            
+            // Busca pelo final do telefone (últimos 8 dígitos para ser mais flexível)
+            const termoBusca = telefoneLimpo.slice(-8);
+            
+            const found = clientes.find(c => {
+                const telCliente = c.telefone.replace(/\D/g,'');
+                return telCliente.includes(termoBusca);
+            });
+
             document.getElementById('area-busca-telefone'+sufix).style.display = 'none';
             
             if(found) {
@@ -1255,8 +1284,11 @@
             else { alert("Para instalar: Toque em Compartilhar > Adicionar à Tela de Início (iOS) ou Menu > Instalar App (Android)."); }
         }
 
-        // Observer
+        // Observer & Init
         window.addEventListener('load', () => {
+            // Tenta carregar clientes externos ao iniciar
+            carregarClientesExternos();
+
             const obs = new IntersectionObserver((entries) => {
                 entries.forEach(e => {
                     if(e.isIntersecting) {
