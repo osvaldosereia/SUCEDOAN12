@@ -203,7 +203,7 @@
             --cor-header-fundo: #f5f5f5;
             --altura-header: 80px; 
             --largura-logo: 100px; 
-            --altura-bottom-nav: 72px; 
+            --altura-bottom-nav: 0px; /* Removida barra fixa */
         }
 
         html { 
@@ -221,7 +221,7 @@
             margin: 0; 
             padding: 0;
             padding-top: calc(var(--altura-header) + 10px); 
-            padding-bottom: calc(var(--altura-bottom-nav) + 20px); 
+            padding-bottom: 80px; /* Espaço para os botões flutuantes */
             min-height: 10vh;
             position: relative; 
             width: 100%;
@@ -512,12 +512,12 @@
         }
 
         .cesta-title-row h2 {
-            /* AJUSTE FONTE: Aumentado para 1.3rem */
-            font-size: 1.3rem; 
+            /* AJUSTE FONTE: Diminuído para 1.1rem */
+            font-size: 1.1rem; 
             margin: 0;
             color: var(--cor-primaria);
             font-weight: 700;
-            line-height: 1.2;
+            line-height: 1.15;
             text-transform: uppercase;
         }
 
@@ -533,14 +533,15 @@
             font-size: 1.1rem;
         }
 
-        /* Botões Horizontais */
+        /* Botões Horizontais - LAYOUT MOBILE OTIMIZADO */
         .cesta-actions-row {
             display: flex;
-            gap: 5px;
-            flex-wrap: wrap; /* Permite quebrar linha se necessário */
+            flex-wrap: wrap; /* Permite quebrar linha */
+            gap: 6px;
             align-items: center;
         }
 
+        /* Encomendar: Ocupa toda a largura na primeira linha */
         .btn-cta-small {
             background-color: var(--cor-whatsapp);
             color: white;
@@ -549,17 +550,17 @@
             padding: 8px 6px;
             font-size: 0.85rem;
             font-weight: 700;
-            flex-grow: 1; /* Ocupa espaço disponível */
             cursor: pointer;
             text-transform: uppercase;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            min-width: 100px; /* Garante tamanho mínimo */
+            width: 100%; /* Força largura total */
+            flex-basis: 100%; /* Garante quebra de linha */
         }
         
-        /* NOVO BOTÃO VER PRODUTOS (Amplo e com texto) */
+        /* Ver Produtos: Ocupa o espaço restante na segunda linha */
         .btn-ver-produtos {
             background-color: #E3F2FD;
             color: #1565C0;
@@ -568,16 +569,16 @@
             padding: 8px 6px;
             font-size: 0.8rem;
             font-weight: 700;
-            flex-grow: 1; /* Ocupa espaço disponível igual ao CTA */
+            flex-grow: 1; 
             cursor: pointer;
             text-transform: uppercase;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            min-width: 100px;
         }
 
+        /* Compartilhar: Botão pequeno ao lado */
         .btn-share-small {
             background-color: #E8F5E9;
             color: #2E7D32;
@@ -589,9 +590,48 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            flex-shrink: 0; /* Não encolhe */
+            flex-shrink: 0; 
         }
         
+        /* === BOTÕES FLUTUANTES INFERIORES === */
+        .floating-buttons-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5000;
+            display: flex;
+            gap: 15px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .btn-float-action {
+            flex: 1;
+            padding: 12px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+            transition: transform 0.2s;
+        }
+        .btn-float-action:active { transform: translateX(-50%) scale(0.95); } /* Correção do transform no active */
+
+        .btn-float-sorteio { 
+            background: linear-gradient(135deg, #43A047, #2E7D32);
+        } 
+        .btn-float-app { 
+            background: linear-gradient(135deg, #1976D2, #0D47A1); 
+        }
+
         /* === LIGHTBOX (ZOOM) === */
         #modalZoomImagem {
             display: none;
@@ -704,13 +744,14 @@
         }
         
         /* --- MODAIS --- */
-        .modal-variacao, #modalContatos, #modalInformacoes {
+        .modal-variacao, #modalContatos, #modalInformacoes, #modalSorteio {
             display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; backdrop-filter: blur(2px);
             padding: 20px;
         }
         #modalContatos { z-index: 4500; }
         #modalInformacoes { z-index: 4600; }
+        #modalSorteio { z-index: 4700; }
 
         .modal-info-content {
             background-color: white; 
@@ -908,52 +949,9 @@
         .bg-instagram { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); }
         .bg-facebook { background-color: var(--cor-facebook); }
 
-        /* --- BARRA INFERIOR --- */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 480px; 
-            height: var(--altura-bottom-nav);
-            background-color: #FFEB3B;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.15); 
-            z-index: 5000;
-            border-top: none; 
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #444; 
-            font-size: 0.75rem; 
-            font-weight: 700; 
-            text-decoration: none;
-            width: 20%; 
-            height: 100%;
-            transition: color 0.2s;
-        }
-
-        .nav-item i {
-            font-size: 1.6rem; 
-            margin-bottom: 5px;
-        }
-
-        .nav-item:active, .nav-item:hover {
-            color: var(--cor-primaria);
-            background-color: #FFF9C4; 
-        }
-
         /* --- RESPONSIVIDADE --- */
         @media (min-width: 481px) {
             .main-content-wrapper, header, .header-background-bar { max-width: 1100px; } 
-            .bottom-nav { max-width: 1100px; }
             .secao-conteudo { padding: 20px 30px; }
             
             html { font-size: 15px; } 
@@ -976,6 +974,21 @@
                 width: 140px;
                 min-width: 140px;
             }
+            
+            /* Ajuste dos botões flutuantes para não ficarem gigantes no desktop */
+            .floating-buttons-container {
+                max-width: 1100px;
+                width: auto;
+                right: 30px;
+                left: auto;
+                transform: none;
+                gap: 20px;
+            }
+            
+            .btn-float-action {
+                width: auto;
+                min-width: 150px;
+            }
         }
         @media (min-width: 940px) { .logo-pequ { left: 50%; margin-left: calc(-550px + 20px); } }
         @media (min-width: 768px) { 
@@ -985,9 +998,6 @@
         /* --- AJUSTES DESKTOP (SIDEBAR) --- */
         @media (min-width: 1024px) {
             .main-content-wrapper, header, .header-background-bar { max-width: 1200px; } 
-            .bottom-nav { 
-                display: none !important; 
-            }
             
             body { padding-bottom: 20px; } 
             .logo-pequ { display: none !important; }
@@ -1014,7 +1024,8 @@
                 box-shadow: 0 4px 15px rgba(0,0,0,0.15);
                 border: 4px solid white;
                 position: absolute;
-                top: -15px; 
+                /* AJUSTE LOGO: Aproximada do topo (de -15px para -25px) */
+                top: -25px; 
                 left: 0;
                 z-index: 3000;
                 transition: transform 0.3s ease;
@@ -1181,7 +1192,7 @@
             <!-- NOVO: Menu de Navegação Desktop -->
             <nav class="desktop-nav desktop-only">
                 <a href="#pag-cestas">Início</a>
-                <a href="#pag-sorteio">Sorteio</a>
+                <a href="#" onclick="event.preventDefault(); abrirModalSorteio();">Sorteio</a>
                 <a href="#pag-pagamento">Pagamento</a>
                 <a href="#pag-entrega">Entrega</a>
             </nav>
@@ -1367,81 +1378,7 @@
         
         <div class="secoes-extras-grid">
             
-            <!-- NOVO: MENU LATERAL (Aparece apenas no Desktop) -->
-            <div class="card desktop-only" id="menu-lateral-produtos">
-                <h3 style="color:var(--cor-primaria); margin-top:0; font-size:1.1rem; border-bottom:1px solid #eee; padding-bottom:8px;">
-                    <i class="fas fa-shopping-basket"></i> Nossas Cestas
-                </h3>
-                <ul class="sidebar-menu-list">
-                    <li><a href="#cestaeconomica">Cesta Econômica</a></li>
-                    <li><a href="#cestamini">Cesta Mini</a></li>
-                    <li><a href="#cestapequena">Cesta Pequena</a></li>
-                    <li><a href="#cestamedia">Cesta Média</a></li>
-                    <li><a href="#cestagrande">Cesta Grande</a></li>
-                </ul>
-            </div>
-
-            <div id="pag-sorteio" class="secao-conteudo">
-                <div class="section-icon-header">
-                    <!-- OTIMIZAÇÃO: loading="lazy" -->
-                    <img src="img/cesta.png" width="60" height="60" loading="lazy" alt="Sorteio Cesta Básica" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
-                </div>
-                <div class="card">
-                    <h2>🎉 Sorteio todo Domingo.</h2>
-                    <p>Próximo Sorteio dia 7 de Dezembro as 18h. Válido para moradores de Cuiabá e VG</p>
-                    
-                    <div id="area-busca-telefone" class="card" style="margin-bottom: 15px;">
-                        <h2>🍀 Participe</h2>
-                        <label>Telefone (Whatsapp): <span style="color:red">*</span></label>
-                        <input type="tel" id="busca-telefone" placeholder="Digite seu telefone..." required>
-                        <button onclick="buscarCadastro('')" class="btn" style="background-color: var(--cor-primaria); margin-top: 5px;">
-                            <i class="fas fa-search" style="margin-right: 8px;"></i> Participar
-                        </button>
-                    </div>
-
-                    <div id="cadastro-encontrado" class="area-resultado-busca" style="display: none;">
-                        <h2>✅ Cadastro Encontrado!</h2>
-                        <p style="margin-bottom: 10px;">Confira seus dados:</p>
-                        <div style="text-align: left;">
-                            <p><strong>Nome:</strong> <span id="nome-cliente-encontrado"></span></p>
-                            <p><strong>Cidade:</strong> <span id="cidade-cliente-encontrado"></span></p>
-                            <p><strong>Bairro:</strong> <span id="bairro-cliente-encontrado"></span></p>
-                        </div>
-                        <button onclick="confirmarJaCadastrado('')" class="btn" style="background-color: var(--cor-whatsapp); margin-top: 15px;">
-                            <i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Confirmar e Participar
-                        </button>
-                    </div>
-                    
-                    <div id="cadastro-novo" class="card cadastro-novo-style" style="display: none;">
-                        <h3 class="titulo-novo-cadastro">📝 Fazer Cadastro</h3>
-                        <p class="subtitulo-novo-cadastro">Não achamos seu número. Preencha abaixo para participar:</p>
-                        
-                        <form onsubmit="event.preventDefault(); enviarNovoCadastro('');">
-                            <label style="font-weight:bold; font-size:0.95rem; color:#444;">Nome Completo:</label>
-                            <input type="text" id="novo-nome" placeholder="Digite seu nome..." required 
-                                   onkeyup="verificarPreenchimento('')" onchange="verificarPreenchimento('')">
-                            
-                            <label style="font-weight:bold; font-size:0.95rem; color:#444;">Telefone:</label>
-                            <input type="tel" id="novo-telefone" disabled style="background:#eee; color:#777;"> 
-                            
-                            <label style="font-weight:bold; font-size:0.95rem; color:#444;">Cidade:</label>
-                            <select id="novo-cidade" required onchange="verificarPreenchimento('')">
-                                <option value="">Toque para escolher...</option>
-                                <option value="Cuiabá">Cuiabá</option>
-                                <option value="Várzea Grande">Várzea Grande</option>
-                            </select>
-                            
-                            <label style="font-weight:bold; font-size:0.95rem; color:#444;">Bairro:</label>
-                            <input type="text" id="novo-bairro" placeholder="Digite seu bairro..." required
-                                   onkeyup="verificarPreenchimento('')" onchange="verificarPreenchimento('')">
-                            
-                            <button type="submit" id="btn-enviar-cadastro" class="btn btn-validacao">
-                                <i class="fas fa-edit" style="margin-right: 8px;"></i> Preencha tudo...
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+            <!-- MENU LATERAL REMOVIDO CONFORME PEDIDO -->
 
             <div id="pag-pagamento" class="secao-conteudo">
                 <div class="section-icon-header">
@@ -1506,28 +1443,15 @@
         </footer>
     </main> <!-- Fechamento da tag main -->
 
-    <nav class="bottom-nav">
-        <a href="#pag-cestas" class="nav-item">
-            <i class="fas fa-home"></i>
-            <span>Início</span>
-        </a>
-        <a href="#pag-sorteio" class="nav-item">
-            <i class="fas fa-gift" style="color: var(--cor-sorteio);"></i>
-            <span>Sorteio</span>
-        </a>
-        <a href="#pag-pagamento" class="nav-item">
-            <i class="fas fa-credit-card" style="color: var(--cor-pagamento);"></i>
-            <span>Pagamento</span>
-        </a>
-        <a href="#pag-entrega" class="nav-item">
-            <i class="fas fa-truck" style="color: var(--cor-entrega);"></i>
-            <span>Entrega</span>
-        </a>
-        <a href="#" onclick="event.preventDefault(); abrirModalContatos();" class="nav-item">
-            <i class="fas fa-comments" style="color: var(--cor-primaria);"></i>
-            <span>Contato</span>
-        </a>
-    </nav>
+    <!-- BOTÕES FLUTUANTES INFERIORES -->
+    <div class="floating-buttons-container">
+        <button onclick="abrirModalSorteio()" class="btn-float-action btn-float-sorteio">
+            <i class="fas fa-gift"></i> Sorteio
+        </button>
+        <button onclick="instalarPWA()" class="btn-float-action btn-float-app">
+            <i class="fas fa-download"></i> Aplicativo
+        </button>
+    </div>
 
     <div id="modalVariacao" class="modal-variacao" onclick="if(event.target === this) fecharModalVariacao()">
         <div class="modal-variacao-content">
@@ -1559,6 +1483,64 @@
                 <div id="brindeArea"></div>
                 <ul class="lista-produtos-modal" id="listaProdutosContent">
                     </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalSorteio" class="modal-variacao" onclick="if(event.target === this) fecharModalSorteio()">
+        <div class="modal-variacao-content">
+            <button class="btn-fechar-modal-var" onclick="fecharModalSorteio()" aria-label="Fechar">&times;</button>
+            
+            <div class="section-icon-header" style="margin-top: 10px;">
+                <img src="img/cesta.png" width="60" height="60" loading="lazy" alt="Sorteio" onerror="this.onerror=null;this.src='https://placehold.co/60x60/4CAF50/ffffff?text=S'">
+            </div>
+            <h3 class="titulo-modal-var" style="margin-top: 0;">🎉 Sorteio</h3>
+            <p class="subtitulo-modal-var">Participe do nosso sorteio semanal!</p>
+            
+            <div id="area-busca-telefone-modal">
+                <label style="display:block; text-align:left; font-weight:bold; margin-bottom:5px;">Telefone (Whatsapp):</label>
+                <input type="tel" id="busca-telefone-modal" placeholder="Digite seu telefone..." required>
+                <button onclick="buscarCadastro('-modal')" class="btn" style="background-color: var(--cor-primaria); margin-top: 5px;">
+                    <i class="fas fa-search" style="margin-right: 8px;"></i> Buscar Cadastro
+                </button>
+            </div>
+
+            <div id="cadastro-encontrado-modal" class="area-resultado-busca" style="display: none; text-align: left;">
+                <h2 style="font-size: 1rem; margin-bottom: 5px;">✅ Encontrado!</h2>
+                <p><strong>Nome:</strong> <span id="nome-cliente-encontrado-modal"></span></p>
+                <p><strong>Cidade:</strong> <span id="cidade-cliente-encontrado-modal"></span></p>
+                <p><strong>Bairro:</strong> <span id="bairro-cliente-encontrado-modal"></span></p>
+                <button onclick="confirmarJaCadastrado('-modal')" class="btn" style="background-color: var(--cor-whatsapp); margin-top: 10px;">
+                    <i class="fab fa-whatsapp"></i> Confirmar
+                </button>
+            </div>
+            
+            <div id="cadastro-novo-modal" class="card cadastro-novo-style" style="display: none; border:none; box-shadow:none; padding: 5px;">
+                <h3 class="titulo-novo-cadastro" style="font-size: 1rem;">📝 Novo Cadastro</h3>
+                
+                <form onsubmit="event.preventDefault(); enviarNovoCadastro('-modal');">
+                    <label style="font-weight:bold; font-size:0.85rem; color:#444;">Nome:</label>
+                    <input type="text" id="novo-nome-modal" placeholder="Nome..." required 
+                           onkeyup="verificarPreenchimento('-modal')" onchange="verificarPreenchimento('-modal')">
+                    
+                    <label style="font-weight:bold; font-size:0.85rem; color:#444;">Telefone:</label>
+                    <input type="tel" id="novo-telefone-modal" disabled style="background:#eee; color:#777;"> 
+                    
+                    <label style="font-weight:bold; font-size:0.85rem; color:#444;">Cidade:</label>
+                    <select id="novo-cidade-modal" required onchange="verificarPreenchimento('-modal')">
+                        <option value="">Escolher...</option>
+                        <option value="Cuiabá">Cuiabá</option>
+                        <option value="Várzea Grande">Várzea Grande</option>
+                    </select>
+                    
+                    <label style="font-weight:bold; font-size:0.85rem; color:#444;">Bairro:</label>
+                    <input type="text" id="novo-bairro-modal" placeholder="Bairro..." required
+                           onkeyup="verificarPreenchimento('-modal')" onchange="verificarPreenchimento('-modal')">
+                    
+                    <button type="submit" id="btn-enviar-cadastro-modal" class="btn btn-validacao">
+                        <i class="fas fa-edit"></i> Cadastrar
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -1747,6 +1729,10 @@
         function abrirModalContatos() { document.getElementById('modalContatos').style.display = 'flex'; }
         function fecharModalContatos() { document.getElementById('modalContatos').style.display = 'none'; }
 
+        // --- MODAL SORTEIO ---
+        function abrirModalSorteio() { document.getElementById('modalSorteio').style.display = 'flex'; }
+        function fecharModalSorteio() { document.getElementById('modalSorteio').style.display = 'none'; }
+
         // --- PWA LOGIC (CORRIGIDA) ---
         // 1. Registro do Service Worker
         if ('serviceWorker' in navigator) {
@@ -1877,8 +1863,8 @@
             const cadastroEncontradoDiv = document.getElementById('cadastro-encontrado' + sufixoId);
             const cadastroNovoDiv = document.getElementById('cadastro-novo' + sufixoId);
             const buscaTelefoneInput = document.getElementById('busca-telefone' + sufixoId);
-            const containerBusca = sufixoId === '' ? document.getElementById('area-busca-telefone') : document.getElementById('area-busca-telefone-modal');
-            const btn = containerBusca.querySelector('.btn');
+            // Correção aqui: quando buscamos no modal, o container é o próprio modal
+            const btn = document.querySelector(`#area-busca-telefone${sufixoId} button`);
 
             cadastroEncontradoDiv.style.display = 'none';
             cadastroNovoDiv.style.display = 'none';
@@ -1930,9 +1916,7 @@
             const cidade = document.getElementById('novo-cidade' + sufixoId).value;
             const bairro = document.getElementById('novo-bairro' + sufixoId).value.trim();
             
-            const btn = sufixoId === '' 
-                ? document.getElementById('btn-enviar-cadastro') 
-                : document.getElementById('btn-enviar-cadastro-modal');
+            const btn = document.getElementById('btn-enviar-cadastro' + sufixoId);
 
             if (nome.length > 2 && cidade !== "" && bairro.length > 2) {
                 btn.classList.add('pronto'); 
