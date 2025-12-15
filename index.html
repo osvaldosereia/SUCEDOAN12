@@ -282,7 +282,7 @@
             margin-bottom: 10px;
         }
 
-        /* === CARD CESTA HORIZONTAL === */
+        /* === CARD CESTA HORIZONTAL (PADRÃO) === */
         .card-cesta-horizontal {
             display: flex;
             flex-direction: row;
@@ -291,10 +291,10 @@
             margin-bottom: 15px;
             border: 1px solid #f0f0f0;
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-            overflow: hidden;
+            overflow: hidden; /* CULPADO: Isso corta o selo nos cards normais */
             min-height: 130px;
             transition: box-shadow 0.2s;
-            contain: content; /* Otimização CSS */
+            contain: content; /* CULPADO: Isso também corta o selo */
         }
 
         .cesta-img-container {
@@ -416,6 +416,76 @@
             justify-content: center;
             cursor: pointer;
             flex-shrink: 0; 
+        }
+
+        /* =========================================
+           NOVO: ESTILOS PARA CESTA DESTAQUE (ECONÔMICA)
+           ========================================= */
+        #cestaeconomica {
+            /* Fundo levemente destacado */
+            background-color: #FFF; 
+            border: 2px solid var(--cor-destaque-dourado);
+            position: relative;
+            /* CORREÇÃO: Forçar que o conteúdo não seja cortado */
+            overflow: visible !important; 
+            contain: none !important; 
+            margin-top: 25px; /* Espaço extra para o selo no topo */
+            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.15);
+            z-index: 5;
+        }
+
+        /* Selo "Mais Vendida" */
+        .selo-destaque {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--cor-destaque-dourado), #FFB300);
+            color: var(--cor-primaria);
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 20; /* Garantir que fique acima do card */
+            white-space: nowrap;
+            border: 2px solid white;
+        }
+
+        /* === MOBILE: MODO FOTO GRANDE (Vertical) === */
+        @media (max-width: 480px) {
+            #cestaeconomica {
+                flex-direction: column !important; /* Força layout vertical */
+            }
+            #cestaeconomica .cesta-img-container {
+                width: 100% !important; /* Foto ocupa largura total */
+                height: 230px !important; /* Altura maior para foto grande */
+                border-bottom: 1px solid #f0f0f0;
+            }
+            #cestaeconomica .cesta-info-container {
+                padding: 20px 15px;
+                text-align: center; /* Centraliza informações */
+            }
+            #cestaeconomica .cesta-title-row h2 {
+                font-size: 1.4rem; /* Título maior */
+                margin-bottom: 5px;
+            }
+            #cestaeconomica .cesta-price-tag {
+                justify-content: center; /* Preço centralizado */
+                font-size: 1rem;
+            }
+            #cestaeconomica .cesta-price-highlight {
+                font-size: 1.4rem;
+            }
+            #cestaeconomica .cesta-actions-row {
+                justify-content: center;
+            }
+            #cestaeconomica .btn-cta-small {
+                padding: 14px; /* Botão maior */
+                font-size: 1rem;
+            }
         }
         
         /* === BOTÕES FLUTUANTES === */
@@ -673,6 +743,33 @@
                 max-width: 100%; 
                 margin: 0 auto; 
             }
+
+            /* === DESTAQUE DESKTOP: OCUPA 2 COLUNAS === */
+            #cestaeconomica {
+                grid-column: 1 / -1; /* Faz o item ocupar toda a linha (2 colunas) */
+                display: flex;
+                flex-direction: row; /* Mantém horizontal no PC */
+                background: linear-gradient(to right, #FFFDE7, #FFF); /* Gradiente sutil */
+            }
+            
+            /* Imagem bem maior no desktop para este item */
+            #cestaeconomica .cesta-img-container {
+                width: 320px !important; 
+                max-width: 45%;
+                height: auto;
+            }
+            
+            #cestaeconomica .cesta-info-container {
+                justify-content: center;
+                padding: 30px;
+            }
+            
+            #cestaeconomica h2 {
+                font-size: 1.8rem;
+                margin-bottom: 15px;
+            }
+
+            /* Fim ajuste Destaque */
             
             .menu-ancoras-cestas { display: none !important; }
             
@@ -885,8 +982,16 @@
                 </div>
 
                 <div class="cesta-cards-grid">
-                    <!-- Cards OTIMIZAÇÃO: Dimensões explicitas nas imagens para evitar CLS -->
+                    
+                    <!-- 
+                       ITEM EM DESTAQUE: CESTA ECONÔMICA 
+                       Alterações: 
+                       1. Adicionado <div class="selo-destaque">
+                       2. O CSS para o ID #cestaeconomica cuida do layout vertical no mobile
+                       e do span de colunas no desktop.
+                    -->
                     <div class="card-cesta-horizontal" id="cestaeconomica">
+                        <div class="selo-destaque"><i class="fas fa-star"></i> Mais Vendida</div>
                         <div class="cesta-img-container" onclick="abrirZoom('img/cesta-basica-cuiaba-varzea-grande-economica.avif', 'Cesta Econômica')">
                             <img src="img/cesta-basica-cuiaba-varzea-grande-economica.avif" width="400" height="400" alt="Cesta Básica Econômica" onerror="this.src='https://placehold.co/400x400?text=ECONÔMICA'">
                             <div class="zoom-overlay-icon"><i class="fas fa-search-plus"></i></div>
@@ -895,7 +1000,9 @@
                             <div>
                                 <div class="cesta-title-row"><h2>Cesta Econômica</h2></div>
                                 <div class="cesta-price-tag">A partir de <span class="cesta-price-highlight">R$ 85,00</span></div>
-                                <div style="font-size: 0.75rem; color: #2E7D32; font-weight: 600;">Ideal para doação</div>
+                                <div style="font-size: 0.85rem; color: #2E7D32; font-weight: 600; margin-bottom: 10px;">
+                                    <i class="fas fa-check-circle"></i> Perfeita para doação e empresas
+                                </div>
                             </div>
                             <div class="cesta-actions-row">
                                 <button class="btn-cta-small" onclick="encomendarDireto('Cesta Econômica', '85,00', false)">
@@ -1137,278 +1244,4 @@
                     <div style="background-color: #FFF3E0; border: 1px solid #FFE0B2; padding: 15px; border-radius: 12px;">
                         <h3 style="font-size: 1rem; color: #E65100; margin: 0 0 10px 0; font-weight: 700;">Novo Cadastro</h3>
                         <form onsubmit="event.preventDefault(); enviarNovoCadastro('-modal');">
-                            <input type="text" id="novo-nome-modal" placeholder="Nome Completo" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px;">
-                            <input type="tel" id="novo-telefone-modal" disabled style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background:#eee; color:#777; margin-bottom: 8px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-                                <select id="novo-cidade-modal" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                                    <option value="">Cidade...</option>
-                                    <option value="Cuiabá">Cuiabá</option>
-                                    <option value="Várzea Grande">VG</option>
-                                </select>
-                                <input type="text" id="novo-bairro-modal" placeholder="Bairro" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                            </div>
-                            <button type="submit" id="btn-enviar-cadastro-modal" style="background-color: #E65100; color: white !important; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                                Finalizar Cadastro
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL CONTATOS CORRIGIDO -->
-    <div id="modalContatos" class="modal-variacao" onclick="if(event.target === this) fecharModalContatos()">
-        <div class="modal-variacao-content" style="padding-top: 40px; padding-bottom: 20px;">
-            <button class="btn-fechar-modal-var" onclick="fecharModalContatos()">&times;</button>
-            <div style="padding: 20px;">
-                <!-- Link direto com texto centralizado e estilo correto -->
-                <a href="https://wa.me/5565996813588?text=Ol%C3%A1%2C%20estou%20salvando%20seu%20contato." class="btn-whatsapp-hero" target="_blank">
-                    <i class="fab fa-whatsapp" style="font-size: 2rem; margin-bottom: 8px;"></i> 
-                    <span>Mande um Oi</span>
-                </a>
-                
-                <div class="modal-section-title">Ou ligue para nós</div>
-                
-                <div class="grid-botoes-modal">
-                    <a href="tel:+5565996813588" class="btn-secundario-modal"><i class="fas fa-phone-alt"></i> (65) 99681-3588</a>
-                    <a href="tel:+5565996813588" class="btn-secundario-modal"><i class="fas fa-phone-alt"></i> Ligar Agora</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ZOOM -->
-    <div id="modalZoomImagem" onclick="if(event.target === this) fecharZoom()">
-        <div class="zoom-img-container">
-            <button class="btn-fechar-zoom" onclick="fecharZoom()">&times;</button>
-            <img id="imgZoomAlvo" src="" class="img-zoom-full" alt="Zoom">
-            <div id="captionZoom" class="zoom-caption"></div>
-        </div>
-    </div>
-    
-    <!-- Scripts -->
-    <script>
-        // OTIMIZAÇÃO JS: Carregamento deferido de Analytics
-        function carregarAnalytics() {
-            if (window.analyticsCarregado) return;
-            window.analyticsCarregado = true;
-            console.log('Carregando Analytics...');
-
-            // Gtag Global
-            const s1 = document.createElement('script');
-            s1.src = 'https://www.googletagmanager.com/gtag/js?id=AW-979692776';
-            s1.async = true;
-            document.head.appendChild(s1);
-
-            // G-tag 2
-            const s2 = document.createElement('script');
-            s2.src = 'https://www.googletagmanager.com/gtag/js?id=G-9XS8B8Z8BV';
-            s2.async = true;
-            document.head.appendChild(s2);
-        }
-
-        // Delay para carregar scripts pesados (3.5s ou interação)
-        setTimeout(carregarAnalytics, 3500);
-        ['click', 'scroll', 'mousemove', 'touchstart'].forEach(evt => 
-            window.addEventListener(evt, carregarAnalytics, {once: true, passive: true})
-        );
-
-        // Stub para garantir que funções chamadas antes do script não quebrem
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'AW-979692776');
-        gtag('config', 'G-9XS8B8Z8BV');
-
-        function gtag_report_conversion(url) {
-            var callback = function () {
-                if (typeof(url) != 'undefined') { window.location = url; }
-            };
-            gtag('event', 'conversion', {
-                'send_to': 'AW-979692776/OzcWCNb7tIACEOjZk9MD',
-                'event_callback': callback
-            });
-            return false;
-        }
-
-        // Dados de teste iniciais (agora incluem a cliente que pediu)
-        var clientes = [
-            { nome: "Cliente Teste", telefone: "65999991234", cidade: "Cuiabá", bairro: "Centro" },
-            { nome: "Maria Silva", telefone: "65988885678", cidade: "Várzea Grande", bairro: "Cristo Rei" },
-            { nome: "ALESSANDRA PEREIRA RODRIGUES", telefone: "65999742889", cidade: "Cuiabá", bairro: "Areao" }
-        ];
-
-        // Função para carregar dados do arquivo externo
-        async function carregarClientesExternos() {
-            try {
-                // Tenta buscar o arquivo. Assume que é um JSON puro ou arquivo de texto com JSON.
-                const response = await fetch('data/clientes.js');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (Array.isArray(data)) {
-                        clientes = data; // Substitui os dados de teste pelos reais
-                        console.log("Sucesso: Clientes carregados do arquivo externo.", clientes.length);
-                    }
-                }
-            } catch (error) {
-                console.warn("Aviso: Não foi possível carregar 'data/clientes.js'. Usando dados de exemplo.", error);
-            }
-        }
-
-        const TELEFONE = "5565996813588"; 
-        let deferredPrompt; 
-        let dadosCestaAtual = { nome: '', precoAlvino: '', precoKoblenz: '' };
-        
-        // Dados das Cestas (Listas)
-        const listasCestas = {
-            'economica': ["<span class='section-title'>Alimentos:</span>", "1 Arroz de 5kg", "1 Açúcar Cristal de 2kg", "1 Óleo de Soja 900ml", "1 Feijão 1kg", "1 Café 250g", "1 Espaguete 400g", "1 Trigo 1kg", "1 Farinha Mandioca 1kg", "1 Sal 1kg", "1 Molho Tomate", "1 Milho", "1 Bolacha Recheada", "1 Miojo", "1 Suco Pó"],
-            'mini': ["<span class='section-title'>Alimentos:</span>", "1 Arroz 5kg", "1 Açúcar 2kg", "2 Óleo 900ml", "2 Feijão 1kg", "1 Café 250g", "1 Espaguete", "1 Sal 1kg", "1 Molho Tomate", "1 Milho", "1 Bolacha", "1 Miojo", "2 Suco Pó", "<span class='section-title'>Limpeza:</span>", "1 Sabão Barra (5un)", "1 Creme Dental", "1 Papel Higiênico (4un)", "1 Amaciante 2L", "1 Desinfetante 2L", "1 Sabão Pó", "1 Detergente", "1 Qboa 1L", "2 Sabonete", "1 Bombril", "1 Bucha"],
-            'pequena': ["<span class='section-title'>Alimentos:</span>", "2 Arroz 5kg", "1 Açúcar 2kg", "2 Óleo", "2 Feijão", "1 Café 250g", "12 Ovos", "1 Mistura Bolo", "1 Espaguete", "1 Trigo", "1 Sal", "1 Molho", "1 Milho", "1 Tempero", "2 Bolacha", "2 Miojo", "2 Suco", "<span class='section-title'>Limpeza:</span>", "1 Sabão Barra", "1 Creme Dental", "1 Papel Higiênico", "1 Amaciante 2L", "1 Desinfetante 2L", "1 Sabão Pó", "2 Detergente", "1 Qboa", "2 Sabonete", "1 Bombril", "1 Bucha"],
-            'media': ["<span class='section-title'>Alimentos:</span>", "3 Arroz 5kg", "2 Açúcar 2kg", "3 Óleo", "3 Feijão", "1 Café 500g", "12 Ovos", "1 Mistura Bolo", "2 Espaguete", "1 Trigo", "1 Sal", "2 Molho", "1 Milho", "1 Tempero", "2 Bolacha", "2 Miojo", "3 Suco", "<span class='section-title'>Limpeza:</span>", "1 Sabão Barra", "2 Creme Dental", "2 Papel Higiênico", "1 Amaciante 2L", "1 Desinfetante 2L", "1 Sabão Pó", "2 Detergente", "1 Qboa", "3 Sabonete", "1 Bombril", "1 Bucha"],
-            'grande': ["<span class='section-title'>Alimentos:</span>", "4 Arroz 5kg", "3 Açúcar 2kg", "4 Óleo", "4 Feijão", "1 Café 500g", "3 Espaguete", "12 Ovos", "1 Mistura Bolo", "1 Trigo", "1 Sal", "2 Molho", "1 Milho", "1 Tempero", "2 Bolacha", "2 Miojo", "4 Suco", "<span class='section-title'>Limpeza:</span>", "1 Sabão Barra", "2 Creme Dental", "2 Papel Higiênico", "1 Amaciante 2L", "1 Desinfetante 2L", "1 Sabão Pó", "2 Detergente", "1 Qboa", "4 Sabonete", "1 Bombril", "1 Bucha"]
-        };
-
-        // Funções de Interação
-        function compartilharCesta(nome, preco) {
-            window.open(`https://wa.me/?text=${encodeURIComponent(`Olha essa ${nome} por R$ ${preco} na Dona Antônia: https://donaantonia.com.br/`)}`, '_blank');
-        }
-        function abrirZoom(src, titulo) {
-            document.getElementById('imgZoomAlvo').src = src;
-            document.getElementById('imgZoomAlvo').onerror = function() { this.src = 'https://placehold.co/800x600?text=Imagem'; };
-            document.getElementById('captionZoom').innerText = titulo;
-            document.getElementById('modalZoomImagem').style.display = 'flex';
-        }
-        function fecharZoom() { document.getElementById('modalZoomImagem').style.display = 'none'; }
-        
-        function abrirModalInfo(tipo) {
-            const el = document.getElementById('listaProdutosContent');
-            const brinde = document.getElementById('brindeArea');
-            el.innerHTML = ''; brinde.innerHTML = '';
-            
-            if (['mini','pequena','media','grande'].includes(tipo)) {
-                brinde.innerHTML = `<div class="brinde-container"><img src="img/amaciante.png" class="brinde-img" width="50" height="50" onerror="this.style.display='none'"><div class="brinde-text"><span class="brinde-label">🎁 BRINDE</span><span class="brinde-desc">Amaciante Ypê 2L</span></div></div>`;
-            }
-            (listasCestas[tipo]||[]).forEach(item => {
-                const li = document.createElement('li');
-                if(item.includes('section-title')) { li.innerHTML = item; li.style.border='none'; li.style.paddingTop='15px'; }
-                else { li.innerHTML = `<i class="fas fa-check" style="color:var(--cor-whatsapp); margin-right:10px;"></i> ${item}`; }
-                el.appendChild(li);
-            });
-            document.getElementById('modalInformacoes').style.display = 'flex';
-        }
-        
-        function encomendarDireto(prod, preco, brinde) {
-            const txt = `Olá, quero encomendar a *${prod}* (R$ ${preco})${brinde ? '. Com brinde.' : '.'}`;
-            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(txt)}`, '_blank');
-        }
-        
-        function abrirModalVariacao(nome, pA, pK) {
-            dadosCestaAtual = {nome, pA, pK};
-            document.getElementById('tituloCestaModal').innerText = nome;
-            document.getElementById('precoAlvinoDisplay').innerText = 'R$ '+pA;
-            document.getElementById('precoKoblenzDisplay').innerText = 'R$ '+pK;
-            document.getElementById('btnConfirmarPedido').disabled = true;
-            document.querySelectorAll('.opcao-select').forEach(e => e.classList.remove('selected'));
-            document.getElementById('modalVariacao').style.display = 'flex';
-        }
-        
-        function selecionarOpcao(tipo) {
-            dadosCestaAtual.tipo = tipo;
-            document.querySelectorAll('.opcao-select').forEach(e => e.classList.remove('selected'));
-            document.getElementById(tipo === 'alvino' ? 'optAlvino' : 'optKoblenz').classList.add('selected');
-            document.getElementById('btnConfirmarPedido').disabled = false;
-        }
-        
-        function confirmarAcao() {
-            const marca = dadosCestaAtual.tipo === 'alvino' ? 'Arroz Tio Alvino' : 'Arroz Koblenz';
-            const preco = dadosCestaAtual.tipo === 'alvino' ? dadosCestaAtual.pA : dadosCestaAtual.pK;
-            const txt = `Olá, quero a *${dadosCestaAtual.nome}* com *${marca}* (R$ ${preco}). Com brinde.`;
-            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(txt)}`, '_blank');
-            fecharModalVariacao();
-        }
-
-        // Funções Genéricas de Modal
-        function fecharModalInfo() { document.getElementById('modalInformacoes').style.display = 'none'; }
-        function fecharModalVariacao() { document.getElementById('modalVariacao').style.display = 'none'; }
-        function fecharModalContatos() { document.getElementById('modalContatos').style.display = 'none'; }
-        function abrirModalContatos() { document.getElementById('modalContatos').style.display = 'flex'; }
-        function fecharModalSorteio() { document.getElementById('modalSorteio').style.display = 'none'; }
-        function abrirModalSorteio() { document.getElementById('modalSorteio').style.display = 'flex'; }
-
-        // Sorteio Logic
-        async function buscarCadastro(sufix) {
-            const inp = document.getElementById('busca-telefone'+sufix);
-            // Limpa formatação para pegar apenas números
-            const telefoneLimpo = inp.value.replace(/\D/g,'');
-            
-            if(telefoneLimpo.length < 8) return alert("Digite o telefone completo.");
-            
-            // Busca pelo final do telefone (últimos 8 dígitos para ser mais flexível)
-            const termoBusca = telefoneLimpo.slice(-8);
-            
-            const found = clientes.find(c => {
-                const telCliente = c.telefone.replace(/\D/g,'');
-                return telCliente.includes(termoBusca);
-            });
-
-            document.getElementById('area-busca-telefone'+sufix).style.display = 'none';
-            
-            if(found) {
-                document.getElementById('nome-cliente-encontrado'+sufix).innerText = found.nome;
-                document.getElementById('cidade-cliente-encontrado'+sufix).innerText = found.cidade;
-                document.getElementById('cadastro-encontrado'+sufix).style.display = 'block';
-            } else {
-                document.getElementById('novo-telefone'+sufix).value = inp.value;
-                document.getElementById('cadastro-novo'+sufix).style.display = 'block';
-            }
-        }
-        
-        function enviarNovoCadastro(sufix) {
-            const n = document.getElementById('novo-nome'+sufix).value;
-            const t = document.getElementById('novo-telefone'+sufix).value;
-            const c = document.getElementById('novo-cidade'+sufix).value;
-            const b = document.getElementById('novo-bairro'+sufix).value;
-            window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(`CADASTRO SORTEIO:\nNome: ${n}\nTel: ${t}\nLocal: ${c} - ${b}`)}`, '_blank');
-        }
-        
-        function confirmarJaCadastrado(sufix) {
-             const n = document.getElementById('nome-cliente-encontrado'+sufix).innerText;
-             window.open(`https://wa.me/${TELEFONE}?text=${encodeURIComponent(`CONFIRMAR PARTICIPAÇÃO:\nSou ${n}, já tenho cadastro.`)}`, '_blank');
-        }
-
-        function verificarPreenchimento(sufix) {
-            // Lógica simples de validação visual se necessário
-        }
-
-        // PWA
-        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
-        function instalarPWA() {
-            if(deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
-            else { alert("Para instalar: Toque em Compartilhar > Adicionar à Tela de Início (iOS) ou Menu > Instalar App (Android)."); }
-        }
-
-        // Observer & Init
-        window.addEventListener('load', () => {
-            // Tenta carregar clientes externos ao iniciar
-            carregarClientesExternos();
-
-            const obs = new IntersectionObserver((entries) => {
-                entries.forEach(e => {
-                    if(e.isIntersecting) {
-                        document.querySelectorAll('.chip-ancora').forEach(c => {
-                            c.classList.toggle('active', c.getAttribute('href') === '#'+e.target.id);
-                        });
-                    }
-                });
-            }, {rootMargin: '-40% 0px -60% 0px'});
-            document.querySelectorAll('.card-cesta-horizontal').forEach(s => obs.observe(s));
-        });
-        
-        function ativarChip(el) {
-            document.querySelectorAll('.chip-ancora').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
-        }
-    </script>
-</body>
-</html>
+                            <input type="text" id="novo-nome-modal" placeholder="Nome Completo" required style="width: 10
