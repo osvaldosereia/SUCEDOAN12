@@ -42,8 +42,8 @@
     <!-- GEO TAGS (Sinalizadores de Localização para Robôs Antigos) -->
     <meta name="geo.region" content="BR-MT" />
     <meta name="geo.placename" content="Cuiabá" />
-    <meta name="geo.position" content="-15.6014;-56.0979" />
-    <meta name="ICBM" content="-15.6014, -56.0979" />
+    <meta name="geo.position" content="-15.6025;-56.0968" />
+    <meta name="ICBM" content="-15.6025, -56.0968" />
 
     <meta name="robots" content="index, follow">
     <meta name="author" content="Super Cestas Básicas Dona Antônia">
@@ -505,45 +505,52 @@
         /* === BOTÕES FLUTUANTES === */
         .floating-buttons-container {
             position: fixed;
-            bottom: 20px; 
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 0; /* Fixado no fundo */
+            left: 0;
+            width: 100%; /* Largura total para a vinheta de ponta a ponta */
             z-index: 5000;
             display: flex;
+            justify-content: center; /* Centralizado horizontalmente sempre */
             gap: 12px;
-            width: 92%;
-            max-width: 460px;
+            padding: 20px 15px 20px 15px; /* Espaço interno */
+            
+            /* VINHETA ESCURA TIPO DEGRADÊ DE BAIXO PARA CIMA - MAIS CLARA */
+            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%);
+            
+            pointer-events: none; /* Permite clicar através da área transparente */
         }
 
         .btn-float-action {
-            flex: 1;
-            padding: 10px 8px; /* Menor verticalmente */
-            border-radius: 50px; /* Mais arredondado */
-            border: none; 
+            pointer-events: auto; /* Reativa cliques nos botões */
+            padding: 10px 16px; /* Mais compacto verticalmente */
+            border-radius: 50px; 
+            border: none; /* Sem borda grossa */
             font-weight: 700; 
             text-transform: uppercase;
-            font-size: 0.75rem; /* Fonte menor */
+            font-size: 0.75rem; /* Fonte menor e discreta */
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2); /* Sombra menor */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0; /* Sem gap */
+            gap: 0; 
             color: white !important;
             transition: transform 0.2s;
             text-align: center;
             line-height: 1.2;
-            white-space: nowrap; /* Forçar uma linha */
+            white-space: nowrap; /* Garante 1 linha */
+            min-width: 100px; /* Largura mínima */
         }
         .btn-float-action:active { transform: scale(0.96); }
 
+        /* VARIAÇÕES DE LARANJA */
         .btn-float-sorteio { 
-            background: linear-gradient(to right, #E65100, #F57C00); /* Laranja Escuro */
+            background: linear-gradient(to right, #FF6F00, #FF8F00); /* Laranja mais escuro/forte */
         } 
-        /* Novo estilo para o botão de salvar contato */
+        
         .btn-float-whatsapp { 
-            background: linear-gradient(to right, #FF9800, #FFB74D); /* Laranja Claro */
+            background: linear-gradient(to right, #EF6C00, #FB8C00); /* Laranja médio */
         }
 
         /* === MODAIS === */
@@ -867,9 +874,10 @@
             }
             
             .floating-buttons-container {
-                max-width: 1100px; width: auto; right: 40px; left: auto; transform: none; gap: 20px;
+                /* REMOVIDO PARA MANTER O ESTILO CENTRALIZADO DO MOBILE */
+                /* max-width: 1100px; width: auto; right: 40px; left: auto; transform: none; gap: 20px; */
             }
-            .btn-float-action { width: auto; min-width: 160px; }
+            .btn-float-action { /* width: auto; min-width: 160px; REMOVIDO */ }
         }
         
         @media (min-width: 1024px) {
@@ -1018,8 +1026,8 @@
       },
       "geo": {
         "@type": "GeoCoordinates",
-        "latitude": -15.6014,
-        "longitude": -56.0979
+        "latitude": -15.6025,
+        "longitude": -56.0968
       },
       "url": "https://donaantonia.com.br/",
       "telephone": "+5565996813588",
@@ -1342,7 +1350,7 @@
 
             <!-- MAPA INCORPORADO NOVO (Lazy Load) -->
             <div class="footer-map-container" style="margin-top: 20px;">
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3842.684742796286!2d-56.0979!3d-15.6014!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTXCsDM2JzA1LjAiUyA1NsKwMDUnNTIuNCJX!5e0!3m2!1spt-BR!2sbr!4v1600000000000!5m2!1spt-BR!2sbr" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" title="Localização Dona Antônia"></iframe>
+                <iframe src="https://maps.google.com/maps?q=9W4X%2BGX%20Jardim%20Nossa%20Sra.%20Aparecida%2C%20Cuiabá%20-%20MT&t=&z=13&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" title="Localização Dona Antônia"></iframe>
             </div>
         </footer>
     </main>
