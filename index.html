@@ -505,41 +505,156 @@
 
         .btn-float-action {
             flex: 1;
-            padding: 18px 24px; /* Aumentado verticalmente */
+            padding: 14px 10px; /* Ajustado para caber 2 botões */
             border-radius: 12px; 
-            border: 2px solid rgba(255,255,255,0.4); /* Borda sutil */
-            font-weight: 800; /* Mais destacado */
+            border: 2px solid rgba(255,255,255,0.4); 
+            font-weight: 800; 
             text-transform: uppercase;
-            font-size: 1rem; /* Fonte maior */
+            font-size: 0.85rem; 
             letter-spacing: 0.5px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4); /* Sombra mais forte */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4); 
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             color: white !important;
             transition: transform 0.2s;
+            text-align: center;
+            line-height: 1.2;
         }
         .btn-float-action:active { transform: scale(0.96); }
 
         .btn-float-sorteio { 
             background: linear-gradient(135deg, #2E7D32, #1B5E20);
         } 
-        .btn-float-app { 
-            background: linear-gradient(135deg, #1565C0, #0D47A1); 
+        /* Novo estilo para o botão de salvar contato */
+        .btn-float-whatsapp { 
+            background: linear-gradient(135deg, #128C7E, #075E54); 
         }
 
         /* === MODAIS === */
-        .modal-variacao, #modalContatos, #modalInformacoes, #modalSorteio, #modalZoomImagem {
+        .modal-variacao, #modalContatos, #modalInformacoes, #modalSorteio, #modalZoomImagem, #modalApresentacao {
             display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.65); justify-content: center; align-items: center; backdrop-filter: blur(3px);
+            background-color: rgba(0,0,0,0.65); justify-content: center; align-items: center; backdrop-filter: blur(5px);
             padding: 20px;
         }
-        #modalContatos { z-index: 4500; }
-        #modalInformacoes { z-index: 4600; }
-        #modalSorteio { z-index: 4700; }
-        #modalZoomImagem { z-index: 9000; background-color: rgba(0,0,0,0.92); flex-direction: column; }
+        
+        /* ESTILO DO SLIDER ULTRA COMPACTO */
+        #modalApresentacao {
+            background-color: rgba(15, 37, 70, 0.9); /* Fundo escuro */
+            z-index: 8000; 
+        }
+
+        .modal-slider-content {
+            background-color: white; 
+            width: 90%; 
+            max-width: 320px; /* Quadrado/Retangular Pequeno */
+            aspect-ratio: 1/1; /* Tenta manter quadrado se possível */
+            border-radius: 24px; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5); 
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            min-height: 300px;
+        }
+        
+        /* Botão Fechar */
+        .btn-fechar-slider {
+            position: absolute;
+            top: 15px;
+            left: 15px; /* Esquerda para não brigar com a seta */
+            z-index: 20;
+            background: transparent;
+            color: #999;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .btn-fechar-slider:hover { color: #333; }
+
+        /* Área dos Slides */
+        .slider-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .slide-item {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeSlide 0.3s ease-out;
+            width: 100%;
+            height: 100%;
+        }
+        .slide-item.active { display: flex; }
+
+        .slide-text-large {
+            font-size: 1.6rem;
+            color: var(--cor-primaria);
+            font-weight: 800;
+            line-height: 1.2;
+            padding: 0 10px;
+        }
+
+        /* Seta de Navegação (Agora na BASE direita) */
+        .slider-next-btn {
+            position: absolute;
+            bottom: 25px; /* Fixado na base */
+            right: 25px;  /* Canto direito */
+            /* Removemos top/transform anteriores */
+            top: auto;
+            transform: none;
+            
+            background: #f5f5f5;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--cor-primaria);
+            cursor: pointer;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .slider-next-btn:active { transform: scale(0.9); }
+
+        /* Botão Final */
+        .slide-final-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+        .btn-eu-quero {
+            background: var(--cor-destaque-dourado);
+            color: var(--cor-primaria);
+            border: none;
+            padding: 16px 30px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.4);
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        .btn-eu-quero:active { transform: scale(0.95); }
 
         .modal-info-content, .modal-variacao-content {
             background-color: white; 
@@ -718,10 +833,14 @@
             gap: 6px;
         }
 
-        /* Animação Zoom */
-        @keyframes zoomIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        /* Animações Modernas */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeSlide {
+            0% { transform: translateX(20px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
         }
         
         @media (min-width: 481px) {
@@ -1147,7 +1266,10 @@
     <!-- BOTÕES FLUTUANTES INFERIORES -->
     <div class="floating-buttons-container">
         <button onclick="abrirModalSorteio()" class="btn-float-action btn-float-sorteio">
-            <i class="fas fa-gift"></i> SORTEIO 20 CESTAS DIA 22/12
+            <i class="fas fa-gift"></i> SORTEIO
+        </button>
+        <button onclick="salvarContato()" class="btn-float-action btn-float-whatsapp">
+            <i class="fab fa-whatsapp"></i> SALVAR CONTATO
         </button>
     </div>
 
@@ -1233,6 +1355,63 @@
                                 Cadastrar para Sorteio
                             </button>
                         </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL SLIDER ULTRA-CLEAN -->
+    <div id="modalApresentacao" class="modal-variacao" onclick="if(event.target === this) fecharApresentacao()">
+        <div class="modal-slider-content">
+            <!-- Botão Fechar -->
+            <button class="btn-fechar-slider" onclick="fecharApresentacao()">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="slider-wrapper">
+                <!-- Seta de Navegação (Agora na BASE direita) - Controlada via JS -->
+                <button id="btnNext" class="slider-next-btn" onclick="mudarSlide(1)">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+
+                <!-- SLIDE 1 -->
+                <div class="slide-item active">
+                    <div class="slide-text-large">Só marcas conhecidas.</div>
+                </div>
+
+                <!-- SLIDE 2 -->
+                <div class="slide-item">
+                    <div class="slide-text-large">Entrega Grátis em Cuiabá e VG.</div>
+                </div>
+
+                <!-- SLIDE 3 -->
+                <div class="slide-item">
+                    <div class="slide-text-large">Troque itens que não quer.</div>
+                </div>
+
+                <!-- SLIDE 4 -->
+                <div class="slide-item">
+                    <div class="slide-text-large">Até 3x sem juros no cartão.</div>
+                </div>
+
+                <!-- SLIDE 5 -->
+                <div class="slide-item">
+                    <div class="slide-text-large">Aceitamos Vale Alimentação.</div>
+                </div>
+
+                <!-- SLIDE 6 -->
+                <div class="slide-item">
+                    <div class="slide-text-large">Pague só na entrega.</div>
+                </div>
+
+                <!-- SLIDE FINAL (Com Botão) -->
+                <div class="slide-item">
+                    <div class="slide-final-container">
+                        <div class="slide-text-large" style="color:#2E7D32;">Concorra a Sorteios.</div>
+                        <button class="btn-eu-quero" onclick="fecharApresentacao()">
+                            EU QUERO!
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1613,6 +1792,13 @@
         function fecharModalContatos() {
             document.getElementById('modalContatos').style.display = 'none';
         }
+        
+        // === SALVAR CONTATO (NOVO) ===
+        function salvarContato() {
+            const texto = "Estou salvando seu contato. Vou olhar novamente as cestas básicas pelo site www.donaantonia.com.br e em breve entro em contato.";
+            const url = `https://wa.me/5565996813588?text=${encodeURIComponent(texto)}`;
+            window.open(url, '_blank');
+        }
 
         // === ZOOM ===
         function abrirZoom(src, alt) {
@@ -1629,6 +1815,81 @@
              document.querySelectorAll('.chip-ancora').forEach(el => el.classList.remove('active'));
              elemento.classList.add('active');
         }
+
+        // === LÓGICA DE APRESENTAÇÃO (SLIDER) ===
+        let slideIndex = 1;
+        
+        // Verifica se o usuário é novo ou não acessa há 30 dias
+        function verificarApresentacao() {
+            const chaveLocal = 'donaAntoniaUltimaVisita';
+            const diasParaRenovar = 30;
+            const agora = new Date().getTime();
+            
+            const ultimaVisita = localStorage.getItem(chaveLocal);
+            
+            if (!ultimaVisita) {
+                // Primeira vez
+                abrirApresentacao();
+            } else {
+                const diasPassados = (agora - parseInt(ultimaVisita)) / (1000 * 60 * 60 * 24);
+                if (diasPassados > diasParaRenovar) {
+                    // Mais de 30 dias
+                    abrirApresentacao();
+                }
+            }
+        }
+
+        function abrirApresentacao() {
+            setTimeout(() => {
+                document.getElementById('modalApresentacao').style.display = 'flex';
+                initSlider(); // Inicia o slider
+            }, 1000);
+        }
+
+        function fecharApresentacao() {
+            const chaveLocal = 'donaAntoniaUltimaVisita';
+            const agora = new Date().getTime();
+            localStorage.setItem(chaveLocal, agora.toString());
+            
+            document.getElementById('modalApresentacao').style.display = 'none';
+        }
+
+        // Funções do Slider
+        function initSlider() {
+            slideIndex = 1;
+            showSlides(slideIndex);
+        }
+
+        function mudarSlide(n) {
+            showSlides(slideIndex += n);
+        }
+
+        function showSlides(n) {
+            let i;
+            let slides = document.getElementsByClassName("slide-item");
+            const btnNext = document.getElementById("btnNext");
+            
+            if (n > slides.length) {slideIndex = 1}    
+            if (n < 1) {slideIndex = slides.length}
+            
+            for (i = 0; i < slides.length; i++) {
+                slides[i].style.display = "none";
+                slides[i].classList.remove("active");
+            }
+            
+            slides[slideIndex-1].style.display = "flex";
+            slides[slideIndex-1].classList.add("active");
+            
+            // SE FOR O ÚLTIMO SLIDE: ESCONDE A SETA
+            if (slideIndex === slides.length) {
+                btnNext.style.display = "none";
+            } else {
+                btnNext.style.display = "flex";
+            }
+        }
+
+        // Iniciar verificação ao carregar
+        window.addEventListener('load', verificarApresentacao);
 
     </script>
 </body>
