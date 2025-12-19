@@ -216,7 +216,7 @@
             .linha-destaque-top { font-size: 0.75rem; }
         }
 
-        /* === ESTILOS DA GRADE DE PRODUTOS PERSONALIZADA === */
+        /* === ESTILOS DA GRADE DE PRODUTOS AJUSTADA === */
         .secao-conteudo { padding: 15px; }
         
         .monte-sua-cesta-container {
@@ -258,67 +258,66 @@
 
         .produto-item {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border: 1px solid #e0e0e0; /* Borda sutil */
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #eee;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            transition: transform 0.2s, background-color 0.2s, border-color 0.2s;
-        }
-        .produto-item:hover {
-            border-color: var(--cor-primaria);
+            transition: all 0.2s ease;
         }
         
-        /* ESTILO SELECIONADO - FUNDO VERDE CLARO */
         .produto-item.selecionado {
-            background-color: #E8F5E9; /* Verde bem claro */
-            border-color: #4CAF50; /* Borda verde mais forte */
-            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.15);
-        }
-        /* Garantir que o fundo verde apareça removendo fundos brancos filhos */
-        .produto-item.selecionado .prod-img-wrapper,
-        .produto-item.selecionado .prod-info {
-            background-color: transparent; 
+            background-color: #E8F5E9;
+            border-color: #4CAF50;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
         }
 
-        /* IMAGEM MAIOR NO CARD COMPACTO */
+        /* CONTAINER DA IMAGEM: QUADRADO E GRANDE */
         .prod-img-wrapper {
             width: 100%;
-            height: 140px; 
+            aspect-ratio: 1 / 1; /* Garante que o container seja quadrado */
             background-color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            padding: 5px;
-            transition: background-color 0.2s;
+            padding: 0; /* Sem padding para maximizar espaço */
+            border-bottom: 1px solid #f5f5f5;
         }
+        
         .prod-img-wrapper img {
-            max-width: 95%;
-            max-height: 95%;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 'contain' para não cortar o produto, 'cover' se quiser preencher tudo */
+            padding: 10px; /* Pequeno respiro para a marca não colar na borda */
+            transition: transform 0.3s ease;
+        }
+        
+        .produto-item:hover .prod-img-wrapper img {
+            transform: scale(1.05);
         }
 
         .prod-info {
-            padding: 8px; 
+            padding: 10px; 
             text-align: center;
-            background: #fff;
-            border-top: 1px solid #f5f5f5;
-            transition: background-color 0.2s;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-grow: 1;
         }
 
         .prod-nome {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: #333;
-            margin-bottom: 6px;
-            min-height: 32px; 
+            margin-bottom: 8px;
+            min-height: 38px; 
             display: flex;
             align-items: center;
             justify-content: center;
-            line-height: 1.1;
+            line-height: 1.2;
             overflow: hidden;
         }
 
@@ -326,111 +325,94 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            background-color: #f5f5f5; /* Mantem fundo cinza nos botoes */
-            border-radius: 20px;
-            padding: 3px; 
+            gap: 8px;
+            background-color: #f0f2f5; 
+            border-radius: 25px;
+            padding: 4px; 
         }
         .produto-item.selecionado .controle-qtd {
-            background-color: #C8E6C9; /* Fundo mais escuro para controle selecionado */
+            background-color: #C8E6C9;
         }
 
         .btn-qtd {
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             border: none;
             background-color: white;
             color: var(--cor-primaria);
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
-        .btn-qtd:active { background-color: #ddd; transform: scale(0.95); }
         
         .qtd-display {
             font-weight: 700;
             color: var(--cor-primaria);
-            width: 20px;
+            min-width: 20px;
             text-align: center;
             font-size: 1rem;
         }
 
-        /* BARRA DE AÇÕES COMPACTA */
+        /* BARRA DE AÇÕES */
         .barra-acoes {
             background-color: white;
             border-top: 1px solid #ddd;
-            padding: 10px 15px; /* Reduzi padding */
+            padding: 12px 15px;
             position: sticky;
             bottom: 0;
             z-index: 900;
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
         
-        /* ESTILOS DA GAMIFICAÇÃO (BARRAS DE PROGRESSO) */
         .gamificacao-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-bottom: 5px;
-            padding-bottom: 10px;
-            border-bottom: 1px dashed #eee;
         }
         .meta-texto {
             display: flex;
             justify-content: space-between;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             margin-bottom: 4px;
-            color: #555;
-            font-weight: 600;
+            color: #666;
+            font-weight: 700;
             text-transform: uppercase;
         }
         .progress-bg {
-            height: 6px;
+            height: 8px;
             background-color: #f0f0f0;
-            border-radius: 3px;
+            border-radius: 4px;
             overflow: hidden;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
         }
         .progress-fill {
             height: 100%;
-            background-color: #FFC107; /* Amarelo (atenção) inicial */
+            background-color: var(--cor-destaque-dourado);
             width: 0%;
-            transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.3s;
+            transition: width 0.4s ease;
         }
-        .progress-fill.concluido {
-            background-color: #2E7D32; /* Verde (sucesso) */
-        }
-        .meta-check {
-            color: #ccc;
-        }
-        .meta-check.ativo {
-            color: #2E7D32;
-        }
+        .progress-fill.concluido { background-color: #2E7D32; }
+        .meta-check { color: #ccc; }
+        .meta-check.ativo { color: #2E7D32; }
 
         .resumo-linha-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2px;
         }
 
-        .total-estimado-label {
-            font-size: 0.85rem;
-            color: #666;
-            margin-right: 5px;
-        }
-        
         #totalValor {
-            font-size: 1.1rem;
-            color: #666; /* Cor inicial neutra */
+            font-size: 1.2rem;
+            color: #666;
+            font-weight: 800;
         }
 
         .btn-historico-mini {
@@ -438,224 +420,78 @@
             color: #1565C0;
             border: 1px solid #BBDEFB;
             border-radius: 20px;
-            padding: 4px 12px;
+            padding: 5px 12px;
             font-size: 0.8rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
 
         .grid-botoes-acao {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 50% para cada */
-            gap: 10px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
 
         .btn-acao {
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            background: white;
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            background: #eee;
             color: #555;
             font-size: 0.9rem;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
             text-transform: uppercase;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            transition: all 0.2s;
-            height: 48px; /* Altura fixa */
+            gap: 8px;
+            height: 52px;
         }
-        .btn-acao:hover { background-color: #f9f9f9; border-color: #bbb; }
         
         .btn-destaque {
             background-color: var(--cor-whatsapp);
             color: white;
-            border: none;
-            opacity: 0.6; /* Inicia desabilitado visualmente */
+            opacity: 0.5;
             pointer-events: none;
-            /* REMOVIDO: grid-column: span 2; */
         }
         .btn-destaque.ativo {
             opacity: 1;
             pointer-events: auto;
-            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4);
+            box-shadow: 0 4px 12px rgba(18, 140, 126, 0.3);
         }
         
         .btn-calc {
             background-color: var(--cor-primaria);
             color: white;
-            border: none;
         }
 
-        /* LISTA HISTORICO */
-        .historico-lista {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .historico-item {
-            background: #f9f9f9;
-            border: 1px solid #eee;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.2s;
-        }
-        .historico-item:hover {
-            background: #E3F2FD;
-            border-color: #BBDEFB;
-        }
-        .hist-data {
-            font-weight: 700;
-            color: var(--cor-primaria);
-            font-size: 0.9rem;
-            display: block;
-        }
-        .hist-resumo {
-            font-size: 0.8rem;
-            color: #666;
-        }
-        .hist-valor {
-            font-weight: 700;
-            color: var(--cor-destaque-vermelho);
-        }
-
-        /* OUTRAS SEÇÕES */
-        .card { 
-            background: white; 
-            border-radius: 12px;
-            padding: 15px; 
-            margin-bottom: 15px; 
-            border: 1px solid #f0f0f0; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
-            height: 100%; 
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .card h2 { 
-            font-size: 1.2rem; 
-            font-weight: 600; 
-            letter-spacing: -0.3px;
-            margin-bottom: 10px;
-        }
-
-        .section-icon-header { text-align: center; margin-bottom: 15px; }
-        .section-icon-header img {
-            width: 50px; height: 50px; object-fit: contain; background-color: var(--cor-primaria);
-            border-radius: 50%; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .lista-pagamento li { padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; display: flex; align-items: center; color: #555; }
-        .emoji-icon { margin-right: 10px; font-size: 1.2rem; }
-
-        /* MODAIS SIMPLES */
+        /* MODAIS */
         .modal-variacao {
             display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.65); justify-content: center; align-items: center; backdrop-filter: blur(5px);
+            background-color: rgba(0,0,0,0.7); justify-content: center; align-items: center; backdrop-filter: blur(4px);
             padding: 20px;
         }
         .modal-info-content {
-            background-color: white; width: 100%; max-width: 340px; border-radius: 16px; 
-            overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            display: flex; flex-direction: column; max-height: 80vh; /* Para scroll se lista for longa */
-        }
-        .modal-info-header {
-            background-color: var(--cor-fundo); padding: 15px; display: flex; 
-            justify-content: space-between; align-items: center; border-bottom: 1px solid #eee;
-        }
-        .btn-fechar-modal-info { 
-            background-color: #f5f5f5; border: 1px solid #ddd; color: #555; cursor: pointer;
-            padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold;
-        }
-        .modal-body-scroll {
-            padding: 15px;
-            overflow-y: auto;
+            background-color: white; width: 100%; max-width: 400px; border-radius: 20px; 
+            overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.5);
         }
 
-        /* TOAST */
-        #toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 6000; }
-        .toast-message { background-color: #333; color: white; padding: 15px 25px; border-radius: 8px; font-weight: 600; margin-top: 10px; white-space: normal; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; max-width: 90%; font-size: 0.9rem; }
-
-        /* FOOTER */
-        .footer-map-container {
-            width: 100%; height: 250px; border-radius: 12px; overflow: hidden; margin-top: 15px; border: 1px solid #eee;
-        }
-        .footer-links-seo { margin-top: 15px; font-size: 0.85rem; }
-        .footer-links-seo a { color: #666; text-decoration: none; margin: 0 5px; }
-
+        /* RESPONSIVIDADE DESKTOP */
         @media (min-width: 481px) {
             .main-content-wrapper, header, .header-background-bar { max-width: 1100px; } 
-            .secao-conteudo { padding: 25px 40px; }
-            html { font-size: 16px; } 
-            
-            /* DESKTOP 3 COLUNAS PARA A GRADE DE PRODUTOS */
-            .produtos-grid {
-                grid-template-columns: repeat(3, 1fr) !important;
-                gap: 20px;
-            }
+            .produtos-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
         }
         
         @media (min-width: 1024px) {
-            .main-content-wrapper, header, .header-background-bar, .header-top { max-width: 1200px; } 
-            body { padding-bottom: 20px; } 
+            .main-content-wrapper, header, .header-background-bar { max-width: 1200px; } 
+            .produtos-grid { grid-template-columns: repeat(4, 1fr); }
             .logo-pequ { display: none !important; }
-            .header-top { margin: 0 auto; justify-content: space-between; padding: 5px 20px; }
             .desktop-only { display: flex !important; }
             .desktop-logo-wrapper { position: relative; width: 60px; }
-            .big-logo-desktop { width: 120px; height: 120px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 4px solid white; position: absolute; top: -25px; left: 0; z-index: 3000; }
-            .desktop-nav { display: flex; gap: 30px; align-items: center; height: 100%; margin-left: 120px; }
-            .desktop-nav a { text-decoration: none; color: var(--cor-primaria); font-weight: 700; font-size: 0.95rem; text-transform: uppercase; padding: 5px 0; }
-            
-            /* DESKTOP LAYOUT NOVO: SEM SIDEBAR */
-            .main-content-wrapper { 
-                display: block; /* Remove o grid com sidebar */
-                padding: 30px 20px; 
-                background-color: transparent; 
-                box-shadow: none; 
-            }
-            
-            .seo-text-block { 
-                margin-top: 40px; 
-                background: white; 
-                border-radius: 12px; 
-                padding: 30px; 
-            }
-            
-            /* Conteúdo principal ocupa toda largura */
-            #pag-cestas { 
-                width: 100%;
-            }
-            
-            /* Seções Extras (Pagamento/Entrega) vão para baixo */
-            .secoes-extras-grid { 
-                display: grid !important; 
-                grid-template-columns: 1fr 1fr; /* Lado a lado */
-                gap: 20px; 
-                margin-top: 30px;
-                width: 100%;
-            }
-            
-            .barra-acoes {
-                position: static; 
-                margin-top: 20px;
-                border-radius: 8px;
-                border: 1px solid #ddd;
-            }
-
-            /* 4 COLUNAS NO DESKTOP */
-            .produtos-grid {
-                grid-template-columns: repeat(4, 1fr) !important;
-                gap: 20px;
-            }
+            .big-logo-desktop { width: 120px; height: 120px; border-radius: 50%; border: 4px solid white; position: absolute; top: -25px; left: 0; z-index: 3000; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+            .desktop-nav { display: flex; gap: 35px; align-items: center; margin-left: 130px; }
+            .desktop-nav a { text-decoration: none; color: var(--cor-primaria); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; }
         }
     </style>
 </head>
@@ -680,7 +516,7 @@
 
             <button class="btn-contato-principal" onclick="abrirModalContatos()" aria-label="Abrir opções de contato">
                 <div class="linha-destaque-top">
-                    <i class="fab fa-whatsapp"></i> <span class="desktop-only" style="display: inline !important;">&nbsp;FALE CONOSCO</span><span style="display: inline;" class="mobile-text">SALVAR CONTATO</span>
+                    <i class="fab fa-whatsapp"></i> <span class="desktop-only">&nbsp;FALE CONOSCO</span><span class="mobile-text">SALVAR CONTATO</span>
                 </div>
             </button>
         </div>
@@ -690,66 +526,58 @@
         <div id="pag-cestas">
             <div class="seo-main-title">
                 <h1>Monte sua Cesta Personalizada</h1>
-                <p>Escolha os produtos e a quantidade que sua família precisa.</p>
+                <p>Escolha os produtos e receba em casa com frete grátis.</p>
             </div>
 
             <div class="secao-conteudo">
                 <div class="monte-sua-cesta-container">
                     <div class="instrucoes-cesta">
-                        <strong><i class="fas fa-exclamation-circle"></i> Regras para Encomendar:</strong>
+                        <strong><i class="fas fa-shopping-basket"></i> Regras da Cesta:</strong>
                         <ul>
                             <li>Mínimo de <strong>10 produtos diferentes</strong>.</li>
-                            <li>Mínimo de <strong>20 itens no total</strong> da cesta.</li>
-                            <li>Clique em <strong>CALCULAR</strong> para ver o valor.</li>
+                            <li>Mínimo de <strong>20 itens no total</strong>.</li>
                         </ul>
                     </div>
 
-                    <!-- GRADE DE PRODUTOS INJETADA VIA JS -->
                     <div id="gridProdutos" class="produtos-grid">
-                        <!-- Itens serão carregados aqui -->
+                        <!-- Itens via JS -->
                     </div>
                 </div>
 
-                <!-- BARRA DE AÇÕES COMPACTA -->
+                <!-- BARRA DE AÇÕES -->
                 <div class="barra-acoes">
-                    
-                    <!-- GAMIFICAÇÃO: PROGRESSO -->
                     <div class="gamificacao-container">
                         <div class="meta-item">
                             <div class="meta-texto">
-                                <span class="meta-label">Prod. Diferentes <i id="icon-dif" class="fas fa-check-circle meta-check"></i></span>
-                                <span id="label-dif" class="meta-valor">0/10</span>
+                                <span>Produtos Dif. <i id="icon-dif" class="fas fa-check-circle meta-check"></i></span>
+                                <span id="label-dif">0/10</span>
                             </div>
                             <div class="progress-bg">
-                                <div id="bar-dif" class="progress-fill" style="width: 0%"></div>
+                                <div id="bar-dif" class="progress-fill"></div>
                             </div>
                         </div>
                         <div class="meta-item">
                             <div class="meta-texto">
-                                <span class="meta-label">Total Itens <i id="icon-total" class="fas fa-check-circle meta-check"></i></span>
-                                <span id="label-total" class="meta-valor">0/20</span>
+                                <span>Total Itens <i id="icon-total" class="fas fa-check-circle meta-check"></i></span>
+                                <span id="label-total">0/20</span>
                             </div>
                             <div class="progress-bg">
-                                <div id="bar-total" class="progress-fill" style="width: 0%"></div>
+                                <div id="bar-total" class="progress-fill"></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="resumo-linha-top">
-                        <div style="display:flex; align-items: baseline;">
-                            <span class="total-estimado-label">Total Estimado:</span>
-                            <span id="totalValor">Clique Calcular</span>
-                        </div>
+                        <span id="totalValor">R$ 0,00</span>
                         <button class="btn-historico-mini" onclick="abrirHistorico()">
-                            <i class="fas fa-history"></i> Pedidos
+                            <i class="fas fa-list-ul"></i> Meus Pedidos
                         </button>
                     </div>
                     
                     <div class="grid-botoes-acao">
                         <button class="btn-acao btn-calc" onclick="calcularTotal()">
-                            <i class="fas fa-calculator"></i> Calcular
+                            <i class="fas fa-calculator"></i> Validar
                         </button>
-                        <!-- Botão Encomendar inicia "desativado" -->
                         <button id="btnEncomendar" class="btn-acao btn-destaque" onclick="encomendarCesta()">
                             <i class="fab fa-whatsapp"></i> Encomendar
                         </button>
@@ -760,127 +588,85 @@
         
         <div class="secoes-extras-grid">
             <div id="pag-pagamento" class="secao-conteudo">
-                <div class="card">
-                    <div class="section-icon-header">
-                        <img src="img/pagamento.png" width="60" height="60" alt="Pagamento" onerror="this.src='https://placehold.co/60x60/2196F3/ffffff?text=P'">
-                    </div>
-                    <h2 style="text-align: center;">Formas de Pagamento</h2>
-                    <ul class="lista-pagamento">
-                        <li><span class="emoji-icon">💵</span> Dinheiro</li>
-                        <li><span class="emoji-icon">✨</span> Pix</li>
-                        <li><span class="emoji-icon">💳</span> Cartão de Débito e Crédito</li>
-                        <li><span class="emoji-icon">🥗</span> Alimentação: Alelo, Sodexo, Pluxee</li>
-                    </ul>
+                <div class="card" style="background:white; border-radius:15px; padding:20px; text-align:center; border:1px solid #eee;">
+                    <h2 style="font-size:1.1rem; margin-bottom:15px;">Pagamento</h2>
+                    <p style="font-size:0.9rem; color:#666;">Aceitamos Dinheiro, Pix, Cartões e Vale Alimentação (Alelo, Sodexo, Pluxee).</p>
                 </div>
             </div>
 
             <div id="pag-entrega" class="secao-conteudo">
-                <div class="card">
-                    <div class="section-icon-header">
-                        <img src="img/entrega.png" width="60" height="60" alt="Entrega" onerror="this.src='https://placehold.co/60x60/FF9800/ffffff?text=E'">
-                    </div>
-                    <h2 style="text-align: center; color: var(--cor-entrega);">Entrega Grátis</h2>
-                    <p style="text-align: center; color: #555;">Em toda Cuiabá e Várzea Grande.</p>
+                <div class="card" style="background:white; border-radius:15px; padding:20px; text-align:center; border:1px solid #eee;">
+                    <h2 style="font-size:1.1rem; margin-bottom:15px; color:var(--cor-entrega);">Entrega Grátis</h2>
+                    <p style="font-size:0.9rem; color:#666;">Cuiabá e Várzea Grande - MT</p>
                 </div>
             </div>
         </div>
 
-        <footer class="seo-text-block" style="text-align: center; font-size: 0.85rem; color: #888; padding: 20px;">
-            <p><strong>Dona Antônia - Cestas Personalizadas</strong></p>
-            <p>Cuiabá - MT &bull; Várzea Grande - MT</p>
-            <div class="footer-map-container" style="margin-top: 20px;">
-                <iframe src="https://maps.google.com/maps?q=9W4X%2BGX%20Jardim%20Nossa%20Sra.%20Aparecida%2C%20Cuiabá%20-%20MT&t=&z=13&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-            </div>
+        <footer style="text-align: center; padding: 30px 20px; color: #999; font-size: 0.8rem;">
+            <p>© Dona Antônia Alimentos - 2025</p>
         </footer>
     </main>
 
-    <!-- MODAL CONTATOS -->
-    <div id="modalContatos" class="modal-variacao" onclick="if(event.target === this) fecharModalContatos()">
-        <div class="modal-info-content" style="max-width: 340px;">
-            <div class="modal-info-header">
-                <h3>Fale Conosco</h3>
-                <button class="btn-fechar-modal-info" onclick="fecharModalContatos()">Fechar</button>
+    <!-- MODAL HISTÓRICO -->
+    <div id="modalHistorico" class="modal-variacao" onclick="if(event.target === this) fecharModalHistorico()">
+        <div class="modal-info-content">
+            <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0;">Pedidos Recentes</h3>
+                <button style="border:none; background:#f0f0f0; border-radius:15px; padding:5px 12px; cursor:pointer;" onclick="fecharModalHistorico()">X</button>
             </div>
-            <div style="padding: 20px; text-align: center;">
-                <a href="https://wa.me/5565996813588" class="btn-acao btn-destaque" target="_blank" style="margin-bottom: 15px; opacity: 1; pointer-events: auto;">
-                    <i class="fab fa-whatsapp"></i> Chamar no WhatsApp
-                </a>
-                <p>Ou ligue: (65) 99681-3588</p>
+            <div style="max-height:60vh; overflow-y:auto; padding:15px;" id="listaHistorico">
+                <!-- Lista via JS -->
             </div>
         </div>
     </div>
 
-    <!-- MODAL HISTÓRICO (NOVO) -->
-    <div id="modalHistorico" class="modal-variacao" onclick="if(event.target === this) fecharModalHistorico()">
-        <div class="modal-info-content">
-            <div class="modal-info-header">
-                <h3>Últimos Pedidos</h3>
-                <button class="btn-fechar-modal-info" onclick="fecharModalHistorico()">Fechar</button>
-            </div>
-            <div class="modal-body-scroll">
-                <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Clique em um pedido para recarregar a cesta e encomendar novamente.</p>
-                <ul id="listaHistorico" class="historico-lista">
-                    <!-- Itens via JS -->
-                </ul>
-            </div>
+    <!-- MODAL CONTATOS -->
+    <div id="modalContatos" class="modal-variacao" onclick="if(event.target === this) fecharModalContatos()">
+        <div class="modal-info-content" style="padding:30px; text-align:center;">
+            <h3>Fale Conosco</h3>
+            <p>Clique no botão abaixo para abrir o WhatsApp.</p>
+            <a href="https://wa.me/5565996813588" class="btn-acao btn-destaque" target="_blank" style="opacity:1; pointer-events:auto; margin-top:20px; text-decoration:none;">
+                <i class="fab fa-whatsapp"></i> WhatsApp Principal
+            </a>
+            <button onclick="fecharModalContatos()" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer;">Fechar</button>
         </div>
     </div>
 
     <script>
-        // === LISTA DE PRODUTOS ===
         const produtos = [
-            // ALIMENTOS
             { id: 1, categoria: "alimentos", nome: "Arroz 5kg", preco: 25.00, img: "img/arroz.png" },
             { id: 2, categoria: "alimentos", nome: "Açúcar Cristal 2kg", preco: 9.50, img: "img/acucar.png" },
             { id: 3, categoria: "alimentos", nome: "Óleo de Soja 900ml", preco: 6.00, img: "img/oleo.png" },
-            { id: 4, categoria: "alimentos", nome: "Feijão Da Casa 1kg", preco: 8.50, img: "img/feijao.png" },
-            { id: 5, categoria: "alimentos", nome: "Café Caboclo 500g", preco: 18.00, img: "img/cafe.png" },
-            { id: 6, categoria: "alimentos", nome: "Espaguete 500g", preco: 4.50, img: "img/macarrao.png" },
-            { id: 7, categoria: "alimentos", nome: "Ovos (Cartela 12)", preco: 12.00, img: "img/ovos.png" },
-            { id: 8, categoria: "alimentos", nome: "Mistura p/ Bolo 400g", preco: 5.00, img: "img/bolo.png" },
-            { id: 9, categoria: "alimentos", nome: "Trigo 1kg", preco: 5.50, img: "img/trigo.png" },
-            { id: 10, categoria: "alimentos", nome: "Sal 1kg", preco: 2.00, img: "img/sal.png" },
-            { id: 11, categoria: "alimentos", nome: "Molho Tomate FUGINI 340g", preco: 3.00, img: "img/molho.png" },
-            { id: 12, categoria: "alimentos", nome: "Milho Lata/Sachê 250g", preco: 3.50, img: "img/milho.png" },
-            { id: 13, categoria: "alimentos", nome: "Tempero Pronto 300g", preco: 4.00, img: "img/tempero.png" },
-            { id: 14, categoria: "alimentos", nome: "Bolacha Recheada My Bit", preco: 3.50, img: "img/bolacha.png" },
-            { id: 15, categoria: "alimentos", nome: "Miojo Apti", preco: 2.00, img: "img/miojo.png" },
-            { id: 16, categoria: "alimentos", nome: "Suco em Pó", preco: 1.50, img: "img/suco.png" },
-            
-            // LIMPEZA E HIGIENE
-            { id: 17, categoria: "limpeza", nome: "Sabão Barra YPE (5 un)", preco: 11.00, img: "img/sabao_barra.png" },
-            { id: 18, categoria: "limpeza", nome: "Creme Dental Sorriso 70g", preco: 4.50, img: "img/creme.png" },
-            { id: 19, categoria: "limpeza", nome: "Papel Higiênico (4un)", preco: 6.00, img: "img/papel.png" },
-            { id: 20, categoria: "limpeza", nome: "Amaciante Ype 2 Litros", preco: 15.00, img: "img/amaciante.png" },
-            { id: 21, categoria: "limpeza", nome: "Desinfetante Remmus 2L", preco: 8.00, img: "img/desinfetante.png" },
-            { id: 22, categoria: "limpeza", nome: "Sabão Pó OMO 800g", preco: 13.00, img: "img/sabao_po.png" },
-            { id: 23, categoria: "limpeza", nome: "Detergente Ype 500ml", preco: 2.50, img: "img/detergente.png" },
-            { id: 24, categoria: "limpeza", nome: "Qboa 1 Litro", preco: 5.00, img: "img/qboa.png" },
-            { id: 25, categoria: "limpeza", nome: "Sabonete Palmolive 90g", preco: 2.80, img: "img/sabonete.png" },
-            { id: 26, categoria: "limpeza", nome: "Esponja Aço Assolan", preco: 2.20, img: "img/aco.png" },
-            { id: 27, categoria: "limpeza", nome: "Esponja Lavar Louça", preco: 1.50, img: "img/bucha.png" }
+            { id: 4, categoria: "alimentos", nome: "Feijão 1kg", preco: 8.50, img: "img/feijao.png" },
+            { id: 5, categoria: "alimentos", nome: "Café 500g", preco: 18.00, img: "img/cafe.png" },
+            { id: 6, categoria: "alimentos", nome: "Macarrão 500g", preco: 4.50, img: "img/macarrao.png" },
+            { id: 7, categoria: "alimentos", nome: "Ovos (Dúzia)", preco: 12.00, img: "img/ovos.png" },
+            { id: 8, categoria: "alimentos", nome: "Trigo 1kg", preco: 5.50, img: "img/trigo.png" },
+            { id: 9, categoria: "alimentos", nome: "Sal 1kg", preco: 2.00, img: "img/sal.png" },
+            { id: 10, categoria: "alimentos", nome: "Molho Tomate", preco: 3.00, img: "img/molho.png" },
+            { id: 17, categoria: "limpeza", nome: "Sabão Barra Ype", preco: 11.00, img: "img/sabao_barra.png" },
+            { id: 18, categoria: "limpeza", nome: "Creme Dental", preco: 4.50, img: "img/creme.png" },
+            { id: 19, categoria: "limpeza", nome: "Papel Higiênico", preco: 6.00, img: "img/papel.png" },
+            { id: 22, categoria: "limpeza", nome: "Sabão Pó OMO", preco: 13.00, img: "img/sabao_po.png" },
+            { id: 23, categoria: "limpeza", nome: "Detergente Ype", preco: 2.50, img: "img/detergente.png" }
         ];
 
-        // Estado das quantidades e Histórico
         let cesta = {}; 
         let historicoPedidos = [];
 
-        // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
             renderizarProdutos();
-            carregarCestaSalva(); // Carrega cesta atual (se houver)
-            carregarHistoricoStorage(); // Carrega lista de pedidos antigos
+            carregarCestaSalva();
+            carregarHistoricoStorage();
         });
 
         function renderizarProdutos() {
             const grid = document.getElementById('gridProdutos');
             grid.innerHTML = '';
 
-            // Renderizar ALIMENTOS
             adicionarCabecalho(grid, 'Alimentos');
             produtos.filter(p => p.categoria === 'alimentos').forEach(prod => criarCard(prod, grid));
 
-            // Renderizar LIMPEZA
             adicionarCabecalho(grid, 'Limpeza e Higiene');
             produtos.filter(p => p.categoria === 'limpeza').forEach(prod => criarCard(prod, grid));
         }
@@ -895,14 +681,12 @@
         function criarCard(prod, container) {
             const qtd = cesta[prod.id] || 0;
             const card = document.createElement('div');
-            card.className = 'produto-item';
-            // Se já tiver item na cesta ao criar, marca como selecionado
-            if (qtd > 0) card.classList.add('selecionado');
-            card.id = `card-produto-${prod.id}`; // Add ID para fácil acesso
+            card.className = 'produto-item' + (qtd > 0 ? ' selecionado' : '');
+            card.id = `card-prod-${prod.id}`;
             
             card.innerHTML = `
                 <div class="prod-img-wrapper">
-                    <img src="${prod.img}" alt="${prod.nome}" onerror="this.src='https://placehold.co/150x150/eee/999?text=Item'">
+                    <img src="${prod.img}" alt="${prod.nome}" onerror="this.src='https://placehold.co/200x200/eee/999?text=${prod.nome}'">
                 </div>
                 <div class="prod-info">
                     <div class="prod-nome">${prod.nome}</div>
@@ -919,291 +703,142 @@
         function alterarQtd(id, delta) {
             if (!cesta[id]) cesta[id] = 0;
             cesta[id] += delta;
-            
             if (cesta[id] < 0) cesta[id] = 0;
             
-            // Atualiza visual apenas do número
             document.getElementById(`qtd-${id}`).innerText = cesta[id];
-            
-            // Atualiza visual do card (verde se > 0)
-            const card = document.getElementById(`card-produto-${id}`);
-            if (cesta[id] > 0) {
-                card.classList.add('selecionado');
-            } else {
-                card.classList.remove('selecionado');
-            }
+            const card = document.getElementById(`card-prod-${id}`);
+            if (cesta[id] > 0) card.classList.add('selecionado');
+            else card.classList.remove('selecionado');
 
-            // RESETAR O CALCULO VISUAL
-            document.getElementById('totalValor').innerText = "Clique em Calcular";
-            document.getElementById('totalValor').style.color = "#666";
-            document.getElementById('totalValor').style.fontWeight = "normal";
+            document.getElementById('totalValor').innerText = "Validar Pedido...";
+            document.getElementById('btnEncomendar').classList.remove('ativo');
             
-            const btnEncomendar = document.getElementById('btnEncomendar');
-            btnEncomendar.classList.remove('ativo');
-            
-            // ATUALIZA GAMIFICAÇÃO EM TEMPO REAL
             atualizarBarrasProgresso();
-
-            // Salva estado atual (auto-save discreto)
             localStorage.setItem('minhaCestaPersonalizada', JSON.stringify(cesta));
         }
 
         function atualizarBarrasProgresso() {
-            let itensCount = 0;
-            let produtosDiferentesCount = 0;
+            let totalItens = 0;
+            let difItens = 0;
             
-            produtos.forEach(prod => {
-                const qtd = cesta[prod.id] || 0;
-                if (qtd > 0) {
-                    itensCount += qtd;
-                    produtosDiferentesCount++;
+            produtos.forEach(p => {
+                const q = cesta[p.id] || 0;
+                if (q > 0) {
+                    totalItens += q;
+                    difItens++;
                 }
             });
 
-            // Metas
-            const metaDif = 10;
-            const metaTotal = 20;
+            const pctDif = Math.min((difItens / 10) * 100, 100);
+            const pctTotal = Math.min((totalItens / 20) * 100, 100);
 
-            // Calcula porcentagens (max 100%)
-            const pctDif = Math.min((produtosDiferentesCount / metaDif) * 100, 100);
-            const pctTotal = Math.min((itensCount / metaTotal) * 100, 100);
+            document.getElementById('label-dif').innerText = `${difItens}/10`;
+            document.getElementById('label-total').innerText = `${totalItens}/20`;
+            
+            const bDif = document.getElementById('bar-dif');
+            const bTotal = document.getElementById('bar-total');
+            
+            bDif.style.width = `${pctDif}%`;
+            bTotal.style.width = `${pctTotal}%`;
 
-            // Atualiza Labels
-            document.getElementById('label-dif').innerText = `${produtosDiferentesCount}/${metaDif}`;
-            document.getElementById('label-total').innerText = `${itensCount}/${metaTotal}`;
+            if (difItens >= 10) { bDif.classList.add('concluido'); document.getElementById('icon-dif').classList.add('ativo'); }
+            else { bDif.classList.remove('concluido'); document.getElementById('icon-dif').classList.remove('ativo'); }
 
-            // Atualiza Barras
-            const barDif = document.getElementById('bar-dif');
-            const barTotal = document.getElementById('bar-total');
-            const iconDif = document.getElementById('icon-dif');
-            const iconTotal = document.getElementById('icon-total');
-
-            barDif.style.width = `${pctDif}%`;
-            barTotal.style.width = `${pctTotal}%`;
-
-            // Verifica Conclusão (Diferentes)
-            if (produtosDiferentesCount >= metaDif) {
-                barDif.classList.add('concluido');
-                iconDif.classList.add('ativo');
-            } else {
-                barDif.classList.remove('concluido');
-                iconDif.classList.remove('ativo');
-            }
-
-            // Verifica Conclusão (Total)
-            if (itensCount >= metaTotal) {
-                barTotal.classList.add('concluido');
-                iconTotal.classList.add('ativo');
-            } else {
-                barTotal.classList.remove('concluido');
-                iconTotal.classList.remove('ativo');
-            }
+            if (totalItens >= 20) { bTotal.classList.add('concluido'); document.getElementById('icon-total').classList.add('ativo'); }
+            else { bTotal.classList.remove('concluido'); document.getElementById('icon-total').classList.remove('ativo'); }
         }
 
         function calcularTotal() {
             let total = 0;
-            let itensCount = 0;
-            let produtosDiferentesCount = 0;
+            let totalItens = 0;
+            let difItens = 0;
             
-            produtos.forEach(prod => {
-                const qtd = cesta[prod.id] || 0;
-                if (qtd > 0) {
-                    total += qtd * prod.preco;
-                    itensCount += qtd;
-                    produtosDiferentesCount++;
+            produtos.forEach(p => {
+                const q = cesta[p.id] || 0;
+                if (q > 0) {
+                    total += q * p.preco;
+                    totalItens += q;
+                    difItens++;
                 }
             });
 
-            // VALIDAÇÃO
-            const minProdutosDif = 10;
-            const minItensTotal = 20;
-
-            if (produtosDiferentesCount < minProdutosDif || itensCount < minItensTotal) {
-                let msgErro = "Para calcular, falta:\n";
-                if (produtosDiferentesCount < minProdutosDif) msgErro += `🔴 +${minProdutosDif - produtosDiferentesCount} produtos diferentes\n`;
-                if (itensCount < minItensTotal) msgErro += `🔴 +${minItensTotal - itensCount} itens no total`;
-
-                mostrarToast(msgErro);
-                
-                document.getElementById('totalValor').innerText = "Incompleto";
-                document.getElementById('totalValor').style.color = "red";
-                
-                const btnEncomendar = document.getElementById('btnEncomendar');
-                btnEncomendar.classList.remove('ativo');
-                
-                return false; 
+            if (difItens < 10 || totalItens < 20) {
+                mostrarToast(`Faltam itens! Você tem ${difItens} produtos e ${totalItens} no total.`);
+                return;
             }
 
-            // SUCESSO
-            const valorFormatado = `R$ ${total.toFixed(2).replace('.', ',')}`;
-            const labelTotal = document.getElementById('totalValor');
-            labelTotal.innerText = valorFormatado;
-            labelTotal.style.color = "var(--cor-destaque-vermelho)";
-            labelTotal.style.fontWeight = "800";
-            
-            const btnEncomendar = document.getElementById('btnEncomendar');
-            btnEncomendar.classList.add('ativo');
-            
-            return { total, valorFormatado, itensCount }; 
+            document.getElementById('totalValor').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            document.getElementById('btnEncomendar').classList.add('ativo');
+            return { total, totalItens };
         }
 
         function encomendarCesta() {
-            const resultado = calcularTotal();
-            if (!resultado) return;
+            const res = calcularTotal();
+            if (!res) return;
 
-            // SALVAR NO HISTÓRICO ANTES DE ENVIAR
-            salvarPedidoHistorico(resultado.total, resultado.itensCount);
+            salvarNoHistorico(res.total, res.totalItens);
 
-            let total = 0;
-            let mensagem = "*Olá! Montei minha Cesta Personalizada no site:*\n\n";
-            let itensAlimentos = "";
-            let itensLimpeza = "";
-
-            produtos.forEach(prod => {
-                const qtd = cesta[prod.id] || 0;
-                if (qtd > 0) {
-                    total += qtd * prod.preco;
-                    if(prod.categoria === 'alimentos') {
-                        itensAlimentos += `▪ ${qtd}x ${prod.nome}\n`;
-                    } else {
-                        itensLimpeza += `▪ ${qtd}x ${prod.nome}\n`;
-                    }
-                }
+            let msg = "*Pedido de Cesta Personalizada*\n\n";
+            produtos.forEach(p => {
+                const q = cesta[p.id] || 0;
+                if (q > 0) msg += `▪ ${q}x ${p.nome}\n`;
             });
+            msg += `\n*Total Estimado: R$ ${res.total.toFixed(2).replace('.', ',')}*`;
 
-            if(itensAlimentos) mensagem += "*[ ALIMENTOS ]*\n" + itensAlimentos + "\n";
-            if(itensLimpeza) mensagem += "*[ LIMPEZA E HIGIENE ]*\n" + itensLimpeza;
-
-            mensagem += `\n*Total Estimado: R$ ${total.toFixed(2).replace('.', ',')}*`;
-            mensagem += `\n\n_Aguardo a confirmação do pedido e entrega._`;
-
-            const url = `https://wa.me/5565996813588?text=${encodeURIComponent(mensagem)}`;
-            window.open(url, '_blank');
+            window.open(`https://wa.me/5565996813588?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // === LÓGICA DE HISTÓRICO ===
-
-        function carregarHistoricoStorage() {
-            const hist = localStorage.getItem('donaAntoniaHistorico');
-            if (hist) {
-                historicoPedidos = JSON.parse(hist);
-            }
-        }
-
-        function salvarPedidoHistorico(total, itens) {
-            const novoPedido = {
-                data: new Date().toLocaleString('pt-BR'),
-                total: total,
-                itensQtd: itens,
-                cestaSalva: { ...cesta } // Copia o objeto cesta atual
-            };
-            
-            // Adiciona no início e mantém apenas os últimos 10
-            historicoPedidos.unshift(novoPedido);
-            if (historicoPedidos.length > 10) historicoPedidos.pop();
-            
+        function salvarNoHistorico(t, i) {
+            const ped = { data: new Date().toLocaleString(), total: t, itens: i, cesta: {...cesta} };
+            historicoPedidos.unshift(ped);
+            if (historicoPedidos.length > 5) historicoPedidos.pop();
             localStorage.setItem('donaAntoniaHistorico', JSON.stringify(historicoPedidos));
         }
 
+        function carregarHistoricoStorage() {
+            const h = localStorage.getItem('donaAntoniaHistorico');
+            if (h) historicoPedidos = JSON.parse(h);
+        }
+
         function abrirHistorico() {
-            const lista = document.getElementById('listaHistorico');
-            lista.innerHTML = '';
-
-            if (historicoPedidos.length === 0) {
-                lista.innerHTML = '<li style="text-align:center; color:#999; padding:20px;">Nenhum pedido recente encontrado.</li>';
-            } else {
-                historicoPedidos.forEach((pedido, index) => {
-                    const li = document.createElement('li');
-                    li.className = 'historico-item';
-                    li.onclick = () => carregarPedidoDoHistorico(index);
-                    
-                    li.innerHTML = `
-                        <div>
-                            <span class="hist-data">${pedido.data}</span>
-                            <span class="hist-resumo">${pedido.itensQtd} itens</span>
-                        </div>
-                        <span class="hist-valor">R$ ${pedido.total.toFixed(2).replace('.', ',')}</span>
-                    `;
-                    lista.appendChild(li);
-                });
-            }
-
+            const l = document.getElementById('listaHistorico');
+            l.innerHTML = '';
+            if (historicoPedidos.length === 0) l.innerHTML = '<p>Nenhum pedido encontrado.</p>';
+            historicoPedidos.forEach((p, idx) => {
+                const d = document.createElement('div');
+                d.style.cssText = "padding:10px; border:1px solid #eee; margin-bottom:10px; border-radius:10px; cursor:pointer;";
+                d.innerHTML = `<strong>${p.data}</strong><br>${p.itens} itens - R$ ${p.total.toFixed(2)}`;
+                d.onclick = () => {
+                    cesta = {...p.cesta};
+                    renderizarProdutos();
+                    atualizarBarrasProgresso();
+                    fecharModalHistorico();
+                    mostrarToast("Cesta recarregada!");
+                };
+                l.appendChild(d);
+            });
             document.getElementById('modalHistorico').style.display = 'flex';
         }
 
-        function carregarPedidoDoHistorico(index) {
-            const pedido = historicoPedidos[index];
-            if (!pedido) return;
+        function fecharModalHistorico() { document.getElementById('modalHistorico').style.display = 'none'; }
+        function abrirModalContatos() { document.getElementById('modalContatos').style.display = 'flex'; }
+        function fecharModalContatos() { document.getElementById('modalContatos').style.display = 'none'; }
 
-            // Restaura a cesta
-            cesta = { ...pedido.cestaSalva };
-            localStorage.setItem('minhaCestaPersonalizada', JSON.stringify(cesta));
-            
-            // Atualiza UI
-            produtos.forEach(prod => {
-                const qtd = cesta[prod.id] || 0;
-                
-                const el = document.getElementById(`qtd-${prod.id}`);
-                if(el) el.innerText = qtd;
-
-                // Atualiza visual do card
-                const card = document.getElementById(`card-produto-${prod.id}`);
-                if (card) {
-                    if (qtd > 0) card.classList.add('selecionado');
-                    else card.classList.remove('selecionado');
-                }
-            });
-
-            // Atualiza Barras
-            atualizarBarrasProgresso();
-
-            // Tenta calcular e validar
-            calcularTotal();
-            
-            fecharModalHistorico();
-            mostrarToast("Pedido recarregado com sucesso!");
-        }
-
-        function fecharModalHistorico() {
-            document.getElementById('modalHistorico').style.display = 'none';
-        }
-
-        // === HELPERS DE PERSISTÊNCIA BÁSICA ===
         function carregarCestaSalva() {
-            const salva = localStorage.getItem('minhaCestaPersonalizada');
-            if (salva) {
-                cesta = JSON.parse(salva);
-                produtos.forEach(prod => {
-                    const qtd = cesta[prod.id] || 0;
-                    
-                    const el = document.getElementById(`qtd-${prod.id}`);
-                    if(el) el.innerText = qtd;
-
-                    // Atualiza visual do card ao carregar
-                    const card = document.getElementById(`card-produto-${prod.id}`);
-                    if (card) {
-                        if (qtd > 0) card.classList.add('selecionado');
-                        else card.classList.remove('selecionado');
-                    }
-                });
-                // Chama para setar o estado inicial das barras
+            const s = localStorage.getItem('minhaCestaPersonalizada');
+            if (s) {
+                cesta = JSON.parse(s);
                 atualizarBarrasProgresso();
             }
         }
 
-        function mostrarToast(msg) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast-message';
-            toast.innerText = msg;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.remove();
-            }, 4000);
+        function mostrarToast(m) {
+            const t = document.createElement('div');
+            t.style.cssText = "position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:10px 20px; border-radius:20px; z-index:9999;";
+            t.innerText = m;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
         }
-
-        function abrirModalContatos() { document.getElementById('modalContatos').style.display = 'flex'; }
-        function fecharModalContatos() { document.getElementById('modalContatos').style.display = 'none'; }
     </script>
 </body>
 </html>
