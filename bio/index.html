@@ -78,6 +78,7 @@
             
             <div class="relative z-10">
                 <div class="w-32 h-32 mx-auto bg-white rounded-full p-1 shadow-lg mb-4 flex items-center justify-center border-4 border-[#FFC107] overflow-hidden">
+                    <!-- LOGO ATUALIZADA -->
                     <img src="img/logo2 (3).png" 
                          alt="Dona Antônia Logo" 
                          class="w-full h-full object-cover" 
@@ -124,18 +125,7 @@
                 <i class="fas fa-phone text-gray-300"></i>
             </a>
 
-             <!-- BOTÃO 3: LOCALIZAÇÃO (Maps) -->
-             <a href="https://maps.google.com/maps?q=9W4X%2BGX%20Jardim%20Nossa%20Sra.%20Aparecida%2C%20Cuiabá%20-%20MT" target="_blank"
-                class="btn-link flex items-center p-4 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 group hover:border-gray-400">
-                 <div class="bg-gray-100 p-2 rounded-full mr-4 text-red-500">
-                     <i class="fas fa-map-marked-alt text-xl"></i>
-                 </div>
-                 <div class="flex-1 text-left">
-                     <span class="block text-lg font-bold">Ver Localização</span>
-                     <span class="block text-xs text-gray-500 font-medium">Abrir no Google Maps</span>
-                 </div>
-                 <i class="fas fa-external-link-alt text-gray-300"></i>
-             </a>
+            <!-- BOTÃO 3: LOCALIZAÇÃO (REMOVIDO DAQUI) -->
 
         </div>
 
@@ -272,15 +262,52 @@
             </div>
         </div>
 
-        <!-- FOOTER (Endereço e Copyright ATUALIZADOS) -->
-        <footer class="bg-gray-100 p-6 text-center border-t border-gray-200 text-gray-500 text-sm">
-            <div class="mb-4">
-                <i class="fas fa-store text-red-400 mb-2 text-lg"></i>
-                <p class="font-bold text-[#D32F2F] text-xs uppercase mb-1">RETIRE E GANHE DESCONTO:</p>
-                <p class="text-xs font-bold text-gray-600 mb-2">Somente das 8h as 12h de Segunda a Sábado</p>
-                <p class="leading-relaxed">R. Trinta, 105 - Jardim Nossa Sra. Aparecida<br>Cuiabá - MT, 78090-660</p>
+        <!-- SEÇÃO RETIRE E GANHE (DESTAQUE INTEGRADO) -->
+        <div class="px-4 pb-6 w-full mt-4">
+            <div class="bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl p-6 text-center text-white shadow-xl relative overflow-hidden group border-2 border-white/20">
+                <!-- Efeito de brilho de fundo -->
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-yellow-400/20 rounded-full blur-3xl"></div>
+                
+                <div class="relative z-10">
+                    <div class="inline-block bg-white/20 p-4 rounded-full mb-4 backdrop-blur-sm shadow-inner">
+                        <i class="fas fa-store-alt text-4xl text-yellow-300"></i>
+                    </div>
+                    
+                    <h3 class="text-2xl font-black uppercase tracking-tight mb-1 text-white drop-shadow-md leading-none">
+                        Retire e Ganhe<br><span class="text-yellow-300 text-3xl">Desconto!</span>
+                    </h3>
+                    
+                    <div class="my-4 flex justify-center">
+                        <span class="bg-black/20 backdrop-blur-md px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide border border-white/10">
+                            <i class="far fa-clock mr-1 text-yellow-300"></i> Seg a Sáb: 08h às 12h
+                        </span>
+                    </div>
+
+                    <p class="text-sm mb-3 leading-relaxed opacity-95 font-medium bg-white/10 rounded-lg p-2 border border-white/5">
+                        R. Trinta, 105 - Jardim Nossa Sra. Aparecida<br>
+                        Cuiabá - MT, 78090-660
+                    </p>
+
+                    <!-- BOTÃO NOVO: VER NO MAPS (Integrado) -->
+                    <a href="https://maps.google.com/maps?q=9W4X%2BGX%20Jardim%20Nossa%20Sra.%20Aparecida%2C%20Cuiabá%20-%20MT" target="_blank"
+                       class="inline-flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white text-xs font-bold uppercase tracking-wide py-2 px-4 rounded-full mb-5 transition border border-white/30 w-full max-w-[200px]">
+                        <i class="fas fa-map-marked-alt text-yellow-300"></i> Abrir no Maps
+                    </a>
+
+                    <!-- BOTÃO ZAP DESCONTO -->
+                    <a href="https://wa.me/5565998150975?text=Ol%C3%A1!%20Vi%20no%20link%20da%20bio%20que%20tem%20desconto%20para%20retirar%20a%20cesta.%20Qual%20o%20valor?" 
+                       class="block w-full bg-white text-red-600 font-black py-4 rounded-xl shadow-lg hover:bg-gray-50 transition transform hover:scale-[1.02] flex items-center justify-center gap-2 group-hover:shadow-2xl">
+                        <i class="fab fa-whatsapp text-2xl text-green-500"></i>
+                        QUAL MEU DESCONTO?
+                    </a>
+                </div>
             </div>
-            <p class="text-xs opacity-60 border-t border-gray-200 pt-4">© 2025 Dona Antônia Alimentos.</p>
+        </div>
+
+        <!-- FOOTER (Copyright) -->
+        <footer class="bg-gray-100 p-4 text-center border-t border-gray-200 text-gray-500 text-sm">
+            <p class="text-xs opacity-60">© 2025 Dona Antônia Alimentos.</p>
         </footer>
     </main>
 
