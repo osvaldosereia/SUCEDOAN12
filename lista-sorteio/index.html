@@ -68,12 +68,7 @@
                                placeholder="Ex: Ana Maria Silva">
                     </div>
 
-                    <div>
-                        <label for="telefone" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Telefone <span class="text-xs text-gray-400 font-normal">(Validação de duplicidade)</span></label>
-                        <input type="tel" id="telefone" name="telefone" required
-                               class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                               placeholder="Ex: 65999998888">
-                    </div>
+                    <!-- Campo Telefone removido conforme solicitado -->
 
                     <div>
                         <label for="cidade" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cidade</label>
@@ -266,31 +261,17 @@
                 e.preventDefault();
                 
                 const formData = new FormData(form);
-                const novoTelefone = formData.get('telefone').trim();
+                // Telefone removido
                 const novoNome = formData.get('nome').trim();
 
-                // Verificação de Duplicados (chave: Telefone)
-                // Nota: Agora verificamos 'telefone' e 'celular' para compatibilidade com arquivos antigos se necessário,
-                // mas focamos em 'telefone' para novos.
-                const duplicado = database.find(item => 
-                    (item.telefone === novoTelefone) || (item.celular === novoTelefone)
-                );
-
-                if (duplicado) {
-                    showMessage(`Bloqueado: O telefone ${novoTelefone} já pertence a "${duplicado.nome}".`, 'error');
-                    document.getElementById('telefone').focus();
-                    document.getElementById('telefone').classList.add('border-red-500', 'bg-red-50');
-                    setTimeout(() => {
-                        document.getElementById('telefone').classList.remove('border-red-500', 'bg-red-50');
-                    }, 3000);
-                    return;
-                }
+                // Validação de duplicidade removida porque o campo chave (telefone) foi excluído.
+                // Se desejar validar por nome no futuro, podemos adicionar essa lógica aqui.
 
                 // Cria o novo objeto com os novos campos
                 const novoCadastro = {
                     id: generateRandomId(),
                     nome: novoNome,
-                    telefone: novoTelefone,
+                    // telefone removido
                     cidade: formData.get('cidade'),
                     bairro: formData.get('bairro'),
                     data_registro: new Date().toLocaleString('pt-BR')
