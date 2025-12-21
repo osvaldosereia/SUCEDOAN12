@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio Cestas Econômicas</title>
+    <!-- Importando Tailwind CSS para estilo rápido e bonito -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importando ícones (FontAwesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Fonte Google (Poppins) para um visual moderno -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Gradiente suave para o fundo */
+        .bg-gradient-custom {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+        }
+        .input-field {
+            transition: all 0.3s ease;
+        }
+        .input-field:focus {
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-gray-100">
+
+    <!-- Container Principal (Cartão) -->
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
+        
+        <!-- Cabeçalho com Logo -->
+        <div class="bg-white p-6 flex justify-center items-center border-b border-gray-100">
+            <!-- 
+               ATUALIZADO: Caminho da imagem alterado para a pasta 'img/' e extensão .png
+            -->
+            <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.png" 
+                 alt="Logo Dona Antonia" 
+                 class="h-40 object-contain"
+                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'text-center text-red-500 font-bold\'>Logo não encontrada.<br>Verifique a pasta img/</div>';">
+        </div>
+
+        <!-- Conteúdo do Sorteio -->
+        <div class="p-6 space-y-4 text-center">
+            
+            <!-- Títulos -->
+            <div class="space-y-2">
+                <span class="inline-block bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                    Sorteio Oficial
+                </span>
+                <h1 class="text-2xl font-bold text-gray-800 leading-tight">
+                    Sorteio de 20 Cestas Econômicas
+                </h1>
+                <p class="text-gray-600 font-medium">
+                    <i class="far fa-calendar-alt mr-1"></i> 22 de Dezembro às 20h
+                </p>
+                <p class="text-sm text-gray-500">
+                    O sorteio será ao vivo pelo Instagram <i class="fab fa-instagram text-pink-600"></i>
+                </p>
+            </div>
+
+            <!-- Botões de Validação (Grupo e Instagram) -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 space-y-3">
+                <p class="text-xs font-bold text-yellow-800 uppercase mb-2">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Para validar sua participação:
+                </p>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="#" class="flex flex-col items-center justify-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition text-blue-600 hover:bg-blue-50">
+                        <i class="fas fa-users text-2xl mb-1"></i>
+                        <span class="text-xs font-bold">Entrar no Grupo</span>
+                    </a>
+                    <a href="https://instagram.com" target="_blank" class="flex flex-col items-center justify-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition text-pink-600 hover:bg-pink-50">
+                        <i class="fab fa-instagram text-2xl mb-1"></i>
+                        <span class="text-xs font-bold">Seguir no Insta</span>
+                    </a>
+                </div>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <!-- Formulário de Cadastro -->
+            <form id="cadastroForm" class="space-y-4 text-left mt-4" onsubmit="enviarParaWhatsapp(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-gray-400"></i>
+                        </div>
+                        <input type="text" id="nome" required 
+                            class="input-field w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-700 placeholder-gray-400"
+                            placeholder="Seu nome">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-map-marker-alt text-gray-400"></i>
+                            </div>
+                            <input type="text" id="cidade" required 
+                                class="input-field w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-700 placeholder-gray-400"
+                                placeholder="Sua cidade">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                        <input type="text" id="bairro" required 
+                            class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-700 placeholder-gray-400"
+                            placeholder="Seu bairro">
+                    </div>
+                </div>
+
+                <!-- Botão Enviar -->
+                <button type="submit" 
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:-translate-y-1 flex items-center justify-center text-lg mt-2">
+                    <i class="fab fa-whatsapp text-2xl mr-2"></i>
+                    ENVIAR CADASTRO
+                </button>
+                <p class="text-xs text-center text-gray-400 mt-2">
+                    Ao clicar, você enviará seus dados para o WhatsApp da promoção.
+                </p>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Script JavaScript para funcionalidade -->
+    <script>
+        function enviarParaWhatsapp(event) {
+            event.preventDefault(); // Impede o recarregamento da página
+
+            // 1. Capturar os valores dos campos
+            const nome = document.getElementById('nome').value;
+            const cidade = document.getElementById('cidade').value;
+            const bairro = document.getElementById('bairro').value;
+
+            // 2. Número de destino (formato internacional: 55 + DDD + Numero)
+            const numeroWhatsapp = "5565998150975";
+
+            // 3. Criar a mensagem formatada
+            // %0A é o código para pular linha na URL
+            const texto = `*OLÁ! QUERO PARTICIPAR DO SORTEIO!* 🧺%0A%0A` +
+                          `👤 *Nome:* ${nome}%0A` +
+                          `🏙️ *Cidade:* ${cidade}%0A` +
+                          `🏡 *Bairro:* ${bairro}%0A%0A` +
+                          `_Me mande o link para seguir no instagram e para entrar no grupo do sorteio_ ✅`;
+
+            // 4. Montar o link
+            const url = `https://wa.me/${numeroWhatsapp}?text=${texto}`;
+
+            // 5. Abrir o WhatsApp
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
