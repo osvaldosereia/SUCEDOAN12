@@ -3,207 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organizador de Clientes</title>
-    <!-- Usando Tailwind CSS para um design bonito e rápido -->
+    <title>Cadastro Sorteio JS</title>
+    <!-- Carrega o Tailwind CSS para estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-slate-100 text-slate-800 font-sans">
-
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #json-output { white-space: pre-wrap; word-wrap: break-word; }
         
-        <!-- Cabeçalho -->
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-blue-700 mb-2">
-                <i class="fas fa-users-cog mr-2"></i>Organizador de Clientes
-            </h1>
-            <p class="text-gray-600">Selecione seus arquivos .js de clientes para visualizar e exportar a lista de nomes.</p>
-        </header>
+        /* Estilo personalizado para a barra de rolagem */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937; /* bg-gray-800 */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563; /* bg-gray-600 */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* bg-gray-500 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
-        <!-- Área de Upload -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
-            <label class="block mb-2 text-sm font-medium text-gray-900">Carregar Arquivos (.js)</label>
-            <div class="flex gap-2">
-                <input type="file" id="fileInput" multiple accept=".js,.txt" 
-                    class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none p-2.5">
-                <button onclick="processarArquivos()" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center">
-                    <i class="fas fa-play mr-2"></i> Processar
-                </button>
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-4xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Cadastro Sorteio (.js)</h1>
+        <p class="text-center text-gray-500 mb-6 text-sm">Sistema de gestão de participantes para sorteio</p>
+        
+        <!-- Área de Upload de Banco de Dados -->
+        <div class="mb-8 p-6 bg-blue-50 rounded-xl border border-blue-100 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-blue-900">1. Carregar Banco de Dados (.js)</h3>
+                    <p class="text-sm text-blue-600">Selecione o arquivo .js que contém a lista de participantes.</p>
+                </div>
+                <div class="text-right">
+                    <span class="block text-xs text-blue-500 uppercase font-bold tracking-wider">Total de Participantes</span>
+                    <span id="db-count" class="text-3xl font-black text-blue-800">0</span>
+                </div>
             </div>
-            <p class="mt-2 text-xs text-gray-500">Suporta múltiplos arquivos simultaneamente (clientes.js, clientes2.js, etc).</p>
+            
+            <input type="file" id="file-input" accept=".js,.json,.txt" 
+                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer transition-colors">
+            
+            <div id="upload-feedback" class="mt-3 text-sm hidden"></div>
         </div>
 
-        <!-- Botões de Ação (Aparecem após processar) -->
-        <div id="actionArea" class="hidden flex justify-between items-center mb-4">
-            <span id="totalCounter" class="font-semibold text-gray-700 bg-gray-200 px-3 py-1 rounded-full text-sm">
-                0 Contatos encontrados
-            </span>
-            <button onclick="baixarListaTxt()" 
-                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200 flex items-center">
-                <i class="fas fa-download mr-2"></i> Baixar Lista (.txt)
-            </button>
-        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Coluna da Esquerda: Formulário -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span class="bg-gray-800 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                    Novo Participante
+                </h3>
+                <form id="cadastro-form" class="space-y-4 bg-gray-50 p-5 rounded-xl border border-gray-200">
+                    <div>
+                        <label for="nome" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nome</label>
+                        <input type="text" id="nome" name="nome" required
+                               class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                               placeholder="Ex: Ana Maria Silva">
+                    </div>
 
-        <!-- Tabela de Resultados -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-            <table class="min-w-full leading-normal">
-                <thead>
-                    <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
-                        <th class="py-3 px-6 text-left">Nome</th>
-                        <th class="py-3 px-6 text-left">Cidade</th>
-                        <th class="py-3 px-6 text-left">Bairro / Detalhes</th>
-                    </tr>
-                </thead>
-                <tbody id="listaClientes" class="text-gray-600 text-sm font-light">
-                    <!-- Linhas serão inseridas aqui via JavaScript -->
-                    <tr>
-                        <td colspan="3" class="py-8 text-center text-gray-400 italic">
-                            Nenhum arquivo processado ainda.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                    <div>
+                        <label for="telefone" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Telefone <span class="text-xs text-gray-400 font-normal">(Validação de duplicidade)</span></label>
+                        <input type="tel" id="telefone" name="telefone" required
+                               class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                               placeholder="Ex: 65999998888">
+                    </div>
+
+                    <div>
+                        <label for="cidade" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cidade</label>
+                        <input type="text" id="cidade" name="cidade" required
+                               class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                               placeholder="Ex: Cuiabá">
+                    </div>
+
+                    <div>
+                        <label for="bairro" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Bairro</label>
+                        <input type="text" id="bairro" name="bairro" required
+                               class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                               placeholder="Ex: Centro">
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit"
+                                class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-bold shadow-md transform active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Adicionar ao Sorteio
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Feedback de Mensagens -->
+                <div id="message-area" class="mt-4 hidden p-3 rounded-lg text-sm font-medium text-center shadow-sm"></div>
+            </div>
+
+            <!-- Coluna da Direita: Visor e Ações -->
+            <div class="flex flex-col h-full">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span class="bg-gray-800 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                    Visor de Dados
+                </h3>
+                
+                <!-- Visor do Arquivo (Preview) -->
+                <div class="bg-gray-900 rounded-xl overflow-hidden shadow-inner flex flex-col border border-gray-700 h-48">
+                    <div class="bg-gray-800 px-4 py-2 text-xs text-gray-400 flex justify-between items-center border-b border-gray-700 flex-shrink-0">
+                        <span>Previsão do Arquivo (.js)</span>
+                        <span class="text-yellow-500 text-[10px]">Somente Leitura</span>
+                    </div>
+                    <!-- O overflow-auto aqui garante a barra de rolagem -->
+                    <pre id="json-output" class="p-4 text-green-400 text-xs overflow-auto font-mono flex-grow custom-scrollbar">const bancoDados = []; // Lista vazia</pre>
+                </div>
+
+                <!-- Botões de Ação Final -->
+                <div class="mt-6 space-y-3">
+                     <button id="download-btn" disabled
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 px-6 rounded-xl font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Baixar Arquivo Completo (.js)
+                    </button>
+
+                    <!-- Novo Botão para TXT -->
+                    <button id="download-txt-btn" disabled
+                            class="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-6 rounded-xl font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Baixar Lista Nomes (A-Z) .txt
+                    </button>
+
+                    <p class="text-center text-xs text-gray-400 mt-2">Escolha o formato ideal para sua necessidade.</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Variável global para armazenar todos os clientes processados
-        let todosClientes = [];
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Variáveis Globais ---
+            let database = []; 
+            const VAR_NAME = "bancoDados"; // Nome da variável que será salva no arquivo JS
 
-        async function processarArquivos() {
-            const input = document.getElementById('fileInput');
-            const tbody = document.getElementById('listaClientes');
-            const actionArea = document.getElementById('actionArea');
-            const totalCounter = document.getElementById('totalCounter');
+            // --- Elementos do DOM ---
+            const form = document.getElementById('cadastro-form');
+            const fileInput = document.getElementById('file-input');
+            const dbCount = document.getElementById('db-count');
+            const jsonOutput = document.getElementById('json-output');
+            const downloadBtn = document.getElementById('download-btn');
+            const downloadTxtBtn = document.getElementById('download-txt-btn'); // Novo botão
+            const messageArea = document.getElementById('message-area');
+            const uploadFeedback = document.getElementById('upload-feedback');
 
-            if (input.files.length === 0) {
-                alert("Por favor, selecione pelo menos um arquivo.");
-                return;
+            // --- Funções Auxiliares ---
+
+            function generateRandomId() {
+                // ID curto e único para uso interno
+                return Date.now().toString(36).toUpperCase();
             }
 
-            // Limpa dados anteriores
-            todosClientes = [];
-            tbody.innerHTML = '<tr><td colspan="3" class="py-8 text-center"><i class="fas fa-spinner fa-spin text-2xl text-blue-500"></i><br>Lendo arquivos...</td></tr>';
+            function updateDisplay() {
+                // Atualiza contadores
+                const count = database.length;
+                dbCount.textContent = count;
+                
+                // Formata a saída como código JavaScript válido
+                const jsonContent = JSON.stringify(database, null, 2);
+                const jsContent = `const ${VAR_NAME} = ${jsonContent};`;
+                
+                jsonOutput.textContent = jsContent;
+                
+                // Rola o visor para o final para mostrar o último inserido
+                jsonOutput.scrollTop = jsonOutput.scrollHeight;
 
-            // Processa cada arquivo
-            for (let i = 0; i < input.files.length; i++) {
-                const arquivo = input.files[i];
-                try {
-                    const texto = await lerArquivo(arquivo);
-                    const clientesDoArquivo = extrairDadosDoTexto(texto);
-                    todosClientes = [...todosClientes, ...clientesDoArquivo];
-                } catch (erro) {
-                    console.error(`Erro ao ler arquivo ${arquivo.name}:`, erro);
+                // Habilita/Desabilita botões de download
+                if (count > 0) {
+                    downloadBtn.removeAttribute('disabled');
+                    downloadBtn.classList.remove('opacity-50');
+                    downloadTxtBtn.removeAttribute('disabled');
+                    downloadTxtBtn.classList.remove('opacity-50');
+                } else {
+                    downloadBtn.setAttribute('disabled', 'true');
+                    downloadBtn.classList.add('opacity-50');
+                    downloadTxtBtn.setAttribute('disabled', 'true');
+                    downloadTxtBtn.classList.add('opacity-50');
                 }
             }
 
-            // Ordenar alfabeticamente por Nome
-            todosClientes.sort((a, b) => {
-                const nomeA = (a.nome || "").toLowerCase();
-                const nomeB = (b.nome || "").toLowerCase();
-                if (nomeA < nomeB) return -1;
-                if (nomeA > nomeB) return 1;
-                return 0;
-            });
+            function showMessage(msg, type) {
+                messageArea.textContent = msg;
+                messageArea.className = 'mt-4 p-3 rounded-lg text-sm font-bold text-center shadow-sm transition-all duration-500';
+                
+                if (type === 'error') {
+                    messageArea.classList.add('bg-red-100', 'text-red-700', 'border', 'border-red-200');
+                } else {
+                    messageArea.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-200');
+                }
+                
+                messageArea.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    messageArea.classList.add('hidden');
+                }, 4000);
+            }
 
-            // Atualizar UI
-            renderizarTabela();
-            actionArea.classList.remove('hidden');
-            totalCounter.textContent = `${todosClientes.length} Contatos encontrados`;
-        }
+            // --- 1. Função de Upload INTELIGENTE (.js) ---
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
 
-        // Função auxiliar para ler arquivo como promessa
-        function lerArquivo(file) {
-            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(e);
+                
+                reader.onload = (event) => {
+                    try {
+                        let content = event.target.result;
+                        
+                        // Lógica de Limpeza para arquivos JS
+                        const firstBracket = content.indexOf('[');
+                        const lastBracket = content.lastIndexOf(']');
+
+                        if (firstBracket !== -1 && lastBracket !== -1) {
+                            // Extrai apenas a parte do array JSON
+                            const jsonPart = content.substring(firstBracket, lastBracket + 1);
+                            const parsedData = JSON.parse(jsonPart);
+
+                            if (Array.isArray(parsedData)) {
+                                database = parsedData;
+                                showMessage(`Arquivo carregado com sucesso! ${database.length} participantes importados.`, 'success');
+                                
+                                // Feedback visual no upload
+                                uploadFeedback.textContent = `Arquivo "${file.name}" carregado.`;
+                                uploadFeedback.className = "mt-3 text-sm text-green-600 font-semibold block";
+                                
+                                updateDisplay();
+                            } else {
+                                throw new Error("O conteúdo não é uma lista válida.");
+                            }
+                        } else {
+                            throw new Error("Não foi possível encontrar uma lista [] no arquivo.");
+                        }
+
+                    } catch (error) {
+                        console.error(error);
+                        showMessage('Erro ao ler o arquivo. Certifique-se que é um arquivo .js ou .json válido.', 'error');
+                        uploadFeedback.textContent = "Erro na leitura do arquivo.";
+                        uploadFeedback.className = "mt-3 text-sm text-red-600 font-semibold block";
+                    }
+                };
+
                 reader.readAsText(file);
             });
-        }
 
-        // O Coração da Lógica: Extrai o array do arquivo JS
-        function extrairDadosDoTexto(conteudo) {
-            try {
-                // 1. Encontra onde começa o array '[' e onde termina ']'
-                const inicio = conteudo.indexOf('[');
-                const fim = conteudo.lastIndexOf(']');
-
-                if (inicio === -1 || fim === -1) return [];
-
-                // 2. Pega apenas o texto que representa o array
-                let jsonTexto = conteudo.substring(inicio, fim + 1);
-
-                // 3. Tenta converter para Objeto Javascript de forma segura
-                const pegarArray = new Function(`return ${jsonTexto};`);
-                return pegarArray();
-
-            } catch (e) {
-                console.error("Erro ao converter texto em dados:", e);
-                return [];
-            }
-        }
-
-        function renderizarTabela() {
-            const tbody = document.getElementById('listaClientes');
-            tbody.innerHTML = '';
-
-            if (todosClientes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-red-500">Nenhum cliente válido encontrado nos arquivos.</td></tr>';
-                return;
-            }
-
-            todosClientes.forEach(cliente => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-gray-200 hover:bg-gray-50";
-
-                // Tratamento de dados nulos e busca de campos alternativos (fallback)
-                const nome = cliente.nome || "Sem Nome";
-                const cidade = cliente.cidade || "-";
-                // Procura bairro, se não tiver, procura complemento (comum nos arquivos tipo 4 e 5)
-                let bairro = cliente.bairro || cliente.complemento || "-";
+            // --- 2. Função de Adicionar e Validar ---
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
                 
-                // Limpa quebras de linha que possam vir no complemento para a visualização
-                bairro = bairro.replace(/(\r\n|\n|\r)/gm, " ");
+                const formData = new FormData(form);
+                const novoTelefone = formData.get('telefone').trim();
+                const novoNome = formData.get('nome').trim();
 
-                tr.innerHTML = `
-                    <td class="py-3 px-6 text-left whitespace-nowrap font-medium">${nome}</td>
-                    <td class="py-3 px-6 text-left">${cidade}</td>
-                    <td class="py-3 px-6 text-left text-xs">${bairro}</td>
-                `;
-                tbody.appendChild(tr);
+                // Verificação de Duplicados (chave: Telefone)
+                // Nota: Agora verificamos 'telefone' e 'celular' para compatibilidade com arquivos antigos se necessário,
+                // mas focamos em 'telefone' para novos.
+                const duplicado = database.find(item => 
+                    (item.telefone === novoTelefone) || (item.celular === novoTelefone)
+                );
+
+                if (duplicado) {
+                    showMessage(`Bloqueado: O telefone ${novoTelefone} já pertence a "${duplicado.nome}".`, 'error');
+                    document.getElementById('telefone').focus();
+                    document.getElementById('telefone').classList.add('border-red-500', 'bg-red-50');
+                    setTimeout(() => {
+                        document.getElementById('telefone').classList.remove('border-red-500', 'bg-red-50');
+                    }, 3000);
+                    return;
+                }
+
+                // Cria o novo objeto com os novos campos
+                const novoCadastro = {
+                    id: generateRandomId(),
+                    nome: novoNome,
+                    telefone: novoTelefone,
+                    cidade: formData.get('cidade'),
+                    bairro: formData.get('bairro'),
+                    data_registro: new Date().toLocaleString('pt-BR')
+                };
+
+                // Adiciona à memória
+                database.push(novoCadastro);
+
+                // Feedback
+                updateDisplay();
+                showMessage(`"${novoNome}" entrou para o sorteio!`, 'success');
+                
+                form.reset();
+                document.getElementById('nome').focus();
             });
-        }
 
-        function baixarListaTxt() {
-            if (todosClientes.length === 0) {
-                alert("Não há dados para baixar.");
-                return;
-            }
+            // --- 3. Função de Download (.js) - Backup Completo ---
+            downloadBtn.addEventListener('click', () => {
+                if (database.length === 0) return;
 
-            // --- CORREÇÃO FINAL E DEFINITIVA ---
-            // A variável conteudoTxt começa vazia.
-            // Não adicionamos cabeçalhos, títulos ou colunas extras.
-            let conteudoTxt = "";
+                const jsonContent = JSON.stringify(database, null, 2);
+                const fileContent = `const ${VAR_NAME} = ${jsonContent};`;
 
-            todosClientes.forEach(cliente => {
-                const nome = cliente.nome || "Sem Nome";
-                // Adiciona APENAS o nome e uma quebra de linha.
-                conteudoTxt += `${nome}\n`;
+                const blob = new Blob([fileContent], { type: 'text/javascript' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                
+                const date = new Date();
+                const timestamp = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}_${date.getHours()}${date.getMinutes()}`;
+                a.download = `participantes_completo_${timestamp}.js`;
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showMessage('Download do banco de dados completo iniciado!', 'success');
             });
 
-            // Cria o blob e o link de download
-            const blob = new Blob([conteudoTxt], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'lista_apenas_nomes.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }
+            // --- 4. Função de Download (.txt) - Apenas Nomes para Sorteio ---
+            downloadTxtBtn.addEventListener('click', () => {
+                if (database.length === 0) return;
+
+                // 1. Extrai apenas os nomes
+                // 2. Ordena alfabeticamente (A-Z)
+                const listaNomes = database
+                    .map(item => item.nome)
+                    .sort((a, b) => a.localeCompare(b));
+
+                // 3. Junta com quebra de linha
+                const conteudoTxt = listaNomes.join('\n');
+
+                const blob = new Blob([conteudoTxt], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                
+                const date = new Date();
+                const timestamp = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
+                a.download = `lista_nomes_sorteio_${timestamp}.txt`;
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showMessage('Lista de nomes (TXT) baixada com sucesso!', 'success');
+            });
+            
+            // Inicialização
+            updateDisplay();
+        });
     </script>
 </body>
 </html>
