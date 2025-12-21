@@ -9,6 +9,22 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         #json-output { white-space: pre-wrap; word-wrap: break-word; }
+        
+        /* Estilo personalizado para a barra de rolagem */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937; /* bg-gray-800 */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563; /* bg-gray-600 */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* bg-gray-500 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -96,11 +112,13 @@
                 </h3>
                 
                 <!-- Visor do Arquivo (Preview) -->
-                <div class="flex-grow bg-gray-900 rounded-xl overflow-hidden shadow-inner flex flex-col border border-gray-700 h-96 lg:h-auto">
-                    <div class="bg-gray-800 px-4 py-2 text-xs text-gray-400 flex justify-between items-center border-b border-gray-700">
+                <!-- A altura foi fixada em h-48 (aprox. 192px) e o overflow-hidden no pai garante o estilo arredondado -->
+                <div class="bg-gray-900 rounded-xl overflow-hidden shadow-inner flex flex-col border border-gray-700 h-48">
+                    <div class="bg-gray-800 px-4 py-2 text-xs text-gray-400 flex justify-between items-center border-b border-gray-700 flex-shrink-0">
                         <span>Previsão do Arquivo (.js)</span>
                         <span class="text-yellow-500 text-[10px]">Somente Leitura</span>
                     </div>
+                    <!-- O overflow-auto aqui garante a barra de rolagem -->
                     <pre id="json-output" class="p-4 text-green-400 text-xs overflow-auto font-mono flex-grow custom-scrollbar">const bancoDados = []; // Lista vazia</pre>
                 </div>
 
