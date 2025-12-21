@@ -11,8 +11,7 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Arquivo de Clientes Externo (Mantido conforme original) -->
-    <script src="clientes.js"></script>
+    <!-- NOTA: Removemos a chamada automática do clientes.js para usar o upload manual/persistente -->
 
     <script>
         tailwind.config = {
@@ -116,7 +115,15 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                 Relatório Cestas (Zap)
             </button>
+            
             <div class="border-t border-slate-100"></div>
+            
+            <!-- NOVO BOTÃO: Importar Clientes -->
+            <button onclick="document.getElementById('input-carregar-clientes').click()" class="w-full text-left px-4 py-3 text-sm hover:bg-purple-50 flex items-center gap-3 text-purple-700 font-medium transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                Importar Base Clientes
+            </button>
+            
             <button onclick="App.ui.modalExport.open()" class="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 flex items-center gap-3 text-slate-700 transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 Exportar Backup
@@ -425,7 +432,9 @@
         </div>
     </div>
 
+    <!-- Inputs de Arquivo Ocultos -->
     <input type="file" id="input-carregar-arquivo" class="hidden" accept=".json,application/json" onchange="App.controllers.importarBackup(this)">
+    <input type="file" id="input-carregar-clientes" class="hidden" accept=".js,.json,text/javascript,application/json" onchange="App.controllers.importarClientes(this)">
 
     <!-- JAVASCRIPT APP -->
     <script>
@@ -440,6 +449,7 @@
             STORAGE_KEY: "rotaflow_v2_db",
             HISTORY_KEY: "rotaflow_historico_db",
             METADATA_KEY: "rotaflow_clientes_meta_db", // Guarda datas de ações (cupom, avaliacao)
+            CLIENTS_DB_KEY: "rotaflow_clientes_db", // NOVO: Chave para persistir clientes
             CESTAS_OPTIONS: [
                 { value: "ECONOMICA", label: "ECONOMICA", price: 85.00 },
                 { value: "Mini Bonini", label: "Mini Bonini", price: 165.00 },
@@ -470,6 +480,15 @@
                 // Carrega Metadados (Ações de marketing)
                 const savedMeta = localStorage.getItem(CONSTANTS.METADATA_KEY);
                 this.data.meta = savedMeta ? JSON.parse(savedMeta) : {};
+
+                // NOVO: Carregar base de Clientes Persistente
+                const savedClients = localStorage.getItem(CONSTANTS.CLIENTS_DB_KEY);
+                if(savedClients) {
+                    try {
+                        window.CLIENTES_DB = JSON.parse(savedClients);
+                        console.log("Clientes carregados do cache local:", window.CLIENTES_DB.length);
+                    } catch(e) { console.error("Erro ao carregar clientes do cache"); }
+                }
             },
             novaRota() {
                 this.data.rotaAtiva = { id: Date.now(), dataCriacao: new Date().toISOString(), entregas: [] };
@@ -999,6 +1018,46 @@
                             }
                             else { throw new Error('Formato inválido'); }
                         } catch(err) { Utils.toast('Erro ao ler arquivo', 'error'); }
+                    };
+                    reader.readAsText(file);
+                },
+
+                // NOVO: Função para Importar Lista de Clientes
+                importarClientes: (input) => {
+                    const file = input.files[0];
+                    if(!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        let content = e.target.result;
+                        
+                        // Tentar limpar declaração de variável JS (ex: const CLIENTES_DB = [...])
+                        // Remove tudo antes do primeiro [ e tudo depois do último ]
+                        // Isso é uma limpeza simples para aceitar arquivos JS ou JSON
+                        try {
+                            // Se for arquivo JS com "const CLIENTES_DB =", tentamos limpar
+                            if (content.includes('=')) {
+                                content = content.substring(content.indexOf('['));
+                                content = content.substring(0, content.lastIndexOf(']') + 1);
+                            }
+
+                            const clientes = JSON.parse(content);
+                            
+                            if (Array.isArray(clientes)) {
+                                // Salvar no LocalStorage para persistir
+                                localStorage.setItem(CONSTANTS.CLIENTS_DB_KEY, JSON.stringify(clientes));
+                                window.CLIENTES_DB = clientes;
+                                Utils.toast(`Base importada com sucesso! ${clientes.length} clientes.`);
+                                
+                                // Opcional: Recarregar a página para garantir que tudo atualize
+                                setTimeout(() => window.location.reload(), 1500);
+                            } else {
+                                Utils.toast('Arquivo inválido: Não é uma lista.', 'error');
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            Utils.toast('Erro ao ler base de clientes. Verifique o formato.', 'error');
+                        }
                     };
                     reader.readAsText(file);
                 },
