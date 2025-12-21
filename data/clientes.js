@@ -178,7 +178,7 @@ const clientes = [
     "telefone": "65992050436",
     "cidade": "Cuiabá",
     "bairro": "Três barras"
-  }, 
+  },
   {
     "nome": "SUELLEN MARIA DOS SANTOS",
     "telefone": "65992923920",
@@ -197,12 +197,12 @@ const clientes = [
     "cidade": "CUIABÁ",
     "bairro": "Praeiro"
   },
-   {
+  {
     "nome": "Ivete vitoriano vitorino",
     "telefone": "06692345531",
     "cidade": "Várzea Grande",
     "bairro": "mARAJOARA"
-  }, 
+  },
   {
     "nome": "Noelvis Castillo Chavez",
     "telefone": "9584257073",
