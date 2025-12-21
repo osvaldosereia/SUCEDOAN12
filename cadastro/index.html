@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Cadastros JSON</title>
+    <title>Gerenciador de Cadastros JS</title>
     <!-- Carrega o Tailwind CSS para estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -13,128 +13,177 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
-    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-3xl">
-        <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">Gerenciador de Cadastros</h1>
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-4xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Gerenciador de Cadastros (.js)</h1>
+        <p class="text-center text-gray-500 mb-6 text-sm">Sistema de gestão de lista baseada em arquivos JavaScript</p>
         
         <!-- Área de Upload de Banco de Dados -->
-        <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <h3 class="text-md font-semibold text-blue-800 mb-2">1. Carregar Banco de Dados (Opcional)</h3>
-            <p class="text-sm text-blue-600 mb-3">Suba um arquivo JSON existente para adicionar novos registros a ele.</p>
-            <input type="file" id="file-input" accept=".json" 
-                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
-            <p id="db-status" class="mt-2 text-sm font-bold text-gray-700">Registros atuais: 0</p>
-        </div>
-
-        <hr class="mb-8 border-gray-200">
-
-        <!-- Formulário de Entrada -->
-        <h3 class="text-md font-semibold text-gray-800 mb-4">2. Novo Cadastro</h3>
-        <form id="cadastro-form" class="space-y-5">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="mb-8 p-6 bg-blue-50 rounded-xl border border-blue-100 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
                 <div>
-                    <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                    <input type="text" id="nome" name="nome" required
-                           class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                           placeholder="Ex: 010 Natalia">
+                    <h3 class="text-lg font-bold text-blue-900">1. Carregar Banco de Dados (.js)</h3>
+                    <p class="text-sm text-blue-600">Selecione o arquivo .js que contém a lista de clientes.</p>
                 </div>
-                <div>
-                    <label for="celular" class="block text-sm font-medium text-gray-700 mb-1">Celular</label>
-                    <input type="tel" id="celular" name="celular" required
-                           class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                           placeholder="Ex: 5565984685473">
+                <div class="text-right">
+                    <span class="block text-xs text-blue-500 uppercase font-bold tracking-wider">Total de Cadastros</span>
+                    <span id="db-count" class="text-3xl font-black text-blue-800">0</span>
                 </div>
-            </div>
-
-            <div>
-                <label for="endereco" class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-                <input type="text" id="endereco" name="endereco" required
-                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                       placeholder="Ex: Nome da Rua">
-            </div>
-
-            <div>
-                <label for="complemento" class="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
-                <textarea id="complemento" name="complemento" rows="2" required
-                          class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Ex: Quadra 20, Casa 01..."></textarea>
-            </div>
-
-            <div class="flex gap-4">
-                <button type="submit"
-                        class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors">
-                    + Adicionar à Lista
-                </button>
-            </div>
-        </form>
-
-        <!-- Mensagens de Erro/Sucesso -->
-        <div id="message-area" class="mt-4 hidden p-3 rounded-lg text-sm text-center"></div>
-
-        <!-- Área de Ação Final -->
-        <div id="action-area" class="mt-8 pt-6 border-t border-gray-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-gray-800">Lista Completa (JSON)</h2>
-                <button id="download-btn"
-                        class="bg-indigo-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                    Baixar Lista Atualizada
-                </button>
             </div>
             
-            <pre id="json-output" class="bg-gray-900 text-green-300 p-4 rounded-lg overflow-x-auto text-xs h-64 overflow-y-scroll"></pre>
+            <input type="file" id="file-input" accept=".js,.json,.txt" 
+                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer transition-colors">
+            
+            <div id="upload-feedback" class="mt-3 text-sm hidden"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Coluna da Esquerda: Formulário -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span class="bg-gray-800 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                    Novo Cadastro
+                </h3>
+                <form id="cadastro-form" class="space-y-4 bg-gray-50 p-5 rounded-xl border border-gray-200">
+                    <div>
+                        <label for="nome" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nome</label>
+                        <input type="text" id="nome" name="nome" required
+                               class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                               placeholder="Ex: 010 Natalia">
+                    </div>
+
+                    <div>
+                        <label for="celular" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Celular <span class="text-xs text-gray-400 font-normal">(Validação de duplicidade)</span></label>
+                        <input type="tel" id="celular" name="celular" required
+                               class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                               placeholder="Ex: 5565984685473">
+                    </div>
+
+                    <div>
+                        <label for="endereco" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Endereço</label>
+                        <input type="text" id="endereco" name="endereco" required
+                               class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                               placeholder="Ex: Rua das Flores">
+                    </div>
+
+                    <div>
+                        <label for="complemento" class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Complemento</label>
+                        <textarea id="complemento" name="complemento" rows="2" required
+                                  class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                                  placeholder="Ex: Quadra 20, Casa 01..."></textarea>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit"
+                                class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-bold shadow-md transform active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Adicionar Cadastro
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Feedback de Mensagens -->
+                <div id="message-area" class="mt-4 hidden p-3 rounded-lg text-sm font-medium text-center shadow-sm"></div>
+            </div>
+
+            <!-- Coluna da Direita: Visor e Ações -->
+            <div class="flex flex-col h-full">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span class="bg-gray-800 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                    Visor de Dados
+                </h3>
+                
+                <!-- Visor do Arquivo (Preview) -->
+                <div class="flex-grow bg-gray-900 rounded-xl overflow-hidden shadow-inner flex flex-col border border-gray-700 h-96 lg:h-auto">
+                    <div class="bg-gray-800 px-4 py-2 text-xs text-gray-400 flex justify-between items-center border-b border-gray-700">
+                        <span>Previsão do Arquivo (.js)</span>
+                        <span class="text-yellow-500 text-[10px]">Somente Leitura</span>
+                    </div>
+                    <pre id="json-output" class="p-4 text-green-400 text-xs overflow-auto font-mono flex-grow custom-scrollbar">const bancoDados = []; // Lista vazia</pre>
+                </div>
+
+                <!-- Botões de Ação Final -->
+                <div class="mt-6">
+                     <button id="download-btn" disabled
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-4 px-6 rounded-xl font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Baixar Novo Arquivo .js
+                    </button>
+                    <p class="text-center text-xs text-gray-400 mt-2">Inclui todos os cadastros anteriores + novos.</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Variáveis Globais ---
-            // Aqui guardamos todos os cadastros na memória
             let database = []; 
+            const VAR_NAME = "bancoDados"; // Nome da variável que será salva no arquivo JS
 
             // --- Elementos do DOM ---
             const form = document.getElementById('cadastro-form');
             const fileInput = document.getElementById('file-input');
-            const dbStatus = document.getElementById('db-status');
+            const dbCount = document.getElementById('db-count');
             const jsonOutput = document.getElementById('json-output');
             const downloadBtn = document.getElementById('download-btn');
             const messageArea = document.getElementById('message-area');
+            const uploadFeedback = document.getElementById('upload-feedback');
 
             // --- Funções Auxiliares ---
 
             function generateRandomId() {
-                return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+                // ID curto e único para uso interno
+                return Date.now().toString(36).toUpperCase();
             }
 
             function updateDisplay() {
-                // Atualiza o contador
-                dbStatus.textContent = `Registros atuais: ${database.length}`;
+                // Atualiza contadores
+                const count = database.length;
+                dbCount.textContent = count;
                 
-                // Atualiza a visualização do JSON (mostra o último adicionado primeiro ou a lista toda)
-                // Aqui optamos por mostrar a lista completa formatada
-                jsonOutput.textContent = JSON.stringify(database, null, 2);
+                // Formata a saída como código JavaScript válido
+                // Ex: const bancoDados = [ ... ];
+                const jsonContent = JSON.stringify(database, null, 2);
+                const jsContent = `const ${VAR_NAME} = ${jsonContent};`;
+                
+                jsonOutput.textContent = jsContent;
+                
+                // Rola o visor para o final para mostrar o último inserido
+                jsonOutput.scrollTop = jsonOutput.scrollHeight;
+
+                // Habilita/Desabilita botão de download
+                if (count > 0) {
+                    downloadBtn.removeAttribute('disabled');
+                    downloadBtn.classList.remove('opacity-50');
+                } else {
+                    downloadBtn.setAttribute('disabled', 'true');
+                    downloadBtn.classList.add('opacity-50');
+                }
             }
 
             function showMessage(msg, type) {
                 messageArea.textContent = msg;
-                messageArea.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+                messageArea.className = 'mt-4 p-3 rounded-lg text-sm font-bold text-center shadow-sm transition-all duration-500';
                 
                 if (type === 'error') {
-                    messageArea.classList.add('bg-red-100', 'text-red-700');
+                    messageArea.classList.add('bg-red-100', 'text-red-700', 'border', 'border-red-200');
                 } else {
-                    messageArea.classList.add('bg-green-100', 'text-green-700');
+                    messageArea.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-200');
                 }
                 
                 messageArea.classList.remove('hidden');
                 
-                // Esconde após 3 segundos
                 setTimeout(() => {
                     messageArea.classList.add('hidden');
-                }, 3000);
+                }, 4000);
             }
 
-            // --- 1. Função de Upload (Subir JSON) ---
+            // --- 1. Função de Upload INTELIGENTE (.js) ---
             fileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -143,85 +192,120 @@
                 
                 reader.onload = (event) => {
                     try {
-                        const content = JSON.parse(event.target.result);
+                        let content = event.target.result;
                         
-                        if (Array.isArray(content)) {
-                            database = content;
-                            showMessage(`Banco de dados carregado com ${database.length} registros!`, 'success');
-                            updateDisplay();
+                        // Lógica de Limpeza para arquivos JS
+                        // Se o arquivo começar com "const x =", precisamos remover isso para ler o JSON
+                        // Procuramos o primeiro '[' e o último ']'
+                        const firstBracket = content.indexOf('[');
+                        const lastBracket = content.lastIndexOf(']');
+
+                        if (firstBracket !== -1 && lastBracket !== -1) {
+                            // Extrai apenas a parte do array JSON
+                            const jsonPart = content.substring(firstBracket, lastBracket + 1);
+                            const parsedData = JSON.parse(jsonPart);
+
+                            if (Array.isArray(parsedData)) {
+                                database = parsedData;
+                                showMessage(`Arquivo carregado com sucesso! ${database.length} registros importados.`, 'success');
+                                
+                                // Feedback visual no upload
+                                uploadFeedback.textContent = `Arquivo "${file.name}" carregado.`;
+                                uploadFeedback.className = "mt-3 text-sm text-green-600 font-semibold block";
+                                
+                                updateDisplay();
+                            } else {
+                                throw new Error("O conteúdo não é uma lista válida.");
+                            }
                         } else {
-                            showMessage('O arquivo JSON deve conter uma lista (array) de objetos.', 'error');
+                            throw new Error("Não foi possível encontrar uma lista [] no arquivo.");
                         }
+
                     } catch (error) {
                         console.error(error);
-                        showMessage('Erro ao ler o arquivo JSON. Verifique a formatação.', 'error');
+                        showMessage('Erro ao ler o arquivo. Certifique-se que é um arquivo .js ou .json contendo uma lista [].', 'error');
+                        uploadFeedback.textContent = "Erro na leitura do arquivo.";
+                        uploadFeedback.className = "mt-3 text-sm text-red-600 font-semibold block";
                     }
                 };
 
                 reader.readAsText(file);
             });
 
-            // --- 2. Função de Adicionar e Verificar Duplicados ---
+            // --- 2. Função de Adicionar e Validar ---
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
                 const formData = new FormData(form);
-                const novoCelular = formData.get('celular');
+                const novoCelular = formData.get('celular').trim();
+                const novoNome = formData.get('nome').trim();
 
-                // Verificação de Duplicados (pelo Celular)
-                // O método .some() retorna true se encontrar pelo menos um igual
-                const jaExiste = database.some(item => item.celular === novoCelular);
+                // Verificação de Duplicados (chave: Celular)
+                const duplicado = database.find(item => item.celular === novoCelular);
 
-                if (jaExiste) {
-                    showMessage(`Erro: O celular ${novoCelular} já está cadastrado!`, 'error');
-                    return; // Para a função aqui, não adiciona
+                if (duplicado) {
+                    showMessage(`Bloqueado: O celular ${novoCelular} já pertence a "${duplicado.nome}".`, 'error');
+                    // Destaca o campo com erro
+                    document.getElementById('celular').focus();
+                    document.getElementById('celular').classList.add('border-red-500', 'bg-red-50');
+                    setTimeout(() => {
+                        document.getElementById('celular').classList.remove('border-red-500', 'bg-red-50');
+                    }, 3000);
+                    return;
                 }
 
                 // Cria o novo objeto
                 const novoCadastro = {
                     id: generateRandomId(),
-                    nome: formData.get('nome'),
+                    nome: novoNome,
                     celular: novoCelular,
                     endereco: formData.get('endereco'),
                     complemento: formData.get('complemento'),
-                    dataCadastro: new Date().toISOString() // Opcional: data de registro
+                    data_registro: new Date().toLocaleString('pt-BR')
                 };
 
-                // Adiciona à lista global
+                // Adiciona à memória
                 database.push(novoCadastro);
 
-                // Feedback visual e limpeza
+                // Feedback
                 updateDisplay();
-                showMessage('Cadastro adicionado com sucesso!', 'success');
-                form.reset(); // Limpa o formulário para o próximo
-                document.getElementById('nome').focus(); // Volta o foco para o nome
+                showMessage(`Cadastro de "${novoNome}" adicionado à lista! Não esqueça de baixar o novo arquivo.`, 'success');
+                
+                // Limpeza inteligente
+                form.reset();
+                document.getElementById('nome').focus();
             });
 
-            // --- 3. Função de Download ---
+            // --- 3. Função de Download (.js) ---
             downloadBtn.addEventListener('click', () => {
-                if (database.length === 0) {
-                    showMessage('A lista está vazia. Adicione algo antes de baixar.', 'error');
-                    return;
-                }
+                if (database.length === 0) return;
 
-                const jsonString = JSON.stringify(database, null, 2);
-                const blob = new Blob([jsonString], { type: 'application/json' });
+                // Monta o conteúdo do arquivo JS
+                const jsonContent = JSON.stringify(database, null, 2);
+                // Adiciona a declaração da variável para que o arquivo seja um script JS válido
+                const fileContent = `const ${VAR_NAME} = ${jsonContent};`;
+
+                const blob = new Blob([fileContent], { type: 'text/javascript' });
                 const url = URL.createObjectURL(blob);
                 
                 const a = document.createElement('a');
                 a.href = url;
-                // Gera um nome de arquivo com data/hora
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-                a.download = `cadastros_atualizados_${timestamp}.json`;
+                
+                // Nome do arquivo com timestamp
+                const date = new Date();
+                const timestamp = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}_${date.getHours()}${date.getMinutes()}`;
+                a.download = `banco_dados_${timestamp}.js`;
                 
                 document.body.appendChild(a);
                 a.click();
                 
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+                
+                showMessage('Download iniciado! Este é seu novo arquivo mestre.', 'success');
             });
             
-            // Inicializa a tela vazia
+            // Inicialização
             updateDisplay();
         });
     </script>
