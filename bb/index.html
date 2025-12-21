@@ -17,7 +17,7 @@
             <h1 class="text-3xl font-bold text-blue-700 mb-2">
                 <i class="fas fa-users-cog mr-2"></i>Organizador de Clientes
             </h1>
-            <p class="text-gray-600">Selecione seus arquivos .js de clientes para visualizar e exportar a lista limpa.</p>
+            <p class="text-gray-600">Selecione seus arquivos .js de clientes para visualizar e exportar a lista de nomes.</p>
         </header>
 
         <!-- Área de Upload -->
@@ -164,7 +164,7 @@
                 // Procura bairro, se não tiver, procura complemento (comum nos arquivos tipo 4 e 5)
                 let bairro = cliente.bairro || cliente.complemento || "-";
                 
-                // Limpa quebras de linha que possam vir no complemento
+                // Limpa quebras de linha que possam vir no complemento para a visualização
                 bairro = bairro.replace(/(\r\n|\n|\r)/gm, " ");
 
                 tr.innerHTML = `
@@ -182,22 +182,15 @@
                 return;
             }
 
-            // Cabeçalho do arquivo TXT
-            let conteudoTxt = "=== LISTA DE CLIENTES ===\n";
-            conteudoTxt += "NOME | CIDADE | BAIRRO / DETALHES\n";
-            conteudoTxt += "------------------------------------------------------------\n";
+            // --- CORREÇÃO FINAL E DEFINITIVA ---
+            // A variável conteudoTxt começa vazia.
+            // Não adicionamos cabeçalhos, títulos ou colunas extras.
+            let conteudoTxt = "";
 
             todosClientes.forEach(cliente => {
                 const nome = cliente.nome || "Sem Nome";
-                
-                // Normalização: Se não tem cidade, deixa vazio. Se não tem bairro, tenta pegar o complemento.
-                let cidade = cliente.cidade ? cliente.cidade : " - ";
-                let bairro = cliente.bairro || cliente.complemento || " - ";
-
-                // Remove quebras de linha para manter o arquivo txt organizado (uma linha por cliente)
-                bairro = bairro.replace(/(\r\n|\n|\r)/gm, " ");
-                
-                conteudoTxt += `${nome};
+                // Adiciona APENAS o nome e uma quebra de linha.
+                conteudoTxt += `${nome}\n`;
             });
 
             // Cria o blob e o link de download
@@ -205,7 +198,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'lista_clientes_organizada.txt';
+            a.download = 'lista_apenas_nomes.txt';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
