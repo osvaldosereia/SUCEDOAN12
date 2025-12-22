@@ -1,8 +1,8 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sorteio Dona Antônia - Especial de Natal</title>
     <style>
         /* CONFIGURAÇÕES GERAIS DE ESTILO */
@@ -11,39 +11,42 @@
             background-color: #1a1a1a;
             color: white;
             margin: 0;
-            padding: 10px;
+            padding: 15px;
             box-sizing: border-box;
-            min-height: 100vh;
+            height: 100vh; /* Altura fixa da tela */
+            width: 100vw;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* Evita scroll na página inteira (app feel) */
         }
 
-        /* CABEÇALHO FLEXÍVEL */
+        /* CABEÇALHO COMPACTO E ELEGANTE */
         header {
             display: flex;
-            align-items: center; /* Alinha verticalmente ao centro */
-            justify-content: center; /* Centraliza o bloco todo na tela */
-            gap: 20px; /* Espaço entre logo e texto */
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
             border-bottom: 1px solid #333;
+            flex: 0 0 auto; /* Não estica */
         }
 
         .logo-img {
-            height: 100px;       
-            width: 100px;        
+            height: 80px;       
+            width: 80px;        
             object-fit: cover;   
             border-radius: 50%;  
-            border: 3px solid #FFD700; 
+            border: 2px solid #FFD700; 
             box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-            flex-shrink: 0; /* Impede a logo de encolher */
+            flex-shrink: 0;
         }
 
         .header-text {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            text-align: left; /* Alinha o texto à esquerda (junto da logo) */
+            text-align: left;
         }
 
         h1 {
@@ -51,35 +54,38 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             margin: 0;
-            font-size: 1.6rem; /* Leve ajuste para caber bem */
+            font-size: 1.4rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             line-height: 1.1;
         }
 
         h2 {
             color: #ccc;
-            font-size: 1.1rem;
-            margin: 5px 0 0 0;
+            font-size: 1rem;
+            margin: 2px 0 0 0;
             font-weight: normal;
         }
 
-        /* LAYOUT ADAPTADO PARA TABLET VERTICAL (Default) */
+        /* LAYOUT PRINCIPAL (VERTICAL OTIMIZADO) */
         .main-container {
             display: flex;
             flex-direction: column-reverse; /* Controles em baixo, Palco em cima */
-            gap: 20px;
-            max-width: 800px;
-            margin: 0 auto;
+            gap: 15px;
             width: 100%;
-            flex: 1;
+            flex: 1; /* Ocupa todo o espaço restante */
+            min-height: 0; /* Importante para o flexbox funcionar com scroll interno */
         }
 
-        /* CONFIGURAÇÕES (Painel inferior no mobile/tablet vertical) */
+        /* CONFIGURAÇÕES (Painel inferior - Compacto) */
         .settings-panel {
             background: #2d2d2d;
-            padding: 15px;
+            padding: 10px 15px;
             border-radius: 15px;
             border: 1px solid #444;
+            flex: 0 0 auto; /* Altura ajustada ao conteúdo */
+            max-height: 35vh; /* Se abrir a lista, não sobe demais */
+            overflow-y: auto;
+            transition: max-height 0.3s ease;
         }
 
         .settings-header {
@@ -87,23 +93,32 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
             color: #FFD700;
             font-weight: bold;
+            font-size: 0.9rem;
+            padding: 5px 0;
         }
 
-        /* PALCO DO SORTEIO (Painel superior) */
+        #area-lista {
+            margin-top: 10px;
+            display: none; /* Começa fechado para focar no sorteio */
+        }
+
+        /* PALCO DO SORTEIO (Painel superior - O Show) */
         .stage-panel {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
+            flex: 1; /* Cresce para ocupar o espaço */
+            min-height: 0;
         }
 
         /* INFO DO SORTEIO ATUAL */
         .current-draw-info {
             text-align: center;
             width: 100%;
+            flex: 0 0 auto;
         }
 
         .sorteio-badge {
@@ -112,9 +127,9 @@
             padding: 5px 20px;
             border-radius: 20px;
             font-weight: 800;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             display: inline-block;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
         }
 
@@ -124,17 +139,18 @@
             margin-bottom: 5px;
         }
 
-        /* O VISOR GRANDE */
+        /* O VISOR GRANDE (Responsivo à altura) */
         #display-sorteio {
             width: 100%;
-            height: 180px; /* Altura boa para aparecer na camera */
+            height: 20vh; /* 20% da altura da tela */
+            min-height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
             background-color: #000;
             border: 4px solid #444;
             border-radius: 20px;
-            font-size: 2.2rem;
+            font-size: 2.5rem; /* Fonte Grande */
             font-weight: 800;
             color: #fff;
             text-align: center;
@@ -143,28 +159,54 @@
             padding: 10px;
             word-break: break-word;
             box-sizing: border-box;
+            flex: 0 0 auto;
         }
 
-        /* LISTA DE GANHADORES (DESTAQUE) */
+        /* BOTÃO DE AÇÃO GIGANTE */
+        button.action-btn {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 20px 0; /* Botão alto para toque fácil */
+            width: 100%;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+            text-transform: uppercase;
+            flex: 0 0 auto;
+        }
+        
+        button.action-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* LISTA DE GANHADORES (Preenche o resto da tela) */
         .winners-section {
             width: 100%;
-            background: rgba(255, 215, 0, 0.1);
+            background: rgba(255, 215, 0, 0.05);
             border: 1px solid #FFD700;
             border-radius: 10px;
-            padding: 15px;
+            padding: 10px;
             box-sizing: border-box;
-            max-height: 250px;
-            overflow-y: auto;
+            overflow-y: auto; /* Scroll apenas aqui */
+            flex: 1; /* IMPORTANTE: Ocupa todo o espaço vertical restante */
+            display: flex;
+            flex-direction: column;
         }
 
         .winners-title {
             color: #FFD700;
             text-align: center;
             margin: 0 0 10px 0;
-            font-size: 1.2rem;
+            font-size: 1rem;
             text-transform: uppercase;
             border-bottom: 1px solid #FFD700;
             padding-bottom: 5px;
+            flex: 0 0 auto;
         }
 
         #lista-ganhadores {
@@ -176,31 +218,26 @@
         .winner-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px;
+            padding: 8px 5px;
             border-bottom: 1px solid #444;
             animation: slideIn 0.5s ease-out;
+            font-size: 0.95rem;
         }
-        .winner-item:last-child { border-bottom: none; }
         
         .winner-number { font-weight: bold; color: #aaa; margin-right: 10px; }
         .winner-name { font-weight: bold; color: #fff; text-align: right; flex: 1; }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* INPUTS E BOTÕES */
+        /* INPUTS E FERRAMENTAS */
         textarea {
             width: 100%;
-            height: 150px;
+            height: 100px;
             background-color: #404040;
             color: white;
             border: 1px solid #555;
             border-radius: 5px;
             padding: 10px;
             font-family: monospace;
-            resize: vertical;
+            resize: none;
             box-sizing: border-box;
         }
 
@@ -208,50 +245,24 @@
             display: flex;
             gap: 5px;
             margin: 5px 0;
-            flex-wrap: wrap; /* Permite quebrar linha se tela for muito estreita */
         }
         
         .btn-tool {
             background-color: #444;
             color: #ddd;
             border: 1px solid #555;
-            padding: 8px;
+            padding: 10px;
             flex: 1;
             cursor: pointer;
             border-radius: 4px;
             text-align: center;
-            font-size: 0.9rem;
-            min-width: 80px;
+            font-size: 0.8rem;
         }
-        .btn-tool:hover { background-color: #555; }
 
-        /* Estilo específico para o botão de upload (label) */
         .btn-upload {
             background-color: #0056b3;
             border-color: #004494;
             color: white;
-        }
-        .btn-upload:hover { background-color: #004494; }
-
-        button.action-btn {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
-            border: none;
-            padding: 20px 0;
-            width: 100%;
-            font-size: 1.5rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
-            text-transform: uppercase;
-            margin-top: 10px;
-        }
-        
-        button.action-btn:disabled {
-            background: #555;
-            cursor: not-allowed;
-            box-shadow: none;
         }
 
         .vencedor {
@@ -266,6 +277,11 @@
             to { transform: scale(1.02); box-shadow: 0 0 40px rgba(255, 215, 0, 0.5); }
         }
 
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
         .confetti {
             position: fixed;
             width: 12px;
@@ -275,19 +291,26 @@
         }
         @keyframes cair { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
 
-        /* Media Query para Desktop */
+        /* MODO DESKTOP (Caso abra no PC) */
         @media (min-width: 1024px) {
+            body { padding: 30px; }
             .main-container {
                 flex-direction: row;
                 align-items: flex-start;
+                overflow: visible; /* No PC pode scrollar normal */
             }
-            .settings-panel { flex: 1; }
-            .stage-panel { flex: 2; }
-            body { padding: 40px; }
+            .settings-panel { 
+                flex: 1; 
+                max-height: none; 
+                height: 100%;
+            }
+            .stage-panel { flex: 2; height: 100%; }
             
-            /* Ajuste de cabeçalho para desktop */
+            #area-lista { display: block; } /* Sempre aberto no PC */
+            
             h1 { font-size: 2.2rem; }
-            .logo-img { height: 120px; width: 120px; }
+            .logo-img { height: 110px; width: 110px; }
+            #display-sorteio { height: 250px; font-size: 3.5rem; }
         }
     </style>
 </head>
@@ -306,43 +329,42 @@
 
     <div class="main-container">
         
-        <!-- PAINEL DE CONFIGURAÇÕES -->
+        <!-- PAINEL DE CONFIGURAÇÕES (Em baixo no tablet) -->
         <div class="settings-panel">
-            <div class="settings-header" onclick="document.getElementById('area-lista').style.display = document.getElementById('area-lista').style.display === 'none' ? 'block' : 'none'">
-                <span>📋 Lista de Participantes (Config)</span>
-                <span style="font-size: 0.8rem">▼</span>
+            <div class="settings-header" onclick="toggleSettings()">
+                <span>📋 Lista de Participantes & Config</span>
+                <span id="seta-config" style="font-size: 1.2rem">▼</span>
             </div>
             
             <div id="area-lista">
                 <div class="toolbar">
                     <!-- Botão de Upload de Arquivo .txt -->
-                    <label for="input-file" class="btn-tool btn-upload">📂 Upload Lista (.txt)</label>
+                    <label for="input-file" class="btn-tool btn-upload">📂 Upload Lista</label>
                     <input type="file" id="input-file" accept=".txt" style="display: none;" onchange="carregarArquivoTxt(this)">
                     
-                    <button class="btn-tool" onclick="limparLista()">🗑️ Limpar</button>
-                    <button class="btn-tool" onclick="removerDuplicados()">✨ Duplicados</button>
-                    <button class="btn-tool" onclick="embaralharLista()">🔀 Embaralhar</button>
+                    <button class="btn-tool" onclick="limparLista()">🗑️</button>
+                    <button class="btn-tool" onclick="removerDuplicados()">✨</button>
+                    <button class="btn-tool" onclick="embaralharLista()">🔀</button>
                 </div>
                 
-                <textarea id="lista-nomes" oninput="atualizarContador()" placeholder="Ou cole a lista aqui (ou carregue o arquivo .txt)...">João Silva
+                <textarea id="lista-nomes" oninput="atualizarContador()" placeholder="Ou cole a lista aqui...">João Silva
 Maria Santos
 Pedro Oliveira
 Ana Costa</textarea>
                 
-                <div style="text-align: right; color: #888; font-size: 0.9rem; margin-top:5px;" id="contador-pessoas">
-                    0 Participantes
-                </div>
-                
-                <div style="margin-top: 15px;">
-                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                    <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.8rem; color:#aaa;">
                         <input type="checkbox" id="check-remover" checked> 
-                        Remover ganhador da lista após sorteio?
+                        Remover ganhador?
                     </label>
+                    <div style="color: #FFD700; font-size: 0.9rem; font-weight:bold;" id="contador-pessoas">
+                        0 Pessoas
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- PALCO -->
+        <!-- PALCO (Em cima no tablet, ocupando o resto da tela) -->
         <div class="stage-panel">
             
             <div class="current-draw-info">
@@ -372,6 +394,18 @@ Ana Costa</textarea>
         let numeroSorteio = 1;
         const maxSorteios = 20;
 
+        function toggleSettings() {
+            const area = document.getElementById('area-lista');
+            const seta = document.getElementById('seta-config');
+            if(area.style.display === 'block') {
+                area.style.display = 'none';
+                seta.innerText = '▼';
+            } else {
+                area.style.display = 'block';
+                seta.innerText = '▲';
+            }
+        }
+
         // --- Funções de Lista e Arquivo ---
         
         function carregarArquivoTxt(input) {
@@ -384,16 +418,17 @@ Ana Costa</textarea>
                 document.getElementById('lista-nomes').value = conteudo;
                 atualizarContador();
                 alert(`Lista carregada com sucesso! ${getListaNomes().length} participantes encontrados.`);
-                
-                // Limpa o input para permitir carregar o mesmo arquivo novamente se necessário
                 input.value = '';
+                
+                // Fecha o painel após carregar para focar no show
+                document.getElementById('area-lista').style.display = 'none';
+                document.getElementById('seta-config').innerText = '▼';
             };
             reader.readAsText(file);
         }
 
         function getListaNomes() {
             const textarea = document.getElementById('lista-nomes');
-            // Remove linhas vazias
             return textarea.value.split('\n').filter(n => n.trim() !== '');
         }
 
@@ -404,7 +439,7 @@ Ana Costa</textarea>
 
         function atualizarContador() {
             const lista = getListaNomes();
-            document.getElementById('contador-pessoas').innerText = `${lista.length} Participantes`;
+            document.getElementById('contador-pessoas').innerText = `${lista.length} Pessoas`;
         }
 
         function limparLista() {
@@ -440,6 +475,8 @@ Ana Costa</textarea>
             const nomes = getListaNomes();
             if (nomes.length < 2) {
                 alert("Adicione pelo menos 2 participantes na lista!");
+                // Abre o painel se estiver vazio
+                document.getElementById('area-lista').style.display = 'block';
                 return;
             }
 
@@ -448,7 +485,7 @@ Ana Costa</textarea>
             
             // Estado de animação
             let tempo = 0;
-            const duracao = 5000; // 5 segundos de suspense
+            const duracao = 5000; 
             const velocidade = 80;
             
             btn.disabled = true;
@@ -468,37 +505,30 @@ Ana Costa</textarea>
         }
 
         function finalizarSorteio(nomesAtuais) {
-            // Escolher vencedor
             const indexVencedor = Math.floor(Math.random() * nomesAtuais.length);
             const vencedor = nomesAtuais[indexVencedor];
             
-            // Exibir no display principal
             const display = document.getElementById('display-sorteio');
             display.innerText = vencedor;
             display.classList.add('vencedor');
             celebrar();
 
-            // Adicionar à lista de ganhadores
             registrarGanhador(numeroSorteio, vencedor);
 
-            // Remover da lista principal se a opção estiver marcada
             const remover = document.getElementById('check-remover').checked;
             if (remover) {
                 nomesAtuais.splice(indexVencedor, 1);
                 setListaNomes(nomesAtuais);
             }
 
-            // Preparar próximo
             const btn = document.getElementById('btn-sortear');
             
             if (numeroSorteio < maxSorteios) {
                 numeroSorteio++;
-                // Pequeno delay para liberar o botão do próximo
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.innerText = `Próximo: Cesta #${numeroSorteio} >>`;
                     btn.onclick = prepararProximoVisual;
-                    // Muda cor para indicar "Avançar"
                     btn.style.background = "linear-gradient(45deg, #f39c12, #f1c40f)";
                 }, 2000);
             } else {
@@ -518,12 +548,10 @@ Ana Costa</textarea>
                 <span class="winner-number">#${numero}</span>
                 <span class="winner-name">${nome}</span>
             `;
-            // Adiciona no topo da lista
             ul.insertBefore(li, ul.firstChild);
         }
 
         function prepararProximoVisual() {
-            // Atualiza labels para o próximo round
             document.getElementById('badge-numero').innerText = `Sorteio ${numeroSorteio} / ${maxSorteios}`;
             document.getElementById('label-premio').innerText = `Cesta Básica Econômica #${numeroSorteio}`;
             document.getElementById('display-sorteio').innerText = "?";
