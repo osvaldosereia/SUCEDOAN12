@@ -20,36 +20,35 @@
             overflow: hidden; 
         }
 
-        /* --- CABEÇALHO --- */
+        /* --- CABEÇALHO (NOVO LAYOUT) --- */
         header {
             display: flex;
             align-items: center;
-            justify-content: flex-start;
-            gap: 15px;
-            padding-bottom: 5px;
+            justify-content: space-between; /* Separa Esquerda e Direita */
+            padding-bottom: 8px;
             border-bottom: 1px solid #333;
             flex: 0 0 auto; 
             height: auto;
-            min-height: 70px;
+            min-height: 80px;
         }
 
-        .logo-container {
+        /* Lado Esquerdo: Logo + Títulos */
+        .header-left {
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
         }
 
         .logo-img {
-            height: 60px;       
-            width: 60px;        
+            height: 65px;       
+            width: 65px;        
             object-fit: cover;   
             border-radius: 50%;
             border: 2px solid #FFD700; 
-            flex-shrink: 0;
             background-color: #333;
         }
 
-        .header-text {
+        .header-titles {
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -72,18 +71,43 @@
             font-weight: normal;
         }
 
+        /* Lado Direito: Infos + Contador */
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            text-align: right;
+            font-size: 0.8rem;
+            color: #aaa;
+            gap: 3px;
+        }
+
+        .info-site { color: #fff; font-weight: bold; }
+        .info-whatsapp { color: #2ecc71; font-weight: 600; }
+        
+        .participant-badge {
+            margin-top: 3px;
+            background-color: #333;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: #FFD700;
+            font-weight: bold;
+            border: 1px solid #444;
+        }
+
         /* --- LAYOUT PRINCIPAL --- */
         .main-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             width: 100%;
             flex: 1; 
-            padding-top: 10px;
+            padding-top: 8px;
             min-height: 0; 
         }
 
-        /* --- BLOCO 1: O PALCO (Reduzido) --- */
+        /* --- BLOCO 1: O PALCO --- */
         .stage-panel {
             display: flex;
             flex-direction: column;
@@ -107,71 +131,60 @@
             font-size: 0.8rem;
         }
 
-        .premio-atual {
-            font-size: 0.9rem;
-            color: #fff;
-        }
+        .premio-atual { font-size: 0.9rem; color: #fff; }
 
         #display-sorteio {
             width: 100%;
-            /* ALTURA REDUZIDA conforme pedido */
-            height: 8vh; 
-            min-height: 60px;
+            height: 9vh; 
+            min-height: 70px;
             display: flex;
             align-items: center;
             justify-content: center;
             background-color: #000;
             border: 2px solid #444;
             border-radius: 8px;
-            font-size: 1.8rem; /* Fonte menor */
+            font-size: 2rem;
             font-weight: 800;
             color: #fff;
             text-align: center;
             padding: 5px;
             box-sizing: border-box;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            transition: all 0.3s;
         }
 
         button.action-btn {
             background: linear-gradient(45deg, #27ae60, #2ecc71);
             color: white;
             border: none;
-            padding: 10px 0; /* Botão mais compacto */
+            padding: 12px 0;
             width: 100%;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 3px 0 #1e8449;
+            margin-bottom: 5px;
         }
-        
-        button.action-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 #1e8449;
-        }
+        button.action-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #1e8449; }
+        button.action-btn:disabled { background: #555; box-shadow: none; cursor: not-allowed; }
 
-        button.action-btn:disabled {
-            background: #555;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
-
-        /* --- BLOCO 2: LISTA DE GANHADORES (Ajustada) --- */
+        /* --- BLOCO 2: LISTA DE GANHADORES (2 COLUNAS) --- */
         .winners-section {
             background: rgba(255, 215, 0, 0.05);
             border: 1px solid #444;
             border-radius: 8px;
             padding: 5px;
             
-            /* Continua ocupando o resto do espaço, mas terá menos espaço agora */
-            flex: 1; 
-            overflow-y: auto; 
+            /* Altura controlada para dar espaço à lista de participantes */
+            height: 25vh; /* Ocupa apenas 25% da tela vertical aprox */
+            flex: 0 0 auto;
             
+            overflow-y: auto; 
             display: flex;
             flex-direction: column;
-            margin-bottom: 5px;
-            min-height: 80px; /* Garante um tamanho mínimo */
         }
 
         .winners-title {
@@ -188,39 +201,55 @@
             list-style: none;
             padding: 0;
             margin: 0;
+            /* MÁGICA DAS 2 COLUNAS: */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 10px;
+            row-gap: 5px;
         }
 
         .winner-item {
             display: flex;
             justify-content: space-between;
-            padding: 5px 8px; 
+            padding: 4px;
             border-bottom: 1px solid #333;
-            font-size: 0.9rem; 
+            font-size: 0.8rem;
             animation: slideIn 0.3s ease-out;
             align-items: center;
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
         }
         
         .winner-number { 
             font-weight: bold; 
-            color: #aaa; 
-            margin-right: 8px;
-            background: #333;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.8rem;
+            color: #FFD700; 
+            margin-right: 5px;
+            font-size: 0.75rem;
         }
-        .winner-name { font-weight: bold; color: #fff; text-align: right; flex: 1; }
+        .winner-name { 
+            font-weight: bold; 
+            color: #fff; 
+            text-align: right; 
+            flex: 1; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
 
-        /* --- BLOCO 3: CONFIGURAÇÕES (Aumentado conforme pedido) --- */
+        /* --- BLOCO 3: CONFIGURAÇÕES (LISTA PARTICIPANTES GIGANTE) --- */
         .settings-panel {
             background: #222;
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #333;
-            flex: 0 0 auto; 
+            
+            /* Ocupa o resto da tela */
+            flex: 1; 
+            
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 5px;
+            min-height: 0; /* Permite scroll interno se necessário */
         }
 
         .settings-header {
@@ -231,10 +260,7 @@
             justify-content: space-between;
         }
 
-        .toolbar {
-            display: flex;
-            gap: 5px;
-        }
+        .toolbar { display: flex; gap: 5px; }
         
         .btn-tool {
             background-color: #333;
@@ -251,61 +277,81 @@
 
         textarea {
             width: 100%;
-            /* AUMENTADO DRASTICAMENTE */
-            height: 150px; 
+            /* OCUPA TODO ESPAÇO RESTANTE */
+            flex: 1; 
             background-color: #111;
             color: #ddd;
             border: 1px solid #444;
             border-radius: 4px;
-            padding: 8px;
+            padding: 10px;
             font-family: monospace;
-            font-size: 0.9rem;
+            font-size: 0.95rem; /* Fonte confortável */
             resize: none;
             box-sizing: border-box;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
-        /* Animações e Utilitários */
+        /* --- EFEITOS ESPECIAIS (EXPLOSÃO) --- */
+        
+        /* Classe ativada no ganhador */
         .vencedor {
             border-color: #FFD700 !important;
-            color: #FFD700 !important;
-            animation: pulsar 0.8s infinite alternate;
-            background-color: #1a1a00 !important;
+            color: #FFF !important;
+            background: linear-gradient(135deg, #000, #333) !important;
+            animation: superGlow 0.5s infinite alternate !important;
         }
 
-        @keyframes pulsar {
-            from { transform: scale(1); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
-            to { transform: scale(1.02); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+        @keyframes superGlow {
+            0% { 
+                text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700; 
+                transform: scale(1);
+                border-color: #FFD700;
+            }
+            100% { 
+                text-shadow: 0 0 30px #FFD700, 0 0 60px #FF0000, 0 0 80px #FFF; 
+                transform: scale(1.05);
+                border-color: #FFF;
+            }
         }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .confetti {
             position: fixed;
-            width: 10px; height: 10px;
             z-index: 9999;
-            animation: cair 3s linear forwards;
+            animation: cair 4s linear forwards;
         }
-        @keyframes cair { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        @keyframes cair { 
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } 
+        }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1a1a1a; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo-container">
+        <div class="header-left">
             <img src="https://via.placeholder.com/150/FFD700/000000?text=Logo" alt="Logo" class="logo-img" onerror="this.src='https://placehold.co/150/png'">
+            <div class="header-titles">
+                <h1>Sorteio 22/12/2025</h1>
+                <h2>Especial de Natal</h2>
+            </div>
         </div>
-        <div class="header-text">
-            <h1>Sorteio Dia 22/12/2025</h1>
-            <h2>20 Cestas Básicas Econômicas</h2>
+
+        <div class="header-right">
+            <div class="info-site">www.donaantonia.com.br</div>
+            <div class="info-whatsapp">99681-3588 | 99815-0975</div>
+            <div class="participant-badge">
+                👥 <span id="contador-header">0</span> no Sorteio
+            </div>
         </div>
     </header>
 
@@ -319,43 +365,46 @@
 
             <div id="display-sorteio">?</div>
 
-            <button id="btn-sortear" class="action-btn" onclick="iniciarSorteio()">🚀 Sortear</button>
+            <button id="btn-sortear" class="action-btn" onclick="iniciarSorteio()">🚀 SORTEAR AGORA</button>
         </div>
 
         <div class="winners-section">
             <h3 class="winners-title">🏆 Ganhadores</h3>
             <ul id="lista-ganhadores">
-                <li style="text-align:center; color:#666; font-style:italic; font-size:0.9rem; padding:10px" id="sem-ganhadores">
-                    Aguardando...
+                <li style="grid-column: span 2; text-align:center; color:#666; font-style:italic; padding:10px" id="sem-ganhadores">
+                    Nenhum ganhador ainda...
                 </li>
             </ul>
         </div>
 
         <div class="settings-panel">
             <div class="settings-header">
-                <span>📋 Participantes</span>
-                <div id="contador-pessoas" style="color:#FFD700">0</div>
+                <span>📋 Lista de Participantes (Editável)</span>
             </div>
             
             <div class="toolbar">
                 <label for="input-file" class="btn-tool btn-upload">📂 Abrir</label>
                 <input type="file" id="input-file" accept=".txt" style="display: none;" onchange="carregarArquivoTxt(this)">
                 
-                <button class="btn-tool" onclick="limparLista()">🗑️</button>
-                <button class="btn-tool" onclick="removerDuplicados()">✨</button>
-                <button class="btn-tool" onclick="embaralharLista()">🔀</button>
+                <button class="btn-tool" onclick="limparLista()">🗑️ Limpar</button>
+                <button class="btn-tool" onclick="removerDuplicados()">✨ Únicos</button>
+                <button class="btn-tool" onclick="embaralharLista()">🔀 Misturar</button>
             </div>
             
-            <textarea id="lista-nomes" oninput="atualizarContador()" placeholder="Cole a lista...">João Silva
+            <textarea id="lista-nomes" oninput="atualizarContador()" placeholder="Cole a lista de nomes aqui...">João Silva
 Maria Santos
 Pedro Oliveira
 Ana Costa
 Carlos Souza
-Fernanda Lima</textarea>
+Fernanda Lima
+Roberto Almeida
+Juliana Costa
+Lucas Pereira
+Beatriz Silva</textarea>
             
             <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.85rem; color:#aaa; margin-top:2px;">
                 <input type="checkbox" id="check-remover" checked> 
-                Remover ganhador da lista?
+                Remover ganhador da lista automaticamente
             </label>
         </div>
 
@@ -390,11 +439,12 @@ Fernanda Lima</textarea>
 
         function atualizarContador() {
             const lista = getListaNomes();
-            document.getElementById('contador-pessoas').innerText = lista.length;
+            // ATUALIZADO: Agora busca o contador lá no cabeçalho
+            document.getElementById('contador-header').innerText = lista.length;
         }
 
         function limparLista() {
-            if(confirm("Apagar lista?")) {
+            if(confirm("Apagar toda a lista de participantes?")) {
                 document.getElementById('lista-nomes').value = "";
                 atualizarContador();
             }
@@ -423,7 +473,7 @@ Fernanda Lima</textarea>
 
             const nomes = getListaNomes();
             if (nomes.length < 2) {
-                alert("Precisa de pelo menos 2 nomes.");
+                alert("Precisa de pelo menos 2 nomes para sortear.");
                 return;
             }
 
@@ -432,10 +482,11 @@ Fernanda Lima</textarea>
             
             let tempo = 0;
             const duracao = 4000; 
-            const velocidade = 80;
+            const velocidade = 60; // Mais rápido para dar emoção
             
             btn.disabled = true;
-            btn.innerText = "Sorteando...";
+            btn.innerText = "SORTEANDO...";
+            btn.style.background = "#444";
             display.classList.remove('vencedor');
 
             const intervalo = setInterval(() => {
@@ -456,7 +507,7 @@ Fernanda Lima</textarea>
             
             const display = document.getElementById('display-sorteio');
             display.innerText = vencedor;
-            display.classList.add('vencedor');
+            display.classList.add('vencedor'); // Ativa o brilho NEON
             celebrar();
 
             registrarGanhador(numeroSorteio, vencedor);
@@ -472,13 +523,13 @@ Fernanda Lima</textarea>
                 numeroSorteio++;
                 setTimeout(() => {
                     btn.disabled = false;
-                    btn.innerText = `Próximo: Cesta #${numeroSorteio} >>`;
+                    btn.innerText = `PRÓXIMO: CESTA #${numeroSorteio} >>`;
                     btn.onclick = prepararProximoVisual;
                     btn.style.background = "linear-gradient(45deg, #f39c12, #f1c40f)";
-                }, 2000);
+                }, 3000); // Espera um pouco mais para apreciarem a festa
             } else {
-                btn.innerText = "FIM DO SORTEIO!";
-                btn.style.background = "#555";
+                btn.innerText = "SORTEIO CONCLUÍDO!";
+                btn.style.background = "#333";
             }
         }
 
@@ -493,6 +544,7 @@ Fernanda Lima</textarea>
                 <span class="winner-number">#${numero}</span>
                 <span class="winner-name">${nome}</span>
             `;
+            // Adiciona sempre no início
             ul.insertBefore(li, ul.firstChild);
         }
 
@@ -503,25 +555,43 @@ Fernanda Lima</textarea>
             document.getElementById('display-sorteio').classList.remove('vencedor');
 
             const btn = document.getElementById('btn-sortear');
-            btn.innerText = `🚀 Sortear`;
+            btn.innerText = `🚀 SORTEAR AGORA`;
             btn.style.background = "linear-gradient(45deg, #27ae60, #2ecc71)";
             btn.onclick = iniciarSorteio;
         }
 
         function celebrar() {
-            const cores = ['#FFD700', '#FF0000', '#00FF00', '#0000FF', '#ffffff', '#ff00ff'];
-            for(let i=0; i<100; i++) {
+            const cores = ['#FFD700', '#FF0000', '#00FF00', '#00FFFF', '#FF00FF', '#FFFFFF'];
+            // AUMENTADO PARA 400 CONFETES
+            for(let i=0; i<400; i++) {
                 const confete = document.createElement('div');
                 confete.classList.add('confetti');
+                
+                // Posição aleatória na tela
                 confete.style.left = Math.random() * 100 + 'vw';
+                
+                // Cores aleatórias
                 confete.style.backgroundColor = cores[Math.floor(Math.random() * cores.length)];
-                confete.style.top = '-20px';
+                
+                // Começa um pouco acima da tela
+                confete.style.top = (Math.random() * -20) + 'px';
+                
+                // Tamanhos variados para profundidade
+                const size = Math.random() * 10 + 5 + 'px';
+                confete.style.width = size;
+                confete.style.height = size;
+                
+                // Velocidades diferentes
                 confete.style.animationDuration = (Math.random() * 2 + 2) + 's'; 
+                
                 document.body.appendChild(confete);
+                
+                // Remove do DOM após cair
                 setTimeout(() => confete.remove(), 5000);
             }
         }
         
+        // Inicializa o contador ao carregar
         atualizarContador();
     </script>
 </body>
