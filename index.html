@@ -97,7 +97,7 @@
 
     <meta name="robots" content="index, follow">
     <meta name="author" content="Super Cestas Básicas Dona Antônia">
-    <meta name="theme-color" content="#0F2546"> 
+    <meta name="theme-color" content="#1B5E20"> <!-- Alterado para o novo Verde -->
     
     <!-- OTIMIZAÇÃO: CSS Crítico Inline e FontAwesome Assíncrono -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
@@ -124,25 +124,36 @@
         }
 
         :root {
-            --cor-primaria: #0F2546; 
-            --cor-destaque-vermelho: #D32F2F; 
-            --cor-destaque-dourado: #FFC107; 
-            --cor-whatsapp: #128C7E; 
+            /* === NOVA PALETA DE CORES (ANTI-CLONE / FRESCOR) === */
+            
+            /* Verde Floresta Elegante (Substitui o Azul) */
+            --cor-primaria: #1B5E20; 
+            
+            /* Terracota/Laranja Queimado (Substitui o Vermelho Padrão) - Alerta diferenciado */
+            --cor-destaque-vermelho: #BF360C; 
+            
+            /* Ouro Rico (Mantido, mas ajustado para combinar com verde) */
+            --cor-destaque-dourado: #FFD600; 
+            
+            --cor-whatsapp: #25D366; /* Verde Whats padrão */
             --cor-telegram: #0088cc;
             --cor-facebook: #1877F2; 
-            --cor-info: #1565C0; 
-            --cor-texto: #333; 
-            --cor-fundo: #fafafa;
+            --cor-info: #2E7D32; /* Ajustado para verde */
+            --cor-texto: #212121; /* Texto quase preto suavizado */
+            
+            /* Fundo Creme Suave (Substitui o cinza frio) */
+            --cor-fundo: #F1F8E9;
+            
             --cor-pagamento: #0277BD; 
-            --cor-entrega: #EF6C00; 
-            --cor-header-fundo: #f5f5f5;
+            --cor-entrega: #E65100; 
+            --cor-header-fundo: #ffffff;
             --altura-header: 80px; 
-            --largura-logo: 100px; 
+            --largura-logo: 110px; /* Logo levemente maior */
             --altura-floating-bar: 70px;
         }
 
         html { 
-            background-color: #e0e0e0; 
+            background-color: #E8F5E9; /* Fundo geral esverdeado suave */
             scroll-behavior: smooth;
             scroll-padding-top: calc(var(--altura-header) + 40px); 
             font-size: 15px;
@@ -152,11 +163,11 @@
 
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
-            background-color: #e0e0e0; 
+            background-color: #E8F5E9; 
             color: var(--cor-texto);
             margin: 0; 
             padding: 0;
-            padding-top: 0; /* REMOVIDO PADDING SUPERIOR (Header não é mais fixo) */
+            padding-top: 0; 
             padding-bottom: 90px; 
             min-height: 10vh;
             position: relative; 
@@ -174,7 +185,7 @@
             max-width: 480px; 
             margin: 0 auto; 
             background-color: var(--cor-fundo); 
-            box-shadow: 0 0 20px rgba(0,0,0,0.05); 
+            box-shadow: 0 0 20px rgba(27, 94, 32, 0.08); /* Sombra levemente verde */
             transition: max-width 0.3s ease; 
         }
         
@@ -185,6 +196,7 @@
             text-align: center;
             padding: 20px 15px 10px 15px;
             background: #fff;
+            border-bottom: 1px solid #E8F5E9;
         }
         .seo-main-title h1 {
             font-size: 1.25rem; 
@@ -194,27 +206,28 @@
         }
         .seo-main-title p {
             font-size: 0.95rem;
-            color: #666;
+            color: #555;
             margin: 6px 0 0 0;
             font-weight: 400;
         }
 
-        /* === BANNER ALERTA PAGAMENTO (MODIFICADO: GRANDE E FIXO/STICKY) === */
+        /* === BANNER ALERTA PAGAMENTO (MODIFICADO: Cor Nova) === */
         .banner-alerta-pagamento {
-            position: sticky; /* FIXA QUANDO ROLA */
+            position: sticky; 
             top: 0;
-            z-index: 3000; /* Z-index alto para ficar sobre outros elementos */
+            z-index: 4000; 
             
-            background-color: #D32F2F; /* VERMELHO DESTAQUE */
-            color: white; /* TEXTO BRANCO */
+            /* Uso da nova cor de destaque (Terracota) */
+            background-color: var(--cor-destaque-vermelho); 
+            color: white; 
             
             border: none;
-            border-bottom: 4px solid #B71C1C; /* Sombra sólida na borda */
+            border-bottom: 4px solid rgba(0,0,0,0.2); 
             
-            padding: 20px 15px; /* MAIOR */
+            padding: 20px 15px; 
             text-align: center;
-            font-size: 1.15rem; /* FONTE MAIOR */
-            font-weight: 700; /* NEGRITO */
+            font-size: 1.15rem; 
+            font-weight: 700; 
             line-height: 1.3;
             
             display: flex;
@@ -223,17 +236,17 @@
             gap: 12px;
             
             margin: 0; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         
         .banner-alerta-pagamento i {
-            color: #FFD700; /* Ícone amarelo ouro para contraste */
+            color: var(--cor-destaque-dourado); 
             font-size: 1.5rem;
         }
 
         @media (min-width: 481px) {
             .banner-alerta-pagamento {
-                border-radius: 0 0 12px 12px; /* Arredondado embaixo no desktop */
+                border-radius: 0 0 12px 12px; 
                 margin-bottom: 20px;
             }
         }
@@ -257,9 +270,9 @@
             cursor: pointer;
         }
         .google-reviews-badge:hover {
-            background-color: #E3F2FD;
-            border-color: #BBDEFB;
-            color: #1565C0;
+            background-color: #E8F5E9;
+            border-color: #A5D6A7;
+            color: var(--cor-primaria);
         }
         .stars { color: #FFC107; letter-spacing: -2px;}
 
@@ -268,7 +281,7 @@
 
         .chip-ancora {
             background: #fff;
-            border: 1px solid #ddd;
+            border: 1px solid #C8E6C9; /* Borda levemente verde */
             padding: 6px 14px;
             border-radius: 20px; 
             font-size: 0.85rem;
@@ -285,16 +298,15 @@
             border-color: var(--cor-primaria);
         }
 
-        /* --- CABEÇALHO (MODIFICADO: NÃO É MAIS FIXO) --- */
+        /* --- CABEÇALHO --- */
         header {
             background-color: white;
             height: var(--altura-header);
             padding: 0;
             display: flex;
             flex-direction: row; 
-            box-shadow: none; /* Remove sombra pois vai rolar */
+            box-shadow: none; 
             
-            /* Removemos Position Fixed */
             position: relative;
             top: auto;
             left: auto;
@@ -302,11 +314,11 @@
             
             width: 100%;
             max-width: 480px; 
-            margin: 0 auto; /* Centraliza */
+            margin: 0 auto; 
             z-index: 1000;
             transition: max-width 0.3s ease;
             contain: layout size; 
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #C8E6C9; /* Divisor sutil */
         }
 
         /* Barra de fundo antiga (removida/oculta) */
@@ -325,18 +337,24 @@
             z-index: 1002;
         }
 
-        /* Logo agora rola junto (Absolute em vez de Fixed) */
+        /* === LOGO COM SOBREPOSIÇÃO (AJUSTE SOLICITADO) === 
+           Aumentado tamanho e ajustado 'top' para criar efeito de sobreposição
+           sobre a barra vermelha (agora terracota)
+        */
         .logo-pequ { 
-            height: var(--largura-logo);
-            width: var(--largura-logo); 
+            height: 110px; /* Aumentado de 100px */
+            width: 110px; 
             object-fit: cover; 
             border-radius: 50%; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
             
-            position: absolute; /* Mudado de Fixed para Absolute */
-            top: 5px; 
+            /* Sombra mais forte para destacar a sobreposição */
+            box-shadow: 0 6px 15px rgba(0,0,0,0.25); 
+            border: 3px solid white; /* Borda branca para separar das cores de fundo */
+            
+            position: absolute; 
+            top: 10px; /* Empurrado um pouco para baixo para sobrepor a área de conteúdo */
             left: 15px; 
-            z-index: 9999; /* AUMENTADO PARA 9999 para garantir que fique por cima do banner */
+            z-index: 6000; /* SUPERIOR AO BANNER (4000) e HEADER (1000) */
             background-color: white;
             padding: 0; 
         }
@@ -346,13 +364,13 @@
             align-items: center;    
             justify-content: center;
             background-color: var(--cor-primaria);
-            color: var(--cor-destaque-dourado); 
-            border: 1px solid var(--cor-destaque-dourado); 
+            color: #FFEB3B; /* Amarelo claro para contraste no verde */
+            border: 1px solid #FFEB3B; 
             border-radius: 50px; 
             padding: 8px 20px; 
             cursor: pointer;
             text-decoration: none;
-            box-shadow: 0 4px 10px rgba(15, 37, 70, 0.2);
+            box-shadow: 0 4px 10px rgba(27, 94, 32, 0.3);
             margin-left: auto;
             text-align: center;
             max-width: calc(100% - var(--largura-logo) - 10px);
@@ -369,8 +387,8 @@
         }
 
         @media (max-width: 380px) {
-            :root { --largura-logo: 85px; --altura-header: 75px; }
-            .logo-pequ { left: 10px; }
+            :root { --largura-logo: 90px; --altura-header: 75px; }
+            .logo-pequ { width: 90px; height: 90px; left: 10px; top: 15px; }
             .linha-destaque-top { font-size: 0.75rem; }
         }
 
@@ -382,49 +400,48 @@
             border-radius: 12px;
             padding: 15px; 
             margin-bottom: 15px; 
-            border: 1px solid #f0f0f0; 
+            border: 1px solid #C8E6C9; /* Borda verde suave */
             box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
             height: 100%; 
             display: flex;
             flex-direction: column;
-            contain: content; /* Otimização CSS */
+            contain: content; 
         }
         
-        /* AJUSTE DE PESO DE FONTE */
         .card h2 { 
             font-size: 1.2rem; 
-            font-weight: 600; /* Reduzido de 700 */
+            font-weight: 600; 
             letter-spacing: -0.3px;
             margin-bottom: 10px;
         }
 
         /* =========================================
-           PADRONIZAÇÃO DOS CARDS (Horizontal no PC, Vertical/Grande no Mobile)
+           PADRONIZAÇÃO DOS CARDS
            ========================================= */
         .card-cesta-horizontal {
             display: flex;
-            flex-direction: row; /* Padrão Desktop */
+            flex-direction: row; 
             background: white;
             border-radius: 12px;
-            margin-bottom: 25px; /* Mais espaço entre cards */
-            border: 1px solid #f0f0f0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06); /* Sombra um pouco maior */
+            margin-bottom: 25px; 
+            border: 1px solid #E8F5E9;
+            box-shadow: 0 4px 12px rgba(27, 94, 32, 0.08); /* Sombra esverdeada */
             position: relative;
-            overflow: visible !important; /* Importante para o selo */
+            overflow: visible !important; 
             min-height: 130px;
             transition: box-shadow 0.2s;
             z-index: 1;
         }
 
-        /* Estilo especial para o destaque (primeiro card) */
+        /* Estilo especial para o destaque (Cesta Econômica) */
         #cestaeconomica {
             border: 2px solid var(--cor-destaque-dourado);
-            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.15);
+            box-shadow: 0 6px 15px rgba(255, 214, 0, 0.25);
             z-index: 5;
         }
 
         .cesta-img-container {
-            width: 160px; /* Padrão desktop */
+            width: 160px; 
             min-width: 160px;
             position: relative;
             background-color: #fff;
@@ -446,7 +463,7 @@
             position: absolute;
             bottom: 6px;
             right: 6px;
-            background-color: rgba(0,0,0,0.6);
+            background-color: rgba(27, 94, 32, 0.8); /* Verde transparente */
             color: white;
             width: 26px;
             height: 26px;
@@ -475,20 +492,20 @@
             margin-bottom: 5px;
         }
 
-        /* === ESTILOS PARA LISTA DE PREÇOS NO CARD (NOVO) === */
+        /* === ESTILOS PARA LISTA DE PREÇOS NO CARD === */
         .lista-precos-card {
-            background-color: #f9f9f9;
+            background-color: #F9FBE7; /* Fundo limão muito suave */
             border-radius: 8px;
             padding: 10px;
             margin-bottom: 12px;
-            border: 1px solid #eee;
+            border: 1px solid #DCEDC8;
         }
         .item-preco-card {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 4px;
-            font-size: 0.95rem; /* Leitura fácil */
+            font-size: 0.95rem; 
         }
         .item-preco-card:last-child {
             margin-bottom: 0;
@@ -507,7 +524,7 @@
         /* Mantido para Cesta Econômica */
         .cesta-price-tag {
             font-size: 0.95rem;
-            color: #666;
+            color: #555;
             margin-bottom: 12px;
             display: flex;
             align-items: baseline;
@@ -527,7 +544,7 @@
             align-items: center;
         }
 
-        /* Botão Encomendar (WhatsApp) - Agora secundário na ordem visual */
+        /* Botão Encomendar (WhatsApp) */
         .btn-cta-small {
             background-color: var(--cor-whatsapp);
             color: white !important;
@@ -548,16 +565,16 @@
             box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
         
-        /* Botão Ver Produtos - Agora DESTAQUE PRINCIPAL */
+        /* Botão Ver Produtos - DESTAQUE PRINCIPAL (Agora em Verde Info) */
         .btn-ver-produtos {
-            background-color: #1565C0; /* Azul Royal */
+            background-color: #2E7D32; /* Verde Info */
             color: white !important; 
             border: none; 
             border-radius: 8px;
-            padding: 12px; /* Aumentado para destaque */
-            font-size: 0.95rem; /* Fonte maior */
-            font-weight: 700; /* Negrito */
-            width: 100%; /* Largura total */
+            padding: 12px; 
+            font-size: 0.95rem; 
+            font-weight: 700; 
+            width: 100%; 
             flex-basis: 100%; 
             cursor: pointer;
             text-transform: uppercase;
@@ -565,8 +582,8 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 4px 8px rgba(21, 101, 192, 0.25); /* Sombra mais forte */
-            margin-bottom: 2px; /* Pequeno espaçamento extra */
+            box-shadow: 0 4px 8px rgba(46, 125, 50, 0.25); 
+            margin-bottom: 2px; 
         }
 
         /* Selo "Mais Vendida" */
@@ -575,8 +592,8 @@
             top: -14px;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(135deg, var(--cor-destaque-dourado), #FFB300);
-            color: var(--cor-primaria);
+            background: linear-gradient(135deg, var(--cor-destaque-dourado), #FBC02D);
+            color: #000; /* Contraste preto no amarelo */
             padding: 6px 20px;
             border-radius: 20px;
             font-weight: 800;
@@ -591,7 +608,7 @@
 
         /* NOVA CLASSE PARA BANNER DE BRINDE */
         .selo-brinde-extra {
-            background-color: #2E7D32; /* Verde forte */
+            background-color: #00695C; /* Verde Petróleo */
             color: white;
             font-size: 0.75rem;
             font-weight: 800;
@@ -609,12 +626,12 @@
         .lista-bairros-seo {
             font-size: 0.85rem;
             color: #555;
-            background: #f9f9f9;
+            background: #fff;
             padding: 15px;
             border-radius: 8px;
             margin-top: 15px;
             text-align: left;
-            border: 1px solid #eee;
+            border: 1px solid #E8F5E9;
         }
         .lista-bairros-seo h4 {
             color: var(--cor-primaria);
@@ -622,7 +639,7 @@
             font-size: 0.9rem;
             font-weight: 700;
             text-transform: uppercase;
-            border-bottom: 1px dashed #ddd;
+            border-bottom: 1px dashed #C8E6C9;
             padding-bottom: 3px;
         }
         .lista-bairros-seo h4:first-child { margin-top: 0; }
@@ -632,28 +649,28 @@
             color: #666;
         }
 
-        /* === MOBILE: TODOS OS CARDS IGUAIS AO PRIMEIRO === */
+        /* === MOBILE === */
         @media (max-width: 480px) {
             .card-cesta-horizontal {
-                flex-direction: column !important; /* Força layout vertical para TODOS */
+                flex-direction: column !important; 
             }
             .cesta-img-container {
-                width: 100% !important; /* Foto ocupa largura total */
-                height: 230px !important; /* Altura grande padronizada */
+                width: 100% !important; 
+                height: 230px !important; 
                 border-top-right-radius: 12px;
                 border-bottom-left-radius: 0;
                 border-bottom: 1px solid #f0f0f0;
             }
             .cesta-info-container {
                 padding: 20px 15px;
-                text-align: center; /* Centraliza informações */
+                text-align: center; 
             }
             .cesta-title-row h2 {
-                font-size: 1.4rem; /* Título maior */
+                font-size: 1.4rem; 
                 margin-bottom: 5px;
             }
             .cesta-price-tag {
-                justify-content: center; /* Preço centralizado */
+                justify-content: center; 
                 font-size: 1rem;
             }
             .cesta-price-highlight {
@@ -663,44 +680,42 @@
                 justify-content: center;
             }
             .btn-cta-small {
-                padding: 14px; /* Botão maior */
+                padding: 14px; 
                 font-size: 1rem;
             }
         }
         
-        /* === BOTÕES FLUTUANTES MODERNIZADOS (ESTILO PROFISSIONAL CLEAN) === */
+        /* === BOTÕES FLUTUANTES MODERNIZADOS === */
         .floating-buttons-container {
             position: fixed;
-            bottom: 20px; /* Descolado da base */
+            bottom: 20px; 
             left: 50%;
             transform: translateX(-50%);
-            width: auto; /* Largura automática */
+            width: auto; 
             z-index: 5000;
             display: flex;
             justify-content: center; 
             gap: 12px;
             padding: 8px 16px; 
             
-            /* Visual Profissional: Branco Sólido com Sombra Elegante */
             background: #ffffff;
             border-radius: 50px;
             border: 1px solid #eee;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15); /* Sombra difusa e suave */
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15); 
             
             pointer-events: auto; 
         }
 
-        /* === NOVA VINHETA DE FUNDO === */
+        /* === VINHETA DE FUNDO === */
         .vinheta-fundo-botoes {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 120px; /* Altura suficiente para cobrir os botões e um pouco mais */
-            /* Gradiente sutil do branco para transparente */
+            height: 120px; 
             background: linear-gradient(to top, rgba(255, 255, 255, 0.95) 20%, rgba(255, 255, 255, 0) 100%);
-            z-index: 900; /* Acima do conteúdo normal, abaixo do header e dos botões */
-            pointer-events: none; /* Permite clicar através da vinheta */
+            z-index: 900; 
+            pointer-events: none; 
         }
 
         .btn-float-action {
@@ -723,31 +738,25 @@
             line-height: 1;
             white-space: nowrap; 
             min-width: 110px; 
-            text-decoration: none; /* Importante para links */
+            text-decoration: none; 
             
-            /* Remove sombras internas ou text-shadows baratas */
             box-shadow: none;
         }
         
         .btn-float-action:hover { transform: translateY(-2px); opacity: 0.95; }
         .btn-float-action:active { transform: scale(0.98) translateY(0); }
 
-        /* Cores Sólidas Profissionais (Flat Design) */
-        
-        /* WhatsApp: Verde Oficial */
         .btn-float-whatsapp { 
             background-color: #25D366; 
             animation: pulse-green 2s infinite;
         }
 
-        /* Instagram: Cor Oficial da Marca (Magenta/Roxo Sólido ou quase) */
         .btn-float-instagram {
             background-color: #C13584;
             min-width: auto; 
             padding: 12px 18px;
         }
 
-        /* Google: Azul Oficial */
         .btn-float-google {
             background-color: #4285F4;
             min-width: auto; 
@@ -767,17 +776,17 @@
             padding: 20px;
         }
         
-        /* ESTILO DO SLIDER ULTRA COMPACTO */
+        /* ESTILO DO SLIDER */
         #modalApresentacao {
-            background-color: rgba(15, 37, 70, 0.9); /* Fundo escuro */
+            background-color: rgba(27, 94, 32, 0.9); /* Verde Escuro */
             z-index: 8000; 
         }
 
         .modal-slider-content {
             background-color: white; 
             width: 90%; 
-            max-width: 320px; /* Quadrado/Retangular Pequeno */
-            aspect-ratio: 1/1; /* Tenta manter quadrado se possível */
+            max-width: 320px; 
+            aspect-ratio: 1/1; 
             border-radius: 24px; 
             overflow: hidden; 
             display: flex; 
@@ -792,7 +801,7 @@
         .btn-fechar-slider {
             position: absolute;
             top: 15px;
-            left: 15px; /* Esquerda para não brigar com a seta */
+            left: 15px; 
             z-index: 20;
             background: transparent;
             color: #999;
@@ -833,16 +842,15 @@
             padding: 0 10px;
         }
 
-        /* Seta de Navegação (Agora na BASE direita) */
+        /* Seta de Navegação */
         .slider-next-btn {
             position: absolute;
-            bottom: 25px; /* Fixado na base */
-            right: 25px;  /* Canto direito */
-            /* Removemos top/transform anteriores */
+            bottom: 25px; 
+            right: 25px;  
             top: auto;
             transform: none;
             
-            background: #f5f5f5;
+            background: #E8F5E9;
             border: none;
             font-size: 1.2rem;
             color: var(--cor-primaria);
@@ -903,7 +911,7 @@
         }
         .modal-info-header h3 { margin: 0; color: var(--cor-primaria); font-size: 1.1rem; font-weight: 700;}
         
-        /* NOVO ESTILO DO BOTÃO FECHAR */
+        /* Botão Fechar Modal */
         .btn-fechar-modal-info, .btn-fechar-modal-var { 
             background-color: #f5f5f5;
             border: 1px solid #ddd;
@@ -916,14 +924,13 @@
             text-transform: uppercase;
             transition: all 0.2s;
             line-height: 1.2;
-            width: auto; /* Garante que o texto caiba */
+            width: auto; 
         }
         .btn-fechar-modal-info:hover, .btn-fechar-modal-var:hover {
             background-color: #e0e0e0;
             color: #333;
         }
         
-        /* Ajuste para o botão fechar do modal de variação que fica absoluto */
         .btn-fechar-modal-var { 
             position: absolute; 
             top: 15px; 
@@ -941,15 +948,15 @@
         .brinde-container {
             display: flex;
             align-items: center;
-            background: #E3F2FD;
-            border: 1px solid #BBDEFB;
+            background: #E8F5E9; /* Verde muito claro */
+            border: 1px solid #C8E6C9;
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 20px;
         }
         .brinde-label {
             font-size: 0.7rem;
-            color: #1565C0;
+            color: #2E7D32;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -965,7 +972,6 @@
         .zoom-img-container { max-width: 100%; max-height: 100%; position: relative; display: flex; justify-content: center; align-items: center;}
         .img-zoom-full { max-width: 95%; max-height: 80vh; object-fit: contain; }
         
-        /* Botão fechar do zoom também atualizado para estilo textual */
         .btn-fechar-zoom { 
             position: absolute; 
             top: 20px; 
@@ -998,7 +1004,7 @@
             display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 2px solid #eee; 
             border-radius: 10px; margin-bottom: 10px; cursor: pointer; text-align: left; transition: all 0.2s;
         }
-        .opcao-select.selected { border-color: var(--cor-primaria); background-color: #E3F2FD; }
+        .opcao-select.selected { border-color: var(--cor-primaria); background-color: #E8F5E9; }
         .opcao-nome { font-weight: 600; color: #333; font-size: 1rem; }
         .opcao-preco { color: var(--cor-destaque-vermelho); font-weight: 700; font-size: 1rem; }
         .btn-confirmar-pedido { 
@@ -1083,7 +1089,7 @@
             /* Ajuste do container flutuante no desktop */
             .floating-buttons-container {
                 left: auto;
-                right: 30px; /* Alinha a direita no desktop */
+                right: 30px; 
                 transform: none;
                 bottom: 30px;
             }
@@ -1121,7 +1127,7 @@
                 display: grid; 
                 grid-template-columns: 270px 1fr; /* Sidebar mais larga (270px) */
                 gap: 30px; 
-                padding: 30px 20px; /* Alinhado com header */
+                padding: 30px 20px; 
                 background-color: transparent; 
                 box-shadow: none; 
                 align-items: start; 
@@ -1129,15 +1135,15 @@
             
             /* BANNER NO GRID */
             .banner-alerta-pagamento {
-                grid-column: 1 / -1; /* Ocupa toda largura no grid */
+                grid-column: 1 / -1; 
             }
             
             .seo-text-block { grid-column: 1 / -1; margin-top: 40px; background: white; border-radius: 12px; padding: 30px; }
-            #pag-cestas { grid-column: 2; grid-row: 2; background: transparent; } /* Ajustado row para 2 por causa do banner */
+            #pag-cestas { grid-column: 2; grid-row: 2; background: transparent; } 
             
             /* CARDS: 1 Coluna (Lista Vertical) */
             .cesta-cards-grid { 
-                display: flex; /* Mudado de grid para flex column */
+                display: flex; 
                 flex-direction: column;
                 gap: 30px; 
                 max-width: 100%; 
@@ -1147,8 +1153,8 @@
             /* PADRONIZAR TODOS OS CARDS COMO HORIZONTAIS GRANDES */
             .card-cesta-horizontal {
                 display: flex;
-                flex-direction: row !important; /* Garante horizontal */
-                min-height: 280px; /* Altura padronizada */
+                flex-direction: row !important; 
+                min-height: 280px; 
                 align-items: stretch;
             }
 
@@ -1185,10 +1191,10 @@
             
             .menu-ancoras-cestas { display: none !important; }
             
-            /* AJUSTE DA SIDEBAR PARA ALINHAMENTO PROFISSIONAL */
+            /* AJUSTE DA SIDEBAR */
             .secoes-extras-grid { 
                 grid-column: 1; 
-                grid-row: 2; /* Ajustado row para 2 por causa do banner */
+                grid-row: 2; 
                 display: flex !important; 
                 flex-direction: column; 
                 gap: 20px; 
@@ -1235,7 +1241,8 @@
             color: var(--cor-primaria);
         }
     </style>
-
+    
+    <!-- MANTIDO: SCRIPTS DE DADOS ESTRUTURADOS E CONTEÚDO... -->
     <!-- OTIMIZAÇÃO SEO LOCAL "NUCLEAR": Dados Estruturados (Schema.org) -->
     <script type="application/ld+json">
     {
@@ -1339,16 +1346,50 @@
       }
     }
     </script>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "Vocês fazem entrega de cesta básica em Cuiabá e Várzea Grande?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim! Realizamos entrega grátis de cestas básicas em toda a área urbana de Cuiabá e Várzea Grande, incluindo bairros como CPA, Coxipó, Centro, Cristo Rei, Tijucal e Pedra 90."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Aceitam cartão de alimentação e vale refeição?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Aceitamos os principais cartões de alimentação como Alelo, Sodexo, Pluxee (antigo Sodexo), Ticket, além de pagamentos digitais via Pix e cartões de crédito e débito."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Quanto tempo demora a entrega da cesta básica?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Para pedidos realizados até as 10h da manhã, a entrega é feita no mesmo dia em Cuiabá e VG. Temos a logística de entrega rápida e eficiente."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Qual o preço da cesta básica mais barata em Cuiabá?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nossa Cesta Econômica custa a partir de R$ 85,00. É ideal para doações, empresas e consumo rápido, contendo todos os itens essenciais de qualidade."
+        }
+      }]
+    }
+    </script>
 </head>
 <body oncontextmenu="return false"> <!-- ANTI-CÓPIA SIMPLES -->
     
     <div id="toast-container"></div> 
 
-    <!-- ELEMENTO DESATIVADO: BARRA DE FUNDO (NÃO PRECISA SE HEADER NÃO FOR FIXO) -->
-    <!-- <div class="header-background-bar"></div> -->
-
     <!-- OTIMIZAÇÃO: LCP Priorizado + CLS Fix -->
-    <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" width="100" height="100" fetchpriority="high" id="logo-principal" onerror="this.src='https://placehold.co/120x120?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
+    <!-- LOGO AGORA MAIOR E COM Z-INDEX ALTO PARA SOBREPOR BARRA -->
+    <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" width="110" height="110" fetchpriority="high" id="logo-principal" onerror="this.src='https://placehold.co/120x120?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
 
     <header>
         <div class="header-top">
@@ -1374,6 +1415,7 @@
     <main class="main-content-wrapper">
         
         <!-- BANNER DE ALERTA DE PAGAMENTO (AGORA STICKY/FIXO AO ROLAR) -->
+        <!-- O LOGO VAI SOBREPOR ESTE ELEMENTO VISUALMENTE -->
         <div class="banner-alerta-pagamento">
             <i class="fas fa-shield-alt"></i>
             <span>Pague somente na entrega. <strong>Não vendemos online.</strong></span>
@@ -1400,10 +1442,6 @@
 
                 <div class="cesta-cards-grid">
                     
-                    <!-- 
-                       ITEM EM DESTAQUE: CESTA ECONÔMICA 
-                       OTIMIZAÇÃO: fetchpriority="high" e ALT geolocalizado
-                    -->
                     <div class="card-cesta-horizontal" id="cestaeconomica">
                         <div class="selo-destaque"><i class="fas fa-star"></i> Mais Vendida</div>
                         <div class="cesta-img-container" onclick="abrirZoom('img/cesta-basica-cuiaba-varzea-grande-economica.avif', 'Cesta Econômica')">
@@ -1447,7 +1485,6 @@
                                 <div class="cesta-title-row"><h2>Cesta Mini</h2></div>
                                 <div class="selo-brinde-extra" style="display: none;"><i class="fas fa-gift"></i> Brinde: Amaciante Ype 2L</div>
                                 
-                                <!-- LISTA DE PREÇOS INSERIDA AQUI -->
                                 <div class="lista-precos-card">
                                     <div class="item-preco-card">
                                         <span class="marca-arroz">Arroz Tio Alvino</span>
@@ -1482,7 +1519,6 @@
                                 <div class="cesta-title-row"><h2>Cesta Pequena</h2></div>
                                 <div class="selo-brinde-extra" style="display: none;"><i class="fas fa-gift"></i> Brinde: Amaciante Ype 2L</div>
                                 
-                                <!-- LISTA DE PREÇOS INSERIDA AQUI -->
                                 <div class="lista-precos-card">
                                     <div class="item-preco-card">
                                         <span class="marca-arroz">Arroz Tio Alvino</span>
@@ -1517,7 +1553,6 @@
                                 <div class="cesta-title-row"><h2>Cesta Média</h2></div>
                                 <div class="selo-brinde-extra" style="display: none;"><i class="fas fa-gift"></i> Brinde: Amaciante Ype 2L</div>
                                 
-                                <!-- LISTA DE PREÇOS INSERIDA AQUI -->
                                 <div class="lista-precos-card">
                                     <div class="item-preco-card">
                                         <span class="marca-arroz">Arroz Tio Alvino</span>
@@ -1552,7 +1587,6 @@
                                 <div class="cesta-title-row"><h2>Cesta Grande</h2></div>
                                 <div class="selo-brinde-extra" style="display: none;"><i class="fas fa-gift"></i> Brinde: Amaciante Ype 2L</div>
                                 
-                                <!-- LISTA DE PREÇOS INSERIDA AQUI -->
                                 <div class="lista-precos-card">
                                     <div class="item-preco-card">
                                         <span class="marca-arroz">Arroz Tio Alvino</span>
@@ -1594,7 +1628,7 @@
                         <li><span class="emoji-icon">🥗</span> Alimentação: Alelo, Sodexo, Pluxee</li>
                         <li><span class="emoji-icon">📱</span> Digitais: Ifood, Caju, Flash</li>
                     </ul>
-                    <p style="color: #D32F2F; font-size: 0.9rem; text-align: center; margin-top: 15px; font-weight: 600;">⚠️ Não vendemos a prazo.</p>
+                    <p style="color: var(--cor-destaque-vermelho); font-size: 0.9rem; text-align: center; margin-top: 15px; font-weight: 600;">⚠️ Não vendemos a prazo.</p>
                 </div>
             </div>
 
@@ -1607,7 +1641,6 @@
                     <div style="text-align: center;">
                         <p style="font-size: 0.95rem; color: #555;">Atendemos toda área urbana de <strong>Cuiabá</strong> e <strong>Várzea Grande</strong>.</p>
                         
-                        <!-- CONTEÚDO HYPER-LOCAL NOVO E EXPANDIDO (MASSIVE SEO) -->
                         <div class="lista-bairros-seo">
                             <h4>📍 Cuiabá - Região Norte (CPA):</h4>
                             <p>CPA I, CPA II, CPA III e CPA IV, Morada da Serra, Três Barras, Jardim Ubirajara, Nova Conquista, 1º de Março, Jardim Vitória, Novo Paraíso.</p>
@@ -1654,7 +1687,6 @@
 
     <!-- BOTÕES FLUTUANTES INFERIORES -->
     <div class="floating-buttons-container">
-        <!-- BOTÃO SORTEIO REMOVIDO DAQUI -->
         
         <!-- BOTÃO BRINDE (SOME APÓS INSTALAÇÃO) -->
         <button id="btn-brinde-float" onclick="abrirModalBrinde()" class="btn-float-action btn-float-whatsapp">
@@ -1697,13 +1729,13 @@
     <!-- NOVO MODAL: BRINDE APP -->
     <div id="modalBrindeApp" class="modal-variacao" onclick="if(event.target === this) fecharModalBrinde()">
         <div class="modal-info-content">
-            <div class="modal-info-header" style="background: linear-gradient(135deg, #1565C0, #0D47A1); color: white;">
+            <div class="modal-info-header" style="background: linear-gradient(135deg, #2E7D32, #1B5E20); color: white;">
                 <h3 style="color: white;"><i class="fas fa-gift"></i> Ativar Modo Brinde</h3>
                 <button class="btn-fechar-modal-info" onclick="fecharModalBrinde()" style="background: rgba(255,255,255,0.2); color: white; border: none;">Fechar</button>
             </div>
             <div class="modal-body-scroll" style="text-align: center; padding: 25px;">
                 <!-- LOGO REDONDA AGORA AQUI -->
-                <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" width="100" height="100" alt="Logo Dona Antônia" style="margin-bottom: 15px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" onerror="this.src='https://placehold.co/100x100/2196F3/ffffff?text=LOGO'">
+                <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" width="100" height="100" alt="Logo Dona Antônia" style="margin-bottom: 15px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" onerror="this.src='https://placehold.co/100x100/2E7D32/ffffff?text=LOGO'">
                 
                 <h2 style="font-size: 1.2rem; color: var(--cor-primaria); margin-bottom: 10px;">Baixe o App e veja os brindes de cada cesta Básica</h2>
 
@@ -1752,7 +1784,7 @@
             </button>
             
             <div class="slider-wrapper">
-                <!-- Seta de Navegação (Agora na BASE direita) - Controlada via JS -->
+                <!-- Seta de Navegação -->
                 <button id="btnNext" class="slider-next-btn" onclick="mudarSlide(1)">
                     <i class="fas fa-arrow-right"></i>
                 </button>
@@ -1843,25 +1875,18 @@
         // === VARIÁVEL PARA INSTALAÇÃO PWA ===
         let deferredPrompt = null;
 
-        // REGISTRAR O SERVICE WORKER (OBRIGATÓRIO PARA INSTALAÇÃO)
+        // REGISTRAR O SERVICE WORKER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Em ambiente de preview, o service-worker.js pode não existir, então comentamos o registro real para evitar erros no console
-                // navigator.serviceWorker.register('./service-worker.js') ...
+                // Simulação em preview
                 console.log('Service Worker (simulado no preview)');
             });
         }
 
-        // Escutar evento de instalação (antes de aparecer o prompt nativo)
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Impede o Chrome 67 e anteriores de mostrar o prompt automaticamente
             e.preventDefault();
-            // Guarda o evento para ser disparado depois
             deferredPrompt = e;
             console.log("PWA: Evento de instalação capturado e salvo.");
-            
-            // Opcional: Mostrar botão de instalação se estivesse oculto
-            // document.getElementById('btn-install-android').style.display = 'block';
         });
 
         // === DADOS DAS CESTAS ===
@@ -2030,14 +2055,11 @@
 
         // === VERIFICAÇÃO DE APP INSTALADO ===
         function isAppInstalled() {
-            // Verifica modo standalone (PWA real) OU flag de simulação no localStorage
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
             const isSimulated = localStorage.getItem('donaAntoniaAppInstalado') === 'true';
-            
             return isStandalone || isSimulated;
         }
 
-        // Função para atualizar a visibilidade dos botões flutuantes e dos banners de brinde
         function atualizarBotoesFlutuantes() {
             const btnBrinde = document.getElementById('btn-brinde-float');
             const btnsPosInstall = document.getElementById('botoes-pos-install');
@@ -2046,17 +2068,11 @@
             if (isAppInstalled()) {
                 if(btnBrinde) btnBrinde.style.display = 'none';
                 if(btnsPosInstall) btnsPosInstall.style.display = 'flex';
-                // Mostrar selos de brinde extra nas cestas
-                selosBrinde.forEach(selo => {
-                    selo.style.display = 'inline-flex';
-                });
+                selosBrinde.forEach(selo => selo.style.display = 'inline-flex');
             } else {
                 if(btnBrinde) btnBrinde.style.display = 'flex';
                 if(btnsPosInstall) btnsPosInstall.style.display = 'none';
-                // Esconder selos de brinde extra nas cestas
-                selosBrinde.forEach(selo => {
-                    selo.style.display = 'none';
-                });
+                selosBrinde.forEach(selo => selo.style.display = 'none');
             }
         }
 
@@ -2070,12 +2086,11 @@
             const lista = document.getElementById('listaProdutosContent');
             lista.innerHTML = '';
 
-            // Renderizar Brinde APENAS SE APP INSTALADO
             const brindeArea = document.getElementById('brindeArea');
             if (dados.brinde && isAppInstalled()) {
                 brindeArea.innerHTML = `
                     <div class="brinde-container">
-                        <i class="fas fa-gift" style="font-size: 24px; color: #1565C0; margin-right: 15px;"></i>
+                        <i class="fas fa-gift" style="font-size: 24px; color: #2E7D32; margin-right: 15px;"></i>
                         <div>
                             <span class="brinde-label">BRINDE ESPECIAL (MODO APP)</span>
                             <span class="brinde-desc">${dados.brinde}</span>
@@ -2083,7 +2098,6 @@
                     </div>
                 `;
             } else if (dados.brinde && !isAppInstalled()) {
-                // Opcional: Mostrar aviso que existe brinde se instalar
                  brindeArea.innerHTML = `
                     <div class="brinde-container" style="background-color: #f5f5f5; border-color: #ddd; cursor: pointer;" onclick="abrirModalBrinde(); fecharModalInfo();">
                         <i class="fas fa-lock" style="font-size: 24px; color: #777; margin-right: 15px;"></i>
@@ -2097,19 +2111,18 @@
                 brindeArea.innerHTML = '';
             }
 
-            // Renderizar Itens
             dados.itens.forEach(item => {
                 const li = document.createElement('li');
-                // Se o item contém tags HTML (negrito), renderiza diferente ou sem check
                 if(item.includes('<b>')) {
-                    li.innerHTML = item; // Apenas o título da seção
+                    li.innerHTML = item; 
                     li.style.borderBottom = "none";
                     li.style.marginTop = "10px";
-                    li.style.backgroundColor = "#f0f0f0";
+                    li.style.backgroundColor = "#E8F5E9"; // Ajuste para verde claro
                     li.style.padding = "5px 10px";
                     li.style.borderRadius = "4px";
+                    li.style.color = "#1B5E20";
                 } else {
-                    li.innerHTML = `<i class="fas fa-check" style="color: #4CAF50; margin-right: 10px; margin-top: 4px;"></i> ${item}`;
+                    li.innerHTML = `<i class="fas fa-check" style="color: #2E7D32; margin-right: 10px; margin-top: 4px;"></i> ${item}`;
                 }
                 lista.appendChild(li);
             });
@@ -2121,23 +2134,18 @@
             document.getElementById('modalInformacoes').style.display = 'none';
         }
 
-        // === NOVO: FUNÇÕES DE BRINDE APP ===
+        // === BRINDE APP ===
         function abrirModalBrinde() {
             document.getElementById('modalBrindeApp').style.display = 'flex';
             
-            // Lógica de Detecção de iOS (iPhone/iPad)
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             
             if (isIOS) {
-                // Se for iPhone, mostra as instruções manuais
                 document.getElementById('instrucoes-ios').style.display = 'block';
                 document.getElementById('btn-install-android').style.display = 'none';
-                // document.getElementById('legenda-install').style.display = 'none'; // Elemento removido no HTML
             } else {
-                // Se for Android/Outro, mostra o botão padrão
                 document.getElementById('instrucoes-ios').style.display = 'none';
                 document.getElementById('btn-install-android').style.display = 'flex';
-                // document.getElementById('legenda-install').style.display = 'block'; // Elemento removido no HTML
             }
         }
         
@@ -2145,40 +2153,26 @@
             document.getElementById('modalBrindeApp').style.display = 'none';
         }
         
-        // Função de Fallback (Simulação)
         function simularInstalacaoApp() {
-            // Simula a instalação salvando no localStorage
             localStorage.setItem('donaAntoniaAppInstalado', 'true');
             alert('Modo Brinde Ativado! (Simulação/Web)\nAgora você verá os brindes nas cestas.');
             fecharModalBrinde();
             window.location.reload(); 
         }
 
-        // === NOVA FUNÇÃO: TENTAR INSTALAR REALMENTE ===
         async function tentarInstalarApp() {
             if (deferredPrompt) {
-                // Se o navegador suporta e guardou o evento, dispara o prompt real
                 deferredPrompt.prompt();
-                
-                // Espera a escolha do usuário
                 const { outcome } = await deferredPrompt.userChoice;
-                console.log(`Resultado da instalação: ${outcome}`);
-                
-                // Limpa a variável
                 deferredPrompt = null;
 
                 if (outcome === 'accepted') {
-                    // Se o usuário aceitou, ativa o modo brinde
                     localStorage.setItem('donaAntoniaAppInstalado', 'true');
                     alert('Obrigado por instalar! O Modo Brinde foi ativado.');
                     fecharModalBrinde();
                     window.location.reload();
                 }
             } else {
-                // Se não suporta instalação nativa (ou já instalou/não capturou evento), usa o fallback
-                console.log("Instalação nativa não disponível. Usando fallback.");
-                
-                // VERIFICAÇÃO EXTRA: Se já estiver em modo standalone, apenas avisa
                 if (window.matchMedia('(display-mode: standalone)').matches) {
                      alert("O App já está instalado! O Modo Brinde já deve estar ativo.");
                 } else {
@@ -2194,12 +2188,10 @@
             document.getElementById('precoAlvinoDisplay').innerText = `R$ ${precoAlvino}`;
             document.getElementById('precoKoblenzDisplay').innerText = `R$ ${precoKoblenz}`;
             
-            // Resetar seleção
             document.getElementById('optAlvino').classList.remove('selected');
             document.getElementById('optKoblenz').classList.remove('selected');
             document.getElementById('btnConfirmarPedido').disabled = true;
             
-            // Resetar estilos dos radios
             document.querySelectorAll('.radio-custom').forEach(el => {
                 el.style.backgroundColor = 'transparent';
                 el.style.borderColor = '#ccc';
@@ -2215,12 +2207,10 @@
         function selecionarOpcao(marca) {
             cestaAtual.selecao = marca;
             
-            // Atualizar classes visuais
             document.getElementById('optAlvino').classList.remove('selected');
             document.getElementById('optKoblenz').classList.remove('selected');
             document.getElementById(`opt${marca === 'alvino' ? 'Alvino' : 'Koblenz'}`).classList.add('selected');
             
-            // Atualizar radios
             document.querySelectorAll('.radio-custom').forEach(el => {
                 el.style.backgroundColor = 'transparent';
                 el.style.borderColor = '#ccc';
@@ -2236,10 +2226,8 @@
 
         // =========================================================
         // OFUSCAÇÃO DE WHATSAPP (SEGURANÇA)
-        // Impede robôs simples de encontrarem o número no código
         // =========================================================
         function getWhatsNumber() {
-            // "Quebra" o número em partes para não aparecer em buscas de texto
             var p1 = "55";
             var p2 = "65";
             var p3 = "9981";
@@ -2261,16 +2249,12 @@
             const marcaNome = cestaAtual.selecao === 'alvino' ? 'Arroz Tio Alvino' : 'Arroz Koblenz';
             const precoFinal = cestaAtual.selecao === 'alvino' ? cestaAtual.precoAlvino : cestaAtual.precoKoblenz;
             
-            // Lógica de Mensagem Específica de Brinde
             let textoBrinde = "";
-            
-            // Se o app estiver instalado E NÃO for a Cesta Econômica
             if (isAppInstalled() && cestaAtual.nome !== 'Cesta Econômica') {
                 textoBrinde = " + 🎁 Brinde: Amaciante Ypê 2L";
             }
             
             const texto = `Olá! Gostaria de encomendar a *${cestaAtual.nome}* com *${marcaNome}* no valor de *R$ ${precoFinal}*${textoBrinde}.`;
-            // Usa função segura
             const url = `https://wa.me/${getWhatsNumber()}?text=${encodeURIComponent(texto)}`;
             
             window.open(url, '_blank');
@@ -2278,124 +2262,15 @@
         }
 
         function encomendarDireto(nome, preco) {
-            // Lógica de Mensagem Específica de Brinde
             let textoBrinde = "";
-            
-            // Se o app estiver instalado E NÃO for a Cesta Econômica
             if (isAppInstalled() && nome !== 'Cesta Econômica') {
                 textoBrinde = " + 🎁 Brinde: Amaciante Ypê 2L";
             }
             
             const texto = `Olá! Gostaria de encomendar a *${nome}* no valor de *R$ ${preco}*${textoBrinde}.`;
-            // Usa função segura
             window.open(`https://wa.me/${getWhatsNumber()}?text=${encodeURIComponent(texto)}`, '_blank');
         }
         
-        function compartilharCesta(nome, preco) {
-             if (navigator.share) {
-                navigator.share({
-                    title: `Super Cestas Dona Antônia - ${nome}`,
-                    text: `Olha essa oferta: ${nome} por R$ ${preco}! Entrega Grátis em Cuiabá e VG.`,
-                    url: window.location.href
-                }).catch(console.error);
-            } else {
-                // Fallback simples com número seguro
-                const texto = `Olha essa oferta: ${nome} por R$ ${preco}! Entrega Grátis em Cuiabá e VG. ${window.location.href}`;
-                window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
-            }
-        }
-
-        // === FUNÇÕES DE SORTEIO (ATUALIZADO) ===
-        function abrirModalSorteio() {
-            document.getElementById('modalSorteio').style.display = 'flex';
-        }
-        function fecharModalSorteio() {
-            document.getElementById('modalSorteio').style.display = 'none';
-        }
-        
-        // VARIÁVEIS GLOBAIS PARA ARMAZENAR DADOS DO FORMULÁRIO DO SORTEIO
-        let clienteEncontradoAtual = null;
-        let novoTelDigitado = '';
-
-        // FUNÇÃO DE BUSCA E VERIFICAÇÃO NA BASE DE DADOS
-        function buscarCadastro(sufixo) {
-            const telInput = document.getElementById(`busca-telefone${sufixo}`).value;
-            // Sanitização simples: remove tudo que não for dígito
-            const telLimpo = telInput.replace(/\D/g, '');
-            novoTelDigitado = telInput; // Guarda o valor original para usar depois
-
-            if(telLimpo.length < 8) {
-                alert('Por favor, digite um número de telefone válido com DDD.');
-                return;
-            }
-            
-            // Verifica se a base de dados foi carregada
-            if (typeof window.listaClientes === 'undefined') {
-                console.error("Base de dados de clientes não carregada.");
-                alert("Erro ao conectar com a base de dados. Tente novamente.");
-                return;
-            }
-
-            // Busca na lista global (carregada de data/clientes.js)
-            const cliente = window.listaClientes.find(c => {
-                const cTel = c.telefone.replace(/\D/g, '');
-                
-                // AJUSTE SOLICITADO: Comparar apenas os últimos 7 dígitos
-                const cTelLast7 = cTel.slice(-7);
-                const inputTelLast7 = telLimpo.slice(-7);
-                
-                return cTelLast7 === inputTelLast7;
-            });
-
-            if(cliente) {
-                // CLIENTE ENCONTRADO
-                clienteEncontradoAtual = cliente;
-                document.getElementById(`area-busca-telefone${sufixo}`).style.display = 'none';
-                document.getElementById(`cadastro-encontrado${sufixo}`).style.display = 'block';
-                document.getElementById(`nome-cliente-encontrado${sufixo}`).innerText = cliente.nome;
-                document.getElementById(`cidade-cliente-encontrado${sufixo}`).innerText = cliente.cidade + (cliente.bairro ? ' - ' + cliente.bairro : '');
-            } else {
-                // CLIENTE NÃO ENCONTRADO -> NOVO CADASTRO
-                document.getElementById(`area-busca-telefone${sufixo}`).style.display = 'none';
-                document.getElementById(`cadastro-novo${sufixo}`).style.display = 'block';
-            }
-        }
-        
-        // ENVIO DE CONFIRMAÇÃO (CLIENTE JÁ EXISTENTE)
-        function confirmarJaCadastrado(sufixo) {
-            if (!clienteEncontradoAtual) return;
-
-            const nome = clienteEncontradoAtual.nome;
-            const tel = clienteEncontradoAtual.telefone;
-            
-            const texto = `Olá! Sou ${nome}, telefone ${tel}. Já tenho cadastro e quero confirmar minha participação no sorteio.`;
-            // Usa função segura
-            const url = `https://wa.me/${getWhatsNumber()}?text=${encodeURIComponent(texto)}`;
-            
-            window.open(url, '_blank');
-            fecharModalSorteio();
-        }
-        
-        // ENVIO DE NOVO CADASTRO
-        function enviarNovoCadastro(sufixo) {
-             const nome = document.getElementById(`novo-nome${sufixo}`).value;
-             const bairro = document.getElementById(`novo-bairro${sufixo}`).value;
-             const cidade = document.getElementById(`novo-cidade${sufixo}`).value;
-             const tel = novoTelDigitado; // Usa o telefone que foi digitado na busca
-
-             if(!nome || !bairro) {
-                 alert("Por favor, preencha todos os campos.");
-                 return;
-             }
-
-             const texto = `Olá! Quero participar do sorteio.\n*Novo Cadastro:*\nNome: ${nome}\nTel: ${tel}\nBairro: ${bairro}\nCidade: ${cidade}`;
-             // Usa função segura
-             const url = `https://wa.me/${getWhatsNumber()}?text=${encodeURIComponent(texto)}`;
-             
-             window.open(url, '_blank');
-             fecharModalSorteio();
-        }
-
         // === FUNÇÕES DE CONTATO ===
         function abrirModalContatos() {
             document.getElementById('modalContatos').style.display = 'flex';
@@ -2404,14 +2279,6 @@
             document.getElementById('modalContatos').style.display = 'none';
         }
         
-        // === SALVAR CONTATO (NOVO) ===
-        function salvarContato() {
-            const texto = "Estou salvando seu contato. Vou olhar novamente as cestas básicas pelo site www.donaantonia.com.br e em breve entro em contato.";
-            // Usa função segura
-            const url = `https://wa.me/${getWhatsNumber()}?text=${encodeURIComponent(texto)}`;
-            window.open(url, '_blank');
-        }
-
         // === ZOOM ===
         function abrirZoom(src, alt) {
             document.getElementById('imgZoomTarget').src = src;
@@ -2431,7 +2298,6 @@
         // === LÓGICA DE APRESENTAÇÃO (SLIDER) ===
         let slideIndex = 1;
         
-        // Verifica se o usuário é novo ou não acessa há 30 dias
         function verificarApresentacao() {
             const chaveLocal = 'donaAntoniaUltimaVisita';
             const diasParaRenovar = 30;
@@ -2440,12 +2306,10 @@
             const ultimaVisita = localStorage.getItem(chaveLocal);
             
             if (!ultimaVisita) {
-                // Primeira vez
                 abrirApresentacao();
             } else {
                 const diasPassados = (agora - parseInt(ultimaVisita)) / (1000 * 60 * 60 * 24);
                 if (diasPassados > diasParaRenovar) {
-                    // Mais de 30 dias
                     abrirApresentacao();
                 }
             }
@@ -2454,7 +2318,7 @@
         function abrirApresentacao() {
             setTimeout(() => {
                 document.getElementById('modalApresentacao').style.display = 'flex';
-                initSlider(); // Inicia o slider
+                initSlider(); 
             }, 1000);
         }
 
@@ -2466,7 +2330,6 @@
             document.getElementById('modalApresentacao').style.display = 'none';
         }
 
-        // Funções do Slider
         function initSlider() {
             slideIndex = 1;
             showSlides(slideIndex);
@@ -2492,7 +2355,6 @@
             slides[slideIndex-1].style.display = "flex";
             slides[slideIndex-1].classList.add("active");
             
-            // SE FOR O ÚLTIMO SLIDE: ESCONDE A SETA
             if (slideIndex === slides.length) {
                 btnNext.style.display = "none";
             } else {
@@ -2500,10 +2362,9 @@
             }
         }
 
-        // Iniciar verificação ao carregar
         window.addEventListener('load', () => {
             verificarApresentacao();
-            atualizarBotoesFlutuantes(); // Verifica o estado dos botões ao carregar
+            atualizarBotoesFlutuantes();
         });
 
     </script>
