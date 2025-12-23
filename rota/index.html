@@ -55,12 +55,48 @@
             scrollbar-width: thin;
         }
 
-        /* Estilos de Impressão (PDF) */
+        /* Estilos de Impressão (PDF & TÉRMICA) */
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            body { background: white; -webkit-print-color-adjust: exact; }
-            #modal-historico .modal-content { 
+            
+            /* Reset geral */
+            body { background: white; -webkit-print-color-adjust: exact; margin: 0; padding: 0; }
+
+            /* MODO TICKET TÉRMICO (Quando body tem a classe .mode-ticket) */
+            body.mode-ticket > *:not(#ticket-print-area) { display: none !important; }
+            
+            body.mode-ticket #ticket-print-area {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                /* Largura total 58mm */
+                width: 58mm;
+                max-width: 58mm; 
+                /* 5mm de respiro lateral (padding) */
+                padding-left: 5mm;
+                padding-right: 5mm;
+                box-sizing: border-box;
+                
+                font-family: 'Courier New', Courier, monospace; /* Fonte Monospaced fica melhor em tickets */
+                font-size: 11px;
+                line-height: 1.2;
+                color: black;
+            }
+
+            /* Estilização Interna do Ticket */
+            .ticket-line { border-bottom: 1px dashed #000; margin: 5px 0; width: 100%; }
+            .ticket-header { text-align: center; margin-bottom: 10px; }
+            .ticket-bold { font-weight: bold; }
+            .ticket-big { font-size: 14px; font-weight: bold; }
+            .ticket-item { display: flex; justify-content: space-between; margin-bottom: 3px; }
+            .ticket-sub { font-size: 10px; padding-left: 10px; margin-bottom: 2px; display: block; }
+            .ticket-total { font-size: 14px; font-weight: bold; text-align: right; margin-top: 5px; }
+            .ticket-footer { text-align: center; margin-top: 15px; font-size: 10px; }
+            
+            /* Ajustes Histórico (Modo Normal - A4) */
+            body:not(.mode-ticket) #modal-historico .modal-content { 
                 position: static; 
                 width: 100%; 
                 max-width: 100%; 
@@ -69,9 +105,9 @@
                 box-shadow: none;
                 border: none;
             }
-            #modal-historico { position: static; background: white; }
-            .overflow-y-auto { overflow: visible !important; height: auto !important; }
-            #crm-summary-bar { background: #f1f5f9 !important; color: black !important; border: 1px solid #ccc; }
+            body:not(.mode-ticket) #modal-historico { position: static; background: white; }
+            body:not(.mode-ticket) .overflow-y-auto { overflow: visible !important; height: auto !important; }
+            body:not(.mode-ticket) #crm-summary-bar { background: #f1f5f9 !important; color: black !important; border: 1px solid #ccc; }
         }
     </style>
 </head>
@@ -79,6 +115,9 @@
 
     <!-- Toast Container -->
     <div id="toast-container" class="no-print"></div>
+
+    <!-- Container Escondido para Impressão de Ticket -->
+    <div id="ticket-print-area" class="hidden"></div>
 
     <!-- Header Fixo -->
     <header class="bg-white shadow-sm sticky top-0 z-30 border-b border-slate-200 no-print">
@@ -665,7 +704,7 @@
                                 ${entrega.cliente.complemento ? `<div class="mb-4"><p class="text-base font-medium text-slate-700 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 inline-block leading-snug w-full">${entrega.cliente.complemento}</p></div>` : ''}
                                 <div class="mb-4 border-t border-b border-slate-100 py-1">${itensHtml}</div>
                                 ${entrega.observacao ? `<div class="mb-4 pt-2 border-t border-slate-100"><p class="text-sm text-red-600 font-bold flex items-start gap-1">⚠️ ${entrega.observacao}</p></div>` : ''}
-                                <div class="space-y-3"><div class="grid grid-cols-3 gap-3"><button onclick="App.controllers.abrirZap(${entrega.id})" class="py-2.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors uppercase tracking-wide">WhatsApp</button><button onclick="App.controllers.abrirMapa('${entrega.cliente.endereco}')" class="py-2.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors uppercase tracking-wide">Mapa</button>${isPendente ? `<button onclick="App.controllers.editarEntrega(${entrega.id})" class="py-2.5 bg-white border border-amber-200 text-amber-600 text-xs font-bold rounded-lg hover:bg-amber-50 transition-colors uppercase tracking-wide">Editar</button>` : ''}</div><div class="grid grid-cols-3 gap-3"><a href="${entrega.cliente.celular ? 'tel:'+entrega.cliente.celular : '#'}" class="py-2.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center uppercase tracking-wide">Ligar</a>${isPendente ? `<button onclick="App.controllers.iniciarPagamento(${entrega.id})" class="col-span-1 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 shadow-sm transition-colors uppercase tracking-wide">Entregue</button><button onclick="App.controllers.cancelarEntrega(${entrega.id})" class="col-span-1 py-2.5 bg-white border border-red-100 text-red-500 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors uppercase tracking-wide">Cancelar</button>` : (entrega.status === 'Entregue' ? `<button onclick="App.controllers.abrirPosVenda(${entrega.id})" class="col-span-2 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 shadow-sm transition-colors uppercase tracking-wide">Pós Venda</button>` : '')}</div>${isPendente ? `<div class="flex justify-center gap-6 mt-2 pt-2 border-t border-slate-50"><button onclick="App.controllers.moverEntrega(${entrega.id}, 'cima')" class="text-slate-300 hover:text-slate-600 p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></button><button onclick="App.controllers.moverEntrega(${entrega.id}, 'baixo')" class="text-slate-300 hover:text-slate-600 p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button></div>` : ''}</div></div></div>`;
+                                <div class="space-y-3"><div class="grid grid-cols-4 gap-3"><button onclick="App.controllers.abrirZap(${entrega.id})" class="py-2.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors uppercase tracking-wide flex flex-col items-center justify-center"><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>Zap</button><button onclick="App.controllers.abrirMapa('${entrega.cliente.endereco}')" class="py-2.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors uppercase tracking-wide flex flex-col items-center justify-center"><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Mapa</button><button onclick="App.controllers.imprimirTicket(${entrega.id})" class="py-2.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors uppercase tracking-wide flex flex-col items-center justify-center"><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Print</button>${isPendente ? `<button onclick="App.controllers.editarEntrega(${entrega.id})" class="py-2.5 bg-white border border-amber-200 text-amber-600 text-xs font-bold rounded-lg hover:bg-amber-50 transition-colors uppercase tracking-wide flex flex-col items-center justify-center"><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Editar</button>` : ''}</div><div class="grid grid-cols-3 gap-3"><a href="${entrega.cliente.celular ? 'tel:'+entrega.cliente.celular : '#'}" class="py-2.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center uppercase tracking-wide">Ligar</a>${isPendente ? `<button onclick="App.controllers.iniciarPagamento(${entrega.id})" class="col-span-1 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 shadow-sm transition-colors uppercase tracking-wide">Entregue</button><button onclick="App.controllers.cancelarEntrega(${entrega.id})" class="col-span-1 py-2.5 bg-white border border-red-100 text-red-500 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors uppercase tracking-wide">Cancelar</button>` : (entrega.status === 'Entregue' ? `<button onclick="App.controllers.abrirPosVenda(${entrega.id})" class="col-span-2 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 shadow-sm transition-colors uppercase tracking-wide">Pós Venda</button>` : '')}</div>${isPendente ? `<div class="flex justify-center gap-6 mt-2 pt-2 border-t border-slate-50"><button onclick="App.controllers.moverEntrega(${entrega.id}, 'cima')" class="text-slate-300 hover:text-slate-600 p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></button><button onclick="App.controllers.moverEntrega(${entrega.id}, 'baixo')" class="text-slate-300 hover:text-slate-600 p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button></div>` : ''}</div></div></div>`;
                     }).join('');
                 }
             },
@@ -853,6 +892,79 @@
                     Utils.toast('Entrega concluída e salva no histórico! 🎉');
                 },
                 abrirZap: (id) => { Store.data.entregaEmAcaoId = id; document.getElementById('modal-whatsapp').classList.remove('hidden'); },
+                
+                // === NOVA FUNÇÃO DE IMPRESSÃO (TICKET) ===
+                imprimirTicket: (id) => {
+                    const entrega = Store.data.rotaAtiva.entregas.find(e => e.id == id);
+                    if(!entrega) return;
+
+                    const container = document.getElementById('ticket-print-area');
+                    const dataHora = new Date(entrega.dataCriacao || new Date()).toLocaleString('pt-BR');
+                    
+                    let itensHtml = entrega.cestas.map(c => `
+                        <div class="ticket-item">
+                            <span>${c.qtd}x ${c.nome}</span>
+                            <span>${Utils.formatMoeda(c.valor * c.qtd)}</span>
+                        </div>
+                        ${c.tipo === 'Alterada' ? `<span class="ticket-sub">ALT: T(${c.tirar}) / P(${c.por})</span>` : ''}
+                        ${c.brindes && c.brindes.length ? `<span class="ticket-sub">+ Brinde: ${c.brindes.join(', ')}</span>` : ''}
+                    `).join('');
+
+                    container.innerHTML = `
+                        <div class="ticket-header">
+                            <div class="ticket-bold ticket-big">ROTA DONA ANTONIA</div>
+                            <div>CRM & Entregas</div>
+                            <div class="ticket-line"></div>
+                            <div>${dataHora}</div>
+                            <div class="ticket-bold">PEDIDO #${id.toString().slice(-4)}</div>
+                        </div>
+                        
+                        <div style="margin-bottom: 5px;">
+                            <div class="ticket-bold">CLIENTE:</div>
+                            <div>${entrega.cliente.nome}</div>
+                            <div>${entrega.cliente.celular || 'Sem celular'}</div>
+                            <div>${entrega.cliente.endereco || 'Retirar no local'}</div>
+                            ${entrega.cliente.complemento ? `<div>(${entrega.cliente.complemento})</div>` : ''}
+                            <div class="ticket-bold" style="margin-top:2px">REGIÃO: ${entrega.regiao}</div>
+                        </div>
+                        
+                        <div class="ticket-line"></div>
+                        
+                        <div style="margin-bottom: 5px;">
+                            ${itensHtml}
+                        </div>
+                        
+                        <div class="ticket-line"></div>
+                        
+                        <div class="ticket-total">
+                            TOTAL: ${Utils.formatMoeda(entrega.valorTotalAjustado)}
+                        </div>
+                        
+                        ${entrega.formaPagamento && entrega.formaPagamento.length > 0 ? `<div style="text-align:right; font-size:11px;">Pagamento: ${entrega.formaPagamento.join(', ')}</div>` : ''}
+                        
+                        ${entrega.observacao ? `<div class="ticket-line"></div><div class="ticket-bold">OBSERVAÇÃO:</div><div>${entrega.observacao}</div>` : ''}
+
+                        <div class="ticket-footer">
+                            <div class="ticket-line"></div>
+                            Obrigado pela preferência!<br>
+                            Deus abençoe sua família.
+                        </div>
+                    `;
+
+                    // Ativa modo ticket e imprime
+                    document.body.classList.add('mode-ticket');
+                    
+                    // Pequeno delay para renderizar e imprimir
+                    setTimeout(() => {
+                        window.print();
+                        // Remove classe após impressão (timeout para garantir que print dialog abriu)
+                        // A maioria dos browsers pausa JS durante o print dialog, então isso roda depois que fecha
+                        setTimeout(() => {
+                            document.body.classList.remove('mode-ticket');
+                        }, 500);
+                    }, 100);
+                },
+
                 abrirPosVenda: (id) => { 
                     Store.data.entregaEmAcaoId = id; 
                     const entrega = Store.data.rotaAtiva.entregas.find(e => e.id == id); 
