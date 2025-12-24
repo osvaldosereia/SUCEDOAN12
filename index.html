@@ -775,16 +775,28 @@
             cursor: pointer;
         }
         
+        /* Adicionado para separar melhor as cestas */
+        .grupo-cesta {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed var(--cor-borda);
+        }
+        .grupo-cesta:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
         .titulo-grupo-cesta {
             font-size: 1.1rem;
             color: var(--cor-destaque-dourado);
-            margin: 20px 0 10px 0;
+            margin: 0 0 10px 0; /* Ajustado margem */
             font-weight: 700;
             text-transform: uppercase;
-            border-bottom: 1px solid var(--cor-borda);
+            /* border-bottom removido daqui para usar no grupo container */
             padding-bottom: 5px;
         }
-        .titulo-grupo-cesta:first-of-type { margin-top: 0; }
+        /* .titulo-grupo-cesta:first-of-type removido pois agora é controlado pelo container .grupo-cesta */
 
         /* Botão do novo modal de aviso */
         .btn-aviso-ok {
@@ -1549,7 +1561,13 @@
                 }
             }
 
-            document.getElementById('btnEnviarInteresse').disabled = false;
+            const btnEnviar = document.getElementById('btnEnviarInteresse');
+            btnEnviar.disabled = false;
+
+            // Rola suavemente até o botão para que o usuário veja a próxima ação
+            setTimeout(() => {
+                btnEnviar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 150);
         }
 
         function enviarMensagemInteresse() {
