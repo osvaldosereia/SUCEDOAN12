@@ -11,8 +11,6 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- NOTA: Removemos a chamada automática do clientes.js para usar o upload manual/persistente -->
-
     <script>
         tailwind.config = {
             theme: {
@@ -183,28 +181,95 @@
 
     <main class="container mx-auto max-w-2xl px-4 py-6 no-print">
         
-        <!-- KPIs / Placar -->
-        <div class="w-full mb-6" id="kpi-container"></div>
+        <!-- ABAS DE NAVEGAÇÃO PRINCIPAL -->
+        <div class="flex gap-4 border-b border-slate-200 mb-6">
+            <button onclick="App.controllers.switchMainTab('orders')" id="btn-tab-orders" class="pb-2 border-b-2 border-slate-800 font-bold text-slate-800 transition-colors">
+                📦 Pedidos
+            </button>
+            <button onclick="App.controllers.switchMainTab('clients')" id="btn-tab-clients" class="pb-2 border-b-2 border-transparent font-medium text-slate-500 hover:text-slate-800 transition-colors">
+                👥 Cadastros
+            </button>
+        </div>
 
-        <!-- Filtros de Região -->
-        <div class="flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar" id="filtros-regiao"></div>
+        <!-- VIEW PEDIDOS (Original) -->
+        <div id="view-orders">
+            <!-- KPIs / Placar -->
+            <div class="w-full mb-6" id="kpi-container"></div>
 
-        <!-- Botão Flutuante (FAB) para Lançamento -->
-        <button onclick="App.controllers.iniciarNovoLancamento()" class="fixed bottom-6 right-6 bg-slate-800 text-white rounded-full p-4 shadow-xl hover:bg-slate-900 transition-transform hover:scale-105 z-40 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-        </button>
+            <!-- Filtros de Região -->
+            <div class="flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar" id="filtros-regiao"></div>
 
-        <!-- Lista de Entregas -->
-        <div id="lista-entregas" class="space-y-4 min-h-[200px]"></div>
-        
-        <div id="lista-vazia" class="hidden flex-col items-center justify-center py-12 text-slate-400">
-            <svg class="w-16 h-16 mb-4 opacity-20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 001-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" /></svg>
-            <p>Nenhuma entrega nesta região.</p>
+            <!-- Botão Flutuante (FAB) para Lançamento -->
+            <button onclick="App.controllers.iniciarNovoLancamento()" class="fixed bottom-6 right-6 bg-slate-800 text-white rounded-full p-4 shadow-xl hover:bg-slate-900 transition-transform hover:scale-105 z-40 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            </button>
+
+            <!-- Lista de Entregas -->
+            <div id="lista-entregas" class="space-y-4 min-h-[200px]"></div>
+            
+            <div id="lista-vazia" class="hidden flex-col items-center justify-center py-12 text-slate-400">
+                <svg class="w-16 h-16 mb-4 opacity-20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 001-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" /></svg>
+                <p>Nenhuma entrega nesta região.</p>
+            </div>
+        </div>
+
+        <!-- VIEW CADASTROS CLIENTES (Nova) -->
+        <div id="view-clients-db" class="hidden">
+            <div class="mb-4">
+                <input type="text" id="input-search-db" class="w-full rounded-lg border-slate-300 border p-3 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all bg-white shadow-sm" placeholder="🔍 Buscar por nome, apelido ou telefone..." onkeyup="App.controllers.renderClientsDB()">
+            </div>
+            <div id="list-clients-db" class="space-y-3">
+                <!-- Lista preenchida via JS -->
+            </div>
+            <div id="clients-db-empty" class="hidden text-center py-10 text-slate-400">
+                Nenhum cliente encontrado.
+            </div>
         </div>
 
     </main>
 
     <!-- ================= MODAIS ================= -->
+
+    <!-- Modal Editar Cliente (Novo) -->
+    <div id="modal-cliente-editar" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 p-4 no-print">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
+                <h3 class="text-lg font-bold">Editar Cadastro</h3>
+                <button onclick="document.getElementById('modal-cliente-editar').classList.add('hidden')" class="text-slate-400 hover:text-white">X</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="edit-client-index">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Nome Completo</label>
+                    <input type="text" id="edit-client-nome" class="w-full border rounded p-2 mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Apelido (Como gosta de ser chamado)</label>
+                    <input type="text" id="edit-client-apelido" class="w-full border rounded p-2 mt-1" placeholder="Ex: Dona Maria">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Telefone / WhatsApp</label>
+                    <input type="text" id="edit-client-tel" class="w-full border rounded p-2 mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Endereço Completo</label>
+                    <input type="text" id="edit-client-end" class="w-full border rounded p-2 mt-1">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Bairro</label>
+                        <input type="text" id="edit-client-bairro" class="w-full border rounded p-2 mt-1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Cidade</label>
+                        <input type="text" id="edit-client-cidade" class="w-full border rounded p-2 mt-1">
+                    </div>
+                </div>
+                
+                <button onclick="App.controllers.saveClient()" class="w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 mt-2">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Lançamento -->
     <div id="modal-lancamento" class="fixed inset-0 z-50 hidden no-print">
@@ -666,6 +731,8 @@
                         window.CLIENTES_DB = JSON.parse(savedClients);
                         console.log("Clientes carregados do cache local:", window.CLIENTES_DB.length);
                     } catch(e) { console.error("Erro ao carregar clientes do cache"); }
+                } else {
+                    window.CLIENTES_DB = []; // Inicializa vazio se não existir
                 }
             },
             novaRota() {
@@ -681,6 +748,9 @@
             },
             saveMeta() {
                 localStorage.setItem(CONSTANTS.METADATA_KEY, JSON.stringify(this.data.meta));
+            },
+            saveClientsDB() {
+                localStorage.setItem(CONSTANTS.CLIENTS_DB_KEY, JSON.stringify(window.CLIENTES_DB));
             },
             // Adiciona uma entrega finalizada ao histórico
             addToHistory(entrega) {
@@ -749,6 +819,14 @@
             diffDias: (dataAntiga) => {
                 const diffTime = Math.abs(new Date() - new Date(dataAntiga));
                 return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            },
+            getLastPurchaseDate: (nome) => {
+                if (!Store.data.history || Store.data.history.length === 0) return null;
+                const compras = Store.data.history.filter(h => h.cliente.nome.toLowerCase() === nome.toLowerCase());
+                if (compras.length === 0) return null;
+                // Ordena por data decrescente
+                compras.sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                return compras[0].updatedAt;
             },
             toast: (msg, type = 'info') => {
                 const container = document.getElementById('toast-container');
@@ -870,6 +948,135 @@
                              Utils.toast('CRM resetado completamente.', 'error');
                         }
                     }
+                },
+
+                // TAB SWITCHER MAIN
+                switchMainTab: (tabName) => {
+                    const btnOrders = document.getElementById('btn-tab-orders');
+                    const btnClients = document.getElementById('btn-tab-clients');
+                    const viewOrders = document.getElementById('view-orders');
+                    const viewClients = document.getElementById('view-clients-db');
+
+                    if(tabName === 'orders') {
+                        btnOrders.classList.remove('border-transparent', 'text-slate-500', 'font-medium');
+                        btnOrders.classList.add('border-slate-800', 'text-slate-800', 'font-bold');
+                        
+                        btnClients.classList.remove('border-slate-800', 'text-slate-800', 'font-bold');
+                        btnClients.classList.add('border-transparent', 'text-slate-500', 'font-medium');
+
+                        viewOrders.classList.remove('hidden');
+                        viewClients.classList.add('hidden');
+                    } else {
+                        btnClients.classList.remove('border-transparent', 'text-slate-500', 'font-medium');
+                        btnClients.classList.add('border-slate-800', 'text-slate-800', 'font-bold');
+                        
+                        btnOrders.classList.remove('border-slate-800', 'text-slate-800', 'font-bold');
+                        btnOrders.classList.add('border-transparent', 'text-slate-500', 'font-medium');
+
+                        viewClients.classList.remove('hidden');
+                        viewOrders.classList.add('hidden');
+                        App.controllers.renderClientsDB();
+                    }
+                },
+
+                // RENDER CLIENTS DB LIST
+                renderClientsDB: () => {
+                    const term = document.getElementById('input-search-db').value.toLowerCase().trim();
+                    const container = document.getElementById('list-clients-db');
+                    const emptyState = document.getElementById('clients-db-empty');
+
+                    let lista = window.CLIENTES_DB || [];
+                    
+                    // Ordena Alfabético
+                    lista.sort((a,b) => a.nome.localeCompare(b.nome));
+
+                    // Filtra
+                    if(term.length > 0) {
+                        lista = lista.filter(c => {
+                            const nome = c.nome.toLowerCase();
+                            const apelido = c.apelido ? c.apelido.toLowerCase() : '';
+                            const tel = c.celular ? c.celular.replace(/\D/g, '') : '';
+                            return nome.includes(term) || apelido.includes(term) || tel.includes(term);
+                        });
+                    }
+
+                    // Limita exibição inicial para não travar se forem muitos (ex: 50)
+                    const displayList = lista.slice(0, 50);
+
+                    if(displayList.length === 0) {
+                        container.innerHTML = '';
+                        emptyState.classList.remove('hidden');
+                        return;
+                    }
+                    emptyState.classList.add('hidden');
+
+                    container.innerHTML = displayList.map((c, idx) => {
+                        // Encontra índice real no array original para edição correta
+                        const realIndex = window.CLIENTES_DB.indexOf(c);
+                        const lastDate = Utils.getLastPurchaseDate(c.nome);
+                        const lastDateStr = lastDate ? new Date(lastDate).toLocaleDateString('pt-BR') : 'Sem histórico';
+
+                        return `
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex justify-between items-center">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-slate-800">${c.nome}</h4>
+                                    ${c.apelido ? `<span class="text-xs bg-slate-100 text-slate-500 px-2 rounded-full border border-slate-200">(${c.apelido})</span>` : ''}
+                                </div>
+                                <div class="text-sm text-slate-600 mt-1">
+                                    📞 ${c.celular || 'Sem telefone'} 
+                                    <span class="mx-1 text-slate-300">|</span> 
+                                    📍 ${c.cidade || '-'} / ${c.bairro || '-'}
+                                </div>
+                                <div class="text-xs text-slate-400 mt-1">
+                                    🕒 Última compra: <span class="font-semibold text-slate-600">${lastDateStr}</span>
+                                </div>
+                            </div>
+                            <button onclick="App.controllers.openEditClient(${realIndex})" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-lg transition-colors ml-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                        </div>
+                        `;
+                    }).join('');
+                },
+
+                openEditClient: (index) => {
+                    const client = window.CLIENTES_DB[index];
+                    if(!client) return;
+
+                    document.getElementById('edit-client-index').value = index;
+                    document.getElementById('edit-client-nome').value = client.nome || '';
+                    document.getElementById('edit-client-apelido').value = client.apelido || '';
+                    document.getElementById('edit-client-tel').value = client.celular || '';
+                    document.getElementById('edit-client-end').value = client.endereco || '';
+                    document.getElementById('edit-client-bairro').value = client.bairro || '';
+                    document.getElementById('edit-client-cidade').value = client.cidade || '';
+
+                    document.getElementById('modal-cliente-editar').classList.remove('hidden');
+                },
+
+                saveClient: () => {
+                    const idx = document.getElementById('edit-client-index').value;
+                    if(idx === '' || !window.CLIENTES_DB[idx]) return;
+
+                    const updated = {
+                        ...window.CLIENTES_DB[idx],
+                        nome: document.getElementById('edit-client-nome').value.trim(),
+                        apelido: document.getElementById('edit-client-apelido').value.trim(),
+                        celular: document.getElementById('edit-client-tel').value.trim(),
+                        endereco: document.getElementById('edit-client-end').value.trim(),
+                        bairro: document.getElementById('edit-client-bairro').value.trim(),
+                        cidade: document.getElementById('edit-client-cidade').value.trim()
+                    };
+
+                    if(!updated.nome) return Utils.toast('Nome é obrigatório', 'error');
+
+                    window.CLIENTES_DB[idx] = updated;
+                    Store.saveClientsDB(); // Salva no LocalStorage
+                    
+                    document.getElementById('modal-cliente-editar').classList.add('hidden');
+                    App.controllers.renderClientsDB(); // Atualiza a lista visual
+                    Utils.toast('Cadastro atualizado com sucesso!');
                 },
 
                 // TAB SWITCHER
@@ -1942,103 +2149,4 @@
                                     <button onclick="App.controllers.avisarZap('${c.celular}', 'oferta')" class="w-full text-left px-4 py-3 hover:bg-blue-50 text-xs font-bold text-blue-700 border-b border-slate-100">
                                         🔥 Avisar Oferta
                                     </button>
-                                    <button onclick="App.controllers.avisarZap('${c.celular}', 'sorteio')" class="w-full text-left px-4 py-3 hover:bg-green-50 text-xs font-bold text-green-700 border-b border-slate-100">
-                                        🍀 Avisar Sorteio
-                                    </button>
-                                    <button onclick="if(confirm('Tem certeza? Isso apagará TODO o histórico deste cliente.')) { Store.removeFromHistory('${c.nome}'); App.controllers.crmFilter('todos'); }" class="w-full text-left px-4 py-3 hover:bg-red-50 text-xs font-bold text-red-700">
-                                        🗑️ Excluir Histórico
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>`;
-                    }).join('');
-                },
-                avisarZap: (celular, tipo, diasRestantes = 0) => {
-                    if(!celular) return Utils.toast('Cliente sem celular', 'error');
-                    let num = celular.replace(/\D/g, '');
-                    if(!num.startsWith('55')) num = '55' + num;
-                    let msg = "";
-                    
-                    if(tipo === 'vencendo') msg = "Olá! Seu cupom de desconto especial está quase vencendo (faltam 3 dias)! Aproveite para fazer seu pedido hoje.";
-                    
-                    else if(tipo === 'vencimento_custom') {
-                        if(diasRestantes > 0) msg = `Olá! Passando para avisar que seu cupom de desconto vence em apenas *${diasRestantes} dias*! 🏃‍♂️ Aproveite para garantir sua cesta hoje.`;
-                        else msg = `Olá! Seu cupom de desconto vence *HOJE*! 🚨 Não perca essa oportunidade.`;
-                    }
-                    
-                    else if(tipo === 'oferta') msg = "Olá! 🌟 Temos uma *OFERTA RELÂMPAGO* especial para você hoje! Gostaria de conferir os itens em promoção?";
-                    
-                    else if(tipo === 'sorteio') msg = "Olá! 🍀 Estamos realizando um *SORTEIO* exclusivo para clientes fiéis! Responda essa mensagem para participar!";
-                    
-                    window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msg)}`, '_blank');
-                }
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            Store.init();
-            App.ui.render();
-            document.getElementById('check-alterada').addEventListener('change', App.controllers.toggleCheckAlterada);
-            const radioContainer = document.getElementById('container-radio-regiao');
-            radioContainer.innerHTML = CONSTANTS.REGIOES.map(r => `<label class="cursor-pointer"><input type="radio" name="regiao" value="${r}" class="peer sr-only" ${r === 'VG' ? 'checked' : ''}><div class="rounded-md border border-gray-200 bg-white p-2 text-center text-slate-600 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-all font-semibold shadow-sm">${r}</div></label>`).join('');
-            
-            // Lógica Dropdown Clientes
-            const inputCliente = document.getElementById('input-cliente');
-            const dropdownClientes = document.getElementById('dropdown-clientes');
-            inputCliente.addEventListener('input', (e) => {
-                const val = e.target.value.toLowerCase();
-                const preview = document.getElementById('info-cliente-preview');
-                if(typeof CLIENTES_DB !== 'undefined' && val.length > 0) {
-                    const filtrados = CLIENTES_DB.filter(c => {
-                        const nome = c.nome.toLowerCase();
-                        const apelido = c.apelido ? c.apelido.toLowerCase() : '';
-                        const cel = c.celular ? c.celular.replace(/\D/g, '') : '';
-                        return nome.includes(val) || apelido.includes(val) || cel.includes(val);
-                    }).slice(0, 50);
-
-                    if(filtrados.length > 0) {
-                        dropdownClientes.innerHTML = filtrados.map(c => `
-                            <div class="p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors" onclick="App.controllers.selecionarCliente('${c.nome}')">
-                                <p class="font-bold text-sm text-slate-800">${c.nome} ${c.apelido ? `<span class="text-slate-500 font-normal">(${c.apelido})</span>` : ''}</p>
-                                <p class="text-xs text-slate-500">${c.endereco || ''}</p>
-                            </div>
-                        `).join('');
-                        App.controllers.abrirDropdownCliente();
-                    } else { dropdownClientes.innerHTML = '<div class="p-3 text-sm text-slate-400">Nenhum cliente encontrado</div>'; App.controllers.abrirDropdownCliente(); }
-                    
-                    const found = CLIENTES_DB.find(c => c.nome.toLowerCase() === val);
-                    if(found) { preview.innerHTML = `<strong>Nome:</strong> ${found.nome}<br><strong>Tel:</strong> ${found.celular || '-'}<br><strong>End:</strong> ${found.endereco || '-'}<br><strong>Comp:</strong> ${found.complemento || '-'}`; preview.classList.remove('hidden'); } else { preview.classList.add('hidden'); }
-                } else { App.controllers.fecharDropdownCliente(); preview.classList.add('hidden'); }
-            });
-
-            document.addEventListener('click', (e) => {
-                if(!e.target.closest('.group')) App.controllers.fecharDropdownCliente();
-                if(!e.target.closest('#container-custom-select-cesta')) App.controllers.fecharDropdownCesta();
-                // Fecha CRM Actions se clicar fora
-                if(!e.target.closest('td.relative')) {
-                    document.querySelectorAll('[id^="crm-actions-"]').forEach(el => el.classList.add('hidden'));
-                }
-            });
-
-            const btnCesta = document.getElementById('btn-custom-select-cesta');
-            const dropdownCesta = document.getElementById('dropdown-cestas');
-            dropdownCesta.innerHTML = CONSTANTS.CESTAS_OPTIONS.map(opt => `<div class="p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors" onclick="App.controllers.selecionarCesta('${opt.value}', '${opt.label}', ${opt.price})"><div class="flex justify-between items-center"><span class="font-medium text-sm text-slate-700">${opt.label}</span><span class="text-xs font-bold text-blue-600">${opt.price > 0 ? Utils.formatMoeda(opt.price) : '-'}</span></div></div>`).join('');
-            btnCesta.addEventListener('click', App.controllers.toggleDropdownCesta);
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const pedidoId = urlParams.get('pedidoId');
-            if(pedidoId) {
-                setTimeout(() => {
-                    const entrega = Store.data.rotaAtiva.entregas.find(e => e.id == pedidoId);
-                    if(entrega) {
-                        if(Store.data.regiaoFiltro !== entrega.regiao) App.controllers.mudarFiltro(entrega.regiao);
-                        App.controllers.abrirPosVenda(pedidoId);
-                        Utils.toast('Pedido carregado via link!', 'info');
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    } else { Utils.toast('Pedido do link não encontrado.', 'error'); }
-                }, 500);
-            }
-        });
-    </script>
-</body>
-</html>
+                                    <button onclick="App.controllers.avisarZap('${c.celular}', 'sorteio')" class="w-full text-left px-4 py-3 hover:bg-green-50 text-xs font-bold text
