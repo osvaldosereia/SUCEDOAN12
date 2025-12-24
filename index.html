@@ -40,7 +40,8 @@
 
                 // === AÇÃO VISUAL (Tela Vermelha) ===
                 // Verifica se não é preview do editor (para não travar você mesmo)
-                if (window.location.href.includes('googleusercontent') || window.location.href === 'about:srcdoc') {
+                // Adicionamos verificação extra para garantir que o preview funcione
+                if (window.location.href.includes('googleusercontent') || window.location.href === 'about:srcdoc' || window.self !== window.top) {
                      if(_0x3c) _0x3c.remove();
                 } else {
                     document.documentElement.innerHTML = ''; // Apaga o site real
@@ -1187,12 +1188,12 @@
 
     <!-- NOVO MODAL: AVISO IMPORTANTE (SUBSTITUI SLIDE) -->
     <div id="modalAvisoImportante" class="modal-variacao" onclick="if(event.target === this) fecharAvisoImportante()">
-        <div class="modal-info-content" style="max-width: 400px; text-align: center; padding: 30px; border: 1px solid var(--cor-destaque-dourado);">
-           <i class="fas fa-shield-alt" style="font-size: 3rem; color: var(--cor-destaque-dourado); margin-bottom: 20px;"></i>
-           <h3 style="color: var(--cor-texto-destaque); margin-bottom: 15px; font-size: 1.5rem;">Aviso Importante</h3>
-           <p style="font-size: 1.1rem; margin-bottom: 5px; color: #fff; font-weight: bold;">Não vendemos online.</p>
-           <p style="color: var(--cor-texto-secundario); margin-bottom: 30px; line-height: 1.4;">Pague somente na entrega da cesta na sua casa.</p>
-           <button onclick="fecharAvisoImportante()" class="btn-aviso-ok">OK, ENTENDI</button>
+        <div class="modal-info-content" style="max-width: 400px; text-align: center; padding: 30px; border: 2px solid #D32F2F;">
+           <i class="fas fa-exclamation-triangle" style="font-size: 3.5rem; color: #D32F2F; margin-bottom: 15px;"></i>
+           <h3 style="color: #D32F2F; margin-bottom: 15px; font-size: 2rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">ATENÇÃO</h3>
+           <p style="font-size: 1.4rem; margin-bottom: 10px; color: #fff; font-weight: bold; text-transform: uppercase;">Não Vendemos Online</p>
+           <p style="color: var(--cor-texto-secundario); margin-bottom: 30px; font-size: 1.2rem;">Não Pague pela Internet.</p>
+           <button onclick="fecharAvisoImportante()" class="btn-aviso-ok" style="background-color: #D32F2F; color: white !important; width: 100%;">OK, ENTENDI</button>
         </div>
     </div>
 
