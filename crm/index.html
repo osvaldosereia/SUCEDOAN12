@@ -10,7 +10,7 @@
     <style>
         /* Estilo Base & Scroll */
         body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .app-container { max-width: 1600px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
+        .app-container { max-width: 1800px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
         
         /* Scrollbars finas */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -73,7 +73,7 @@
             </div>
         </header>
 
-        <!-- 2. Barra de Filtros (Controla Coluna 1 e 3) -->
+        <!-- 2. Barra de Filtros (Controla Coluna 1 e 4) -->
         <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-3 flex items-center gap-4 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-filter text-gray-400"></i>
@@ -98,10 +98,10 @@
             </div>
         </div>
 
-        <!-- 3. ÁREA PRINCIPAL (GRID 3 COLUNAS) -->
-        <div class="grid grid-cols-12 gap-4 flex-1 overflow-hidden min-h-0">
+        <!-- 3. ÁREA PRINCIPAL (GRID 4 COLUNAS) -->
+        <div class="grid grid-cols-12 gap-3 flex-1 overflow-hidden min-h-0">
             
-            <!-- COLUNA 1: VENDAS DO PERÍODO (Operacional) -->
+            <!-- COLUNA 1: VENDAS (3/12) -->
             <div class="col-span-3 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
                 <div class="p-3 border-b border-gray-100 bg-blue-50 flex justify-between items-center shrink-0">
                     <div>
@@ -117,7 +117,7 @@
                 </div>
             </div>
 
-            <!-- COLUNA 2: RADAR DE INATIVOS (Retenção) -->
+            <!-- COLUNA 2: RADAR DE INATIVOS (3/12) -->
             <div class="col-span-3 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
                 <div class="p-3 border-b border-gray-100 bg-red-50 flex flex-col gap-2 shrink-0">
                     <div class="flex justify-between items-center">
@@ -149,32 +149,54 @@
                 </div>
             </div>
 
-            <!-- COLUNA 3: ANÁLISE ESTRATÉGICA (Inteligência) - Mais Larga -->
-            <div class="col-span-6 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+            <!-- COLUNA 3: CUPONS ATIVOS (NOVA - 2/12) -->
+            <div class="col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+                <div class="p-2 border-b border-gray-100 bg-yellow-50 flex flex-col gap-1 shrink-0">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-yellow-800 text-sm uppercase"><i class="fa-solid fa-ticket mr-2"></i>Cupons</h2>
+                        <span id="countCupons" class="bg-yellow-200 text-yellow-800 text-[10px] px-2 rounded-full font-bold">0</span>
+                    </div>
+                    
+                    <!-- Filtros de Vencimento -->
+                    <div class="flex gap-1 mt-1">
+                        <button onclick="renderizarCupons('hoje')" class="flex-1 bg-white border border-yellow-200 hover:bg-yellow-100 text-[9px] py-1 rounded text-yellow-800 font-bold transition">HOJE</button>
+                        <button onclick="renderizarCupons('amanha')" class="flex-1 bg-white border border-yellow-200 hover:bg-yellow-100 text-[9px] py-1 rounded text-yellow-800 font-bold transition">AMANHÃ</button>
+                        <button onclick="renderizarCupons('semana')" class="flex-1 bg-white border border-yellow-200 hover:bg-yellow-100 text-[9px] py-1 rounded text-yellow-800 font-bold transition">7 DIAS</button>
+                    </div>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-2 bg-gray-50 custom-scroll">
+                    <div id="listaCupons" class="flex flex-col gap-2">
+                        <!-- Cupons listados aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUNA 4: ANÁLISE ESTRATÉGICA (4/12) -->
+            <div class="col-span-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
                 <div class="p-3 border-b border-gray-100 bg-purple-50 flex justify-between items-center shrink-0">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-purple-100 p-2 rounded-full text-purple-600">
-                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    <div class="flex items-center gap-2">
+                        <div class="bg-purple-100 p-1.5 rounded-full text-purple-600">
+                            <i class="fa-solid fa-magnifying-glass-chart text-xs"></i>
                         </div>
                         <div>
-                            <h2 class="font-bold text-purple-900 text-sm uppercase">Análise Estratégica</h2>
-                            <p class="text-[10px] text-purple-600">Detalhamento segmentado dos dados filtrados</p>
+                            <h2 class="font-bold text-purple-900 text-sm uppercase">Estratégia</h2>
                         </div>
                     </div>
                     
                     <!-- SELETOR DE VISÃO -->
                     <div class="relative">
                         <select id="seletorAnalise" onchange="renderizarAnaliseEstrategica()" 
-                            class="appearance-none bg-white border border-purple-300 text-purple-900 text-xs font-bold rounded pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer shadow-sm hover:bg-purple-50 transition">
-                            <option value="tipo_cesta">📦 Por Tipo de Cesta</option>
-                            <option value="status_cesta">✨ Normal vs Alterada</option>
-                            <option value="pagamento">💳 Meios de Pagamento</option>
-                            <option value="cidade">city Por Cidade</option>
-                            <option value="bairro">📍 Por Bairro</option>
-                            <option value="rota">🚚 Por Rota (Estimada)</option>
+                            class="appearance-none bg-white border border-purple-300 text-purple-900 text-[10px] font-bold rounded pl-2 pr-6 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer shadow-sm hover:bg-purple-50 transition w-32">
+                            <option value="tipo_cesta">📦 Cestas</option>
+                            <option value="status_cesta">✨ Status</option>
+                            <option value="pagamento">💳 Pagto</option>
+                            <option value="cidade">city Cidade</option>
+                            <option value="bairro">📍 Bairro</option>
+                            <option value="rota">🚚 Rota</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-purple-700">
-                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-purple-700">
+                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
                         </div>
                     </div>
                 </div>
@@ -183,10 +205,9 @@
                     <table class="w-full text-left table-strategy border-collapse">
                         <thead>
                             <tr>
-                                <th class="w-5/12 pl-4">Segmento</th>
-                                <th class="w-2/12 text-center">Qtd. Vendas</th>
-                                <th class="w-2/12 text-right">Valor Total</th>
-                                <th class="w-3/12 text-right pr-4">Participação (%)</th>
+                                <th class="pl-2">Segmento</th>
+                                <th class="text-center">Qtd</th>
+                                <th class="text-right pr-2">Total</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaAnalise">
@@ -194,10 +215,9 @@
                         </tbody>
                         <tfoot class="bg-gray-50 font-bold text-xs border-t border-gray-200">
                             <tr>
-                                <td class="pl-4 py-3">TOTAIS</td>
+                                <td class="pl-2 py-2">TOTAIS</td>
                                 <td class="text-center" id="footerQtd">0</td>
-                                <td class="text-right" id="footerValor">R$ 0,00</td>
-                                <td class="text-right pr-4">100%</td>
+                                <td class="text-right pr-2" id="footerValor">R$ 0</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -212,10 +232,12 @@
         // --- 1. CONFIGURAÇÃO E DADOS ---
         const KEY_CLIENTES = 'sistema_empresarial_clientes';
         const KEY_PEDIDOS = 'sistema_empresarial_vendas';
+        const KEY_CUPONS = 'sistema_empresarial_cupons';
         
         let clientes = [];
         let vendas = [];
         let vendasFiltradas = [];
+        let cupons = []; // { telefone, nome, valor, expiracao, dataGeracao }
 
         const TEMPLATES = {
             agradecimento: "Olá {nome}! Tudo bem? Passando para agradecer pela preferência na sua compra do dia {data}. Espero que tenha gostado dos produtos! Qualquer coisa estou à disposição. 🛒",
@@ -224,7 +246,9 @@
             resgate: "Olá {nome}! Sumiu hein? 😉 Faz {dias} dias que não te vemos. Temos cestas fresquinhas chegando. Que tal aproveitar um desconto especial de retorno? Me chama aqui!",
             feedback: "Oi {nome}, queria saber se deu tudo certo com a entrega da cesta no dia {data}? O arroz estava ok?",
             sorteio: "Olá {nome}! 🍀 Você está participando do nosso sorteio mensal! Confira seu número da sorte e o regulamento aqui: [LINK_SORTEIO]",
-            cupom: "Olá {nome}! 🎁 Como agradecimento, geramos um cupom de R$ {valor} para sua próxima compra! Válido até {validade}. Aproveite! 🛒"
+            cupom: "Olá {nome}! 🎁 Como agradecimento, geramos um cupom de R$ {valor} para sua próxima compra! Válido até {validade}. Aproveite! 🛒",
+            cupom_resgate: "Olá {nome}! 🎁 Sentimos sua falta! Aqui está um cupom especial de R$ {valor} para você fazer um pedido nos próximos 10 dias. Válido até {validade}. Vamos aproveitar? 🥗",
+            lembrete_cupom: "Oi {nome}! ⏰ Passando só pra lembrar que seu cupom de desconto de R$ {valor} vence {vencimento}. Não vai perder, hein? 😉"
         };
 
         window.onload = () => {
@@ -245,14 +269,26 @@
         function atualizarDados() {
             const cLocal = localStorage.getItem(KEY_CLIENTES);
             const vLocal = localStorage.getItem(KEY_PEDIDOS);
+            const cpLocal = localStorage.getItem(KEY_CUPONS);
 
             if (cLocal) clientes = JSON.parse(cLocal);
             if (vLocal) vendas = JSON.parse(vLocal);
+            if (cpLocal) cupons = JSON.parse(cpLocal);
 
             vendas.sort((a, b) => new Date(b.data) - new Date(a.data));
             
+            // Limpa cupons vencidos há mais de 30 dias para não sujar o banco
+            const hoje = new Date();
+            cupons = cupons.filter(c => {
+                const dataExp = new Date(c.expiracao);
+                const diff = (hoje - dataExp) / (1000 * 60 * 60 * 24);
+                return diff < 30; 
+            });
+            localStorage.setItem(KEY_CUPONS, JSON.stringify(cupons));
+
             aplicarFiltros();
-            renderizarRadar(); // Independente do filtro de data
+            renderizarRadar();
+            renderizarCupons('semana'); // Default view
         }
 
         function importarDadosExternos(input) {
@@ -285,6 +321,103 @@
             });
         }
 
+        // --- SISTEMA DE CUPONS ---
+
+        function gerarCupomZap(telefone, nome, valor, diasValidade, tipoTemplate) {
+            // 1. Calcula Data
+            const dataValidade = new Date();
+            dataValidade.setDate(dataValidade.getDate() + parseInt(diasValidade));
+            const validadeStr = dataValidade.toLocaleDateString('pt-BR');
+            const validadeISO = dataValidade.toISOString().split('T')[0];
+
+            // 2. Registra no "Banco" (Array)
+            const novoCupom = {
+                telefone: telefone.replace(/\D/g, ''),
+                nome: nome,
+                valor: valor,
+                expiracao: validadeISO,
+                dataGeracao: new Date().toISOString()
+            };
+
+            // Remove cupom anterior do mesmo cliente se existir para substituir
+            cupons = cupons.filter(c => c.telefone !== novoCupom.telefone);
+            cupons.push(novoCupom);
+            localStorage.setItem(KEY_CUPONS, JSON.stringify(cupons));
+
+            // 3. Atualiza Telas
+            renderizarRadar();
+            renderizarCupons('semana');
+
+            // 4. Envia Zap
+            enviarZap(telefone, tipoTemplate, nome, null, null, valor, validadeStr);
+        }
+
+        function renderizarCupons(filtro) {
+            const container = document.getElementById('listaCupons');
+            container.innerHTML = '';
+            
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            
+            // Filtra cupons ativos
+            let listaFiltrada = cupons.filter(c => {
+                const dataExp = new Date(c.expiracao + 'T00:00:00'); // Garante hora zerada para comparar
+                return dataExp >= hoje; // Apenas válidos
+            });
+
+            // Aplica filtro de período
+            listaFiltrada = listaFiltrada.filter(c => {
+                const dataExp = new Date(c.expiracao + 'T00:00:00');
+                const diffDias = Math.floor((dataExp - hoje) / (1000 * 60 * 60 * 24));
+                
+                if (filtro === 'hoje') return diffDias === 0;
+                if (filtro === 'amanha') return diffDias === 1;
+                if (filtro === 'semana') return diffDias >= 0 && diffDias <= 7;
+                return true;
+            });
+
+            // Ordena por vencimento (mais urgente primeiro)
+            listaFiltrada.sort((a, b) => new Date(a.expiracao) - new Date(b.expiracao));
+
+            document.getElementById('countCupons').innerText = listaFiltrada.length;
+
+            listaFiltrada.forEach(c => {
+                const dataExp = new Date(c.expiracao + 'T00:00:00');
+                const diffDias = Math.floor((dataExp - hoje) / (1000 * 60 * 60 * 24));
+                
+                let textoVencimento = "";
+                let corTexto = "";
+                let textoZap = "";
+
+                if (diffDias === 0) { textoVencimento = "Vence HOJE!"; corTexto = "text-red-600 font-bold"; textoZap = "hoje"; }
+                else if (diffDias === 1) { textoVencimento = "Vence Amanhã"; corTexto = "text-orange-600"; textoZap = "amanhã"; }
+                else { textoVencimento = `Vence em ${diffDias} dias`; corTexto = "text-yellow-700"; textoZap = `dia ${dataExp.toLocaleDateString('pt-BR')}`; }
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-2 rounded border border-yellow-200 shadow-sm flex flex-col gap-1";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-xs text-gray-800 truncate w-24" title="${c.nome}">${c.nome}</div>
+                            <div class="text-[10px] ${corTexto}">${textoVencimento}</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="bg-green-100 text-green-700 font-bold text-xs px-1 rounded">R$ ${c.valor}</span>
+                        </div>
+                    </div>
+                    <button onclick="enviarZap('${c.telefone}', 'lembrete_cupom', '${c.nome}', null, null, '${c.valor}', '${textoZap}')" 
+                        class="mt-1 w-full bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-[10px] font-bold py-1 rounded flex items-center justify-center gap-1 transition">
+                        <i class="fa-regular fa-bell"></i> Lembrar
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+
+            if (listaFiltrada.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 text-[10px] py-4">Nenhum cupom neste período.</div>';
+            }
+        }
+
         // --- LÓGICA DE FILTROS ---
 
         function aplicarFiltros() {
@@ -302,7 +435,7 @@
 
             atualizarKPIsDashboard();
             renderizarPosVendaCompacto(); // Coluna 1
-            renderizarAnaliseEstrategica(); // Coluna 3
+            renderizarAnaliseEstrategica(); // Coluna 4
         }
 
         function atualizarKPIsDashboard() {
@@ -312,36 +445,23 @@
             document.getElementById('countPosVenda').innerText = vendasFiltradas.length;
         }
 
-        // --- COLUNA 1: VENDAS (Lista Inteligente) ---
+        // --- COLUNA 1: VENDAS ---
 
         function togglePanel(panelId) {
             const panel = document.getElementById(panelId);
             const isHidden = panel.classList.contains('hidden');
-            
-            // Fecha todos os painéis irmãos dentro do mesmo card (opcional, para UI limpa)
-            // Para simplicidade, apenas toggle
-            if (isHidden) {
-                panel.classList.remove('hidden');
-                panel.classList.add('panel-expand');
-            } else {
-                panel.classList.add('hidden');
-                panel.classList.remove('panel-expand');
-            }
+            if (isHidden) { panel.classList.remove('hidden'); panel.classList.add('panel-expand'); } 
+            else { panel.classList.add('hidden'); panel.classList.remove('panel-expand'); }
         }
 
         function calcularValorCupom(itens) {
-            // Lógica para determinar valor do cupom baseado no tipo da cesta
-            // Valores: 5, 10, 15, 20, 25
             if (!itens || itens.length === 0) return 5;
-            
-            const tipo = itens[0].tipo.toLowerCase(); // Pega o primeiro item como base
-            
+            const tipo = itens[0].tipo.toLowerCase();
             if (tipo.includes('empresarial') || tipo.includes('familia') || tipo.includes('premium')) return 25;
             if (tipo.includes('grande')) return 20;
             if (tipo.includes('media') || tipo.includes('média')) return 15;
             if (tipo.includes('pequena') || tipo.includes('individual')) return 10;
-            
-            return 5; // Padrão
+            return 5;
         }
 
         function renderizarPosVendaCompacto() {
@@ -359,18 +479,11 @@
                 const primeiroNome = v.cliente.nome.split(' ')[0];
                 const valorCupom = calcularValorCupom(v.itens);
                 
-                // Data de validade do cupom (hoje + 30 dias)
                 const dataValidade = new Date();
-                dataValidade.setDate(dataValidade.getDate() + 30);
-                const validadeStr = dataValidade.toLocaleDateString('pt-BR');
+                dataValidade.setDate(dataValidade.getDate() + 30); // 30 dias para vendas normais
+                // const validadeStr = dataValidade.toLocaleDateString('pt-BR');
 
-                // Itens HTML
-                const itensHtml = v.itens.map(i => 
-                    `<div class="flex justify-between text-[10px] text-gray-600 border-b border-gray-100 py-1">
-                        <span>${i.tipo} (${i.marca || 'Padrão'})</span>
-                        <span class="font-mono">x1</span>
-                    </div>`
-                ).join('');
+                const itensHtml = v.itens.map(i => `<div class="flex justify-between text-[10px] text-gray-600 border-b border-gray-100 py-1"><span>${i.tipo} (${i.marca || 'Padrão'})</span><span class="font-mono">x1</span></div>`).join('');
 
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
@@ -384,30 +497,18 @@
                         </div>
                     </div>
                     
-                    <!-- Botões de Ação Principais -->
                     <div class="grid grid-cols-3 gap-1 mt-2">
-                        <button onclick="togglePanel('${cardId}-pedido')" class="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-[10px] py-1 rounded transition">
-                            <i class="fa-solid fa-basket-shopping mr-1"></i> Pedido
-                        </button>
-                        <button onclick="togglePanel('${cardId}-cliente')" class="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-[10px] py-1 rounded transition">
-                            <i class="fa-regular fa-user mr-1"></i> Cliente
-                        </button>
-                        <button onclick="togglePanel('${cardId}-posvenda')" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-[10px] py-1 rounded transition">
-                            <i class="fa-brands fa-whatsapp mr-1"></i> Pós Venda
-                        </button>
+                        <button onclick="togglePanel('${cardId}-pedido')" class="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-[10px] py-1 rounded transition"><i class="fa-solid fa-basket-shopping mr-1"></i> Pedido</button>
+                        <button onclick="togglePanel('${cardId}-cliente')" class="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-[10px] py-1 rounded transition"><i class="fa-regular fa-user mr-1"></i> Cliente</button>
+                        <button onclick="togglePanel('${cardId}-posvenda')" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-[10px] py-1 rounded transition"><i class="fa-brands fa-whatsapp mr-1"></i> Pós Venda</button>
                     </div>
 
-                    <!-- PAINEL 1: Detalhes do Pedido -->
                     <div id="${cardId}-pedido" class="hidden bg-gray-50 rounded p-2 mt-1 border border-gray-100">
                         <h4 class="text-[10px] font-bold text-gray-500 uppercase mb-1">Itens do Pedido</h4>
                         ${itensHtml}
-                        <div class="flex justify-between text-[10px] font-bold text-gray-700 mt-1 pt-1">
-                            <span>Total</span>
-                            <span>R$ ${v.financeiro.total.toFixed(2)}</span>
-                        </div>
+                        <div class="flex justify-between text-[10px] font-bold text-gray-700 mt-1 pt-1"><span>Total</span><span>R$ ${v.financeiro.total.toFixed(2)}</span></div>
                     </div>
 
-                    <!-- PAINEL 2: Detalhes do Cliente -->
                     <div id="${cardId}-cliente" class="hidden bg-gray-50 rounded p-2 mt-1 border border-gray-100 text-[10px] text-gray-600 space-y-1">
                         <h4 class="text-[10px] font-bold text-gray-500 uppercase mb-1">Dados Cadastrais</h4>
                         <div><i class="fa-solid fa-phone w-4"></i> ${v.cliente.telefone}</div>
@@ -415,46 +516,24 @@
                         <div><i class="fa-solid fa-city w-4"></i> ${v.cliente.bairro} - ${v.cliente.cidade}</div>
                     </div>
 
-                    <!-- PAINEL 3: Ações de Pós Venda (Zap) -->
                     <div id="${cardId}-posvenda" class="hidden bg-blue-50 rounded p-2 mt-1 border border-blue-100">
                         <h4 class="text-[10px] font-bold text-blue-800 uppercase mb-2 text-center">Ações Rápidas WhatsApp</h4>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="enviarZap('${v.cliente.telefone}', 'agradecimento', '${primeiroNome}', '${dataStr}')" 
-                                class="flex items-center justify-center gap-1 bg-white border border-green-200 text-green-700 hover:bg-green-50 rounded p-1 text-[10px] shadow-sm transition">
-                                <i class="fa-regular fa-thumbs-up"></i> Obrigado
-                            </button>
-                            
-                            <button onclick="enviarZap('${v.cliente.telefone}', 'insta', '${primeiroNome}')" 
-                                class="flex items-center justify-center gap-1 bg-white border border-pink-200 text-pink-700 hover:bg-pink-50 rounded p-1 text-[10px] shadow-sm transition">
-                                <i class="fa-brands fa-instagram"></i> Instagram
-                            </button>
-                            
-                            <button onclick="enviarZap('${v.cliente.telefone}', 'avaliacao', '${primeiroNome}')" 
-                                class="flex items-center justify-center gap-1 bg-white border border-yellow-200 text-yellow-700 hover:bg-yellow-50 rounded p-1 text-[10px] shadow-sm transition">
-                                <i class="fa-solid fa-star"></i> Google
-                            </button>
-                            
-                            <button onclick="enviarZap('${v.cliente.telefone}', 'sorteio', '${primeiroNome}')" 
-                                class="flex items-center justify-center gap-1 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded p-1 text-[10px] shadow-sm transition">
-                                <i class="fa-solid fa-ticket"></i> Sorteio
-                            </button>
-
-                            <button onclick="enviarZap('${v.cliente.telefone}', 'cupom', '${primeiroNome}', null, null, '${valorCupom}', '${validadeStr}')" 
-                                class="col-span-2 flex items-center justify-center gap-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90 rounded p-1 text-[10px] shadow-sm transition font-bold">
-                                <i class="fa-solid fa-tag"></i> Cupom R$ ${valorCupom},00
-                            </button>
+                            <button onclick="enviarZap('${v.cliente.telefone}', 'agradecimento', '${primeiroNome}', '${dataStr}')" class="flex items-center justify-center gap-1 bg-white border border-green-200 text-green-700 hover:bg-green-50 rounded p-1 text-[10px] shadow-sm transition"><i class="fa-regular fa-thumbs-up"></i> Obrigado</button>
+                            <button onclick="enviarZap('${v.cliente.telefone}', 'insta', '${primeiroNome}')" class="flex items-center justify-center gap-1 bg-white border border-pink-200 text-pink-700 hover:bg-pink-50 rounded p-1 text-[10px] shadow-sm transition"><i class="fa-brands fa-instagram"></i> Instagram</button>
+                            <button onclick="enviarZap('${v.cliente.telefone}', 'avaliacao', '${primeiroNome}')" class="flex items-center justify-center gap-1 bg-white border border-yellow-200 text-yellow-700 hover:bg-yellow-50 rounded p-1 text-[10px] shadow-sm transition"><i class="fa-solid fa-star"></i> Google</button>
+                            <button onclick="enviarZap('${v.cliente.telefone}', 'sorteio', '${primeiroNome}')" class="flex items-center justify-center gap-1 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded p-1 text-[10px] shadow-sm transition"><i class="fa-solid fa-ticket"></i> Sorteio</button>
+                            <!-- Gera e Salva Cupom -->
+                            <button onclick="gerarCupomZap('${v.cliente.telefone}', '${v.cliente.nome}', '${valorCupom}', '30', 'cupom')" class="col-span-2 flex items-center justify-center gap-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90 rounded p-1 text-[10px] shadow-sm transition font-bold"><i class="fa-solid fa-tag"></i> Cupom R$ ${valorCupom},00</button>
                         </div>
                     </div>
                 `;
                 container.appendChild(card);
             });
-
-            if (listaExibicao.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-400 text-xs py-10">Nenhuma venda encontrada no período.</div>';
-            }
+            if (listaExibicao.length === 0) container.innerHTML = '<div class="text-center text-gray-400 text-xs py-10">Nenhuma venda encontrada.</div>';
         }
 
-        // --- COLUNA 2: RADAR (Inativos) ---
+        // --- COLUNA 2: RADAR ---
 
         function renderizarRadar() {
             const diasCorte = parseInt(document.getElementById('diasInativo').value) || 30;
@@ -471,6 +550,8 @@
             });
 
             const hoje = new Date();
+            const hojeStr = hoje.toISOString().split('T')[0];
+            
             const listaInativos = clientes.filter(c => {
                 const ultimaData = mapaUltimaCompra[c.id];
                 if (!ultimaData) return false; 
@@ -486,7 +567,25 @@
                 empty.classList.remove('hidden');
             } else {
                 empty.classList.add('hidden');
-                listaInativos.slice(0, 100).forEach(c => { // Limite de exibição para radar
+                listaInativos.slice(0, 100).forEach(c => {
+                    // Verifica se cliente JÁ tem cupom ativo (data expiracao >= hoje)
+                    const telLimpo = c.telefone.replace(/\D/g, '');
+                    const cupomAtivo = cupons.find(cupom => {
+                        const cupomTel = cupom.telefone; 
+                        return cupomTel === telLimpo && cupom.expiracao >= hojeStr;
+                    });
+                    
+                    const btnClass = cupomAtivo 
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                        : "bg-green-100 hover:bg-green-200 text-green-700 border border-green-200 hover:scale-110";
+                    
+                    const btnClick = cupomAtivo 
+                        ? ""
+                        : `onclick="gerarCupomZap('${c.telefone}', '${c.nome}', '10', '10', 'cupom_resgate')"`;
+                    
+                    const icone = cupomAtivo ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-tag"></i>';
+                    const title = cupomAtivo ? "Cupom já ativo" : "Enviar Cupom Resgate (10d)";
+
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-red-50 transition border-b border-gray-50 group";
                     tr.innerHTML = `
@@ -497,10 +596,16 @@
                         <td class="p-2 text-center">
                             <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">${c.diasSemComprar}d</span>
                         </td>
-                        <td class="p-2 text-center">
+                        <td class="p-2 text-center flex gap-1 justify-center">
+                            <!-- Botão Padrão Resgate (Texto Genérico) -->
                             <button onclick="enviarZap('${c.telefone}', 'resgate', '${c.nome}', null, '${c.diasSemComprar}')" 
-                                class="bg-green-100 hover:bg-green-200 text-green-700 border border-green-200 rounded p-1 shadow-sm transition transform hover:scale-110" title="Resgatar">
-                                <i class="fa-brands fa-whatsapp"></i>
+                                class="bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 rounded p-1 shadow-sm transition" title="Msg Genérica">
+                                <i class="fa-regular fa-comment"></i>
+                            </button>
+                            <!-- Botão Cupom (Condicional) -->
+                            <button ${btnClick} 
+                                class="${btnClass} rounded p-1 shadow-sm transition transform" title="${title}">
+                                ${icone}
                             </button>
                         </td>
                     `;
@@ -509,14 +614,13 @@
             }
         }
 
-        // --- COLUNA 3: ANÁLISE ESTRATÉGICA (O CÉREBRO) ---
+        // --- COLUNA 4: ANÁLISE ---
 
         function renderizarAnaliseEstrategica() {
             const view = document.getElementById('seletorAnalise').value;
             const tbody = document.getElementById('tabelaAnalise');
             tbody.innerHTML = '';
-
-            // 1. Agregar Dados
+            
             const aggregations = {};
             let grandTotal = 0;
             let grandQtd = 0;
@@ -524,116 +628,50 @@
             vendasFiltradas.forEach(v => {
                 grandTotal += v.financeiro.total;
                 grandQtd++;
-
-                let keys = []; // Uma venda pode gerar múltiplas chaves (ex: múltiplos produtos)
-                let value = v.financeiro.total; // Valor a atribuir (pode ser dividido se necessário, mas simplificaremos por venda)
+                let keys = []; 
+                let value = v.financeiro.total;
 
                 switch(view) {
                     case 'tipo_cesta':
-                        // Para produtos, iteramos sobre os itens
-                        v.itens.forEach(item => {
-                            // Marca produtos simples vs produtos compostos se necessário
-                            keys.push(item.tipo);
-                        });
-                        // Ajuste: O valor financeiro da venda é unico. 
-                        // Se quisermos valor por produto, precisariamos do preço unitário. 
-                        // Como o JSON pode variar, vamos contar ocorrência e somar valor proporcional ou total da venda.
-                        // Simplificação: Contagem + Valor Total da Venda (Atribuído ao produto principal ou dividido? Vamos usar contagem pura e valor estimado médio se não tiver detalhe).
-                        // MELHOR: Usar apenas contagem para itens, ou valor total da venda categorizado pelo "tipo principal" se houver apenas 1.
-                        // Se houver mix, duplicar o valor total distorce. Vamos assumir Valor = 0 para itens individuais se não tivermos preço, 
-                        // mas para simplificar a visualização financeira, vamos somar o total da venda na chave do PRIMEIRO item ou dividir.
-                        // Solução Robusta: Somar Valor Total na chave "Mix" se > 1 item, ou na chave do item único.
-                        if (v.itens.length > 1) {
-                            keys = ['Mix de Produtos'];
-                        } else if (v.itens.length > 0) {
-                            keys = [v.itens[0].tipo];
-                        } else {
-                            keys = ['Indefinido'];
-                        }
+                        if (v.itens.length > 1) keys = ['Mix']; else if (v.itens.length > 0) keys = [v.itens[0].tipo]; else keys = ['Indefinido'];
                         break;
-                    
                     case 'status_cesta':
-                        // Verifica se tem alguma marcação diferente de Padrão
                         const temAlteracao = v.itens.some(i => i.marca && i.marca !== 'Padrão');
-                        keys.push(temAlteracao ? 'Alterada / Personalizada' : 'Normal / Padrão');
+                        keys.push(temAlteracao ? 'Alterada' : 'Padrão');
                         break;
-
-                    case 'pagamento':
-                        keys.push(v.pagamento.metodo || 'Não Informado');
-                        break;
-
-                    case 'cidade':
-                        keys.push(v.cliente.cidade || 'Não Informado');
-                        break;
-                    
-                    case 'bairro':
-                        keys.push(v.cliente.bairro || 'Não Informado');
-                        break;
-
+                    case 'pagamento': keys.push(v.pagamento.metodo || 'N/A'); break;
+                    case 'cidade': keys.push(v.cliente.cidade || 'N/A'); break;
+                    case 'bairro': keys.push(v.cliente.bairro || 'N/A'); break;
                     case 'rota':
-                        // Lógica de inferência de Rota
-                        // Se bairro contiver "Centro", Rota 1. Se "Jardim", Rota 2. 
-                        // Isso é um exemplo, idealmente viria do JSON.
                         const b = (v.cliente.bairro || '').toLowerCase();
-                        if (b.includes('centro') || b.includes('comercial')) keys.push('Rota Central');
-                        else if (b.includes('jardim') || b.includes('parque')) keys.push('Rota Sul/Jardins');
-                        else if (b.includes('vila') || b.includes('nossa')) keys.push('Rota Norte/Vilas');
-                        else keys.push('Rota Padrão / Outras');
+                        if (b.includes('centro') || b.includes('comercial')) keys.push('Central');
+                        else if (b.includes('jardim') || b.includes('parque')) keys.push('Sul/Jardins');
+                        else if (b.includes('vila') || b.includes('nossa')) keys.push('Norte/Vilas');
+                        else keys.push('Outras');
                         break;
                 }
-
-                // Processar Agregação
                 keys.forEach(k => {
                     if (!aggregations[k]) aggregations[k] = { qtd: 0, valor: 0 };
                     aggregations[k].qtd += 1;
-                    aggregations[k].valor += value; // Atenção: Em 'tipo_cesta' mix, soma valor cheio.
+                    aggregations[k].valor += value;
                 });
             });
 
-            // 2. Converter para Array e Ordenar
-            const lista = Object.entries(aggregations).map(([k, val]) => ({
-                segmento: k,
-                qtd: val.qtd,
-                valor: val.valor,
-                perc: (grandTotal > 0) ? (val.valor / grandTotal) * 100 : 0
-            }));
-
-            // Ordenar por Valor Financeiro (decrescente)
+            const lista = Object.entries(aggregations).map(([k, val]) => ({ segmento: k, qtd: val.qtd, valor: val.valor }));
             lista.sort((a, b) => b.valor - a.valor);
 
-            // 3. Renderizar Tabela
             lista.forEach(item => {
                 const tr = document.createElement('tr');
-                
-                // Barra de progresso visual para %
-                const barraLargura = Math.max(item.perc, 1); 
-                const barraCor = item.perc > 20 ? 'bg-purple-500' : 'bg-purple-300';
-
                 tr.innerHTML = `
-                    <td class="pl-4 py-2 relative">
-                        <div class="font-medium text-gray-700 relative z-10">${item.segmento}</div>
-                    </td>
-                    <td class="text-center font-mono text-gray-600">${item.qtd}</td>
-                    <td class="text-right font-medium text-gray-800">R$ ${item.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td class="pr-4 py-2 align-middle">
-                        <div class="flex items-center justify-end gap-2">
-                            <span class="text-xs text-gray-500 font-bold w-8 text-right">${item.perc.toFixed(1)}%</span>
-                            <div class="h-2 w-16 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full ${barraCor}" style="width: ${barraLargura}%"></div>
-                            </div>
-                        </div>
-                    </td>
+                    <td class="pl-2 py-1 text-xs text-gray-700 truncate max-w-[100px]" title="${item.segmento}">${item.segmento}</td>
+                    <td class="text-center text-xs font-mono text-gray-600">${item.qtd}</td>
+                    <td class="text-right text-xs pr-2 text-gray-800">R$ ${item.valor.toLocaleString('pt-BR', {minimumFractionDigits: 0})}</td>
                 `;
                 tbody.appendChild(tr);
             });
-
-            // Atualizar Rodapé da Tabela
             document.getElementById('footerQtd').innerText = grandQtd;
             document.getElementById('footerValor').innerText = grandTotal.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
-
-            if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">Sem dados para este filtro.</td></tr>';
-            }
+            if (lista.length === 0) tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-400 text-xs">Sem dados.</td></tr>';
         }
 
         // --- UTILITÁRIOS ---
