@@ -20,6 +20,14 @@
             -webkit-tap-highlight-color: transparent; 
             background-color: #f3f4f6;
         }
+        /* Esconder barra de rolagem mas permitir scroll */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
     </style>
 </head>
 <body>
@@ -29,7 +37,6 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         // --- ÍCONES (SVG Components) ---
-        // Recriando os ícones do Lucide para funcionar sem importação externa
         const IconBase = ({ children, size = 24, className = "" }) => (
             <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -48,6 +55,7 @@
         );
 
         const Truck = (props) => <IconBase {...props}><path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11"/><path d="M14 9h4l4 4v4c0 .6-.4 1-1 1h-2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></IconBase>;
+        // Settings usado no modal de pagamento
         const Settings = (props) => <IconBase {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></IconBase>;
         const List = (props) => <IconBase {...props}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></IconBase>;
         const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
@@ -73,7 +81,6 @@
             const [orders, setOrders] = useState([]);
             const [activeRoutes, setActiveRoutes] = useState([]);
             const [showLoadList, setShowLoadList] = useState(false);
-            const [showRouteFilter, setShowRouteFilter] = useState(false);
             
             // Referência para o input de arquivo
             const fileInputRef = useRef(null);
@@ -100,7 +107,7 @@
                     try {
                         const json = JSON.parse(e.target.result);
                         if (Array.isArray(json)) {
-                            // Processa os dados para garantir que tenham o status local necessário
+                            // Processa os dados
                             const processedData = json.map(order => ({
                                 ...order,
                                 status_entrega: order.status_entrega || 'pendente'
@@ -108,7 +115,7 @@
                             
                             setOrders(processedData);
                             
-                            // Atualiza as rotas ativas com base no novo arquivo
+                            // Ativa todas as rotas ao carregar
                             const newRoutes = Array.from(new Set(processedData.map(o => o.rota)));
                             setActiveRoutes(newRoutes);
                             
@@ -122,7 +129,6 @@
                     }
                 };
                 reader.readAsText(file);
-                // Limpa o input para permitir carregar o mesmo arquivo novamente se necessário
                 event.target.value = '';
             };
 
@@ -131,7 +137,6 @@
                 let filtered = orders.filter(o => activeRoutes.includes(o.rota));
                 
                 // Ordenar: Pendentes primeiro, depois entregues/cancelados
-                // Mantém a ordem original dentro dos grupos
                 return filtered.sort((a, b) => {
                     const scoreA = a.status_entrega === 'pendente' ? 0 : 1;
                     const scoreB = b.status_entrega === 'pendente' ? 0 : 1;
@@ -248,40 +253,32 @@
                                 />
                                 <button 
                                     onClick={() => fileInputRef.current.click()}
-                                    className="p-2 bg-blue-500 rounded-lg active:bg-blue-700"
+                                    className="p-2 bg-blue-500 rounded-lg active:bg-blue-700 shadow-sm border border-blue-400"
                                     title="Importar Pedidos"
                                 >
                                     <Upload size={20} />
                                 </button>
-
-                                <button 
-                                    onClick={() => setShowRouteFilter(!showRouteFilter)}
-                                    className={`p-2 rounded-lg ${showRouteFilter ? 'bg-blue-800' : 'bg-blue-500'}`}
-                                >
-                                    <Settings size={20} />
-                                </button>
+                                
                                 <button 
                                     onClick={() => setShowLoadList(true)}
-                                    className="p-2 bg-green-500 rounded-lg font-bold flex items-center gap-1 active:bg-green-600"
+                                    className="p-2 bg-green-500 rounded-lg font-bold flex items-center gap-1 active:bg-green-600 shadow-sm border border-green-400"
                                 >
                                     <List size={20} /> Carga
                                 </button>
                             </div>
                         </div>
 
-                        {/* FILTRO DE ROTAS EXPANDIDO */}
-                        {showRouteFilter && (
-                            <div className="bg-blue-700 px-4 py-2 flex flex-wrap gap-2">
-                                <span className="text-xs text-blue-200 w-full">Toque para ativar/desativar rotas:</span>
-                                {availableRoutes.length === 0 && <span className="text-white text-sm">Sem rotas carregadas.</span>}
+                        {/* BARRA DE ROTAS (Horizontal Scroll) */}
+                        {availableRoutes.length > 0 && (
+                            <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
                                 {availableRoutes.map(route => (
                                     <button
                                         key={route}
                                         onClick={() => toggleRoute(route)}
-                                        className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
+                                        className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold transition-all shadow-sm flex-shrink-0 ${
                                             activeRoutes.includes(route) 
-                                            ? 'bg-white text-blue-700' 
-                                            : 'bg-blue-900 text-blue-300 border border-blue-500'
+                                            ? 'bg-white text-blue-700 scale-105' 
+                                            : 'bg-blue-800/50 text-blue-100 border border-blue-500/30'
                                         }`}
                                     >
                                         {route}
@@ -293,8 +290,8 @@
 
                     {/* LISTA DE PEDIDOS */}
                     <main className="p-4 space-y-4">
-                        {displayedOrders.length === 0 && (
-                            <div className="text-center text-gray-500 py-20 flex flex-col items-center">
+                        {orders.length === 0 ? (
+                             <div className="text-center text-gray-500 py-20 flex flex-col items-center">
                                 <Package size={64} className="text-gray-300 mb-4"/>
                                 <p className="text-lg font-medium text-gray-600">Nenhum pedido carregado</p>
                                 <p className="text-sm text-gray-400 mt-2 max-w-[250px]">Toque no botão de <b>Upload</b> no topo para carregar o arquivo JSON da rota.</p>
@@ -305,136 +302,141 @@
                                     <Upload size={20} /> Carregar Rota
                                 </button>
                             </div>
-                        )}
-
-                        {displayedOrders.map((order) => {
-                            const isPending = order.status_entrega === 'pendente';
-                            const isCancelled = order.status_entrega === 'cancelado';
-                            
-                            return (
-                                <div 
-                                    key={order.id} 
-                                    className={`rounded-xl shadow-lg overflow-hidden border-2 ${
-                                        isPending ? 'bg-white border-transparent' : 
-                                        isCancelled ? 'bg-red-50 border-red-200 opacity-60' : 'bg-green-50 border-green-200 opacity-60'
-                                    }`}
-                                >
-                                    {/* CABEÇALHO DO CARD */}
-                                    <div className="bg-gray-50 px-4 py-3 flex justify-between items-start border-b border-gray-100">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h2 className="text-lg font-bold text-gray-800">{order.cliente.nome}</h2>
-                                                {order.cliente.apelido && <span className="text-xs bg-gray-200 px-2 py-0.5 rounded text-gray-600">{order.cliente.apelido}</span>}
+                        ) : displayedOrders.length === 0 ? (
+                            <div className="text-center text-gray-500 py-10">
+                                <p>Nenhuma rota selecionada ou sem pedidos para as rotas ativas.</p>
+                                <p className="text-sm mt-2">Toque nas rotas acima para visualizar.</p>
+                            </div>
+                        ) : (
+                            displayedOrders.map((order) => {
+                                const isPending = order.status_entrega === 'pendente';
+                                const isCancelled = order.status_entrega === 'cancelado';
+                                
+                                return (
+                                    <div 
+                                        key={order.id} 
+                                        className={`rounded-xl shadow-lg overflow-hidden border-2 ${
+                                            isPending ? 'bg-white border-transparent' : 
+                                            isCancelled ? 'bg-red-50 border-red-200 opacity-60' : 'bg-green-50 border-green-200 opacity-60'
+                                        }`}
+                                    >
+                                        {/* CABEÇALHO DO CARD */}
+                                        <div className="bg-gray-50 px-4 py-3 flex justify-between items-start border-b border-gray-100">
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h2 className="text-lg font-bold text-gray-800">{order.cliente.nome}</h2>
+                                                    {order.cliente.apelido && <span className="text-xs bg-gray-200 px-2 py-0.5 rounded text-gray-600">{order.cliente.apelido}</span>}
+                                                </div>
+                                                <span className="inline-block mt-1 text-xs font-bold px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                                                    {order.rota}
+                                                </span>
                                             </div>
-                                            <span className="inline-block mt-1 text-xs font-bold px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                                                {order.rota}
-                                            </span>
+                                            <div className="text-right">
+                                                <span className={`block font-bold text-lg ${order.pagamento.status === 'pago' ? 'text-green-600' : 'text-orange-600'}`}>
+                                                    R$ {order.financeiro.total}
+                                                </span>
+                                                <span className="text-xs text-gray-500 uppercase">{order.pagamento.metodo}</span>
+                                            </div>
                                         </div>
-                                        <div className="text-right">
-                                            <span className={`block font-bold text-lg ${order.pagamento.status === 'pago' ? 'text-green-600' : 'text-orange-600'}`}>
-                                                R$ {order.financeiro.total}
-                                            </span>
-                                            <span className="text-xs text-gray-500 uppercase">{order.pagamento.metodo}</span>
-                                        </div>
-                                    </div>
 
-                                    {/* CORPO DO CARD */}
-                                    <div className="p-4">
-                                        <div className="mb-4">
-                                            <p className="text-gray-700 leading-snug flex items-start gap-2">
-                                                <MapPin className="text-red-500 shrink-0 mt-1" size={18} />
-                                                {order.cliente.endereco}
-                                            </p>
-                                            {order.obs && (
-                                                <p className="mt-2 text-sm bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-200 flex items-center gap-2">
-                                                    <Info size={16} /> <b>Obs:</b> {order.obs}
+                                        {/* CORPO DO CARD */}
+                                        <div className="p-4">
+                                            <div className="mb-4">
+                                                <p className="text-gray-700 leading-snug flex items-start gap-2">
+                                                    <MapPin className="text-red-500 shrink-0 mt-1" size={18} />
+                                                    {order.cliente.endereco}
                                                 </p>
+                                                {order.obs && (
+                                                    <p className="mt-2 text-sm bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-200 flex items-center gap-2">
+                                                        <Info size={16} /> <b>Obs:</b> {order.obs}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* BOTÕES DE AÇÃO - APENAS SE PENDENTE */}
+                                            {isPending && (
+                                                <div className="space-y-3">
+                                                    
+                                                    {/* AÇÕES RÁPIDAS (ZAP + MAPA) */}
+                                                    <div className="grid grid-cols-5 gap-2">
+                                                        <button 
+                                                            onClick={() => handleWhatsApp(order.cliente.telefone, `Olá ${order.cliente.nome}, entregador chegando com sua cesta!`)}
+                                                            className="col-span-1 bg-green-100 text-green-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-200"
+                                                        >
+                                                            <Truck size={20} />
+                                                            <span className="text-[10px] font-bold">Chegando</span>
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleWhatsApp(order.cliente.telefone, `Olá ${order.cliente.nome}, o entregador chegou! pode receber?`)}
+                                                            className="col-span-1 bg-green-100 text-green-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-200"
+                                                        >
+                                                            <CheckCircle size={20} />
+                                                            <span className="text-[10px] font-bold">Cheguei</span>
+                                                        </button>
+                                                         <button 
+                                                            onClick={() => handleWhatsApp(order.cliente.telefone, "")}
+                                                            className="col-span-1 bg-green-500 text-white py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-600 shadow-sm"
+                                                        >
+                                                            <MessageCircle size={20} />
+                                                            <span className="text-[10px] font-bold">Zap</span>
+                                                        </button>
+                                                        <a 
+                                                            href={`tel:${order.cliente.telefone}`}
+                                                            className="col-span-1 bg-gray-100 text-gray-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-gray-200"
+                                                        >
+                                                            <Phone size={20} />
+                                                            <span className="text-[10px] font-bold">Ligar</span>
+                                                        </a>
+                                                        <button 
+                                                            onClick={() => openMap(order.cliente.endereco, order.cliente.maps)}
+                                                            className="col-span-1 bg-blue-100 text-blue-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-blue-200"
+                                                        >
+                                                            <Navigation size={20} />
+                                                            <span className="text-[10px] font-bold">Mapa</span>
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            onClick={() => setDetailsModal({ open: true, order })}
+                                                            className="flex-1 bg-indigo-50 text-indigo-700 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 border border-indigo-100"
+                                                        >
+                                                            <Package size={18} /> Ver Detalhes
+                                                        </button>
+                                                    </div>
+
+                                                    <hr className="border-gray-100 my-2" />
+
+                                                    {/* AÇÕES PRINCIPAIS (ENTREGUE / CANCELADO) */}
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <button 
+                                                            onClick={() => handleCancel(order)}
+                                                            className="bg-red-50 text-red-600 py-4 rounded-lg font-bold text-lg border border-red-200 active:bg-red-100 flex items-center justify-center gap-2"
+                                                        >
+                                                            <XCircle size={24} /> Cancelar
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => openDeliveryModal(order)}
+                                                            className="bg-green-600 text-white py-4 rounded-lg font-bold text-lg shadow-md active:bg-green-700 flex items-center justify-center gap-2"
+                                                        >
+                                                            <CheckCircle size={24} /> ENTREGUE
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* STATUS FINALIZADO */}
+                                            {!isPending && (
+                                                <div className={`p-3 rounded-lg text-center font-bold flex items-center justify-center gap-2 ${isCancelled ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
+                                                    {isCancelled ? <XCircle /> : <CheckCircle />}
+                                                    {isCancelled ? 'PEDIDO CANCELADO' : 'PEDIDO ENTREGUE'}
+                                                </div>
                                             )}
                                         </div>
-
-                                        {/* BOTÕES DE AÇÃO - APENAS SE PENDENTE */}
-                                        {isPending && (
-                                            <div className="space-y-3">
-                                                
-                                                {/* AÇÕES RÁPIDAS (ZAP + MAPA) */}
-                                                <div className="grid grid-cols-5 gap-2">
-                                                    <button 
-                                                        onClick={() => handleWhatsApp(order.cliente.telefone, `Olá ${order.cliente.nome}, entregador chegando com sua cesta!`)}
-                                                        className="col-span-1 bg-green-100 text-green-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-200"
-                                                    >
-                                                        <Truck size={20} />
-                                                        <span className="text-[10px] font-bold">Chegando</span>
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleWhatsApp(order.cliente.telefone, `Olá ${order.cliente.nome}, o entregador chegou! pode receber?`)}
-                                                        className="col-span-1 bg-green-100 text-green-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-200"
-                                                    >
-                                                        <CheckCircle size={20} />
-                                                        <span className="text-[10px] font-bold">Cheguei</span>
-                                                    </button>
-                                                     <button 
-                                                        onClick={() => handleWhatsApp(order.cliente.telefone, "")}
-                                                        className="col-span-1 bg-green-500 text-white py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-600 shadow-sm"
-                                                    >
-                                                        <MessageCircle size={20} />
-                                                        <span className="text-[10px] font-bold">Zap</span>
-                                                    </button>
-                                                    <a 
-                                                        href={`tel:${order.cliente.telefone}`}
-                                                        className="col-span-1 bg-gray-100 text-gray-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-gray-200"
-                                                    >
-                                                        <Phone size={20} />
-                                                        <span className="text-[10px] font-bold">Ligar</span>
-                                                    </a>
-                                                    <button 
-                                                        onClick={() => openMap(order.cliente.endereco, order.cliente.maps)}
-                                                        className="col-span-1 bg-blue-100 text-blue-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-blue-200"
-                                                    >
-                                                        <Navigation size={20} />
-                                                        <span className="text-[10px] font-bold">Mapa</span>
-                                                    </button>
-                                                </div>
-
-                                                <div className="flex gap-2">
-                                                    <button 
-                                                        onClick={() => setDetailsModal({ open: true, order })}
-                                                        className="flex-1 bg-indigo-50 text-indigo-700 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 border border-indigo-100"
-                                                    >
-                                                        <Package size={18} /> Ver Detalhes
-                                                    </button>
-                                                </div>
-
-                                                <hr className="border-gray-100 my-2" />
-
-                                                {/* AÇÕES PRINCIPAIS (ENTREGUE / CANCELADO) */}
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <button 
-                                                        onClick={() => handleCancel(order)}
-                                                        className="bg-red-50 text-red-600 py-4 rounded-lg font-bold text-lg border border-red-200 active:bg-red-100 flex items-center justify-center gap-2"
-                                                    >
-                                                        <XCircle size={24} /> Cancelar
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => openDeliveryModal(order)}
-                                                        className="bg-green-600 text-white py-4 rounded-lg font-bold text-lg shadow-md active:bg-green-700 flex items-center justify-center gap-2"
-                                                    >
-                                                        <CheckCircle size={24} /> ENTREGUE
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* STATUS FINALIZADO */}
-                                        {!isPending && (
-                                            <div className={`p-3 rounded-lg text-center font-bold flex items-center justify-center gap-2 ${isCancelled ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
-                                                {isCancelled ? <XCircle /> : <CheckCircle />}
-                                                {isCancelled ? 'PEDIDO CANCELADO' : 'PEDIDO ENTREGUE'}
-                                            </div>
-                                        )}
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })
+                        )}
                     </main>
 
                     {/* --- MODAL LISTA DE CARGA --- */}
