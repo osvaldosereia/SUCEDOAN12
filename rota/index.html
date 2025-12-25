@@ -1,744 +1,611 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rota Dona Antonia | Gestão de Pedidos</title>
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Phone, 
+  MapPin, 
+  MessageCircle, 
+  Navigation, 
+  CheckCircle, 
+  XCircle, 
+  Package, 
+  List, 
+  Settings, 
+  Truck,
+  DollarSign,
+  Info,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
+
+// --- DADOS INICIAIS (Do seu JSON) ---
+const initialData = [
+  {
+    "id": "1766675984779",
+    "data": "2025-12-25T15:19:44.779Z",
+    "cliente": {
+      "id": "1766675932268",
+      "nome": "Osvaldo sereia junior",
+      "endereco": "Rua Alexandre de Barros, 440, Cond. Jardim Apoena, Chácara dos Pinheiros",
+      "cidade": "Cuiabá",
+      "telefone": "65984491018",
+      "maps": "9W4X+GX - Jardim Nossa Sra. Aparecida, Cuiabá - MT"
+    },
+    "rota": "Coxipó",
+    "pagamento": {
+      "metodo": "dinheiro",
+      "status": "pendente"
+    },
+    "financeiro": {
+      "subtotal": 170,
+      "desconto": 5,
+      "total": 165
+    },
+    "brinde": "Amaciante",
+    "obs": "",
+    "itens": [
+      {
+        "id": 1766675970140,
+        "tipo": "Cesta Mini",
+        "marca": "Koblenz",
+        "preco": 170,
+        "modo": "alterada",
+        "conteudo": [
+          "1 Arroz de 5kg", "1 Açúcar Cristal de 2kg", "3 Óleo de Soja de 900ml", "..."
+        ]
+      }
+    ],
+    "ordem": 0,
+    "status_entrega": "pendente" // Adicionado para controle local
+  },
+  {
+    "id": "1766691263531",
+    "data": "2025-12-25T19:34:23.531Z",
+    "cliente": {
+      "id": "1766675932268",
+      "nome": "Osvaldo sereia junior",
+      "apelido": "Sereia",
+      "telefone": "65984491018",
+      "cidade": "Cuiabá",
+      "bairro": "Chácara dos Pinheiros",
+      "endereco": "Rua Alexandre de Barros, 440, Cond. Jardim Apoena",
+      "desc_casa": "",
+      "maps": "9W4X+GX - Jardim Nossa Sra. Aparecida, Cuiabá - MT"
+    },
+    "rota": "VG",
+    "pagamento": {
+      "metodo": "cartao",
+      "status": "pago"
+    },
+    "financeiro": {
+      "subtotal": 220,
+      "desconto": 15,
+      "total": 205
+    },
+    "brinde": "Sabao Po",
+    "obs": "",
+    "itens": [
+      {
+        "id": 1766691248136,
+        "tipo": "Cesta Pequena",
+        "marca": "Koblenz",
+        "preco": 220,
+        "modo": "alterada",
+        "identificacao": "45",
+        "conteudo": ["2 Arroz de 5kg", "..."]
+      }
+    ],
+    "ordem": 10,
+    "status_entrega": "pendente"
+  },
+  {
+    "id": "1766686037788",
+    "data": "2025-12-25T18:07:17.788Z",
+    "cliente": {
+      "id": "1766675932268",
+      "nome": "Osvaldo sereia junior",
+      "endereco": "Rua Alexandre de Barros, 440, Cond. Jardim Apoena, Chácara dos Pinheiros",
+      "cidade": "Cuiabá",
+      "telefone": "65984491018",
+      "maps": "9W4X+GX - Jardim Nossa Sra. Aparecida, Cuiabá - MT"
+    },
+    "rota": "Coxipó",
+    "pagamento": {
+      "metodo": "dinheiro",
+      "status": "pendente"
+    },
+    "financeiro": {
+      "subtotal": 215,
+      "desconto": 0,
+      "total": 215
+    },
+    "brinde": "Amaciante",
+    "obs": "casa azul",
+    "itens": [
+      {
+        "id": 1766686022859,
+        "tipo": "Cesta Pequena",
+        "marca": "Tio Alvino",
+        "preco": 215,
+        "modo": "normal",
+        "identificacao": null,
+        "conteudo": ["2 Arroz de 5kg", "..."]
+      }
+    ],
+    "ordem": 20,
+    "status_entrega": "pendente"
+  }
+];
+
+// Configurações
+const ADMIN_PHONE = "5565998150975";
+
+export default function DeliveryApp() {
+  const [orders, setOrders] = useState(initialData);
+  const [activeRoutes, setActiveRoutes] = useState([]);
+  const [showLoadList, setShowLoadList] = useState(false);
+  const [showRouteFilter, setShowRouteFilter] = useState(false);
+  
+  // Modal de Confirmação de Entrega
+  const [deliveryModal, setDeliveryModal] = useState({ open: false, orderId: null, paymentMethod: '' });
+  
+  // Modal de Detalhes do Pedido
+  const [detailsModal, setDetailsModal] = useState({ open: false, order: null });
+
+  // Extrair rotas únicas
+  const availableRoutes = useMemo(() => {
+    const routes = new Set(initialData.map(o => o.rota));
+    return Array.from(routes);
+  }, []);
+
+  // Inicializar rotas ativas
+  useEffect(() => {
+    setActiveRoutes(availableRoutes);
+  }, [availableRoutes]);
+
+  // Filtrar e Ordenar Pedidos
+  const displayedOrders = useMemo(() => {
+    let filtered = orders.filter(o => activeRoutes.includes(o.rota));
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    // Ordenar: Pendentes primeiro, depois entregues/cancelados
+    // Mantém a ordem original dentro dos grupos
+    return filtered.sort((a, b) => {
+      const scoreA = a.status_entrega === 'pendente' ? 0 : 1;
+      const scoreB = b.status_entrega === 'pendente' ? 0 : 1;
+      return scoreA - scoreB || a.ordem - b.ordem;
+    });
+  }, [orders, activeRoutes]);
+
+  // Estatísticas
+  const stats = useMemo(() => {
+    const total = displayedOrders.length;
+    const pending = displayedOrders.filter(o => o.status_entrega === 'pendente').length;
+    return { total, pending, completed: total - pending };
+  }, [displayedOrders]);
+
+  // Lista de Carga (Resumo)
+  const loadList = useMemo(() => {
+    const list = {};
+    orders.filter(o => activeRoutes.includes(o.rota) && o.status_entrega === 'pendente').forEach(order => {
+      order.itens.forEach(item => {
+        const key = `${item.tipo} - ${item.marca}`;
+        list[key] = (list[key] || 0) + 1;
+      });
+    });
+    return Object.entries(list);
+  }, [orders, activeRoutes]);
+
+  // --- AÇÕES ---
+
+  const handleWhatsApp = (phone, message) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const finalPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const openMap = (address, mapsLink) => {
+    if (mapsLink) {
+        // Tenta usar o link do Google Maps se existir e for uma URL
+        if(mapsLink.includes('http')) {
+             window.open(mapsLink, '_blank');
+        } else {
+             // Se for texto (ex: código plus), pesquisa
+             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsLink)}`, '_blank');
+        }
+    } else {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+    }
+  };
+
+  const handleCancel = (order) => {
+    if (!window.confirm("Confirmar cancelamento deste pedido?")) return;
+
+    const newOrders = orders.map(o => 
+      o.id === order.id ? { ...o, status_entrega: 'cancelado' } : o
+    );
+    setOrders(newOrders);
+
+    // Notificar Admin
+    const msg = `⚠️ *Pedido Cancelado*\nCliente: ${order.cliente.nome}\nRota: ${order.rota}\nMotivo: Entrega cancelada pelo entregador.`;
+    handleWhatsApp(ADMIN_PHONE, msg);
+  };
+
+  const openDeliveryModal = (order) => {
+    setDeliveryModal({ 
+      open: true, 
+      orderId: order.id, 
+      paymentMethod: order.pagamento.metodo,
+      currentOrder: order 
+    });
+  };
+
+  const confirmDelivery = () => {
+    const { orderId, paymentMethod, currentOrder } = deliveryModal;
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        brand: { 50: '#f8fafc', 100: '#f1f5f9', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' }
-                    }
-                }
-            }
-        }
-    </script>
+    const newOrders = orders.map(o => 
+      o.id === orderId ? { ...o, status_entrega: 'entregue', pagamento: { ...o.pagamento, metodo: paymentMethod, status: 'pago' } } : o
+    );
+    setOrders(newOrders);
+    setDeliveryModal({ open: false, orderId: null, paymentMethod: '' });
 
-    <style>
-        body { background-color: #f8fafc; }
-        
-        /* Scrollbar Fina e Elegante */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    // Notificar Admin
+    const msg = `✅ *Entrega Realizada*\nCliente: ${currentOrder.cliente.nome}\nPagamento: ${paymentMethod.toUpperCase()}\nValor: R$ ${currentOrder.financeiro.total}`;
+    handleWhatsApp(ADMIN_PHONE, msg);
+  };
 
-        /* Animações Suaves */
-        .fade-in { animation: fadeIn 0.2s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  const toggleRoute = (route) => {
+    if (activeRoutes.includes(route)) {
+      setActiveRoutes(activeRoutes.filter(r => r !== route));
+    } else {
+      setActiveRoutes([...activeRoutes, route]);
+    }
+  };
 
-        /* Estilo Compacto para Desktop */
-        .input-compact {
-            @apply text-sm border-gray-300 rounded shadow-sm focus:border-brand-600 focus:ring focus:ring-brand-200 focus:ring-opacity-50 w-full transition-all;
-        }
-        
-        .btn-action {
-            @apply px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wide transition-colors duration-200 border;
-        }
+  // --- RENDERIZAÇÃO ---
 
-        /* Modal Transitions */
-        .modal-backdrop { transition: opacity 0.2s ease; }
-        .modal-panel { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease; }
-    </style>
-</head>
-<body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
-
-    <!-- Toast Container (Notificações) -->
-    <div id="toast-container" class="fixed top-5 right-5 z-[60] flex flex-col gap-2"></div>
-
-    <!-- HEADER / TOPBAR -->
-    <header class="bg-white border-b border-slate-200 h-16 flex-none flex items-center justify-between px-6 shadow-sm z-30">
-        <div class="flex items-center gap-4">
-            <div class="bg-brand-800 text-white p-2 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 7m0 13V7" /></svg>
-            </div>
-            <div>
-                <h1 class="text-lg font-bold text-slate-800 leading-none">Rota Dona Antonia</h1>
-                <p class="text-xs text-slate-500 font-medium" id="header-date">Carregando...</p>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-100 font-sans pb-20">
+      
+      {/* HEADER FIXO */}
+      <header className="bg-blue-600 text-white sticky top-0 z-30 shadow-md">
+        <div className="px-4 py-3 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <Truck size={24} /> Rota Entrega
+            </h1>
+            <p className="text-sm opacity-90">
+              Restam <b>{stats.pending}</b> de {stats.total}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowRouteFilter(!showRouteFilter)}
+              className={`p-2 rounded-lg ${showRouteFilter ? 'bg-blue-800' : 'bg-blue-500'}`}
+            >
+              <Settings size={20} />
+            </button>
+            <button 
+              onClick={() => setShowLoadList(true)}
+              className="p-2 bg-green-500 rounded-lg font-bold flex items-center gap-1"
+            >
+              <List size={20} /> Carga
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-4">
-            <!-- Barra de Filtros de Região (Compacta) -->
-            <div class="bg-slate-100 p-1 rounded-lg flex gap-1" id="filtros-regiao">
-                <!-- Preenchido via JS -->
-            </div>
+        {/* FILTRO DE ROTAS EXPANDIDO */}
+        {showRouteFilter && (
+          <div className="bg-blue-700 px-4 py-2 flex flex-wrap gap-2">
+            <span className="text-xs text-blue-200 w-full">Toque para ativar/desativar rotas:</span>
+            {availableRoutes.map(route => (
+              <button
+                key={route}
+                onClick={() => toggleRoute(route)}
+                className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
+                  activeRoutes.includes(route) 
+                    ? 'bg-white text-blue-700' 
+                    : 'bg-blue-900 text-blue-300 border border-blue-500'
+                }`}
+              >
+                {route}
+              </button>
+            ))}
+          </div>
+        )}
+      </header>
 
-            <div class="h-8 w-px bg-slate-200 mx-2"></div>
+      {/* LISTA DE PEDIDOS */}
+      <main className="p-4 space-y-4">
+        {displayedOrders.length === 0 && (
+          <div className="text-center text-gray-500 py-10">
+            Nenhum pedido nesta rota.
+          </div>
+        )}
 
-            <button onclick="App.controllers.iniciarNovoLancamento()" class="bg-brand-800 hover:bg-brand-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:shadow transition-all flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                Novo Pedido
-            </button>
-            
-            <button onclick="App.controllers.resetarRota()" class="text-red-500 hover:bg-red-50 p-2 rounded-lg text-xs font-bold transition-colors" title="Limpar Rota Atual">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-            </button>
-        </div>
-    </header>
-
-    <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 flex overflow-hidden bg-slate-50 relative">
-        
-        <!-- Sidebar KPI (Opcional, ou manter stats no topo) -->
-        <aside class="w-64 bg-white border-r border-slate-200 hidden xl:flex flex-col p-6 gap-6 overflow-y-auto">
-            <div id="kpi-container" class="space-y-4">
-                <!-- KPIs renderizados aqui -->
-            </div>
-            
-            <div class="border-t border-slate-100 pt-4">
-                <h3 class="text-xs font-bold text-slate-400 uppercase mb-3">Acesso Rápido</h3>
-                <nav class="space-y-1">
-                    <a href="#" class="block px-3 py-2 bg-brand-50 text-brand-700 rounded-md text-sm font-bold">📦 Pedidos Ativos</a>
-                    <a href="#" onclick="alert('Funcionalidade simplificada para esta demo')" class="block px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-sm font-medium">👥 Base de Clientes</a>
-                    <a href="#" onclick="App.controllers.exportarRota()" class="block px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-sm font-medium">💾 Exportar JSON</a>
-                </nav>
-            </div>
-        </aside>
-
-        <!-- Grid de Pedidos -->
-        <div class="flex-1 overflow-y-auto p-6 scroll-smooth">
-            
-            <!-- Barra de Busca Rápida -->
-            <div class="mb-6 max-w-md">
-                <div class="relative">
-                    <input type="text" id="search-pedidos" onkeyup="App.ui.filterCards()" placeholder="🔍 Filtrar pedidos por nome, endereço ou item..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 shadow-sm">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </div>
+        {displayedOrders.map((order) => {
+          const isPending = order.status_entrega === 'pendente';
+          const isCancelled = order.status_entrega === 'cancelado';
+          
+          return (
+            <div 
+              key={order.id} 
+              className={`rounded-xl shadow-lg overflow-hidden border-2 ${
+                isPending ? 'bg-white border-transparent' : 
+                isCancelled ? 'bg-red-50 border-red-200 opacity-60' : 'bg-green-50 border-green-200 opacity-60'
+              }`}
+            >
+              {/* CABEÇALHO DO CARD */}
+              <div className="bg-gray-50 px-4 py-3 flex justify-between items-start border-b border-gray-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-800">{order.cliente.nome}</h2>
+                    {order.cliente.apelido && <span className="text-xs bg-gray-200 px-2 py-0.5 rounded text-gray-600">{order.cliente.apelido}</span>}
+                  </div>
+                  <span className="inline-block mt-1 text-xs font-bold px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                    {order.rota}
+                  </span>
                 </div>
-            </div>
+                <div className="text-right">
+                  <span className={`block font-bold text-lg ${order.pagamento.status === 'pago' ? 'text-green-600' : 'text-orange-600'}`}>
+                    R$ {order.financeiro.total}
+                  </span>
+                  <span className="text-xs text-gray-500 uppercase">{order.pagamento.metodo}</span>
+                </div>
+              </div>
 
-            <div id="lista-entregas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 pb-20">
-                <!-- CARDS renderizados via JS -->
-            </div>
+              {/* CORPO DO CARD */}
+              <div className="p-4">
+                <div className="mb-4">
+                    <p className="text-gray-700 leading-snug flex items-start gap-2">
+                        <MapPin className="text-red-500 shrink-0 mt-1" size={18} />
+                        {order.cliente.endereco}
+                    </p>
+                    {order.obs && (
+                        <p className="mt-2 text-sm bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-200 flex items-center gap-2">
+                            <Info size={16} /> <b>Obs:</b> {order.obs}
+                        </p>
+                    )}
+                </div>
 
-            <!-- Empty State -->
-            <div id="lista-vazia" class="hidden flex-col items-center justify-center h-full text-slate-400 opacity-60">
-                <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                <p class="text-lg font-medium">Nenhum pedido nesta região.</p>
+                {/* BOTÕES DE AÇÃO - APENAS SE PENDENTE */}
+                {isPending && (
+                  <div className="space-y-3">
+                    
+                    {/* AÇÕES RÁPIDAS (ZAP + MAPA) */}
+                    <div className="grid grid-cols-5 gap-2">
+                        <button 
+                            onClick={() => handleWhatsApp(order.cliente.telefone, `Olá ${order.cliente.nome}, entregador chegando com sua cesta!`)}
+                            className="col-span-1 bg-green-100 text-green-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-200"
+                        >
+                            <Truck size={20} />
+                            <span className="text-[10px] font-bold">Chegando</span>
+                        </button>
+                        <button 
+                            onClick={() => handleWhatsApp(order.cliente.telefone, `Olá ${order.cliente.nome}, o entregador chegou! pode receber?`)}
+                            className="col-span-1 bg-green-100 text-green-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-200"
+                        >
+                            <CheckCircle size={20} />
+                            <span className="text-[10px] font-bold">Cheguei</span>
+                        </button>
+                         <button 
+                            onClick={() => handleWhatsApp(order.cliente.telefone, "")}
+                            className="col-span-1 bg-green-500 text-white py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-600 shadow-sm"
+                        >
+                            <MessageCircle size={20} />
+                            <span className="text-[10px] font-bold">Zap</span>
+                        </button>
+                        <a 
+                            href={`tel:${order.cliente.telefone}`}
+                            className="col-span-1 bg-gray-100 text-gray-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-gray-200"
+                        >
+                            <Phone size={20} />
+                            <span className="text-[10px] font-bold">Ligar</span>
+                        </a>
+                        <button 
+                            onClick={() => openMap(order.cliente.endereco, order.cliente.maps)}
+                            className="col-span-1 bg-blue-100 text-blue-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-blue-200"
+                        >
+                            <Navigation size={20} />
+                            <span className="text-[10px] font-bold">Mapa</span>
+                        </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => setDetailsModal({ open: true, order })}
+                            className="flex-1 bg-indigo-50 text-indigo-700 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 border border-indigo-100"
+                        >
+                            <Package size={18} /> Ver Detalhes
+                        </button>
+                    </div>
+
+                    <hr className="border-gray-100 my-2" />
+
+                    {/* AÇÕES PRINCIPAIS (ENTREGUE / CANCELADO) */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <button 
+                            onClick={() => handleCancel(order)}
+                            className="bg-red-50 text-red-600 py-4 rounded-lg font-bold text-lg border border-red-200 active:bg-red-100 flex items-center justify-center gap-2"
+                        >
+                            <XCircle size={24} /> Cancelar
+                        </button>
+                        <button 
+                            onClick={() => openDeliveryModal(order)}
+                            className="bg-green-600 text-white py-4 rounded-lg font-bold text-lg shadow-md active:bg-green-700 flex items-center justify-center gap-2"
+                        >
+                            <CheckCircle size={24} /> ENTREGUE
+                        </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STATUS FINALIZADO */}
+                {!isPending && (
+                  <div className={`p-3 rounded-lg text-center font-bold flex items-center justify-center gap-2 ${isCancelled ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
+                    {isCancelled ? <XCircle /> : <CheckCircle />}
+                    {isCancelled ? 'PEDIDO CANCELADO' : 'PEDIDO ENTREGUE'}
+                  </div>
+                )}
+              </div>
             </div>
+          );
+        })}
+      </main>
+
+      {/* --- MODAL LISTA DE CARGA --- */}
+      {showLoadList && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
+             <button 
+                onClick={() => setShowLoadList(false)}
+                className="absolute top-4 right-4 text-gray-500 p-2"
+            >
+                <XCircle size={28} />
+            </button>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                <Package className="text-blue-600"/> Carga Necessária
+            </h2>
+            <p className="text-gray-500 mb-4 text-sm">Itens para as rotas ativas ({activeRoutes.join(', ')}):</p>
+            
+            <div className="max-h-[60vh] overflow-y-auto space-y-2">
+                {loadList.length === 0 ? (
+                    <p>Tudo entregue ou sem pedidos!</p>
+                ) : (
+                    loadList.map(([name, count]) => (
+                        <div key={name} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <span className="font-medium text-gray-700">{name}</span>
+                            <span className="bg-blue-600 text-white font-bold px-3 py-1 rounded-full">{count}</span>
+                        </div>
+                    ))
+                )}
+            </div>
+            <button 
+                onClick={() => setShowLoadList(false)}
+                className="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-bold text-lg"
+            >
+                Fechar
+            </button>
+          </div>
         </div>
-    </main>
+      )}
 
-    <!-- ================= MODAIS DESKTOP ================= -->
-
-    <!-- Modal Lançamento (Largo para Desktop) -->
-    <div id="modal-lancamento" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm modal-backdrop transition-opacity" onclick="App.ui.modalLancamento.close()"></div>
-        
-        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-auto max-h-[90vh] flex flex-col pointer-events-auto modal-panel transform transition-all">
-                
-                <!-- Modal Header -->
-                <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 rounded-t-xl">
-                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <span class="bg-brand-600 text-white w-6 h-6 rounded flex items-center justify-center text-xs">P</span>
-                        <span id="modal-lancamento-title">Novo Pedido</span>
-                    </h3>
-                    <button onclick="App.ui.modalLancamento.close()" class="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-200 transition-colors">
-                        <span class="sr-only">Fechar</span>
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      {/* --- MODAL CONFIRMAR ENTREGA --- */}
+      {deliveryModal.open && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl p-6">
+            <h2 className="text-xl font-bold mb-4 text-center">Confirmar Pagamento</h2>
+            <p className="text-center text-gray-600 mb-6">Como o cliente pagou?</p>
+            
+            <div className="space-y-3">
+                {['dinheiro', 'cartao', 'pix'].map(method => (
+                    <button
+                        key={method}
+                        onClick={() => setDeliveryModal(prev => ({ ...prev, paymentMethod: method }))}
+                        className={`w-full py-3 px-4 rounded-xl border-2 flex items-center justify-between transition-all ${
+                            deliveryModal.paymentMethod === method 
+                            ? 'border-green-500 bg-green-50 text-green-700 font-bold' 
+                            : 'border-gray-200 text-gray-600'
+                        }`}
+                    >
+                        <span className="capitalize flex items-center gap-2">
+                            {method === 'dinheiro' && <DollarSign size={20}/>}
+                            {method === 'cartao' && <Settings size={20}/>}
+                            {method === 'pix' && <ZapIcon />} 
+                            {method}
+                        </span>
+                        {deliveryModal.paymentMethod === method && <CheckCircle size={20} />}
                     </button>
-                </div>
-
-                <!-- Modal Body (Grid Layout) -->
-                <div class="flex-1 overflow-y-auto p-6">
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        
-                        <!-- Coluna Esquerda: Cliente e Localização -->
-                        <div class="lg:col-span-5 space-y-5 border-r border-slate-100 pr-4">
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Dados do Cliente</h4>
-                            
-                            <div class="relative group">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Nome / Busca</label>
-                                <input type="text" id="input-cliente" class="input-compact" placeholder="Digite para buscar..." autocomplete="off">
-                                <div id="dropdown-clientes" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"></div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Bairro</label>
-                                    <input type="text" id="input-bairro" class="input-compact bg-slate-50" placeholder="Bairro">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Cidade</label>
-                                    <select id="input-cidade" class="input-compact bg-slate-50">
-                                        <option value="Cuiabá">Cuiabá</option>
-                                        <option value="Várzea Grande">Várzea Grande</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Região de Entrega</label>
-                                <div class="grid grid-cols-4 gap-2 text-sm" id="container-radio-regiao">
-                                    <!-- JS Generated -->
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Observações Gerais</label>
-                                <textarea id="input-obs-geral" rows="3" class="input-compact resize-none" placeholder="Ponto de referência, cor do portão..."></textarea>
-                            </div>
-                        </div>
-
-                        <!-- Coluna Direita: Itens do Pedido -->
-                        <div class="lg:col-span-7 flex flex-col h-full">
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Montagem do Pedido</h4>
-                            
-                            <!-- Adicionar Item Box -->
-                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-4 shadow-sm">
-                                <div class="flex gap-2 mb-3">
-                                    <div class="flex-1 relative">
-                                        <select id="select-cesta" class="input-compact h-10 font-medium text-slate-700">
-                                            <option value="">Selecione a Cesta...</option>
-                                            <!-- JS Generated -->
-                                        </select>
-                                    </div>
-                                    <input type="number" id="qtd-cesta" value="1" min="1" class="input-compact w-20 text-center font-bold h-10">
-                                </div>
-
-                                <div class="flex items-center gap-4 mb-3">
-                                    <label class="inline-flex items-center cursor-pointer text-sm select-none">
-                                        <input type="checkbox" id="check-alterada" class="form-checkbox h-4 w-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500">
-                                        <span class="ml-2 text-slate-600 font-medium">Personalizar/Alterar?</span>
-                                    </label>
-                                </div>
-
-                                <!-- Box Detalhes Alterada -->
-                                <div id="box-detalhes-alterada" class="hidden bg-white p-3 rounded border border-amber-200 mb-3 space-y-2 animate-in fade-in">
-                                    <p class="text-[10px] font-bold text-amber-600 uppercase">Ajustar Itens:</p>
-                                    <div id="lista-produtos-edicao" class="max-h-32 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                        <!-- JS Generated -->
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center gap-3 mb-3">
-                                    <span class="text-xs font-bold text-slate-400 uppercase">Brindes:</span>
-                                    <label class="inline-flex items-center text-xs bg-white px-2 py-1 rounded border hover:bg-slate-50 cursor-pointer"><input type="checkbox" name="brindes" value="Ovo" class="mr-1">Ovo</label>
-                                    <label class="inline-flex items-center text-xs bg-white px-2 py-1 rounded border hover:bg-slate-50 cursor-pointer"><input type="checkbox" name="brindes" value="Amaciante" class="mr-1">Amaciante</label>
-                                    <label class="inline-flex items-center text-xs bg-white px-2 py-1 rounded border hover:bg-slate-50 cursor-pointer"><input type="checkbox" name="brindes" value="Cafe" class="mr-1">Café</label>
-                                </div>
-
-                                <button onclick="App.controllers.adicionarItemAoCarrinho()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-lg text-sm font-bold shadow transition-transform active:scale-95 flex justify-center items-center gap-2">
-                                    <span>Adicionar ao Carrinho</span>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                                </button>
-                            </div>
-
-                            <!-- Lista Carrinho -->
-                            <div class="flex-1 overflow-y-auto bg-white border border-slate-200 rounded-lg p-0 mb-4 min-h-[150px]">
-                                <table class="w-full text-sm text-left">
-                                    <thead class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase sticky top-0">
-                                        <tr>
-                                            <th class="px-4 py-2">Qtd</th>
-                                            <th class="px-4 py-2">Item</th>
-                                            <th class="px-4 py-2 text-right">Valor</th>
-                                            <th class="px-2 py-2 w-10"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="carrinho-visual" class="divide-y divide-slate-100">
-                                        <!-- JS Generated -->
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                <span class="font-bold text-slate-600">Total do Pedido:</span>
-                                <div class="flex items-center gap-1">
-                                    <span class="text-sm text-slate-400">R$</span>
-                                    <input type="number" id="input-valor-final" step="0.01" class="bg-transparent border-none text-right font-black text-xl text-slate-800 w-32 focus:ring-0 p-0" placeholder="0.00">
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-xl">
-                    <button onclick="App.ui.modalLancamento.close()" class="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-bold hover:bg-white transition-colors">Cancelar</button>
-                    <button onclick="App.controllers.salvarEntrega()" id="btn-submit-lancamento" class="px-8 py-2.5 rounded-lg bg-brand-600 text-white font-bold hover:bg-brand-700 shadow-md transition-all active:scale-95">Confirmar Pedido</button>
-                </div>
+                ))}
             </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-6">
+                <button 
+                    onClick={() => setDeliveryModal({ open: false, orderId: null, paymentMethod: '' })}
+                    className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100"
+                >
+                    Voltar
+                </button>
+                <button 
+                    onClick={confirmDelivery}
+                    className="py-3 rounded-xl font-bold text-white bg-green-600 shadow-lg active:scale-95 transition-transform"
+                >
+                    Confirmar
+                </button>
+            </div>
+          </div>
         </div>
-    </div>
+      )}
 
-    <!-- Modal Pagamento (Compacto) -->
-    <div id="modal-pagamento" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="bg-green-600 p-4 text-white text-center">
-                <h3 class="text-lg font-bold">Concluir Entrega</h3>
-                <p class="text-green-100 text-sm mt-1" id="pag-cliente-nome">Cliente</p>
-                <p class="text-3xl font-black mt-2" id="pag-valor-total">R$ 0,00</p>
+       {/* --- MODAL DETALHES --- */}
+       {detailsModal.open && detailsModal.order && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative max-h-[85vh] overflow-y-auto">
+             <button 
+                onClick={() => setDetailsModal({ open: false, order: null })}
+                className="absolute top-4 right-4 text-gray-500 bg-gray-100 rounded-full p-1"
+            >
+                <XCircle size={24} />
+            </button>
+            
+            <div className="mb-4">
+                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Pedido</span>
+                <h2 className="text-2xl font-bold text-gray-800">
+                    {detailsModal.order.itens[0]?.tipo || 'Cesta'}
+                </h2>
+                <p className="text-gray-500">{detailsModal.order.itens[0]?.marca}</p>
             </div>
-            <div class="p-6">
-                <p class="text-xs text-slate-500 font-bold uppercase mb-3">Forma de Pagamento</p>
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <label class="cursor-pointer border p-3 rounded-lg hover:bg-green-50 hover:border-green-200 transition-all text-center has-[:checked]:bg-green-50 has-[:checked]:border-green-500">
-                        <input type="checkbox" name="pagamento" value="DINHEIRO" class="hidden">
-                        <span class="block font-bold text-slate-700 text-sm">💵 Dinheiro</span>
-                    </label>
-                    <label class="cursor-pointer border p-3 rounded-lg hover:bg-green-50 hover:border-green-200 transition-all text-center has-[:checked]:bg-green-50 has-[:checked]:border-green-500">
-                        <input type="checkbox" name="pagamento" value="PIX" class="hidden">
-                        <span class="block font-bold text-slate-700 text-sm">💠 PIX</span>
-                    </label>
-                    <label class="cursor-pointer border p-3 rounded-lg hover:bg-green-50 hover:border-green-200 transition-all text-center has-[:checked]:bg-green-50 has-[:checked]:border-green-500">
-                        <input type="checkbox" name="pagamento" value="CARTÃO" class="hidden">
-                        <span class="block font-bold text-slate-700 text-sm">💳 Cartão</span>
-                    </label>
-                    <label class="cursor-pointer border p-3 rounded-lg hover:bg-green-50 hover:border-green-200 transition-all text-center has-[:checked]:bg-green-50 has-[:checked]:border-green-500">
-                        <input type="checkbox" name="pagamento" value="SÓ ENTREGAR" class="hidden">
-                        <span class="block font-bold text-slate-700 text-sm">📦 Só Entregar</span>
-                    </label>
+
+            <div className="bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
+                <div className="flex justify-between mb-2">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-semibold">R$ {detailsModal.order.financeiro.subtotal}</span>
                 </div>
-                <div class="flex gap-3">
-                    <button onclick="document.getElementById('modal-pagamento').classList.add('hidden')" class="flex-1 py-2 text-slate-500 hover:bg-slate-100 rounded-lg font-bold text-sm">Cancelar</button>
-                    <button onclick="App.controllers.confirmarPagamento()" class="flex-1 py-2.5 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 text-sm">Confirmar Baixa</button>
+                <div className="flex justify-between mb-2 text-red-500">
+                    <span className="">Desconto</span>
+                    <span className="font-semibold">- R$ {detailsModal.order.financeiro.desconto}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-gray-200 text-lg font-bold text-gray-800">
+                    <span>Total</span>
+                    <span>R$ {detailsModal.order.financeiro.total}</span>
                 </div>
             </div>
+
+             <div className="mb-6">
+                <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <List size={18} /> Itens da Cesta
+                </h3>
+                <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
+                    {detailsModal.order.itens[0]?.conteudo.map((item, idx) => {
+                        // Limpa tags HTML básicas se vierem do JSON
+                        const cleanItem = item.replace(/<[^>]*>?/gm, '');
+                        if (!cleanItem) return null;
+                        return <li key={idx}>{cleanItem}</li>
+                    })}
+                </ul>
+            </div>
+
+            {detailsModal.order.brinde && (
+                <div className="bg-purple-50 text-purple-800 p-3 rounded-lg font-bold text-center mb-6 border border-purple-100">
+                    🎁 Brinde: {detailsModal.order.brinde}
+                </div>
+            )}
+
+            <button 
+                onClick={() => setDetailsModal({ open: false, order: null })}
+                className="w-full bg-gray-800 text-white py-3 rounded-xl font-bold"
+            >
+                Fechar
+            </button>
+          </div>
         </div>
+      )}
+
     </div>
+  );
+}
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // --- CONSTANTS & CONFIG ---
-        const CONSTANTS = {
-            REGIOES: ["VG", "CUIABA", "COXIPO", "CPA"],
-            STORAGE_KEY: "rotaflow_v2_db",
-            CLIENTS_DB_KEY: "rotaflow_clientes_db",
-            CESTAS: [
-                { value: "ECONOMICA", label: "ECONOMICA", price: 85.00 },
-                { value: "Mini Bonini", label: "Mini Bonini", price: 165.00 },
-                { value: "Pequena Bonini", label: "Pequena Bonini", price: 215.00 },
-                { value: "Média Bonini", label: "Média Bonini", price: 320.00 },
-                { value: "Grande Bonini", label: "Grande Bonini", price: 380.00 },
-                { value: "Grande Koblenz", label: "Grande Koblenz", price: 390.00 }
-            ],
-            // Simplified Items for "Personalization" logic
-            ITENS_BASE: [
-                { nome: 'Arroz 5kg', qtd: 1 }, { nome: 'Açúcar 2kg', qtd: 1 }, { nome: 'Óleo', qtd: 2 }, 
-                { nome: 'Feijão 1kg', qtd: 2 }, { nome: 'Café', qtd: 1 }, { nome: 'Macarrão', qtd: 2 },
-                { nome: 'Trigo 1kg', qtd: 1 }, { nome: 'Sal', qtd: 1 }, { nome: 'Extrato', qtd: 1 },
-                { nome: 'Bolacha', qtd: 2 }, { nome: 'Sabão Pó', qtd: 1 }, { nome: 'Qboa', qtd: 1 }
-            ]
-        };
-
-        const Utils = {
-            formatMoeda: (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0),
-            formatData: (iso) => new Date(iso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }),
-            toast: (msg, type = 'success') => {
-                const c = document.getElementById('toast-container');
-                const el = document.createElement('div');
-                el.className = `px-4 py-3 rounded shadow-lg text-sm font-bold flex items-center gap-2 animate-in slide-in-from-right duration-300 ${type === 'error' ? 'bg-red-500 text-white' : 'bg-brand-800 text-white'}`;
-                el.innerHTML = type === 'error' ? `<span>⚠️</span> ${msg}` : `<span>✅</span> ${msg}`;
-                c.appendChild(el);
-                setTimeout(() => el.remove(), 3000);
-            }
-        };
-
-        const Store = {
-            data: { rotaAtiva: null, regiaoFiltro: 'VG', carrinhoTemp: [], editingId: null, tempBasketItems: [] },
-            init() {
-                const saved = localStorage.getItem(CONSTANTS.STORAGE_KEY);
-                this.data.rotaAtiva = saved ? JSON.parse(saved) : { id: Date.now(), dataCriacao: new Date().toISOString(), entregas: [] };
-                
-                const savedClients = localStorage.getItem(CONSTANTS.CLIENTS_DB_KEY);
-                window.CLIENTES_DB = savedClients ? JSON.parse(savedClients) : [];
-            },
-            save() {
-                localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(this.data.rotaAtiva));
-                App.ui.render();
-            },
-            addEntrega(ent) { this.data.rotaAtiva.entregas.push(ent); this.save(); },
-            updateEntrega(id, updates) {
-                const idx = this.data.rotaAtiva.entregas.findIndex(e => e.id == id);
-                if (idx !== -1) {
-                    this.data.rotaAtiva.entregas[idx] = { ...this.data.rotaAtiva.entregas[idx], ...updates, updatedAt: new Date().toISOString() };
-                    this.save();
-                }
-            },
-            getEntregas() {
-                return this.data.rotaAtiva.entregas
-                    .filter(e => e.regiao === this.data.regiaoFiltro)
-                    .sort((a,b) => (a.status === 'Pendente' ? -1 : 1));
-            }
-        };
-
-        const App = {
-            ui: {
-                modalLancamento: {
-                    open: () => document.getElementById('modal-lancamento').classList.remove('hidden'),
-                    close: () => document.getElementById('modal-lancamento').classList.add('hidden')
-                },
-                renderCarrinho: () => {
-                    const tbody = document.getElementById('carrinho-visual');
-                    const totalInput = document.getElementById('input-valor-final');
-                    let total = 0;
-                    
-                    if(Store.data.carrinhoTemp.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs italic">Carrinho vazio</td></tr>';
-                        if(!Store.data.editingId) totalInput.value = '';
-                        return;
-                    }
-
-                    tbody.innerHTML = Store.data.carrinhoTemp.map((item, i) => {
-                        total += (item.valor * item.qtd);
-                        return `
-                            <tr class="group hover:bg-slate-50 transition-colors">
-                                <td class="px-4 py-2 font-bold text-slate-600">${item.qtd}x</td>
-                                <td class="px-4 py-2">
-                                    <div class="font-medium text-slate-800">${item.nome}</div>
-                                    ${item.tipo === 'Alterada' ? '<div class="text-[10px] text-amber-600 font-bold uppercase">Personalizada</div>' : ''}
-                                    ${item.brindes && item.brindes.length ? `<div class="text-[10px] text-brand-500">+ ${item.brindes.join(', ')}</div>` : ''}
-                                </td>
-                                <td class="px-4 py-2 text-right font-mono text-slate-600">${Utils.formatMoeda(item.valor * item.qtd)}</td>
-                                <td class="px-2 py-2 text-center">
-                                    <button onclick="App.controllers.removerItemCarrinho(${i})" class="text-red-300 hover:text-red-500 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
-
-                    // Só atualiza input se for calculado ou se estiver vazio
-                    if(!totalInput.value || Store.data.editingId === null) totalInput.value = total.toFixed(2);
-                },
-                render: () => {
-                    document.getElementById('header-date').innerText = Utils.formatData(Store.data.rotaAtiva.dataCriacao);
-                    
-                    // Render Regiao Filters
-                    const filtrosEl = document.getElementById('filtros-regiao');
-                    filtrosEl.innerHTML = CONSTANTS.REGIOES.map(r => {
-                        const count = Store.data.rotaAtiva.entregas.filter(e => e.regiao === r && e.status === 'Pendente').length;
-                        const active = Store.data.regiaoFiltro === r;
-                        return `<button onclick="App.controllers.mudarFiltro('${r}')" class="px-3 py-1.5 rounded-md text-xs font-bold transition-all ${active ? 'bg-white shadow text-brand-800' : 'text-slate-500 hover:bg-slate-200'}">${r} ${count > 0 ? `<span class="bg-brand-100 text-brand-700 ml-1 px-1.5 py-0.5 rounded-full text-[10px]">${count}</span>` : ''}</button>`;
-                    }).join('');
-
-                    // Render Cards
-                    const entregas = Store.getEntregas();
-                    const container = document.getElementById('lista-entregas');
-                    const empty = document.getElementById('lista-vazia');
-                    
-                    if(entregas.length === 0) { container.innerHTML = ''; empty.classList.remove('hidden'); empty.classList.add('flex'); return; }
-                    empty.classList.add('hidden'); empty.classList.remove('flex');
-
-                    // Update KPI Summary in Sidebar
-                    const total = Store.data.rotaAtiva.entregas.length;
-                    const done = Store.data.rotaAtiva.entregas.filter(e => e.status === 'Entregue').length;
-                    const pending = total - done;
-                    document.getElementById('kpi-container').innerHTML = `
-                        <div class="bg-white rounded-lg border border-slate-100 p-4 shadow-sm">
-                            <p class="text-xs text-slate-400 font-bold uppercase mb-1">Total Pedidos</p>
-                            <p class="text-2xl font-black text-slate-800">${total}</p>
-                        </div>
-                        <div class="bg-green-50 rounded-lg border border-green-100 p-4 shadow-sm">
-                            <p class="text-xs text-green-600 font-bold uppercase mb-1">Entregues</p>
-                            <p class="text-2xl font-black text-green-700">${done}</p>
-                        </div>
-                        <div class="bg-brand-50 rounded-lg border border-brand-100 p-4 shadow-sm">
-                            <p class="text-xs text-brand-600 font-bold uppercase mb-1">Pendentes</p>
-                            <p class="text-2xl font-black text-brand-700">${pending}</p>
-                        </div>
-                    `;
-
-                    container.innerHTML = entregas.map((e, idx) => {
-                        const isDone = e.status === 'Entregue';
-                        const isCanceled = e.status === 'Cancelada';
-                        let opacityClass = isDone || isCanceled ? 'opacity-60 bg-slate-50 border-slate-200' : 'bg-white border-slate-200 hover:border-brand-300 hover:shadow-md';
-                        
-                        const itemsHtml = e.cestas.map(c => 
-                            `<div class="flex justify-between text-xs py-1 border-b border-slate-50 last:border-0">
-                                <span class="font-medium text-slate-700 truncate w-2/3" title="${c.nome}">${c.qtd}x ${c.nome}</span>
-                                <span class="text-slate-500">${Utils.formatMoeda(c.valor * c.qtd)}</span>
-                             </div>`
-                        ).join('');
-
-                        return `
-                        <div class="card rounded-xl border p-4 transition-all flex flex-col h-full ${opacityClass} relative overflow-hidden group">
-                            ${isDone ? '<div class="absolute right-0 top-0 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10">ENTREGUE</div>' : ''}
-                            ${isCanceled ? '<div class="absolute right-0 top-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10">CANCELADA</div>' : ''}
-                            
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h4 class="font-bold text-slate-800 text-sm leading-tight mb-1">${e.cliente.nome}</h4>
-                                    <p class="text-xs text-slate-500 truncate max-w-[180px]" title="${e.cliente.endereco}">${e.cliente.endereco || 'Retirar'}</p>
-                                    ${e.cliente.bairro ? `<p class="text-[10px] text-slate-400 font-medium uppercase tracking-wide mt-1">${e.cliente.bairro}</p>` : ''}
-                                </div>
-                                <div class="text-right">
-                                    <div class="font-black text-brand-700 text-sm">${Utils.formatMoeda(e.valorTotalAjustado)}</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">#${e.displayId || (idx+1)}</div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-slate-50 rounded p-2 mb-3 flex-1 overflow-y-auto max-h-[80px] custom-scrollbar">
-                                ${itemsHtml}
-                            </div>
-                            
-                            ${e.observacao ? `<div class="bg-amber-50 text-amber-700 text-[10px] p-2 rounded mb-3 border border-amber-100 font-medium">⚠️ ${e.observacao}</div>` : ''}
-
-                            <div class="grid grid-cols-4 gap-2 mt-auto pt-2 border-t border-slate-100">
-                                <a href="${e.cliente.celular ? 'tel:'+e.cliente.celular.replace(/\D/g,'') : '#'}" class="btn-action flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-800" title="Ligar">
-                                    📞
-                                </a>
-                                <button onclick="App.controllers.abrirZap('${e.cliente.celular}')" class="btn-action flex items-center justify-center text-green-600 hover:bg-green-50 border-green-100" title="WhatsApp">
-                                    💬
-                                </button>
-                                
-                                ${!isDone && !isCanceled ? `
-                                    <button onclick="App.controllers.editarEntrega(${e.id})" class="btn-action flex items-center justify-center text-amber-600 hover:bg-amber-50 border-amber-100" title="Editar">
-                                        ✏️
-                                    </button>
-                                    <button onclick="App.controllers.iniciarPagamento(${e.id})" class="btn-action flex items-center justify-center bg-slate-800 text-white hover:bg-slate-900 border-slate-800" title="Concluir">
-                                        ✔
-                                    </button>
-                                ` : `
-                                    <button class="col-span-2 btn-action bg-gray-100 text-gray-400 cursor-not-allowed">Concluído</button>
-                                `}
-                            </div>
-                        </div>`;
-                    }).join('');
-                },
-                filterCards: () => {
-                    const term = document.getElementById('search-pedidos').value.toLowerCase();
-                    const cards = document.querySelectorAll('#lista-entregas > div');
-                    cards.forEach(card => {
-                        card.style.display = card.innerText.toLowerCase().includes(term) ? 'flex' : 'none';
-                    });
-                }
-            },
-            controllers: {
-                mudarFiltro: (r) => { Store.data.regiaoFiltro = r; App.ui.render(); },
-                resetarRota: () => { if(confirm('Zerar rota e iniciar novo dia?')) { Store.data.rotaAtiva = {id: Date.now(), dataCriacao:new Date().toISOString(), entregas:[]}; Store.save(); } },
-                
-                iniciarNovoLancamento: () => {
-                    Store.data.editingId = null;
-                    Store.data.carrinhoTemp = [];
-                    // Reset fields
-                    document.getElementById('input-cliente').value = '';
-                    document.getElementById('input-bairro').value = '';
-                    document.getElementById('input-cidade').value = 'Cuiabá';
-                    document.getElementById('input-obs-geral').value = '';
-                    document.getElementById('input-valor-final').value = '';
-                    document.getElementById('qtd-cesta').value = 1;
-                    document.getElementById('modal-lancamento-title').innerText = "Novo Pedido";
-                    document.getElementById('btn-submit-lancamento').innerText = "Confirmar Pedido";
-                    
-                    const padrao = document.querySelector(`input[name="regiao"][value="VG"]`);
-                    if(padrao) padrao.checked = true;
-                    
-                    App.ui.renderCarrinho();
-                    App.ui.modalLancamento.open();
-                },
-                editarEntrega: (id) => {
-                    const e = Store.data.rotaAtiva.entregas.find(x => x.id == id);
-                    if(!e) return;
-                    Store.data.editingId = id;
-                    Store.data.carrinhoTemp = JSON.parse(JSON.stringify(e.cestas));
-                    
-                    document.getElementById('input-cliente').value = e.cliente.nome;
-                    document.getElementById('input-bairro').value = e.cliente.bairro || '';
-                    document.getElementById('input-cidade').value = e.cliente.cidade || 'Cuiabá';
-                    document.getElementById('input-obs-geral').value = e.observacao || '';
-                    document.getElementById('input-valor-final').value = e.valorTotalAjustado;
-                    
-                    const radio = document.querySelector(`input[name="regiao"][value="${e.regiao}"]`);
-                    if(radio) radio.checked = true;
-                    
-                    document.getElementById('modal-lancamento-title').innerText = `Editando Pedido #${e.displayId || ''}`;
-                    document.getElementById('btn-submit-lancamento').innerText = "Salvar Alterações";
-                    
-                    App.ui.renderCarrinho();
-                    App.ui.modalLancamento.open();
-                },
-                adicionarItemAoCarrinho: () => {
-                    const select = document.getElementById('select-cesta');
-                    const nome = select.value;
-                    if(!nome) return Utils.toast('Selecione uma cesta', 'error');
-                    
-                    const price = parseFloat(select.options[select.selectedIndex].getAttribute('data-price'));
-                    const qtd = parseInt(document.getElementById('qtd-cesta').value);
-                    const isAlt = document.getElementById('check-alterada').checked;
-                    const brindes = Array.from(document.querySelectorAll('input[name="brindes"]:checked')).map(el => el.value);
-                    
-                    Store.data.carrinhoTemp.push({
-                        nome, valor: price, qtd, tipo: isAlt ? 'Alterada' : 'Normal', brindes
-                    });
-                    
-                    // Reset item inputs
-                    document.getElementById('check-alterada').checked = false;
-                    document.getElementById('box-detalhes-alterada').classList.add('hidden');
-                    document.getElementById('qtd-cesta').value = 1;
-                    document.querySelectorAll('input[name="brindes"]').forEach(el => el.checked = false);
-                    App.ui.renderCarrinho();
-                },
-                removerItemCarrinho: (idx) => {
-                    Store.data.carrinhoTemp.splice(idx, 1);
-                    App.ui.renderCarrinho();
-                },
-                salvarEntrega: () => {
-                    const nome = document.getElementById('input-cliente').value;
-                    const regiaoEl = document.querySelector('input[name="regiao"]:checked');
-                    
-                    if(!nome || !regiaoEl) return Utils.toast('Dados incompletos', 'error');
-                    if(Store.data.carrinhoTemp.length === 0) return Utils.toast('Carrinho vazio', 'error');
-
-                    const clienteData = {
-                        nome,
-                        bairro: document.getElementById('input-bairro').value,
-                        cidade: document.getElementById('input-cidade').value,
-                        celular: '' // Poderia buscar do DB se existir
-                    };
-                    
-                    // Tenta achar celular no DB
-                    const existing = window.CLIENTES_DB.find(c => c.nome.toLowerCase() === nome.toLowerCase());
-                    if(existing) { 
-                        clienteData.celular = existing.celular; 
-                        clienteData.endereco = existing.endereco;
-                    }
-
-                    const valFinal = parseFloat(document.getElementById('input-valor-final').value) || 0;
-                    
-                    if(Store.data.editingId) {
-                        Store.updateEntrega(Store.data.editingId, {
-                            cliente: clienteData,
-                            regiao: regiaoEl.value,
-                            cestas: Store.data.carrinhoTemp,
-                            valorTotalAjustado: valFinal,
-                            observacao: document.getElementById('input-obs-geral').value
-                        });
-                        Utils.toast('Pedido atualizado!');
-                    } else {
-                        // Generate Display ID (Day sequence)
-                        const today = new Date().toLocaleDateString('pt-BR');
-                        const countToday = Store.data.rotaAtiva.entregas.filter(e => new Date(e.dataCriacao).toLocaleDateString('pt-BR') === today).length;
-                        
-                        Store.addEntrega({
-                            id: Date.now(),
-                            displayId: (countToday + 1).toString().padStart(2, '0'),
-                            cliente: clienteData,
-                            regiao: regiaoEl.value,
-                            cestas: Store.data.carrinhoTemp,
-                            valorTotalAjustado: valFinal,
-                            observacao: document.getElementById('input-obs-geral').value,
-                            status: 'Pendente',
-                            dataCriacao: new Date().toISOString()
-                        });
-                        Utils.toast('Novo pedido lançado!');
-                    }
-                    App.ui.modalLancamento.close();
-                },
-                iniciarPagamento: (id) => {
-                    Store.data.editingId = id; // reuses logic
-                    const e = Store.data.rotaAtiva.entregas.find(x => x.id == id);
-                    document.getElementById('pag-cliente-nome').innerText = e.cliente.nome;
-                    document.getElementById('pag-valor-total').innerText = Utils.formatMoeda(e.valorTotalAjustado);
-                    document.getElementById('modal-pagamento').classList.remove('hidden');
-                },
-                confirmarPagamento: () => {
-                    const pags = Array.from(document.querySelectorAll('input[name="pagamento"]:checked')).map(el => el.value);
-                    if(pags.length === 0) return Utils.toast('Informe o pagamento', 'error');
-                    Store.updateEntrega(Store.data.editingId, { status: 'Entregue', formaPagamento: pags });
-                    document.getElementById('modal-pagamento').classList.add('hidden');
-                    Utils.toast('Entrega concluída!');
-                },
-                abrirZap: (cel) => {
-                    if(!cel) return Utils.toast('Sem número', 'error');
-                    window.open(`https://api.whatsapp.com/send?phone=55${cel.replace(/\D/g,'')}`, '_blank');
-                },
-                exportarRota: () => {
-                    const link = document.createElement("a");
-                    link.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(Store.data.rotaAtiva));
-                    link.download = `Rota_${new Date().toLocaleDateString('pt-BR')}.json`;
-                    link.click();
-                },
-                // Helper para o checkbox "Alterada"
-                toggleEditList: () => {
-                    const box = document.getElementById('box-detalhes-alterada');
-                    const list = document.getElementById('lista-produtos-edicao');
-                    if(document.getElementById('check-alterada').checked) {
-                        box.classList.remove('hidden');
-                        // Preenche lista com itens padrão para edição
-                        list.innerHTML = CONSTANTS.ITENS_BASE.map(item => `
-                            <div class="flex justify-between items-center text-xs border-b border-amber-100 py-1">
-                                <span>${item.nome}</span>
-                                <div class="flex items-center gap-2">
-                                    <button class="w-5 h-5 bg-slate-100 rounded hover:bg-slate-200">-</button>
-                                    <span class="font-bold w-4 text-center">${item.qtd}</span>
-                                    <button class="w-5 h-5 bg-slate-100 rounded hover:bg-slate-200">+</button>
-                                </div>
-                            </div>
-                        `).join('');
-                    } else {
-                        box.classList.add('hidden');
-                    }
-                }
-            }
-        };
-
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            Store.init();
-            
-            // Render Radios for Region
-            document.getElementById('container-radio-regiao').innerHTML = CONSTANTS.REGIOES.map(r => `
-                <label class="cursor-pointer">
-                    <input type="radio" name="regiao" value="${r}" class="peer sr-only">
-                    <div class="border rounded py-1.5 text-center text-slate-500 peer-checked:bg-slate-800 peer-checked:text-white peer-checked:border-slate-800 transition-all font-bold hover:bg-slate-50">${r}</div>
-                </label>
-            `).join('');
-
-            // Render Basket Options
-            const selectCesta = document.getElementById('select-cesta');
-            CONSTANTS.CESTAS.forEach(opt => {
-                const el = document.createElement('option');
-                el.value = opt.value;
-                el.innerText = `${opt.label} - ${Utils.formatMoeda(opt.price)}`;
-                el.setAttribute('data-price', opt.price);
-                selectCesta.appendChild(el);
-            });
-
-            // Listeners
-            document.getElementById('check-alterada').addEventListener('change', App.controllers.toggleEditList);
-            
-            // Client Search Autocomplete
-            document.getElementById('input-cliente').addEventListener('input', (e) => {
-                const val = e.target.value.toLowerCase();
-                const dd = document.getElementById('dropdown-clientes');
-                if(val.length > 1) {
-                    const matches = window.CLIENTES_DB.filter(c => c.nome.toLowerCase().includes(val)).slice(0, 10);
-                    if(matches.length) {
-                        dd.classList.remove('hidden');
-                        dd.innerHTML = matches.map(c => `
-                            <div class="p-2 hover:bg-slate-50 cursor-pointer border-b text-sm" onclick="selectClient('${c.nome}', '${c.bairro}', '${c.cidade}')">
-                                <div class="font-bold text-slate-700">${c.nome}</div>
-                                <div class="text-xs text-slate-500">${c.bairro || '-'}</div>
-                            </div>
-                        `).join('');
-                    } else dd.classList.add('hidden');
-                } else dd.classList.add('hidden');
-            });
-
-            // Global helper for onclick inside HTML string
-            window.selectClient = (nome, bairro, cidade) => {
-                document.getElementById('input-cliente').value = nome;
-                if(bairro) document.getElementById('input-bairro').value = bairro;
-                if(cidade) document.getElementById('input-cidade').value = cidade;
-                document.getElementById('dropdown-clientes').classList.add('hidden');
-            };
-
-            App.ui.render();
-        });
-    </script>
-</body>
-</html>
+// Icone Pix simples SVG
+const ZapIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+  </svg>
+);
