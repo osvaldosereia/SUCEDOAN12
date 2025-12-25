@@ -23,7 +23,7 @@
         .btn-zap:hover { transform: scale(1.1); }
         
         /* Tabela compacta para relatórios */
-        .table-report td, .table-report th { padding: 2px 4px; font-size: 0.75rem; border-bottom: 1px solid #f3f4f6; }
+        .table-report td, .table-report th { padding: 2px 4px; font-size: 0.70rem; border-bottom: 1px solid #f3f4f6; }
     </style>
 </head>
 <body class="text-gray-800">
@@ -31,7 +31,7 @@
     <div class="app-container p-4">
         
         <!-- Cabeçalho -->
-        <header class="bg-white shadow-sm rounded-lg p-3 mb-3 flex justify-between items-center border border-gray-200">
+        <header class="bg-white shadow-sm rounded-lg p-2 mb-2 flex justify-between items-center border border-gray-200">
             <div class="flex items-center gap-4">
                 <div class="bg-purple-600 text-white p-2 rounded">
                     <i class="fa-solid fa-handshake"></i>
@@ -66,10 +66,10 @@
         </header>
 
         <!-- Barra de Filtros de Período -->
-        <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-3 flex items-center gap-4">
+        <div class="bg-white p-2 rounded-lg shadow-sm border border-gray-200 mb-2 flex items-center gap-4">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-filter text-gray-400"></i>
-                <span class="text-xs font-bold text-gray-700 uppercase">Análise de Período:</span>
+                <span class="text-xs font-bold text-gray-700 uppercase">Análise:</span>
             </div>
             <div class="flex items-center gap-2">
                 <label class="text-xs text-gray-500">De:</label>
@@ -87,15 +87,15 @@
             </div>
         </div>
 
-        <!-- Painel de Relatórios Detalhados (Expandido) -->
-        <div class="grid grid-cols-3 gap-4 mb-4 h-48">
+        <!-- Painel de Relatórios Detalhados (Compacto - h-32) -->
+        <div class="grid grid-cols-3 gap-2 mb-2 h-32">
             <!-- Relatório 1: Produtos -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-                <div class="bg-indigo-50 px-3 py-2 border-b border-indigo-100 flex justify-between">
-                    <h3 class="text-xs font-bold text-indigo-800 uppercase">Cestas Vendidas</h3>
-                    <i class="fa-solid fa-basket-shopping text-indigo-300"></i>
+                <div class="bg-indigo-50 px-2 py-1 border-b border-indigo-100 flex justify-between items-center">
+                    <h3 class="text-[11px] font-bold text-indigo-800 uppercase">Cestas Vendidas</h3>
+                    <i class="fa-solid fa-basket-shopping text-indigo-300 text-xs"></i>
                 </div>
-                <div class="flex-1 overflow-y-auto p-2 custom-scroll">
+                <div class="flex-1 overflow-y-auto p-1 custom-scroll">
                     <table class="w-full text-left table-report">
                         <thead><tr><th>Produto</th><th class="text-right">Qtd</th></tr></thead>
                         <tbody id="relatorioProdutos"></tbody>
@@ -105,11 +105,11 @@
 
             <!-- Relatório 2: Financeiro -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-                <div class="bg-green-50 px-3 py-2 border-b border-green-100 flex justify-between">
-                    <h3 class="text-xs font-bold text-green-800 uppercase">Pagamentos</h3>
-                    <i class="fa-solid fa-money-bill-wave text-green-300"></i>
+                <div class="bg-green-50 px-2 py-1 border-b border-green-100 flex justify-between items-center">
+                    <h3 class="text-[11px] font-bold text-green-800 uppercase">Pagamentos</h3>
+                    <i class="fa-solid fa-money-bill-wave text-green-300 text-xs"></i>
                 </div>
-                <div class="flex-1 overflow-y-auto p-2 custom-scroll">
+                <div class="flex-1 overflow-y-auto p-1 custom-scroll">
                     <table class="w-full text-left table-report">
                         <thead><tr><th>Método</th><th class="text-right">Total (R$)</th></tr></thead>
                         <tbody id="relatorioPagamentos"></tbody>
@@ -119,11 +119,11 @@
 
             <!-- Relatório 3: Região -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-                <div class="bg-orange-50 px-3 py-2 border-b border-orange-100 flex justify-between">
-                    <h3 class="text-xs font-bold text-orange-800 uppercase">Cidades / Bairros</h3>
-                    <i class="fa-solid fa-map-location-dot text-orange-300"></i>
+                <div class="bg-orange-50 px-2 py-1 border-b border-orange-100 flex justify-between items-center">
+                    <h3 class="text-[11px] font-bold text-orange-800 uppercase">Cidades / Bairros</h3>
+                    <i class="fa-solid fa-map-location-dot text-orange-300 text-xs"></i>
                 </div>
-                <div class="flex-1 overflow-y-auto p-2 custom-scroll">
+                <div class="flex-1 overflow-y-auto p-1 custom-scroll">
                     <table class="w-full text-left table-report">
                         <thead><tr><th>Local</th><th class="text-right">Vendas</th></tr></thead>
                         <tbody id="relatorioLocais"></tbody>
