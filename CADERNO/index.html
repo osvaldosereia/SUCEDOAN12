@@ -64,9 +64,17 @@
             <i class="fa-solid fa-scale-balanced text-2xl text-amber-500"></i>
             <h1 class="text-xl font-bold">Caderno de Estudos Jurídicos</h1>
         </div>
-        <button onclick="clearData()" class="text-xs text-slate-400 hover:text-red-400 transition">
-            <i class="fa-solid fa-trash"></i> Limpar Tudo
-        </button>
+        
+        <!-- Botões de Backup e Restaurar -->
+        <div class="flex items-center gap-4">
+            <button onclick="exportData()" class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1" title="Baixar Backup (JSON)">
+                <i class="fa-solid fa-download"></i> Backup
+            </button>
+            <label class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1 cursor-pointer" title="Restaurar Backup (JSON)">
+                <i class="fa-solid fa-upload"></i> Restaurar
+                <input type="file" id="restoreInput" accept=".json" class="hidden" onchange="importData(this)">
+            </label>
+        </div>
     </header>
 
     <!-- Layout Principal -->
@@ -178,8 +186,13 @@
         // --- INIT ---
         function init() {
             loadData();
+            // Se não houver data selecionada carregada, usa hoje
             if (!state.selectedDate) state.selectedDate = new Date().toISOString().split('T')[0];
             
+            // Sincroniza a visualização do calendário com a data selecionada (para não abrir no mês errado)
+            const parts = state.selectedDate.split('-');
+            state.currentDate = new Date(parts[0], parts[1] - 1, parts[2]);
+
             renderTags();
             renderCalendar();
             renderNotes();
@@ -192,6 +205,7 @@
 
         function saveData() {
             localStorage.setItem(STORE_KEY, JSON.stringify(state));
+            // Renderização pode ser otimizada, mas mantemos para garantir UI atualizada
             renderTags();
             renderCalendar();
             renderNotes();
@@ -201,10 +215,55 @@
             const data = localStorage.getItem(STORE_KEY);
             if (data) {
                 const parsed = JSON.parse(data);
-                state.tags = parsed.tags || [];
+                state.tags = parsed.tags || state.tags;
                 state.notes = parsed.notes || [];
+                // Recupera o estado exato da última sessão (data e filtro)
                 if (parsed.selectedDate) state.selectedDate = parsed.selectedDate;
+                if (parsed.filterTag) state.filterTag = parsed.filterTag;
             }
+        }
+
+        // --- BACKUP & RESTORE ---
+        function exportData() {
+            const dataStr = JSON.stringify(state);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = 'law_notes_backup_' + new Date().toISOString().slice(0,10) + '.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    // Validação simples
+                    if (json.notes && Array.isArray(json.notes) && Array.isArray(json.tags)) {
+                        if(confirm('Isso substituirá TODAS as suas notas atuais pelo conteúdo do backup. Deseja continuar?')) {
+                            state = json;
+                            // Reset de data se necessário, ou mantem a do backup
+                            if(!state.currentDate) state.currentDate = new Date();
+                            else state.currentDate = new Date(state.currentDate); // Re-hidratar data obj
+                            
+                            saveData(); // Salva e renderiza
+                            alert('Backup restaurado com sucesso!');
+                        }
+                    } else {
+                        alert('Arquivo de backup inválido ou corrompido.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Erro ao ler o arquivo. Verifique se é um JSON válido.');
+                }
+            };
+            reader.readAsText(file);
+            input.value = ''; // Limpa input para permitir re-selecionar mesmo arquivo
         }
 
         // --- DATA & CALENDÁRIO ---
@@ -219,7 +278,8 @@
             state.selectedDate = dateStr;
             updateDateDisplay();
             renderCalendar(); 
-            renderNotes();    
+            renderNotes();
+            saveData(); // Salva a navegação para persistir a sessão
         }
 
         function changeMonth(delta) { 
@@ -383,9 +443,10 @@
                     </div>
                 `).join('');
             } else if (title === 'Subnotas') {
-                // Alterado: Fundo branco, linha divisória, área de respiro (p-4)
-                contentHtml = items.map((item) => `
+                // Modificado: Adicionado cabeçalho numérico destacado
+                contentHtml = items.map((item, idx) => `
                     <div class="bg-white p-4 border-b border-gray-200 last:border-0 mb-2 text-sm text-slate-700 rich-content relative group/sub">
+                        <div class="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2 border-b pb-1">Subnota ${idx + 1}</div>
                         ${item.text}
                         <button onclick="deleteSubnote(${noteId}, ${item.id})" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 hidden group-hover/sub:block"><i class="fa-solid fa-times"></i></button>
                     </div>
@@ -494,7 +555,12 @@
                 saveData();
             }
         }
-        function toggleFilter(tag) { state.filterTag = state.filterTag === tag ? null : tag; renderTags(); renderNotes(); }
+        function toggleFilter(tag) { 
+            state.filterTag = state.filterTag === tag ? null : tag; 
+            renderTags(); 
+            renderNotes(); 
+            saveData(); // Persiste a preferência de filtro
+        }
         function renderTags() {
             const list = document.getElementById('tagFilterList');
             const select = document.getElementById('noteTagSelect');
@@ -507,7 +573,6 @@
         }
         function deleteNote(id) { if (confirm('Apagar nota?')) { state.notes = state.notes.filter(n => n.id !== id); saveData(); } }
         function toggleReminder(id) { const n = state.notes.find(x => x.id === id); if(n) { n.reminder = !n.reminder; saveData(); } }
-        function clearData() { if(confirm('Apagar TUDO?')) { localStorage.removeItem(STORE_KEY); location.reload(); } }
 
         init();
     </script>
