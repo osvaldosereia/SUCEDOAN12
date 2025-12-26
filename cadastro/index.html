@@ -126,7 +126,11 @@
                     <div class="grid grid-cols-2 gap-3 mb-3">
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">Cidade</label>
-                            <input type="text" id="cidade" class="w-full border border-gray-300 rounded px-2 py-1 compact-input focus:outline-none focus:border-blue-500">
+                            <select id="cidade" class="w-full border border-gray-300 rounded px-2 py-1 compact-input focus:outline-none focus:border-blue-500 bg-white">
+                                <option value="">Selecione...</option>
+                                <option value="Cuiabá">Cuiabá</option>
+                                <option value="Várzea Grande">Várzea Grande</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">Bairro</label>
@@ -173,7 +177,7 @@
                                 <th class="font-semibold border-b">Nome / Apelido</th>
                                 <th class="font-semibold border-b">Contato</th>
                                 <th class="font-semibold border-b">Localização</th>
-                                <th class="font-semibold border-b text-center w-40">Ações</th>
+                                <th class="font-semibold border-b text-center w-48">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaClientes" class="divide-y divide-gray-100">
@@ -359,6 +363,16 @@
             window.open(url, '_blank');
         }
 
+        // --- NOVA FUNÇÃO PARA MAPA ---
+        function abrirMapaCliente(id) {
+            const c = clientes.find(c => c.id === id);
+            if (!c || !c.maps) {
+                alert('Este cliente não possui link do Google Maps cadastrado.');
+                return;
+            }
+            window.open(c.maps, '_blank');
+        }
+
         function renderizarTabela() {
             const tbody = document.getElementById('tabelaClientes');
             const termoBusca = document.getElementById('busca').value.toLowerCase();
@@ -387,7 +401,9 @@
                 tr.className = "hover:bg-blue-50 transition group";
                 const niver = (c.diaNiver && c.mesNiver) ? `${c.diaNiver}/${c.mesNiver}` : '-';
                 const local = `${c.cidade || ''} ${c.bairro ? '- ' + c.bairro : ''}`;
-                const btnMaps = c.maps ? `<a href="${c.maps}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-1"><i class="fa-solid fa-map-location-dot"></i></a>` : '';
+                
+                // Botão de link pequeno na coluna endereço (opcional manter)
+                const btnMapsLink = c.maps ? `<span class="text-xs text-blue-400"><i class="fa-solid fa-check"></i></span>` : '';
 
                 tr.innerHTML = `
                     <td class="border-b">
@@ -400,7 +416,7 @@
                     </td>
                     <td class="border-b" title="${c.descCasa || ''}">
                         <div class="text-xs text-gray-700">${local}</div>
-                        <div class="text-xs text-gray-500 truncate max-w-[150px]">${c.endereco || ''} ${btnMaps}</div>
+                        <div class="text-xs text-gray-500 truncate max-w-[150px]">${c.endereco || ''} ${btnMapsLink}</div>
                     </td>
                     <td class="border-b text-center">
                         <div class="flex justify-center gap-1">
@@ -409,6 +425,10 @@
                             </button>
                             <button onclick="imprimirCliente('${c.id}')" class="text-gray-600 hover:bg-gray-100 p-1.5 rounded" title="Imprimir Ficha">
                                 <i class="fa-solid fa-print"></i>
+                            </button>
+                            <!-- NOVO BOTÃO DE MAPA -->
+                            <button onclick="abrirMapaCliente('${c.id}')" class="text-orange-600 hover:bg-orange-100 p-1.5 rounded" title="Abrir no Maps">
+                                <i class="fa-solid fa-map-location-dot"></i>
                             </button>
                             <button onclick="exportarUnicoCliente('${c.id}')" class="text-green-600 hover:bg-green-100 p-1.5 rounded" title="Exportar JSON">
                                 <i class="fa-solid fa-file-export"></i>
