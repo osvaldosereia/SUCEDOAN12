@@ -339,11 +339,11 @@
             filteredNotes.forEach(note => {
                 const dateFormatted = new Date(note.timestamp).toLocaleString('pt-BR');
                 
-                // Links de IA (Google Search com Prompt)
+                // Links de IA (Google Search com Prompt e parametro &udm=50)
                 const promptBase = encodeURIComponent(note.content.substring(0, 100)); // Pega os primeiros 100 caracteres
-                const linkExplain = `https://www.google.com/search?q=Explique+didaticamente+o+conceito+juridico:+${promptBase}`;
-                const linkGlossary = `https://www.google.com/search?q=Glossario+juridico+definicao+de:+${promptBase}`;
-                const linkArticle = `https://www.google.com/search?q=Artigo+academico+direito+sobre:+${promptBase}`;
+                const linkExplain = `https://www.google.com/search?q=Explique+didaticamente+o+conceito+juridico:+${promptBase}&udm=50`;
+                const linkGlossary = `https://www.google.com/search?q=Glossario+juridico+definicao+de:+${promptBase}&udm=50`;
+                const linkArticle = `https://www.google.com/search?q=Artigo+academico+direito+sobre:+${promptBase}&udm=50`;
 
                 const el = document.createElement('div');
                 el.className = "bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition group";
@@ -421,7 +421,8 @@
                         const ampersandPosition = vId.indexOf('&');
                         if(ampersandPosition != -1) vId = vId.substring(0, ampersandPosition);
                         
-                        return `<div class="bg-black rounded overflow-hidden aspect-video relative group/vid">
+                        // Video pequeno: w-64 (256px)
+                        return `<div class="w-64 bg-black rounded overflow-hidden aspect-video relative group/vid shadow-sm">
                                     <iframe class="w-full h-full" src="https://www.youtube.com/embed/${vId}" frameborder="0" allowfullscreen></iframe>
                                     <button onclick="deleteResource(${note.id}, ${idx})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 text-xs hidden group-hover/vid:block">X</button>
                                 </div>`;
@@ -431,9 +432,10 @@
                                     <button onclick="deleteResource(${note.id}, ${idx})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-times"></i></button>
                                 </div>`;
                     } else if (res.type === 'code') {
-                         return `<div class="bg-gray-800 text-gray-200 p-3 rounded font-mono text-xs relative group/code">
-                                    <pre>${res.value}</pre>
-                                    <button onclick="deleteResource(${note.id}, ${idx})" class="absolute top-1 right-1 text-gray-400 hover:text-white hidden group-hover/code:block"><i class="fa-solid fa-times"></i></button>
+                        // Texto claro com fundo cinza claro
+                         return `<div class="bg-gray-50 text-slate-800 border border-gray-200 p-3 rounded font-mono text-sm relative group/code shadow-inner">
+                                    <pre class="whitespace-pre-wrap">${res.value}</pre>
+                                    <button onclick="deleteResource(${note.id}, ${idx})" class="absolute top-1 right-1 text-slate-400 hover:text-red-500 hidden group-hover/code:block"><i class="fa-solid fa-times"></i></button>
                                 </div>`;
                     }
                 }).join('')}
