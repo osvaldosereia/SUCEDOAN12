@@ -4,24 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
-    <!-- === DICA 4: LOCAL PARA O PIXEL DA META (FACEBOOK/INSTAGRAM) === -->
-    <!-- Peça para seu gestor de tráfego gerar o código do Pixel e cole ele aqui abaixo -->
-    <!-- 
-    <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', 'SEU_ID_DO_PIXEL_AQUI');
-      fbq('track', 'PageView');
-    </script>
-    -->
-    <!-- FIM DO PIXEL -->
-
     <!-- === CAMADA 1: Ocultar tudo por padrão === -->
     <style id="security-lock">html{display:none !important;}</style>
 
@@ -149,14 +131,15 @@
             --cor-entrega: #ff9800; 
             
             --altura-header: 80px; 
-            --largura-logo: 90px; 
+            --altura-banner-top: 54px; /* Altura do banner fixo */
+            --largura-logo: 85px; 
             --altura-floating-bar: 70px;
         }
 
         html { 
             background-color: var(--cor-fundo-site);
             scroll-behavior: smooth;
-            scroll-padding-top: calc(var(--altura-header) + 40px); 
+            scroll-padding-top: calc(var(--altura-header) + var(--altura-banner-top) + 20px); 
             font-size: 15px;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
@@ -168,13 +151,107 @@
             color: var(--cor-texto);
             margin: 0; 
             padding: 0;
-            padding-top: var(--altura-header); 
+            padding-top: calc(var(--altura-header) + var(--altura-banner-top)); /* Ajuste para banner + header */
             padding-bottom: 90px; 
             min-height: 10vh;
             position: relative; 
             width: 100%;
             line-height: 1.5; 
         }
+
+        /* BANNER FIXO NO TOPO */
+        .top-banner-fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--altura-banner-top);
+            background: linear-gradient(90deg, #1565C0 0%, #0D47A1 100%);
+            color: white;
+            z-index: 1005; /* Acima do header */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.85rem;
+            line-height: 1.2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            padding: 5px;
+        }
+        .top-banner-fixed strong {
+            color: #FFD700;
+            text-transform: uppercase;
+        }
+
+        /* Cabeçalho Ajustado */
+        header {
+            background-color: var(--cor-fundo-header);
+            height: var(--altura-header);
+            padding: 0;
+            display: flex;
+            flex-direction: row; 
+            position: fixed;
+            top: var(--altura-banner-top); /* Fica logo abaixo do banner */
+            left: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4); 
+            width: 100%;
+            z-index: 1000;
+            contain: layout size; 
+            border-bottom: 1px solid var(--cor-borda);
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: flex-end; 
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 5px 15px;
+            position: relative;
+            z-index: 1002;
+            max-width: 480px; 
+            margin: 0 auto;
+        }
+
+        .logo-pequ { 
+            height: var(--largura-logo);
+            width: var(--largura-logo); 
+            object-fit: cover; 
+            border-radius: 50%; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            position: fixed;
+            top: calc(var(--altura-banner-top) + 5px); /* Logo ajustado */
+            left: 15px; 
+            z-index: 10001;
+            background-color: white; 
+            padding: 0; 
+            border: 2px solid var(--cor-borda);
+        }
+
+        /* Botões do Topo (Instagram e Ligar) */
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+        
+        .btn-header-action {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--cor-borda);
+            color: var(--cor-texto-destaque);
+            padding: 8px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .btn-header-action i { font-size: 1.1rem; }
+        .btn-header-insta { color: #E1306C; border-color: rgba(225, 48, 108, 0.3); }
+        .btn-header-call { color: var(--cor-info); border-color: rgba(33, 150, 243, 0.3); }
 
         h1, h2, h3, h4, h5, h6 {
             color: var(--cor-texto-destaque);
@@ -215,7 +292,7 @@
             font-weight: 400;
         }
 
-        /* === NOVO BANNER DIFERENCIAIS (DICA 2) === */
+        /* === BANNER DIFERENCIAIS === */
         .banner-diferenciais {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -271,87 +348,9 @@
             border-color: var(--cor-destaque-dourado);
         }
 
-        header {
-            background-color: var(--cor-fundo-header);
-            height: var(--altura-header);
-            padding: 0;
-            display: flex;
-            flex-direction: row; 
-            position: fixed;
-            top: 0;
-            left: 0;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4); 
-            width: 100%;
-            z-index: 1000;
-            contain: layout size; 
-            border-bottom: 1px solid var(--cor-borda);
-        }
-        
-        .header-top {
-            display: flex;
-            justify-content: flex-end; 
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            padding: 5px 15px;
-            position: relative;
-            z-index: 1002;
-            max-width: 480px; 
-            margin: 0 auto;
-        }
-
-        .logo-pequ { 
-            height: var(--largura-logo);
-            width: var(--largura-logo); 
-            object-fit: cover; 
-            border-radius: 50%; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
-            position: fixed;
-            top: 5px; 
-            left: 15px; 
-            z-index: 10001;
-            background-color: white; 
-            padding: 0; 
-            border: 2px solid var(--cor-borda);
-        }
-
-        /* HEADER ALERT OTIMIZADO (DICA 1) */
-        .header-alert-box {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            text-align: right;
-            /* Cor mais amigável: Azul/Verde ou manter vermelho se for muito critico, 
-               mas aqui vamos focar no beneficio */
-            color: #ffffff; 
-            background: linear-gradient(135deg, #1565C0, #0D47A1); /* Azul segurança */
-            border: 2px solid #42A5F5;
-            
-            font-size: 0.85rem; 
-            font-weight: 500;
-            line-height: 1.2;
-            
-            margin-left: auto; 
-            max-width: 68%; 
-            gap: 10px;
-            padding: 8px 15px; 
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .header-alert-box i {
-            font-size: 1.4rem;
-            color: #FFD700; 
-        }
-        .header-alert-box strong {
-            color: #FFD700;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-        }
-
         @media (max-width: 380px) {
-            :root { --largura-logo: 85px; --altura-header: 85px; }
-            .logo-pequ { left: 10px; top: 8px; }
-            .header-alert-box { font-size: 0.8rem; padding: 6px 10px; }
+            :root { --largura-logo: 80px; --altura-header: 80px; }
+            .logo-pequ { left: 10px; top: calc(var(--altura-banner-top) + 8px); }
         }
 
         .secao-conteudo { padding: 15px; }
@@ -497,26 +496,6 @@
             gap: 8px;
             align-items: center;
         }
-
-        .btn-cta-small {
-            background-color: var(--cor-whatsapp);
-            color: white !important;
-            border: none;
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%; 
-            flex-basis: 100%; 
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
         
         .btn-ver-produtos {
             background-color: #1E88E5; 
@@ -593,7 +572,6 @@
             .cesta-price-tag { justify-content: center; font-size: 1rem; }
             .cesta-price-highlight { font-size: 1.4rem; }
             .cesta-actions-row { justify-content: center; }
-            .btn-cta-small { padding: 14px; font-size: 1rem; }
         }
         
         .floating-buttons-container {
@@ -652,7 +630,6 @@
         .btn-float-action:hover { transform: translateY(-2px); opacity: 0.95; }
         .btn-float-action:active { transform: scale(0.98) translateY(0); }
 
-        .btn-float-instagram { background-color: #C13584; }
         .btn-float-contato { background-color: var(--cor-whatsapp); }
 
         .modal-variacao, #modalContatos, #modalInformacoes, #modalZoomImagem, #modalApresentacao, #modalAvisoImportante, #modalSelecaoInteresse {
@@ -756,37 +733,65 @@
         .titulo-modal-var { margin-top: 15px; font-size: 1.3rem; font-weight: 700; color: var(--cor-texto-destaque); }
         .subtitulo-modal-var { color: var(--cor-texto-secundario); margin-bottom: 20px; font-size: 0.95rem; }
         
-        /* NOVO ESTILO PARA O SELECT */
-        .form-select-cesta {
+        /* === CUSTOM SELECT STYLES === */
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .custom-select-trigger {
             width: 100%;
             padding: 15px;
             border-radius: 10px;
-            background-color: var(--cor-fundo-site); 
+            background-color: rgba(0,0,0,0.3); 
             color: var(--cor-texto-destaque);
             border: 2px solid var(--cor-borda);
             font-size: 1rem;
-            outline: none;
-            margin-bottom: 20px;
             cursor: pointer;
-            appearance: none; 
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .form-select-cesta:focus {
-            border-color: var(--cor-info);
+        .custom-select-trigger:after {
+            content: '▼';
+            font-size: 0.8rem;
+            color: var(--cor-texto-secundario);
+        }
+        .custom-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--cor-fundo-site);
+            border: 1px solid var(--cor-borda);
+            border-radius: 10px;
+            z-index: 200;
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .custom-options.open {
+            display: block;
+        }
+        .custom-option {
+            padding: 15px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            color: var(--cor-texto);
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        .custom-option:last-child { border-bottom: none; }
+        .custom-option:hover { background-color: rgba(255,255,255,0.05); }
+        .custom-option-header {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: var(--cor-destaque-dourado);
+            font-weight: 700;
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
         }
 
-        .opcao-select {
-            display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 2px solid var(--cor-borda); 
-            border-radius: 10px; margin-bottom: 10px; cursor: pointer; text-align: left; transition: all 0.2s;
-            background: rgba(0,0,0,0.2);
-        }
-        .opcao-select.selected { border-color: var(--cor-info); background-color: rgba(100, 181, 246, 0.1); }
-        .opcao-nome { font-weight: 600; color: var(--cor-texto-destaque); font-size: 1rem; }
-        .opcao-preco { color: var(--cor-destaque-vermelho); font-weight: 700; font-size: 1rem; }
         .btn-confirmar-pedido { 
             width: 100%; padding: 14px; background-color: var(--cor-whatsapp); color: white !important; border: none; 
             border-radius: 10px; font-weight: 700; font-size: 1rem; margin-top: 15px; cursor: pointer; text-transform: uppercase;
@@ -882,6 +887,10 @@
             }
             
             .floating-buttons-container { left: auto; right: 30px; transform: none; bottom: 30px; }
+            
+            /* Banner Desktop em 1 linha */
+            .top-banner-fixed { flex-direction: row; gap: 10px; font-size: 1rem; }
+            .top-banner-fixed br { display: none; }
         }
         
         @media (min-width: 1024px) {
@@ -980,6 +989,11 @@
     
     <div id="toast-container"></div> 
 
+    <!-- NOVO BANNER FIXO -->
+    <div class="top-banner-fixed">
+        Faça seu pedido pelo WhatsApp<br><strong>&nbsp;e pague só na Entrega!</strong>
+    </div>
+
     <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" width="80" height="80" fetchpriority="high" id="logo-principal" onerror="this.src='https://placehold.co/80x80?text=LOGO'" alt="Logo Dona Antônia" class="logo-pequ">
 
     <header>
@@ -994,10 +1008,14 @@
                 <a href="#pag-entrega">Entrega</a>
             </nav>
 
-            <!-- AVISO INTEGRADO NO HEADER (DICA 1: FRASE POSITIVA) -->
-            <div class="header-alert-box">
-                <i class="fas fa-check-circle"></i>
-                <span>Faça seu pedido pelo WhatsApp<br><strong>e pague só na Entrega!</strong></span>
+            <!-- NOVOS BOTÕES NO HEADER -->
+            <div class="header-actions">
+                <a href="https://www.instagram.com/super.cestas.dona.antonia/" target="_blank" class="btn-header-action btn-header-insta">
+                    <i class="fab fa-instagram"></i> Instagram
+                </a>
+                <a href="tel:5565998150975" class="btn-header-action btn-header-call">
+                    <i class="fas fa-phone-alt"></i> Salvar Contato
+                </a>
             </div>
         </div>
     </header>
@@ -1242,17 +1260,14 @@
 
     <div class="vinheta-fundo-botoes"></div>
 
-    <!-- BOTÕES FLUTUANTES SIMPLIFICADOS (DICA 3: BOTÃO WHATSAPP "GRUDENTO" E MAIOR) -->
+    <!-- BOTÕES FLUTUANTES SIMPLIFICADOS (APENAS WHATSAPP) -->
     <div class="floating-buttons-container">
-        <a href="https://www.instagram.com/super.cestas.dona.antonia/" target="_blank" class="btn-float-action btn-float-instagram">
-            <i class="fab fa-instagram"></i>
-        </a>
-        <button onclick="abrirModalContatos()" class="btn-float-action btn-float-contato" style="padding: 12px 25px;">
+        <button onclick="abrirModalInteresse()" class="btn-float-action btn-float-contato" style="padding: 12px 25px;">
             <i class="fab fa-whatsapp"></i> Pedir Agora no WhatsApp
         </button>
     </div>
 
-    <!-- MODAL DE AVISO INICIAL (DICA 1: FRASE POSITIVA TAMBÉM AQUI) -->
+    <!-- MODAL DE AVISO INICIAL -->
     <div id="modalAvisoImportante" class="modal-variacao" onclick="if(event.target === this) fecharAvisoImportante()">
         <div class="modal-info-content" style="max-width: 400px; text-align: center; padding: 30px; border: 1px solid var(--cor-destaque-dourado);">
            <h3 style="color: var(--cor-destaque-dourado); margin-bottom: 20px; font-size: 1.6rem; font-weight: 700;">Segurança Garantida</h3>
@@ -1262,7 +1277,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE INTERESSE AGORA COM DROPDOWN (SELECT) -->
+    <!-- MODAL DE INTERESSE AGORA COM SELETOR CUSTOMIZADO -->
     <div id="modalSelecaoInteresse" class="modal-variacao" onclick="if(event.target === this) fecharModalInteresse()">
         <div class="modal-variacao-content" style="max-width: 400px;"> 
             <button class="btn-fechar-modal-var" onclick="fecharModalInteresse()">Fechar</button>
@@ -1270,33 +1285,32 @@
                 <h3 class="titulo-modal-var" style="margin-top: 0;">Iniciar Atendimento</h3>
                 <p class="subtitulo-modal-var">Para agilizar, selecione qual cesta você tem interesse:</p>
                 
-                <select id="selectCestaInteresse" class="form-select-cesta" onchange="atualizarSelecaoDropdown()">
-                    <option value="" selected disabled>👇 Toque aqui para selecionar...</option>
-                    
-                    <optgroup label="Mais Econômicas">
-                        <option value="Cesta Econômica||85,00">Cesta Econômica - R$ 85,00</option>
-                    </optgroup>
+                <!-- SELETOR CUSTOMIZADO (SUBSTITUINDO O <SELECT> NATIVO) -->
+                <div class="custom-select-container">
+                    <div class="custom-select-trigger" onclick="toggleCustomSelect()">
+                        <span id="customSelectText">👇 Toque aqui para selecionar...</span>
+                    </div>
+                    <div class="custom-options" id="customOptionsList">
+                        <div class="custom-option-header">Mais Econômicas</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Econômica', '', '85,00')">Cesta Econômica - R$ 85,00</div>
+                        
+                        <div class="custom-option-header">Cesta Mini</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Mini', 'Tio Alvino', '165,00')">Mini c/ Tio Alvino - R$ 165,00</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Mini', 'Koblenz', '170,00')">Mini c/ Koblenz - R$ 170,00</div>
 
-                    <optgroup label="Cesta Mini">
-                        <option value="Cesta Mini|Tio Alvino|165,00">Mini c/ Tio Alvino - R$ 165,00</option>
-                        <option value="Cesta Mini|Koblenz|170,00">Mini c/ Koblenz - R$ 170,00</option>
-                    </optgroup>
+                        <div class="custom-option-header">Cesta Pequena</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Pequena', 'Tio Alvino', '215,00')">Pequena c/ Tio Alvino - R$ 215,00</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Pequena', 'Koblenz', '220,00')">Pequena c/ Koblenz - R$ 220,00</div>
 
-                    <optgroup label="Cesta Pequena">
-                        <option value="Cesta Pequena|Tio Alvino|215,00">Pequena c/ Tio Alvino - R$ 215,00</option>
-                        <option value="Cesta Pequena|Koblenz|220,00">Pequena c/ Koblenz - R$ 220,00</option>
-                    </optgroup>
+                        <div class="custom-option-header">Cesta Média</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Média', 'Tio Alvino', '320,00')">Média c/ Tio Alvino - R$ 320,00</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Média', 'Koblenz', '325,00')">Média c/ Koblenz - R$ 325,00</div>
 
-                    <optgroup label="Cesta Média">
-                        <option value="Cesta Média|Tio Alvino|320,00">Média c/ Tio Alvino - R$ 320,00</option>
-                        <option value="Cesta Média|Koblenz|325,00">Média c/ Koblenz - R$ 325,00</option>
-                    </optgroup>
-
-                    <optgroup label="Cesta Grande">
-                        <option value="Cesta Grande|Tio Alvino|380,00">Grande c/ Tio Alvino - R$ 380,00</option>
-                        <option value="Cesta Grande|Koblenz|390,00">Grande c/ Koblenz - R$ 390,00</option>
-                    </optgroup>
-                </select>
+                        <div class="custom-option-header">Cesta Grande</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Grande', 'Tio Alvino', '380,00')">Grande c/ Tio Alvino - R$ 380,00</div>
+                        <div class="custom-option" onclick="selectCustomOption('Cesta Grande', 'Koblenz', '390,00')">Grande c/ Koblenz - R$ 390,00</div>
+                    </div>
+                </div>
 
                 <button class="btn-confirmar-pedido" id="btnEnviarInteresse" onclick="enviarMensagemInteresse()" disabled style="margin-top: 5px;">
                     <i class="fab fa-whatsapp"></i> Iniciar Conversa
@@ -1305,7 +1319,7 @@
         </div>
     </div>
 
-    <!-- MODAL VARIACAO ANTIGO (Pode ser mantido ou removido, mantido para evitar erros se algo ainda o chamar) -->
+    <!-- MODAL VARIACAO ANTIGO (Pode ser mantido ou removido) -->
     <div id="modalVariacao" class="modal-variacao" onclick="if(event.target === this) fecharModalVariacao()">
         <div class="modal-variacao-content">
             <button class="btn-fechar-modal-var" onclick="fecharModalVariacao()">Fechar</button>
@@ -1504,30 +1518,48 @@
         function abrirModalInteresse() {
             fecharModalContatos();
             document.getElementById('modalSelecaoInteresse').style.display = 'flex';
+            // Abre automaticamente o seletor customizado ao entrar no modal
+            setTimeout(() => {
+                const trigger = document.querySelector('.custom-select-trigger');
+                if(trigger) toggleCustomSelect();
+            }, 300);
         }
 
         function fecharModalInteresse() {
             document.getElementById('modalSelecaoInteresse').style.display = 'none';
+            document.getElementById('customOptionsList').classList.remove('open');
         }
 
-        // --- NOVA FUNÇÃO PARA O SELECT DROPDOWN ---
-        function atualizarSelecaoDropdown() {
-            const select = document.getElementById('selectCestaInteresse');
-            const btn = document.getElementById('btnEnviarInteresse');
-            
-            if (select.value) {
-                const partes = select.value.split('|');
-                interesseSelecionado = {
-                    cesta: partes[0],
-                    marca: partes[1], // pode ser vazio (caso da Econômica)
-                    preco: partes[2]
-                };
-                btn.disabled = false;
-                // Opcional: Atualizar texto do botão para confirmar visualmente
-                // btn.innerHTML = `<i class="fab fa-whatsapp"></i> Pedir ${partes[0]}`; 
-            } else {
-                btn.disabled = true;
+        // --- LÓGICA DO SELETOR CUSTOMIZADO ---
+        function toggleCustomSelect() {
+            const options = document.getElementById('customOptionsList');
+            options.classList.toggle('open');
+        }
+
+        // Fecha o seletor se clicar fora dele
+        window.onclick = function(event) {
+            if (!event.target.matches('.custom-select-trigger') && !event.target.closest('.custom-select-trigger')) {
+                const options = document.getElementById('customOptionsList');
+                if (options && options.classList.contains('open')) {
+                    options.classList.remove('open');
+                }
             }
+        }
+
+        function selectCustomOption(cesta, marca, preco) {
+            interesseSelecionado = { cesta, marca, preco };
+            
+            let textoDisplay = cesta;
+            if (marca) {
+                textoDisplay += ` (${marca === 'Tio Alvino' ? 'Tio Alvino' : 'Koblenz'})`;
+            }
+            textoDisplay += ` - R$ ${preco}`;
+
+            document.getElementById('customSelectText').innerText = textoDisplay;
+            document.getElementById('customOptionsList').classList.remove('open'); // Fecha o menu
+            
+            // Habilita o botão
+            document.getElementById('btnEnviarInteresse').disabled = false;
         }
 
         function enviarMensagemInteresse() {
