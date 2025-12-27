@@ -673,11 +673,13 @@
                 area.appendChild(row);
             });
 
-            // --- NOVO: Item Manual ---
+            // --- Divisor para área de extras ---
             const divDivisor = document.createElement('div');
+            divDivisor.id = "divisorExtras";
             divDivisor.className = "border-t border-dashed border-gray-300 my-2 pt-1";
             area.appendChild(divDivisor);
 
+            // --- Área de Input Manual (Fixo no final) ---
             const labelManual = document.createElement('div');
             labelManual.className = "text-[10px] font-bold text-blue-600 mb-1";
             labelManual.innerText = "Adicionar Item Extra/Manual:";
@@ -685,12 +687,74 @@
 
             const rowManual = document.createElement('div');
             rowManual.className = "flex items-center gap-2 mb-1";
-            // As classes 'item-qtd' e 'item-desc' garantem que a função adicionarItemAoCarrinho capture esses valores
             rowManual.innerHTML = `
-                <input type="number" min="0" value="0" class="w-12 border border-blue-300 bg-blue-50 rounded text-center px-1 item-qtd font-bold text-blue-800">
-                <input type="text" placeholder="Nome do produto extra..." class="flex-1 border border-blue-300 bg-blue-50 rounded px-1 item-desc text-blue-800 placeholder-blue-300">
+                <input type="number" id="qtdExtraInput" min="1" value="1" class="w-12 border border-blue-300 bg-blue-50 rounded text-center px-1 font-bold text-blue-800">
+                <input type="text" id="nomeExtraInput" placeholder="Nome do produto extra..." class="flex-1 border border-blue-300 bg-blue-50 rounded px-1 text-blue-800 placeholder-blue-300 text-xs">
+                <button onclick="adicionarExtraVisualmente()" class="bg-blue-600 text-white w-7 h-7 rounded hover:bg-blue-700 flex items-center justify-center shadow-sm" title="Adicionar Item"><i class="fa-solid fa-plus text-xs"></i></button>
             `;
             area.appendChild(rowManual);
+        }
+
+        function adicionarExtraVisualmente() {
+            const qtdInput = document.getElementById('qtdExtraInput');
+            const nomeInput = document.getElementById('nomeExtraInput');
+            const area = document.getElementById('areaItensCesta');
+            const divisor = document.getElementById('divisorExtras');
+
+            const qtd = qtdInput.value;
+            const nome = nomeInput.value.trim();
+
+            if(!nome) {
+                alert('Digite o nome do produto extra.');
+                nomeInput.focus();
+                return;
+            }
+            if(qtd <= 0) return alert('Quantidade deve ser maior que 0.');
+
+            // Verifica se já existe o título "Produtos Extras"
+            let tituloExtra = document.getElementById('tituloExtras');
+            if(!tituloExtra) {
+                tituloExtra = document.createElement('div');
+                tituloExtra.id = 'tituloExtras';
+                tituloExtra.className = "font-bold text-blue-600 mt-3 mb-1 border-b border-blue-100 bg-blue-50 px-1 rounded text-xs";
+                tituloExtra.innerHTML = "PRODUTOS EXTRAS";
+                area.insertBefore(tituloExtra, divisor);
+            }
+
+            const row = document.createElement('div');
+            row.className = "flex items-center gap-2 mb-1 row-extra animate-pulse"; 
+            setTimeout(() => row.classList.remove('animate-pulse'), 500);
+
+            row.innerHTML = `
+                <input type="number" min="0" value="${qtd}" class="w-12 border border-blue-200 rounded text-center px-1 item-qtd text-blue-800 font-bold bg-blue-50">
+                <div class="flex-1 flex gap-1 items-center">
+                     <input type="text" value="${nome}" class="flex-1 border border-blue-200 rounded px-1 item-desc text-blue-800 bg-blue-50 text-xs">
+                     <button onclick="this.closest('.row-extra').remove(); verificarTituloExtraVazio()" class="text-red-400 hover:text-red-600 px-1" title="Remover"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                </div>
+            `;
+            
+            area.insertBefore(row, divisor);
+
+            // Limpa e foca
+            qtdInput.value = 1;
+            nomeInput.value = '';
+            nomeInput.focus();
+        }
+
+        function verificarTituloExtraVazio() {
+             const titulo = document.getElementById('tituloExtras');
+             const divisor = document.getElementById('divisorExtras');
+             
+             if(titulo && divisor) {
+                 // Verifica se tem elementos entre titulo e divisor
+                 let current = titulo.nextElementSibling;
+                 let hasItem = false;
+                 while(current && current !== divisor) {
+                     if(current.tagName === 'DIV') hasItem = true;
+                     current = current.nextElementSibling;
+                 }
+                 if(!hasItem) titulo.remove();
+             }
         }
 
         // --- CARRINHO ---
@@ -725,10 +789,10 @@
                     } 
                     // Se for linha de item
                     else if (child.classList.contains('flex')) {
-                        const q = child.querySelector('.item-qtd').value;
-                        const d = child.querySelector('.item-desc').value;
+                        const q = child.querySelector('.item-qtd') ? child.querySelector('.item-qtd').value : 0;
+                        const d = child.querySelector('.item-desc') ? child.querySelector('.item-desc').value : '';
                         
-                        if (q > 0) {
+                        if (q > 0 && d) {
                             // Se existe um cabeçalho pendente, adiciona ele primeiro
                             if (headerPendente) {
                                 itensFinais.push(`<b>${headerPendente}:</b>`);
