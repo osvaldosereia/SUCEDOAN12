@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Cestas Dona Antônia - Link na Bio</title>
+    <!-- Tailwind CSS para estilização rápida e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+        }
+        .basket-card {
+            transition: transform 0.2s;
+        }
+        .basket-card:hover {
+            transform: translateY(-5px);
+        }
+        .btn-pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex justify-center">
+
+    <!-- Container Mobile (limita a largura para parecer um app) -->
+    <div class="w-full max-w-md bg-white shadow-xl min-h-screen flex flex-col relative">
+        
+        <!-- Cabeçalho / Hero -->
+        <header class="gradient-bg text-white p-6 rounded-b-3xl text-center relative z-10">
+            <div class="mb-4 flex justify-center">
+                <div class="bg-white p-1 rounded-full shadow-lg">
+                    <!-- Logo Redonda -->
+                    <img src="img/logo.png" alt="Logo Dona Antônia" class="w-24 h-24 rounded-full object-cover">
+                </div>
+            </div>
+            <h1 class="text-2xl font-bold mb-1">Super Cestas Dona Antônia</h1>
+            <p class="text-green-100 text-sm mb-4">Qualidade e Confiança há 8 anos</p>
+            
+            <!-- Badges de Confiança -->
+            <div class="flex flex-wrap justify-center gap-2 text-xs font-semibold">
+                <span class="bg-white text-green-800 px-3 py-1 rounded-full shadow-sm">
+                    <i class="fa-solid fa-truck"></i> Entrega Grátis Cuiabá/VG
+                </span>
+                <span class="bg-white text-green-800 px-3 py-1 rounded-full shadow-sm">
+                    <i class="fa-solid fa-wallet"></i> Pague na Entrega
+                </span>
+            </div>
+        </header>
+
+        <!-- Aviso Importante (Segurança) -->
+        <div class="px-4 -mt-5 relative z-20">
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-md">
+                <h3 class="font-bold text-red-700 text-sm mb-1"><i class="fa-solid fa-shield-halved"></i> Compra Segura</h3>
+                <ul class="text-xs text-red-800 space-y-1">
+                    <li>❌ <span class="font-semibold">NÃO</span> pedimos PIX adiantado.</li>
+                    <li>✅ Você só paga com a cesta na mão!</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Links Principais -->
+        <section class="p-4 space-y-3">
+            <a href="#" class="block bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-3 px-4 rounded-xl text-center shadow transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-star"></i> ENTRAR NO GRUPO VIP DE DESCONTOS
+            </a>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <a href="https://wa.me/5565996813588" target="_blank" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-2 rounded-xl text-center text-sm border border-gray-300 flex flex-col items-center justify-center">
+                    <i class="fa-brands fa-whatsapp text-green-600 text-xl mb-1"></i>
+                    Atendimento 1<br><span class="text-xs">(65) 99681-3588</span>
+                </a>
+                <a href="https://wa.me/5565998150975" target="_blank" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-2 rounded-xl text-center text-sm border border-gray-300 flex flex-col items-center justify-center">
+                    <i class="fa-brands fa-whatsapp text-green-600 text-xl mb-1"></i>
+                    Atendimento 2<br><span class="text-xs">(65) 99815-0975</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Catálogo de Cestas -->
+        <section class="flex-1 bg-gray-50 rounded-t-3xl p-4 mt-2">
+            <h2 class="text-center font-bold text-gray-800 text-lg mb-4 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-list-check text-green-600"></i> Escolha sua Cesta
+            </h2>
+            
+            <div id="products-container" class="space-y-4 pb-20">
+                <!-- Os produtos serão inseridos aqui via JavaScript -->
+            </div>
+        </section>
+
+        <!-- Botão Flutuante do WhatsApp -->
+        <a href="https://wa.me/5565998150975?text=Olá! Vim pelo Link da Bio e tenho uma dúvida." target="_blank" class="fixed bottom-4 right-4 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl btn-pulse z-50 flex items-center justify-center w-14 h-14">
+            <i class="fa-brands fa-whatsapp text-3xl"></i>
+        </a>
+
+        <!-- Rodapé -->
+        <footer class="bg-gray-800 text-gray-400 text-center py-6 text-xs mt-auto">
+            <p>© 2024 Super Cestas Dona Antônia</p>
+            <p>Atendendo mais de 700 famílias todo mês.</p>
+        </footer>
+    </div>
+
+    <!-- Script de Lógica -->
+    <script>
+        // Configuração dos Números de WhatsApp
+        // O sistema vai alternar ou usar o principal para pedidos
+        const mainPhone = "5565998150975"; 
+
+        // Dados das Cestas (Fácil de editar)
+        const products = [
+            {
+                id: 'economica',
+                name: 'Cesta Econômica',
+                price: 85.00,
+                image: 'img/cestaeconomica.png',
+                items: ['Ideal para solteiros', 'Itens essenciais', 'Melhor custo-benefício'],
+                color: 'blue'
+            },
+            {
+                id: 'mini',
+                name: 'Cesta Mini',
+                price: 165.00,
+                image: 'img/cestamini.png',
+                items: ['Para consumo rápido', 'Variedade básica', 'Sem carregar peso'],
+                color: 'teal'
+            },
+            {
+                id: 'pequena',
+                name: 'Cesta Pequena',
+                price: 215.00,
+                image: 'img/cestapequena.png',
+                items: ['Ideal para casais', 'Marcas de qualidade', 'Entrega Rápida'],
+                color: 'green'
+            },
+            {
+                id: 'media',
+                name: 'Cesta Média',
+                price: 320.00,
+                image: 'img/cestamedia.png',
+                items: ['Famílias até 3 pessoas', 'Completa', 'Frete Grátis'],
+                color: 'orange'
+            },
+            {
+                id: 'grande',
+                name: 'Cesta Grande',
+                price: 380.00,
+                image: 'img/cestagrande.png',
+                items: ['Família grande', 'Muita variedade', 'O melhor preço'],
+                color: 'red'
+            }
+        ];
+
+        // Função para formatar moeda
+        const formatMoney = (value) => {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        };
+
+        // Função para gerar o link do WhatsApp
+        const getWhatsappLink = (productName, price) => {
+            const message = `Olá Dona Antônia! 👋\n\nVi no link da bio e gostaria de encomendar a *${productName}* no valor de *${formatMoney(price)}*.\n\nComo funciona a entrega?`;
+            return `https://wa.me/${mainPhone}?text=${encodeURIComponent(message)}`;
+        };
+
+        // Renderizar Produtos
+        const container = document.getElementById('products-container');
+
+        products.forEach(product => {
+            const card = document.createElement('div');
+            card.className = 'basket-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-center sm:items-start';
+            
+            // HTML do Card
+            card.innerHTML = `
+                <div class="w-full sm:w-1/3 relative">
+                    <img src="${product.image}" alt="${product.name}" class="w-full h-40 object-cover rounded-xl shadow-inner bg-gray-200">
+                    <div class="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow">
+                        Entrega Grátis
+                    </div>
+                </div>
+                
+                <div class="flex-1 w-full text-center sm:text-left">
+                    <h3 class="font-bold text-gray-800 text-lg leading-tight">${product.name}</h3>
+                    <div class="text-2xl font-bold text-green-700 my-1">${formatMoney(product.price)}</div>
+                    
+                    <ul class="text-xs text-gray-500 mb-3 space-y-1 inline-block text-left">
+                        ${product.items.map(item => `<li><i class="fa-solid fa-check text-green-500 mr-1"></i> ${item}</li>`).join('')}
+                    </ul>
+
+                    <a href="${getWhatsappLink(product.name, product.price)}" target="_blank" 
+                       class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+                        <span>Encomendar Agora</span>
+                        <i class="fa-brands fa-whatsapp text-xl"></i>
+                    </a>
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+
+    </script>
+</body>
+</html>
