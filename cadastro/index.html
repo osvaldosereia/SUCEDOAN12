@@ -147,6 +147,16 @@
                                 <input type="text" id="maps" class="w-full border border-gray-300 rounded-r px-2 py-1 compact-input focus:outline-none focus:border-blue-500" placeholder="Ex: 7R9W+45 Cuiabá">
                             </div>
                         </div>
+                        
+                        <!-- NOVO CAMPO FOTO -->
+                        <div class="col-span-2">
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Foto (Link Street View)</label>
+                            <div class="flex">
+                                <span class="bg-gray-100 border border-r-0 border-gray-300 rounded-l px-2 flex items-center text-gray-500"><i class="fa-solid fa-street-view text-xs"></i></span>
+                                <input type="text" id="foto" class="w-full border border-gray-300 rounded-r px-2 py-1 compact-input focus:outline-none focus:border-blue-500" placeholder="Cole o link do Street View aqui">
+                            </div>
+                        </div>
+
                         <div class="col-span-2">
                             <label class="block text-xs font-bold text-gray-600 mb-1">Descrição Frente Casa</label>
                             <textarea id="descCasa" rows="3" class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: Portão branco, muro alto, árvore na frente..."></textarea>
@@ -177,7 +187,7 @@
                                 <th class="font-semibold border-b">Nome / Apelido</th>
                                 <th class="font-semibold border-b">Contato</th>
                                 <th class="font-semibold border-b">Localização</th>
-                                <th class="font-semibold border-b text-center w-48">Ações</th>
+                                <th class="font-semibold border-b text-center w-56">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaClientes" class="divide-y divide-gray-100">
@@ -224,6 +234,7 @@
                 bairro: document.getElementById('bairro').value,
                 endereco: document.getElementById('endereco').value,
                 maps: document.getElementById('maps').value,
+                foto: document.getElementById('foto').value, // Novo campo salvo aqui
                 descCasa: document.getElementById('descCasa').value,
                 dataCadastro: new Date().toISOString()
             };
@@ -254,6 +265,7 @@
             document.getElementById('bairro').value = cliente.bairro;
             document.getElementById('endereco').value = cliente.endereco;
             document.getElementById('maps').value = cliente.maps;
+            document.getElementById('foto').value = cliente.foto || ''; // Carrega foto ou vazio
             document.getElementById('descCasa').value = cliente.descCasa;
             document.getElementById('nome').focus();
         }
@@ -343,6 +355,7 @@
                         <p><strong>Endereço:</strong> ${c.endereco || '-'}</p>
                         <p><strong>Referência/Descrição da Casa:</strong><br>${c.descCasa || '-'}</p>
                         ${c.maps ? `<p><strong>Localização (Maps):</strong> <br>${c.maps}</p>` : ''}
+                        ${c.foto ? `<p><strong>Street View (Link):</strong> <br>${c.foto}</p>` : ''}
                     </div>
                     <div style="margin-top: 40px; font-size: 12px; text-align: center; color: #666;">
                         Impresso em: ${new Date().toLocaleString()}
@@ -356,14 +369,14 @@
             const c = clientes.find(c => c.id === id);
             if (!c) return;
 
-            const texto = `*FICHA DO CLIENTE*\n\n*Nome:* ${c.nome}\n*Apelido:* ${c.apelido || ''}\n*Tel:* ${c.telefone}\n*End:* ${c.endereco}\n*Bairro:* ${c.bairro}\n*Cidade:* ${c.cidade}\n*Ref:* ${c.descCasa}\n${c.maps ? '*Maps:* ' + c.maps : ''}`;
+            const texto = `*FICHA DO CLIENTE*\n\n*Nome:* ${c.nome}\n*Apelido:* ${c.apelido || ''}\n*Tel:* ${c.telefone}\n*End:* ${c.endereco}\n*Bairro:* ${c.bairro}\n*Cidade:* ${c.cidade}\n*Ref:* ${c.descCasa}\n${c.maps ? '*Maps:* ' + c.maps : ''}\n${c.foto ? '*Street View:* ' + c.foto : ''}`;
             
-            // Abre o WhatsApp para compartilhar o texto (pode mandar para si mesmo ou para alguém da equipe)
+            // Abre o WhatsApp para compartilhar o texto
             const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
             window.open(url, '_blank');
         }
 
-        // --- NOVA FUNÇÃO PARA MAPA (COM PESQUISA POR CÓDIGO) ---
+        // --- FUNÇÕES DE MAPA E FOTO ---
         function abrirMapaCliente(id) {
             const c = clientes.find(c => c.id === id);
             if (!c || !c.maps) {
@@ -371,15 +384,20 @@
                 return;
             }
             
-            // Verifica se é um link completo ou apenas um código
             let urlDestino = c.maps;
             if (!c.maps.trim().toLowerCase().startsWith('http')) {
-                // Se não começar com http, assume que é um código/endereço e cria link de pesquisa
-                // encodeURIComponent garante que espaços e caracteres especiais sejam tratados corretamente
                 urlDestino = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.maps)}`;
             }
-            
             window.open(urlDestino, '_blank');
+        }
+
+        function abrirFotoCliente(id) {
+            const c = clientes.find(c => c.id === id);
+            if (!c || !c.foto) {
+                alert('Este cliente não possui link de foto cadastrado.');
+                return;
+            }
+            window.open(c.foto, '_blank');
         }
 
         function renderizarTabela() {
@@ -411,8 +429,8 @@
                 const niver = (c.diaNiver && c.mesNiver) ? `${c.diaNiver}/${c.mesNiver}` : '-';
                 const local = `${c.cidade || ''} ${c.bairro ? '- ' + c.bairro : ''}`;
                 
-                // Botão de link pequeno na coluna endereço (mantido para visualização)
-                const btnMapsLink = c.maps ? `<span class="text-xs text-blue-400"><i class="fa-solid fa-check"></i></span>` : '';
+                const btnMapsLink = c.maps ? `<span class="text-xs text-orange-400 ml-1" title="Tem mapa"><i class="fa-solid fa-map-pin"></i></span>` : '';
+                const btnFotoLink = c.foto ? `<span class="text-xs text-blue-400 ml-1" title="Tem foto"><i class="fa-solid fa-street-view"></i></span>` : '';
 
                 tr.innerHTML = `
                     <td class="border-b">
@@ -425,7 +443,7 @@
                     </td>
                     <td class="border-b" title="${c.descCasa || ''}">
                         <div class="text-xs text-gray-700">${local}</div>
-                        <div class="text-xs text-gray-500 truncate max-w-[150px]">${c.endereco || ''} ${btnMapsLink}</div>
+                        <div class="text-xs text-gray-500 truncate max-w-[150px]">${c.endereco || ''} ${btnMapsLink} ${btnFotoLink}</div>
                     </td>
                     <td class="border-b text-center">
                         <div class="flex justify-center gap-1">
@@ -435,10 +453,16 @@
                             <button onclick="imprimirCliente('${c.id}')" class="text-gray-600 hover:bg-gray-100 p-1.5 rounded" title="Imprimir Ficha">
                                 <i class="fa-solid fa-print"></i>
                             </button>
-                            <!-- NOVO BOTÃO DE MAPA -->
+                            
                             <button onclick="abrirMapaCliente('${c.id}')" class="text-orange-600 hover:bg-orange-100 p-1.5 rounded" title="Abrir no Maps">
                                 <i class="fa-solid fa-map-location-dot"></i>
                             </button>
+                            
+                            <!-- NOVO BOTÃO VER FOTO -->
+                            <button onclick="abrirFotoCliente('${c.id}')" class="text-blue-600 hover:bg-blue-100 p-1.5 rounded" title="Ver Street View">
+                                <i class="fa-solid fa-street-view"></i>
+                            </button>
+
                             <button onclick="exportarUnicoCliente('${c.id}')" class="text-green-600 hover:bg-green-100 p-1.5 rounded" title="Exportar JSON">
                                 <i class="fa-solid fa-file-export"></i>
                             </button>
@@ -457,3 +481,14 @@
     </script>
 </body>
 </html>
+```
+
+### Explicação das Alterações
+
+1.  **Novo Campo HTML**: Adicionei o bloco abaixo logo após o campo "Google Maps". Ele usa o ícone `fa-street-view` para diferenciar.
+    ```html
+    <div class="col-span-2">
+        <label class="block text-xs font-bold text-gray-600 mb-1">Foto (Link Street View)</label>
+        ...
+        <input type="text" id="foto" ...>
+    </div>
