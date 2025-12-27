@@ -1140,6 +1140,15 @@
                 }).join('');
 
                 const localizacao = `${p.cliente.endereco || ''}, ${p.cliente.bairro || ''}`;
+
+                // --- NOVO: LÓGICA DE BOTÕES MAPA E FOTO ---
+                const linkMap = p.cliente.maps ? p.cliente.maps : '';
+                const linkFoto = p.cliente.foto ? p.cliente.foto : ''; // Campo novo do cadastro
+                
+                // Botões Mini (Usam stopPropagation para não abrir o card inteiro)
+                const btnMapHTML = linkMap ? `<button onclick="event.stopPropagation(); window.open('${linkMap}', '_blank')" class="ml-2 text-orange-500 hover:text-orange-600 transition" title="Abrir Mapa"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
+                const btnFotoHTML = linkFoto ? `<button onclick="event.stopPropagation(); window.open('${linkFoto}', '_blank')" class="ml-1 text-purple-500 hover:text-purple-600 transition" title="Ver Foto"><i class="fa-solid fa-image"></i></button>` : '';
+                // ------------------------------------------
                 
                 const botoesOrdem = pedidosFiltrados.length > 1 ? `
                     <div class="flex flex-col gap-1 mr-2 justify-center pl-1">
@@ -1166,8 +1175,10 @@
                             </div>
                             <div class="flex-1 min-w-0 flex flex-col justify-center">
                                 <div class="font-bold text-gray-800 text-sm truncate leading-tight">${p.cliente.nome}</div>
-                                <div class="text-[10px] text-gray-500 truncate flex items-center gap-1">
-                                    <i class="fa-solid fa-location-dot text-[9px] text-gray-400"></i> ${localizacao}
+                                <div class="text-[10px] text-gray-500 truncate flex items-center">
+                                    <i class="fa-solid fa-location-dot text-[9px] text-gray-400 mr-1"></i> ${localizacao}
+                                    ${btnMapHTML}
+                                    ${btnFotoHTML}
                                 </div>
                             </div>
                             <div class="hidden sm:block w-1/3 px-2">
