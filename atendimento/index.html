@@ -21,10 +21,13 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #E5DDD5; }
         
         .wa-header { background-color: #008069; }
+        
+        /* NOVO BACKGROUND PERSONALIZADO */
         .wa-bg { 
-            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-color: #E5DDD5;
+            /* Padrão SVG Ajustado: Letras bem maiores e espaçamento calibrado para leitura */
+            background-image: url("data:image/svg+xml,%3Csvg width='320' height='180' viewBox='0 0 320 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239CAFA3' fill-opacity='0.20' fill-rule='evenodd'%3E%3Ctext x='20' y='70' font-family='Arial, sans-serif' font-size='24' font-weight='bold' transform='rotate(-8 20 70)'%3Ewww.donaantonia.com.br%3C/text%3E%3Ctext x='80' y='150' font-family='Arial, sans-serif' font-size='24' font-weight='bold' transform='rotate(-8 80 150)'%3E65 99815-0975%3C/text%3E%3C/g%3E%3C/svg%3E");
             background-repeat: repeat;
-            opacity: 0.9;
         }
         
         .msg-in { background-color: #FFFFFF; border-radius: 0 8px 8px 8px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); }
@@ -183,7 +186,7 @@
         }
         .product-info { display: flex; flex-direction: column; line-height: 1.1; }
         .product-qty { 
-            font-size: 0.85rem; /* Ajustado para caber "unidade" */
+            font-size: 0.85rem; 
             font-weight: 800; 
             color: var(--cor-whatsapp);
             margin-bottom: 3px;
@@ -275,7 +278,7 @@
     <!-- HEADER -->
     <header class="wa-header text-white p-3 flex items-center shadow-md z-30 shrink-0">
         <div class="w-10 h-10 rounded-full bg-gray-300 overflow-hidden mr-3 border border-white/30 relative shrink-0">
-            <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Osvaldo&backgroundColor=c0aede'" alt="Osvaldo" class="w-full h-full object-cover protected-img">
+            <img src="img/logo.png" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Osvaldo&backgroundColor=c0aede'" alt="Osvaldo" class="w-full h-full object-cover protected-img">
             <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
         </div>
         <div class="flex-1 min-w-0">
@@ -495,7 +498,6 @@
             });
         }
 
-        // Modified showOptions to support subtitles
         function showOptions(options) {
             setTimeout(() => {
                 const optionsId = `opts-${Date.now()}`;
@@ -563,24 +565,39 @@
         function getProductImage(text) {
             const lowerText = text.toLowerCase();
             let imgName = 'outros.png';
-            if(lowerText.includes('arroz')) imgName = 'arroz.png';
-            else if(lowerText.includes('acucar') || lowerText.includes('açúcar')) imgName = 'acucar.png';
-            else if(lowerText.includes('oleo') || lowerText.includes('óleo')) imgName = 'oleo.png';
-            else if(lowerText.includes('feijao') || lowerText.includes('feijão')) imgName = 'feijao.png';
-            else if(lowerText.includes('cafe') || lowerText.includes('café')) imgName = 'cafe.png';
-            else if(lowerText.includes('macarrao') || lowerText.includes('espaguete')) imgName = 'macarrao.png';
-            else if(lowerText.includes('molho')) imgName = 'molho.png';
-            else if(lowerText.includes('sal')) imgName = 'sal.png';
-            else if(lowerText.includes('trigo')) imgName = 'trigo.png';
-            else if(lowerText.includes('ovo')) imgName = 'ovos.png';
-            else if(lowerText.includes('limpeza')) imgName = 'limpeza.png';
-            else if(lowerText.includes('milho')) imgName = 'milho.png';
-            else if(lowerText.includes('tempero')) imgName = 'tempero.png';
-            else if(lowerText.includes('bolacha')) imgName = 'bolacha.png';
-            else if(lowerText.includes('miojo')) imgName = 'miojo.png';
-            else if(lowerText.includes('suco')) imgName = 'suco.png';
-            else if(lowerText.includes('farinha')) imgName = 'farinha.png';
-            return `img/produtos/${imgName}`;
+            let folder = 'img/alimento/';
+
+            if(lowerText.includes('arroz')) imgName = 'Arroz Koblenz 5kg.webp';
+            else if(lowerText.includes('açúcar') || lowerText.includes('acucar')) imgName = 'açucar doce dia 2 kg.webp';
+            else if(lowerText.includes('bolacha')) imgName = 'bolacha mybit.webp';
+            else if(lowerText.includes('bolo') || lowerText.includes('mistura')) imgName = 'bolo apti chocolate.webp';
+            else if(lowerText.includes('café') || lowerText.includes('cafe')) {
+                // Tenta detectar 500g ou 250g
+                if(lowerText.includes('500g')) imgName = 'cafe caboclo 500g.webp';
+                else imgName = 'cafe caboclo 250g.webp';
+            }
+            else if(lowerText.includes('espaguete')) imgName = 'espaguete qdelicia.webp';
+            else if(lowerText.includes('esponja')) {
+                imgName = 'esponja assolan.webp';
+                folder = 'img/limpezaehigiente/';
+            }
+            else if(lowerText.includes('feijão') || lowerText.includes('feijao')) imgName = 'feijão da casa.webp';
+            else if(lowerText.includes('milho')) imgName = 'milho verde predileta.webp';
+            else if(lowerText.includes('miojo')) imgName = 'miojo apti.webp';
+            else if(lowerText.includes('molho')) imgName = 'molho fugini.webp';
+            else if(lowerText.includes('oleo') || lowerText.includes('óleo')) imgName = 'oleo de soja liza.webp';
+            else if(lowerText.includes('ovo')) imgName = 'ovo duzia.jpg';
+            else if(lowerText.includes('sal')) imgName = 'sal.webp';
+            else if(lowerText.includes('suco')) imgName = 'suco frisco.webp';
+            else if(lowerText.includes('tempero')) imgName = 'tempero tio jonas.jpg';
+            else if(lowerText.includes('trigo')) imgName = 'trigo vitoriosa.webp';
+            // Produtos de limpeza genericos (se o nome nao bate com esponja)
+            else if(lowerText.includes('limpeza')) {
+                folder = 'img/limpezaehigiente/';
+                imgName = 'limpeza_generico.png'; // Fallback
+            }
+
+            return `${folder}${imgName}`;
         }
 
         function parseProductItem(text) {
@@ -588,7 +605,8 @@
             if(match) {
                 const qty = parseInt(match[1]);
                 const qtyText = qty > 1 ? `${qty} unidades` : `${qty} unidade`;
-                return { qty: qtyText, name: match[2], img: getProductImage(match[2]) };
+                return { qty: qtyText, name: match[2], img: getProductImage(match[2] + (text.includes('500g') ? ' 500g' : '')) }; 
+                // Passa o texto original para manter infos como '500g' se estiverem na string
             }
             return { qty: '1 unidade', name: text, img: getProductImage(text) };
         }
@@ -596,6 +614,7 @@
         function generateCardHTML(cesta) {
             const slidesHTML = cesta.items.map(item => {
                 const parsed = parseProductItem(item);
+                // Placeholder apenas se falhar
                 const fallbackImg = `https://placehold.co/80x80/eee/999?text=${parsed.name.substring(0,3).toUpperCase()}`;
                 
                 return `
