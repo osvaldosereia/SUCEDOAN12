@@ -72,54 +72,60 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column;
         }
 
-        /* Header do Card (Foto + Título) */
+        /* Header do Card (Foto + Título) - AJUSTADO: Titulo em cima, Foto grande embaixo */
         .card-header-visual {
-            display: flex; flex-direction: row; align-items: center;
-            background: #fff; padding: 10px; border-bottom: 1px solid #f0f0f0; position: relative;
+            display: flex; flex-direction: column; /* Vertical */
+            align-items: center; justify-content: center;
+            background: #fff; padding: 0; border-bottom: 1px solid #f0f0f0; position: relative;
         }
-        .card-img-left {
-            width: 135px; height: 135px; object-fit: cover; border-radius: 8px; flex-shrink: 0; border: 1px solid #eee;
+        
+        .card-title-row {
+            width: 100%; padding: 12px 10px; background: #fdfdfd; text-align: center;
+            border-bottom: 1px solid #f0f0f0;
         }
-        .card-title-right {
-            flex-grow: 1; padding-left: 15px; display: flex; flex-direction: column; justify-content: center;
+        .card-title-row h2 {
+            font-size: 1.3rem; margin: 0; color: #0F2546; font-weight: 800; 
+            text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.2;
         }
-        .card-title-right h2 {
-            font-size: 1.2rem; margin: 0; color: #0F2546; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.2;
+
+        .card-img-container {
+            width: 100%; padding: 15px; display: flex; justify-content: center;
         }
+        .card-img-large {
+            width: 180px; height: 180px; object-fit: cover; border-radius: 8px; 
+            /* Sombra suave para destacar a cesta */
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+        }
+
         .selo-destaque {
-            position: absolute; top: -5px; right: 10px;
+            position: absolute; top: 45px; right: 10px;
             background: linear-gradient(135deg, #ffb300, #FFB300);
-            color: #0F2546; padding: 4px 10px; border-radius: 0 0 10px 10px;
-            font-weight: 800; font-size: 0.65rem; text-transform: uppercase; z-index: 10;
+            color: #0F2546; padding: 4px 10px; border-radius: 20px;
+            font-weight: 800; font-size: 0.7rem; text-transform: uppercase; z-index: 10;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        /* Slider de Produtos */
+        /* Slider de Produtos - AJUSTADO PARA SER MAIS ALTO */
         .product-slider-container { background: #f9fafb; padding: 15px 0; position: relative; }
         .product-slider {
-            display: flex; overflow-x: auto; gap: 12px; padding: 0 15px;
+            display: flex; overflow-x: auto; gap: 10px; padding: 0 15px;
             scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
         }
         .product-slider::-webkit-scrollbar { height: 4px; }
         .product-slider::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
 
         .product-slide {
-            flex: 0 0 110px; display: flex; flex-direction: column; align-items: center;
+            flex: 0 0 120px; /* Mais largo */
+            min-height: 160px; /* Mais alto */
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 5px;
             text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .product-slide img { width: 65px; height: 65px; object-fit: contain; margin-bottom: 8px; }
+        .product-slide img { width: 85px; height: 85px; object-fit: contain; margin-bottom: 8px; } /* Imagem maior */
         .product-info { display: flex; flex-direction: column; line-height: 1.1; }
-        .product-qty { font-size: 0.85rem; font-weight: 800; color: #25D366; margin-bottom: 3px; }
+        .product-qty { font-size: 0.85rem; font-weight: 800; color: #0d5f46; margin-bottom: 3px; } /* Verde escuro */
         .product-name { font-size: 0.75rem; color: #444; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* Indicadores de Scroll */
-        .scroll-hint {
-            background-color: #fff8dc; color: #b45309; font-size: 0.75rem; font-weight: 800;
-            text-align: center; padding: 8px; margin: 0 10px 8px 10px; border-radius: 6px;
-            border: 1px dashed #fcd34d; display: flex; align-items: center; justify-content: center;
-            gap: 6px; animation: pulseHint 2s infinite;
-        }
         .slider-arrow-indicator {
             position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
             background: rgba(255, 255, 255, 0.9); border: 2px solid #25D366; border-radius: 50%;
@@ -133,7 +139,7 @@
         .price-item-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; color: #555; }
         .price-item-row strong { color: #ff5252; }
 
-        /* Widget de Encomenda (Opções de Arroz) */
+        /* Widget de Encomenda */
         .order-widget {
             background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             border: 1px solid #25D366; margin-top: 5px;
@@ -205,7 +211,8 @@
         const CONFIG = {
             ownerName: "Osvaldo",
             whatsAppGroupLink: "https://chat.whatsapp.com/IOI3gSBLRVk4jGK2QMunp1",
-            whatsAppNumber: "5565998150975"
+            whatsAppNumber: "5565998150975",
+            instagramLink: "https://instagram.com/cestas.dona.antonia.cuiaba.vg"
         };
 
         if (window.self !== window.top) window.top.location.href = window.self.location.href;
@@ -214,7 +221,7 @@
         const CESTAS = [
             {
                 id: 'grande', nome: 'Cesta Grande', arrozQtd: 4, brindeNome: '1 OMO 800g',
-                brindeImg: 'img/limpeza/sabão em pó omo 800g.webp',
+                brindeImg: 'img/limpezaehigiente/sabão em pó omo 800g.webp',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
                 items: ['4 Arroz Koblenz 5kg', '3 Açúcar Doce Dia 2kg', '4 Óleo de Soja Liza 900ml', '4 Feijão Da Casa 1kg', '1 Café Caboclo 500g', '3 Espaguete QDelicia 500g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '2 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '4 Suco Frisco', '1 Sabão Barra Ype 900g', '2 Creme Dental Sorriso 70g', '2 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '4 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
                 opcoes: [{ arroz: 'Tio Alvino', preco: '380,00' }, { arroz: 'Koblenz', preco: '390,00' }]
@@ -228,7 +235,7 @@
             },
             {
                 id: 'pequena', nome: 'Cesta Pequena', arrozQtd: 2, brindeNome: '1 Amaciante 2L',
-                brindeImg: 'img/limpeza/amaciante ype 2L.webp',
+                brindeImg: 'img/limpezaehigiente/amaciante ype 2L.webp',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
                 items: ['2 Arroz Koblenz 5kg', '1 Açúcar Doce Dia 2kg', '2 Óleo de Soja Liza 900ml', '2 Feijão Da Casa 1kg', '1 Café Caboclo 250g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '1 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '1 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '2 Suco Frisco', '1 Sabão Barra Ype 900g', '1 Creme Dental Sorriso 70g', '1 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '2 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
                 opcoes: [{ arroz: 'Tio Alvino', preco: '215,00' }, { arroz: 'Koblenz', preco: '220,00' }]
@@ -285,7 +292,6 @@
             return Math.min(baseDelay + (text.length * charDelay), 4000);
         }
 
-        // Adiciona mensagens ao chat
         function addMessage(text, sender = 'bot', forceDelay = null) {
             return new Promise(resolve => {
                 const typingTime = forceDelay !== null ? forceDelay : calculateTypingTime(text);
@@ -314,7 +320,7 @@
                             const typingEl = document.getElementById(typingId);
                             if(typingEl) typingEl.remove();
                             
-                            const isCard = text.includes('card-cesta-new') || text.includes('order-widget') || text.includes('product-slider-container');
+                            const isCard = text.includes('card-cesta-new') || text.includes('order-widget') || text.includes('product-slider-container') || text.includes('final-thank-you');
                             const bubbleClass = isCard ? 'p-1 bg-transparent shadow-none' : 'p-2 px-3 bg-white shadow-sm';
                             
                             const html = `
@@ -369,7 +375,6 @@
             }, 800);
         }
 
-        // Funções para manipulação dos Cards
         window.selectRice = function(id, nome, preco) {
             const btn = document.getElementById(`btn-pedir-${id}`);
             const allOpts = document.querySelectorAll(`#widget-${id} .radio-arroz-option`);
@@ -380,6 +385,7 @@
             btn.onclick = () => {
                 const msg = `Olá! Aqui é o ${state.clientDisplayName}. Quero encomendar a *Cesta ${id.toUpperCase()}* com *Arroz ${nome}* por *R$ ${preco}*.`;
                 window.open(`https://wa.me/${CONFIG.whatsAppNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+                handlePostClick();
             }
         };
 
@@ -393,6 +399,14 @@
                 triggerPostCardFlow();
             }
         };
+
+        // Função para mostrar mensagem final após clique no Zap
+        function handlePostClick() {
+            setTimeout(() => {
+                state.step = 100;
+                nextStepFlow();
+            }, 1500);
+        }
 
         function triggerPostCardFlow() {
             if (state.cardHasInteracted) return;
@@ -417,7 +431,6 @@
             showOptions(opcoes);
         }
 
-        // Lógica de mapeamento de imagens
         function getProductImage(text) {
             const lowerText = text.toLowerCase();
             let imgName = 'outros.png';
@@ -434,9 +447,9 @@
             else if(lowerText.includes('espaguete')) imgName = 'espaguete qdelicia.webp';
             else if(lowerText.includes('esponja de aço') || lowerText.includes('lã de aço') || lowerText.includes('assolan')) {
                 imgName = 'lã de aço assolan.webp';
-                folder = 'img/limpeza/';
+                folder = 'img/limpezaehigiente/';
             }
-            else if(lowerText.includes('esponja')) { imgName = 'esponja de lavar louça.webp'; folder = 'img/limpeza/'; }
+            else if(lowerText.includes('esponja')) { imgName = 'esponja de lavar louça.webp'; folder = 'img/limpezaehigiente/'; }
             else if(lowerText.includes('feijão') || lowerText.includes('feijao')) imgName = 'feijão da casa.webp';
             else if(lowerText.includes('milho')) imgName = 'milho verde predileta.webp';
             else if(lowerText.includes('miojo')) imgName = 'miojo apti.webp';
@@ -448,14 +461,14 @@
             else if(lowerText.includes('tempero')) imgName = 'tempero tio jonas.jpg';
             else if(lowerText.includes('trigo')) imgName = 'trigo vitoriosa.webp';
             
-            else if(lowerText.includes('creme dental')) { imgName = 'Creme Dental Sorriso 70g.webp'; folder = 'img/limpeza/'; }
-            else if(lowerText.includes('desinfetante')) { imgName = 'Desinfetante Remmus 2L.webp'; folder = 'img/limpeza/'; }
-            else if(lowerText.includes('detergente')) { imgName = 'Detergente Ype 500ml.webp'; folder = 'img/limpeza/'; }
-            else if(lowerText.includes('qboa')) { imgName = 'Qboa 1 Litro.webp'; folder = 'img/limpeza/'; }
-            else if(lowerText.includes('amaciante')) { imgName = 'amaciante ype 2L.webp'; folder = 'img/limpeza/'; }
-            else if(lowerText.includes('sabonete')) { imgName = 'sabonete palmolive 85g.webp'; folder = 'img/limpeza/'; }
-            else if(lowerText.includes('sabão barra') || lowerText.includes('sabao barra')) { imgName = 'sabão barra ype 900g.webp'; folder = 'img/limpeza/'; }
-            else if(lowerText.includes('sabão pó') || lowerText.includes('sabão em pó') || lowerText.includes('omo')) { imgName = 'sabão em pó omo 800g.webp'; folder = 'img/limpeza/'; }
+            else if(lowerText.includes('creme dental')) { imgName = 'Creme Dental Sorriso 70g.webp'; folder = 'img/limpezaehigiente/'; }
+            else if(lowerText.includes('desinfetante')) { imgName = 'Desinfetante Remmus 2L.webp'; folder = 'img/limpezaehigiente/'; }
+            else if(lowerText.includes('detergente')) { imgName = 'Detergente Ype 500ml.webp'; folder = 'img/limpezaehigiente/'; }
+            else if(lowerText.includes('qboa')) { imgName = 'Qboa 1 Litro.webp'; folder = 'img/limpezaehigiente/'; }
+            else if(lowerText.includes('amaciante')) { imgName = 'amaciante ype 2L.webp'; folder = 'img/limpezaehigiente/'; }
+            else if(lowerText.includes('sabonete')) { imgName = 'sabonete palmolive 85g.webp'; folder = 'img/limpezaehigiente/'; }
+            else if(lowerText.includes('sabão barra') || lowerText.includes('sabao barra')) { imgName = 'sabão barra ype 900g.webp'; folder = 'img/limpezaehigiente/'; }
+            else if(lowerText.includes('sabão pó') || lowerText.includes('sabão em pó') || lowerText.includes('omo')) { imgName = 'sabão em pó omo 800g.webp'; folder = 'img/limpezaehigiente/'; }
 
             return `${folder}${imgName}`;
         }
@@ -495,17 +508,16 @@
             <div class="card-msg-container">
                 <div class="card-cesta-new">
                     <div class="card-header-visual">
-                        ${cesta.destaque ? `<div class="selo-destaque">${cesta.destaque}</div>` : ''}
-                        <img src="${cesta.img}" class="card-img-left" alt="${cesta.nome}">
-                        <div class="card-title-right">
+                        <div class="card-title-row">
                             <h2>${cesta.nome}</h2>
                         </div>
-                    </div>
-                    <div class="product-slider-container">
-                        <div class="scroll-hint">
-                            <i class="ph-bold ph-hand-swipe-left text-lg"></i> 
-                            ARRASTE PARA O LADO <i class="ph-bold ph-arrow-right"></i>
+                        ${cesta.destaque ? `<div class="selo-destaque">${cesta.destaque}</div>` : ''}
+                        <div class="card-img-container">
+                            <img src="${cesta.img}" class="card-img-large" alt="${cesta.nome}">
                         </div>
+                    </div>
+                    
+                    <div class="product-slider-container">
                         <div class="slider-wrapper">
                             <div class="product-slider" onscroll="handleSlideScroll(this)">
                                 ${slidesHTML}
@@ -516,6 +528,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="card-price-display-only">
                         ${pricesHTML}
                     </div>
@@ -529,7 +542,7 @@
                 const imgPath = `img/empresa/${foto}`;
                 const fallbackImg = `https://placehold.co/400x250/eee/999?text=Dona+Antonia+${index+1}`;
                 return `
-                <div class="product-slide" style="flex: 0 0 240px; border:none; box-shadow:none;">
+                <div class="product-slide" style="flex: 0 0 240px; border:none; box-shadow:none; min-height:auto;">
                     <img src="${imgPath}" onerror="this.src='${fallbackImg}'" style="width:100%; height:160px; object-fit:cover; border-radius:8px;" alt="Empresa">
                 </div>`;
             }).join('');
@@ -537,8 +550,8 @@
             return `
             <div class="card-msg-container">
                 <div class="card-cesta-new">
-                    <div class="card-header-visual">
-                        <img src="img/logo.png" class="card-img-left" style="width:70px; height:70px;" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Osvaldo'">
+                    <div class="card-header-visual" style="flex-direction:row;">
+                        <img src="img/logo.png" style="width:70px; height:70px; border-radius:50%;" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Osvaldo'">
                         <div class="card-title-right">
                             <h2 style="font-size:1.1rem">Dona Antônia Alimentos</h2>
                             <p style="font-size:0.8rem; color:#666;">Desde 2016 em Cuiabá & VG</p>
@@ -587,6 +600,10 @@
                             <div class="product-slider">
                                 ${slidesHTML}
                                 <div style="min-width: 15px;"></div>
+                            </div>
+                            <!-- Seta Flutuante Brindes -->
+                            <div class="slider-arrow-indicator">
+                                <i class="ph-bold ph-caret-right text-green-600 text-xl"></i>
                             </div>
                         </div>
                     </div>
@@ -671,9 +688,8 @@
 
             // Se for decisão de brinde
             if (value === 'salvar_brinde') {
-                window.open(`https://wa.me/${CONFIG.whatsAppNumber}?text=Olá! Salvei seu contato e quero garantir meu brinde!`, '_blank');
-                // Assume intenção de compra futura ou imediata
-                state.step = 99; // Finaliza ou mantem
+                window.open(`https://wa.me/${CONFIG.whatsAppNumber}?text=Olá! Aqui é o ${state.clientDisplayName}. Salvei seu contato e quero garantir meu brinde!`, '_blank');
+                handlePostClick();
             }
 
             nextStepFlow(value);
@@ -710,7 +726,6 @@
                     let opcoesCestas = [];
                     CESTAS.forEach((c, i) => {
                         // Filtra se já viu, mas se viu todas reseta a lógica visual apenas se necessário
-                        // Requisito: "manda novamente a lista menos a que ja foi vista"
                         if (!state.viewedBaskets.includes(c.id)) {
                             opcoesCestas.push({
                                 text: c.nome,
@@ -778,7 +793,7 @@
                     await addMessage(alertMsg);
 
                     setTimeout(async () => {
-                        await addMessage(`${name}, eu vou garantir um brinde pra quando você fizer a sua primeira compra.`);
+                        await addMessage(`🎁 ${name}, eu vou garantir um brinde pra quando você fizer a sua primeira compra.`);
                         await addMessage(generateGiftCarouselHTML());
 
                         showOptions([
@@ -801,8 +816,31 @@
                     break;
                     
                 case 99: // Ações Finais
-                    if(triggerValue === 'salvar') window.open(`https://wa.me/${CONFIG.whatsAppNumber}?text=Olá! Aqui é o ${state.clientDisplayName}. Salvei o contato!`, '_blank');
-                    if(triggerValue === 'vip') window.open(CONFIG.whatsAppGroupLink, '_blank');
+                    if(triggerValue === 'salvar') {
+                        window.open(`https://wa.me/${CONFIG.whatsAppNumber}?text=Olá! Aqui é o ${state.clientDisplayName}. Salvei o contato!`, '_blank');
+                        handlePostClick();
+                    }
+                    if(triggerValue === 'vip') {
+                        window.open(CONFIG.whatsAppGroupLink, '_blank');
+                        handlePostClick();
+                    }
+                    break;
+
+                case 100: // Passo Final (Agradecimento)
+                    await addMessage(`Obrigado, ${name}! Estamos prontos para te atender no WhatsApp. 🟢`);
+                    await addMessage(`Enquanto isso, siga a gente no Instagram para acompanhar as novidades:`);
+                    
+                    const instaBtn = `
+                        <div class="flex justify-center w-full mt-2 mb-4">
+                            <a href="${CONFIG.instagramLink}" target="_blank" 
+                               class="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 px-6 rounded-full shadow-lg flex items-center gap-2 hover:opacity-90 transition transform hover:scale-105 no-underline">
+                                <i class="ph-bold ph-instagram-logo text-2xl"></i>
+                                Seguir no Instagram
+                            </a>
+                        </div>`;
+                    
+                    chatContainer.insertAdjacentHTML('beforeend', instaBtn);
+                    scrollToBottom();
                     break;
             }
         }
