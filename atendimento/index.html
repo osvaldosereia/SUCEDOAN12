@@ -25,7 +25,7 @@
         /* NOVO BACKGROUND PERSONALIZADO */
         .wa-bg { 
             background-color: #E5DDD5;
-            /* Padrão SVG Ajustado: Letras bem maiores e espaçamento calibrado para leitura */
+            /* Padrão SVG Ajustado */
             background-image: url("data:image/svg+xml,%3Csvg width='320' height='180' viewBox='0 0 320 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239CAFA3' fill-opacity='0.20' fill-rule='evenodd'%3E%3Ctext x='20' y='70' font-family='Arial, sans-serif' font-size='24' font-weight='bold' transform='rotate(-8 20 70)'%3Ewww.donaantonia.com.br%3C/text%3E%3Ctext x='80' y='150' font-family='Arial, sans-serif' font-size='24' font-weight='bold' transform='rotate(-8 80 150)'%3E65 99815-0975%3C/text%3E%3C/g%3E%3C/svg%3E");
             background-repeat: repeat;
         }
@@ -108,7 +108,7 @@
             position: relative;
         }
         
-        /* FOTO DA CESTA AUMENTADA (50% MAIOR QUE ANTES) */
+        /* FOTO DA CESTA AUMENTADA */
         .card-img-left {
             width: 135px;
             height: 135px;
@@ -153,8 +153,7 @@
         /* Slider Horizontal de Produtos */
         .product-slider-container {
             background: #f9fafb;
-            padding: 10px 0 15px 0;
-            position: relative; /* Necessário para o overlay */
+            padding: 15px 0;
         }
         .product-slider {
             display: flex;
@@ -166,11 +165,6 @@
         }
         .product-slider::-webkit-scrollbar { height: 4px; }
         .product-slider::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
-
-        /* Wrapper para a seta flutuante */
-        .slider-wrapper {
-            position: relative;
-        }
 
         .product-slide {
             flex: 0 0 110px;
@@ -222,7 +216,7 @@
         }
         .price-item-row strong { color: var(--cor-destaque-vermelho); }
 
-        /* WIDGET DE ENCOMENDA (Aparece depois) */
+        /* WIDGET DE ENCOMENDA */
         .order-widget {
             background: #fff;
             border-radius: 12px;
@@ -241,7 +235,7 @@
 
         .radio-arroz-option {
             display: flex; 
-            flex-direction: row; /* Horizontal */
+            flex-direction: row; 
             align-items: center; 
             justify-content: space-between;
             padding: 12px 15px;
@@ -273,7 +267,7 @@
         }
         .btn-encomendar-card:active { transform: translateY(3px); box-shadow: none; }
         
-        /* NOVO DESIGN DO SCROLL HINT (Para público leigo) */
+        /* SCROLL HINT */
         .scroll-hint {
             background-color: #fff8dc; /* Amarelo clarinho */
             color: #b45309; /* Laranja escuro */
@@ -312,7 +306,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             z-index: 20;
             animation: bounceRight 1.2s infinite;
-            pointer-events: none; /* Deixa clicar "através" dela */
+            pointer-events: none; 
             transition: opacity 0.3s;
         }
         @keyframes bounceRight {
@@ -474,7 +468,8 @@
             browsingQueue: [],
             cardInteractionTimer: null,
             cardHasInteracted: false,
-            currentBasketId: null
+            currentBasketId: null,
+            giftShown: false
         };
 
         const getGreeting = () => {
@@ -524,7 +519,7 @@
                             const typingEl = document.getElementById(typingId);
                             if(typingEl) typingEl.remove();
                             
-                            const isCard = text.includes('card-cesta-new') || text.includes('order-widget');
+                            const isCard = text.includes('card-cesta-new') || text.includes('order-widget') || text.includes('omo');
                             const bubbleClass = isCard ? 'p-1 bg-transparent shadow-none' : 'p-2 px-3 bg-white shadow-sm';
                             
                             const html = `
@@ -626,10 +621,11 @@
 
             await addMessage(`O que quer fazer agora?`, 'bot');
 
+            // Aqui redirecionamos "Encomendar" e "Pagamento" para o Passo 6 (Brinde)
             const opcoes = [
-                { text: `Encomendar a ${nomeCesta} ✅`, value: "encomendar_atual", nextStep: 3 },
+                { text: `Encomendar a ${nomeCesta} ✅`, value: "encomendar_atual", nextStep: 6 },
                 { text: "Ver outras cestas 🔄", value: "ver_outra", nextStep: 5 },
-                { text: "Ver formas de pagamento 💳", value: "pagamento", nextStep: 4 }
+                { text: "Ver formas de pagamento 💳", value: "pagamento", nextStep: 6 }
             ];
 
             showOptions(opcoes);
@@ -830,6 +826,18 @@
                 state.step = 2; 
             }
 
+            // Lógica para o passo 6 (Decisão Brinde)
+            if (state.step === 6) {
+                if (value === 'salvar_brinde') {
+                    // Abre link de salvar
+                    window.open(`https://wa.me/${CONFIG.whatsAppNumber}?text=Olá! Salvei seu contato e quero meu OMO de brinde!`, '_blank');
+                    // Decide para onde ir baseado na intenção original (guardada?)
+                    // Vamos simplificar: se escolheu brinde, assumimos que vai encomendar depois
+                    state.step = 3; // Vai para widget de encomenda
+                }
+                // Se for "pagamento" ou "encomendar_atual", o nextStep já cuida (4 ou 3)
+            }
+
             nextStepFlow(value);
         }
 
@@ -934,6 +942,29 @@
                     }));
                     
                     showOptions(listaCestas);
+                    break;
+
+                case 6: // OFERTA DO BRINDE (INTERCEPTADOR)
+                    if (state.giftShown) {
+                        // Se já mostrou, não mostra de novo, redireciona
+                        if (triggerValue === 'encomendar_atual') { state.step = 3; nextStepFlow(); return; }
+                        if (triggerValue === 'pagamento') { state.step = 4; nextStepFlow(); return; }
+                    }
+                    state.giftShown = true;
+
+                    await addMessage(`Ah, ${name}! Antes de finalizarmos...`, 'bot');
+                    await addMessage(`Eu quero muito que você vire nosso cliente hoje.`);
+                    await addMessage(`Se você salvar nosso contato agora e me mandar um 'Oi' lá no Zap, eu vou liberar um **Sabão em Pó OMO 800g de BRINDE** na sua primeira compra.`);
+                    
+                    const omoImg = `<div class="flex justify-center mb-2"><div class="bg-white p-2 rounded-lg shadow-sm border border-gray-200"><img src="img/limpeza/sabão em pó omo 800g.webp" onerror="this.src='https://placehold.co/200x200/2196F3/FFF?text=OMO+800g'" class="w-40 h-40 object-contain mx-auto"><p class="text-center font-bold text-blue-600 mt-2">Sabão OMO 800g</p></div></div>`;
+                    await addMessage(omoImg);
+
+                    // Botões de decisão
+                    showOptions([
+                        { text: "Salvar e Ganhar Brinde 🎁", value: "salvar_brinde", nextStep: 6 }, // Mantém step 6 para logica no handleOptionClick
+                        { text: "Só ver Pagamento 💳", value: "pagamento", nextStep: 4 },
+                        { text: "Só Encomendar ✅", value: "encomendar_atual", nextStep: 3 }
+                    ]);
                     break;
                     
                 case 99:
