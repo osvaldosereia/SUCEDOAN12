@@ -108,31 +108,57 @@
             --cor-destaque-vermelho: #ff5252;
         }
 
-        .card-msg-container { width: 100%; max-width: 340px; margin-bottom: 5px; }
+        /* CARD WIDE AJUSTADO */
+        .card-msg-container { width: 100%; max-width: 95%; margin-bottom: 5px; } /* Largo */
 
         .card-cesta-new {
             background: #fff; border-radius: 16px; border: 1px solid #e0e0e0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: row;
             position: relative;
         }
 
-        /* NAVEGAÇÃO DO CARD UNIFICADO */
-        .card-nav-header {
-            display: flex; justify-content: space-between; align-items: center;
-            background: #fdfdfd; padding: 10px; border-bottom: 1px solid #eee;
+        /* SIDEBAR DE CHIPS */
+        .card-sidebar {
+            width: 90px;
+            background: #f8f9fa;
+            border-left: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px;
+            justify-content: center;
+            overflow-y: auto;
         }
-        .nav-arrow-btn {
-            width: 40px; height: 40px; border-radius: 50%; background: #f0f2f5;
-            display: flex; align-items: center; justify-content: center;
-            color: #008069; cursor: pointer; border: 1px solid #ddd;
-            transition: all 0.2s; font-size: 1.2rem;
+        
+        .chip-nav {
+            font-size: 0.65rem;
+            padding: 8px 4px;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #e0e0e0;
+            background: white;
+            color: #666;
+            font-weight: 700;
+            transition: all 0.2s;
+            text-transform: uppercase;
         }
-        .nav-arrow-btn:active { background: #e0e0e0; transform: scale(0.95); }
-        .nav-title-group { text-align: center; flex: 1; }
-        .nav-title-display {
-            font-weight: 800; color: #0F2546; font-size: 1.1rem; text-transform: uppercase;
+        
+        .chip-nav:active { transform: scale(0.95); }
+        .chip-nav.selected {
+            background: #008069;
+            color: white;
+            border-color: #006d59;
+            box-shadow: 0 2px 4px rgba(0,128,105,0.3);
         }
-        .nav-subtitle { font-size: 0.7rem; color: #666; font-weight: 500; margin-top: -2px; }
+
+        /* CONTEÚDO PRINCIPAL (ESQUERDA) */
+        .card-main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
         .card-header-visual {
             display: flex; flex-direction: column;
@@ -140,65 +166,55 @@
             background: #fff; padding: 0; border-bottom: 1px solid #f0f0f0; position: relative;
         }
         
-        .card-img-container { width: 100%; padding: 15px; display: flex; justify-content: center; transition: opacity 0.3s; }
+        .card-img-container { width: 100%; padding: 10px; display: flex; justify-content: center; transition: opacity 0.3s; }
         .card-img-large {
-            width: 180px; height: 180px; object-fit: cover; border-radius: 8px; 
+            width: 140px; height: 140px; object-fit: cover; border-radius: 8px; 
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
         }
 
         .selo-destaque {
-            position: absolute; top: 15px; right: 10px;
+            position: absolute; top: 10px; left: 10px; /* Movido para esquerda */
             background: linear-gradient(135deg, #ffb300, #FFB300);
-            color: #0F2546; padding: 4px 10px; border-radius: 20px;
-            font-weight: 800; font-size: 0.7rem; text-transform: uppercase; z-index: 10;
+            color: #0F2546; padding: 3px 8px; border-radius: 20px;
+            font-weight: 800; font-size: 0.65rem; text-transform: uppercase; z-index: 10;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* Slider de Produtos */
-        .product-slider-container { background: #f9fafb; padding: 15px 0; position: relative; transition: opacity 0.3s; }
+        .product-slider-container { background: #f9fafb; padding: 10px 0; position: relative; transition: opacity 0.3s; }
         .product-slider {
-            display: flex; overflow-x: auto; gap: 10px; padding: 0 15px;
+            display: flex; overflow-x: auto; gap: 8px; padding: 0 10px;
             scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
         }
         .product-slider::-webkit-scrollbar { height: 4px; }
         .product-slider::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
 
         .product-slide {
-            flex: 0 0 120px; min-height: 160px;
+            flex: 0 0 100px; min-height: 140px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 5px;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 4px;
             text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .product-slide img { width: 85px; height: 85px; object-fit: contain; margin-bottom: 8px; }
+        .product-slide img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 6px; }
         .product-info { display: flex; flex-direction: column; line-height: 1.1; }
-        .product-qty { font-size: 0.85rem; font-weight: 800; color: #0d5f46; margin-bottom: 3px; }
-        .product-name { font-size: 0.75rem; color: #444; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-qty { font-size: 0.8rem; font-weight: 800; color: #0d5f46; margin-bottom: 2px; }
+        .product-name { font-size: 0.7rem; color: #444; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
-        /* Company Stats Slides */
-        .stat-slide {
-            flex: 0 0 200px; height: 120px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-radius: 12px; padding: 15px; text-align: center; color: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .stat-text { font-weight: 800; font-size: 1.1rem; line-height: 1.2; margin-bottom: 5px; }
-        .stat-sub { font-size: 0.85rem; opacity: 0.9; }
-
         .slider-arrow-indicator {
-            position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+            position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
             background: rgba(255, 255, 255, 0.9); border: 2px solid #25D366; border-radius: 50%;
-            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 20; animation: bounceRight 1.2s infinite;
             pointer-events: none; transition: opacity 0.3s;
         }
 
         /* Preços */
-        .card-price-display-only { padding: 10px 15px; background: #fff; border-top: 1px solid #eee; transition: opacity 0.3s; }
-        .price-item-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; color: #555; }
+        .card-price-display-only { padding: 8px 10px; background: #fff; border-top: 1px solid #eee; transition: opacity 0.3s; }
+        .price-item-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; color: #555; }
         .price-item-row strong { color: #ff5252; }
 
         /* Discount Widget */
-        .discount-container { background: #fff; border-radius: 8px; padding: 12px; border: 1px solid #e0e0e0; }
+        .discount-container { background: #fff; border-radius: 8px; padding: 12px; border: 1px solid #e0e0e0; max-width: 320px; } /* Widget normal */
         .discount-table { width: 100%; font-size: 0.9rem; margin-bottom: 0; }
         .discount-table td { padding: 6px 0; border-bottom: 1px dashed #eee; }
         .discount-table td:last-child { text-align: right; font-weight: bold; color: #166534; }
@@ -209,7 +225,7 @@
         .radio-discount.selected .radio-circle { border-color: #166534; }
         .radio-discount.selected .radio-circle::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background: #166534; border-radius: 50%; }
 
-        /* Card Empresa (REDESENHADO) */
+        /* Card Empresa */
         .company-header {
             padding: 20px 15px; display: flex; flex-direction: row; align-items: center;
             background: #fff; border-bottom: 1px solid #f0f0f0; gap: 15px;
@@ -234,6 +250,17 @@
             display: flex; align-items: center; justify-content: center;
         }
         .company-social-btn:hover { color: #008069; transform: scale(1.05); border-color: #008069; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        /* Company Stats Slides */
+        .stat-slide {
+            flex: 0 0 200px; height: 120px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 12px; padding: 15px; text-align: center; color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .stat-text { font-weight: 800; font-size: 1.1rem; line-height: 1.2; margin-bottom: 5px; }
+        .stat-sub { font-size: 0.85rem; opacity: 0.9; }
+
     </style>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden" oncontextmenu="return false;">
@@ -302,25 +329,11 @@
         // BASE DE DADOS ATUALIZADA
         const CESTAS = [
             {
-                id: 'grande', nome: 'Cesta Grande', desconto: 25, arrozQtd: 4, brindeNome: '1 OMO 800g',
-                brindeImg: 'img/limpeza/sabão em pó omo 800g.webp',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
-                items: ['4 Arroz Koblenz 5kg', '3 Açúcar Doce Dia 2kg', '4 Óleo de Soja Liza 900ml', '4 Feijão Da Casa 1kg', '1 Café Caboclo 500g', '3 Espaguete QDelicia 500g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '2 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '4 Suco Frisco', '1 Sabão Barra Ype 900g', '2 Creme Dental Sorriso 70g', '2 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '4 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
-                opcoes: [{ arroz: 'Tio Alvino', preco: '380,00', valor_num: 380.00 }, { arroz: 'Koblenz', preco: '390,00', valor_num: 390.00 }]
-            },
-            {
-                id: 'media', nome: 'Cesta Média', desconto: 20, arrozQtd: 3, brindeNome: '1 Café 250g',
-                brindeImg: 'img/alimentos/cafe caboclo 250g.webp',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
-                items: ['3 Arroz Koblenz 5kg', '2 Açúcar Doce Dia 2kg', '3 Óleo de Soja Liza 900ml', '3 Feijão Da Casa 1kg', '1 Café Caboclo 500g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '2 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '2 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '3 Suco Frisco', '1 Sabão Barra Ype 900g', '2 Creme Dental Sorriso 70g', '2 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '3 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
-                opcoes: [{ arroz: 'Tio Alvino', preco: '320,00', valor_num: 320.00 }, { arroz: 'Koblenz', preco: '325,00', valor_num: 325.00 }]
-            },
-            {
-                id: 'pequena', nome: 'Cesta Pequena', desconto: 15, arrozQtd: 2, brindeNome: '1 Amaciante 2L',
-                brindeImg: 'img/limpeza/amaciante ype 2L.webp',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
-                items: ['2 Arroz Koblenz 5kg', '1 Açúcar Doce Dia 2kg', '2 Óleo de Soja Liza 900ml', '2 Feijão Da Casa 1kg', '1 Café Caboclo 250g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '1 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '1 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '2 Suco Frisco', '1 Sabão Barra Ype 900g', '1 Creme Dental Sorriso 70g', '1 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '2 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
-                opcoes: [{ arroz: 'Tio Alvino', preco: '215,00', valor_num: 215.00 }, { arroz: 'Koblenz', preco: '220,00', valor_num: 220.00 }]
+                id: 'economica', nome: 'Cesta Econômica', destaque: 'Mais Vendida', desconto: 5, arrozQtd: 1, brindeNome: '1 Trigo 1kg',
+                brindeImg: 'img/alimentos/trigo vitoriosa.webp',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
+                items: ['1 Arroz Koblenz 5kg', '1 Açúcar Doce Dia 2kg', '1 Óleo de Soja Liza 900ml', '1 Feijão Da Casa 1kg', '1 Café Caboclo 250g', '1 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Farinha Mandioca', '1 Sal 1kg', '1 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Bolacha MyBit Recheada', '1 Miojo Apti', '1 Suco Frisco'],
+                opcoes: [{ arroz: 'Valor Único', preco: '85,00', valor_num: 85.00 }]
             },
             {
                 id: 'mini', nome: 'Cesta Mini', desconto: 10, arrozQtd: 1, brindeNome: '1 Feijão 1kg',
@@ -330,11 +343,25 @@
                 opcoes: [{ arroz: 'Tio Alvino', preco: '165,00', valor_num: 165.00 }, { arroz: 'Koblenz', preco: '170,00', valor_num: 170.00 }]
             },
             {
-                id: 'economica', nome: 'Cesta Econômica', destaque: 'Mais Vendida', desconto: 5, arrozQtd: 1, brindeNome: '1 Trigo 1kg',
-                brindeImg: 'img/alimentos/trigo vitoriosa.webp',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
-                items: ['1 Arroz Koblenz 5kg', '1 Açúcar Doce Dia 2kg', '1 Óleo de Soja Liza 900ml', '1 Feijão Da Casa 1kg', '1 Café Caboclo 250g', '1 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Farinha Mandioca', '1 Sal 1kg', '1 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Bolacha MyBit Recheada', '1 Miojo Apti', '1 Suco Frisco'],
-                opcoes: [{ arroz: 'Valor Único', preco: '85,00', valor_num: 85.00 }]
+                id: 'pequena', nome: 'Cesta Pequena', desconto: 15, arrozQtd: 2, brindeNome: '1 Amaciante 2L',
+                brindeImg: 'img/limpeza/amaciante ype 2L.webp',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
+                items: ['2 Arroz Koblenz 5kg', '1 Açúcar Doce Dia 2kg', '2 Óleo de Soja Liza 900ml', '2 Feijão Da Casa 1kg', '1 Café Caboclo 250g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '1 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '1 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '2 Suco Frisco', '1 Sabão Barra Ype 900g', '1 Creme Dental Sorriso 70g', '1 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '2 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
+                opcoes: [{ arroz: 'Tio Alvino', preco: '215,00', valor_num: 215.00 }, { arroz: 'Koblenz', preco: '220,00', valor_num: 220.00 }]
+            },
+            {
+                id: 'media', nome: 'Cesta Média', desconto: 20, arrozQtd: 3, brindeNome: '1 Café 250g',
+                brindeImg: 'img/alimentos/cafe caboclo 250g.webp',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
+                items: ['3 Arroz Koblenz 5kg', '2 Açúcar Doce Dia 2kg', '3 Óleo de Soja Liza 900ml', '3 Feijão Da Casa 1kg', '1 Café Caboclo 500g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '2 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '2 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '3 Suco Frisco', '1 Sabão Barra Ype 900g', '2 Creme Dental Sorriso 70g', '2 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '3 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
+                opcoes: [{ arroz: 'Tio Alvino', preco: '320,00', valor_num: 320.00 }, { arroz: 'Koblenz', preco: '325,00', valor_num: 325.00 }]
+            },
+            {
+                id: 'grande', nome: 'Cesta Grande', desconto: 25, arrozQtd: 4, brindeNome: '1 OMO 800g',
+                brindeImg: 'img/limpeza/sabão em pó omo 800g.webp',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
+                items: ['4 Arroz Koblenz 5kg', '3 Açúcar Doce Dia 2kg', '4 Óleo de Soja Liza 900ml', '4 Feijão Da Casa 1kg', '1 Café Caboclo 500g', '3 Espaguete QDelicia 500g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '2 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '4 Suco Frisco', '1 Sabão Barra Ype 900g', '2 Creme Dental Sorriso 70g', '2 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '4 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
+                opcoes: [{ arroz: 'Tio Alvino', preco: '380,00', valor_num: 380.00 }, { arroz: 'Koblenz', preco: '390,00', valor_num: 390.00 }]
             }
         ];
 
@@ -351,7 +378,7 @@
             clientDisplayName: '', 
             viewedBaskets: [],
             timerRef: null,
-            currentBasketIndex: 0,
+            currentBasketIndex: 0, // Inicia na Economica (Primeira da lista ajustada)
             selectedDiscountId: null,
             scrollTriggered: false
         };
@@ -362,6 +389,13 @@
         };
 
         const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Data + 30 dias para validade
+        const getFutureDate = () => {
+            const date = new Date();
+            date.setDate(date.getDate() + 30);
+            return date.toLocaleDateString('pt-BR');
+        };
 
         function scrollToBottom() {
             setTimeout(() => {
@@ -459,42 +493,39 @@
         }
 
         // --- SISTEMA DE NAVEGAÇÃO DO CARD UNIFICADO ---
-        window.switchBasketCard = function(direction) {
-            const container = document.getElementById('unified-card-content');
-            if(!container) return;
-            
-            // Reset scroll state when switching baskets
-            state.scrollTriggered = false;
-
-            // Fade out
-            const elementsToFade = container.querySelectorAll('.card-img-container, .product-slider-container, .card-price-display-only, .selo-destaque');
-            elementsToFade.forEach(el => el.style.opacity = '0');
-
-            setTimeout(() => {
-                let newIndex = state.currentBasketIndex + direction;
-                if(newIndex < 0) newIndex = CESTAS.length - 1;
-                if(newIndex >= CESTAS.length) newIndex = 0;
-                
-                state.currentBasketIndex = newIndex;
-                const cesta = CESTAS[newIndex];
-                
-                // Track interaction
-                trackEvent('ViewContent', { content_name: cesta.nome });
-
-                // Update DOM
-                const titleEl = document.getElementById('card-nav-title');
-                if(titleEl) titleEl.innerText = cesta.nome;
-
-                // Regenerate content
-                container.innerHTML = generateUnifiedInnerContent(cesta);
-                
-                // Fade in
-                setTimeout(() => {
-                    const newElements = container.querySelectorAll('.card-img-container, .product-slider-container, .card-price-display-only, .selo-destaque');
-                    newElements.forEach(el => el.style.opacity = '1');
-                }, 50);
-
-            }, 250);
+        window.selectBasketChip = function(index) {
+             const container = document.getElementById('unified-card-content');
+             if(!container) return;
+             
+             // Update Chip UI
+             const chips = document.querySelectorAll('.chip-nav');
+             chips.forEach(c => c.classList.remove('selected'));
+             document.getElementById(`chip-${index}`).classList.add('selected');
+ 
+             // Reset scroll
+             state.scrollTriggered = false;
+ 
+             // Fade out content
+             const elementsToFade = container.querySelectorAll('.card-img-container, .product-slider-container, .card-price-display-only, .selo-destaque');
+             elementsToFade.forEach(el => el.style.opacity = '0');
+ 
+             setTimeout(() => {
+                 state.currentBasketIndex = index;
+                 const cesta = CESTAS[index];
+                 
+                 // Track interaction
+                 trackEvent('ViewContent', { content_name: cesta.nome });
+ 
+                 // Regenerate content
+                 container.innerHTML = generateUnifiedInnerContent(cesta);
+                 
+                 // Fade in
+                 setTimeout(() => {
+                     const newElements = container.querySelectorAll('.card-img-container, .product-slider-container, .card-price-display-only, .selo-destaque');
+                     newElements.forEach(el => el.style.opacity = '1');
+                 }, 50);
+ 
+             }, 250);
         };
 
         function getProductImage(text) {
@@ -601,73 +632,55 @@
         }
 
         function generateUnifiedCardFrame(initialCesta) {
+            const chipsHTML = CESTAS.map((c, i) => {
+                // Short name for chip if too long
+                const shortName = c.nome.replace('Cesta ', '');
+                const isSelected = initialCesta.id === c.id ? 'selected' : '';
+                return `<div id="chip-${i}" class="chip-nav ${isSelected}" onclick="selectBasketChip(${i})">${shortName}</div>`;
+            }).join('');
+
             return `
             <div class="card-msg-container">
                 <div class="card-cesta-new">
-                    <div class="card-nav-header">
-                        <div class="nav-arrow-btn" onclick="switchBasketCard(-1)"><i class="ph-bold ph-caret-left"></i></div>
-                        <div class="nav-title-group">
-                            <div id="card-nav-title" class="nav-title-display">${initialCesta.nome}</div>
-                            <div class="nav-subtitle">Toque para trocar</div>
+                    <div class="card-main-content">
+                        <div id="unified-card-content">
+                            ${generateUnifiedInnerContent(initialCesta)}
                         </div>
-                        <div class="nav-arrow-btn" onclick="switchBasketCard(1)"><i class="ph-bold ph-caret-right"></i></div>
                     </div>
-                    <div id="unified-card-content">
-                        ${generateUnifiedInnerContent(initialCesta)}
-                    </div>
-                </div>
-            </div>`;
-        }
-
-        // --- DISCOUNT WIDGET SEPARADO ---
-        function generateDiscountTableOnly() {
-            const rows = CESTAS.map(c => `<tr><td>${c.nome}</td><td>- R$ ${c.desconto},00</td></tr>`).join('');
-            return `
-            <div class="card-msg-container">
-                <div class="discount-container">
-                    <h3 class="text-center font-bold text-lg text-[#0F2546] mb-2"><i class="ph-fill ph-tag text-green-500"></i> Descontos pra você:</h3>
-                    <div class="bg-yellow-50 border border-yellow-200 rounded p-2">
-                        <table class="discount-table">
-                            ${rows}
-                        </table>
+                    <div class="card-sidebar no-scrollbar">
+                        ${chipsHTML}
                     </div>
                 </div>
             </div>`;
         }
 
-        function generateDiscountSelector() {
-            const options = CESTAS.map(c => `
-                <div id="disc-${c.id}" class="radio-discount" onclick="selectDiscount('${c.id}')">
-                    <div class="radio-circle"></div>
-                    <div class="flex-1 font-semibold text-gray-700">${c.nome}</div>
-                    <div class="text-green-600 font-bold">-R$${c.desconto}</div>
-                </div>
-            `).join('');
+        // --- RETENTION / DISCOUNT LOGIC ---
 
+        function generateSingleDiscountWidget(cesta) {
             return `
             <div class="card-msg-container">
                 <div class="discount-container">
-                    <p class="font-bold text-sm mb-2 text-gray-700">Escolha um desconto:</p>
-                    ${options}
-                    <button onclick="submitDiscount()" class="w-full bg-[#008069] text-white font-bold py-3 rounded-lg mt-2 shadow-md hover:bg-[#006d59] active:scale-95 transition">
-                        GARANTIR MEU DESCONTO <i class="ph-bold ph-whatsapp-logo ml-1"></i>
+                    <h3 class="text-center font-bold text-lg text-[#0F2546] mb-2"><i class="ph-fill ph-tag text-green-500"></i> Desconto Liberado:</h3>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded p-4 text-center mb-4">
+                        <p class="text-sm text-gray-600 mb-1">Para Cesta ${cesta.nome.replace('Cesta ', '')}:</p>
+                        <div class="text-3xl font-bold text-green-600 mb-1">- R$ ${cesta.desconto},00</div>
+                        <p class="text-xs text-red-500 font-bold">Válido até ${getFutureDate()}</p>
+                    </div>
+
+                    <button onclick="confirmDiscount('${cesta.id}')" class="w-full bg-[#008069] text-white font-bold py-3 rounded-lg shadow-md hover:bg-[#006d59] active:scale-95 transition">
+                        GARANTIR DESCONTO AGORA <i class="ph-bold ph-check-circle ml-1"></i>
                     </button>
+                    <p class="text-[10px] text-center text-gray-400 mt-2">Sem compromisso de compra hoje.</p>
                 </div>
             </div>`;
         }
 
-        window.selectDiscount = function(id) {
-            state.selectedDiscountId = id;
-            document.querySelectorAll('.radio-discount').forEach(el => el.classList.remove('selected'));
-            document.getElementById(`disc-${id}`).classList.add('selected');
-        };
-
-        window.submitDiscount = function() {
-            if(!state.selectedDiscountId) return;
-            const cesta = CESTAS.find(c => c.id === state.selectedDiscountId);
-            const msg = `Olá! Sou ${state.clientDisplayName}. Escolhi a *${cesta.nome}* e quero garantir meu desconto de *R$ ${cesta.desconto},00* na primeira compra (Válido por 15 dias).`;
+        window.confirmDiscount = function(id) {
+            const cesta = CESTAS.find(c => c.id === id);
+            const msg = `Olá! Sou ${state.clientDisplayName}. Tenho interesse na *${cesta.nome}* e quero garantir meu desconto de *R$ ${cesta.desconto},00* (Válido até ${getFutureDate()}).`;
             
-            trackEvent('Lead', { value: cesta.desconto, currency: 'BRL', content_name: 'Discount Claim' });
+            trackEvent('Lead', { value: cesta.desconto, currency: 'BRL', content_name: 'Retention Discount Claim' });
             window.open(`https://wa.me/${CONFIG.whatsAppNumber}?text=${encodeURIComponent(msg)}`, '_blank');
             
             setTimeout(() => {
@@ -675,6 +688,7 @@
                 nextStepFlow();
             }, 1500);
         };
+
 
         function generateCompanyCardHTML() {
             // SLIDES COM TEXTO COLORIDO
@@ -694,29 +708,31 @@
             return `
             <div class="card-msg-container">
                 <div class="card-cesta-new">
-                    <div class="company-header">
-                        <img src="img/logo.png" class="company-logo" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Osvaldo'">
-                        <div class="company-info">
-                            <h2>Dona Antônia Alimentos</h2>
-                            <p>Desde 2016 em Cuiabá & VG</p>
-                        </div>
-                    </div>
-                    
-                    <div class="product-slider-container" style="padding: 15px 0;">
-                        <div class="slider-wrapper">
-                            <div class="product-slider">
-                                ${slidesHTML}
-                                <div style="min-width: 15px;"></div>
+                    <div class="card-main-content">
+                        <div class="company-header">
+                            <img src="img/logo.png" class="company-logo" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Osvaldo'">
+                            <div class="company-info">
+                                <h2>Dona Antônia Alimentos</h2>
+                                <p>Desde 2016 em Cuiabá & VG</p>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="company-social-section">
-                        <div class="company-follow-text">Siga <i class="ph-bold ph-caret-right"></i></div>
-                        <div class="company-social-row">
-                            <a href="https://instagram.com" target="_blank" class="company-social-btn"><i class="ph ph-instagram-logo"></i></a>
-                            <a href="https://facebook.com" target="_blank" class="company-social-btn"><i class="ph ph-facebook-logo"></i></a>
-                            <a href="https://wa.me/${CONFIG.whatsAppNumber}" target="_blank" class="company-social-btn"><i class="ph ph-whatsapp-logo"></i></a>
+                        
+                        <div class="product-slider-container" style="padding: 15px 0;">
+                            <div class="slider-wrapper">
+                                <div class="product-slider">
+                                    ${slidesHTML}
+                                    <div style="min-width: 15px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="company-social-section">
+                            <div class="company-follow-text">Siga <i class="ph-bold ph-caret-right"></i></div>
+                            <div class="company-social-row">
+                                <a href="https://instagram.com" target="_blank" class="company-social-btn"><i class="ph ph-instagram-logo"></i></a>
+                                <a href="https://facebook.com" target="_blank" class="company-social-btn"><i class="ph ph-facebook-logo"></i></a>
+                                <a href="https://wa.me/${CONFIG.whatsAppNumber}" target="_blank" class="company-social-btn"><i class="ph ph-whatsapp-logo"></i></a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -729,15 +745,10 @@
             if (element.scrollLeft > 20) { if(arrow) arrow.style.opacity = '0'; } else { if(arrow) arrow.style.opacity = '1'; }
 
             // GATILHO DE ROLAGEM (Scroll Trigger)
-            // Se o usuário rolou até o final (quase), assumimos que ele viu os produtos e avançamos
-            // Tolerância de 50px
             if (element.scrollLeft + element.clientWidth >= element.scrollWidth - 50) {
-                // Checa se está no passo de ver cestas (5) e se ainda não disparou
                 if (state.step === 5 && !state.scrollTriggered) {
                     state.scrollTriggered = true;
-                    // Limpa timer de espera pois o usuário já interagiu
                     clearTimeout(state.timerRef);
-                    // Avança após um pequeno delay para ele terminar de ler
                     setTimeout(() => {
                          if(state.step === 5) nextStepFlow('scroll_trigger');
                     }, 1500); 
@@ -793,6 +804,14 @@
             // Timer Reset logic se necessário
             if(state.timerRef) clearTimeout(state.timerRef);
 
+            // Se for seleção de cesta para desconto
+            if (value.startsWith('discount_basket_')) {
+                const index = parseInt(value.split('_')[2]);
+                state.selectedDiscountId = CESTAS[index].id; // Salva ID para uso posterior
+                nextStepFlow('discount_selected');
+                return;
+            }
+
             nextStepFlow(value);
         }
 
@@ -812,15 +831,12 @@
 
                 case 2: // Mostra Empresa
                     await addMessage(generateCompanyCardHTML());
-                    // REMOVIDO: Mensagem "Somos de Cuiabá..." (Já está no card)
-                    // MUDANÇA: AGORA PERGUNTA ANTES DE MOSTRAR AS CESTAS
                     setTimeout(() => { 
                         state.step = 4; // Passo intermediário para perguntar
                         nextStepFlow('ask_show_products'); 
                     }, 4000);
                     break;
 
-                // PASSO NOVO: PERGUNTA DIDÁTICA
                 case 4: 
                     if(triggerValue === 'ask_show_products') {
                         await addMessage(`Posso te apresentar nossas opções de cestas agora?`);
@@ -830,38 +846,33 @@
                     }
                     break;
 
-                case 3: // Fallback caso venha do "Sim" direto do passo 1
-                     // Redireciona para o passo 5 (Mostrar Cestas) com uma msg antes
+                case 3: 
                      await addMessage(`Combinado! Vou te mostrar as opções.`);
                      setTimeout(() => { state.step = 5; nextStepFlow(); }, 1000);
                      break;
 
-                case 5: // Exibe Card UNIFICADO
-                    state.currentBasketIndex = 0; // Começa na Grande
-                    state.scrollTriggered = false; // Reset trigger
+                case 5: // Exibe Card UNIFICADO COM CHIPS
+                    state.currentBasketIndex = 0; // Começa na Economica
+                    state.scrollTriggered = false; 
                     await addMessage(`Você pode navegar entre elas aqui mesmo 👇`);
                     await addMessage(generateUnifiedCardFrame(CESTAS[0]));
                     
                     trackEvent('ViewContent', { content_name: CESTAS[0].nome });
 
-                    // TIMER DE RETENÇÃO REDUZIDO (20s)
-                    // Se o usuário não fizer nada em 20s, avança.
-                    // Se rolar o slider (ver handleSlideScroll), avança antes.
                     state.timerRef = setTimeout(() => {
                         state.step = 6;
                         nextStepFlow('timer_trigger');
                     }, 20000); 
                     break;
 
-                case 6: // Pergunta Pagamento (Recuperação)
-                    // REMOVIDO: "Ei fulano..." - Agora é direto.
+                case 6: // Pergunta Pagamento
                     await addMessage(`Posso te mostrar as formas de pagamento facilitadas?`);
                     showOptions([
                         { text: "Pode mostrar ✅", value: "show_payment", nextStep: 7 }
                     ]);
                     break;
 
-                case 7: // Mostra Pagamento e PITCH DE DESCONTO
+                case 7: // Mostra Pagamento e INICIA RETENÇÃO
                     await addMessage(`Aceitamos praticamente tudo:`);
                     const listaPagamento = `
                         <ul class="list-disc pl-5 space-y-1">
@@ -871,25 +882,42 @@
                         </ul>`;
                     await addMessage(listaPagamento);
                     
-                    // Pitch Final Separado em 2 partes
+                    // NOVA ESTRATÉGIA DE RETENÇÃO (5 segundos)
                     setTimeout(async () => {
-                        // MENSAGEM HUMANA DE TRANSIÇÃO
-                        await addMessage(`Olha, pra te ajudar a fechar a sua primeira compra com a gente...`);
-                        await addMessage(`Preparei algo especial 👇`);
-                        
-                        setTimeout(async () => {
-                            await addMessage(`🎁 <b>PROMOÇÃO RELÂMPAGO</b>`);
-                            // 1. Mostra Tabela
-                            await addMessage(generateDiscountTableOnly());
-                            
-                            setTimeout(async () => {
-                                 // 2. Convite para Ação
-                                 await addMessage(`${name}, mesmo que não vá comprar agora, garanta seu desconto.`);
-                                 await addMessage(generateDiscountSelector()); 
-                            }, 1500);
-                        }, 1500);
+                        state.step = 8;
+                        nextStepFlow('retention_start');
+                    }, 5000);
+                    break;
 
-                    }, 2000);
+                case 8: // Retenção - Hook
+                    await addMessage(`${name}, quero que você se torne nosso cliente.`);
+                    await addMessage(`Posso te oferecer um desconto pra sua primeira compra?`);
+                    
+                    showOptions([
+                        { text: "Pode sim 👍", value: "accept_offer", nextStep: 9 }
+                    ]);
+                    break;
+
+                case 9: // Retenção - Escolha
+                    await addMessage(`Que ótimo! Qual tamanho de cesta te interessa mais?`);
+                    
+                    // Gera opções baseadas nas cestas
+                    const basketOptions = CESTAS.map((c, i) => ({
+                        text: c.nome.replace('Cesta ', ''),
+                        value: `discount_basket_${i}`,
+                        nextStep: 10
+                    }));
+                    
+                    showOptions(basketOptions);
+                    break;
+
+                case 10: // Retenção - Revelação e CTA
+                    const selectedBasket = CESTAS.find(c => c.id === state.selectedDiscountId);
+                    
+                    await addMessage(`Boa escolha!`);
+                    await addMessage(`Para a <b>${selectedBasket.nome}</b>, consegui liberar um desconto especial.`);
+                    
+                    await addMessage(generateSingleDiscountWidget(selectedBasket));
                     break;
 
                 case 100: // Passo Final
