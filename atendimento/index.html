@@ -62,7 +62,7 @@
             -webkit-user-select: none;
         }
 
-        /* === ESTILOS DOS CARDS (Importados do Site) === */
+        /* === ESTILOS DOS CARDS === */
         :root {
             --cor-destaque-dourado: #ffb300;
             --cor-texto-destaque: #0F2546;
@@ -74,7 +74,7 @@
 
         .card-msg-container {
             width: 100%;
-            max-width: 320px; /* Limita largura dentro do chat */
+            max-width: 320px;
         }
 
         .card-cesta-new {
@@ -93,11 +93,12 @@
             position: relative;
             background: #fff;
             min-height: 100px;
+            border-bottom: 1px solid #eee;
         }
         .card-img-side {
-            width: 120px;
-            min-width: 120px;
-            height: 120px;
+            width: 110px;
+            min-width: 110px;
+            height: 110px;
             object-fit: cover;
         }
         .card-title-side {
@@ -107,6 +108,7 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            background: #fdfdfd;
         }
         .card-title-side h2 {
             font-size: 1.1rem;
@@ -114,6 +116,7 @@
             color: var(--cor-texto-destaque);
             font-weight: 800;
             text-transform: uppercase;
+            line-height: 1.2;
         }
 
         .selo-destaque {
@@ -127,77 +130,92 @@
             font-size: 0.65rem;
             text-transform: uppercase;
             z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        .card-control-row {
-            display: flex;
-            border-top: 1px solid var(--cor-borda);
-        }
-        .btn-card-toggle {
-            flex: 1;
-            background: #f9f9f9;
-            border: none;
-            border-right: 1px solid var(--cor-borda);
-            color: #555;
-            padding: 12px 5px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-        .btn-card-toggle:last-child { border-right: none; }
-        .btn-card-toggle.active { background: #e3f2fd; color: #1976D2; }
-        .btn-card-toggle.active-valor { background: #e8f5e9; color: #388E3C; }
-
-        .card-expand-section {
-            display: none;
-            padding: 15px;
+        /* Área de Scroll da Lista */
+        .card-scroll-area {
+            max-height: 180px; /* Altura fixa visível */
+            overflow-y: auto;
             background: #fafafa;
-            border-top: 1px solid var(--cor-borda);
-            animation: slideDown 0.3s ease-out;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
         }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Scrollbar customizada e BEM VISÍVEL para público leigo */
+        .card-scroll-area::-webkit-scrollbar {
+            width: 12px; /* Larga */
+        }
+        .card-scroll-area::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-left: 1px solid #ddd;
+        }
+        .card-scroll-area::-webkit-scrollbar-thumb {
+            background: #888; 
+            border-radius: 6px;
+            border: 2px solid #f1f1f1;
+        }
+        .card-scroll-area::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
 
         .lista-itens-card { list-style: none; padding: 0; margin: 0; text-align: left; }
         .lista-itens-card li {
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px dashed #ccc;
-            font-size: 0.85rem;
-            color: #555;
+            font-size: 0.9rem;
+            color: #444;
             display: flex; align-items: flex-start;
+            line-height: 1.3;
         }
-        .lista-itens-card li i { color: #4CAF50; margin-right: 8px; margin-top: 3px; }
+        .lista-itens-card li i { color: #4CAF50; margin-right: 8px; margin-top: 3px; font-size: 0.8rem;}
         .lista-itens-card li.grupo-titulo {
-            color: var(--cor-destaque-dourado); /* Usando variável do site */
-            color: #e65100; /* Fallback visivel */
-            font-weight: 700;
-            border-bottom: none;
-            padding-top: 12px;
+            color: #e65100;
+            font-weight: 800;
+            border-bottom: 2px solid #ffe0b2;
+            padding-top: 15px;
+            padding-bottom: 5px;
             text-transform: uppercase;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
+            background: #fafafa;
+            position: sticky;
+            top: 0;
+        }
+        .lista-itens-card li.grupo-titulo:first-child { padding-top: 0; }
+
+        /* Área de Preço */
+        .card-price-area {
+            padding: 15px;
+            background: #fff;
         }
 
         .radio-arroz-option {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px;
-            border: 1px solid #ddd; border-radius: 6px;
+            padding: 12px;
+            border: 2px solid #eee; border-radius: 8px;
             margin-bottom: 8px; cursor: pointer; background: white;
+            transition: all 0.2s;
         }
+        .radio-arroz-option:active { transform: scale(0.98); }
         .radio-arroz-option.selected { border-color: var(--cor-whatsapp); background: #f0fff4; }
+        
         .radio-arroz-info { display: flex; flex-direction: column; text-align: left;}
-        .radio-arroz-name { font-weight: 600; font-size: 0.9rem; color: #333; }
-        .radio-arroz-price { color: var(--cor-destaque-vermelho); font-weight: 800; font-size: 1rem; }
+        .radio-arroz-name { font-weight: 600; font-size: 0.95rem; color: #333; }
+        .radio-arroz-price { color: var(--cor-destaque-vermelho); font-weight: 800; font-size: 1.1rem; }
         
         .btn-encomendar-card {
             width: 100%; background-color: var(--cor-whatsapp); color: white;
-            border: none; padding: 12px; border-radius: 6px;
+            border: none; padding: 14px; border-radius: 8px;
             font-size: 1rem; font-weight: 800; text-transform: uppercase;
             cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-            margin-top: 10px;
+            margin-top: 10px; box-shadow: 0 3px 0 #189d4b;
+            transition: transform 0.1s;
+        }
+        .btn-encomendar-card:active { transform: translateY(3px); box-shadow: none; }
+        
+        .scroll-hint {
+            font-size: 0.75rem; color: #777; text-align: center;
+            padding: 4px; background: #eee; font-style: italic;
         }
     </style>
 </head>
@@ -257,11 +275,12 @@
 
         if (window.self !== window.top) window.top.location.href = window.self.location.href;
 
-        // --- DADOS DAS CESTAS (Para gerar os cards) ---
+        // --- DADOS DAS CESTAS ---
         const CESTAS = [
             {
                 id: 'grande',
                 nome: 'Cesta Grande',
+                arrozQtd: 4,
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
                 items: [
                     '4 Arroz de 5kg', '3 Açúcar Cristal de 2kg', '4 Óleo de Soja 900ml', 
@@ -278,6 +297,7 @@
             {
                 id: 'media',
                 nome: 'Cesta Média',
+                arrozQtd: 3,
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
                 items: [
                     '3 Arroz de 5kg', '2 Açúcar Cristal', '3 Óleo', '3 Feijão', 
@@ -293,6 +313,7 @@
             {
                 id: 'pequena',
                 nome: 'Cesta Pequena',
+                arrozQtd: 2,
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
                 items: [
                     '2 Arroz de 5kg', '1 Açúcar 2kg', '2 Óleo', '2 Feijão', 
@@ -308,6 +329,7 @@
             {
                 id: 'mini',
                 nome: 'Cesta Mini',
+                arrozQtd: 1,
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
                 items: [
                     '1 Arroz de 5kg', '1 Açúcar 2kg', '2 Óleo', '2 Feijão', 
@@ -323,6 +345,7 @@
                 id: 'economica',
                 nome: 'Cesta Econômica',
                 destaque: 'Mais Vendida',
+                arrozQtd: 1,
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
                 items: [
                     '1 Arroz de 5kg', '1 Açúcar 2kg', '1 Óleo', '1 Feijão', 
@@ -344,7 +367,8 @@
         let state = { 
             step: 0, 
             userName: '', 
-            currentCestaIndex: 0 // Começa na 0 (Grande)
+            suggestedIndex: null, // Índice da cesta sugerida inicialmente
+            browsingQueue: [] // Fila de cestas para mostrar depois
         };
 
         const getGreeting = () => {
@@ -360,26 +384,21 @@
             }, 100);
         }
 
-        // --- FUNÇÃO DE MENSAGEM COM DELAY HUMANO ---
-        // Calcula tempo baseado no tamanho do texto (simula leitura/digitação real)
+        // --- MENSAGEM COM DELAY HUMANO ---
         function calculateTypingTime(text) {
-            const baseDelay = 1500; // Mínimo 1.5s
-            const charDelay = 40;   // ms por caractere
-            return Math.min(baseDelay + (text.length * charDelay), 4500); // Max 4.5s
+            const baseDelay = 1000;
+            const charDelay = 30;
+            return Math.min(baseDelay + (text.length * charDelay), 4000);
         }
 
         function addMessage(text, sender = 'bot', forceDelay = null) {
             return new Promise(resolve => {
                 const typingTime = forceDelay !== null ? forceDelay : calculateTypingTime(text);
-                
-                // Pequena pausa antes de começar a digitar (pensando)
-                const preTypingDelay = sender === 'bot' ? 800 : 0;
+                const preTypingDelay = sender === 'bot' ? 600 : 0;
 
                 setTimeout(() => {
                     if (sender === 'bot') {
                         statusText.innerText = 'Digitando...';
-                        
-                        // Scroll automático ao começar a digitar
                         scrollToBottom();
 
                         const typingId = `typing-${Date.now()}`;
@@ -400,13 +419,12 @@
                             const typingEl = document.getElementById(typingId);
                             if(typingEl) typingEl.remove();
                             
-                            // Se for HTML (Card), remove classes de padding padrão
                             const isCard = text.includes('card-cesta-new');
                             const bubbleClass = isCard ? 'p-1 bg-transparent shadow-none' : 'p-2 px-3 bg-white shadow-sm';
                             
                             const html = `
                                 <div class="flex justify-start w-full mb-2 fade-in">
-                                    <div class="msg-in ${bubbleClass} rounded-lg relative max-w-[90%] text-gray-800 text-[15px] leading-snug protected-msg">
+                                    <div class="msg-in ${bubbleClass} rounded-lg relative max-w-[95%] text-gray-800 text-[15px] leading-snug protected-msg">
                                         ${text}
                                         ${!isCard ? `<span class="block text-[10px] text-gray-400 text-right mt-1 -mr-1">${getCurrentTime()}</span>` : ''}
                                     </div>
@@ -454,31 +472,18 @@
                 scrollToBottom();
                 userInput.disabled = true;
                 userInput.placeholder = "Selecione uma opção acima 👆";
-            }, 1000); // Delay fixo antes de mostrar botões
+            }, 800);
         }
 
-        // --- FUNÇÕES DE RENDERIZAÇÃO DE CARD ---
-        
-        // Expor funções globais para o HTML injetado funcionar
-        window.toggleCardSection = function(id, section) {
-            const prodSec = document.getElementById(`prod-${id}`);
-            const valSec = document.getElementById(`val-${id}`);
-            
-            if(section === 'produtos') {
-                const isHidden = prodSec.style.display === 'none' || prodSec.style.display === '';
-                prodSec.style.display = isHidden ? 'block' : 'none';
-                valSec.style.display = 'none';
-            } else {
-                const isHidden = valSec.style.display === 'none' || valSec.style.display === '';
-                valSec.style.display = isHidden ? 'block' : 'none';
-                prodSec.style.display = 'none';
-            }
-            scrollToBottom();
-        };
-
+        // --- FUNÇÕES GLOBAIS DE CARD ---
         window.selectRice = function(id, nome, preco) {
             const btn = document.getElementById(`btn-pedir-${id}`);
-            btn.innerHTML = `<i class="fa-brands fa-whatsapp"></i> Pedir (${nome})`;
+            // Feedback visual imediato
+            const allOpts = document.querySelectorAll(`#val-${id} .radio-arroz-option`);
+            allOpts.forEach(el => el.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+
+            btn.innerHTML = `<i class="fa-brands fa-whatsapp"></i> Pedir Agora`;
             btn.onclick = () => {
                 const msg = `Olá! Quero encomendar a *Cesta ${id.toUpperCase()}* com *Arroz ${nome}* por *R$ ${preco}*.`;
                 window.open(`https://wa.me/${CONFIG.whatsAppNumber}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -494,7 +499,9 @@
                         <span class="radio-arroz-name">${opt.arroz.includes('Valor') ? 'Valor Único' : 'Com ' + opt.arroz}</span>
                         <span class="radio-arroz-price">R$ ${opt.preco}</span>
                     </div>
-                    <div class="w-4 h-4 rounded-full border border-gray-400"></div>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                         <div class="w-3 h-3 bg-green-500 rounded-full hidden selection-dot"></div>
+                    </div>
                 </div>
             `).join('');
 
@@ -508,21 +515,16 @@
                             <h2>${cesta.nome}</h2>
                         </div>
                     </div>
-                    <div class="card-control-row">
-                        <button class="btn-card-toggle" onclick="toggleCardSection('${cesta.id}', 'produtos')">
-                            <i class="fa-solid fa-list-ul"></i> Produtos
-                        </button>
-                        <button class="btn-card-toggle" onclick="toggleCardSection('${cesta.id}', 'valor')">
-                            <i class="fa-solid fa-dollar-sign"></i> Valor
-                        </button>
-                    </div>
-                    <div id="prod-${cesta.id}" class="card-expand-section">
+                    
+                    <div class="scroll-hint">Role para ver todos os produtos 👇</div>
+                    <div class="card-scroll-area">
                         <ul class="lista-itens-card">
                             ${itemsHTML}
                         </ul>
                     </div>
-                    <div id="val-${cesta.id}" class="card-expand-section">
-                        <p style="margin-bottom: 10px; font-size: 0.8rem; color:#aaa;">Selecione uma opção:</p>
+
+                    <div id="val-${cesta.id}" class="card-price-area">
+                        <p style="margin-bottom: 10px; font-size: 0.9rem; color:#666; font-weight: 600;">Selecione uma opção:</p>
                         ${riceOptionsHTML}
                         <button id="btn-pedir-${cesta.id}" class="btn-encomendar-card">
                             <i class="fa-brands fa-whatsapp"></i> Escolha o Arroz
@@ -533,12 +535,11 @@
         }
 
         // --- LÓGICA DO ROTEIRO ---
-
         window.onload = async () => {
             setTimeout(async () => {
                 await addMessage(`${getGreeting()}! Tudo bem? 👋`, 'bot', 1000);
-                await addMessage(`Aqui é o *${CONFIG.ownerName}*, da Cesta Básica Econômica.`, 'bot', 2000);
-                await addMessage(`Pra gente começar, qual é o seu primeiro nome?`, 'bot', 1500);
+                await addMessage(`Aqui é o *${CONFIG.ownerName}*, da Cesta Básica Econômica.`, 'bot', 1500);
+                await addMessage(`Qual é o seu primeiro nome?`, 'bot', 1200);
                 userInput.focus();
             }, 500);
         };
@@ -566,115 +567,104 @@
 
             await addMessage(text, 'user');
             state.step = nextStep;
+
+            // Configuração da Sugestão baseada na resposta
+            if (state.step === 2) {
+                if (value === '1') { state.suggestedIndex = 3; state.browsingQueue = [4, 2, 1, 0]; } // Mini -> Eco, Peq, Med, G
+                else if (value === '2') { state.suggestedIndex = 2; state.browsingQueue = [1, 3, 0, 4]; } // Peq -> Med, Mini, G, Eco
+                else if (value === '3') { state.suggestedIndex = 1; state.browsingQueue = [0, 2, 3, 4]; } // Med -> G, Peq...
+                else { state.suggestedIndex = 0; state.browsingQueue = [1, 2, 3, 4]; } // Grande -> Med...
+            }
             
-            // Lógica para navegação nas cestas
-            if (value === 'ver_proxima') {
-                state.currentCestaIndex++;
-                state.step = 5; // Volta para o loop de mostrar cesta
-            } else if (value === 'entrar_grupo') {
-                state.step = 6; // Vai para o final
+            // Controle da fila de "Ver Outras"
+            if (value === 'ver_outra') {
+                 if(state.browsingQueue.length > 0) {
+                     state.suggestedIndex = state.browsingQueue.shift(); // Pega o próximo da fila
+                     state.step = 2; // Volta para mostrar card (Passo 2 reutilizado)
+                 } else {
+                     state.step = 3; // Acabaram as opções, vai para fechamento
+                 }
             }
 
-            nextStepFlow(value);
+            nextStepFlow();
         }
 
-        async function nextStepFlow(value) {
+        async function nextStepFlow() {
             const name = state.userName;
 
             switch (state.step) {
                 case 1:
                     await addMessage(`Prazer, ${name}! 😀`);
-                    await addMessage(`Me diz uma coisa... você já costuma comprar cesta básica?`, 'bot', 2500);
+                    await addMessage(`Agora vou te mostrar as nossas opções de cestas. Tenho certeza que uma vai te servir perfeitamente.`);
+                    await addMessage(`Pra eu te indicar a certa: **Quantos pacotes de arroz (5kg) você usa na sua casa por mês?**`, 'bot', 2500);
                     showOptions([
-                        { text: "Sim, já compro 👍", value: "sim", nextStep: 2 },
-                        { text: "Não, compro no mercado 🛒", value: "nao", nextStep: 3 }
+                        { text: "1 Pacote", value: "1", nextStep: 2 },
+                        { text: "2 Pacotes", value: "2", nextStep: 2 },
+                        { text: "3 Pacotes", value: "3", nextStep: 2 },
+                        { text: "4 ou mais", value: "4", nextStep: 2 }
                     ]);
                     break;
 
-                case 2: // Já compra
-                    await addMessage(`Ah, que ótimo! Então você sabe como ajuda na economia de casa.`);
-                    await addMessage(`A nossa cesta é diferenciada. Preço baixo de verdade e marcas de primeira (Arroz Tio Lino, Açúcar Itamarati...). 🍚`);
-                    await addMessage(`E a gente entrega aí na sua porta, sem cobrar taxa se for em Cuiabá ou VG.`);
-                    // Vai para apresentação de pagamento
-                    setTimeout(() => { state.step = 4; nextStepFlow(); }, 1000);
-                    break;
-
-                case 3: // Mercado
-                    await addMessage(`Entendi! Olha, vou te contar um segredo... 🤫`);
-                    await addMessage(`Comprar item por item no supermercado sai *muito mais caro* no final do mês.`, 'bot', 3000);
-                    await addMessage(`Com a gente você recebe tudo em casa e paga bem menos por marcas ótimas.`);
-                    // Vai para apresentação de pagamento
-                    setTimeout(() => { state.step = 4; nextStepFlow(); }, 1000);
-                    break;
-
-                case 4: // Pagamento Completo + Pergunta Cestas
-                    await addMessage(`Sobre o pagamento, facilitamos MUITO pra você:`);
-                    await addMessage(`✅ *Cartão de Crédito* em até 3x.`);
-                    await addMessage(`✅ *Cartão de Débito*.`);
-                    await addMessage(`✅ *PIX* ou *Dinheiro* na entrega.`);
-                    await addMessage(`✅ *Vale Alimentação/Refeição:* Aceitamos Alelo, Sodexo, Pluxee, Caju, Flash, iFood Benefícios...`);
-                    await addMessage(`Você quer conhecer as nossas cestas agora?`, 'bot', 2000);
-                    showOptions([
-                        { text: "Sim, quero ver 😍", value: "sim_ver", nextStep: 5 },
-                        { text: "Não, só quero o grupo 👋", value: "nao_ver", nextStep: 6 }
-                    ]);
-                    break;
-
-                case 5: // Loop de Mostrar Cestas
-                    const index = state.currentCestaIndex;
+                case 2: // Mostrar Cesta Sugerida
+                    const index = state.suggestedIndex;
+                    const cesta = CESTAS[index];
+                    const qtdArroz = cesta.arrozQtd;
                     
-                    if (index < CESTAS.length) {
-                        const cestaAtual = CESTAS[index];
-                        
-                        // Mensagem de introdução da cesta
-                        if(index === 0) {
-                            await addMessage(`Vou te mostrar a nossa maior primeiro. Essa é a **${cestaAtual.nome}**. 👇`);
-                        } else {
-                            await addMessage(`Aqui está a **${cestaAtual.nome}**. 👇`);
-                        }
-                        
-                        // Renderiza o Card
-                        await addMessage(generateCardHTML(cestaAtual));
-                        
-                        // Pergunta se quer ver a próxima (se houver próxima)
-                        if (index < CESTAS.length - 1) {
-                            const proximaCesta = CESTAS[index + 1];
-                            await addMessage(`O que achou? Quer ver a próxima (${proximaCesta.nome}) ou prefere entrar no nosso grupo de descontos?`, 'bot', 2500);
-                            showOptions([
-                                { text: `Ver a ${proximaCesta.nome} ➡️`, value: "ver_proxima", nextStep: 5 }, // nextStep 5 volta pra esse case com index incrementado
-                                { text: "Entrar no Grupo VIP 🎁", value: "entrar_grupo", nextStep: 6 }
-                            ]);
-                        } else {
-                            // Acabaram as cestas
-                            await addMessage(`Essa foi a nossa última opção (a mais barata).`);
-                            await addMessage(`Gostou de alguma? Se quiser pedir, é só clicar no botão verde do preço no card acima.`);
-                            await addMessage(`Ou vem pro nosso grupo pegar o cupom de desconto!`);
-                            showOptions([
-                                { text: "Quero entrar no Grupo! 🚀", value: "entrar_grupo", nextStep: 6 }
-                            ]);
-                        }
-                    } 
+                    // Frase varia se é a primeira sugestão ou "outra"
+                    if (state.browsingQueue.length >= 3) { // Lógica simples para detectar se é a primeira
+                         await addMessage(`Legal! Pra essa quantidade, vou te mostrar a **${cesta.nome}**, que vem com ${qtdArroz} arroz.`);
+                    } else {
+                         await addMessage(`Entendi. Então dá uma olhada nessa aqui, a **${cesta.nome}**:`);
+                    }
+
+                    // Renderiza CARD
+                    await addMessage(generateCardHTML(cesta));
+
+                    await addMessage(`Ela é bem completa. O que achou?`);
+                    
+                    const temMais = state.browsingQueue.length > 0;
+                    const opcoes = [
+                        { text: "Gostei dessa! 😍", value: "gostei", nextStep: 3 },
+                    ];
+                    
+                    if(temMais) {
+                        opcoes.push({ text: "Ver outras cestas 🔄", value: "ver_outra", nextStep: 2 });
+                    } else {
+                        opcoes.push({ text: "Ver comparação de preço 💲", value: "comparar", nextStep: 3 });
+                    }
+
+                    showOptions(opcoes);
                     break;
 
-                case 6: // Fechamento (Link Grupo)
-                    await addMessage(`Perfeito, ${name}!`);
-                    await addMessage(`Pra você garantir brindes e ver as ofertas relâmpago, entra no nosso **Grupo VIP** agora.`);
-                    await addMessage(`🎁 Toda semana tem sorteio exclusivo pra quem tá lá.`);
+                case 3: // Argumentação de Valor + Comparativo
+                    await addMessage(`Ótima escolha, ${name}!`);
+                    await addMessage(`Sabe, muita gente compara com o mercado... mas quando coloca na ponta do lápis, vê a diferença.`);
+                    await addMessage(`🛒 No supermercado, além de pagar mais caro em marcas boas como Camil e Tio Lino, você ainda tem que carregar peso.`);
+                    await addMessage(`Aqui a gente entrega na sua porta e o preço é esse que você viu. Sem surpresas. 😉`);
                     
                     setTimeout(() => {
-                        const finalHTML = `
-                            <div class="flex justify-center w-full mt-4 mb-8">
-                                <a href="${CONFIG.whatsAppGroupLink}" target="_blank" 
-                                   class="bg-[#25D366] text-white font-bold py-3 px-6 rounded-full shadow-xl flex items-center gap-2 animate-bounce hover:scale-105 transition no-underline">
-                                    <i class="ph-bold ph-whatsapp-logo text-2xl"></i>
-                                    ENTRAR NO GRUPO VIP
-                                </a>
-                            </div>`;
-                        chatContainer.insertAdjacentHTML('beforeend', finalHTML);
-                        scrollToBottom();
-                    }, 1000);
+                        nextStepFlowFinal();
+                    }, 2000);
                     break;
             }
+        }
+
+        async function nextStepFlowFinal() {
+            await addMessage(`Pra finalizar e você garantir esse preço especial (e brindes!), você precisa entrar no nosso **Grupo VIP**.`);
+            await addMessage(`É lá que soltamos os cupons de desconto.`);
+            
+            setTimeout(() => {
+                const finalHTML = `
+                    <div class="flex justify-center w-full mt-4 mb-8">
+                        <a href="${CONFIG.whatsAppGroupLink}" target="_blank" 
+                           class="bg-[#25D366] text-white font-bold py-3 px-6 rounded-full shadow-xl flex items-center gap-2 animate-bounce hover:scale-105 transition no-underline">
+                            <i class="ph-bold ph-whatsapp-logo text-2xl"></i>
+                            ENTRAR NO GRUPO VIP
+                        </a>
+                    </div>`;
+                chatContainer.insertAdjacentHTML('beforeend', finalHTML);
+                scrollToBottom();
+            }, 1000);
         }
 
         sendBtn.addEventListener('click', handleInput);
