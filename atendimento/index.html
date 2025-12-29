@@ -865,6 +865,13 @@
                     await addMessage(`Boa escolha!`);
                     await addMessage(`Para a <b>${selectedBasket.nome}</b>, consegui liberar um desconto especial.`);
                     await addMessage(generateSingleDiscountWidget(selectedBasket));
+
+                    // Adicionado conforme solicitado
+                    await addMessage(`Clique para garantir seu desconto. 👆`);
+                    
+                    const textSave = encodeURIComponent("Estou salvando seu contato");
+                    // Linkando para o número solicitado no prompt (0965)
+                    await addMessage(`Não esqueça de salvar nosso contato <a href="https://wa.me/5565998150965?text=${textSave}" target="_blank" class="font-bold text-[#008069] hover:underline">65 99815-0965</a>.`);
                     break;
                 case 100: // Passo Final
                     await addMessage(`Perfeito! Aguarde que já vamos confirmar seu pedido no WhatsApp. 🟢`);
