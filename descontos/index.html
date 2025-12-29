@@ -727,8 +727,9 @@
             trackEvent('PageView');
             
             // 1. Cumprimento Cordial (Sem pedir nome)
-            await addMessage(`${getGreeting()}! Seja bem-vindo(a) à Super Cestas Dona Antônia. 👋`, 'bot', 800);
-            await addMessage(`Confira nossas opções de cestas básicas com o melhor preço da região: 👇`, 'bot', 1200);
+            await addMessage(`${getGreeting()}! Olá, aqui é o Osvaldo da Cestas Básicas Dona Antônia. 👋`, 'bot', 800);
+            await addMessage(`Entregamos em Cuiabá e Várzea Grande:`, 'bot', 800);
+            await addMessage(`Conheça nossas Cestas: 👇`, 'bot', 1200);
 
             // 2. Mostrar Card Imediatamente
             state.step = 5; // Pula direto para passo de exibição
