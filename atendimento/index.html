@@ -610,7 +610,7 @@
                     `;
                     await addMessage(companyHTML, 'bot', 1500);
                     // AJUSTE: Tempo aumentado de 4s para 6s para ler o card da empresa
-                    setTimeout(() => { state.step = 4; nextStep(); }, 6000);
+                    setTimeout(() => { state.step = 4; nextStep(); }, 4000);
                     break;
 
                 case 3: 
@@ -639,7 +639,7 @@
                             state.step = 6; 
                             nextStep();
                         }
-                    }, 25000); 
+                    }, 12000); 
                     break;
 
                 case 6: // Pergunta Pagamento
@@ -660,7 +660,7 @@
                     `;
                     await addMessage(payHTML, 'bot');
                     // AJUSTE: Tempo aumentado para 7s para ler a lista de pagamento
-                    setTimeout(() => { state.step = 8; nextStep(); }, 7000);
+                    setTimeout(() => { state.step = 8; nextStep(); }, 3500);
                     break;
 
                 case 8: // Hook
