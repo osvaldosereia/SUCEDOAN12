@@ -7,17 +7,25 @@
     <meta name="description" content="Cestas básicas com qualidade e preço justo. Fale com a gente!">
     <meta name="theme-color" content="#ffffff">
     
-    <!-- SECURITY PROTOCOL -->
+    <!-- PILLAR 3: SECURITY PROTOCOL (Modo Preview Ativo) -->
     <script>
         (function() {
-            const allowedDomains = ['www.donaantonia.com.br', 'donaantonia.com.br', 'localhost', '127.0.0.1', 'generativelanguage.net'];
+            const allowedDomains = [
+                'www.donaantonia.com.br', 
+                'donaantonia.com.br', 
+                'localhost', 
+                '127.0.0.1', 
+                'generativelanguage.net' // Permitir preview do Google
+            ];
             const currentDomain = window.location.hostname;
             const isAllowed = allowedDomains.some(d => currentDomain === d || currentDomain.endsWith('.' + d));
 
             if (!isAllowed) {
-                alert("⚠️ ALERTA DE SEGURANÇA ⚠️\n\nSITE CLONADO DETECTADO.\nACESSE O OFICIAL: WWW.DONAANTONIA.COM.BR");
-                document.write(`<style>body,html{overflow:hidden!important;height:100%!important;background:#ef4444!important}body>*{filter:invert(1) blur(4px) grayscale(100%)!important;transform:rotate(180deg) scale(.9)!important;pointer-events:none!important;opacity:.5!important}#security-overlay{position:fixed!important;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.95)!important;z-index:999999!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;color:#fbbf24!important;font-family:sans-serif!important;text-align:center;transform:none!important;filter:none!important;pointer-events:auto!important}</style><div id="security-overlay"><h1 style="font-size:3rem;margin-bottom:20px">🚫 GOLPE DETECTADO 🚫</h1><p style="font-size:1.5rem">Este site (<strong>${currentDomain}</strong>) não é oficial.</p><br><a href="https://www.donaantonia.com.br" style="background:#fbbf24;color:#000;padding:20px;text-decoration:none;font-weight:bold;border-radius:10px;font-size:1.2rem">IR PARA SITE OFICIAL</a></div>`);
-                window.stop(); throw new Error("Security Violation");
+                console.warn("⚠️ DOMÍNIO NÃO AUTORIZADO DETECTADO: " + currentDomain);
+                // Para produção, descomente as linhas abaixo para bloquear totalmente:
+                // alert("⚠️ ALERTA DE SEGURANÇA ⚠️\n\nSITE CLONADO DETECTADO.\nACESSE O OFICIAL: WWW.DONAANTONIA.COM.BR");
+                // document.write(`<style>body,html{overflow:hidden!important;height:100%!important;background:#ef4444!important}body>*{filter:invert(1) blur(4px) grayscale(100%)!important;transform:rotate(180deg) scale(.9)!important;pointer-events:none!important;opacity:.5!important}#security-overlay{position:fixed!important;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.95)!important;z-index:999999!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;color:#fbbf24!important;font-family:sans-serif!important;text-align:center;transform:none!important;filter:none!important;pointer-events:auto!important}</style><div id="security-overlay"><h1 style="font-size:3rem;margin-bottom:20px">🚫 GOLPE DETECTADO 🚫</h1><p style="font-size:1.5rem">Este site (<strong>${currentDomain}</strong>) não é oficial.</p><br><a href="https://www.donaantonia.com.br" style="background:#fbbf24;color:#000;padding:20px;text-decoration:none;font-weight:bold;border-radius:10px;font-size:1.2rem">IR PARA SITE OFICIAL</a></div>`);
+                // window.stop(); throw new Error("Security Violation");
             }
         })();
     </script>
@@ -80,6 +88,8 @@
             color: var(--text-main);
             overflow: hidden;
             display: flex; flex-direction: column;
+            /* Garante visibilidade inicial */
+            opacity: 1; visibility: visible;
         }
 
         /* HEADER CLEAN */
@@ -109,7 +119,6 @@
         #chat-container {
             flex: 1; overflow-y: auto; padding: 20px;
             background-color: var(--bg-color);
-            /* Sem background image para visual limpo */
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
         }
@@ -377,7 +386,7 @@
     </footer>
 
     <script>
-        // === LÓGICA DE NEGÓCIO (MANTIDA 100% IGUAL) ===
+        // === LÓGICA DE NEGÓCIO ===
         
         window.dataLayer = window.dataLayer || [];
         function trackEvent(eventName, params = {}) {
@@ -648,8 +657,10 @@
             await addMessage(`Qual é o seu nome?`, 'bot', 1000);
         }
 
+        // GATILHOS DE INICIALIZAÇÃO
+        document.addEventListener('DOMContentLoaded', initApp);
         window.addEventListener('load', initApp);
-        setTimeout(initApp, 1500);
+        setTimeout(initApp, 1500); // Fail-safe
 
         async function handleInput() {
             const text = userInput.value.trim();
