@@ -51,7 +51,6 @@
             background-color: #E5DDD5;
             overflow: hidden;
             display: flex; flex-direction: column;
-            /* REMOVIDO: visibilidade oculta que causava tela branca */
         }
 
         /* HEADER */
@@ -89,7 +88,8 @@
 
         .msg-bubble {
             padding: 8px 12px; border-radius: 7.5px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
-            max-width: 85%; font-size: 15px; line-height: 19px; position: relative; color: #111b21;
+            max-width: 90%; /* Aumentado para dar mais largura */
+            font-size: 15px; line-height: 19px; position: relative; color: #111b21;
         }
         .msg-in { background-color: #fff; border-top-left-radius: 0; }
         .msg-out { background-color: #d9fdd3; border-top-right-radius: 0; }
@@ -110,7 +110,7 @@
         .send-btn:active { transform: scale(0.95); }
 
         /* OPTIONS */
-        .msg-options { display: flex; flex-direction: column; gap: 8px; width: 85%; margin-bottom: 10px; }
+        .msg-options { display: flex; flex-direction: column; gap: 8px; width: 90%; margin-bottom: 10px; }
         .wa-btn {
             background: white; color: #008069; border: 1px solid #f0f0f0; padding: 12px;
             border-radius: 8px; text-align: center; font-size: 15px; font-weight: 600; cursor: pointer;
@@ -119,7 +119,7 @@
         .wa-btn-subtitle { display: block; font-size: 11px; font-weight: 400; color: #54656f; margin-top: 2px; }
 
         /* CARD UNIFICADO */
-        .card-msg-container { width: 100%; max-width: 95%; margin-bottom: 5px; }
+        .card-msg-container { width: 100%; max-width: 100%; margin-bottom: 5px; } /* Largura máxima */
         .card-cesta-new {
             background: #fff; border-radius: 16px; border: 1px solid #e0e0e0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; position: relative;
@@ -129,12 +129,15 @@
         .card-img-large { width: 150px; height: 150px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15)); }
         
         .card-chips-area {
-            width: 95px; background: #f8f9fa; border-left: 1px solid #eee; padding: 8px 5px;
-            display: flex; flex-direction: column; gap: 8px; overflow-y: auto; justify-content: center;
+            width: 95px; background: #f8f9fa; border-left: 1px solid #eee; 
+            padding: 12px 8px; /* Mais respiro lateral e vertical */
+            display: flex; flex-direction: column; gap: 10px; /* Mais espaço entre chips */
+            overflow-y: auto; justify-content: center;
         }
         .chip-nav {
-            font-size: 11px; padding: 6px 2px; border-radius: 4px; text-align: center; cursor: pointer;
+            font-size: 11px; padding: 8px 4px; border-radius: 6px; text-align: center; cursor: pointer;
             border: 1px solid #e0e0e0; background: white; color: #666; font-weight: bold; text-transform: uppercase;
+            line-height: 1.1;
         }
         .chip-nav.selected { background: #008069; color: white; border-color: #006d59; box-shadow: 0 2px 4px rgba(0,128,105,0.2); }
 
@@ -162,9 +165,13 @@
         .slider-arrow-indicator {
             position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
             background: rgba(255,255,255,0.9); border: 2px solid #25D366; border-radius: 50%;
-            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2); pointer-events: none; animation: bounceRight 1.5s infinite;
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+            animation: bounceRight 1.5s infinite;
+            cursor: pointer; pointer-events: auto; /* Habilitado click */
+            z-index: 20;
         }
+        .slider-arrow-indicator:active { transform: translateY(-50%) scale(0.9); }
 
         /* PRICES */
         .card-price-display-only { padding: 10px; background: #fff; }
@@ -222,7 +229,7 @@
             <div class="header-status-dot"></div>
         </div>
         <div class="header-info">
-            <div class="header-title">Cestas Dona Antônia</div>
+            <div class="header-title">Cesta Básica Dona Antônia</div>
             <div id="status-text" class="header-subtitle">Online</div>
         </div>
         <div class="header-actions">
@@ -260,7 +267,6 @@
             instagramLink: "https://instagram.com/cestas.dona.antonia.cuiaba.vg"
         };
 
-        // DADOS ORIGINAIS E COMPLETOS RESTAURADOS
         const CESTAS = [
             {
                 id: 'economica', nome: 'Cesta Econômica', destaque: 'Mais Vendida', desconto: 5, arrozQtd: 1, brindeNome: '1 Trigo 1kg',
@@ -299,7 +305,6 @@
             }
         ];
 
-        // LOGICA DE IMAGENS DETALHADA RESTAURADA
         function getProductImage(text) {
             const lowerText = text.toLowerCase();
             let imgName = 'outros.png';
@@ -355,13 +360,14 @@
 
         function addMessage(text, type = 'bot', delayOverride = null) {
             return new Promise(resolve => {
-                let delay = 600;
+                let delay = 800; // Tempo base aumentado para humanização
                 if (type === 'bot') {
                     const isCard = text.includes('card-cesta') || text.includes('discount-container') || text.includes('company-header');
                     if (isCard) {
-                        delay = 600; 
+                        delay = 800; 
                     } else {
-                        delay = Math.min(text.length * 20 + 300, 1500);
+                        // Cálculo mais lento: mais tempo por caractere
+                        delay = Math.min(text.length * 30 + 500, 2500);
                     }
                 } else {
                     delay = 0;
@@ -382,7 +388,7 @@
                         `);
                         scrollToBottom();
 
-                        const typingTime = (text.includes('card-cesta') || text.includes('discount-container')) ? 800 : delay; 
+                        const typingTime = (text.includes('card-cesta') || text.includes('discount-container')) ? 1000 : delay; 
                         
                         setTimeout(() => {
                             const el = document.getElementById(id);
@@ -415,7 +421,7 @@
                         scrollToBottom();
                         resolve();
                     }
-                }, type === 'user' ? 0 : 200);
+                }, type === 'user' ? 0 : 400); // Delay inicial maior
             });
         }
 
@@ -435,7 +441,7 @@
                     </div>
                 `);
                 scrollToBottom();
-            }, 400);
+            }, 600); // Opções demoram um pouquinho mais
         }
 
         window.handleOpt = async function(val, next, id, text) {
@@ -459,6 +465,15 @@
                 container.innerHTML = getCardContent(CESTAS[idx]);
                 container.style.opacity = '1';
             }, 150);
+        };
+
+        // Função de scroll da seta
+        window.scrollSlider = function(btn) {
+            const wrapper = btn.parentElement;
+            const slider = wrapper.querySelector('.product-slider');
+            if(slider) {
+                slider.scrollBy({ left: 220, behavior: 'smooth' }); // Move aprox 2 cards
+            }
         };
 
         function getCardContent(cesta) {
@@ -503,7 +518,7 @@
                             ${slides}
                             <div style="min-width:10px"></div>
                         </div>
-                        <div class="slider-arrow-indicator"><i class="fa-solid fa-chevron-right text-green-600"></i></div>
+                        <div class="slider-arrow-indicator" onclick="scrollSlider(this)"><i class="fa-solid fa-chevron-right text-green-600"></i></div>
                     </div>
                 </div>
                 <div class="card-price-display-only">
@@ -521,9 +536,9 @@
             // document.body.style.opacity = '1';
             trackEvent('PageView');
             
-            await addMessage(`${getGreeting()}! Tudo bem? 👋`, 'bot', 400);
-            await addMessage(`Aqui é o <b>${CONFIG.ownerName}</b>, da Cesta Básica Dona Antônia.`, 'bot', 800);
-            await addMessage(`Qual é o seu nome?`, 'bot', 600);
+            await addMessage(`${getGreeting()}! Tudo bem? 👋`, 'bot', 600);
+            await addMessage(`Aqui é o <b>${CONFIG.ownerName}</b>, da Cesta Básica Dona Antônia.`, 'bot', 1000);
+            await addMessage(`Qual é o seu nome?`, 'bot', 800);
         }
 
         // Trigger faster
@@ -555,8 +570,8 @@
 
             switch (state.step) {
                 case 1:
-                    await addMessage(`Prazer, ${name}! 😀`, 'bot', 600);
-                    await addMessage(`Você já conhece nossas cestas?`, 'bot', 800);
+                    await addMessage(`Prazer, ${name}! 😀`, 'bot', 800);
+                    await addMessage(`Você já conhece nossas cestas?`, 'bot', 1000);
                     showOptions([
                         { text: "Sim, já conheço 👍", val: "sim", next: 3 },
                         { text: "Não conheço 🤔", val: "nao", next: 2 }
@@ -564,14 +579,15 @@
                     break;
                 
                 case 2: // Mostra Empresa
+                    // Correção dos ícones: fa-solid para ícones sólidos e fa-brands para marcas
                     const stats = [
-                        {icon: 'fa-clock', txt: '8 anos em Cuiabá e VG', color: '#10b981'},
-                        {icon: 'fa-truck', txt: '+30 mil Entregas', color: '#3b82f6'},
-                        {icon: 'fa-thumbs-up', txt: '6 mil seguidores (Face)', color: '#8b5cf6'},
-                        {icon: 'fa-instagram', txt: '1.9k seguidores (Insta)', color: '#E1306C'}
+                        {icon: 'fa-clock', type: 'fa-solid', txt: '8 anos em Cuiabá e VG', color: '#10b981'},
+                        {icon: 'fa-truck', type: 'fa-solid', txt: '+30 mil Entregas', color: '#3b82f6'},
+                        {icon: 'fa-thumbs-up', type: 'fa-solid', txt: '6 mil seguidores (Face)', color: '#8b5cf6'},
+                        {icon: 'fa-instagram', type: 'fa-brands', txt: '1.9k seguidores (Insta)', color: '#E1306C'}
                     ].map(s => `
                         <div class="stat-row" style="background:${s.color}">
-                            <i class="fa-brands ${s.icon}" style="margin-right:8px"></i> ${s.txt}
+                            <i class="${s.type} ${s.icon}" style="margin-right:8px"></i> ${s.txt}
                         </div>
                     `).join('');
                     
@@ -581,7 +597,7 @@
                             <div class="company-header">
                                 <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="company-logo" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Osvaldo'">
                                 <div>
-                                    <h3 style="margin:0; font-size:16px; color:#0f2546;">Dona Antônia</h3>
+                                    <h3 style="margin:0; font-size:16px; color:#0f2546;">Cesta Básica Dona Antônia</h3>
                                     <p style="margin:0; font-size:13px; color:#666;">Desde 2016</p>
                                 </div>
                             </div>
@@ -589,18 +605,18 @@
                         </div>
                         </div>
                     `;
-                    await addMessage(companyHTML, 'bot', 1000);
-                    setTimeout(() => { state.step = 4; nextStep(); }, 4000);
+                    await addMessage(companyHTML, 'bot', 1200);
+                    setTimeout(() => { state.step = 4; nextStep(); }, 4500);
                     break;
 
                 case 3: 
                 case 4:
-                    await addMessage(state.step === 3 ? "Vou te mostrar as opções então." : "Posso mostrar as cestas agora?", 'bot', 800);
+                    await addMessage(state.step === 3 ? "Vou te mostrar as opções então." : "Posso mostrar as cestas agora?", 'bot', 1000);
                     showOptions([{ text: "Ver Cestas ✅", val: "ok", next: 5 }]);
                     break;
 
                 case 5: // Card Interativo
-                    await addMessage(`Navegue pelas opções abaixo 👇`, 'bot', 600);
+                    await addMessage(`Navegue pelas opções abaixo 👇`, 'bot', 800);
                     const cardHTML = `
                         <div class="card-msg-container">
                             <div class="card-cesta-new">
@@ -619,16 +635,16 @@
                             state.step = 6; 
                             nextStep();
                         }
-                    }, 15000);
+                    }, 18000); // Mais tempo para ler
                     break;
 
                 case 6: // Pergunta Pagamento
-                    await addMessage(`Gostou de alguma? Posso te mostrar como funciona o pagamento?`, 'bot', 800);
+                    await addMessage(`Gostou de alguma? Posso te mostrar como funciona o pagamento?`, 'bot', 1000);
                     showOptions([{ text: "Pode mostrar 👍", val: "pay", next: 7 }]);
                     break;
                 
                 case 7: // Mostra Pagamento
-                    await addMessage(`Aceitamos praticamente tudo:`, 'bot', 600);
+                    await addMessage(`Aceitamos praticamente tudo:`, 'bot', 800);
                     const payHTML = `
                         <ul class="list-disc" style="background:#fff; padding:15px 15px 15px 35px; border-radius:8px; box-shadow:0 1px 1px rgba(0,0,0,0.1);">
                             <li>Cartão de Débito</li>
@@ -639,17 +655,17 @@
                         </ul>
                     `;
                     await addMessage(payHTML, 'bot');
-                    setTimeout(() => { state.step = 8; nextStep(); }, 4500);
+                    setTimeout(() => { state.step = 8; nextStep(); }, 5000);
                     break;
 
                 case 8: // Hook
-                    await addMessage(`⭐ ${name}, quero muito que você se torne nosso cliente.`, 'bot', 800);
-                    await addMessage(`🚀 Posso te oferecer um desconto pra sua primeira compra?`, 'bot', 800);
+                    await addMessage(`⭐ ${name}, quero muito que você se torne nosso cliente.`, 'bot', 1000);
+                    await addMessage(`🚀 Posso te oferecer um desconto pra sua primeira compra?`, 'bot', 1000);
                     showOptions([{ text: "Quero Desconto 🎁", val: "sim", next: 9 }]);
                     break;
 
                 case 9:
-                    await addMessage(`Que ótimo! Qual tamanho de cesta te interessa mais?`, 'bot', 600);
+                    await addMessage(`Que ótimo! Qual tamanho de cesta te interessa mais?`, 'bot', 800);
                     const opts = CESTAS.map((c, i) => ({
                         text: c.nome.replace('Cesta ', ''),
                         sub: `(${c.arrozQtd} Arroz)`,
@@ -661,7 +677,7 @@
 
                 case 10: // Desconto
                     const selected = CESTAS.find(c => c.id === state.selectedDiscountId);
-                    await addMessage(`Boa escolha! Para a <b>${selected.nome}</b>, liberei isso:`, 'bot', 800);
+                    await addMessage(`Boa escolha! Para a <b>${selected.nome}</b>, liberei isso:`, 'bot', 1000);
                     
                     const discountHTML = `
                         <div class="card-msg-container">
@@ -679,10 +695,10 @@
                         </div>
                     `;
                     await addMessage(discountHTML, 'bot');
-                    await addMessage("Clique acima para garantir. 👆", 'bot', 800);
+                    await addMessage("Clique acima para garantir. 👆", 'bot', 1000);
                     
                     const textSave = encodeURIComponent("Estou salvando seu contato");
-                    await addMessage(`Não esqueça de salvar nosso contato: <a href="https://wa.me/${CONFIG.whatsAppSaveNumber}?text=${textSave}" target="_blank" class="text-link">65 99815-0965</a>`, 'bot', 1000);
+                    await addMessage(`Não esqueça de salvar nosso contato: <a href="https://wa.me/${CONFIG.whatsAppSaveNumber}?text=${textSave}" target="_blank" class="text-link">65 99815-0965</a>`, 'bot', 1200);
                     break;
             }
         }
