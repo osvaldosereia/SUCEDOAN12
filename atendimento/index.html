@@ -124,11 +124,11 @@
             background: #fff; border-radius: 16px; border: 1px solid #e0e0e0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; position: relative;
         }
-        /* AJUSTE: Altura aumentada para 230px (+50px) para acomodar melhor a imagem e chips */
-        .card-top-row { display: flex; height: 230px; border-bottom: 1px solid #f5f5f5; }
+        /* AJUSTE: Altura aumentada para 280px (mais 50px sobre os 230px anteriores) */
+        .card-top-row { display: flex; height: 280px; border-bottom: 1px solid #f5f5f5; }
         .card-img-area { flex: 1; padding: 10px; display: flex; align-items: center; justify-content: center; position: relative; }
-        /* AJUSTE: Imagem maior proporcionalmente */
-        .card-img-large { width: 190px; height: 190px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15)); }
+        /* AJUSTE: Imagem maior proporcionalmente (240px) */
+        .card-img-large { width: 240px; height: 240px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15)); }
         
         .card-chips-area {
             width: 95px; background: #f8f9fa; border-left: 1px solid #eee; 
@@ -265,7 +265,7 @@
             ownerName: "Osvaldo",
             whatsAppGroupLink: "https://chat.whatsapp.com/IOI3gSBLRVk4jGK2QMunp1",
             whatsAppNumber: "5565998150975",
-            whatsAppSaveNumber: "5565998150975",
+            whatsAppSaveNumber: "5565998150965",
             instagramLink: "https://instagram.com/cestas.dona.antonia.cuiaba.vg"
         };
 
@@ -585,9 +585,9 @@
                     // Correção dos ícones: fa-solid para ícones sólidos e fa-brands para marcas
                     const stats = [
                         {icon: 'fa-clock', type: 'fa-solid', txt: '8 anos em Cuiabá e VG', color: '#10b981'},
-                        {icon: 'fa-truck', type: 'fa-solid', txt: 'Já entregamos + de 30 mil Cestas', color: '#3b82f6'},
-                        {icon: 'fa-thumbs-up', type: 'fa-solid', txt: '6 mil seguidores no Facebook', color: '#8b5cf6'},
-                        {icon: 'fa-instagram', type: 'fa-brands', txt: 'Quase 2 mil seguidores no Instagram', color: '#E1306C'}
+                        {icon: 'fa-truck', type: 'fa-solid', txt: '+30 mil Entregas', color: '#3b82f6'},
+                        {icon: 'fa-thumbs-up', type: 'fa-solid', txt: '6 mil seguidores (Face)', color: '#8b5cf6'},
+                        {icon: 'fa-instagram', type: 'fa-brands', txt: '1.9k seguidores (Insta)', color: '#E1306C'}
                     ].map(s => `
                         <div class="stat-row" style="background:${s.color}">
                             <i class="${s.type} ${s.icon}" style="margin-right:8px"></i> ${s.txt}
@@ -670,7 +670,7 @@
                     break;
 
                 case 9:
-                    await addMessage(`Legal! Pra qual cesta você quer o Desconto?`, 'bot', 1000);
+                    await addMessage(`Que ótimo! Qual tamanho de cesta te interessa mais?`, 'bot', 1000);
                     const opts = CESTAS.map((c, i) => ({
                         text: c.nome.replace('Cesta ', ''),
                         sub: `(${c.arrozQtd} Arroz)`,
