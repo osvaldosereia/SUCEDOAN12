@@ -872,7 +872,7 @@
                 if (index % 3 === 0) scrollToBottom();
 
                 index++;
-                setTimeout(showNextItem, 1200); 
+                setTimeout(showNextItem, 300); // 300ms delay for faster display
             }
 
             showNextItem();
@@ -887,8 +887,8 @@
             
             await new Promise(r => setTimeout(r, 1000));
             
-            await addMessage(`Vou garantir o valor de <b>R$ 205,00</b> pra você por 30 dias.`);
-            await addMessage(`Você encomendar quando precisar.`);
+            await addMessage(`Vou garantir essa cesta de R$ 220,00 por <b>R$ 205,00</b> por 30 dias.`);
+            await addMessage(`Você pede quando precisar.`);
             
             await addMessage(`Quer o desconto?`);
             
@@ -918,7 +918,7 @@
             await addMessage(`Redirecionando...`);
 
             setTimeout(() => {
-                const text = `Olá! Meu nome é *${userFullName}*. Quero garantir o valor de R$ 205 na Cesta Pequena por 30 dias.`;
+                const text = `Olá! Meu nome é *${userFullName}*. Vim pelo Instagram e quero garantir meu cadastro de desconto (R$ 205,00) na Cesta Pequena por 30 dias.`;
                 const phone = "5565998150975";
                 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                 const baseUrl = isMobile ? "https://api.whatsapp.com/send" : "https://web.whatsapp.com/send";
