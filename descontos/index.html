@@ -38,6 +38,21 @@
             "latitude": -15.636881, 
             "longitude": -56.046892 
           },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday"
+              ],
+              "opens": "08:00",
+              "closes": "12:00"
+            }
+          ],
           "url": "https://www.donaantonia.com.br",
           "priceRange": "$$"
         },
@@ -108,7 +123,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -262,7 +277,9 @@
             transition: all 0.2s;
         }
         .nav-item:active { transform: scale(0.9); color: var(--primary); }
-        .nav-item i { font-size: 24px; }
+        
+        /* FIX: SVG Icons stability */
+        .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
         .nav-item span { font-size: 10px; font-weight: 600; }
         
         /* Cor específica para marcas */
@@ -339,16 +356,18 @@
         .modal-overlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5); z-index: 2000;
-            display: none; align-items: center; justify-content: center;
-            padding: 20px; backdrop-filter: blur(4px);
-            opacity: 0; transition: opacity 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px; backdrop-filter: blur(5px);
+            opacity: 0; visibility: hidden; transition: all 0.3s;
         }
-        .modal-overlay.active { opacity: 1; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        
         .modal-content {
-            background: white; width: 100%; max-width: 320px;
-            border-radius: 20px; padding: 24px; position: relative;
+            background: white; width: 100%; max-width: 360px;
+            border-radius: 24px; padding: 0; position: relative;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            transform: scale(0.9); transition: transform 0.3s;
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden; max-height: 90vh; overflow-y: auto;
         }
         .modal-overlay.active .modal-content { transform: scale(1); }
 
@@ -356,7 +375,41 @@
             position: absolute; top: 12px; right: 12px;
             background: #F1F5F9; border: none; width: 32px; height: 32px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; color: var(--text-sub);
+            cursor: pointer; color: var(--text-sub); z-index: 10;
+        }
+
+        /* MODAL CUSTOM STYLES */
+        .modal-header { padding: 24px 24px 16px 24px; border-bottom: 1px solid #F1F5F9; text-align: center; }
+        .modal-header img { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #E2E8F0; margin-bottom: 8px; }
+        .modal-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); }
+        .modal-header p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-sub); }
+        
+        .stats-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px 24px;
+        }
+        .stat-item {
+            background: #F8FAFC; padding: 10px; border-radius: 12px; text-align: center;
+            border: 1px solid #E2E8F0;
+        }
+        .stat-item i { font-size: 20px; color: var(--primary); margin-bottom: 4px; display: block; }
+        .stat-item strong { display: block; font-size: 14px; font-weight: 700; color: var(--text-main); }
+        .stat-item span { font-size: 11px; color: var(--text-sub); }
+
+        .info-list { padding: 0 24px 16px 24px; list-style: none; margin: 0; }
+        .info-row { 
+            display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #F1F5F9;
+            font-size: 14px; color: var(--text-main); align-items: flex-start;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row i { color: var(--text-sub); font-size: 18px; margin-top: 2px; }
+        .info-content { flex: 1; }
+        .info-label { display: block; font-size: 11px; color: var(--text-sub); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
+
+        .payment-badge {
+            background: #ECFDF5; color: #047857; text-align: center; padding: 12px;
+            margin: 0 24px 24px 24px; border-radius: 12px; font-weight: 700; font-size: 14px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            border: 1px solid #10B981;
         }
 
         /* TYPING INDICATOR */
@@ -406,47 +459,113 @@
 
         <!-- FIXED APP NAVIGATION BAR (Footer) -->
         <footer class="app-navigation-bar">
+            <!-- WHATSAPP SVG INLINE -->
             <a href="https://wa.me/5565998150975" target="_blank" class="nav-item wa" 
                onclick="trackMarketingEvent('Contact', {method: 'whatsapp', location: 'navbar'})">
-                <i class="ph-fill ph-whatsapp-logo"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M187.58,144.84l-32-16a8,8,0,0,0-8,.5l-14.69,9.8a40.55,40.55,0,0,1-16-16l9.8-14.69a8,8,0,0,0,.5-8l-16-32A8,8,0,0,0,104,64a40,40,0,0,0-40,40,88.1,88.1,0,0,0,88,88,40,40,0,0,0,40-40A8,8,0,0,0,187.58,144.84ZM152,176a72.13,72.13,0,0,1-56-56,24,24,0,0,1,16-24L122,116l-6.8,10.2a24.58,24.58,0,0,0-1.2,26,24.58,24.58,0,0,0,26,1.2L150,147l20,10A24,24,0,0,1,152,176ZM128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216l12.47-37.4a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"></path></svg>
                 <span>WhatsApp</span>
             </a>
+            
+            <!-- FACEBOOK SVG INLINE -->
             <a href="https://facebook.com/cestas.dona.antonia" target="_blank" class="nav-item fb"
                onclick="trackMarketingEvent('Contact', {method: 'facebook', location: 'navbar'})">
-                <i class="ph-fill ph-facebook-logo"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm24-112h-8V88a16,16,0,0,0-16-16H112a8,8,0,0,0-8,8v24H96a8,8,0,0,0-8,8v32a8,8,0,0,0,8,8h8v48a8,8,0,0,0,8,8h32a8,8,0,0,0,8-8V152h16a8,8,0,0,0,8-8V112A8,8,0,0,0,152,104Z"></path></svg>
                 <span>Facebook</span>
             </a>
+            
+            <!-- INSTAGRAM SVG INLINE -->
             <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="nav-item ig"
                onclick="trackMarketingEvent('Contact', {method: 'instagram', location: 'navbar'})">
-                <i class="ph-fill ph-instagram-logo"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"></path></svg>
                 <span>Instagram</span>
             </a>
+            
+            <!-- LOJA SVG INLINE -->
             <button onclick="toggleModal(true)" class="nav-item info">
-                <i class="ph-fill ph-storefront"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M240,112H232V96a16,16,0,0,0-16-16H184a16,16,0,0,0-16,16v16H88V96A16,16,0,0,0,72,80H40A16,16,0,0,0,24,96v16H16a8,8,0,0,0-8,8v88a16,16,0,0,0,16,16H232a16,16,0,0,0,16-16V120A8,8,0,0,0,240,112Zm-72-16h48v16H168Zm-128,0h48v16H40ZM24,208V128H232v80Zm56-48H48a8,8,0,0,0,0,16H80a8,8,0,0,0,0-16Zm128,0H176a8,8,0,0,0,0,16h32a8,8,0,0,0,0-16Zm-8-128H56a8,8,0,0,1,8-8H192A8,8,0,0,1,200,32Z"></path></svg>
                 <span>Loja</span>
             </button>
         </footer>
 
-        <!-- MODAL INFO -->
+        <!-- MODAL INFO (NEW STRUCTURE) -->
         <div id="infoModal" class="modal-overlay" onclick="if(event.target === this) toggleModal(false)">
             <div class="modal-content">
                 <button class="close-modal" onclick="toggleModal(false)"><i class="ph-bold ph-x"></i></button>
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; border-bottom:1px solid #F1F5F9; padding-bottom:16px;">
-                    <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="brand-logo" style="width:50px; height:50px;" onerror="this.src='https://placehold.co/50x50/2563EB/ffffff?text=DA'">
-                    <div>
-                        <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--text-main);">Dona Antônia</h3>
-                        <span style="font-size:12px; color:var(--text-sub); display:block;">Cestas Básicas</span>
+                
+                <div class="modal-header">
+                    <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
+                         alt="Logo Dona Antônia" 
+                         onerror="this.src='https://placehold.co/70x70/2563EB/ffffff?text=DA'">
+                    <h3>Dona Antônia</h3>
+                    <p style="font-weight: 500;">Super Cestas Básicas</p>
+                    <p style="font-size: 11px; margin-top: 2px;">CNPJ: 51.385.335.0001-06</p>
+                </div>
+
+                <!-- PROVA SOCIAL EM GRID -->
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <i class="ph-fill ph-package"></i>
+                        <strong>+30 Mil</strong>
+                        <span>Entregas</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="ph-fill ph-calendar-check"></i>
+                        <strong>8 Anos</strong>
+                        <span>Em Cuiabá e VG</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="ph-fill ph-facebook-logo"></i>
+                        <strong>+6 Mil</strong>
+                        <span>Seguidores</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="ph-fill ph-instagram-logo"></i>
+                        <strong>~2 Mil</strong>
+                        <span>Seguidores</span>
                     </div>
                 </div>
-                <div style="margin-bottom:20px;">
-                    <ul style="list-style:none; padding:0; margin:0;">
-                        <li style="margin-bottom:12px; display:flex; gap:12px; font-size:14px; color:var(--text-main);"><i class="ph-fill ph-check-circle" style="color:var(--primary); font-size:20px;"></i> 8 anos em Cuiabá e VG</li>
-                        <li style="margin-bottom:12px; display:flex; gap:12px; font-size:14px; color:var(--text-main);"><i class="ph-fill ph-package" style="color:var(--primary); font-size:20px;"></i> +30 mil entregas</li>
-                    </ul>
+
+                <div class="info-list">
+                    <!-- ENDEREÇO -->
+                    <div class="info-row">
+                        <i class="ph-fill ph-map-pin" style="color:#ef4444;"></i>
+                        <div class="info-content">
+                            <span class="info-label">Endereço</span>
+                            <a href="https://maps.google.com/?q=R.+Trinta,+105+-+Jardim+Nossa+Sra.+Aparecida,+Cuiabá+-+MT,+78090-660" target="_blank" style="text-decoration:none; color:inherit;">
+                                R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- TELEFONES -->
+                    <div class="info-row">
+                        <i class="ph-fill ph-phone" style="color:#22c55e;"></i>
+                        <div class="info-content">
+                            <span class="info-label">Telefones ⭐</span>
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                <a href="tel:65996813588" style="text-decoration:none; color:inherit; font-weight:600;">(65) 99681-3588</a>
+                                <a href="tel:65998150975" style="text-decoration:none; color:inherit; font-weight:600;">(65) 99815-0975</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HORÁRIOS -->
+                    <div class="info-row">
+                        <i class="ph-fill ph-clock" style="color:#f59e0b;"></i>
+                        <div class="info-content">
+                            <span class="info-label">Funcionamento</span>
+                            <div>Segunda a Sábado: 08:00 – 12:00</div>
+                            <div style="color:#ef4444; font-size:12px;">Domingo: Fechado</div>
+                        </div>
+                    </div>
                 </div>
-                <div style="text-align:center;">
-                    <p style="margin:0; font-size:15px; font-weight:700; color:var(--primary);">📞 (65) 99815-0975</p>
+
+                <!-- PAGAMENTO -->
+                <div class="payment-badge">
+                    <i class="ph-fill ph-money"></i>
+                    Pague só na entrega na sua casa
                 </div>
+
             </div>
         </div>
     </div>
@@ -811,13 +930,10 @@
         window.toggleModal = function(show) {
             const modal = document.getElementById('infoModal');
             if(show) {
-                modal.style.display = 'flex';
-                void modal.offsetWidth; 
                 modal.classList.add('active');
                 trackMarketingEvent('ViewContent', { content_name: 'Modal Quem Somos' });
             } else {
                 modal.classList.remove('active');
-                setTimeout(() => { modal.style.display = 'none'; }, 300);
             }
         }
 
