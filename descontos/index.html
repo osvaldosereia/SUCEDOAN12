@@ -99,59 +99,65 @@
         .msg-in { background: var(--white); color: var(--text-main); border-radius: 18px 18px 18px 4px; }
         .msg-out { background: var(--primary); color: white; border-radius: 18px 18px 4px 18px; }
 
+        /* FULL WIDTH BUBBLE (For Grid & Big Image) */
+        .msg-bubble.full-width {
+            max-width: 100%;
+            width: 100%;
+            padding: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
         /* IMAGE MESSAGE */
-        .msg-image {
-            width: 100%; border-radius: 12px; margin-top: 8px;
-            display: block; pointer-events: none; /* Anti-Copy */
+        .msg-image-full {
+            width: 100%; 
+            display: block; 
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            pointer-events: none; /* Anti-Copy */
         }
 
         /* PRODUCT GRID (UNBOXING EFFECT) */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 6px; /* Menor gap para caber mais imagem */
+            gap: 8px; /* Gap um pouco maior para respiro */
             width: 100%;
             margin-top: 10px;
+            padding: 0 4px; /* Pequeno padding lateral */
         }
 
         .mini-card {
             background: #F8FAFC; border: 1px solid #E2E8F0;
             border-radius: 8px; 
-            padding: 4px; /* Padding mínimo */
+            padding: 6px; 
             text-align: center;
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            height: 120px; /* Altura fixa ligeiramente maior */
+            animation: fadeInScale 1.2s cubic-bezier(0.16, 1, 0.3, 1); /* Fade mais lento */
+            height: 130px; /* Um pouco mais alto */
             overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
         }
 
         @keyframes fadeInScale {
-            0% { opacity: 0; transform: scale(0.8); }
+            0% { opacity: 0; transform: scale(0.9); }
             100% { opacity: 1; transform: scale(1); }
         }
 
         .mini-card img {
             width: 100%; 
-            height: 80px; /* Altura forçada para imagem grande */
+            height: 85px; 
             object-fit: contain;
             mix-blend-mode: multiply;
             flex-shrink: 0;
         }
         
         .mini-card span { 
-            font-size: 10px; line-height: 1.1; 
+            font-size: 11px; line-height: 1.1; 
             color: var(--text-sub); font-weight: 600; 
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-            margin-top: 2px;
+            margin-top: 4px;
         }
-        
-        .count-badge {
-            background: var(--primary); color: white;
-            font-size: 9px; padding: 2px 6px; border-radius: 10px;
-            position: absolute; top: 4px; left: 4px; z-index: 2;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .mini-card { position: relative; } /* Para posicionar o badge */
 
         /* BUTTONS */
         .action-btn {
@@ -264,7 +270,6 @@
             if(t.includes('bolacha')) return folderAlimento + 'bolacha mybit.webp';
             if(t.includes('miojo')) return folderAlimento + 'miojo apti.webp';
             if(t.includes('suco')) return folderAlimento + 'suco frisco.webp';
-            // Limpeza
             if(t.includes('sabão barra')) return folderLimpeza + 'sabão barra ype 900g.webp';
             if(t.includes('creme dental')) return folderLimpeza + 'Creme Dental Sorriso 70g.webp';
             if(t.includes('papel')) return folderLimpeza + 'papel higienico.webp';
@@ -286,7 +291,7 @@
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
         }
 
-        function addMessage(content, type = 'bot', delay = 800) {
+        function addMessage(content, type = 'bot', delay = 800, isFullWidth = false) {
             return new Promise(resolve => {
                 if(type === 'bot') {
                     const typingId = 'typing-' + Date.now();
@@ -300,7 +305,8 @@
                     scrollToBottom();
 
                     setTimeout(() => {
-                        document.getElementById(typingId).remove();
+                        const typingEl = document.getElementById(typingId);
+                        if(typingEl) typingEl.remove();
                         appendFinalMessage();
                     }, delay);
                 } else {
@@ -308,9 +314,12 @@
                 }
 
                 function appendFinalMessage() {
+                    const bubbleClass = isFullWidth ? 'msg-bubble full-width' : (type === 'bot' ? 'msg-bubble msg-in' : 'msg-bubble msg-out');
+                    const rowClass = type === 'bot' ? 'msg-start' : 'msg-end';
+                    
                     const html = `
-                        <div class="msg-row ${type === 'bot' ? 'msg-start' : 'msg-end'}">
-                            <div class="msg-bubble ${type === 'bot' ? 'msg-in' : 'msg-out'}">
+                        <div class="msg-row ${rowClass}">
+                            <div class="${bubbleClass}">
                                 ${content}
                             </div>
                         </div>
@@ -325,17 +334,24 @@
         function addAction(text, callbackId) {
             const btnId = 'btn-' + Date.now();
             const html = `<button id="${btnId}" class="action-btn" onclick="handleAction('${btnId}', '${text}', ${callbackId})">${text}</button>`;
-            chatContainer.lastElementChild.querySelector('.msg-bubble').insertAdjacentHTML('beforeend', html);
-            scrollToBottom();
+            // Procura o último bubble (seja full ou normal) para adicionar o botão abaixo
+            const lastBubble = chatContainer.lastElementChild.querySelector('.msg-bubble');
+            if(lastBubble) {
+                lastBubble.insertAdjacentHTML('beforeend', html);
+                scrollToBottom();
+            }
         }
 
         async function handleAction(btnId, text, callbackId) {
-            document.getElementById(btnId).remove();
+            const btn = document.getElementById(btnId);
+            if(btn) btn.remove();
+            
             await addMessage(text, 'user', 0);
             
             if (callbackId === 1) flowStartShowcase();
             if (callbackId === 2) flowStartGridAnimation();
-            if (callbackId === 3) flowRedirectWhatsApp();
+            if (callbackId === 3) flowPreRedirect();
+            if (callbackId === 4) flowRedirectWhatsApp();
         }
 
         async function initFlow() {
@@ -344,11 +360,14 @@
             const greeting = new Date().getHours() < 12 ? "Bom dia" : "Boa tarde";
             await addMessage(`${greeting}! Sou o assistente virtual da Dona Antônia.`);
             
-            await addMessage(`Essa é a nossa <b>Cesta Pequena</b>, uma das mais completas: <br>
-                <img src="img/cesta pequena.jpg" class="msg-image" alt="Cesta Pequena" onerror="this.src='https://placehold.co/400x300/e2e8f0/2563EB?text=Foto+Cesta+Pequena'">
-            `, 'bot', 1200);
+            await addMessage(`Essa é a nossa <b>Cesta Pequena</b>, uma das mais completas:`, 'bot', 1000);
 
-            await addMessage(`Você quer ver todos os produtos que estão nessa cesta?`);
+            // FOTO WIDE SEM BALÃO
+            await addMessage(`
+                <img src="img/cesta pequena.jpg" class="msg-image-full" alt="Cesta Pequena" onerror="this.src='https://placehold.co/400x300/e2e8f0/2563EB?text=Foto+Cesta+Pequena'">
+            `, 'bot', 0, true);
+
+            await addMessage(`Você quer ver todos os produtos que estão nessa cesta?`, 'bot', 1000);
             addAction("Quero sim 👍", 1);
         }
 
@@ -360,44 +379,42 @@
 
         async function flowStartGridAnimation() {
             const gridId = 'live-grid-' + Date.now();
-            await addMessage(`Aqui estão os produtos: <div id="${gridId}" class="grid-container"></div>`, 'bot', 500);
+            // GRID WIDE COM BALÃO FULL WIDTH
+            await addMessage(`Aqui estão os produtos: <div id="${gridId}" class="grid-container"></div>`, 'bot', 500, true);
             
             const gridEl = document.getElementById(gridId);
             
             let flatItems = [];
             CESTA_PEQUENA_ITEMS.forEach(item => {
                 for(let i=0; i < item.qtd; i++) {
-                    flatItems.push({ ...item, isMulti: item.qtd > 1 });
+                    flatItems.push({ ...item });
                 }
             });
 
             let index = 0;
             function showNextItem() {
                 if (index >= flatItems.length) {
-                    setTimeout(flowOfferDiscount, 1500);
+                    setTimeout(flowOfferDiscount, 2000); // Pausa maior antes de começar a ofertar
                     return;
                 }
 
                 const item = flatItems[index];
                 const img = getProductImage(item.name);
                 
-                // Card HTML Otimizado
+                // Card SEM BADGE
                 const card = `
                     <div class="mini-card">
-                        ${item.isMulti ? `<div class="count-badge">${index+1}</div>` : ''}
                         <img src="${img}" alt="${item.name}">
                         <span>${item.name.replace(/\d+(kg|ml|g|L)/gi, '')}</span>
                     </div>
                 `;
 
-                // BEFOREEND: Adiciona no final (vai preenchendo as linhas de cima para baixo)
                 gridEl.insertAdjacentHTML('beforeend', card);
-                
-                // SCROLL SUAVE: Rola para baixo para acompanhar os novos itens
                 chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
 
                 index++;
-                setTimeout(showNextItem, 600); 
+                // MAIS LENTO (CHARME)
+                setTimeout(showNextItem, 1100); 
             }
 
             showNextItem();
@@ -405,17 +422,16 @@
 
         async function flowOfferDiscount() {
             await addMessage(`Gostou? Bastante coisa né? 😍`);
-            await addMessage(`Tenho uma condição especial para hoje.`);
-            await addMessage(`Quer ativar o <b>DESCONTO VIP</b> para que o preço dela fique por apenas <b>R$ 205,00</b>?`);
+            await addMessage(`Essa cesta é a que mais vendemos e custa <b>R$ 220,00</b> entregue na sua casa.`);
             
-            const btnId = 'btn-desc-' + Date.now();
-            const html = `
-                <button id="${btnId}" class="action-btn primary" onclick="handleAction('${btnId}', 'Sim, quero o desconto! 🎁', 3)">
-                    SIM, ATIVAR DESCONTO
-                </button>
-            `;
-            chatContainer.lastElementChild.querySelector('.msg-bubble').insertAdjacentHTML('beforeend', html);
-            scrollToBottom();
+            await addMessage(`Pra você se tornar nosso cliente vamos te fazer por <b>R$ 205,00</b>, quer?`);
+            
+            addAction("Sim 🎁", 3);
+        }
+
+        async function flowPreRedirect() {
+            await addMessage(`Legal, vamos te direcionar para o nosso whatsapp para colocar seu nome na lista de clientes Vip.`);
+            addAction("Ok", 4);
         }
 
         async function flowRedirectWhatsApp() {
@@ -425,14 +441,11 @@
                 content_name: 'Cesta Pequena Desconto VIP' 
             });
 
-            await addMessage(`Legal! 🎉`);
-            await addMessage(`Vou te direcionar para o nosso WhatsApp para colocar seu nome na lista e finalizar o pedido.`);
-            
             setTimeout(() => {
                 const text = "Olá! Vim pelo site e quero a *Cesta Pequena* com o desconto de R$ 205,00.";
                 const phone = "5565998150975";
                 window.location.href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-            }, 2500);
+            }, 1000);
         }
 
         window.addEventListener('load', initFlow);
