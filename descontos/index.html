@@ -210,9 +210,13 @@
             background: transparent; box-shadow: none; margin-left: 0;
         }
 
+        /* IMAGENS DO CHAT */
         .msg-image-full {
-            width: 100%; display: block; border-radius: 12px;
+            width: 100%; 
+            height: auto; /* Mantém proporção original */
+            display: block; border-radius: 12px;
             box-shadow: var(--shadow-md); pointer-events: none;
+            object-fit: cover;
         }
 
         /* GRID ANIMATION */
@@ -495,15 +499,42 @@
             { name: "Esponja", qtd: 1, type: "limpeza" }
         ];
 
+        // RECUPERADO DO ARQUIVO ORIGINAL - LÓGICA COMPLETA DE IMAGENS
         function getProductImage(text) {
             const t = text.toLowerCase();
             const folderAlimento = 'img/alimento/';
             const folderLimpeza = 'img/limpeza/';
             const placeholder = `https://placehold.co/150x150/f1f5f9/334155?text=${encodeURIComponent(text.split(' ')[0])}`;
+            
             if(t.includes('arroz')) return folderAlimento + 'Arroz Koblenz 5kg.webp';
             if(t.includes('açúcar')) return folderAlimento + 'açucar doce dia 2 kg.webp';
             if(t.includes('oleo') || t.includes('óleo')) return folderAlimento + 'oleo de soja liza.webp';
-            return placeholder; 
+            if(t.includes('feijão')) return folderAlimento + 'feijão da casa.webp';
+            if(t.includes('café')) return folderAlimento + 'cafe caboclo 250g.webp';
+            if(t.includes('ovo')) return folderAlimento + 'ovo duzia.jpg';
+            if(t.includes('bolo')) return folderAlimento + 'bolo apti chocolate.webp';
+            if(t.includes('espaguete')) return folderAlimento + 'espaguete qdelicia.webp';
+            if(t.includes('trigo')) return folderAlimento + 'trigo vitoriosa.webp';
+            if(t.includes('sal')) return folderAlimento + 'sal.webp';
+            if(t.includes('molho')) return folderAlimento + 'molho fugini.webp';
+            if(t.includes('milho')) return folderAlimento + 'milho verde predileta.webp';
+            if(t.includes('tempero')) return folderAlimento + 'tempero tio jonas.jpg';
+            if(t.includes('bolacha')) return folderAlimento + 'bolacha mybit.webp';
+            if(t.includes('miojo')) return folderAlimento + 'miojo apti.webp';
+            if(t.includes('suco')) return folderAlimento + 'suco frisco.webp';
+            if(t.includes('sabão barra')) return folderLimpeza + 'sabão barra ype 900g.webp';
+            if(t.includes('creme dental')) return folderLimpeza + 'Creme Dental Sorriso 70g.webp';
+            if(t.includes('papel')) return folderLimpeza + 'papel higienico.webp';
+            if(t.includes('amaciante')) return folderLimpeza + 'amaciante ype 2L.webp';
+            if(t.includes('desinfetante')) return folderLimpeza + 'Desinfetante Remmus 2L.webp';
+            if(t.includes('sabão em pó') || t.includes('omo')) return folderLimpeza + 'sabão em pó omo 800g.webp';
+            if(t.includes('detergente')) return folderLimpeza + 'Detergente Ype 500ml.webp';
+            if(t.includes('qboa')) return folderLimpeza + 'Qboa 1 Litro.webp';
+            if(t.includes('sabonete')) return folderLimpeza + 'sabonete palmolive 85g.webp';
+            if(t.includes('lã')) return folderLimpeza + 'lã de aço assolan.webp';
+            if(t.includes('esponja')) return folderLimpeza + 'esponja de lavar louça.webp';
+
+            return placeholder;
         }
 
         let userFullName = "";
@@ -618,6 +649,7 @@
             interactionZone.innerHTML = ''; // Limpa botões
             await addMessage(text, 'user', 0);
             
+            if (callbackId === 0.5) flowPriceReveal(); // Novo Step: Confirmação do desconto
             if (callbackId === 1) flowStartShowcase();
             if (callbackId === 2) flowStartGridAnimation();
             if (callbackId === 3) flowPreRedirect();
@@ -627,7 +659,15 @@
         // --- FLOW SEQUENCES ---
 
         async function initFlow() {
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, 600));
+
+            // PASSO 1: Imagem Vertical do Anúncio (Primeira Coisa)
+            await addMessage(`
+                <img src="img/anuncio.png" class="msg-image-full" alt="Promoção Cesta Pequena" 
+                     loading="eager"
+                     onerror="this.src='https://placehold.co/360x640/2563EB/ffffff?text=Anúncio+Vertical'">
+            `, 'bot', 500, true);
+
             const hour = new Date().getHours();
             const greeting = hour < 12 ? "Bom dia" : (hour < 18 ? "Boa tarde" : "Boa noite");
             
@@ -650,17 +690,18 @@
             await addMessage(`Prazer, ${userFirstName}!`);
             await addMessage(`Bom... Você já sabe que eu tenho um desconto pra você né?`);
             
-            await new Promise(r => setTimeout(r, 600));
+            // Botão de Confirmação (Step 2)
+            renderFooterActions([
+                { text: "Sei sim! 👍", callbackId: 0.5, isPrimary: true }
+            ]);
+        }
 
-            await addMessage(`A cesta de R$ 220,00 é a nossa campeã de vendas.`);
-            await addMessage(`Olha só:`);
-
-            await addMessage(`
-                <img src="img/cesta pequena.jpg" class="msg-image-full" alt="Foto Real Cesta Pequena" 
-                     loading="eager" width="400" height="300"
-                     onerror="this.src='https://placehold.co/400x300/e2e8f0/2563EB?text=Foto+Cesta+Pequena'">
-            `, 'bot', 1000, true);
-
+        async function flowPriceReveal() {
+            // Nova Mensagem de Preço Personalizada
+            await addMessage(`A cesta de R$ 220,00 é a nossa campeã de vendas e pra você <b>${userFirstName}</b>, ela vai sair por <b>R$ 205,00</b>.`);
+            
+            // Pula direto para produtos (Sem foto da cesta)
+            await new Promise(r => setTimeout(r, 800));
             await addMessage(`Quer ver os produtos dela?`);
             
             renderFooterActions([
@@ -694,7 +735,7 @@
 
             function showNextItem() {
                 if (index >= total) {
-                    setTimeout(flowOfferDiscount, 2500); 
+                    setTimeout(flowOfferDiscount, 2000); 
                     return;
                 }
 
@@ -721,13 +762,11 @@
         async function flowOfferDiscount() {
             scrollToBottom();
             await addMessage(`Viu só, ${userFirstName}?`);
-            await addMessage(`Só trabalhamos com marcas de tradição na região.`);
-            await addMessage(`Tem <b>Koblenz, Tio Alvino, Caboclo, Ypê, Omo e Qboa</b>.`);
             
-            await new Promise(r => setTimeout(r, 1200));
-
-            await addMessage(`O preço normal dessa cesta é R$ 220,00.`);
-            await addMessage(`Mas tenho uma proposta pra você.`);
+            // Texto Enxuto
+            await addMessage(`Só trabalhamos com marcas de primeira qualidade.`);
+            
+            await new Promise(r => setTimeout(r, 1000));
             
             await addMessage(`Vou garantir essa cesta de R$ 220,00 por <b>R$ 205,00</b> por 30 dias.`);
             await addMessage(`Você pede quando precisar.`);
