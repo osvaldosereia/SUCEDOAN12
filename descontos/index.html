@@ -8,101 +8,204 @@
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cesta Pequena | Super Cestas Dona Antônia</title>
-    <meta name="description" content="Conheça a Cesta Pequena Dona Antônia. Produtos de qualidade com o melhor preço de Cuiabá e Várzea Grande.">
+    <title>Cesta Pequena Promoção | Super Cestas Dona Antônia</title>
+    <meta name="description" content="Garanta sua Cesta Pequena Dona Antônia com desconto VIP. Entrega em Cuiabá e Várzea Grande. Qualidade e economia na sua mesa.">
     <meta name="theme-color" content="#2563EB">
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://www.donaantonia.com.br/cesta-pequena">
+
+    <!-- SEO LOCAL + PRODUCT SCHEMA (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "LocalBusiness",
+          "@id": "https://www.donaantonia.com.br",
+          "name": "Super Cestas Dona Antônia de Cuiabá e VG",
+          "image": "https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif",
+          "telephone": "5565998150975",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "R. Trinta, 105 - Jardim Nossa Sra. Aparecida",
+            "addressLocality": "Cuiabá",
+            "addressRegion": "MT",
+            "postalCode": "78090-660",
+            "addressCountry": "BR"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -15.636881, 
+            "longitude": -56.046892 
+          },
+          "url": "https://www.donaantonia.com.br",
+          "priceRange": "$$"
+        },
+        {
+          "@type": "Product",
+          "name": "Cesta Básica Pequena",
+          "description": "Cesta completa com alimentos e produtos de limpeza essenciais. 27 itens de qualidade.",
+          "image": "https://donaantonia.com.br/img/cesta-pequena.jpg",
+          "offers": {
+            "@type": "Offer",
+            "priceCurrency": "BRL",
+            "price": "205.00",
+            "availability": "https://schema.org/InStock",
+            "seller": {
+              "@type": "LocalBusiness",
+              "name": "Super Cestas Dona Antônia"
+            }
+          }
+        }
+      ]
+    }
+    </script>
 
     <!-- PILLAR 3: SECURITY SUITE -->
     <script>
         (function() {
-            // DOMAIN LOCK & FRAME BUSTER
+            // 1. DOMAIN LOCK & FRAME BUSTER
             const allowedDomains = ['www.donaantonia.com.br', 'donaantonia.com.br', 'localhost', '127.0.0.1'];
             const currentDomain = window.location.hostname;
             const isPreviewEnv = currentDomain.includes('google') || currentDomain.includes('sandbox') || currentDomain.includes('content') || currentDomain.includes('firebaseapp');
             
             if (!isPreviewEnv && !allowedDomains.some(d => currentDomain.endsWith(d))) {
-                console.warn(`⚠️ [SECURITY] Acesso não autorizado.`);
-                // window.location.href = 'https://www.donaantonia.com.br'; // Descomente em produção
+                console.warn(`⚠️ [SECURITY] Domínio não autorizado.`);
+                // window.location.replace('https://www.donaantonia.com.br'); // UNCOMMENT IN PROD
             }
             if (window.top !== window.self && !isPreviewEnv) {
                 window.top.location = window.self.location;
             }
+
+            // 2. DISABLE RIGHT CLICK & DRAG
+            document.addEventListener('contextmenu', event => event.preventDefault());
+            document.addEventListener('dragstart', event => event.preventDefault());
         })();
     </script>
 
     <!-- PILLAR 2: TRACKING & ANALYTICS -->
     <script>
         window.dataLayer = window.dataLayer || [];
+        function generateEventID() {
+            return 'evt_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+        }
         function trackMarketingEvent(eventName, params = {}) {
-            window.dataLayer.push({ 'event': eventName, ...params });
-            if (typeof fbq === 'function') fbq('track', eventName, params);
-            console.log(`%c[PIXEL] ${eventName}`, "background:#0f172a;color:#22c55e;padding:2px 5px;", params);
+            const eventData = {
+                'event': eventName,
+                'eventID': generateEventID(),
+                'timestamp': new Date().toISOString(),
+                ...params
+            };
+            window.dataLayer.push(eventData);
+            if (typeof fbq === 'function') {
+                fbq('track', eventName, params, { eventID: eventData.eventID });
+            }
+            console.log(`%c[MARKETING] ${eventName}`, "background:#0f172a;color:#22c55e;padding:4px;border-radius:4px;", eventData);
         }
     </script>
 
     <!-- LIBS -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #2563EB;
-            --bg-color: #E2E8F0; 
-            --text-main: #1E293B;
+            --primary: #2563EB; /* Azul Dona Antonia */
+            --action-color: #10B981; /* Verde Ação/Zap */
+            --action-dark: #059669;
+            --bg-color: #F1F5F9; 
+            --text-main: #0F172A;
             --text-sub: #64748B;
             --white: #ffffff;
-            --bubble-bot: #ffffff;
-            --bubble-user: #2563EB;
-            --text-user: #ffffff;
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+            --footer-height: 80px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* RESET & BASE */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        input, textarea { user-select: text; }
         
         body {
             margin: 0 auto; padding: 0;
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
+            background-color: #cbd5e1;
             color: var(--text-main);
-            overflow: hidden;
+            height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .app-container {
+            background-color: var(--bg-color);
+            width: 100%; max-width: 480px; height: 100%;
             display: flex; flex-direction: column;
-            max-width: 480px; width: 100%; height: 100vh;
             position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
         }
 
         /* HEADER */
         .modern-header {
-            background-color: var(--white); height: 70px; padding: 0 20px;
+            background-color: var(--white); height: 64px; padding: 0 16px;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid #CBD5E1; flex-shrink: 0; z-index: 10;
+            border-bottom: 1px solid #E2E8F0; 
+            position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+            transition: transform 0.3s ease-in-out;
         }
-        .brand-logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .brand-info h1 { font-size: 15px; font-weight: 700; margin: 0; }
-        .status-badge { font-size: 11px; color: #10B981; background: #D1FAE5; padding: 2px 8px; border-radius: 12px; }
+        .modern-header.hidden {
+            transform: translateY(-100%);
+        }
+        
+        .brand-wrapper { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; }
+        .brand-logo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0; }
+        .brand-info { overflow: hidden; }
+        .brand-info h1 { 
+            font-size: 14px; font-weight: 700; margin: 0; color: var(--text-main); 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .status-dot { width: 8px; height: 8px; background-color: #10B981; border-radius: 50%; display: inline-block; margin-right: 4px; }
+        .status-text { font-size: 11px; color: var(--text-sub); }
 
         /* CHAT AREA */
         #chat-container {
-            flex: 1; overflow-y: auto; padding: 20px; 
-            padding-bottom: 140px; /* Espaço extra para o Dock Flutuante */
-            background-color: var(--bg-color); scroll-behavior: smooth;
+            flex: 1; overflow-y: auto; padding: 16px; 
+            padding-top: 80px; /* Header Space */
+            padding-bottom: 100px; /* Footer Space */
+            background-color: var(--bg-color); 
+            scroll-behavior: smooth;
         }
+        #chat-container::-webkit-scrollbar { width: 4px; }
+        #chat-container::-webkit-scrollbar-thumb { background-color: #CBD5E1; border-radius: 4px; }
 
-        .msg-row { display: flex; width: 100%; margin-bottom: 16px; animation: slideUp 0.3s ease; }
+        .msg-row { display: flex; width: 100%; margin-bottom: 16px; } 
         .msg-start { justify-content: flex-start; }
         .msg-end { justify-content: flex-end; }
         
         .msg-bubble {
-            padding: 14px 16px; max-width: 85%; font-size: 15px; line-height: 1.5;
-            position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            padding: 14px 18px;
+            max-width: 85%; 
+            font-size: 16px; 
+            line-height: 1.6;
+            position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            word-wrap: break-word;
         }
-        .msg-in { background: var(--white); color: var(--text-main); border-radius: 18px 18px 18px 4px; }
-        .msg-out { background: var(--primary); color: white; border-radius: 18px 18px 4px 18px; }
+        .msg-in { 
+            background: var(--white); color: var(--text-main); 
+            border-radius: 0 18px 18px 18px;
+            margin-left: 8px;
+        }
+        .avatar-holder { width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; margin-top: 2px; }
+        .avatar-holder img { width: 100%; height: 100%; object-fit: cover; }
+
+        .msg-out { 
+            background: var(--primary); color: white;
+            border-radius: 18px 0 18px 18px; 
+        }
 
         .msg-bubble.full-width {
             max-width: 100%; width: 100%; padding: 0;
-            background: transparent; box-shadow: none;
+            background: transparent; box-shadow: none; margin-left: 0;
         }
 
         .msg-image-full {
@@ -113,217 +216,277 @@
         /* GRID ANIMATION */
         .grid-container {
             display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 8px; width: 100%; margin-top: 10px; padding: 0 4px;
+            gap: 10px; width: 100%; margin-top: 8px; padding: 0 2px;
         }
         .mini-card {
-            background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; 
-            padding: 6px; text-align: center;
+            background: var(--white); border: 1px solid #E2E8F0; border-radius: 10px; 
+            padding: 8px; text-align: center;
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            animation: fadeInScale 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-            height: 130px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            height: 150px; 
+            overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.04);
         }
-        @keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
-        .mini-card img { width: 100%; height: 85px; object-fit: contain; mix-blend-mode: multiply; flex-shrink: 0; }
+        @keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+        .mini-card img { 
+            width: 100%; height: 100px;
+            object-fit: contain; 
+            mix-blend-mode: multiply; flex-shrink: 0; 
+        }
         .mini-card span { 
-            font-size: 11px; line-height: 1.1; color: var(--text-sub); font-weight: 600; 
+            font-size: 11px; line-height: 1.2; color: var(--text-sub); font-weight: 700; 
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-            margin-top: 4px;
+            margin-top: 6px;
         }
 
-        /* BUTTONS */
-        .action-btn {
-            background: var(--white); border: 1px solid #CBD5E1; color: var(--primary);
-            font-weight: 700; padding: 12px 24px; border-radius: 12px;
-            cursor: pointer; margin-top: 8px; width: 100%;
-            transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        /* FIXED INTERACTION FOOTER */
+        .interaction-footer {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: var(--white);
+            border-top: 1px solid #E2E8F0;
+            padding: 12px 16px;
+            z-index: 30;
+            display: flex; flex-direction: column; gap: 8px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+            min-height: 70px;
+            justify-content: center;
         }
-        .action-btn:active { transform: scale(0.96); background: #F1F5F9; }
-        .action-btn.primary { background: var(--primary); color: white; border: none; }
 
-        /* FLOATING DOCK (NEW) */
+        /* INPUT FIELD IN FOOTER */
+        .input-area {
+            display: flex; gap: 8px; width: 100%; align-items: center;
+        }
+        .chat-input {
+            flex: 1; padding: 12px 16px; border-radius: 24px; border: 1px solid #CBD5E1;
+            font-size: 16px; outline: none; font-family: 'Inter', sans-serif;
+            background: #F8FAFC; color: var(--text-main);
+        }
+        .chat-input:focus { border-color: var(--primary); background: white; }
+        .send-btn {
+            background: var(--primary); color: white; border: none;
+            width: 44px; height: 44px; border-radius: 50%; font-size: 20px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.2);
+            transition: transform 0.1s;
+        }
+        .send-btn:active { transform: scale(0.95); }
+
+        /* ACTION BUTTONS IN FOOTER */
+        .actions-area {
+            display: flex; gap: 8px; width: 100%; overflow-x: auto; 
+            padding-bottom: 4px; scrollbar-width: none;
+        }
+        .actions-area::-webkit-scrollbar { display: none; }
+
+        .action-btn-footer {
+            flex: 1; min-width: max-content;
+            background: var(--white); 
+            border: 2px solid var(--action-color);
+            color: var(--action-dark);
+            font-weight: 700; padding: 12px 20px; border-radius: 12px;
+            cursor: pointer; font-size: 14px; text-align: center;
+            transition: all 0.2s;
+        }
+        .action-btn-footer:active { transform: scale(0.96); background: #ECFDF5; }
+        .action-btn-footer.primary { 
+            background: var(--action-color); color: white; border: none; 
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        /* FLOATING DOCK (Hidden when footer is active with input) */
         .floating-dock {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-            display: flex; align-items: center; gap: 12px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            padding: 8px 12px;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.2);
+            position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 8px; z-index: 25;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 6px 8px; border-radius: 32px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             border: 1px solid rgba(255,255,255,0.6);
-            width: max-content;
-            max-width: 95%;
+            width: max-content; max-width: 95%;
+            transition: opacity 0.3s;
         }
 
-        .dock-socials { display: flex; gap: 8px; padding-right: 12px; border-right: 1px solid #E2E8F0; }
-        
         .dock-btn {
-            width: 42px; height: 42px; border-radius: 50%;
+            width: 40px; height: 40px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             border: none; cursor: pointer; text-decoration: none;
-            font-size: 20px; transition: transform 0.2s, box-shadow 0.2s;
-            position: relative;
+            font-size: 20px; color: white;
         }
-        .dock-btn:active { transform: scale(0.9); }
-        
-        .btn-wa { background: #25D366; color: white; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
-        .btn-fb { background: #1877F2; color: white; }
-        .btn-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: white; }
-        
+        .btn-wa { background: #25D366; }
+        .btn-fb { background: #1877F2; }
+        .btn-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
         .btn-info {
-            width: auto; height: 42px; padding: 0 20px;
+            width: auto; height: 40px; padding: 0 16px;
             background: var(--text-main); color: white;
             font-size: 13px; font-weight: 600; 
-            border-radius: 21px; /* Pill shape */
-            gap: 8px;
-            box-shadow: 0 4px 10px rgba(30, 41, 59, 0.2);
+            border-radius: 20px; gap: 6px; margin-left: 4px;
         }
 
-        /* MODAL (RESTORED) */
+        /* MODAL */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6); z-index: 2000;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 2000;
             display: none; align-items: center; justify-content: center;
             padding: 20px; backdrop-filter: blur(4px);
+            opacity: 0; transition: opacity 0.3s;
         }
+        .modal-overlay.active { opacity: 1; }
         .modal-content {
-            background: white; width: 100%; max-width: 340px;
-            border-radius: 24px; padding: 24px; position: relative;
+            background: white; width: 100%; max-width: 320px;
+            border-radius: 20px; padding: 24px; position: relative;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: scale(0.9); transition: transform 0.3s;
         }
-        @keyframes modalPop {
-            from { opacity: 0; transform: scale(0.95) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+
         .close-modal {
-            position: absolute; top: 16px; right: 16px;
+            position: absolute; top: 12px; right: 12px;
             background: #F1F5F9; border: none; width: 32px; height: 32px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             cursor: pointer; color: var(--text-sub);
         }
-        .modal-body ul { list-style: none; padding: 0; margin: 0 0 20px 0; }
-        .modal-body li { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-main); }
-        .modal-body li i { color: var(--primary); font-size: 18px; }
 
-        /* TYPING */
-        .typing { display: flex; gap: 4px; padding: 10px; }
-        .dot { width: 6px; height: 6px; background: #94A3B8; border-radius: 50%; animation: bounce 1.4s infinite; }
-        .dot:nth-child(2) { animation-delay: 0.2s; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        /* TYPING INDICATOR */
+        .typing-bubble {
+            padding: 14px 18px; background: var(--white); border-radius: 0 18px 18px 18px;
+            display: inline-flex; gap: 4px; width: fit-content;
+            margin-left: 8px; margin-bottom: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .dot { width: 7px; height: 7px; background: #94A3B8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <header class="modern-header">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
-                 class="brand-logo" alt="Logo"
-                 onerror="this.src='https://placehold.co/40x40/2563EB/ffffff?text=DA'">
-            <div class="brand-info">
-                <h1>Dona Antônia</h1>
-                <span class="status-badge">Online agora</span>
-            </div>
-        </div>
-        <i class="ph ph-dots-three-vertical" style="font-size: 24px; color: var(--text-sub);"></i>
-    </header>
-
-    <main id="chat-container">
-        <!-- Chat Flow Starts Here -->
-    </main>
-
-    <!-- FLOATING DOCK -->
-    <div class="floating-dock">
-        <div class="dock-socials">
-            <a href="https://wa.me/5565998150975" target="_blank" class="dock-btn btn-wa" aria-label="WhatsApp">
-                <i class="ph-fill ph-whatsapp-logo"></i>
-            </a>
-            <a href="https://facebook.com/cestas.dona.antonia" target="_blank" class="dock-btn btn-fb" aria-label="Facebook">
-                <i class="ph-fill ph-facebook-logo"></i>
-            </a>
-            <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="dock-btn btn-ig" aria-label="Instagram">
-                <i class="ph-fill ph-instagram-logo"></i>
-            </a>
-        </div>
-        <button onclick="toggleModal(true)" class="dock-btn btn-info">
-            <i class="ph-bold ph-storefront"></i> Quem Somos
-        </button>
-    </div>
-
-    <!-- INFO MODAL -->
-    <div id="infoModal" class="modal-overlay" onclick="if(event.target === this) toggleModal(false)">
-        <div class="modal-content">
-            <button class="close-modal" onclick="toggleModal(false)"><i class="ph-bold ph-x"></i></button>
-            
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; border-bottom:1px solid #F1F5F9; padding-bottom:16px;">
+    <div class="app-container">
+        <!-- HEADER (Collapsible) -->
+        <header id="main-header" class="modern-header">
+            <div class="brand-wrapper">
                 <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
-                     class="brand-logo" style="width:50px; height:50px;"
-                     onerror="this.src='https://placehold.co/50x50/2563EB/ffffff?text=DA'">
-                <div>
-                    <h3 style="margin:0; font-size:15px; font-weight:700; color:var(--text-main);">Dona Antônia</h3>
-                    <span style="font-size:11px; color:var(--text-sub); display:block;">CNPJ: 51.385.335.0001.06</span>
+                     class="brand-logo" alt="Logo Dona Antônia"
+                     onerror="this.src='https://placehold.co/40x40/2563EB/ffffff?text=DA'">
+                <div class="brand-info">
+                    <h1>Super Cestas Dona Antônia de Cuiabá e VG</h1>
+                    <div>
+                        <span class="status-dot"></span>
+                        <span class="status-text">Online</span>
+                    </div>
                 </div>
             </div>
+            <i class="ph ph-dots-three-vertical" style="font-size: 24px; color: var(--text-sub);"></i>
+        </header>
 
-            <div class="modal-body">
-                <ul>
-                    <li><i class="ph-fill ph-check-circle"></i> 8 anos em Cuiabá e VG</li>
-                    <li><i class="ph-fill ph-package"></i> Mais de 30 mil cestas entregues</li>
-                    <li><i class="ph-fill ph-users"></i> +8.000 Seguidores nas redes</li>
-                </ul>
+        <!-- CHAT MAIN -->
+        <main id="chat-container">
+            <!-- Messages injected via JS -->
+        </main>
 
-                <div style="font-size:12px; color:var(--text-sub); background:#F8FAFC; padding:12px; border-radius:12px; margin-bottom:16px; border:1px solid #F1F5F9;">
-                    <a href="https://maps.google.com/?q=R.+Trinta,+105+-+Jardim+Nossa+Sra.+Aparecida,+Cuiabá+-+MT,+78090-660" target="_blank" style="color:inherit; text-decoration:none; display:flex; gap:10px; align-items:start">
-                        <i class="ph-fill ph-map-pin" style="color:#ef4444; flex-shrink:0; margin-top:2px; font-size:16px;"></i>
-                        <span>R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT</span>
-                    </a>
+        <!-- FLOATING DOCK (Socials) -->
+        <div id="social-dock" class="floating-dock">
+            <div style="display: flex; gap: 8px; padding-right: 8px; border-right: 1px solid #E2E8F0;">
+                <a href="https://wa.me/5565998150975" target="_blank" class="dock-btn btn-wa" 
+                   onclick="trackMarketingEvent('Contact', {method: 'whatsapp', location: 'dock'})" aria-label="WhatsApp">
+                    <i class="ph-fill ph-whatsapp-logo"></i>
+                </a>
+                <a href="https://facebook.com/cestas.dona.antonia" target="_blank" class="dock-btn btn-fb" 
+                   onclick="trackMarketingEvent('Contact', {method: 'facebook', location: 'dock'})" aria-label="Facebook">
+                    <i class="ph-fill ph-facebook-logo"></i>
+                </a>
+                <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="dock-btn btn-ig" 
+                   onclick="trackMarketingEvent('Contact', {method: 'instagram', location: 'dock'})" aria-label="Instagram">
+                    <i class="ph-fill ph-instagram-logo"></i>
+                </a>
+            </div>
+            <button onclick="toggleModal(true)" class="dock-btn btn-info">
+                <i class="ph-bold ph-storefront"></i> Quem Somos
+            </button>
+        </div>
+
+        <!-- FIXED FOOTER (Inputs & Actions) -->
+        <footer id="interaction-footer" class="interaction-footer">
+            <!-- Dynamic Content Here -->
+        </footer>
+
+        <!-- MODAL INFO -->
+        <div id="infoModal" class="modal-overlay" onclick="if(event.target === this) toggleModal(false)">
+            <div class="modal-content">
+                <button class="close-modal" onclick="toggleModal(false)"><i class="ph-bold ph-x"></i></button>
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; border-bottom:1px solid #F1F5F9; padding-bottom:16px;">
+                    <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="brand-logo" style="width:50px; height:50px;" onerror="this.src='https://placehold.co/50x50/2563EB/ffffff?text=DA'">
+                    <div>
+                        <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--text-main);">Dona Antônia</h3>
+                        <span style="font-size:12px; color:var(--text-sub); display:block;">Cestas Básicas</span>
+                    </div>
                 </div>
-
-                <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-main);">
-                    <p style="margin:0">📞 (65) 99815-0975</p>
+                <div style="margin-bottom:20px;">
+                    <ul style="list-style:none; padding:0; margin:0;">
+                        <li style="margin-bottom:12px; display:flex; gap:12px; font-size:14px; color:var(--text-main);"><i class="ph-fill ph-check-circle" style="color:var(--primary); font-size:20px;"></i> 8 anos em Cuiabá e VG</li>
+                        <li style="margin-bottom:12px; display:flex; gap:12px; font-size:14px; color:var(--text-main);"><i class="ph-fill ph-package" style="color:var(--primary); font-size:20px;"></i> +30 mil entregas</li>
+                    </ul>
+                </div>
+                <div style="text-align:center;">
+                    <p style="margin:0; font-size:15px; font-weight:700; color:var(--primary);">📞 (65) 99815-0975</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- DATA & LOGIC ---
+        // --- HEADER SCROLL LOGIC ---
+        const header = document.getElementById('main-header');
+        const scrollContainer = document.getElementById('chat-container');
+        let lastScrollY = 0;
 
-        // Modal Function
-        window.toggleModal = function(show) {
-            const modal = document.getElementById('infoModal');
-            modal.style.display = show ? 'flex' : 'none';
-            if(show) trackMarketingEvent('ViewContent', { content_name: 'Modal Quem Somos' });
-        }
+        scrollContainer.addEventListener('scroll', () => {
+            const currentScrollY = scrollContainer.scrollTop;
+            
+            // Only toggle if scrolled more than 50px to avoid jitter at top
+            if (currentScrollY > 50) {
+                if (currentScrollY > lastScrollY) {
+                    // Scrolling DOWN -> Hide Header
+                    header.classList.add('hidden');
+                } else {
+                    // Scrolling UP -> Show Header
+                    header.classList.remove('hidden');
+                }
+            } else {
+                header.classList.remove('hidden');
+            }
+            lastScrollY = currentScrollY;
+        });
 
+        // --- PRODUTOS ---
         const CESTA_PEQUENA_ITEMS = [
             { name: "Arroz Koblenz 5kg", qtd: 2, type: "alimento" },
             { name: "Açúcar Doce Dia 2kg", qtd: 1, type: "alimento" },
-            { name: "Óleo de Soja Liza 900ml", qtd: 2, type: "alimento" },
+            { name: "Óleo de Soja Liza", qtd: 2, type: "alimento" },
             { name: "Feijão Da Casa 1kg", qtd: 2, type: "alimento" },
             { name: "Café Caboclo 250g", qtd: 1, type: "alimento" },
             { name: "Ovos (Dúzia)", qtd: 1, type: "alimento" },
-            { name: "Bolo Apti Chocolate", qtd: 1, type: "alimento" },
+            { name: "Bolo Apti Choc.", qtd: 1, type: "alimento" },
             { name: "Espaguete QDelicia", qtd: 1, type: "alimento" },
             { name: "Trigo Vitoriosa 1kg", qtd: 1, type: "alimento" },
             { name: "Sal 1kg", qtd: 1, type: "alimento" },
             { name: "Molho Fugini 340g", qtd: 1, type: "alimento" },
-            { name: "Milho Verde Predileta", qtd: 1, type: "alimento" },
+            { name: "Milho Verde", qtd: 1, type: "alimento" },
             { name: "Tempero Tio Jonas", qtd: 1, type: "alimento" },
             { name: "Bolacha MyBit", qtd: 2, type: "alimento" },
             { name: "Miojo Apti", qtd: 2, type: "alimento" },
             { name: "Suco Frisco", qtd: 2, type: "alimento" },
             { name: "Sabão Barra Ype", qtd: 1, type: "limpeza" },
-            { name: "Creme Dental Sorriso", qtd: 1, type: "limpeza" },
+            { name: "Creme Dental", qtd: 1, type: "limpeza" },
             { name: "Papel Higiênico", qtd: 1, type: "limpeza" },
             { name: "Amaciante Ype 2L", qtd: 1, type: "limpeza" },
-            { name: "Desinfetante Remmus", qtd: 1, type: "limpeza" },
+            { name: "Desinfetante 2L", qtd: 1, type: "limpeza" },
             { name: "Sabão em Pó OMO", qtd: 1, type: "limpeza" },
             { name: "Detergente Ype", qtd: 2, type: "limpeza" },
             { name: "Qboa 1 Litro", qtd: 1, type: "limpeza" },
             { name: "Sabonete Palmolive", qtd: 2, type: "limpeza" },
-            { name: "Lã de Aço Assolan", qtd: 1, type: "limpeza" },
+            { name: "Lã de Aço", qtd: 1, type: "limpeza" },
             { name: "Esponja", qtd: 1, type: "limpeza" }
         ];
 
@@ -331,52 +494,44 @@
             const t = text.toLowerCase();
             const folderAlimento = 'img/alimento/';
             const folderLimpeza = 'img/limpeza/';
-            const placeholder = `https://placehold.co/100x100/f1f5f9/334155?text=${encodeURIComponent(text.split(' ')[0])}`;
-            
+            const placeholder = `https://placehold.co/150x150/f1f5f9/334155?text=${encodeURIComponent(text.split(' ')[0])}`;
             if(t.includes('arroz')) return folderAlimento + 'Arroz Koblenz 5kg.webp';
             if(t.includes('açúcar')) return folderAlimento + 'açucar doce dia 2 kg.webp';
             if(t.includes('oleo') || t.includes('óleo')) return folderAlimento + 'oleo de soja liza.webp';
-            if(t.includes('feijão')) return folderAlimento + 'feijão da casa.webp';
-            if(t.includes('café')) return folderAlimento + 'cafe caboclo 250g.webp';
-            if(t.includes('ovo')) return folderAlimento + 'ovo duzia.jpg';
-            if(t.includes('bolo')) return folderAlimento + 'bolo apti chocolate.webp';
-            if(t.includes('espaguete')) return folderAlimento + 'espaguete qdelicia.webp';
-            if(t.includes('trigo')) return folderAlimento + 'trigo vitoriosa.webp';
-            if(t.includes('sal')) return folderAlimento + 'sal.webp';
-            if(t.includes('molho')) return folderAlimento + 'molho fugini.webp';
-            if(t.includes('milho')) return folderAlimento + 'milho verde predileta.webp';
-            if(t.includes('tempero')) return folderAlimento + 'tempero tio jonas.jpg';
-            if(t.includes('bolacha')) return folderAlimento + 'bolacha mybit.webp';
-            if(t.includes('miojo')) return folderAlimento + 'miojo apti.webp';
-            if(t.includes('suco')) return folderAlimento + 'suco frisco.webp';
-            if(t.includes('sabão barra')) return folderLimpeza + 'sabão barra ype 900g.webp';
-            if(t.includes('creme dental')) return folderLimpeza + 'Creme Dental Sorriso 70g.webp';
-            if(t.includes('papel')) return folderLimpeza + 'papel higienico.webp';
-            if(t.includes('amaciante')) return folderLimpeza + 'amaciante ype 2L.webp';
-            if(t.includes('desinfetante')) return folderLimpeza + 'Desinfetante Remmus 2L.webp';
-            if(t.includes('sabão em pó') || t.includes('omo')) return folderLimpeza + 'sabão em pó omo 800g.webp';
-            if(t.includes('detergente')) return folderLimpeza + 'Detergente Ype 500ml.webp';
-            if(t.includes('qboa')) return folderLimpeza + 'Qboa 1 Litro.webp';
-            if(t.includes('sabonete')) return folderLimpeza + 'sabonete palmolive 85g.webp';
-            if(t.includes('lã')) return folderLimpeza + 'lã de aço assolan.webp';
-            if(t.includes('esponja')) return folderLimpeza + 'esponja de lavar louça.webp';
-
-            return placeholder;
+            return placeholder; 
         }
 
+        let userFullName = "";
+        let userFirstName = "";
         const chatContainer = document.getElementById('chat-container');
+        const footerEl = document.getElementById('interaction-footer');
+
+        function calculateTypingDelay(text) {
+            if (!text) return 1500;
+            const cleanText = text.replace(/<[^>]*>?/gm, ''); 
+            const baseDelay = cleanText.length * 60; 
+            const variation = Math.random() * 500;
+            return Math.min(Math.max(baseDelay + variation, 1500), 5000);
+        }
 
         function scrollToBottom() {
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+            setTimeout(() => {
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+            }, 100);
         }
 
-        function addMessage(content, type = 'bot', delay = 800, isFullWidth = false) {
+        function addMessage(content, type = 'bot', forceDelay = null, isFullWidth = false) {
             return new Promise(resolve => {
+                const delay = forceDelay !== null ? forceDelay : calculateTypingDelay(content);
+
                 if(type === 'bot') {
                     const typingId = 'typing-' + Date.now();
+                    const avatarHtml = `<div class="avatar-holder"><img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" onerror="this.src='https://placehold.co/30x30/2563EB/ffffff?text=DA'"></div>`;
+                    
                     chatContainer.insertAdjacentHTML('beforeend', `
                         <div id="${typingId}" class="msg-row msg-start">
-                            <div class="msg-bubble msg-in typing">
+                            ${avatarHtml}
+                            <div class="typing-bubble">
                                 <div class="dot"></div><div class="dot"></div><div class="dot"></div>
                             </div>
                         </div>
@@ -389,15 +544,19 @@
                         appendFinalMessage();
                     }, delay);
                 } else {
-                    appendFinalMessage();
+                    setTimeout(appendFinalMessage, 300);
                 }
 
                 function appendFinalMessage() {
                     const bubbleClass = isFullWidth ? 'msg-bubble full-width' : (type === 'bot' ? 'msg-bubble msg-in' : 'msg-bubble msg-out');
                     const rowClass = type === 'bot' ? 'msg-start' : 'msg-end';
-                    
+                    const avatar = (type === 'bot' && !isFullWidth) 
+                        ? `<div class="avatar-holder"><img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" onerror="this.src='https://placehold.co/30x30/2563EB/ffffff?text=DA'"></div>` 
+                        : (type === 'bot' ? '<div style="width:32px"></div>' : '');
+
                     const html = `
-                        <div class="msg-row ${rowClass}">
+                        <div class="msg-row ${rowClass} animate-up">
+                            ${avatar}
                             <div class="${bubbleClass}">
                                 ${content}
                             </div>
@@ -410,20 +569,62 @@
             });
         }
 
-        function addAction(text, callbackId) {
-            const btnId = 'btn-' + Date.now();
-            const html = `<button id="${btnId}" class="action-btn" onclick="handleAction('${btnId}', '${text}', ${callbackId})">${text}</button>`;
-            const lastBubble = chatContainer.lastElementChild.querySelector('.msg-bubble');
-            if(lastBubble) {
-                lastBubble.insertAdjacentHTML('beforeend', html);
-                scrollToBottom();
-            }
+        // --- FIXED FOOTER UI LOGIC ---
+
+        function renderFooterInput(callback) {
+            footerEl.innerHTML = `
+                <div class="input-area">
+                    <input type="text" id="footerInput" class="chat-input" placeholder="Digite seu nome..." autocomplete="off">
+                    <button class="send-btn" onclick="submitFooterInput()"><i class="ph-bold ph-paper-plane-right"></i></button>
+                </div>
+            `;
+            
+            // Define global submit handler
+            window.submitFooterInput = function() {
+                const input = document.getElementById('footerInput');
+                const val = input.value.trim();
+                if(!val) return;
+                
+                // Disable input temporarily
+                input.disabled = true;
+                
+                // Show user message in chat
+                addMessage(val, 'user', 0);
+                
+                // Clear footer content (or show loading state if needed)
+                footerEl.innerHTML = '';
+                
+                callback(val);
+            };
+
+            // Enter key support
+            const inputEl = document.getElementById('footerInput');
+            inputEl.focus();
+            inputEl.addEventListener("keypress", function(event) {
+                if (event.key === "Enter") window.submitFooterInput();
+            });
         }
 
-        async function handleAction(btnId, text, callbackId) {
-            const btn = document.getElementById(btnId);
-            if(btn) btn.remove();
+        function renderFooterActions(actions) {
+            const buttonsHtml = actions.map(act => 
+                `<button class="action-btn-footer ${act.isPrimary ? 'primary' : ''}" onclick="handleFooterAction('${act.text}', ${act.callbackId})">${act.text}</button>`
+            ).join('');
+
+            footerEl.innerHTML = `
+                <div class="actions-area">
+                    ${buttonsHtml}
+                </div>
+            `;
             
+            // Adjust dock position if needed, or hide it
+            // document.getElementById('social-dock').style.opacity = '0';
+        }
+
+        async function handleFooterAction(text, callbackId) {
+            // Clear Footer actions
+            footerEl.innerHTML = '';
+            // document.getElementById('social-dock').style.opacity = '1';
+
             await addMessage(text, 'user', 0);
             
             if (callbackId === 1) flowStartShowcase();
@@ -432,47 +633,78 @@
             if (callbackId === 4) flowRedirectWhatsApp();
         }
 
+        // --- FLOW SEQUENCES ---
+
         async function initFlow() {
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 800));
+            const hour = new Date().getHours();
+            const greeting = hour < 12 ? "Bom dia" : (hour < 18 ? "Boa tarde" : "Boa noite");
             
-            const greeting = new Date().getHours() < 12 ? "Bom dia" : "Boa tarde";
-            await addMessage(`${greeting}! Sou o assistente virtual da Dona Antônia.`);
+            await addMessage(`👋 ${greeting}!`);
+            await addMessage(`Sou o <b>Osvaldo</b>, assistente da Dona Antônia.`);
+            await addMessage(`Qual seu nome?`);
             
-            await addMessage(`Essa é a nossa <b>Cesta Pequena</b>, uma das mais completas:`, 'bot', 1000);
+            // Mostra Input no Footer
+            renderFooterInput(handleNameSubmit);
+        }
 
-            // FOTO WIDE SEM BALÃO
+        async function handleNameSubmit(name) {
+            userFullName = name;
+            userFirstName = name.split(' ')[0];
+            userFirstName = userFirstName.charAt(0).toUpperCase() + userFirstName.slice(1).toLowerCase();
+
+            setTimeout(flowContextAd, 800);
+        }
+
+        async function flowContextAd() {
+            await addMessage(`Prazer, ${userFirstName}!`);
+            await addMessage(`Bom... Você já sabe que eu tenho um desconto pra você né?`);
+            
+            await new Promise(r => setTimeout(r, 600));
+
+            await addMessage(`A cesta de R$ 220,00 é a nossa campeã de vendas.`);
+            await addMessage(`Olha só:`);
+
             await addMessage(`
-                <img src="img/cesta pequena.jpg" class="msg-image-full" alt="Cesta Pequena" onerror="this.src='https://placehold.co/400x300/e2e8f0/2563EB?text=Foto+Cesta+Pequena'">
-            `, 'bot', 0, true);
+                <img src="img/cesta pequena.jpg" class="msg-image-full" alt="Foto Real Cesta Pequena" 
+                     loading="eager" width="400" height="300"
+                     onerror="this.src='https://placehold.co/400x300/e2e8f0/2563EB?text=Foto+Cesta+Pequena'">
+            `, 'bot', 1000, true);
 
-            await addMessage(`Você quer ver todos os produtos que estão nessa cesta?`, 'bot', 1000);
-            addAction("Quero sim 👍", 1);
+            await addMessage(`Quer ver os produtos dela?`);
+            
+            renderFooterActions([
+                { text: "Sim, quero ver", callbackId: 1, isPrimary: true }
+            ]);
         }
 
         async function flowStartShowcase() {
             trackMarketingEvent('InitiateCheckout', { content_name: 'Showcase Cesta Pequena' });
-            await addMessage(`Ok, vou enviar 1 por 1 para você conferir, pode ser?`);
-            addAction("Ok, pode mandar", 2);
+            await addMessage(`Combinado.`);
+            await addMessage(`São 27 itens no total.`);
+            await addMessage(`Vou te mostrar...`);
+            
+            renderFooterActions([
+                { text: "Pode mostrar", callbackId: 2, isPrimary: true }
+            ]);
         }
 
         async function flowStartGridAnimation() {
             const gridId = 'live-grid-' + Date.now();
-            // GRID WIDE COM BALÃO FULL WIDTH
-            await addMessage(`Aqui estão os produtos: <div id="${gridId}" class="grid-container"></div>`, 'bot', 500, true);
+            await addMessage(`<div id="${gridId}" class="grid-container"></div>`, 'bot', 800, true);
             
             const gridEl = document.getElementById(gridId);
-            
             let flatItems = [];
             CESTA_PEQUENA_ITEMS.forEach(item => {
-                for(let i=0; i < item.qtd; i++) {
-                    flatItems.push({ ...item });
-                }
+                for(let i=0; i < item.qtd; i++) flatItems.push({ ...item });
             });
 
             let index = 0;
+            const total = flatItems.length;
+
             function showNextItem() {
-                if (index >= flatItems.length) {
-                    setTimeout(flowOfferDiscount, 2000); 
+                if (index >= total) {
+                    setTimeout(flowOfferDiscount, 2500); 
                     return;
                 }
 
@@ -481,45 +713,81 @@
                 
                 const card = `
                     <div class="mini-card">
-                        <img src="${img}" alt="${item.name}">
-                        <span>${item.name.replace(/\d+(kg|ml|g|L)/gi, '')}</span>
+                        <img src="${img}" alt="${item.name}" loading="lazy">
+                        <span>${item.name}</span>
                     </div>
                 `;
 
                 gridEl.insertAdjacentHTML('beforeend', card);
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+                if (index % 3 === 0) scrollToBottom();
 
                 index++;
-                setTimeout(showNextItem, 1100); 
+                setTimeout(showNextItem, 1200); 
             }
 
             showNextItem();
         }
 
         async function flowOfferDiscount() {
-            await addMessage(`Gostou? Bastante coisa né? 😍`);
-            await addMessage(`Essa cesta é a que mais vendemos e custa <b>R$ 220,00</b> entregue na sua casa.`);
-            await addMessage(`Pra você se tornar nosso cliente vamos te fazer por <b>R$ 205,00</b>, quer?`);
-            addAction("Sim 🎁", 3);
+            scrollToBottom();
+            await addMessage(`Viu só, ${userFirstName}?`);
+            await addMessage(`Só trabalhamos com marcas de tradição na região.`);
+            await addMessage(`Tem <b>Koblenz, Tio Alvino, Caboclo, Ypê, Omo e Qboa</b>.`);
+            
+            await new Promise(r => setTimeout(r, 1200));
+
+            await addMessage(`O preço normal dessa cesta é R$ 220,00.`);
+            await addMessage(`Mas tenho uma proposta pra você.`);
+            await addMessage(`Não precisa comprar agora se não quiser.`);
+            await addMessage(`Eu quero cadastrar seu nome na nossa lista VIP.`);
+            await addMessage(`Assim, garantimos o preço de <b>R$ 205,00</b> pra você pelos próximos 30 dias.`);
+            await addMessage(`Você pede quando precisar.`);
+            
+            renderFooterActions([
+                { text: "Quero garantir meu desconto", callbackId: 3, isPrimary: true }
+            ]);
         }
 
         async function flowPreRedirect() {
-            await addMessage(`Legal, vamos te direcionar para o nosso whatsapp para colocar seu nome na lista de clientes Vip.`);
-            addAction("Ok", 4);
+            await addMessage(`Perfeito!`);
+            await addMessage(`Vou abrir seu WhatsApp.`);
+            await addMessage(`Lá nossa atendente vai salvar seu contato como <b>Cliente com Desconto</b>.`);
+            renderFooterActions([
+                { text: "Abrir WhatsApp", callbackId: 4, isPrimary: true }
+            ]);
         }
 
         async function flowRedirectWhatsApp() {
             trackMarketingEvent('Lead', { 
                 value: 205.00, 
                 currency: 'BRL', 
-                content_name: 'Cesta Pequena Desconto VIP' 
+                content_name: 'Cesta Pequena Desconto VIP',
+                status: 'redirected'
             });
 
+            await addMessage(`Redirecionando...`);
+
             setTimeout(() => {
-                const text = "Olá! Vim pelo site e quero a *Cesta Pequena* com o desconto de R$ 205,00.";
+                const text = `Olá! Meu nome é *${userFullName}*. Vim pelo Instagram e quero garantir meu cadastro de desconto (R$ 205,00) na Cesta Pequena por 30 dias.`;
                 const phone = "5565998150975";
-                window.location.href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-            }, 1000);
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                const baseUrl = isMobile ? "https://api.whatsapp.com/send" : "https://web.whatsapp.com/send";
+                
+                window.location.href = `${baseUrl}?phone=${phone}&text=${encodeURIComponent(text)}`;
+            }, 2500);
+        }
+
+        window.toggleModal = function(show) {
+            const modal = document.getElementById('infoModal');
+            if(show) {
+                modal.style.display = 'flex';
+                void modal.offsetWidth; 
+                modal.classList.add('active');
+                trackMarketingEvent('ViewContent', { content_name: 'Modal Quem Somos' });
+            } else {
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 300);
+            }
         }
 
         window.addEventListener('load', initFlow);
