@@ -48,7 +48,6 @@
 
     <style>
         :root {
-            /* 2025 DESIGN TOKENS */
             --primary: #2563EB;
             --primary-light: #EFF6FF;
             --primary-dark: #1D4ED8;
@@ -59,9 +58,10 @@
             --text-main: #0F172A;
             --text-sec: #64748B;
             --border: #E2E8F0;
+            --danger: #EF4444; 
             
             --header-h: 60px;
-            --footer-h: 130px; 
+            --footer-h: 80px; 
             
             --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
             --shadow-float: 0 20px 25px -5px rgba(0,0,0,0.1);
@@ -75,9 +75,9 @@
             padding-bottom: calc(var(--footer-h) + 10px); 
         }
 
-        /* --- HEADER (NORMAL FLOW) --- */
+        /* --- HEADER --- */
         .app-header {
-            position: relative; /* Mudado de fixed para relative */
+            position: relative; 
             height: var(--header-h);
             background: white;
             border-bottom: 1px solid var(--border);
@@ -87,17 +87,15 @@
 
         .logo { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; }
         .brand h1 { font-size: 14px; font-weight: 700; line-height: 1.2; margin: 0; color: var(--text-main); }
-        .brand span { font-size: 11px; color: var(--success-dark); font-weight: 600; display:flex; align-items:center; gap:4px; }
-        .live-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        /* Aberto agora removed */
 
         /* --- HERO --- */
         .hero { padding: 20px 16px 10px; text-align: center; }
         .hero h2 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: var(--text-main); }
         
-        /* --- NAV SLIDER (NORMAL FLOW - SCROLLS AWAY) --- */
+        /* --- NAV SLIDER --- */
         .nav-slider-container {
-            position: relative; /* Mudado de sticky para relative */
+            position: relative; 
             background: var(--background);
             padding: 12px 0;
             border-bottom: 1px solid var(--border);
@@ -161,7 +159,6 @@
             box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.25);
         }
         .nav-card.active .nav-card-name { color: var(--primary); }
-        
         .active-indicator {
             position: absolute; top: 6px; right: 6px;
             background: var(--primary); color: white;
@@ -172,46 +169,61 @@
 
 
         /* --- PRODUCT DETAILS AREA --- */
-        .catalog-area { padding: 0 16px; max-width: 600px; margin: 0 auto; }
+        .catalog-area { padding: 0 16px; max-width: 600px; margin: 0 auto; position: relative; min-height: 150vh; }
         
         .product-card {
             background: var(--surface); border-radius: 24px;
-            overflow: hidden; border: 1px solid var(--border);
+            overflow: visible; 
+            border: 1px solid var(--border);
             box-shadow: var(--shadow-card);
             animation: fadeIn 0.3s ease-out;
-            min-height: 100vh; /* Ensure full height */
+            min-height: 100vh; 
         }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
-        /* STICKY PRODUCT INFO CONTAINER */
+        /* STICKY INFO */
         .product-info-sticky {
-            position: sticky; top: 0; 
-            z-index: 45; /* Higher than content, lower than modals/footer */
-            background: white;
-            padding: 20px 20px 10px 20px;
+            position: -webkit-sticky; position: sticky;
+            top: 0; z-index: 45;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(8px);
+            padding: 16px 20px 10px 20px;
             border-bottom: 1px solid var(--border);
+            border-radius: 24px 24px 0 0;
             box-shadow: 0 4px 10px -4px rgba(0,0,0,0.05);
+            margin: -1px -1px 0 -1px;
         }
 
-        .p-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .p-title { font-size: 22px; font-weight: 800; color: var(--text-main); margin: 0; letter-spacing: -0.5px; }
-        .p-price-tag { 
-            background: var(--primary-light); color: var(--primary-dark);
-            padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 16px;
-        }
+        .p-header { margin-bottom: 12px; }
+        .p-title { font-size: 20px; font-weight: 800; color: var(--text-main); margin: 0 0 4px 0; letter-spacing: -0.5px; }
+        .p-subtitle { font-size: 13px; color: var(--text-sec); }
 
+        /* OPÇÕES DE PREÇO */
         .p-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        
         .option-row {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px; border: 2px solid var(--border); border-radius: 12px;
-            cursor: pointer; transition: all 0.2s;
+            cursor: pointer; transition: all 0.3s;
         }
         .option-row.selected { border-color: var(--primary); background: #F8FAFC; }
-        .option-name { font-size: 12px; font-weight: 600; color: var(--text-main); }
-        .option-price { font-size: 13px; font-weight: 700; color: var(--primary); }
+        
+        .option-info { display: flex; flex-direction: column; }
+        .option-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+        
+        .price-wrapper { display: flex; align-items: center; gap: 6px; }
+        .price-normal { font-size: 14px; font-weight: 700; color: var(--text-main); }
+        .price-old { font-size: 12px; color: var(--text-sec); text-decoration: line-through; display: none; } /* Hidden initially */
+        .price-new { font-size: 15px; font-weight: 800; color: var(--success-dark); display: none; } /* Hidden initially */
+
+        /* Revealed State */
+        .p-options.revealed .price-normal { display: none; }
+        .p-options.revealed .price-old { display: block; }
+        .p-options.revealed .price-new { display: block; }
+
         .radio-indicator {
             width: 18px; height: 18px; border-radius: 50%; border: 2px solid #CBD5E1;
-            position: relative;
+            position: relative; flex-shrink: 0;
         }
         .option-row.selected .radio-indicator { border-color: var(--primary); background: var(--primary); }
         .option-row.selected .radio-indicator::after {
@@ -219,22 +231,24 @@
             width: 6px; height: 6px; background: white; border-radius: 50%;
         }
 
-        /* Botão de Compra - Interno */
-        .btn-buy-main {
-            width: 100%; background: var(--success); color: white;
-            padding: 14px; border: none; border-radius: 16px;
-            font-size: 15px; font-weight: 700; cursor: pointer;
+        /* Botão de Ação - Variável */
+        .btn-action-main {
+            width: 100%; background: var(--primary); color: white;
+            padding: 14px; border: none; border-radius: 12px;
+            font-size: 14px; font-weight: 800; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-            transition: transform 0.1s;
-            white-space: nowrap; margin-bottom: 5px;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            transition: all 0.3s; white-space: nowrap; text-transform: uppercase;
         }
-        .btn-buy-main:active { transform: scale(0.98); background: var(--success-dark); }
+        .btn-action-main.revealed {
+            background: var(--success);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            animation: pulse-green 1s;
+        }
+        @keyframes pulse-green { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
         /* CONTENT BELOW STICKY */
-        .p-content-scrollable {
-            padding: 20px;
-        }
+        .p-content-scrollable { padding: 20px; }
 
         .p-divider { 
             display: flex; align-items: center; gap: 10px; margin: 0 0 16px; 
@@ -246,50 +260,42 @@
         .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .item-card {
             background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px;
-            padding: 10px 5px; text-align: center;
+            padding: 8px 4px; text-align: center;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            height: 190px;
+            height: 190px; 
         }
         .item-img {
             width: 100%; height: 100px;
-            object-fit: contain; margin-bottom: 6px;
+            object-fit: contain; margin-bottom: 4px;
             mix-blend-mode: multiply;
         }
         .item-qty {
             background: var(--primary-light); color: var(--primary-dark);
-            font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px;
-            margin-bottom: 4px; width: 100%;
+            font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+            margin-bottom: 2px; width: 100%;
         }
         .item-name {
-            font-size: 11px; font-weight: 600; color: var(--text-main); line-height: 1.2;
+            font-size: 11px; font-weight: 600; color: var(--text-main); line-height: 1.1;
+            margin-bottom: 0;
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
         }
 
-        /* --- FIXED APP FOOTER --- */
+        /* --- FIXED APP FOOTER (ONLY CHIPS) --- */
         .app-footer {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(12px); border-top: 1px solid var(--border);
             display: flex; flex-direction: column; justify-content: flex-end; 
-            padding: 12px 16px 12px; gap: 10px;
+            padding: 12px 16px 20px; gap: 10px;
             z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
         }
+        .footer-label { font-size: 10px; font-weight: 700; color: var(--text-sec); text-align: center; text-transform: uppercase; margin-bottom: 4px; }
         
-        .footer-cta {
-            width: 100%; background: var(--primary); color: white;
-            padding: 10px;
-            border: none; border-radius: 12px;
-            font-size: 14px; font-weight: 800; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-
         .footer-actions {
             display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;
         }
         .f-chip {
-            padding: 6px 12px; border-radius: 99px; font-size: 11px; font-weight: 600;
+            padding: 8px 14px; border-radius: 99px; font-size: 11px; font-weight: 600;
             display: flex; align-items: center; gap: 6px; cursor: pointer; border: none;
             text-decoration: none; transition: transform 0.1s;
             flex: 1; justify-content: center; max-width: 120px; min-width: fit-content;
@@ -333,33 +339,19 @@
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 18px; color: var(--text-muted); cursor: pointer;
         }
-
+        
+        /* Modal Infos */
         .company-header { text-align: center; padding: 24px; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; }
         .company-logo-lg { width: 72px; height: 72px; border-radius: 50%; border: 4px solid white; box-shadow: var(--shadow-sm); margin-bottom: 12px; }
         .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; }
-        .stat-tile {
-            background: #F8FAFC; padding: 16px; border-radius: var(--radius-md);
-            text-align: center; border: 1px solid #E2E8F0;
-        }
+        .stat-tile { background: #F8FAFC; padding: 16px; border-radius: var(--radius-md); text-align: center; border: 1px solid #E2E8F0; }
         .stat-val { display: block; font-size: 16px; font-weight: 800; color: var(--primary); }
         .stat-lbl { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
 
-        .contact-row {
-            display: flex; align-items: center; gap: 12px; padding: 16px;
-            border: 1px solid #E2E8F0; border-radius: var(--radius-md);
-            text-decoration: none; color: var(--text-heading); font-weight: 600;
-            margin: 0 20px 12px; transition: background 0.2s;
-        }
-        .contact-row:active { background: #F1F5F9; }
+        .contact-row { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #E2E8F0; border-radius: var(--radius-md); text-decoration: none; color: var(--text-heading); font-weight: 600; margin: 0 20px 12px; }
         .contact-icon { width: 40px; height: 40px; background: #EFF6FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px; }
 
-        .btn-buy-modal {
-            width: 100%; background: var(--success); color: white;
-            padding: 16px; border: none; border-radius: 16px;
-            font-size: 16px; font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        }
+        .btn-buy-modal { width: 100%; background: var(--success); color: white; padding: 16px; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
 
     </style>
 </head>
@@ -371,7 +363,6 @@
              class="logo" alt="DA" onerror="this.src='https://placehold.co/100x100'">
         <div class="header-info">
             <div class="brand"><h1>Super Cestas Dona Antônia</h1></div>
-            <div class="brand"><span><div class="live-dot"></div> Aberto Agora</span></div>
         </div>
     </header>
 
@@ -380,7 +371,7 @@
         <h2>Conheça as Cestas Básicas</h2>
     </section>
 
-    <!-- NAV SLIDER (Relative/Normal Flow) -->
+    <!-- NAV SLIDER -->
     <nav id="app-nav" class="nav-slider-container">
         <div class="nav-slider-box">
             <div class="slider-wrapper">
@@ -398,13 +389,9 @@
         <!-- JS Injection -->
     </main>
 
-    <!-- FIXED FOOTER (Reordered) -->
+    <!-- FIXED FOOTER (Chips Only) -->
     <footer class="app-footer">
-        <!-- CTA (Acima) -->
-        <button onclick="openLead('Geral')" class="footer-cta">
-            <i class="ph-bold ph-ticket"></i> GARANTIR MEU DESCONTO
-        </button>
-        <!-- Chips (Abaixo, colados na base) -->
+        <div class="footer-label">Conheça Nossa Empresa</div>
         <div class="footer-actions">
             <button onclick="openModal('info')" class="f-chip fc-info"><i class="ph-bold ph-storefront"></i> Sobre</button>
             <button onclick="openModal('contact')" class="f-chip fc-zap"><i class="ph-bold ph-whatsapp-logo"></i> Contato</button>
@@ -424,7 +411,14 @@
                 <input type="text" id="leadName" class="inp" placeholder="Ex: Maria Silva">
             </div>
             <div>
-                <label class="lbl">Bairro</label>
+                <label class="lbl">Cidade</label>
+                <select id="leadCity" class="inp">
+                    <option value="Cuiabá">Cuiabá</option>
+                    <option value="Várzea Grande">Várzea Grande</option>
+                </select>
+            </div>
+            <div>
+                <label class="lbl">Bairro (Opcional)</label>
                 <input type="text" id="leadBairro" class="inp" placeholder="Ex: Pedra 90">
             </div>
             <input type="hidden" id="leadContext">
@@ -464,63 +458,32 @@
     </div>
 
     <script>
-        // --- DATA LAYER (NAMES UPDATED TO 2 LINES) ---
+        // --- DATA LAYER (PRICING STRATEGY) ---
         const BASKETS = {
-            'ECONOMICA': {
-                name: 'Cesta<br>Econômica',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
-                opts: [{ n: 'Valor Único', p: 'R$ 85,00', sel: true }],
-                items: [
-                    {q:1, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:1, n:'Óleo 900ml'},
-                    {q:1, n:'Feijão 1kg'}, {q:1, n:'Café 250g'}, {q:1, n:'Espaguete 400g'},
-                    {q:1, n:'Trigo 1kg'}, {q:1, n:'Farinha Mandioca'}, {q:1, n:'Sal 1kg'},
-                    {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'}, {q:1, n:'Bolacha Recheada'},
-                    {q:1, n:'Miojo'}, {q:1, n:'Suco Pó'}
-                ]
-            },
-            'MINI': {
-                name: 'Cesta<br>Mini',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
+            'GRANDE': {
+                name: 'Cesta<br>Grande',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
                 opts: [
-                    { n: 'Com Arroz Tio Alvino', p: 'R$ 165,00', sel: true },
-                    { n: 'Com Arroz Koblenz', p: 'R$ 170,00' }
+                    { n: 'Com Arroz Tio Alvino', norm: 'R$ 405,00', desc: 'R$ 380,00', sel: true }
                 ],
                 items: [
-                    {q:1, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:2, n:'Óleo 900ml'},
-                    {q:2, n:'Feijão 1kg'}, {q:1, n:'Café 250g'}, {q:1, n:'Espaguete 500g'},
-                    {q:1, n:'Sal 1kg'}, {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'},
-                    {q:1, n:'Bolacha Recheada'}, {q:1, n:'Miojo'}, {q:2, n:'Suco Pó'},
-                    {q:1, n:'Sabão Barra'}, {q:1, n:'Creme Dental'}, {q:1, n:'Papel Higiênico'},
-                    {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'}, {q:1, n:'Sabão Pó OMO'},
-                    {q:1, n:'Detergente'}, {q:1, n:'Qboa 1L'}, {q:2, n:'Sabonete'},
-                    {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}
-                ]
-            },
-            'PEQUENA': {
-                name: 'Cesta<br>Pequena',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
-                opts: [
-                    { n: 'Com Arroz Tio Alvino', p: 'R$ 215,00', sel: true },
-                    { n: 'Com Arroz Koblenz', p: 'R$ 220,00' }
-                ],
-                items: [
-                    {q:2, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:2, n:'Óleo 900ml'},
-                    {q:2, n:'Feijão 1kg'}, {q:1, n:'Café 250g'}, {q:1, n:'12 Ovos'},
-                    {q:1, n:'Mistura Bolo'}, {q:1, n:'Espaguete 500g'}, {q:1, n:'Trigo 1kg'},
-                    {q:1, n:'Sal 1kg'}, {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'},
+                    {q:4, n:'Arroz 5kg'}, {q:3, n:'Açúcar 2kg'}, {q:4, n:'Óleo 900ml'},
+                    {q:4, n:'Feijão 1kg'}, {q:1, n:'Café 500g'}, {q:3, n:'Espaguete 500g'},
+                    {q:1, n:'12 Ovos'}, {q:1, n:'Mistura Bolo'}, {q:1, n:'Trigo 1kg'},
+                    {q:1, n:'Sal 1kg'}, {q:2, n:'Molho Tomate'}, {q:1, n:'Milho Lata'},
                     {q:1, n:'Tempero'}, {q:2, n:'Bolacha Recheada'}, {q:2, n:'Miojo'},
-                    {q:2, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:1, n:'Creme Dental'},
-                    {q:1, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'},
+                    {q:4, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:2, n:'Creme Dental'},
+                    {q:2, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'},
                     {q:1, n:'Sabão Pó OMO'}, {q:2, n:'Detergente'}, {q:1, n:'Qboa 1L'},
-                    {q:2, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}
+                    {q:4, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}
                 ]
             },
             'MEDIA': {
                 name: 'Cesta<br>Média',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
                 opts: [
-                    { n: 'Com Arroz Tio Alvino', p: 'R$ 320,00', sel: true },
-                    { n: 'Com Arroz Koblenz', p: 'R$ 325,00' }
+                    { n: 'Com Arroz Tio Alvino', norm: 'R$ 340,00', desc: 'R$ 320,00', sel: true },
+                    { n: 'Com Arroz Koblenz', norm: 'R$ 345,00', desc: 'R$ 325,00' }
                 ],
                 items: [
                     {q:3, n:'Arroz 5kg'}, {q:2, n:'Açúcar 2kg'}, {q:3, n:'Óleo 900ml'},
@@ -534,22 +497,53 @@
                     {q:3, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}
                 ]
             },
-            'GRANDE': {
-                name: 'Cesta<br>Grande',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
+            'PEQUENA': {
+                name: 'Cesta<br>Pequena',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
                 opts: [
-                    { n: 'Com Arroz Tio Alvino', p: 'R$ 380,00', sel: true }
+                    { n: 'Com Arroz Tio Alvino', norm: 'R$ 230,00', desc: 'R$ 215,00', sel: true },
+                    { n: 'Com Arroz Koblenz', norm: 'R$ 235,00', desc: 'R$ 220,00' }
                 ],
                 items: [
-                    {q:4, n:'Arroz 5kg'}, {q:3, n:'Açúcar 2kg'}, {q:4, n:'Óleo 900ml'},
-                    {q:4, n:'Feijão 1kg'}, {q:1, n:'Café 500g'}, {q:3, n:'Espaguete 500g'},
-                    {q:1, n:'12 Ovos'}, {q:1, n:'Mistura Bolo'}, {q:1, n:'Trigo 1kg'},
-                    {q:1, n:'Sal 1kg'}, {q:2, n:'Molho Tomate'}, {q:1, n:'Milho Lata'},
+                    {q:2, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:2, n:'Óleo 900ml'},
+                    {q:2, n:'Feijão 1kg'}, {q:1, n:'Café 250g'}, {q:1, n:'12 Ovos'},
+                    {q:1, n:'Mistura Bolo'}, {q:1, n:'Espaguete 500g'}, {q:1, n:'Trigo 1kg'},
+                    {q:1, n:'Sal 1kg'}, {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'},
                     {q:1, n:'Tempero'}, {q:2, n:'Bolacha Recheada'}, {q:2, n:'Miojo'},
-                    {q:4, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:2, n:'Creme Dental'},
-                    {q:2, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'},
+                    {q:2, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:1, n:'Creme Dental'},
+                    {q:1, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'},
                     {q:1, n:'Sabão Pó OMO'}, {q:2, n:'Detergente'}, {q:1, n:'Qboa 1L'},
-                    {q:4, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}
+                    {q:2, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}
+                ]
+            },
+            'MINI': {
+                name: 'Cesta<br>Mini',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
+                opts: [
+                    { n: 'Com Arroz Tio Alvino', norm: 'R$ 175,00', desc: 'R$ 165,00', sel: true },
+                    { n: 'Com Arroz Koblenz', norm: 'R$ 180,00', desc: 'R$ 170,00' }
+                ],
+                items: [
+                    {q:1, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:2, n:'Óleo 900ml'},
+                    {q:2, n:'Feijão 1kg'}, {q:1, n:'Café 250g'}, {q:1, n:'Espaguete 500g'},
+                    {q:1, n:'Sal 1kg'}, {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'},
+                    {q:1, n:'Bolacha Recheada'}, {q:1, n:'Miojo'}, {q:2, n:'Suco Pó'},
+                    {q:1, n:'Sabão Barra'}, {q:1, n:'Creme Dental'}, {q:1, n:'Papel Higiênico'},
+                    {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'}, {q:1, n:'Sabão Pó OMO'},
+                    {q:1, n:'Detergente'}, {q:1, n:'Qboa 1L'}, {q:2, n:'Sabonete'},
+                    {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}
+                ]
+            },
+            'ECONOMICA': {
+                name: 'Cesta<br>Econômica',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
+                opts: [{ n: 'Valor Único', norm: 'R$ 90,00', desc: 'R$ 85,00', sel: true }],
+                items: [
+                    {q:1, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:1, n:'Óleo 900ml'},
+                    {q:1, n:'Feijão 1kg'}, {q:1, n:'Café 250g'}, {q:1, n:'Espaguete 400g'},
+                    {q:1, n:'Trigo 1kg'}, {q:1, n:'Farinha Mandioca'}, {q:1, n:'Sal 1kg'},
+                    {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'}, {q:1, n:'Bolacha Recheada'},
+                    {q:1, n:'Miojo'}, {q:1, n:'Suco Pó'}
                 ]
             }
         };
@@ -559,7 +553,6 @@
             const low = n.toLowerCase();
             const f = 'img/alimento/';
             const c = 'img/limpeza/';
-            
             if(low.includes('arroz')) return f + 'Arroz Koblenz 5kg.webp';
             if(low.includes('açúcar')) return f + 'açucar doce dia 2 kg.webp';
             if(low.includes('bolacha')) return f + 'bolacha mybit.webp';
@@ -578,7 +571,6 @@
             if(low.includes('suco')) return f + 'suco frisco.webp';
             if(low.includes('tempero')) return f + 'tempero tio jonas.jpg';
             if(low.includes('trigo')) return f + 'trigo vitoriosa.webp';
-
             if(low.includes('creme')) return c + 'Creme Dental Sorriso 70g.webp';
             if(low.includes('desinfetante')) return c + 'Desinfetante Remmus 2L.webp';
             if(low.includes('detergente')) return c + 'Detergente Ype 500ml.webp';
@@ -590,16 +582,17 @@
             if(low.includes('sabonete')) return c + 'sabonete palmolive 85g.webp';
             if(low.includes('barra')) return c + 'sabão barra ype 900g.webp';
             if(low.includes('sabão pó') || low.includes('omo')) return c + 'sabão em pó omo 800g.webp';
-
             return `https://placehold.co/150x150/f1f5f9/94a3b8?text=${n.substr(0,3)}`;
         }
 
         // --- CORE ---
-        let currKey = 'ECONOMICA';
+        let currKey = 'GRANDE';
+        let isDiscountRevealed = false;
 
         function renderNavSlider() {
             const container = document.getElementById('basket-slider');
-            const sliderHtml = Object.keys(BASKETS).map(k => {
+            const keys = ['GRANDE', 'MEDIA', 'PEQUENA', 'MINI', 'ECONOMICA'];
+            const sliderHtml = keys.map(k => {
                 const b = BASKETS[k];
                 const activeClass = k === currKey ? 'active' : '';
                 return `
@@ -611,7 +604,6 @@
                     <div class="active-indicator"><i class="ph-bold ph-check"></i></div>
                 </div>
             `}).join('');
-            
             container.innerHTML = sliderHtml;
         }
 
@@ -620,17 +612,21 @@
             const selOpt = data.opts.find(o => o.sel) || data.opts[0];
             const mount = document.getElementById('product-mount');
 
+            // Logic to determine what prices to show based on state
             const optionsHtml = data.opts.map((o, i) => `
                 <div class="option-row ${o.sel ? 'selected' : ''}" onclick="setOption(${i})">
-                    <span class="option-name">${o.n}</span>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span class="option-price">${o.p}</span>
-                        <div class="radio-indicator"></div>
+                    <div class="option-info">
+                        <span class="option-name">${o.n}</span>
+                        <div class="price-wrapper">
+                             <span class="price-normal" style="display: ${isDiscountRevealed ? 'none' : 'block'}">${o.norm}</span>
+                             <span class="price-old" style="display: ${isDiscountRevealed ? 'block' : 'none'}">${o.norm}</span>
+                             <span class="price-new" style="display: ${isDiscountRevealed ? 'block' : 'none'}">${o.desc}</span>
+                        </div>
                     </div>
+                    <div class="radio-indicator"></div>
                 </div>
             `).join('');
 
-            // CALCULO DE QUANTIDADE REAL
             const totalItems = data.items.reduce((acc, item) => acc + item.q, 0);
 
             const itemsHtml = data.items.map(i => {
@@ -643,32 +639,27 @@
                 </div>`;
             }).join('');
 
+            const btnText = isDiscountRevealed ? 
+                '<i class="ph-bold ph-star"></i> GARANTIR DESCONTO POR 30 DIAS' : 
+                '<i class="ph-bold ph-eye"></i> VER VALOR COM DESCONTO';
+
+            const btnClass = isDiscountRevealed ? 'btn-action-main revealed' : 'btn-action-main';
+
             mount.innerHTML = `
                 <article class="product-card">
-                    
-                    <!-- STICKY HEADER INSIDE CARD -->
                     <div class="product-info-sticky">
                          <div class="p-header">
                             <h2 class="p-title">${data.name.replace('<br>', ' ')}</h2>
-                            <div class="p-price-tag">${selOpt.p}</div>
                         </div>
-
-                        <div class="p-options">${optionsHtml}</div>
-
-                        <button class="btn-buy-main" onclick="openLead('${data.name.replace('<br>', ' ')} - ${selOpt.n} (${selOpt.p})')">
-                            <i class="ph-bold ph-whatsapp-logo"></i> ENCOMENDAR NO WHATS
+                        <div class="p-options ${isDiscountRevealed ? 'revealed' : ''}">${optionsHtml}</div>
+                        
+                        <button class="${btnClass}" onclick="handleMainAction()">
+                            ${btnText}
                         </button>
                     </div>
-
-                    <!-- SCROLLABLE CONTENT -->
                     <div class="p-content-scrollable">
-                        <div class="p-divider">
-                            <i class="ph-bold ph-basket"></i> ${totalItems} ITENS INCLUSOS
-                        </div>
-
-                        <div class="items-grid">
-                            ${itemsHtml}
-                        </div>
+                        <div class="p-divider"><i class="ph-bold ph-basket"></i> ${totalItems} ITENS INCLUSOS</div>
+                        <div class="items-grid">${itemsHtml}</div>
                     </div>
                 </article>
             `;
@@ -676,9 +667,9 @@
 
         function setBasket(k) {
             currKey = k;
+            isDiscountRevealed = false; // Reset discount view on change
             renderNavSlider();
             renderProductView();
-            // Scroll to show content from top (Header height + padding)
             window.scrollTo({ top: 80, behavior: 'smooth' });
             trackEvent('ViewBasket', { name: k });
         }
@@ -686,6 +677,20 @@
         function setOption(idx) {
             BASKETS[currKey].opts.forEach((o, i) => o.sel = i === idx);
             renderProductView();
+        }
+
+        function handleMainAction() {
+            if (!isDiscountRevealed) {
+                // Reveal Logic
+                isDiscountRevealed = true;
+                renderProductView();
+                trackEvent('RevealDiscount', { basket: currKey });
+            } else {
+                // Open Modal Logic
+                const data = BASKETS[currKey];
+                const selOpt = data.opts.find(o => o.sel);
+                openLead(`${data.name.replace('<br>', ' ')} - ${selOpt.n} (${selOpt.desc})`);
+            }
         }
 
         function scrollNav(amount) {
@@ -703,48 +708,36 @@
 
         function sendLead() {
             const name = document.getElementById('leadName').value;
-            const bairro = document.getElementById('leadBairro').value;
+            const city = document.getElementById('leadCity').value;
+            const bairro = document.getElementById('leadBairro').value || 'Não informado'; // Optional handle
             const ctx = document.getElementById('leadContext').value;
-            if(!name || !bairro) return alert('Preencha seu nome e bairro');
+            if(!name) return alert('Por favor, informe seu nome.');
             
-            const msg = `Olá! Me chamo *${name}* (${bairro}).\nTenho interesse em: *${ctx}*`;
+            const msg = `Olá! Me chamo *${name}*, sou de *${city}* (${bairro}).\nTenho interesse em: *${ctx}*.\nGostaria de garantir meu desconto!`;
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             trackEvent('Lead', { value: 0 });
+            closeModal('lead');
         }
 
-        // --- SCROLL LOGIC (NO JS NEEDED FOR STICKY CSS, JUST TOGGLING HEADER/NAV) ---
-        // Mas o pedido foi para esconder topbar e cards ao rolar pra baixo e mostrar ao rolar pra cima
-        // Então mantemos o JS apenas para o Topo e Nav, não para o Sticky dentro do card.
-        // O sticky do card é CSS puro.
-        
+        // --- SCROLL LOGIC ---
         let lastY = 0;
         window.addEventListener('scroll', () => {
             const currY = window.scrollY;
             const head = document.getElementById('app-header');
             const nav = document.getElementById('app-nav');
-            
-            // Standard Logic: Scroll Down -> Hide / Scroll Up -> Show (ONLY IF NOT AT TOP)
-            if (currY > 80) { // Slightly increased threshold
-                // Scroll Down -> Hide Header/Nav (Card Sticky takes over)
-                // O card sticky header vai aparecer porque o topo da pagina subiu
-                
-                // HIDE HEADER AND NAV SLIDER
-                // Note: We don't toggle classes here, we just rely on normal scroll flow to push them up.
-                // Wait, user asked "somem pra cima" - normal scroll does this.
-                // But user also asked "voltam a aparecer quando a rolagem chegar ate eles normalmente"
-                // This means NO sticky/fixed positioning on them at all? 
-                // "A topbar e os cards das cestas ficam normal sumindo e aparecendo na rolagem normal"
-                // YES -> POSITION RELATIVE (Done in CSS)
-                
-                // So actually, NO JS SCROLL LOGIC is needed for hiding them if they are relative.
-                // They just scroll out of view.
-                
-                // BUT wait, "Quando rolar ao conrario para voltar ao topo os cards das cestas e o top bar so voltam a aparecer quando a rolagem chegar ate eles normalmente, nao devem aparecer antecipamente."
-                // This confirms standard scrolling. 
-                // BUT "Mas na rolagem a parte do nome da cesta, valores e botao ficam fixos." -> This is the sticky part inside the card.
-                
-                // Conclusion: No JS needed for scroll effects on Header/Nav. CSS position: relative handles it.
+            if (currY > 80) {
+                if (currY > lastY) {
+                    head.classList.add('hidden');
+                    nav.classList.add('hidden');
+                } else {
+                    head.classList.remove('hidden');
+                    nav.classList.remove('hidden');
+                }
+            } else {
+                head.classList.remove('hidden');
+                nav.classList.remove('hidden');
             }
+            lastY = currY;
         });
 
         // INIT
