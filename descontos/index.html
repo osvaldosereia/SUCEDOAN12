@@ -61,7 +61,7 @@
             --border: #E2E8F0;
             
             --header-h: 60px;
-            --footer-h: 160px; /* Aumentado para acomodar o botão grande + chips */
+            --footer-h: 130px; 
             
             --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
             --shadow-float: 0 20px 25px -5px rgba(0,0,0,0.1);
@@ -72,7 +72,7 @@
             margin: 0; padding: 0;
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: var(--background); color: var(--text-main);
-            padding-bottom: calc(var(--footer-h) + 20px); 
+            padding-bottom: calc(var(--footer-h) + 10px); 
         }
 
         /* --- SMART HEADER --- */
@@ -99,13 +99,15 @@
         
         /* --- STICKY BASKET SLIDER (VERTICAL NAV) --- */
         .nav-slider-container {
-            position: sticky; top: 0; z-index: 40;
+            position: sticky; top: var(--header-h); z-index: 40;
             background: rgba(248, 250, 252, 0.98);
             backdrop-filter: blur(10px);
             padding: 12px 0;
             border-bottom: 1px solid var(--border);
-            transition: top 0.3s ease;
+            transition: transform 0.3s ease, top 0.3s ease;
         }
+        /* Quando hidden, sobe tudo para fora da tela (header height + slider height) */
+        .nav-slider-container.hidden { transform: translateY(-200px); } 
         
         .slider-wrapper {
             position: relative;
@@ -130,7 +132,7 @@
         }
         .basket-scroller::-webkit-scrollbar { display: none; }
 
-        /* NAV CARD - AJUSTADO HEIGHT (-30px) */
+        /* NAV CARD */
         .nav-card {
             flex: 0 0 28%; /* ~3.5 itens na tela mobile */
             scroll-snap-align: start;
@@ -142,12 +144,12 @@
             cursor: pointer; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             box-shadow: var(--shadow-card);
             position: relative;
-            height: 180px; /* Reduzido de 210px para 180px */
+            height: 170px;
         }
         
         .nav-card-img {
             width: 100%; 
-            height: 120px; /* Reduzido de 150px para 120px */
+            height: 110px;
             object-fit: cover;
             background: #f1f5f9;
         }
@@ -157,7 +159,7 @@
             display: flex; flex-direction: column; justify-content: center;
         }
         .nav-card-name {
-            font-size: 12px; /* Fonte Aumentada */
+            font-size: 12px;
             font-weight: 800; color: var(--text-main);
             text-transform: uppercase; line-height: 1.1;
         }
@@ -221,6 +223,19 @@
             width: 8px; height: 8px; background: white; border-radius: 50%;
         }
 
+        /* Botão de Compra - Interno */
+        .btn-buy-main {
+            width: 100%; background: var(--success); color: white;
+            padding: 16px; border: none; border-radius: 16px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            transition: transform 0.1s;
+            white-space: nowrap;
+        }
+        .btn-buy-main i { flex-shrink: 0; }
+        .btn-buy-main:active { transform: scale(0.98); background: var(--success-dark); }
+
         /* Divisor */
         .p-divider { 
             display: flex; align-items: center; gap: 10px; margin: 24px 0 16px; 
@@ -228,16 +243,16 @@
         }
         .p-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-        /* Grid de Itens VERTICAL - AJUSTE HEIGHT (-20px) */
+        /* Grid de Itens VERTICAL - AJUSTE HEIGHT */
         .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .item-card {
             background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px;
             padding: 10px 5px; text-align: center;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            height: 220px; /* Reduzido de 240px para 220px */
+            height: 190px;
         }
         .item-img {
-            width: 100%; height: 130px; 
+            width: 100%; height: 100px;
             object-fit: contain; margin-bottom: 6px;
             mix-blend-mode: multiply;
         }
@@ -251,27 +266,25 @@
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
         }
 
-        /* --- FIXED APP FOOTER + BIG BUTTON --- */
+        /* --- FIXED APP FOOTER --- */
         .app-footer {
             position: fixed; bottom: 0; left: 0; right: 0;
-            height: var(--footer-h);
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(12px); border-top: 1px solid var(--border);
-            display: flex; flex-direction: column; justify-content: flex-start; 
-            padding: 16px 16px; gap: 12px;
+            display: flex; flex-direction: column; justify-content: flex-end; 
+            padding: 12px 16px 12px; gap: 10px;
             z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
         }
         
         .footer-cta {
             width: 100%; background: var(--primary); color: white;
-            padding: 14px; border: none; border-radius: 12px;
-            font-size: 16px; font-weight: 800; cursor: pointer;
+            padding: 10px;
+            border: none; border-radius: 12px;
+            font-size: 14px; font-weight: 800; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
             box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
             text-transform: uppercase; letter-spacing: 0.5px;
-            animation: pulse-btn 2s infinite;
         }
-        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
         .footer-actions {
             display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;
@@ -341,7 +354,6 @@
         .contact-row:active { background: #F1F5F9; }
         .contact-icon { width: 40px; height: 40px; background: #EFF6FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px; }
 
-        /* Botão de Compra Primário no Modal */
         .btn-buy-modal {
             width: 100%; background: var(--success); color: white;
             padding: 16px; border: none; border-radius: 16px;
@@ -364,7 +376,7 @@
         </div>
     </header>
 
-    <!-- HERO (Sem Botão) -->
+    <!-- HERO -->
     <section class="hero">
         <h2>Conheça as Cestas Básicas</h2>
     </section>
@@ -387,17 +399,19 @@
         <!-- JS Injection -->
     </main>
 
-    <!-- FIXED FOOTER (Big Button + Chips) -->
+    <!-- FIXED FOOTER (Reordered) -->
     <footer class="app-footer">
+        <!-- CTA (Acima) -->
+        <button onclick="openLead('Geral')" class="footer-cta">
+            <i class="ph-bold ph-ticket"></i> GARANTIR MEU DESCONTO
+        </button>
+        <!-- Chips (Abaixo, colados na base) -->
         <div class="footer-actions">
             <button onclick="openModal('info')" class="f-chip fc-info"><i class="ph-bold ph-storefront"></i> Sobre</button>
             <button onclick="openModal('contact')" class="f-chip fc-zap"><i class="ph-bold ph-whatsapp-logo"></i> Contato</button>
             <a href="https://instagram.com" target="_blank" class="f-chip fc-insta"><i class="ph-bold ph-instagram-logo"></i> Insta</a>
             <a href="https://facebook.com" target="_blank" class="f-chip fc-face"><i class="ph-bold ph-facebook-logo"></i> Face</a>
         </div>
-        <button onclick="openLead('Geral')" class="footer-cta">
-            <i class="ph-bold ph-ticket"></i> GARANTIR MEU DESCONTO
-        </button>
     </footer>
 
     <!-- LEAD MODAL -->
@@ -617,6 +631,9 @@
                 </div>
             `).join('');
 
+            // CALCULO DE QUANTIDADE REAL
+            const totalItems = data.items.reduce((acc, item) => acc + item.q, 0);
+
             const itemsHtml = data.items.map(i => {
                 const qtd = i.q === 1 ? '1 UNIDADE' : `${i.q} UNIDADES`;
                 return `
@@ -632,10 +649,6 @@
                     <!-- FOTO GRANDE REMOVIDA -->
                     
                     <div class="p-content">
-                        <!-- Botão de Compra no Topo também (Removido por pedido, mas o fluxo pedia?) 
-                             Não, o pedido foi "role a lista de produtos no inicio mostrando desde os valores"
-                             Isso significa que ao trocar, deve mostrar o topo do card onde estão os valores -->
-                        
                         <div class="p-header">
                             <h2 class="p-title">${data.name.replace('<br>', ' ')}</h2>
                             <div class="p-price-tag">${selOpt.p}</div>
@@ -649,7 +662,7 @@
                         </button>
 
                         <div class="p-divider">
-                            <i class="ph-bold ph-basket"></i> ${data.items.length} ITENS INCLUSOS
+                            <i class="ph-bold ph-basket"></i> ${totalItems} ITENS INCLUSOS
                         </div>
 
                         <div class="items-grid">
@@ -698,19 +711,28 @@
             trackEvent('Lead', { value: 0 });
         }
 
-        // --- SCROLL LOGIC ---
+        // --- SCROLL LOGIC (REVERTED TO STANDARD: HIDE ON SCROLL DOWN) ---
         let lastY = 0;
         window.addEventListener('scroll', () => {
             const currY = window.scrollY;
             const head = document.getElementById('app-header');
             const nav = document.getElementById('app-nav');
             
-            if (currY > 50 && currY > lastY) {
-                head.classList.add('hidden');
-                nav.style.top = '0';
+            // Standard Logic: Scroll Down -> Hide / Scroll Up -> Show
+            if (currY > 50) {
+                if (currY > lastY) {
+                    // Scrolling Down -> HIDE both
+                    head.classList.add('hidden');
+                    nav.classList.add('hidden');
+                } else {
+                    // Scrolling Up -> SHOW both
+                    head.classList.remove('hidden');
+                    nav.classList.remove('hidden');
+                }
             } else {
+                // Top -> Always Show
                 head.classList.remove('hidden');
-                nav.style.top = '60px';
+                nav.classList.remove('hidden');
             }
             lastY = currY;
         });
