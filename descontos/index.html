@@ -8,936 +8,694 @@
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cesta Pequena Promoção | Super Cestas Dona Antônia</title>
-    <meta name="description" content="Garanta sua Cesta Pequena Dona Antônia com desconto VIP. Entrega em Cuiabá e Várzea Grande. Qualidade e economia na sua mesa.">
+    <title>Catálogo de Cestas Básicas | Dona Antônia Cuiabá</title>
+    <meta name="description" content="Confira nosso catálogo completo de Cestas Básicas: Econômica, Pequena, Média e Grande. Entrega grátis em Cuiabá e Várzea Grande.">
     <meta name="theme-color" content="#2563EB">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://www.donaantonia.com.br/cesta-pequena">
-
-    <!-- SEO LOCAL + PRODUCT SCHEMA (JSON-LD) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "LocalBusiness",
-          "@id": "https://www.donaantonia.com.br",
-          "name": "Super Cestas Dona Antônia de Cuiabá e VG",
-          "image": "https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif",
-          "telephone": "5565998150975",
-          "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "R. Trinta, 105 - Jardim Nossa Sra. Aparecida",
-            "addressLocality": "Cuiabá",
-            "addressRegion": "MT",
-            "postalCode": "78090-660",
-            "addressCountry": "BR"
-          },
-          "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": -15.636881, 
-            "longitude": -56.046892 
-          },
-          "openingHoursSpecification": [
-            {
-              "@type": "OpeningHoursSpecification",
-              "dayOfWeek": [
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday"
-              ],
-              "opens": "08:00",
-              "closes": "12:00"
-            }
-          ],
-          "url": "https://www.donaantonia.com.br",
-          "priceRange": "$$"
-        },
-        {
-          "@type": "Product",
-          "name": "Cesta Básica Pequena",
-          "description": "Cesta completa com alimentos e produtos de limpeza essenciais. 27 itens de qualidade.",
-          "image": "https://donaantonia.com.br/img/cesta-pequena.jpg",
-          "offers": {
-            "@type": "Offer",
-            "priceCurrency": "BRL",
-            "price": "205.00",
-            "availability": "https://schema.org/InStock",
-            "seller": {
-              "@type": "LocalBusiness",
-              "name": "Super Cestas Dona Antônia"
-            }
-          }
-        }
-      ]
-    }
-    </script>
+    <link rel="canonical" href="https://www.donaantonia.com.br/catalogo">
 
     <!-- PILLAR 3: SECURITY SUITE -->
     <script>
         (function() {
-            // 1. DOMAIN LOCK & FRAME BUSTER
             const allowedDomains = ['www.donaantonia.com.br', 'donaantonia.com.br', 'localhost', '127.0.0.1'];
             const currentDomain = window.location.hostname;
             const isPreviewEnv = currentDomain.includes('google') || currentDomain.includes('sandbox') || currentDomain.includes('content') || currentDomain.includes('firebaseapp');
             
             if (!isPreviewEnv && !allowedDomains.some(d => currentDomain.endsWith(d))) {
                 console.warn(`⚠️ [SECURITY] Domínio não autorizado.`);
-                // window.location.replace('https://www.donaantonia.com.br'); // UNCOMMENT IN PROD
             }
-            if (window.top !== window.self && !isPreviewEnv) {
-                window.top.location = window.self.location;
-            }
-
-            // 2. DISABLE RIGHT CLICK & DRAG
+            
             document.addEventListener('contextmenu', event => event.preventDefault());
             document.addEventListener('dragstart', event => event.preventDefault());
         })();
     </script>
 
-    <!-- PILLAR 2: TRACKING & ANALYTICS -->
+    <!-- PILLAR 2: DATA LAYER -->
     <script>
         window.dataLayer = window.dataLayer || [];
-        function generateEventID() {
-            return 'evt_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-        }
-        function trackMarketingEvent(eventName, params = {}) {
+        function trackEvent(eventName, params = {}) {
             const eventData = {
                 'event': eventName,
-                'eventID': generateEventID(),
+                'eventID': 'evt_' + Date.now(),
                 'timestamp': new Date().toISOString(),
                 ...params
             };
             window.dataLayer.push(eventData);
-            if (typeof fbq === 'function') {
-                fbq('track', eventName, params, { eventID: eventData.eventID });
-            }
-            console.log(`%c[MARKETING] ${eventName}`, "background:#0f172a;color:#22c55e;padding:4px;border-radius:4px;", eventData);
+            if(typeof fbq === 'function') fbq('track', eventName, params, {eventID: eventData.eventID});
+            console.log(`🚀 [TRACKING] ${eventName}`, eventData);
         }
     </script>
 
     <!-- LIBS -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #2563EB; /* Azul Dona Antonia */
-            --action-color: #10B981; /* Verde Ação/Zap */
-            --action-dark: #059669;
-            --bg-color: #F1F5F9; 
+            --primary: #2563EB;
+            --primary-dark: #1e40af;
+            --secondary: #10B981;
+            --bg-color: #F8FAFC;
             --text-main: #0F172A;
             --text-sub: #64748B;
             --white: #ffffff;
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
-            
-            /* Dimensoes */
-            --app-bar-height: 70px;
+            --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --header-height: 70px;
+            --footer-height: 90px;
         }
 
-        /* RESET & BASE */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-        input, textarea { user-select: text; }
-        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            margin: 0 auto; padding: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: #cbd5e1;
-            color: var(--text-main);
-            height: 100vh;
-            display: flex; align-items: center; justify-content: center;
+            margin: 0; padding: 0; font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color); color: var(--text-main);
+            padding-bottom: var(--footer-height); /* Space for fixed footer */
         }
 
-        .app-container {
-            background-color: var(--bg-color);
-            width: 100%; max-width: 480px; height: 100%;
-            display: flex; flex-direction: column;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 40px rgba(0,0,0,0.1);
-        }
-
-        /* HEADER */
-        .modern-header {
-            background-color: var(--white); height: 64px; padding: 0 16px;
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid #E2E8F0; 
-            position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+        /* HEADER (Top Bar) */
+        .catalog-header {
+            background: var(--white); padding: 10px 16px;
+            display: flex; align-items: center; gap: 12px;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             transition: transform 0.3s ease-in-out;
+            height: var(--header-height);
         }
-        .modern-header.hidden {
-            transform: translateY(-100%);
-        }
+        .catalog-header.hidden { transform: translateY(-100%); }
         
-        .brand-wrapper { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; }
-        .brand-logo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0; }
-        .brand-info { overflow: hidden; }
-        .brand-info h1 { 
-            font-size: 14px; font-weight: 700; margin: 0; color: var(--text-main); 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .status-dot { width: 8px; height: 8px; background-color: #10B981; border-radius: 50%; display: inline-block; margin-right: 4px; }
-        .status-text { font-size: 11px; color: var(--text-sub); }
+        .brand-logo { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #E2E8F0; object-fit: cover; }
+        .brand-name { font-size: 14px; font-weight: 700; color: var(--text-main); line-height: 1.2; }
 
-        /* CHAT AREA */
-        #chat-container {
-            flex: 1; overflow-y: auto; padding: 16px; 
-            padding-top: 80px; /* Header Space */
-            padding-bottom: 140px; /* Footer + Interaction Space */
-            background-color: var(--bg-color); 
-            scroll-behavior: smooth;
-        }
-        #chat-container::-webkit-scrollbar { width: 4px; }
-        #chat-container::-webkit-scrollbar-thumb { background-color: #CBD5E1; border-radius: 4px; }
-
-        .msg-row { display: flex; width: 100%; margin-bottom: 16px; } 
-        .msg-start { justify-content: flex-start; }
-        .msg-end { justify-content: flex-end; }
+        /* HERO SECTION */
+        .hero-section { padding: 20px 16px; text-align: center; margin-top: var(--header-height); }
+        .hero-title { font-size: 22px; font-weight: 800; margin: 0 0 16px 0; color: var(--text-main); letter-spacing: -0.5px; }
         
-        .msg-bubble {
-            padding: 14px 18px;
-            max-width: 85%; 
-            font-size: 16px; 
-            line-height: 1.6;
-            position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-            word-wrap: break-word;
-        }
-        .msg-in { 
-            background: var(--white); color: var(--text-main); 
-            border-radius: 0 18px 18px 18px;
-            margin-left: 8px;
-        }
-        .avatar-holder { width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; margin-top: 2px; }
-        .avatar-holder img { width: 100%; height: 100%; object-fit: cover; }
-
-        .msg-out { 
-            background: var(--primary); color: white;
-            border-radius: 18px 0 18px 18px; 
-        }
-
-        .msg-bubble.full-width {
-            max-width: 100%; width: 100%; padding: 0;
-            background: transparent; box-shadow: none; margin-left: 0;
-        }
-
-        /* IMAGENS DO CHAT */
-        .msg-image-full {
-            width: 100%; 
-            height: auto; /* Mantém proporção original */
-            display: block; border-radius: 12px;
-            box-shadow: var(--shadow-md); pointer-events: none;
-            object-fit: cover;
-        }
-
-        /* GRID ANIMATION */
-        .grid-container {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 10px; width: 100%; margin-top: 8px; padding: 0 2px;
-        }
-        .mini-card {
-            background: var(--white); border: 1px solid #E2E8F0; border-radius: 10px; 
-            padding: 8px; text-align: center;
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            height: 150px; 
-            overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-        }
-        @keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
-        .mini-card img { 
-            width: 100%; height: 100px;
-            object-fit: contain; 
-            mix-blend-mode: multiply; flex-shrink: 0; 
-        }
-        .mini-card span { 
-            font-size: 11px; line-height: 1.2; color: var(--text-sub); font-weight: 700; 
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-            margin-top: 6px;
-        }
-
-        /* --- UI MODERNA: NAVIGATION BAR FIXA --- */
-        .app-navigation-bar {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            height: var(--app-bar-height);
-            background: var(--white);
-            border-top: 1px solid #E2E8F0;
-            display: flex; align-items: center; justify-content: space-around;
-            padding: 0 16px; z-index: 50;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
-        }
-
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; gap: 4px;
-            color: var(--text-sub); text-decoration: none;
-            background: none; border: none; cursor: pointer;
-            transition: all 0.2s;
-        }
-        .nav-item:active { transform: scale(0.9); color: var(--primary); }
-        
-        /* FIX: SVG Icons stability */
-        .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
-        .nav-item span { font-size: 10px; font-weight: 600; }
-        
-        /* Cor específica para marcas */
-        .nav-item.wa { color: #25D366; }
-        .nav-item.fb { color: #1877F2; }
-        .nav-item.ig { color: #E1306C; }
-        .nav-item.info { color: var(--text-main); }
-
-
-        /* --- UI MODERNA: INTERACTION ZONE (ABOVE FOOTER) --- */
-        .interaction-zone {
-            position: absolute; 
-            bottom: var(--app-bar-height); left: 0; right: 0;
-            z-index: 40;
-            padding: 10px 16px 16px 16px;
-            /* Gradiente suave para o texto não ficar voando */
-            background: linear-gradient(to top, rgba(241,245,249,1) 80%, rgba(241,245,249,0));
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-            min-height: 10px;
-        }
-
-        /* INPUT FIELD */
-        .input-area {
-            display: flex; gap: 8px; width: 100%; align-items: center;
-            background: white; padding: 6px; border-radius: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #E2E8F0;
-            animation: slideUpFade 0.3s ease-out;
-        }
-        .chat-input {
-            flex: 1; padding: 10px 16px; border: none;
-            font-size: 16px; outline: none; font-family: 'Inter', sans-serif;
-            background: transparent; color: var(--text-main);
-        }
-        .send-btn {
+        .btn-discount {
             background: var(--primary); color: white; border: none;
-            width: 40px; height: 40px; border-radius: 50%; font-size: 18px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: transform 0.1s;
+            width: 100%; max-width: 400px; padding: 14px;
+            font-size: 16px; font-weight: 700; border-radius: 12px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transition: transform 0.2s; margin: 0 auto;
         }
-        .send-btn:active { transform: scale(0.95); }
+        .btn-discount:active { transform: scale(0.98); background: var(--primary-dark); }
 
-        /* ACTION BUTTONS */
-        .actions-area {
-            display: flex; gap: 10px; width: 100%; overflow-x: auto; 
-            padding: 4px 2px; scrollbar-width: none;
-            justify-content: flex-end; /* Alinha botões à direita como chat */
-            animation: slideUpFade 0.3s ease-out;
+        /* CHIPS MENU (Sticky & Styled) */
+        .chips-container {
+            display: flex; gap: 8px; overflow-x: auto; 
+            padding: 12px 16px;
+            scrollbar-width: none; justify-content: center;
+            
+            /* Sticky Logic */
+            position: sticky;
+            top: var(--header-height); /* Default position under header */
+            z-index: 40;
+            background: rgba(248, 250, 252, 0.95); /* Semi-transparent bg */
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #E2E8F0;
+            transition: top 0.3s ease-in-out; /* Smooth transition for header sync */
         }
-        .actions-area::-webkit-scrollbar { display: none; }
+        .chips-container::-webkit-scrollbar { display: none; }
+        
+        .chip {
+            padding: 8px 16px; background: var(--white); border: 1px solid #E2E8F0;
+            border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--text-sub);
+            white-space: nowrap; cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .chip.active { background: var(--text-main); color: white; border-color: var(--text-main); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        .action-btn-modern {
-            background: var(--white); 
-            border: 1px solid #CBD5E1;
-            color: var(--text-main);
-            font-weight: 600; padding: 10px 20px; border-radius: 20px;
-            cursor: pointer; font-size: 14px; white-space: nowrap;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        /* CATALOG LIST */
+        .catalog-list { padding: 20px 16px; display: flex; flex-direction: column; gap: 24px; max-width: 600px; margin: 0 auto; }
+
+        /* CARD STYLES */
+        .card-cesta-new {
+            background: var(--white); border-radius: 16px; overflow: hidden;
+            box-shadow: var(--card-shadow); border: 1px solid #F1F5F9;
+            margin-bottom: 20px; animation: fadeInScale 0.4s ease-out;
+            scroll-margin-top: 140px; /* Ensures scroll lands nicely below chips */
+        }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .card-header-visual { position: relative; background: #f8fafc; padding: 0; }
+        
+        /* FOTO DA CESTA */
+        .card-img-side {
+            width: 100%; 
+            height: auto; 
+            object-fit: cover; 
+            display: block; 
+            max-height: 450px; 
+        }
+        
+        .card-title-side {
+            padding: 16px; background: white; border-bottom: 1px solid #f1f5f9;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .card-title-side h2 { margin: 0; font-size: 20px; font-weight: 800; color: var(--text-main); }
+        .price-badge { font-size: 18px; font-weight: 700; color: var(--primary); }
+
+        .card-control-row { display: flex; border-bottom: 1px solid #E2E8F0; }
+        .btn-card-toggle {
+            flex: 1; background: #F8FAFC; border: none; padding: 14px;
+            font-size: 14px; font-weight: 600; color: var(--text-sub);
+            cursor: pointer; transition: all 0.2s; border-right: 1px solid #E2E8F0;
+        }
+        .btn-card-toggle:last-child { border-right: none; }
+        .btn-card-toggle.active { background: white; color: var(--primary); box-shadow: inset 0 -2px 0 var(--primary); }
+        .btn-card-toggle i { margin-right: 6px; }
+
+        .card-expand-section { padding: 16px; display: none; }
+        .card-expand-section.active { display: block; }
+
+        /* PRODUCTS GRID */
+        .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+        .mini-product-card {
+            background: #fff; border: 1px solid #E2E8F0; border-radius: 8px;
+            padding: 8px 4px; text-align: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            height: 210px; gap: 4px;
+        }
+        .mini-prod-img { width: 100%; height: 120px; object-fit: contain; margin-bottom: 2px; mix-blend-mode: multiply; }
+        .mini-prod-badge { background: #EFF6FF; color: var(--primary); font-size: 13px; font-weight: 800; padding: 4px 8px; border-radius: 4px; margin-bottom: 2px; width: 100%; }
+        .mini-prod-name { font-size: 11px; color: var(--text-main); font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* RADIO SELECTION */
+        .arroz-selection-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .radio-arroz-option {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px; border: 2px solid #E2E8F0; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s; background: white;
+        }
+        .radio-arroz-option.selected { border-color: var(--primary); background: #EFF6FF; }
+        .radio-arroz-info { display: flex; flex-direction: column; }
+        .radio-arroz-name { font-size: 14px; font-weight: 600; color: var(--text-main); }
+        .radio-arroz-price { font-size: 16px; font-weight: 700; color: var(--primary); }
+        .radio-circle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #CBD5E1; position: relative; flex-shrink: 0; }
+        .radio-arroz-option.selected .radio-circle { border-color: var(--primary); }
+        .radio-arroz-option.selected .radio-circle::after {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 10px; height: 10px; background: var(--primary); border-radius: 50%;
+        }
+
+        .btn-encomendar-card {
+            background: #10B981; color: white; width: 100%; border: none;
+            padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); transition: background 0.2s;
+        }
+        .btn-encomendar-card:active { transform: scale(0.98); background: #059669; }
+
+        /* --- COMPANY BOTTOM BAR (CHIPS STYLE) --- */
+        .company-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid #E2E8F0;
+            padding: 12px 16px; z-index: 100;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .company-bar-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-sub); letter-spacing: 0.5px;
+        }
+        .company-buttons-chips {
+            display: flex; gap: 8px; overflow-x: auto; width: 100%;
+            scrollbar-width: none; justify-content: center; padding-bottom: 2px;
+        }
+        .company-buttons-chips::-webkit-scrollbar { display: none; }
+
+        .footer-chip {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 16px;
+            background: #F8FAFC; border: 1px solid #E2E8F0;
+            border-radius: 20px;
+            font-size: 12px; font-weight: 600; color: var(--text-main);
+            text-decoration: none; cursor: pointer; white-space: nowrap;
             transition: all 0.2s;
         }
-        .action-btn-modern:active { transform: scale(0.96); background: #F1F5F9; }
-        
-        .action-btn-modern.primary { 
-            background: var(--action-color); color: white; border: none; 
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            font-weight: 700;
-        }
+        .footer-chip:active { transform: scale(0.95); opacity: 0.8; }
+        .footer-chip i { font-size: 16px; }
 
-        @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        /* Brand Colors for Chips */
+        .footer-chip.instagram { color: #E1306C; background: #FFF0F5; border-color: #FFDBE9; }
+        .footer-chip.facebook { color: #1877F2; background: #EFF6FF; border-color: #BFDBFE; }
+        .footer-chip.whatsapp { color: #25D366; background: #DCFCE7; border-color: #BBF7D0; }
 
-        /* MODAL */
+        /* MODAL COMMON */
         .modal-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
-            padding: 20px; backdrop-filter: blur(5px);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); z-index: 2000;
+            display: flex; align-items: flex-end;
             opacity: 0; visibility: hidden; transition: all 0.3s;
+            backdrop-filter: blur(4px);
         }
+        .modal-overlay.center { align-items: center; justify-content: center; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
         
-        .modal-content {
-            background: white; width: 100%; max-width: 360px;
-            border-radius: 24px; padding: 0; position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: hidden; max-height: 90vh; overflow-y: auto;
+        .modal-sheet {
+            background: white; width: 100%; border-radius: 20px 20px 0 0;
+            padding: 24px; max-width: 600px; margin: 0 auto;
+            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh; overflow-y: auto;
         }
-        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-overlay.active .modal-sheet { transform: translateY(0); }
 
-        .close-modal {
-            position: absolute; top: 12px; right: 12px;
-            background: #F1F5F9; border: none; width: 32px; height: 32px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; color: var(--text-sub); z-index: 10;
+        .modal-popup {
+            background: white; width: 90%; max-width: 340px; border-radius: 16px;
+            padding: 0; position: relative; overflow: hidden;
+            transform: scale(0.9); transition: transform 0.3s;
         }
+        .modal-overlay.active .modal-popup { transform: scale(1); }
 
-        /* MODAL CUSTOM STYLES */
-        .modal-header { padding: 24px 24px 16px 24px; border-bottom: 1px solid #F1F5F9; text-align: center; }
-        .modal-header img { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #E2E8F0; margin-bottom: 8px; }
-        .modal-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); }
-        .modal-header p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-sub); }
-        
-        .stats-grid { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px 24px;
-        }
-        .stat-item {
-            background: #F8FAFC; padding: 10px; border-radius: 12px; text-align: center;
-            border: 1px solid #E2E8F0;
-        }
-        .stat-item i { font-size: 20px; color: var(--primary); margin-bottom: 4px; display: block; }
-        .stat-item strong { display: block; font-size: 14px; font-weight: 700; color: var(--text-main); }
-        .stat-item span { font-size: 11px; color: var(--text-sub); }
-
-        .info-list { padding: 0 24px 16px 24px; list-style: none; margin: 0; }
-        .info-row { 
-            display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #F1F5F9;
-            font-size: 14px; color: var(--text-main); align-items: flex-start;
-        }
-        .info-row:last-child { border-bottom: none; }
-        .info-row i { color: var(--text-sub); font-size: 18px; margin-top: 2px; }
-        .info-content { flex: 1; }
-        .info-label { display: block; font-size: 11px; color: var(--text-sub); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
-
-        .payment-badge {
-            background: #ECFDF5; color: #047857; text-align: center; padding: 12px;
-            margin: 0 24px 24px 24px; border-radius: 12px; font-weight: 700; font-size: 14px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            border: 1px solid #10B981;
+        .btn-close-modal {
+            position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; color: #94A3B8; cursor: pointer; z-index: 10;
         }
 
-        /* TYPING INDICATOR */
-        .typing-bubble {
-            padding: 14px 18px; background: var(--white); border-radius: 0 18px 18px 18px;
-            display: inline-flex; gap: 4px; width: fit-content;
-            margin-left: 8px; margin-bottom: 12px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        /* CONTACT MODAL LIST */
+        .contact-list { list-style: none; padding: 0; margin: 20px 0 0 0; }
+        .contact-item { 
+            display: flex; align-items: center; gap: 12px; padding: 12px; 
+            border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 10px;
+            text-decoration: none; color: var(--text-main); font-weight: 600;
         }
-        .dot { width: 7px; height: 7px; background: #94A3B8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
-        .dot:nth-child(1) { animation-delay: -0.32s; }
-        .dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .contact-item i { font-size: 20px; color: var(--secondary); }
+
+        /* INFO MODAL STYLES (Reused) */
+        .modal-header-info { text-align: center; padding: 20px; border-bottom: 1px solid #F1F5F9; }
+        .modal-header-info img { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #E2E8F0; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px; }
+        .stat-box { background: #F8FAFC; padding: 10px; text-align: center; border-radius: 8px; border: 1px solid #E2E8F0; }
+        .stat-box strong { display: block; font-size: 14px; color: var(--text-main); }
+        .stat-box span { font-size: 10px; color: var(--text-sub); }
+
+        /* FORM STYLES */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-sub); }
+        .form-input, .form-select {
+            width: 100%; padding: 12px; border: 1px solid #CBD5E1; border-radius: 8px;
+            font-size: 15px; font-family: 'Inter', sans-serif;
+        }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); }
 
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <div class="app-container">
-        <!-- HEADER (Collapsible) -->
-        <header id="main-header" class="modern-header">
-            <div class="brand-wrapper">
-                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
-                     class="brand-logo" alt="Logo Dona Antônia"
-                     onerror="this.src='https://placehold.co/40x40/2563EB/ffffff?text=DA'">
-                <div class="brand-info">
-                    <h1>Super Cestas Dona Antônia de Cuiabá e VG</h1>
-                    <div>
-                        <span class="status-dot"></span>
-                        <span class="status-text">Online</span>
-                    </div>
+    <!-- HEADER (Hide on scroll down) -->
+    <header id="main-header" class="catalog-header">
+        <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
+             class="brand-logo" alt="Logo Dona Antonia"
+             onerror="this.src='https://placehold.co/40x40/2563EB/ffffff?text=DA'">
+        <div class="brand-name">Super Cestas Dona Antônia<br>de Cuiabá e VG</div>
+    </header>
+
+    <!-- HERO & CTA -->
+    <section class="hero-section">
+        <h1 class="hero-title">Conheça as nossas<br>Cestas Básicas</h1>
+        <button onclick="openLeadModal('Geral')" class="btn-discount">
+            <i class="ph-bold ph-ticket"></i> Garantir meu Desconto
+        </button>
+    </section>
+
+    <!-- CHIPS NAVIGATION -->
+    <nav class="chips-container" id="nav-chips">
+        <!-- Rendered via JS -->
+    </nav>
+
+    <!-- CATALOG MAIN -->
+    <main class="catalog-list" id="catalog-container">
+        <!-- Single Active Card Rendered Here -->
+    </main>
+
+    <!-- COMPANY BOTTOM BAR (CHIPS) -->
+    <footer class="company-bar">
+        <div class="company-bar-title">Conheça a nossa Empresa</div>
+        <div class="company-buttons-chips">
+            <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="footer-chip instagram">
+                <i class="ph-logo-instagram"></i> Instagram
+            </a>
+            <a href="https://facebook.com/cestas.dona.antonia" target="_blank" class="footer-chip facebook">
+                <i class="ph-logo-facebook"></i> Facebook
+            </a>
+            <button onclick="openModal('infoModal')" class="footer-chip">
+                <i class="ph-storefront"></i> Sobre
+            </button>
+            <button onclick="openModal('contactModal')" class="footer-chip whatsapp">
+                <i class="ph-whatsapp-logo"></i> Contato
+            </button>
+        </div>
+    </footer>
+
+    <!-- LEAD MODAL -->
+    <div id="leadModal" class="modal-overlay" onclick="if(event.target === this) closeModal('leadModal')">
+        <div class="modal-sheet">
+            <button class="btn-close-modal" onclick="closeModal('leadModal')"><i class="ph-bold ph-x"></i></button>
+            <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 700;">Garantir Desconto 🎉</h2>
+            <p style="margin: 0 0 20px 0; font-size: 14px; color: var(--text-sub);">Preencha para receber o cupom no WhatsApp.</p>
+            <div class="form-group"><label class="form-label">Seu Nome</label><input type="text" id="inputName" class="form-input" placeholder="Ex: Maria da Silva"></div>
+            <div class="form-group"><label class="form-label">Cidade</label><select id="inputCity" class="form-select"><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select></div>
+            <div class="form-group"><label class="form-label">Bairro</label><input type="text" id="inputBairro" class="form-input" placeholder="Ex: Pedra 90"></div>
+            <input type="hidden" id="inputContext" value="">
+            <button onclick="submitLead()" class="btn-discount" style="width: 100%;">Enviar para WhatsApp <i class="ph-bold ph-whatsapp-logo"></i></button>
+        </div>
+    </div>
+
+    <!-- INFO MODAL (Sobre) -->
+    <div id="infoModal" class="modal-overlay center" onclick="if(event.target === this) closeModal('infoModal')">
+        <div class="modal-popup">
+            <button class="btn-close-modal" onclick="closeModal('infoModal')"><i class="ph-bold ph-x"></i></button>
+            <div class="modal-header-info">
+                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" onerror="this.src='https://placehold.co/60x60'">
+                <h3 style="margin: 8px 0 0 0; font-size: 18px;">Dona Antônia</h3>
+                <p style="margin:0; font-size: 12px; color: #64748B;">CNPJ: 51.385.335.0001-06</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-box"><strong>+30 Mil</strong><span>Entregas</span></div>
+                <div class="stat-box"><strong>8 Anos</strong><span>Mercado</span></div>
+                <div class="stat-box"><strong>+6k</strong><span>Facebook</span></div>
+                <div class="stat-box"><strong>+2k</strong><span>Instagram</span></div>
+            </div>
+            <div style="padding: 0 16px 16px 16px; text-align: center;">
+                <p style="font-size: 13px; color: #334155; line-height: 1.5;">
+                    Tradição e qualidade em cestas básicas. Entregamos em toda Cuiabá e Várzea Grande com pagamento na hora.
+                </p>
+                <div style="background: #ECFDF5; color: #065F46; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; margin-top: 10px;">
+                    <i class="ph-money"></i> Pague só na entrega
                 </div>
             </div>
-            <i class="ph ph-dots-three-vertical" style="font-size: 24px; color: var(--text-sub);"></i>
-        </header>
-
-        <!-- CHAT MAIN -->
-        <main id="chat-container">
-            <!-- Messages injected via JS -->
-        </main>
-
-        <!-- INTERACTION ZONE (Inputs & Actions ABOVE Footer) -->
-        <div id="interaction-zone" class="interaction-zone">
-            <!-- Dynamic Content Here -->
         </div>
+    </div>
 
-        <!-- FIXED APP NAVIGATION BAR (Footer) -->
-        <footer class="app-navigation-bar">
-            <!-- WHATSAPP SVG INLINE -->
-            <a href="https://wa.me/5565998150975" target="_blank" class="nav-item wa" 
-               onclick="trackMarketingEvent('Contact', {method: 'whatsapp', location: 'navbar'})">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M187.58,144.84l-32-16a8,8,0,0,0-8,.5l-14.69,9.8a40.55,40.55,0,0,1-16-16l9.8-14.69a8,8,0,0,0,.5-8l-16-32A8,8,0,0,0,104,64a40,40,0,0,0-40,40,88.1,88.1,0,0,0,88,88,40,40,0,0,0,40-40A8,8,0,0,0,187.58,144.84ZM152,176a72.13,72.13,0,0,1-56-56,24,24,0,0,1,16-24L122,116l-6.8,10.2a24.58,24.58,0,0,0-1.2,26,24.58,24.58,0,0,0,26,1.2L150,147l20,10A24,24,0,0,1,152,176ZM128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216l12.47-37.4a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"></path></svg>
-                <span>WhatsApp</span>
-            </a>
+    <!-- CONTACT MODAL -->
+    <div id="contactModal" class="modal-overlay center" onclick="if(event.target === this) closeModal('contactModal')">
+        <div class="modal-popup" style="padding: 24px;">
+            <button class="btn-close-modal" onclick="closeModal('contactModal')"><i class="ph-bold ph-x"></i></button>
+            <h3 style="margin: 0 0 4px 0;">Fale Conosco</h3>
+            <p style="margin: 0; font-size: 13px; color: #64748B;">Clique para ligar ou chamar no Zap</p>
             
-            <!-- FACEBOOK SVG INLINE -->
-            <a href="https://facebook.com/cestas.dona.antonia" target="_blank" class="nav-item fb"
-               onclick="trackMarketingEvent('Contact', {method: 'facebook', location: 'navbar'})">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm24-112h-8V88a16,16,0,0,0-16-16H112a8,8,0,0,0-8,8v24H96a8,8,0,0,0-8,8v32a8,8,0,0,0,8,8h8v48a8,8,0,0,0,8,8h32a8,8,0,0,0,8-8V152h16a8,8,0,0,0,8-8V112A8,8,0,0,0,152,104Z"></path></svg>
-                <span>Facebook</span>
-            </a>
-            
-            <!-- INSTAGRAM SVG INLINE -->
-            <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="nav-item ig"
-               onclick="trackMarketingEvent('Contact', {method: 'instagram', location: 'navbar'})">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"></path></svg>
-                <span>Instagram</span>
-            </a>
-            
-            <!-- LOJA SVG INLINE -->
-            <button onclick="toggleModal(true)" class="nav-item info">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M240,112H232V96a16,16,0,0,0-16-16H184a16,16,0,0,0-16,16v16H88V96A16,16,0,0,0,72,80H40A16,16,0,0,0,24,96v16H16a8,8,0,0,0-8,8v88a16,16,0,0,0,16,16H232a16,16,0,0,0,16-16V120A8,8,0,0,0,240,112Zm-72-16h48v16H168Zm-128,0h48v16H40ZM24,208V128H232v80Zm56-48H48a8,8,0,0,0,0,16H80a8,8,0,0,0,0-16Zm128,0H176a8,8,0,0,0,0,16h32a8,8,0,0,0,0-16Zm-8-128H56a8,8,0,0,1,8-8H192A8,8,0,0,1,200,32Z"></path></svg>
-                <span>Loja</span>
-            </button>
-        </footer>
-
-        <!-- MODAL INFO (NEW STRUCTURE) -->
-        <div id="infoModal" class="modal-overlay" onclick="if(event.target === this) toggleModal(false)">
-            <div class="modal-content">
-                <button class="close-modal" onclick="toggleModal(false)"><i class="ph-bold ph-x"></i></button>
-                
-                <div class="modal-header">
-                    <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
-                         alt="Logo Dona Antônia" 
-                         onerror="this.src='https://placehold.co/70x70/2563EB/ffffff?text=DA'">
-                    <h3>Dona Antônia</h3>
-                    <p style="font-weight: 500;">Super Cestas Básicas</p>
-                    <p style="font-size: 11px; margin-top: 2px;">CNPJ: 51.385.335.0001-06</p>
-                </div>
-
-                <!-- PROVA SOCIAL EM GRID -->
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <i class="ph-fill ph-package"></i>
-                        <strong>+30 Mil</strong>
-                        <span>Entregas</span>
-                    </div>
-                    <div class="stat-item">
-                        <i class="ph-fill ph-calendar-check"></i>
-                        <strong>8 Anos</strong>
-                        <span>Em Cuiabá e VG</span>
-                    </div>
-                    <div class="stat-item">
-                        <i class="ph-fill ph-facebook-logo"></i>
-                        <strong>+6 Mil</strong>
-                        <span>Seguidores</span>
-                    </div>
-                    <div class="stat-item">
-                        <i class="ph-fill ph-instagram-logo"></i>
-                        <strong>~2 Mil</strong>
-                        <span>Seguidores</span>
-                    </div>
-                </div>
-
-                <div class="info-list">
-                    <!-- ENDEREÇO -->
-                    <div class="info-row">
-                        <i class="ph-fill ph-map-pin" style="color:#ef4444;"></i>
-                        <div class="info-content">
-                            <span class="info-label">Endereço</span>
-                            <a href="https://maps.google.com/?q=R.+Trinta,+105+-+Jardim+Nossa+Sra.+Aparecida,+Cuiabá+-+MT,+78090-660" target="_blank" style="text-decoration:none; color:inherit;">
-                                R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- TELEFONES -->
-                    <div class="info-row">
-                        <i class="ph-fill ph-phone" style="color:#22c55e;"></i>
-                        <div class="info-content">
-                            <span class="info-label">Telefones ⭐</span>
-                            <div style="display:flex; flex-direction:column; gap:4px;">
-                                <a href="tel:65996813588" style="text-decoration:none; color:inherit; font-weight:600;">(65) 99681-3588</a>
-                                <a href="tel:65998150975" style="text-decoration:none; color:inherit; font-weight:600;">(65) 99815-0975</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- HORÁRIOS -->
-                    <div class="info-row">
-                        <i class="ph-fill ph-clock" style="color:#f59e0b;"></i>
-                        <div class="info-content">
-                            <span class="info-label">Funcionamento</span>
-                            <div>Segunda a Sábado: 08:00 – 12:00</div>
-                            <div style="color:#ef4444; font-size:12px;">Domingo: Fechado</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PAGAMENTO -->
-                <div class="payment-badge">
-                    <i class="ph-fill ph-money"></i>
-                    Pague só na entrega na sua casa
-                </div>
-
+            <ul class="contact-list">
+                <li>
+                    <a href="tel:65996813588" class="contact-item">
+                        <i class="ph-phone"></i> (65) 99681-3588
+                    </a>
+                </li>
+                <li>
+                    <a href="https://wa.me/5565998150975" class="contact-item">
+                        <i class="ph-whatsapp-logo"></i> (65) 99815-0975
+                    </a>
+                </li>
+            </ul>
+            <div style="text-align: center; margin-top: 16px;">
+                <p style="font-size: 12px; color: #94A3B8;">Atendimento: Seg a Sáb das 08h às 12h</p>
             </div>
         </div>
     </div>
 
     <script>
-        // --- HEADER SCROLL LOGIC ---
-        const header = document.getElementById('main-header');
-        const scrollContainer = document.getElementById('chat-container');
-        let lastScrollY = 0;
-
-        scrollContainer.addEventListener('scroll', () => {
-            const currentScrollY = scrollContainer.scrollTop;
-            if (currentScrollY > 50) {
-                if (currentScrollY > lastScrollY) header.classList.add('hidden');
-                else header.classList.remove('hidden');
-            } else {
-                header.classList.remove('hidden');
+        // --- DATABASE ---
+        const BASKETS = {
+            'ECONOMICA': {
+                name: 'Cesta Econômica',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
+                priceDisplay: 'R$ 85,00',
+                options: [{ label: 'Valor Único', price: 'R$ 85,00', value: '85,00', selected: true }],
+                items: [
+                    { qtd: '1x', name: 'Arroz 5kg' }, { qtd: '1x', name: 'Açúcar 2kg' }, { qtd: '1x', name: 'Óleo 900ml' },
+                    { qtd: '1x', name: 'Feijão 1kg' }, { qtd: '1x', name: 'Café 250g' }, { qtd: '1x', name: 'Espaguete 400g' },
+                    { qtd: '1x', name: 'Trigo 1kg' }, { qtd: '1x', name: 'Farinha Mandioca 1kg' }, { qtd: '1x', name: 'Sal 1kg' },
+                    { qtd: '1x', name: 'Molho Tomate' }, { qtd: '1x', name: 'Milho Lata' }, { qtd: '1x', name: 'Bolacha Recheada' },
+                    { qtd: '1x', name: 'Miojo' }, { qtd: '1x', name: 'Suco Pó' }
+                ]
+            },
+            'MINI': {
+                name: 'Cesta Mini',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
+                priceDisplay: 'A partir de R$ 165,00',
+                options: [
+                    { label: 'Com Arroz Tio Alvino', price: 'R$ 165,00', value: '165,00', selected: true },
+                    { label: 'Com Arroz Koblenz', price: 'R$ 170,00', value: '170,00' }
+                ],
+                items: [
+                    { qtd: '1x', name: 'Arroz 5kg' }, { qtd: '1x', name: 'Açúcar 2kg' }, { qtd: '2x', name: 'Óleo 900ml' },
+                    { qtd: '2x', name: 'Feijão 1kg' }, { qtd: '1x', name: 'Café 250g' }, { qtd: '1x', name: 'Espaguete 500g' },
+                    { qtd: '1x', name: 'Sal 1kg' }, { qtd: '1x', name: 'Molho Tomate' }, { qtd: '1x', name: 'Milho Lata' },
+                    { qtd: '1x', name: 'Bolacha Recheada' }, { qtd: '1x', name: 'Miojo' }, { qtd: '2x', name: 'Suco Pó' },
+                    { qtd: '1x', name: 'Sabão Barra' }, { qtd: '1x', name: 'Creme Dental' }, { qtd: '1x', name: 'Papel Higiênico' },
+                    { qtd: '1x', name: 'Amaciante 2L' }, { qtd: '1x', name: 'Desinfetante 2L' }, { qtd: '1x', name: 'Sabão Pó OMO' },
+                    { qtd: '1x', name: 'Detergente' }, { qtd: '1x', name: 'Qboa 1L' }, { qtd: '2x', name: 'Sabonete' },
+                    { qtd: '1x', name: 'Esponja Aço' }, { qtd: '1x', name: 'Esponja Louça' }
+                ]
+            },
+            'PEQUENA': {
+                name: 'Cesta Pequena',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
+                priceDisplay: 'A partir de R$ 215,00',
+                options: [
+                    { label: 'Com Arroz Tio Alvino', price: 'R$ 215,00', value: '215,00', selected: true },
+                    { label: 'Com Arroz Koblenz', price: 'R$ 220,00', value: '220,00' }
+                ],
+                items: [
+                    { qtd: '2x', name: 'Arroz 5kg' }, { qtd: '1x', name: 'Açúcar 2kg' }, { qtd: '2x', name: 'Óleo 900ml' },
+                    { qtd: '2x', name: 'Feijão 1kg' }, { qtd: '1x', name: 'Café 250g' }, { qtd: '1x', name: '12 Ovos' },
+                    { qtd: '1x', name: 'Mistura Bolo' }, { qtd: '1x', name: 'Espaguete 500g' }, { qtd: '1x', name: 'Trigo 1kg' },
+                    { qtd: '1x', name: 'Sal 1kg' }, { qtd: '1x', name: 'Molho Tomate' }, { qtd: '1x', name: 'Milho Lata' },
+                    { qtd: '1x', name: 'Tempero' }, { qtd: '2x', name: 'Bolacha Recheada' }, { qtd: '2x', name: 'Miojo' },
+                    { qtd: '2x', name: 'Suco Pó' }, { qtd: '1x', name: 'Sabão Barra' }, { qtd: '1x', name: 'Creme Dental' },
+                    { qtd: '1x', name: 'Papel Higiênico' }, { qtd: '1x', name: 'Amaciante 2L' }, { qtd: '1x', name: 'Desinfetante 2L' },
+                    { qtd: '1x', name: 'Sabão Pó OMO' }, { qtd: '2x', name: 'Detergente' }, { qtd: '1x', name: 'Qboa 1L' },
+                    { qtd: '2x', name: 'Sabonete' }, { qtd: '1x', name: 'Esponja Aço' }, { qtd: '1x', name: 'Esponja Louça' }
+                ]
+            },
+            'MEDIA': {
+                name: 'Cesta Média',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
+                priceDisplay: 'A partir de R$ 320,00',
+                options: [
+                    { label: 'Com Arroz Tio Alvino', price: 'R$ 320,00', value: '320,00', selected: true },
+                    { label: 'Com Arroz Koblenz', price: 'R$ 325,00', value: '325,00' }
+                ],
+                items: [
+                    { qtd: '3x', name: 'Arroz 5kg' }, { qtd: '2x', name: 'Açúcar 2kg' }, { qtd: '3x', name: 'Óleo 900ml' },
+                    { qtd: '3x', name: 'Feijão 1kg' }, { qtd: '1x', name: 'Café 500g' }, { qtd: '1x', name: '12 Ovos' },
+                    { qtd: '1x', name: 'Mistura Bolo' }, { qtd: '2x', name: 'Espaguete 500g' }, { qtd: '1x', name: 'Trigo 1kg' },
+                    { qtd: '1x', name: 'Sal 1kg' }, { qtd: '2x', name: 'Molho Tomate' }, { qtd: '1x', name: 'Milho Lata' },
+                    { qtd: '1x', name: 'Tempero' }, { qtd: '2x', name: 'Bolacha Recheada' }, { qtd: '2x', name: 'Miojo' },
+                    { qtd: '3x', name: 'Suco Pó' }, { qtd: '1x', name: 'Sabão Barra' }, { qtd: '2x', name: 'Creme Dental' },
+                    { qtd: '2x', name: 'Papel Higiênico' }, { qtd: '1x', name: 'Amaciante 2L' }, { qtd: '1x', name: 'Desinfetante 2L' },
+                    { qtd: '1x', name: 'Sabão Pó OMO' }, { qtd: '2x', name: 'Detergente' }, { qtd: '1x', name: 'Qboa 1L' },
+                    { qtd: '3x', name: 'Sabonete' }, { qtd: '1x', name: 'Esponja Aço' }, { qtd: '1x', name: 'Esponja Louça' }
+                ]
+            },
+            'GRANDE': {
+                name: 'Cesta Grande',
+                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
+                priceDisplay: 'R$ 380,00',
+                options: [
+                    { label: 'Com Arroz Tio Alvino', price: 'R$ 380,00', value: '380,00', selected: true }
+                ],
+                items: [
+                    { qtd: '4x', name: 'Arroz 5kg' }, { qtd: '3x', name: 'Açúcar 2kg' }, { qtd: '4x', name: 'Óleo 900ml' },
+                    { qtd: '4x', name: 'Feijão 1kg' }, { qtd: '1x', name: 'Café 500g' }, { qtd: '3x', name: 'Espaguete 500g' },
+                    { qtd: '1x', name: '12 Ovos' }, { qtd: '1x', name: 'Mistura Bolo' }, { qtd: '1x', name: 'Trigo 1kg' },
+                    { qtd: '1x', name: 'Sal 1kg' }, { qtd: '2x', name: 'Molho Tomate' }, { qtd: '1x', name: 'Milho Lata' },
+                    { qtd: '1x', name: 'Tempero' }, { qtd: '2x', name: 'Bolacha Recheada' }, { qtd: '2x', name: 'Miojo' },
+                    { qtd: '4x', name: 'Suco Pó' }, { qtd: '1x', name: 'Sabão Barra' }, { qtd: '2x', name: 'Creme Dental' },
+                    { qtd: '2x', name: 'Papel Higiênico' }, { qtd: '1x', name: 'Amaciante 2L' }, { qtd: '1x', name: 'Desinfetante 2L' },
+                    { qtd: '1x', name: 'Sabão Pó OMO' }, { qtd: '2x', name: 'Detergente' }, { qtd: '1x', name: 'Qboa 1L' },
+                    { qtd: '4x', name: 'Sabonete' }, { qtd: '1x', name: 'Esponja Aço' }, { qtd: '1x', name: 'Esponja Louça' }
+                ]
             }
-            lastScrollY = currentScrollY;
+        };
+
+        // --- IMAGE MAPPER ---
+        function getProductImage(name) {
+            const n = name.toLowerCase();
+            const foodPath = 'img/alimento/';
+            const cleanPath = 'img/limpeza/';
+            
+            if(n.includes('arroz')) return foodPath + 'Arroz Koblenz 5kg.webp';
+            if(n.includes('açúcar')) return foodPath + 'açucar doce dia 2 kg.webp';
+            if(n.includes('bolacha')) return foodPath + 'bolacha mybit.webp';
+            if(n.includes('bolo')) return foodPath + 'bolo apti chocolate.webp';
+            if(n.includes('café') && n.includes('500g')) return foodPath + 'cafe caboclo 500g.webp';
+            if(n.includes('café')) return foodPath + 'cafe caboclo 250g.webp';
+            if(n.includes('espaguete')) return foodPath + 'espaguete qdelicia.webp';
+            if(n.includes('farinha mandioca')) return foodPath + 'farinha de mandioca.webp';
+            if(n.includes('feijão')) return foodPath + 'feijão da casa.webp';
+            if(n.includes('milho')) return foodPath + 'milho verde predileta.webp';
+            if(n.includes('miojo')) return foodPath + 'miojo apti.webp';
+            if(n.includes('molho')) return foodPath + 'molho fugini.webp';
+            if(n.includes('óleo')) return foodPath + 'oleo de soja liza.webp';
+            if(n.includes('ovo')) return foodPath + 'ovo duzia.jpg';
+            if(n.includes('sal')) return foodPath + 'sal.webp';
+            if(n.includes('suco')) return foodPath + 'suco frisco.webp';
+            if(n.includes('tempero')) return foodPath + 'tempero tio jonas.jpg';
+            if(n.includes('trigo')) return foodPath + 'trigo vitoriosa.webp';
+
+            if(n.includes('creme dental')) return cleanPath + 'Creme Dental Sorriso 70g.webp';
+            if(n.includes('desinfetante')) return cleanPath + 'Desinfetante Remmus 2L.webp';
+            if(n.includes('detergente')) return cleanPath + 'Detergente Ype 500ml.webp';
+            if(n.includes('qboa')) return cleanPath + 'Qboa 1 Litro.webp';
+            if(n.includes('amaciante')) return cleanPath + 'amaciante ype 2L.webp';
+            if(n.includes('esponja louça')) return cleanPath + 'esponja de lavar louça.webp';
+            if(n.includes('esponja aço')) return cleanPath + 'lã de aço assolan.webp';
+            if(n.includes('papel')) return cleanPath + 'papel higienico.webp';
+            if(n.includes('sabonete')) return cleanPath + 'sabonete palmolive 85g.webp';
+            if(n.includes('sabão barra')) return cleanPath + 'sabão barra ype 900g.webp';
+            if(n.includes('sabão pó') || n.includes('omo')) return cleanPath + 'sabão barra ype 900g.webp';
+
+            return `https://placehold.co/100x100/f1f5f9/334155?text=${encodeURIComponent(name.split(' ')[0])}`;
+        }
+
+        // --- CORE FUNCTIONS ---
+        function renderChips() {
+            const nav = document.getElementById('nav-chips');
+            nav.innerHTML = Object.keys(BASKETS).map(key => `
+                <button class="chip ${key === 'ECONOMICA' ? 'active' : ''}" 
+                        onclick="switchBasket('${key}', this)">
+                    ${key}
+                </button>
+            `).join('');
+        }
+
+        function renderBasket(key) {
+            const container = document.getElementById('catalog-container');
+            const data = BASKETS[key];
+            
+            const itemsHtml = data.items.map(item => {
+                const qtyNum = item.qtd.replace('x', '');
+                const qtyText = `${qtyNum} ${qtyNum === '1' ? 'unidade' : 'unidades'}`;
+                return `
+                <div class="mini-product-card">
+                    <img src="${getProductImage(item.name)}" class="mini-prod-img" loading="lazy" alt="${item.name}">
+                    <div class="mini-prod-badge">${qtyText}</div>
+                    <span class="mini-prod-name">${item.name}</span>
+                </div>
+            `}).join('');
+
+            const optionsHtml = data.options.map(opt => `
+                <div class="radio-arroz-option ${opt.selected ? 'selected' : ''}" 
+                     onclick="selectOption('${key}', '${opt.value}', '${opt.price}', '${opt.label}', this)">
+                    <div class="radio-arroz-info">
+                        <span class="radio-arroz-name">${opt.label}</span>
+                        <span class="radio-arroz-price">${opt.price}</span>
+                    </div>
+                    <div class="radio-circle"></div>
+                </div>
+            `).join('');
+
+            const defaultOpt = data.options.find(o => o.selected) || data.options[0];
+
+            container.innerHTML = `
+                <div class="card-cesta-new">
+                    <div class="card-header-visual">
+                        <img src="${data.img}" class="card-img-side" alt="${data.name}">
+                        <div class="card-title-side">
+                            <h2>${data.name}</h2>
+                            <span class="price-badge">${data.priceDisplay}</span>
+                        </div>
+                    </div>
+                    <div class="card-control-row">
+                        <button class="btn-card-toggle active" onclick="toggleTab('produtos')"><i class="fas fa-th-large"></i> Produtos</button>
+                        <button class="btn-card-toggle" onclick="toggleTab('valor')"><i class="fas fa-dollar-sign"></i> Valor & Pedido</button>
+                    </div>
+                    <div id="tab-produtos" class="card-expand-section active">
+                        <div class="products-grid">${itemsHtml}</div>
+                    </div>
+                    <div id="tab-valor" class="card-expand-section">
+                        <p style="margin-bottom: 12px; font-size: 13px; color:#64748B;">Selecione uma opção:</p>
+                        <div class="arroz-selection-container">${optionsHtml}</div>
+                        <button id="btn-final-order" class="btn-encomendar-card" 
+                                onclick="openLeadModal('${data.name} - ${defaultOpt.label} (${defaultOpt.price})')">
+                            <i class="fab fa-whatsapp"></i> Encomendar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function switchBasket(key, btn) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            renderBasket(key);
+        }
+
+        function toggleTab(tabName) {
+            document.querySelectorAll('.btn-card-toggle').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-produtos').style.display = tabName === 'produtos' ? 'grid' : 'none';
+            document.getElementById('tab-valor').style.display = tabName === 'valor' ? 'block' : 'none';
+        }
+
+        function selectOption(basketKey, value, priceDisplay, label, element) {
+            document.querySelectorAll('.radio-arroz-option').forEach(e => e.classList.remove('selected'));
+            element.classList.add('selected');
+            const btn = document.getElementById('btn-final-order');
+            const basketName = BASKETS[basketKey].name;
+            btn.onclick = function() {
+                openLeadModal(`${basketName} - ${label} (${priceDisplay})`);
+            };
+        }
+
+        // --- MODALS SYSTEM ---
+        function openLeadModal(context) {
+            document.getElementById('leadModal').classList.add('active');
+            document.getElementById('inputContext').value = context;
+            trackEvent('OpenLeadForm', { context: context });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            trackEvent('OpenModal', { id: modalId });
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function submitLead() {
+            const name = document.getElementById('inputName').value.trim();
+            const city = document.getElementById('inputCity').value;
+            const bairro = document.getElementById('inputBairro').value.trim();
+            const interest = document.getElementById('inputContext').value;
+
+            if(!name || !bairro) {
+                alert('Preencha seu nome e bairro para continuar.');
+                return;
+            }
+
+            const text = `Olá! Me chamo *${name}*, sou de *${city}* (Bairro: ${bairro}).\nTenho interesse em: *${interest}*.`;
+            const phone = "5565998150975";
+            const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
+            
+            trackEvent('SubmitLead', { interest: interest });
+            window.location.href = url;
+            closeModal('leadModal');
+        }
+
+        // --- HEADER SCROLL LOGIC ---
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('main-header');
+            const chips = document.getElementById('nav-chips');
+            
+            if (window.scrollY > lastScrollY && window.scrollY > 50) {
+                // Scroll Down -> Hide Header, Sticky Chips at Top
+                header.classList.add('hidden');
+                chips.style.top = '0px'; 
+            } else {
+                // Scroll Up -> Show Header, Sticky Chips below Header
+                header.classList.remove('hidden');
+                chips.style.top = '70px';
+            }
+            lastScrollY = window.scrollY;
         });
 
-        // --- PRODUTOS ---
-        const CESTA_PEQUENA_ITEMS = [
-            { name: "Arroz Koblenz 5kg", qtd: 2, type: "alimento" },
-            { name: "Açúcar Doce Dia 2kg", qtd: 1, type: "alimento" },
-            { name: "Óleo de Soja Liza", qtd: 2, type: "alimento" },
-            { name: "Feijão Da Casa 1kg", qtd: 2, type: "alimento" },
-            { name: "Café Caboclo 250g", qtd: 1, type: "alimento" },
-            { name: "Ovos (Dúzia)", qtd: 1, type: "alimento" },
-            { name: "Bolo Apti Choc.", qtd: 1, type: "alimento" },
-            { name: "Espaguete QDelicia", qtd: 1, type: "alimento" },
-            { name: "Trigo Vitoriosa 1kg", qtd: 1, type: "alimento" },
-            { name: "Sal 1kg", qtd: 1, type: "alimento" },
-            { name: "Molho Fugini 340g", qtd: 1, type: "alimento" },
-            { name: "Milho Verde", qtd: 1, type: "alimento" },
-            { name: "Tempero Tio Jonas", qtd: 1, type: "alimento" },
-            { name: "Bolacha MyBit", qtd: 2, type: "alimento" },
-            { name: "Miojo Apti", qtd: 2, type: "alimento" },
-            { name: "Suco Frisco", qtd: 2, type: "alimento" },
-            { name: "Sabão Barra Ype", qtd: 1, type: "limpeza" },
-            { name: "Creme Dental", qtd: 1, type: "limpeza" },
-            { name: "Papel Higiênico", qtd: 1, type: "limpeza" },
-            { name: "Amaciante Ype 2L", qtd: 1, type: "limpeza" },
-            { name: "Desinfetante 2L", qtd: 1, type: "limpeza" },
-            { name: "Sabão em Pó OMO", qtd: 1, type: "limpeza" },
-            { name: "Detergente Ype", qtd: 2, type: "limpeza" },
-            { name: "Qboa 1 Litro", qtd: 1, type: "limpeza" },
-            { name: "Sabonete Palmolive", qtd: 2, type: "limpeza" },
-            { name: "Lã de Aço", qtd: 1, type: "limpeza" },
-            { name: "Esponja", qtd: 1, type: "limpeza" }
-        ];
-
-        // RECUPERADO DO ARQUIVO ORIGINAL - LÓGICA COMPLETA DE IMAGENS
-        function getProductImage(text) {
-            const t = text.toLowerCase();
-            const folderAlimento = 'img/alimento/';
-            const folderLimpeza = 'img/limpeza/';
-            const placeholder = `https://placehold.co/150x150/f1f5f9/334155?text=${encodeURIComponent(text.split(' ')[0])}`;
-            
-            if(t.includes('arroz')) return folderAlimento + 'Arroz Koblenz 5kg.webp';
-            if(t.includes('açúcar')) return folderAlimento + 'açucar doce dia 2 kg.webp';
-            if(t.includes('oleo') || t.includes('óleo')) return folderAlimento + 'oleo de soja liza.webp';
-            if(t.includes('feijão')) return folderAlimento + 'feijão da casa.webp';
-            if(t.includes('café')) return folderAlimento + 'cafe caboclo 250g.webp';
-            if(t.includes('ovo')) return folderAlimento + 'ovo duzia.jpg';
-            if(t.includes('bolo')) return folderAlimento + 'bolo apti chocolate.webp';
-            if(t.includes('espaguete')) return folderAlimento + 'espaguete qdelicia.webp';
-            if(t.includes('trigo')) return folderAlimento + 'trigo vitoriosa.webp';
-            if(t.includes('sal')) return folderAlimento + 'sal.webp';
-            if(t.includes('molho')) return folderAlimento + 'molho fugini.webp';
-            if(t.includes('milho')) return folderAlimento + 'milho verde predileta.webp';
-            if(t.includes('tempero')) return folderAlimento + 'tempero tio jonas.jpg';
-            if(t.includes('bolacha')) return folderAlimento + 'bolacha mybit.webp';
-            if(t.includes('miojo')) return folderAlimento + 'miojo apti.webp';
-            if(t.includes('suco')) return folderAlimento + 'suco frisco.webp';
-            if(t.includes('sabão barra')) return folderLimpeza + 'sabão barra ype 900g.webp';
-            if(t.includes('creme dental')) return folderLimpeza + 'Creme Dental Sorriso 70g.webp';
-            if(t.includes('papel')) return folderLimpeza + 'papel higienico.webp';
-            if(t.includes('amaciante')) return folderLimpeza + 'amaciante ype 2L.webp';
-            if(t.includes('desinfetante')) return folderLimpeza + 'Desinfetante Remmus 2L.webp';
-            if(t.includes('sabão em pó') || t.includes('omo')) return folderLimpeza + 'sabão em pó omo 800g.webp';
-            if(t.includes('detergente')) return folderLimpeza + 'Detergente Ype 500ml.webp';
-            if(t.includes('qboa')) return folderLimpeza + 'Qboa 1 Litro.webp';
-            if(t.includes('sabonete')) return folderLimpeza + 'sabonete palmolive 85g.webp';
-            if(t.includes('lã')) return folderLimpeza + 'lã de aço assolan.webp';
-            if(t.includes('esponja')) return folderLimpeza + 'esponja de lavar louça.webp';
-
-            return placeholder;
-        }
-
-        let userFullName = "";
-        let userFirstName = "";
-        const chatContainer = document.getElementById('chat-container');
-        const interactionZone = document.getElementById('interaction-zone');
-
-        function calculateTypingDelay(text) {
-            if (!text) return 1500;
-            const cleanText = text.replace(/<[^>]*>?/gm, ''); 
-            const baseDelay = cleanText.length * 60; 
-            const variation = Math.random() * 500;
-            return Math.min(Math.max(baseDelay + variation, 1500), 5000);
-        }
-
-        function scrollToBottom() {
-            setTimeout(() => {
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
-            }, 100);
-        }
-
-        function addMessage(content, type = 'bot', forceDelay = null, isFullWidth = false) {
-            return new Promise(resolve => {
-                const delay = forceDelay !== null ? forceDelay : calculateTypingDelay(content);
-
-                if(type === 'bot') {
-                    const typingId = 'typing-' + Date.now();
-                    const avatarHtml = `<div class="avatar-holder"><img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" onerror="this.src='https://placehold.co/30x30/2563EB/ffffff?text=DA'"></div>`;
-                    
-                    chatContainer.insertAdjacentHTML('beforeend', `
-                        <div id="${typingId}" class="msg-row msg-start">
-                            ${avatarHtml}
-                            <div class="typing-bubble">
-                                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                            </div>
-                        </div>
-                    `);
-                    scrollToBottom();
-
-                    setTimeout(() => {
-                        const typingEl = document.getElementById(typingId);
-                        if(typingEl) typingEl.remove();
-                        appendFinalMessage();
-                    }, delay);
-                } else {
-                    setTimeout(appendFinalMessage, 300);
-                }
-
-                function appendFinalMessage() {
-                    const bubbleClass = isFullWidth ? 'msg-bubble full-width' : (type === 'bot' ? 'msg-bubble msg-in' : 'msg-bubble msg-out');
-                    const rowClass = type === 'bot' ? 'msg-start' : 'msg-end';
-                    const avatar = (type === 'bot' && !isFullWidth) 
-                        ? `<div class="avatar-holder"><img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" onerror="this.src='https://placehold.co/30x30/2563EB/ffffff?text=DA'"></div>` 
-                        : (type === 'bot' ? '<div style="width:32px"></div>' : '');
-
-                    const html = `
-                        <div class="msg-row ${rowClass} animate-up">
-                            ${avatar}
-                            <div class="${bubbleClass}">
-                                ${content}
-                            </div>
-                        </div>
-                    `;
-                    chatContainer.insertAdjacentHTML('beforeend', html);
-                    scrollToBottom();
-                    resolve();
-                }
-            });
-        }
-
-        // --- INTERACTION ZONE LOGIC ---
-
-        function renderFooterInput(callback) {
-            interactionZone.innerHTML = `
-                <div class="input-area">
-                    <input type="text" id="footerInput" class="chat-input" placeholder="Digite seu nome..." autocomplete="off">
-                    <button class="send-btn" onclick="submitFooterInput()"><i class="ph-bold ph-paper-plane-right"></i></button>
-                </div>
-            `;
-            
-            window.submitFooterInput = function() {
-                const input = document.getElementById('footerInput');
-                const val = input.value.trim();
-                if(!val) return;
-                
-                input.disabled = true;
-                addMessage(val, 'user', 0);
-                interactionZone.innerHTML = ''; // Limpa a zona, mas a navbar continua lá
-                callback(val);
-            };
-
-            const inputEl = document.getElementById('footerInput');
-            inputEl.focus();
-            inputEl.addEventListener("keypress", function(event) {
-                if (event.key === "Enter") window.submitFooterInput();
-            });
-        }
-
-        function renderFooterActions(actions) {
-            const buttonsHtml = actions.map(act => 
-                `<button class="action-btn-modern ${act.isPrimary ? 'primary' : ''}" onclick="handleFooterAction('${act.text}', ${act.callbackId})">${act.text}</button>`
-            ).join('');
-
-            interactionZone.innerHTML = `
-                <div class="actions-area">
-                    ${buttonsHtml}
-                </div>
-            `;
-        }
-
-        async function handleFooterAction(text, callbackId) {
-            interactionZone.innerHTML = ''; // Limpa botões
-            await addMessage(text, 'user', 0);
-            
-            if (callbackId === 0.5) flowPriceReveal(); // Novo Step: Confirmação do desconto
-            if (callbackId === 1) flowStartShowcase();
-            if (callbackId === 2) flowStartGridAnimation();
-            if (callbackId === 3) flowPreRedirect();
-            if (callbackId === 4) flowRedirectWhatsApp();
-        }
-
-        // --- FLOW SEQUENCES ---
-
-        async function initFlow() {
-            await new Promise(r => setTimeout(r, 600));
-
-            // PASSO 1: Imagem Vertical do Anúncio (Primeira Coisa)
-            await addMessage(`
-                <img src="img/anuncio.png" class="msg-image-full" alt="Promoção Cesta Pequena" 
-                     loading="eager"
-                     onerror="this.src='https://placehold.co/360x640/2563EB/ffffff?text=Anúncio+Vertical'">
-            `, 'bot', 500, true);
-
-            const hour = new Date().getHours();
-            const greeting = hour < 12 ? "Bom dia" : (hour < 18 ? "Boa tarde" : "Boa noite");
-            
-            await addMessage(`👋 ${greeting}!`);
-            await addMessage(`Sou o <b>Osvaldo</b>, assistente da Dona Antônia.`);
-            await addMessage(`Qual seu nome?`);
-            
-            renderFooterInput(handleNameSubmit);
-        }
-
-        async function handleNameSubmit(name) {
-            userFullName = name;
-            userFirstName = name.split(' ')[0];
-            userFirstName = userFirstName.charAt(0).toUpperCase() + userFirstName.slice(1).toLowerCase();
-
-            setTimeout(flowContextAd, 800);
-        }
-
-        async function flowContextAd() {
-            await addMessage(`Prazer, ${userFirstName}!`);
-            await addMessage(`Bom... Você já sabe que eu tenho um desconto pra você né?`);
-            
-            // Botão de Confirmação (Step 2)
-            renderFooterActions([
-                { text: "Sei sim! 👍", callbackId: 0.5, isPrimary: true }
-            ]);
-        }
-
-        async function flowPriceReveal() {
-            // Nova Mensagem de Preço Personalizada
-            await addMessage(`A cesta de R$ 220,00 é a nossa campeã de vendas e pra você <b>${userFirstName}</b>, ela vai sair por <b>R$ 205,00</b>.`);
-            
-            // Pula direto para produtos (Sem foto da cesta)
-            await new Promise(r => setTimeout(r, 800));
-            await addMessage(`Quer ver os produtos dela?`);
-            
-            renderFooterActions([
-                { text: "Sim, quero ver", callbackId: 1, isPrimary: true }
-            ]);
-        }
-
-        async function flowStartShowcase() {
-            trackMarketingEvent('InitiateCheckout', { content_name: 'Showcase Cesta Pequena' });
-            await addMessage(`Combinado.`);
-            await addMessage(`São 27 itens no total.`);
-            await addMessage(`Vou te mostrar...`);
-            
-            renderFooterActions([
-                { text: "Pode mostrar", callbackId: 2, isPrimary: true }
-            ]);
-        }
-
-        async function flowStartGridAnimation() {
-            const gridId = 'live-grid-' + Date.now();
-            await addMessage(`<div id="${gridId}" class="grid-container"></div>`, 'bot', 800, true);
-            
-            const gridEl = document.getElementById(gridId);
-            let flatItems = [];
-            CESTA_PEQUENA_ITEMS.forEach(item => {
-                for(let i=0; i < item.qtd; i++) flatItems.push({ ...item });
-            });
-
-            let index = 0;
-            const total = flatItems.length;
-
-            function showNextItem() {
-                if (index >= total) {
-                    setTimeout(flowOfferDiscount, 2000); 
-                    return;
-                }
-
-                const item = flatItems[index];
-                const img = getProductImage(item.name);
-                
-                const card = `
-                    <div class="mini-card">
-                        <img src="${img}" alt="${item.name}" loading="lazy">
-                        <span>${item.name}</span>
-                    </div>
-                `;
-
-                gridEl.insertAdjacentHTML('beforeend', card);
-                if (index % 3 === 0) scrollToBottom();
-
-                index++;
-                setTimeout(showNextItem, 300); // 300ms delay for faster display
-            }
-
-            showNextItem();
-        }
-
-        async function flowOfferDiscount() {
-            scrollToBottom();
-            await addMessage(`Viu só, ${userFirstName}?`);
-            
-            // Texto Enxuto
-            await addMessage(`Só trabalhamos com marcas de primeira qualidade.`);
-            
-            await new Promise(r => setTimeout(r, 1000));
-            
-            await addMessage(`Vou garantir essa cesta de R$ 220,00 por <b>R$ 205,00</b> por 30 dias.`);
-            await addMessage(`Você pede quando precisar.`);
-            
-            await addMessage(`Quer o desconto?`);
-            
-            renderFooterActions([
-                { text: "Quero!", callbackId: 3, isPrimary: true }
-            ]);
-        }
-
-        async function flowPreRedirect() {
-            await addMessage(`Ótimo!`);
-            await addMessage(`Vou te mandar pro WhatsApp agora.`);
-            await addMessage(`Lá vou colocar seu nome na nossa <b>Lista de Clientes com Desconto</b>.`);
-            
-            renderFooterActions([
-                { text: "Abrir WhatsApp", callbackId: 4, isPrimary: true }
-            ]);
-        }
-
-        async function flowRedirectWhatsApp() {
-            trackMarketingEvent('Lead', { 
-                value: 205.00, 
-                currency: 'BRL', 
-                content_name: 'Cesta Pequena Desconto VIP',
-                status: 'redirected'
-            });
-
-            await addMessage(`Redirecionando...`);
-
-            setTimeout(() => {
-                const text = `Olá! Meu nome é *${userFullName}*. Vim pelo Instagram e quero garantir meu cadastro de desconto (R$ 205,00) na Cesta Pequena por 30 dias.`;
-                const phone = "5565998150975";
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                const baseUrl = isMobile ? "https://api.whatsapp.com/send" : "https://web.whatsapp.com/send";
-                
-                window.location.href = `${baseUrl}?phone=${phone}&text=${encodeURIComponent(text)}`;
-            }, 2500);
-        }
-
-        window.toggleModal = function(show) {
-            const modal = document.getElementById('infoModal');
-            if(show) {
-                modal.classList.add('active');
-                trackMarketingEvent('ViewContent', { content_name: 'Modal Quem Somos' });
-            } else {
-                modal.classList.remove('active');
-            }
-        }
-
-        window.addEventListener('load', initFlow);
+        // INIT
+        window.onload = function() {
+            renderChips();
+            renderBasket('ECONOMICA');
+        };
 
     </script>
 </body>
