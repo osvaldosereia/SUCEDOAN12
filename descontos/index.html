@@ -8,11 +8,17 @@
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Catálogo de Cestas Básicas | Dona Antônia Cuiabá</title>
-    <meta name="description" content="Cestas Básicas completas com entrega em Cuiabá e Várzea Grande. Confira a Econômica, Pequena, Média e Grande.">
+    <title>Catálogo Completo | Dona Antônia Cuiabá</title>
+    <meta name="description" content="Confira todas as nossas Cestas Básicas: Econômica, Pequena, Média e Grande. Entrega em Cuiabá e Várzea Grande.">
     <meta name="theme-color" content="#ffffff">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://www.donaantonia.com.br/catalogo">
+
+    <!-- PERFORMANCE HINTS (MODERN RESOURCES) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://donaantonia.com.br">
 
     <!-- PILLAR 3: SECURITY -->
     <script>
@@ -64,7 +70,6 @@
             --footer-h: 80px; 
             
             --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-            --shadow-float: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -72,134 +77,60 @@
             margin: 0; padding: 0;
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: var(--background); color: var(--text-main);
-            padding-bottom: calc(var(--footer-h) + 10px); 
+            padding-bottom: calc(var(--footer-h) + 20px); 
         }
 
-        /* --- HEADER --- */
+        /* --- HEADER (Standard Static) --- */
         .app-header {
-            position: relative; 
             height: var(--header-h);
             background: white;
             border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; padding: 0 16px; gap: 12px;
-            z-index: 50;
+            display: flex; align-items: center; justify-content: center; padding: 0 16px; gap: 12px;
+            /* No fixed position */
         }
+        .logo { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; }
+        .brand h1 { font-size: 16px; font-weight: 800; line-height: 1.2; margin: 0; color: var(--text-main); }
 
-        .logo { width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; }
-        .brand h1 { font-size: 16px; font-weight: 600; line-height: 1.2; margin: 0; color: var(--text-main); }
-        /* Aberto agora removed */
-
-        /* --- HERO --- */
-        .hero { padding: 20px 16px 10px; text-align: center; }
-        .hero h2 { font-size: 18px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: var(--text-main); }
-        
-        /* --- NAV SLIDER --- */
-        .nav-slider-container {
-            position: relative; 
-            background: var(--background);
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-            z-index: 40;
+        /* --- CATALOG CONTAINER --- */
+        .catalog-container { 
+            padding: 20px 16px; 
+            max-width: 600px; 
+            margin: 0 auto; 
         }
         
-        .slider-wrapper {
-            position: relative;
-            display: flex; align-items: center;
-        }
-
-        .scroll-btn {
-            position: absolute; z-index: 2;
-            background: rgba(255,255,255,0.9); border: 1px solid var(--border);
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--primary); cursor: pointer; box-shadow: var(--shadow-sm);
-        }
-        .scroll-btn.left { left: 8px; }
-        .scroll-btn.right { right: 8px; }
-
-        .basket-scroller {
-            display: flex; gap: 12px; overflow-x: auto;
-            padding: 0 16px; scrollbar-width: none;
-            width: 100%;
-            scroll-snap-type: x mandatory;
-        }
-        .basket-scroller::-webkit-scrollbar { display: none; }
-
-        /* NAV CARD */
-        .nav-card {
-            flex: 0 0 28%;
-            scroll-snap-align: start;
-            background: var(--surface);
-            border: 2px solid transparent; 
-            border-radius: 16px;
-            overflow: hidden;
-            display: flex; flex-direction: column;
-            cursor: pointer; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: var(--shadow-card);
-            position: relative;
-            height: 170px;
-        }
-        
-        .nav-card-img {
-            width: 100%; height: 110px;
-            object-fit: cover; background: #f1f5f9;
-        }
-        .nav-card-body {
-            padding: 6px 4px; text-align: center;
-            background: white; flex-grow: 1;
-            display: flex; flex-direction: column; justify-content: center;
-        }
-        .nav-card-name {
-            font-size: 12px; font-weight: 800; color: var(--text-main);
-            text-transform: uppercase; line-height: 1.1;
-        }
-        
-        .nav-card.active {
-            border-color: var(--primary); transform: translateY(-4px);
-            box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.25);
-        }
-        .nav-card.active .nav-card-name { color: var(--primary); }
-        .active-indicator {
-            position: absolute; top: 6px; right: 6px;
-            background: var(--primary); color: white;
-            width: 18px; height: 18px; border-radius: 50%;
-            display: none; align-items: center; justify-content: center; font-size: 10px;
-        }
-        .nav-card.active .active-indicator { display: flex; }
-
-
-        /* --- PRODUCT DETAILS AREA --- */
-        .catalog-area { padding: 0 16px; max-width: 600px; margin: 0 auto; position: relative; min-height: 150vh; }
-        
-        .product-card {
-            background: var(--surface); border-radius: 24px;
-            overflow: visible; 
+        /* --- PRODUCT CARD (Vertical Layout + Performance) --- */
+        .product-section {
+            background: var(--surface); 
+            border-radius: 24px;
             border: 1px solid var(--border);
             box-shadow: var(--shadow-card);
-            animation: fadeIn 0.3s ease-out;
-            min-height: 100vh; 
+            overflow: hidden;
+            margin-bottom: 0;
+            /* MODERN RENDER OPTIMIZATION: Skips rendering off-screen content */
+            content-visibility: auto; 
+            contain-intrinsic-size: 1px 1000px; /* Prevents scrollbar jumping */
         }
-        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
-        /* STICKY INFO */
-        .product-info-sticky {
-            position: -webkit-sticky; position: sticky;
-            top: 0; z-index: 45;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(8px);
-            padding: 16px 20px 10px 20px;
+        /* HEADER BLOCK */
+        .p-header-block {
+            padding: 20px 20px 10px 20px;
+            background: #fff;
             border-bottom: 1px solid var(--border);
-            border-radius: 24px 24px 0 0;
-            box-shadow: 0 4px 10px -4px rgba(0,0,0,0.05);
-            margin: -1px -1px 0 -1px;
         }
 
-        .p-header { margin-bottom: 12px; }
-        .p-title { font-size: 20px; font-weight: 800; color: var(--text-main); margin: 0 0 4px 0; letter-spacing: -0.5px; }
-        .p-subtitle { font-size: 13px; color: var(--text-sec); }
+        .p-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .p-title { font-size: 22px; font-weight: 800; color: var(--text-main); margin: 0; letter-spacing: -0.5px; }
+        
+        .basket-hero-img {
+            width: 100%; height: auto; max-height: 220px;
+            object-fit: cover; border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+            background: #f8fafc;
+        }
 
         /* OPÇÕES DE PREÇO */
-        .p-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .p-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
         
         .option-row {
             display: flex; justify-content: space-between; align-items: center;
@@ -213,8 +144,8 @@
         
         .price-wrapper { display: flex; align-items: center; gap: 6px; }
         .price-normal { font-size: 14px; font-weight: 700; color: var(--text-main); }
-        .price-old { font-size: 12px; color: var(--text-sec); text-decoration: line-through; display: none; } /* Hidden initially */
-        .price-new { font-size: 15px; font-weight: 800; color: var(--success-dark); display: none; } /* Hidden initially */
+        .price-old { font-size: 12px; color: var(--text-sec); text-decoration: line-through; display: none; }
+        .price-new { font-size: 15px; font-weight: 800; color: var(--success-dark); display: none; }
 
         /* Revealed State */
         .p-options.revealed .price-normal { display: none; }
@@ -231,7 +162,7 @@
             width: 6px; height: 6px; background: white; border-radius: 50%;
         }
 
-        /* Botão de Ação - Variável */
+        /* BUTTONS */
         .btn-action-main {
             width: 100%; background: var(--primary); color: white;
             padding: 14px; border: none; border-radius: 12px;
@@ -247,27 +178,25 @@
         }
         @keyframes pulse-green { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-        /* CONTENT BELOW STICKY */
-        .p-content-scrollable { padding: 20px; }
-
+        /* LIST */
+        .p-content-list { padding: 20px; }
         .p-divider { 
             display: flex; align-items: center; gap: 10px; margin: 0 0 16px; 
             color: var(--text-sec); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
         }
         .p-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-        /* Grid de Itens VERTICAL - COMPACTO (UPDATED) */
+        /* COMPACT GRID */
         .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .item-card {
             background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px;
-            padding: 4px; text-align: center; /* Compact Padding */
+            padding: 4px; text-align: center;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            height: 110%; /* Changed from auto to 100% to fill row */
-            /* Removed min-height to fix whitespace issue */
+            height: 100%;
         }
         .item-img {
-            width: 100%; height: 90px; /* Reduced Height */
-            object-fit: contain; margin-bottom: 2px; /* Reduced Margin */
+            width: 100%; height: 90px;
+            object-fit: contain; margin-bottom: 2px;
             mix-blend-mode: multiply;
         }
         .item-qty {
@@ -281,7 +210,21 @@
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
         }
 
-        /* --- FIXED APP FOOTER (ONLY CHIPS) --- */
+        /* SEPARATOR */
+        .section-separator {
+            height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .section-separator::before {
+            content: ''; width: 100%; height: 2px;
+            background-image: linear-gradient(to right, transparent 0%, #cbd5e1 50%, transparent 100%);
+        }
+        .separator-icon {
+            position: absolute; background: var(--background); padding: 0 10px; color: #cbd5e1; font-size: 20px;
+        }
+
+        /* --- FOOTER & MODALS --- */
         .app-footer {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: rgba(255, 255, 255, 0.98);
@@ -291,10 +234,7 @@
             z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
         }
         .footer-label { font-size: 10px; font-weight: 700; color: var(--text-sec); text-align: center; text-transform: uppercase; margin-bottom: 4px; }
-        
-        .footer-actions {
-            display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;
-        }
+        .footer-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; }
         .f-chip {
             padding: 8px 14px; border-radius: 99px; font-size: 11px; font-weight: 600;
             display: flex; align-items: center; gap: 6px; cursor: pointer; border: none;
@@ -309,7 +249,6 @@
         .fc-zap { background: #DCFCE7; color: #16A34A; }
         .fc-info { background: var(--text-main); color: white; }
 
-        /* --- MODALS --- */
         .modal-wrap {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(15, 23, 42, 0.6); z-index: 1000;
@@ -318,85 +257,48 @@
         }
         .modal-wrap.active { opacity: 1; pointer-events: auto; }
         .modal-wrap.center { align-items: center; justify-content: center; }
-
         .modal-box {
             background: white; width: 100%; border-radius: 24px 24px 0 0;
             padding: 24px; max-width: 600px; margin: 0 auto;
             transform: translateY(100%); transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .modal-wrap.active .modal-box { transform: translateY(0); }
-        .modal-wrap.center .modal-box { 
-            border-radius: 24px; width: 90%; max-width: 360px; transform: scale(0.9); 
-        }
+        .modal-wrap.center .modal-box { border-radius: 24px; width: 90%; max-width: 360px; transform: scale(0.9); }
         .modal-wrap.center.active .modal-box { transform: scale(1); }
 
         .inp { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; background: #F8FAFC; }
-        .inp:focus { outline: 2px solid var(--primary); border-color: transparent; background: white; }
         .lbl { font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block; text-transform: uppercase; }
+        .close-btn { position: absolute; top: 16px; right: 16px; background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--text-sec); cursor: pointer; }
 
-        .close-btn {
-            position: absolute; top: 16px; right: 16px;
-            background: #F1F5F9; border: none; width: 32px; height: 32px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 18px; color: var(--text-muted); cursor: pointer;
-        }
-        
-        /* Modal Infos (UPDATED) */
         .company-header { text-align: center; padding: 24px; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; }
-        .company-logo-lg { width: 72px; height: 72px; border-radius: 50%; border: 4px solid white; box-shadow: var(--shadow-sm); margin-bottom: 12px; }
-        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; }
-        .stat-tile { background: #F8FAFC; padding: 16px; border-radius: var(--radius-md); text-align: center; border: 1px solid #E2E8F0; }
-        .stat-val { display: block; font-size: 16px; font-weight: 800; color: var(--primary); }
-        .stat-lbl { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-
-        .contact-row { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #E2E8F0; border-radius: var(--radius-md); text-decoration: none; color: var(--text-heading); font-weight: 600; margin: 0 20px 12px; }
+        .company-logo-lg { width: 72px; height: 72px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 12px; }
+        .contact-row { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #E2E8F0; border-radius: 12px; text-decoration: none; color: var(--text-main); font-weight: 600; margin: 0 20px 12px; }
         .contact-icon { width: 40px; height: 40px; background: #EFF6FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px; }
-
+        
         .info-block { padding: 0 24px 24px; text-align: left; font-size: 13px; color: var(--text-main); }
         .info-section { margin-bottom: 16px; }
-        .info-title { font-weight: 800; text-transform: uppercase; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: block; }
+        .info-title { font-weight: 800; text-transform: uppercase; font-size: 11px; color: var(--text-sec); margin-bottom: 4px; display: block; }
         .social-links { display: flex; gap: 12px; margin-top: 8px; }
         .social-btn { flex: 1; padding: 8px; border-radius: 8px; background: #F1F5F9; text-align: center; text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 12px; }
-
         .btn-buy-modal { width: 100%; background: var(--success); color: white; padding: 16px; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
 
     </style>
 </head>
 <body>
 
-    <!-- SMART HEADER -->
-    <header id="app-header" class="app-header">
+    <!-- STATIC HEADER -->
+    <header class="app-header">
         <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
              class="logo" alt="DA" onerror="this.src='https://placehold.co/100x100'">
-        <div class="header-info">
-            <div class="brand"><h1>Super Cestas Dona Antônia</h1></div>
-        </div>
+        <div class="brand"><h1>Super Cestas Dona Antônia</h1></div>
     </header>
 
-    <!-- HERO -->
-    <section class="hero">
-        <h2>Conheça as Cestas Básicas</h2>
-    </section>
-
-    <!-- NAV SLIDER -->
-    <nav id="app-nav" class="nav-slider-container">
-        <div class="nav-slider-box">
-            <div class="slider-wrapper">
-                <div class="scroll-btn left" onclick="scrollNav(-120)"><i class="ph-bold ph-caret-left"></i></div>
-                <div id="basket-slider" class="basket-scroller">
-                    <!-- JS Injection -->
-                </div>
-                <div class="scroll-btn right" onclick="scrollNav(120)"><i class="ph-bold ph-caret-right"></i></div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- CATALOG AREA -->
-    <main id="product-mount" class="catalog-area">
-        <!-- JS Injection -->
+    <!-- CATALOG FEED -->
+    <main id="catalog-mount" class="catalog-container">
+        <!-- JS Injection of All Baskets -->
     </main>
 
-    <!-- FIXED FOOTER (Chips Only) -->
+    <!-- FIXED FOOTER -->
     <footer class="app-footer">
         <div class="footer-label">Conheça Nossa Empresa</div>
         <div class="footer-actions">
@@ -407,7 +309,7 @@
         </div>
     </footer>
 
-    <!-- LEAD MODAL -->
+    <!-- MODALS -->
     <div id="modal-lead" class="modal-wrap" onclick="if(event.target===this) closeModal('lead')">
         <div class="modal-box">
             <button class="close-btn" onclick="closeModal('lead')"><i class="ph-bold ph-x"></i></button>
@@ -429,44 +331,31 @@
                 <input type="text" id="leadBairro" class="inp" placeholder="Ex: Pedra 90">
             </div>
             <input type="hidden" id="leadContext">
-            <button onclick="sendLead()" class="btn-buy-modal"><i class="ph-bold ph-whatsapp-logo"></i> Garantir Preço com Desconto</button>
+            <button onclick="sendLead()" class="btn-buy-modal"><i class="ph-bold ph-whatsapp-logo"></i> Enviar Pedido</button>
         </div>
     </div>
 
-    <!-- INFO MODAL (UPDATED) -->
     <div id="modal-info" class="modal-wrap center" onclick="if(event.target===this) closeModal('info')">
         <div class="modal-box" style="text-align:center; max-height: 85vh; overflow-y: auto;">
             <button class="close-btn" onclick="closeModal('info')" style="top:10px; right:10px;"><i class="ph-bold ph-x"></i></button>
             <div class="company-header">
                 <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="company-logo-lg" onerror="this.src='https://placehold.co/100x100'">
-                <h3 style="margin:0; font-size:18px; color:var(--text-heading);">Dona Antônia</h3>
-                <p style="margin:4px 0 0; font-size:12px; color:var(--text-muted);">CNPJ: 51.385.335.0001-06</p>
+                <h3 style="margin:0; font-size:18px; color:var(--text-main);">Dona Antônia</h3>
+                <p style="margin:4px 0 0; font-size:12px; color:var(--text-sec);">CNPJ: 51.385.335.0001-06</p>
             </div>
-
             <div class="info-block">
                  <div class="info-section">
                     <span class="info-title">Sobre Nós</span>
-                    <p style="margin:0;">🔸️Cesta Básica em Cuiabá e Várzea Grande.<br>
-                    ⭐ 99681-3588 | 99815-0975<br>
-                    💸 Pague só na entrega na sua casa.<br>
-                    👇 Pedidos Somente por Whatsapp</p>
+                    <p style="margin:0;">🔸️Cesta Básica em Cuiabá e Várzea Grande.<br>⭐ 99681-3588 | 99815-0975<br>💸 Pague só na entrega.<br>👇 Pedidos Somente por Whatsapp</p>
                 </div>
-
                 <div class="info-section">
                     <span class="info-title">Endereço</span>
                     <p style="margin:0;">R. Trinta, 105 - Jardim Nossa Sra. Aparecida<br>Cuiabá - MT, 78090-660</p>
                 </div>
-
                 <div class="info-section">
-                    <span class="info-title">Horário de Funcionamento</span>
-                    <p style="margin:0; font-size:12px; line-height:1.6;">
-                        Segunda a Sexta: 08:00–12:00<br>
-                        Sábado: 08:00–12:00<br>
-                        Domingo: Fechado<br>
-                        <em style="color:var(--text-muted);">Feriados: Fechado</em>
-                    </p>
+                    <span class="info-title">Horário</span>
+                    <p style="margin:0; font-size:12px; line-height:1.6;">Seg-Sex: 08:00–12:00<br>Sáb: 08:00–12:00<br>Dom/Feriados: Fechado</p>
                 </div>
-
                 <div class="info-section">
                     <span class="info-title">Redes Sociais</span>
                     <div class="social-links">
@@ -475,30 +364,27 @@
                     </div>
                 </div>
             </div>
-            
             <div style="padding: 0 24px 24px; text-align: center;">
                 <div style="background:#ECFDF5; color:#065F46; padding:10px; border-radius:8px; font-size:12px; font-weight:700;"><i class="ph-money"></i> Pague só na entrega</div>
             </div>
         </div>
     </div>
 
-    <!-- CONTACT MODAL -->
     <div id="modal-contact" class="modal-wrap center" onclick="if(event.target===this) closeModal('contact')">
         <div class="modal-box">
             <button class="close-btn" onclick="closeModal('contact')" style="top:10px; right:10px;"><i class="ph-bold ph-x"></i></button>
-            <div style="padding:24px 24px 10px;"><h3 class="modal-title">Fale Conosco</h3><p class="modal-sub" style="margin-bottom:16px;">Clique para chamar:</p></div>
+            <div style="padding:24px 24px 10px;"><h3 class="modal-title" style="margin:0; font-size:18px;">Fale Conosco</h3><p style="margin:4px 0 16px; color:var(--text-sec); font-size:14px;">Clique para chamar:</p></div>
             <a href="tel:65996813588" class="contact-row"><div class="contact-icon"><i class="ph-phone"></i></div><span>(65) 99681-3588</span></a>
             <a href="https://wa.me/5565998150975" class="contact-row"><div class="contact-icon" style="color:#16A34A; background:#DCFCE7;"><i class="ph-whatsapp-logo"></i></div><span>(65) 99815-0975</span></a>
-            <div style="text-align: center; margin-top: 10px; padding-bottom: 20px;"><p style="font-size: 11px; color: var(--text-muted);">Seg a Sáb: 08:00 às 12:00</p></div>
+            <div style="text-align: center; margin-top: 10px; padding-bottom: 20px;"><p style="font-size: 11px; color: var(--text-sec);">Seg a Sáb: 08:00 às 12:00</p></div>
         </div>
     </div>
 
     <script>
-        // --- DATA LAYER (PRICING STRATEGY) ---
-        // PRICES UPDATED: Norm is Anchor (Higher), Desc is the requested "Correct Value"
+        // --- DATA ---
         const BASKETS = {
             'GRANDE': {
-                name: 'Cesta<br>Grande',
+                name: 'Cesta Grande',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
                 opts: [
                     { n: 'Com Arroz Tio Alvino', norm: 'R$ 380,00', desc: 'R$ 355,00', sel: true },
@@ -517,7 +403,7 @@
                 ]
             },
             'MEDIA': {
-                name: 'Cesta<br>Média',
+                name: 'Cesta Média',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
                 opts: [
                     { n: 'Com Arroz Tio Alvino', norm: 'R$ 320,00', desc: 'R$ 300,00', sel: true },
@@ -536,7 +422,7 @@
                 ]
             },
             'PEQUENA': {
-                name: 'Cesta<br>Pequena',
+                name: 'Cesta Pequena',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
                 opts: [
                     { n: 'Com Arroz Tio Alvino', norm: 'R$ 215,00', desc: 'R$ 200,00', sel: true },
@@ -555,7 +441,7 @@
                 ]
             },
             'MINI': {
-                name: 'Cesta<br>Mini',
+                name: 'Cesta Mini',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
                 opts: [
                     { n: 'Com Arroz Tio Alvino', norm: 'R$ 165,00', desc: 'R$ 155,00', sel: true },
@@ -573,7 +459,7 @@
                 ]
             },
             'ECONOMICA': {
-                name: 'Cesta<br>Econômica',
+                name: 'Cesta Econômica',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
                 opts: [{ n: 'Valor Único', norm: 'R$ 85,00', desc: 'R$ 80,00', sel: true }],
                 items: [
@@ -586,7 +472,11 @@
             }
         };
 
-        // --- IMAGE LOGIC ---
+        // --- STATE MANAGEMENT ---
+        const STATE = {
+            revealed: {}, // Stores 'key': boolean
+        };
+
         function getImg(n) {
             const low = n.toLowerCase();
             const f = 'img/alimento/';
@@ -623,116 +513,110 @@
             return `https://placehold.co/150x150/f1f5f9/94a3b8?text=${n.substr(0,3)}`;
         }
 
-        // --- CORE ---
-        let currKey = 'GRANDE';
-        let isDiscountRevealed = false;
-
-        function renderNavSlider() {
-            const container = document.getElementById('basket-slider');
+        function renderAllProducts() {
+            const container = document.getElementById('catalog-mount');
             const keys = ['GRANDE', 'MEDIA', 'PEQUENA', 'MINI', 'ECONOMICA'];
-            const sliderHtml = keys.map(k => {
-                const b = BASKETS[k];
-                const activeClass = k === currKey ? 'active' : '';
-                return `
-                <div class="nav-card ${activeClass}" onclick="setBasket('${k}')">
-                    <img src="${b.img}" class="nav-card-img" alt="${b.name}">
-                    <div class="nav-card-body">
-                        <span class="nav-card-name">${b.name}</span>
-                    </div>
-                    <div class="active-indicator"><i class="ph-bold ph-check"></i></div>
-                </div>
-            `}).join('');
-            container.innerHTML = sliderHtml;
-        }
-
-        function renderProductView() {
-            const data = BASKETS[currKey];
-            const selOpt = data.opts.find(o => o.sel) || data.opts[0];
-            const mount = document.getElementById('product-mount');
-
-            // Logic to determine what prices to show based on state
-            const optionsHtml = data.opts.map((o, i) => `
-                <div class="option-row ${o.sel ? 'selected' : ''}" onclick="setOption(${i})">
-                    <div class="option-info">
-                        <span class="option-name">${o.n}</span>
-                        <div class="price-wrapper">
-                             <span class="price-normal" style="display: ${isDiscountRevealed ? 'none' : 'block'}">${o.norm}</span>
-                             <span class="price-old" style="display: ${isDiscountRevealed ? 'block' : 'none'}">${o.norm}</span>
-                             <span class="price-new" style="display: ${isDiscountRevealed ? 'block' : 'none'}">${o.desc}</span>
+            
+            let html = '';
+            
+            keys.forEach((key, index) => {
+                const data = BASKETS[key];
+                const isRevealed = STATE.revealed[key] || false;
+                
+                // Get selected option
+                const selOpt = data.opts.find(o => o.sel) || data.opts[0];
+                
+                // PERFORMANCE LOGIC:
+                // First basket (Grande) is eager/high priority for fast LCP.
+                // Others are lazy/auto.
+                const imgLoading = index === 0 ? 'eager' : 'lazy';
+                const fetchPriority = index === 0 ? 'high' : 'auto';
+                
+                // Options HTML
+                const optionsHtml = data.opts.map((o, i) => `
+                    <div class="option-row ${o.sel ? 'selected' : ''}" onclick="selectOption('${key}', ${i})">
+                        <div class="option-info">
+                            <span class="option-name">${o.n}</span>
+                            <div class="price-wrapper">
+                                 <span class="price-normal" style="display: ${isRevealed ? 'none' : 'block'}">${o.norm}</span>
+                                 <span class="price-old" style="display: ${isRevealed ? 'block' : 'none'}">${o.norm}</span>
+                                 <span class="price-new" style="display: ${isRevealed ? 'block' : 'none'}">${o.desc}</span>
+                            </div>
                         </div>
+                        <div class="radio-indicator"></div>
                     </div>
-                    <div class="radio-indicator"></div>
-                </div>
-            `).join('');
+                `).join('');
 
-            const totalItems = data.items.reduce((acc, item) => acc + item.q, 0);
+                const totalItems = data.items.reduce((acc, item) => acc + item.q, 0);
 
-            const itemsHtml = data.items.map(i => {
-                const qtd = i.q === 1 ? '1 UN' : `${i.q} UN`; // Compact Qty Text
-                return `
-                <div class="item-card">
-                    <img src="${getImg(i.n)}" class="item-img" loading="lazy">
-                    <div class="item-qty">${qtd}</div>
-                    <div class="item-name">${i.n}</div>
-                </div>`;
-            }).join('');
+                const itemsHtml = data.items.map(i => {
+                    const qtd = i.q === 1 ? '1 UN' : `${i.q} UN`;
+                    return `
+                    <div class="item-card">
+                        <img src="${getImg(i.n)}" class="item-img" loading="lazy" decoding="async">
+                        <div class="item-qty">${qtd}</div>
+                        <div class="item-name">${i.n}</div>
+                    </div>`;
+                }).join('');
 
-            const btnText = isDiscountRevealed ? 
-                '<i class="ph-bold ph-star"></i> GARANTIR DESCONTO POR 30 DIAS' : 
-                '<i class="ph-bold ph-eye"></i> VER VALOR COM DESCONTO';
+                const btnText = isRevealed ? 
+                    '<i class="ph-bold ph-star"></i> GARANTIR DESCONTO POR 30 DIAS' : 
+                    '<i class="ph-bold ph-eye"></i> VER VALOR COM DESCONTO';
 
-            const btnClass = isDiscountRevealed ? 'btn-action-main revealed' : 'btn-action-main';
+                const btnClass = isRevealed ? 'btn-action-main revealed' : 'btn-action-main';
 
-            mount.innerHTML = `
-                <article class="product-card">
-                    <div class="product-info-sticky">
-                         <div class="p-header">
-                            <h2 class="p-title">${data.name.replace('<br>', ' ')}</h2>
+                html += `
+                    <article class="product-section" id="basket-${key}">
+                        <div class="p-header-block">
+                             <div class="p-title-row">
+                                <h2 class="p-title">${data.name}</h2>
+                             </div>
+                             
+                             <img src="${data.img}" 
+                                  class="basket-hero-img" 
+                                  alt="${data.name}"
+                                  loading="${imgLoading}"
+                                  fetchpriority="${fetchPriority}">
+
+                            <div class="p-options ${isRevealed ? 'revealed' : ''}">${optionsHtml}</div>
+                            
+                            <button class="${btnClass}" onclick="handleAction('${key}')">
+                                ${btnText}
+                            </button>
                         </div>
-                        <div class="p-options ${isDiscountRevealed ? 'revealed' : ''}">${optionsHtml}</div>
-                        
-                        <button class="${btnClass}" onclick="handleMainAction()">
-                            ${btnText}
-                        </button>
-                    </div>
-                    <div class="p-content-scrollable">
-                        <div class="p-divider"><i class="ph-bold ph-basket"></i> ${totalItems} ITENS INCLUSOS</div>
-                        <div class="items-grid">${itemsHtml}</div>
-                    </div>
-                </article>
-            `;
+                        <div class="p-content-list">
+                            <div class="p-divider"><i class="ph-bold ph-basket"></i> ${totalItems} ITENS INCLUSOS</div>
+                            <div class="items-grid">${itemsHtml}</div>
+                        </div>
+                    </article>
+                `;
+
+                // Add Separator if not last
+                if (index < keys.length - 1) {
+                    html += `<div class="section-separator"><div class="separator-icon"><i class="ph-fill ph-circles-three-plus"></i></div></div>`;
+                }
+            });
+
+            container.innerHTML = html;
         }
 
-        function setBasket(k) {
-            currKey = k;
-            isDiscountRevealed = false; // Reset discount view on change
-            renderNavSlider();
-            renderProductView();
-            window.scrollTo({ top: 80, behavior: 'smooth' });
-            trackEvent('ViewBasket', { name: k });
+        // --- ACTIONS ---
+        function selectOption(key, idx) {
+            BASKETS[key].opts.forEach((o, i) => o.sel = i === idx);
+            renderAllProducts();
         }
 
-        function setOption(idx) {
-            BASKETS[currKey].opts.forEach((o, i) => o.sel = i === idx);
-            renderProductView();
-        }
-
-        function handleMainAction() {
-            if (!isDiscountRevealed) {
-                // Reveal Logic
-                isDiscountRevealed = true;
-                renderProductView();
-                trackEvent('RevealDiscount', { basket: currKey });
+        function handleAction(key) {
+            const isRevealed = STATE.revealed[key];
+            if (!isRevealed) {
+                STATE.revealed[key] = true;
+                renderAllProducts();
+                trackEvent('RevealDiscount', { basket: key });
             } else {
-                // Open Modal Logic
-                const data = BASKETS[currKey];
+                const data = BASKETS[key];
                 const selOpt = data.opts.find(o => o.sel);
-                openLead(`${data.name.replace('<br>', ' ')} - ${selOpt.n} (${selOpt.desc})`);
+                openLead(`${data.name} - ${selOpt.n} (${selOpt.desc})`);
             }
-        }
-
-        function scrollNav(amount) {
-            document.getElementById('basket-slider').scrollBy({ left: amount, behavior: 'smooth' });
         }
 
         // --- MODALS ---
@@ -747,42 +631,19 @@
         function sendLead() {
             const name = document.getElementById('leadName').value;
             const city = document.getElementById('leadCity').value;
-            const bairro = document.getElementById('leadBairro').value || 'Não informado'; // Optional handle
+            const bairro = document.getElementById('leadBairro').value || 'Não informado'; 
             const ctx = document.getElementById('leadContext').value;
             if(!name) return alert('Por favor, informe seu nome.');
             
-            const msg = `Olá! Me chamo *${name}*, sou de *${city}*, do bairro *${bairro}*.\n\nQuero Garantir o preço com desconto para a cesta: *${ctx}* pelos próximos 30 dias.\n\nConfirmado?`;
+            const msg = `Olá! Me chamo *${name}*, sou de *${city}* (${bairro}).\nTenho interesse em: *${ctx}*.\nGostaria de garantir meu desconto!`;
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             trackEvent('Lead', { value: 0 });
             closeModal('lead');
         }
 
-        // --- SCROLL LOGIC ---
-        let lastY = 0;
-        window.addEventListener('scroll', () => {
-            const currY = window.scrollY;
-            const head = document.getElementById('app-header');
-            const nav = document.getElementById('app-nav');
-            if (currY > 80) {
-                if (currY > lastY) {
-                    head.classList.add('hidden');
-                    nav.classList.add('hidden');
-                } else {
-                    head.classList.remove('hidden');
-                    nav.classList.remove('hidden');
-                }
-            } else {
-                head.classList.remove('hidden');
-                nav.classList.remove('hidden');
-            }
-            lastY = currY;
-        });
-
-        // INIT
-        window.onload = function() {
-            renderNavSlider();
-            renderProductView();
-        };
+        // --- INITIALIZATION (Optimized) ---
+        // Run immediately instead of waiting for window.onload (all resources)
+        renderAllProducts();
 
     </script>
 </body>
