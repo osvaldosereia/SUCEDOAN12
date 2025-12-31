@@ -751,7 +751,7 @@
             const ctx = document.getElementById('leadContext').value;
             if(!name) return alert('Por favor, informe seu nome.');
             
-            const msg = `Olá! Me chamo *${name}*, sou de *${city}*, do bairro ${bairro}.\nQuero Garantir o preço com desconto para a cesta: *${ctx}*.\n pelos próximos 30 dias. Confirmado?`;
+            const msg = `Olá! Me chamo *${name}*, sou de *${city}*, do bairro *${bairro}*.\n\nQuero Garantir o preço com desconto para a cesta: *${ctx}* pelos próximos 30 dias.\n\nConfirmado?`;
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             trackEvent('Lead', { value: 0 });
             closeModal('lead');
