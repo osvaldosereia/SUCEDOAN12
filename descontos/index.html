@@ -61,7 +61,7 @@
             --border: #E2E8F0;
             
             --header-h: 60px;
-            --footer-h: 80px; 
+            --footer-h: 160px; /* Aumentado para acomodar o botão grande + chips */
             
             --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
             --shadow-float: 0 20px 25px -5px rgba(0,0,0,0.1);
@@ -95,16 +95,8 @@
 
         /* --- HERO --- */
         .hero { margin-top: var(--header-h); padding: 20px 16px 10px; text-align: center; }
-        .hero h2 { font-size: 22px; font-weight: 800; margin: 0 0 16px; letter-spacing: -0.5px; }
-        .hero-btn {
-            background: var(--primary); color: white; border: none;
-            padding: 12px 24px; border-radius: 99px; font-weight: 700; font-size: 14px;
-            display: inline-flex; align-items: center; gap: 8px;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-            cursor: pointer; transition: transform 0.2s;
-        }
-        .hero-btn:active { transform: scale(0.96); }
-
+        .hero h2 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: var(--text-main); }
+        
         /* --- STICKY BASKET SLIDER (VERTICAL NAV) --- */
         .nav-slider-container {
             position: sticky; top: 0; z-index: 40;
@@ -138,7 +130,7 @@
         }
         .basket-scroller::-webkit-scrollbar { display: none; }
 
-        /* NAV CARD - AJUSTADO HEIGHT */
+        /* NAV CARD - AJUSTADO HEIGHT (-30px) */
         .nav-card {
             flex: 0 0 28%; /* ~3.5 itens na tela mobile */
             scroll-snap-align: start;
@@ -150,23 +142,24 @@
             cursor: pointer; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             box-shadow: var(--shadow-card);
             position: relative;
-            height: 210px; /* Reduzido de 280px para 210px */
+            height: 180px; /* Reduzido de 210px para 180px */
         }
         
         .nav-card-img {
             width: 100%; 
-            height: 150px; /* Reduzido de 220px para 150px */
+            height: 120px; /* Reduzido de 150px para 120px */
             object-fit: cover;
             background: #f1f5f9;
         }
         .nav-card-body {
-            padding: 8px 4px; text-align: center;
+            padding: 6px 4px; text-align: center;
             background: white; flex-grow: 1;
             display: flex; flex-direction: column; justify-content: center;
         }
         .nav-card-name {
-            font-size: 10px; font-weight: 800; color: var(--text-main);
-            text-transform: uppercase; line-height: 1.2;
+            font-size: 12px; /* Fonte Aumentada */
+            font-weight: 800; color: var(--text-main);
+            text-transform: uppercase; line-height: 1.1;
         }
         
         /* Active State */
@@ -198,18 +191,6 @@
         }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
-        /* 1. Imagem Imersiva VERTICAL */
-        .p-image-container { 
-            position: relative; width: 100%; 
-            background: #F1F5F9;
-            aspect-ratio: 3/4; /* Força proporção vertical */
-        }
-        .p-image { 
-            width: 100%; height: 100%; 
-            object-fit: cover; display: block;
-        }
-        .p-gradient { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(to top, rgba(0,0,0,0.1), transparent); }
-
         /* 2. Info & Compra */
         .p-content { padding: 20px; }
         
@@ -240,17 +221,6 @@
             width: 8px; height: 8px; background: white; border-radius: 50%;
         }
 
-        /* Botão de Compra */
-        .btn-buy-main {
-            width: 100%; background: var(--success); color: white;
-            padding: 16px; border: none; border-radius: 16px;
-            font-size: 16px; font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-            transition: transform 0.1s;
-        }
-        .btn-buy-main:active { transform: scale(0.98); background: var(--success-dark); }
-
         /* Divisor */
         .p-divider { 
             display: flex; align-items: center; gap: 10px; margin: 24px 0 16px; 
@@ -258,16 +228,16 @@
         }
         .p-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-        /* Grid de Itens VERTICAL */
+        /* Grid de Itens VERTICAL - AJUSTE HEIGHT (-20px) */
         .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .item-card {
             background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px;
             padding: 10px 5px; text-align: center;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            height: 240px; 
+            height: 220px; /* Reduzido de 240px para 220px */
         }
         .item-img {
-            width: 100%; height: 150px; 
+            width: 100%; height: 130px; 
             object-fit: contain; margin-bottom: 6px;
             mix-blend-mode: multiply;
         }
@@ -281,24 +251,33 @@
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
         }
 
-        /* --- FIXED APP FOOTER --- */
+        /* --- FIXED APP FOOTER + BIG BUTTON --- */
         .app-footer {
             position: fixed; bottom: 0; left: 0; right: 0;
             height: var(--footer-h);
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(12px); border-top: 1px solid var(--border);
-            display: flex; flex-direction: column; justify-content: center; padding: 0 16px;
-            z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
+            display: flex; flex-direction: column; justify-content: flex-start; 
+            padding: 16px 16px; gap: 12px;
+            z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
         }
-        .footer-label { 
-            font-size: 10px; font-weight: 700; color: var(--text-sec); 
-            text-transform: uppercase; margin-bottom: 8px; text-align: center; letter-spacing: 0.5px;
+        
+        .footer-cta {
+            width: 100%; background: var(--primary); color: white;
+            padding: 14px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            animation: pulse-btn 2s infinite;
         }
+        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
         .footer-actions {
-            display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+            display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;
         }
         .f-chip {
-            padding: 8px 12px; border-radius: 99px; font-size: 11px; font-weight: 600;
+            padding: 6px 12px; border-radius: 99px; font-size: 11px; font-weight: 600;
             display: flex; align-items: center; gap: 6px; cursor: pointer; border: none;
             text-decoration: none; transition: transform 0.1s;
             flex: 1; justify-content: center; max-width: 120px; min-width: fit-content;
@@ -362,6 +341,15 @@
         .contact-row:active { background: #F1F5F9; }
         .contact-icon { width: 40px; height: 40px; background: #EFF6FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px; }
 
+        /* Botão de Compra Primário no Modal */
+        .btn-buy-modal {
+            width: 100%; background: var(--success); color: white;
+            padding: 16px; border: none; border-radius: 16px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
     </style>
 </head>
 <body>
@@ -376,12 +364,9 @@
         </div>
     </header>
 
-    <!-- HERO -->
+    <!-- HERO (Sem Botão) -->
     <section class="hero">
-        <h2>Economia real na<br><span style="color:var(--primary)">mesa da sua família</span></h2>
-        <button onclick="openLead('Geral')" class="hero-btn">
-            <i class="ph-bold ph-ticket"></i> GARANTIR MEU DESCONTO
-        </button>
+        <h2>Conheça as Cestas Básicas</h2>
     </section>
 
     <!-- STICKY NAV SLIDER (Vertical Cards) -->
@@ -402,15 +387,17 @@
         <!-- JS Injection -->
     </main>
 
-    <!-- FIXED FOOTER -->
+    <!-- FIXED FOOTER (Big Button + Chips) -->
     <footer class="app-footer">
-        <div class="footer-label">Conheça Nossa Empresa</div>
         <div class="footer-actions">
             <button onclick="openModal('info')" class="f-chip fc-info"><i class="ph-bold ph-storefront"></i> Sobre</button>
             <button onclick="openModal('contact')" class="f-chip fc-zap"><i class="ph-bold ph-whatsapp-logo"></i> Contato</button>
             <a href="https://instagram.com" target="_blank" class="f-chip fc-insta"><i class="ph-bold ph-instagram-logo"></i> Insta</a>
             <a href="https://facebook.com" target="_blank" class="f-chip fc-face"><i class="ph-bold ph-facebook-logo"></i> Face</a>
         </div>
+        <button onclick="openLead('Geral')" class="footer-cta">
+            <i class="ph-bold ph-ticket"></i> GARANTIR MEU DESCONTO
+        </button>
     </footer>
 
     <!-- LEAD MODAL -->
@@ -428,7 +415,7 @@
                 <input type="text" id="leadBairro" class="inp" placeholder="Ex: Pedra 90">
             </div>
             <input type="hidden" id="leadContext">
-            <button onclick="sendLead()" class="btn-buy-main"><i class="ph-bold ph-whatsapp-logo"></i> Enviar Pedido</button>
+            <button onclick="sendLead()" class="btn-buy-modal"><i class="ph-bold ph-whatsapp-logo"></i> Enviar Pedido</button>
         </div>
     </div>
 
@@ -464,10 +451,10 @@
     </div>
 
     <script>
-        // --- DATA LAYER ---
+        // --- DATA LAYER (NAMES UPDATED TO 2 LINES) ---
         const BASKETS = {
             'ECONOMICA': {
-                name: 'Cesta Econômica',
+                name: 'Cesta<br>Econômica',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
                 opts: [{ n: 'Valor Único', p: 'R$ 85,00', sel: true }],
                 items: [
@@ -479,7 +466,7 @@
                 ]
             },
             'MINI': {
-                name: 'Cesta Mini',
+                name: 'Cesta<br>Mini',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
                 opts: [
                     { n: 'Com Arroz Tio Alvino', p: 'R$ 165,00', sel: true },
@@ -497,7 +484,7 @@
                 ]
             },
             'PEQUENA': {
-                name: 'Cesta Pequena',
+                name: 'Cesta<br>Pequena',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
                 opts: [
                     { n: 'Com Arroz Tio Alvino', p: 'R$ 215,00', sel: true },
@@ -516,7 +503,7 @@
                 ]
             },
             'MEDIA': {
-                name: 'Cesta Média',
+                name: 'Cesta<br>Média',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
                 opts: [
                     { n: 'Com Arroz Tio Alvino', p: 'R$ 320,00', sel: true },
@@ -535,7 +522,7 @@
                 ]
             },
             'GRANDE': {
-                name: 'Cesta Grande',
+                name: 'Cesta<br>Grande',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
                 opts: [
                     { n: 'Com Arroz Tio Alvino', p: 'R$ 380,00', sel: true }
@@ -606,7 +593,7 @@
                 <div class="nav-card ${activeClass}" onclick="setBasket('${k}')">
                     <img src="${b.img}" class="nav-card-img" alt="${b.name}">
                     <div class="nav-card-body">
-                        <span class="nav-card-name">${k}</span>
+                        <span class="nav-card-name">${b.name}</span>
                     </div>
                     <div class="active-indicator"><i class="ph-bold ph-check"></i></div>
                 </div>
@@ -642,17 +629,22 @@
 
             mount.innerHTML = `
                 <article class="product-card">
-                    <!-- FOTO GRANDE REMOVIDA DAQUI - FOCO TOTAL NO CONTEUDO -->
+                    <!-- FOTO GRANDE REMOVIDA -->
                     
                     <div class="p-content">
+                        <!-- Botão de Compra no Topo também (Removido por pedido, mas o fluxo pedia?) 
+                             Não, o pedido foi "role a lista de produtos no inicio mostrando desde os valores"
+                             Isso significa que ao trocar, deve mostrar o topo do card onde estão os valores -->
+                        
                         <div class="p-header">
-                            <h2 class="p-title">${data.name}</h2>
+                            <h2 class="p-title">${data.name.replace('<br>', ' ')}</h2>
                             <div class="p-price-tag">${selOpt.p}</div>
                         </div>
 
                         <div class="p-options">${optionsHtml}</div>
 
-                        <button class="btn-buy-main" onclick="openLead('${data.name} - ${selOpt.n} (${selOpt.p})')">
+                        <!-- Botão Interno -->
+                        <button class="btn-buy-main" onclick="openLead('${data.name.replace('<br>', ' ')} - ${selOpt.n} (${selOpt.p})')">
                             <i class="ph-bold ph-whatsapp-logo"></i> ENCOMENDAR NO WHATS
                         </button>
 
@@ -672,7 +664,8 @@
             currKey = k;
             renderNavSlider();
             renderProductView();
-            // Scroll para ajuste fino se desejar
+            // Scroll to show content from top (Header height + padding)
+            window.scrollTo({ top: 80, behavior: 'smooth' });
             trackEvent('ViewBasket', { name: k });
         }
 
