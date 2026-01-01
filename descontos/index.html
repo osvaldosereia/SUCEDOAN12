@@ -847,6 +847,11 @@
             
             msg += "✅ *Validade:* Todo o mês de Janeiro.";
             
+            // Adicionando links extras ao final da mensagem
+            msg += "\n\n👀 *Veja as cestas:*\ndonaantonia.com.br";
+            msg += "\n\n🎁 *Grupo de Descontos e Sorteios:*\nhttps://chat.whatsapp.com/IOI3gSBLRVk4jGK2QMunp1";
+            msg += "\n\n📸 *Siga no Instagram:*\nhttps://www.instagram.com/cestas.dona.antonia.cuiaba.vg/";
+
             const phone = "5565998150975";
             window.location.href = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
             
