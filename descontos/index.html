@@ -12,6 +12,8 @@
     <meta name="description" content="Confira todas as nossas Cestas Básicas: Econômica, Pequena, Média e Grande. Entrega em Cuiabá e Várzea Grande.">
     <meta name="theme-color" content="#ffffff">
     <meta name="robots" content="index, follow">
+    <!-- Verification Meta Tag -->
+    <meta name="facebook-domain-verification" content="sa60eslx69a2vs9jaojicyissuoueq" />
     <link rel="canonical" href="https://www.donaantonia.com.br/catalogo">
 
     <!-- PERFORMANCE HINTS -->
@@ -637,6 +639,7 @@
             const selOpt = data.opts.find(o => o.sel) || data.opts[0];
 
             // Setup loading attributes for initial render (index provided) or updates (index = 999)
+            // If updating (index 999), we can use eager as it's already in viewport, or keep lazy.
             const isInitialHero = index === 0;
             const imgLoading = isInitialHero ? 'eager' : 'lazy';
             const fetchPriority = isInitialHero ? 'high' : 'auto';
