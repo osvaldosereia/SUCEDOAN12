@@ -241,29 +241,33 @@
         /* LIST & GRID */
         .p-content-list { padding: 20px; }
         
-        .p-count-badge {
-            text-align: center;
-            font-size: 14px;
-            font-weight: 800;
-            color: var(--primary);
-            background: var(--primary-light);
-            padding: 10px;
-            border-radius: 8px;
+        /* UNIFIED INFO BOX STYLES */
+        .info-summary {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+            border-radius: 12px;
+            padding: 14px 12px;
             margin-bottom: 16px;
-            letter-spacing: -0.3px;
-        }
-
-        .customization-note {
-            background: #FFFBEB; 
-            border: 1px solid #FEF3C7;
-            color: #B45309;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 700;
             text-align: center;
-            margin-top: 16px;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        
+        .info-summary-title {
+            color: #0369A1;
+            font-weight: 800;
+            font-size: 15px;
+            margin-bottom: 6px;
+            display: block;
+        }
+        
+        .info-summary-sub {
+            color: #0c4a6e;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.4;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px;
         }
 
         /* COMPACT GRID */
@@ -713,11 +717,16 @@
 
                 </div>
                 <div class="p-content-list" style="display: ${listDisplay};">
-                    <div class="p-count-badge">Essa Cesta possui ${totalItems} Produtos</div>
-                    <div class="items-grid">${itemsHtml}</div>
-                    <div class="customization-note">
-                        <i class="ph-bold ph-arrows-left-right"></i> Você pode personalizar sua cesta trocando os produtos que não quer.
+                    
+                    <!-- UNIFIED INFO BLOCK -->
+                    <div class="info-summary">
+                        <span class="info-summary-title">Essa Cesta possui ${totalItems} Produtos</span>
+                        <div class="info-summary-sub">
+                            <i class="ph-bold ph-arrows-left-right"></i> Você pode personalizar sua cesta trocando os produtos que não quer.
+                        </div>
                     </div>
+
+                    <div class="items-grid">${itemsHtml}</div>
                 </div>
             `;
         }
