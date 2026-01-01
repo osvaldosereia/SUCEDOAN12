@@ -89,7 +89,7 @@
             --danger: #EF4444; 
             
             --header-h: 60px;
-            --footer-h: 110px; /* Reduced slightly due to horizontal layout */
+            --footer-h: 140px; 
             
             --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
         }
@@ -112,11 +112,11 @@
         .logo { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; }
         .brand h1 { font-size: 16px; font-weight: 800; line-height: 1.2; margin: 0; color: var(--text-main); }
 
-        /* --- INTRO TEXT (ADJUSTED) --- */
+        /* --- INTRO TEXT --- */
         .intro-text {
             text-align: center;
             padding: 24px 16px 8px;
-            font-size: 18px; /* Increased Size */
+            font-size: 18px; 
             font-weight: 700;
             color: var(--text-sec);
             line-height: 1.5;
@@ -161,40 +161,28 @@
             background: #f8fafc;
         }
 
-        /* OPÇÕES DE PREÇO */
-        .p-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-        
-        .option-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; border: 2px solid var(--border); border-radius: 12px;
-            cursor: pointer; 
-            transition: border-color 0.2s, background-color 0.2s;
+        /* NOVAS OPÇÕES EM GRID (CARDS LADO A LADO) */
+        .p-options-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-bottom: 16px; 
         }
-        .option-row.selected { border-color: var(--primary); background: #F8FAFC; }
-        
-        .option-info { display: flex; flex-direction: column; }
-        .option-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
-        
-        .price-wrapper { display: flex; align-items: center; gap: 6px; }
-        .price-normal { font-size: 14px; font-weight: 700; color: var(--text-main); }
-        .price-old { font-size: 12px; color: var(--text-sec); text-decoration: line-through; display: none; }
-        .price-new { font-size: 15px; font-weight: 800; color: var(--green-strong); display: none; }
+        .p-options-grid.single { grid-template-columns: 1fr; } /* Para Economica */
 
-        .p-options.revealed .price-normal { display: none; }
-        .p-options.revealed .price-old { display: block; }
-        .p-options.revealed .price-new { display: block; }
-
-        .radio-indicator {
-            width: 18px; height: 18px; border-radius: 50%; border: 2px solid #CBD5E1;
-            position: relative; flex-shrink: 0;
+        .option-card {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 12px 8px; 
+            border: 1px solid var(--border); border-radius: 12px;
+            background: #F8FAFC;
+            text-align: center;
+            height: 100%;
         }
-        .option-row.selected .radio-indicator { border-color: var(--primary); background: var(--primary); }
-        .option-row.selected .radio-indicator::after {
-            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 6px; height: 6px; background: white; border-radius: 50%;
-        }
-
-        /* BUTTONS (OLD & NEW SPLIT) */
+        
+        .option-name { font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .price-normal { font-size: 16px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; }
+        
+        /* BUTTONS */
         .btn-action-main {
             width: 100%; background: var(--primary); color: white;
             padding: 20px; 
@@ -205,40 +193,6 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .btn-action-main:active { transform: scale(0.98); }
-
-        /* NEW SPLIT ACTION ROW */
-        .action-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 4px;
-        }
-        .btn-split {
-            flex: 1;
-            padding: 16px 8px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 800;
-            border: none;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-            transition: transform 0.1s;
-        }
-        .btn-split:active { transform: scale(0.97); }
-        
-        .btn-split.pay {
-            background: #EFF6FF;
-            color: var(--primary);
-            border: 1px solid #DBEAFE;
-        }
-        
-        .btn-split.order {
-            background: var(--green-strong);
-            color: white;
-            box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3);
-            animation: pulse-green 1s;
-        }
-
-        @keyframes pulse-green { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
         /* LIST & GRID */
         .p-content-list { padding: 20px; }
@@ -311,54 +265,58 @@
             position: absolute; background: var(--background); padding: 0 10px; color: #cbd5e1; font-size: 20px;
         }
 
-        /* --- FOOTER (UPDATED LAYOUT) --- */
+        /* --- FOOTER (UPDATED LAYOUT - STACKED) --- */
         .app-footer {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #F1F5F9; 
             backdrop-filter: blur(12px); border-top: 1px solid #E2E8F0;
             display: flex; flex-direction: column; justify-content: flex-end; 
-            padding: 10px 12px 16px; gap: 8px; 
+            padding: 10px 12px 16px; gap: 10px; 
             z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
         }
         .footer-label { 
             font-size: 11px; font-weight: 800; color: var(--text-main);
-            text-align: center; text-transform: uppercase; margin-bottom: 4px; 
+            text-align: center; text-transform: uppercase; margin-bottom: 0px; 
         }
         
-        /* NEW FOOTER ROW */
-        .footer-actions-row {
+        .footer-actions-col {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 10px;
             width: 100%;
         }
 
         .btn-social {
-            flex: 1; /* Makes them equal width */
-            padding: 12px 8px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 700;
+            width: 100%;
+            padding: 14px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
             text-decoration: none;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
             transition: transform 0.1s;
             cursor: pointer; border: none;
-            height: 48px;
         }
         .btn-social:active { transform: scale(0.98); }
 
         .btn-insta {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); 
-            color: white;
-            box-shadow: 0 3px 10px rgba(220, 39, 67, 0.25);
+            background: white; 
+            color: #E1306C;
+            border: 1px solid #E2E8F0;
+            font-size: 13px;
         }
         
         .btn-offers {
             background: #25D366; 
             color: white;
-            box-shadow: 0 3px 10px rgba(37, 211, 102, 0.25);
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+            font-size: 15px;
+            animation: pulse-green 1.5s infinite;
         }
 
+        @keyframes pulse-green { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+        /* MODALS & INPUTS */
         .modal-wrap {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(15, 23, 42, 0.6); z-index: 1000;
@@ -376,9 +334,24 @@
         .modal-wrap.center .modal-box { border-radius: 24px; width: 90%; max-width: 360px; transform: scale(0.9); }
         .modal-wrap.center.active .modal-box { transform: scale(1); }
 
-        .inp { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; background: #F8FAFC; }
+        .inp { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; background: #F8FAFC; font-size: 16px; color: var(--text-main); outline: none; transition: border-color 0.2s; }
+        .inp:focus { border-color: var(--primary); background: white; }
         .lbl { font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block; text-transform: uppercase; }
         
+        /* CITY SELECTOR */
+        .city-options { display: flex; gap: 10px; margin-bottom: 16px; }
+        .city-btn { 
+            flex: 1; padding: 14px; border: 2px solid var(--border); border-radius: 12px; 
+            background: #F8FAFC; color: var(--text-sec); font-weight: 700; font-size: 14px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .city-btn.selected {
+            border-color: var(--primary); background: var(--primary-light); color: var(--primary);
+        }
+        .error-msg {
+            color: var(--danger); font-size: 12px; font-weight: 700; text-align: center; margin-top: -8px; margin-bottom: 12px; display: none;
+        }
+
         /* Close btn accessibility */
         .close-btn { position: absolute; top: 16px; right: 16px; background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--text-sec); cursor: pointer; }
 
@@ -420,20 +393,51 @@
     <footer class="app-footer">
         <div class="footer-label">CONHEÇA NOSSA EMPRESA</div>
         
-        <div class="footer-actions-row">
-            <!-- INSTAGRAM BUTTON -->
-            <a href="https://instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="btn-social btn-insta">
-                <i class="ph-bold ph-instagram-logo"></i> Instagram
-            </a>
-            
-            <!-- WHATSAPP OFFERS BUTTON (RENAMED) -->
-            <button onclick="sendOffers()" class="btn-social btn-offers">
-                <i class="ph-bold ph-whatsapp-logo"></i> Salvar Contato
+        <div class="footer-actions-col">
+            <!-- WHATSAPP OFFERS BUTTON (PRIMARY) -->
+            <button onclick="openOffersModal()" class="btn-social btn-offers">
+                <i class="ph-bold ph-whatsapp-logo"></i> RECEBER DESCONTOS NO WHATSAPP
             </button>
+
+            <!-- INSTAGRAM BUTTON (SECONDARY) -->
+            <a href="https://instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="btn-social btn-insta">
+                <i class="ph-bold ph-instagram-logo"></i> Seguir no Instagram
+            </a>
         </div>
     </footer>
 
-    <!-- MODALS -->
+    <!-- MODAL: OFFERS / LEAD QUALIFICATION (NEW) -->
+    <div id="modal-offers" class="modal-wrap" onclick="if(event.target===this) closeModal('offers')">
+        <div class="modal-box" style="padding-top: 16px;">
+            <button class="close-btn" onclick="closeModal('offers')" aria-label="Fechar Modal"><i class="ph-bold ph-x"></i></button>
+            
+            <div style="text-align: left;">
+                <h2 style="margin:0 0 4px; font-size:20px;">Salvar Contato 📲</h2>
+                <p style="margin:0 0 20px; color:var(--text-sec); font-size:14px; line-height:1.4;">Preencha para receber a tabela de descontos atualizada no seu WhatsApp.</p>
+                
+                <label class="lbl">Seu Nome</label>
+                <input type="text" id="offerName" class="inp" placeholder="Digite seu nome...">
+
+                <label class="lbl">Sua Cidade</label>
+                <div class="city-options">
+                    <button class="city-btn" id="city-cba" onclick="selectCity('Cuiabá')">Cuiabá</button>
+                    <button class="city-btn" id="city-vg" onclick="selectCity('Várzea Grande')">Várzea Grande</button>
+                </div>
+                
+                <div id="offerError" class="error-msg">⚠️ Por favor, preencha seu nome e escolha a cidade.</div>
+
+                <button onclick="confirmOffers()" class="btn-buy-modal">
+                    <i class="ph-bold ph-whatsapp-logo"></i> Receber Tabela Agora
+                </button>
+                
+                <div style="text-align: center; font-size: 11px; color: var(--text-sec); margin-top: 10px;">
+                    <i class="ph-fill ph-lock-key"></i> Seus dados estão seguros
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: DIRECT ORDER -->
     <div id="modal-lead" class="modal-wrap" onclick="if(event.target===this) closeModal('lead')">
         <div class="modal-box" style="padding-top: 16px;">
             <button class="close-btn" onclick="closeModal('lead')" aria-label="Fechar Modal"><i class="ph-bold ph-x"></i></button>
@@ -448,6 +452,7 @@
                         <li>Dinheiro, Pix, Cartão de Débito</li>
                     </ul>
                     <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #E2E8F0; font-size: 12px; font-weight: 700; color: var(--danger);">
+                        <i class="ph-bold ph-warning"></i> Aviso: Não vendemos pra 30 dias
                     </div>
                 </div>
             </div>
@@ -588,6 +593,7 @@
         // --- STATE MANAGEMENT ---
         const STATE = {
             revealed: {}, // Stores 'key': boolean
+            offerCity: '' // Stores selected city for offers
         };
 
         function getImg(n) {
@@ -635,27 +641,22 @@
         function generateBasketInnerHtml(key, index) {
             const data = BASKETS[key];
             const isRevealed = STATE.revealed[key] || false;
-            const selOpt = data.opts.find(o => o.sel) || data.opts[0];
-
+            
             // Setup loading attributes for initial render (index provided) or updates (index = 999)
-            // If updating (index 999), we can use eager as it's already in viewport, or keep lazy.
             const isInitialHero = index === 0;
             const imgLoading = isInitialHero ? 'eager' : 'lazy';
             const fetchPriority = isInitialHero ? 'high' : 'auto';
 
-            const optionsHtml = data.opts.map((o, i) => `
-                <div class="option-row ${o.sel ? 'selected' : ''}" onclick="selectOption('${key}', ${i})">
-                    <div class="option-info">
-                        <span class="option-name">${o.n}</span>
-                        <div class="price-wrapper">
-                                <span class="price-normal" style="display: ${isRevealed ? 'none' : 'block'}">${o.norm}</span>
-                                <span class="price-old" style="display: ${isRevealed ? 'block' : 'none'}">${o.norm}</span>
-                                <span class="price-new" style="display: ${isRevealed ? 'block' : 'none'}">${o.desc}</span>
-                        </div>
-                    </div>
-                    <div class="radio-indicator"></div>
+            // GERAÇÃO DAS OPÇÕES EM GRID (SEM RADIO)
+            const optionsHtml = data.opts.map((o) => `
+                <div class="option-card">
+                    <span class="option-name">${o.n.replace('Com ', '')}</span>
+                    <span class="price-normal">${o.norm}</span>
                 </div>
             `).join('');
+            
+            // Classe grid ajustada se for apenas 1 opção
+            const gridClass = data.opts.length === 1 ? 'p-options-grid single' : 'p-options-grid';
 
             const totalItems = data.items.reduce((acc, item) => acc + item.q, 0);
 
@@ -673,22 +674,13 @@
             let actionHtml = '';
             
             if (isRevealed) {
-                // SPLIT BUTTONS
-                actionHtml = `
-                    <div class="action-row">
-                        <button class="btn-split pay" onclick="openLead('${data.name} (Ver Pagamento)')">
-                            <i class="ph-bold ph-credit-card"></i> Formas de Pagamento
-                        </button>
-                        <button class="btn-split order" onclick="orderDirect('${key}')">
-                            <i class="ph-bold ph-whatsapp-logo"></i> ENCOMENDAR
-                        </button>
-                    </div>
-                `;
+                // BUTTON DISAPPEARS ON REVEAL (NO ACTION BUTTONS HERE)
+                actionHtml = '';
             } else {
-                // SINGLE REVEAL BUTTON
+                // SINGLE REVEAL BUTTON (UPDATED TEXT)
                 actionHtml = `
                     <button class="btn-action-main" onclick="handleAction('${key}')">
-                        <i class="ph-bold ph-eye"></i> VER VALOR COM DESCONTO
+                        <i class="ph-bold ph-basket"></i> VER PRODUTOS DESTA CESTA
                     </button>
                 `;
             }
@@ -709,10 +701,10 @@
                             fetchpriority="${fetchPriority}"
                             width="600" height="337">
 
-                    <div class="p-options ${isRevealed ? 'revealed' : ''}">${optionsHtml}</div>
+                    <div class="${gridClass}">${optionsHtml}</div>
                     
                     <div style="display: ${isRevealed ? 'block' : 'none'}; text-align: center; font-size: 13px; color: var(--success-dark); margin-bottom: 12px; font-weight: 700;">
-                        <i class="ph-bold ph-calendar-check"></i> Desconto válido p/ todo o mês de Janeiro
+                        <i class="ph-bold ph-check-circle"></i> Lista de produtos completa abaixo
                     </div>
 
                     ${actionHtml}
@@ -736,7 +728,9 @@
         // --- RENDER LOGIC ---
         function renderAllProducts() {
             const container = document.getElementById('catalog-mount');
-            const keys = ['GRANDE', 'MEDIA', 'PEQUENA', 'MINI', 'ECONOMICA'];
+            
+            // ORDEM INVERTIDA: ECONOMICA -> GRANDE
+            const keys = ['ECONOMICA', 'MINI', 'PEQUENA', 'MEDIA', 'GRANDE'];
             
             let html = '';
             keys.forEach((key, index) => {
@@ -763,8 +757,9 @@
 
         // --- ACTIONS ---
         function selectOption(key, idx) {
+            // No selection logic needed visually anymore, 
+            // but we keep state for potential future use or analytics
             BASKETS[key].opts.forEach((o, i) => o.sel = i === idx);
-            updateBasket(key); // Targeted update only
         }
 
         function handleAction(key) {
@@ -772,7 +767,7 @@
             if (!isRevealed) {
                 STATE.revealed[key] = true;
                 updateBasket(key); // Targeted update only
-                trackEvent('RevealDiscount', { basket: key });
+                trackEvent('RevealProducts', { basket: key });
             }
         }
 
@@ -803,14 +798,46 @@
             closeModal('lead');
         }
 
-        // --- OFFERS ---
-        function sendOffers() {
-            let msg = "Estou salvando as ofertas de janeiro. 📅\n\n";
+        // --- OFFERS MODAL LOGIC (QUALIFICATION) ---
+        function openOffersModal() {
+            // Reset fields
+            document.getElementById('offerName').value = '';
+            document.getElementById('offerError').style.display = 'none';
+            STATE.offerCity = '';
+            
+            // Reset buttons visual state
+            document.getElementById('city-cba').classList.remove('selected');
+            document.getElementById('city-vg').classList.remove('selected');
+            
+            openModal('offers');
+            trackEvent('OpenOffersForm');
+        }
+
+        function selectCity(city) {
+            STATE.offerCity = city;
+            // UI Toggle
+            const isCba = city === 'Cuiabá';
+            document.getElementById('city-cba').classList.toggle('selected', isCba);
+            document.getElementById('city-vg').classList.toggle('selected', !isCba);
+        }
+
+        function confirmOffers() {
+            const name = document.getElementById('offerName').value.trim();
+            const city = STATE.offerCity;
+            
+            // Validation
+            if (!name || !city) {
+                document.getElementById('offerError').style.display = 'block';
+                return;
+            }
+
+            // Construct Message
+            let msg = `Olá, eu sou o ${name}, moro em ${city} e vou salvar seu contato.\n\nValores com desconto:\n`;
+            
             const keys = ['GRANDE', 'MEDIA', 'PEQUENA', 'MINI', 'ECONOMICA'];
             
             keys.forEach(k => {
                 const b = BASKETS[k];
-                // Loop through all options to show both Alvino and Koblenz prices if available
                 msg += `*${b.name.replace('<br>', ' ')}*\n`;
                 b.opts.forEach(opt => {
                      msg += `- ${opt.n}: *${opt.desc}*\n`;
@@ -822,7 +849,9 @@
             
             const phone = "5565998150975";
             window.location.href = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
-            trackEvent('RequestOffers', { type: 'whatsapp' });
+            
+            trackEvent('SubmitLeadOffers', { city: city });
+            closeModal('offers');
         }
 
         // --- INITIALIZATION ---
