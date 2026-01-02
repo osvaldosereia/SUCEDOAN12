@@ -489,46 +489,45 @@
         // --- CORREÇÃO DE IMAGENS ---
         function getExactImgPath(productName) {
             const name = productName.toLowerCase();
-            const basePath = '../descontos/img/alimento/'; 
+            const pathFood = '../descontos/img/alimento/'; 
+            const pathClean = '../descontos/img/limpeza/';
             
-            let fileName = '';
-
-            // ALIMENTOS
-            if (name.includes('tio alvino')) fileName = 'arroztioalvino.jpg';
-            else if (name.includes('koblenz')) fileName = 'Arroz Koblenz 5kg.webp';
-            else if (name.includes('açúcar') || name.includes('doce dia')) fileName = 'açucar doce dia 2 kg.webp';
-            else if (name.includes('liza')) fileName = 'oleo de soja liza.webp';
-            else if (name.includes('feijão')) fileName = 'feijão da casa.webp';
-            else if (name.includes('caboclo') && name.includes('500')) fileName = 'cafe caboclo 500g.webp';
-            else if (name.includes('caboclo') && name.includes('250')) fileName = 'cafe caboclo 250g.webp';
-            else if (name.includes('premiado')) fileName = 'cafepremiado.webp';
-            else if (name.includes('espaguete') || name.includes('q\'delícia')) fileName = 'espaguete qdelicia.webp';
-            else if (name.includes('ovos')) fileName = 'ovo duzia.jpg';
-            else if (name.includes('bolo apti')) fileName = 'bolo apti chocolate.webp';
-            else if (name.includes('trigo')) fileName = 'trigo vitoriosa.webp';
-            else if (name.includes('sal')) fileName = 'sal.webp';
-            else if (name.includes('molho') || name.includes('fugini')) fileName = 'molho fugini.webp';
-            else if (name.includes('milho') || name.includes('predileta')) fileName = 'milho verde predileta.webp';
-            else if (name.includes('tempero') || name.includes('jonas')) fileName = 'tempero tio jonas.jpg';
-            else if (name.includes('bolacha') || name.includes('mybit')) fileName = 'bolacha mybit.webp';
-            else if (name.includes('miojo')) fileName = 'miojo apti.webp';
-            else if (name.includes('suco') || name.includes('frisco')) fileName = 'suco frisco.webp';
-            else if (name.includes('mandioca')) fileName = 'farinha de mandioca.webp';
+            // ALIMENTOS (Retorna pathFood + arquivo)
+            if (name.includes('tio alvino')) return pathFood + 'arroztioalvino.jpg';
+            if (name.includes('koblenz')) return pathFood + 'Arroz Koblenz 5kg.webp';
+            if (name.includes('açúcar') || name.includes('doce dia')) return pathFood + 'açucar doce dia 2 kg.webp';
+            if (name.includes('liza')) return pathFood + 'oleo de soja liza.webp';
+            if (name.includes('feijão')) return pathFood + 'feijão da casa.webp';
+            if (name.includes('caboclo') && name.includes('500')) return pathFood + 'cafe caboclo 500g.webp';
+            if (name.includes('caboclo') && name.includes('250')) return pathFood + 'cafe caboclo 250g.webp';
+            if (name.includes('premiado')) return pathFood + 'cafepremiado.webp';
+            if (name.includes('espaguete') || name.includes('q\'delícia')) return pathFood + 'espaguete qdelicia.webp';
+            if (name.includes('ovos')) return pathFood + 'ovo duzia.jpg';
+            if (name.includes('bolo apti')) return pathFood + 'bolo apti chocolate.webp';
+            if (name.includes('trigo')) return pathFood + 'trigo vitoriosa.webp';
+            if (name.includes('sal')) return pathFood + 'sal.webp';
+            if (name.includes('molho') || name.includes('fugini')) return pathFood + 'molho fugini.webp';
+            if (name.includes('milho') || name.includes('predileta')) return pathFood + 'milho verde predileta.webp';
+            if (name.includes('tempero') || name.includes('jonas')) return pathFood + 'tempero tio jonas.jpg';
+            if (name.includes('bolacha') || name.includes('mybit')) return pathFood + 'bolacha mybit.webp';
+            if (name.includes('miojo')) return pathFood + 'miojo apti.webp';
+            if (name.includes('suco') || name.includes('frisco')) return pathFood + 'suco frisco.webp';
+            if (name.includes('mandioca')) return pathFood + 'farinha de mandioca.webp';
             
-            // LIMPEZA (Atualizado com nomes exatos)
-            else if (name.includes('assolan')) fileName = 'lã de aço assolan.webp';
-            else if (name.includes('creme dental')) fileName = 'Creme Dental Sorriso 70g.webp';
-            else if (name.includes('desinfetante')) fileName = 'Desinfetante Remmus 2L.webp';
-            else if (name.includes('detergente')) fileName = 'Detergente Ype 500ml.webp';
-            else if (name.includes('qboa')) fileName = 'Qboa 1 Litro.webp';
-            else if (name.includes('amaciante')) fileName = 'amaciante ype 2L.webp';
-            else if (name.includes('louça')) fileName = 'esponja de lavar louça.webp';
-            else if (name.includes('papel higiênico')) fileName = 'papel higienico.webp';
-            else if (name.includes('sabonete')) fileName = 'sabonete palmolive 85g.webp';
-            else if (name.includes('sabão em barra') || name.includes('sabão barra')) fileName = 'sabão barra ype 900g.webp';
-            else if (name.includes('sabão pó') || name.includes('omo')) fileName = 'sabão em pó omo 800g.webp';
+            // LIMPEZA (Retorna pathClean + arquivo)
+            if (name.includes('assolan')) return pathClean + 'lã de aço assolan.webp';
+            if (name.includes('creme dental')) return pathClean + 'Creme Dental Sorriso 70g.webp';
+            if (name.includes('desinfetante')) return pathClean + 'Desinfetante Remmus 2L.webp';
+            if (name.includes('detergente')) return pathClean + 'Detergente Ype 500ml.webp';
+            if (name.includes('qboa')) return pathClean + 'Qboa 1 Litro.webp';
+            if (name.includes('amaciante')) return pathClean + 'amaciante ype 2L.webp';
+            if (name.includes('louça')) return pathClean + 'esponja de lavar louça.webp';
+            if (name.includes('papel higiênico')) return pathClean + 'papel higienico.webp';
+            if (name.includes('sabonete')) return pathClean + 'sabonete palmolive 85g.webp';
+            if (name.includes('sabão em barra') || name.includes('sabão barra')) return pathClean + 'sabão barra ype 900g.webp';
+            if (name.includes('sabão pó') || name.includes('omo')) return pathClean + 'sabão em pó omo 800g.webp';
             
-            if (fileName) return basePath + fileName;
+            // Fallback Genérico
             return `https://placehold.co/200x200/e2e8f0/64748b?text=${encodeURIComponent(productName.substring(0,8))}`;
         }
 
