@@ -141,11 +141,11 @@
             letter-spacing: -0.3px;
         }
 
-        /* --- DIDACTIC SLIDE (O NOVO BLOCO) --- */
+        /* --- DIDACTIC SLIDE --- */
         .didactic-section {
             padding: 24px 16px 10px 16px;
-            max-width: 600px; margin: 0 auto;
-            margin-top: 20px; /* Espaço extra por causa da logo vazada */
+            max-width: 600px; 
+            margin: 20px auto; /* Espaçamento ajustado para ficar entre cards */
         }
 
         .didactic-slide {
@@ -158,7 +158,6 @@
             overflow: hidden;
         }
         
-        /* Faixa decorativa no topo do slide */
         .didactic-slide::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
             background: linear-gradient(90deg, #2563EB, #10B981);
@@ -186,7 +185,7 @@
         }
 
         .ds-text {
-            font-size: 15px; /* Fonte Grande e Legível */
+            font-size: 15px;
             color: #374151; font-weight: 500; line-height: 1.5;
         }
         
@@ -239,7 +238,7 @@
             padding: 12px 16px; border-radius: 12px;
             border: 1px solid var(--border-medium); background: white;
             transition: all 0.2s;
-            cursor: pointer; /* Adicionado para indicar clique */
+            cursor: pointer; 
         }
         .opt-row.selected {
             border-color: var(--success); background: #F0FDF4;
@@ -300,17 +299,28 @@
             height: 1px; background: #E5E7EB; z-index: 0;
         }
 
-        /* FOOTER FLUTUANTE */
+        /* FOOTER FLUTUANTE ATUALIZADO (2 BOTOES) */
         .app-footer {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: calc(100% - 32px); max-width: 500px; z-index: 100;
+            display: flex; gap: 10px; /* Espaço entre os botões */
         }
-        .btn-footer-company {
-            width: 100%; background: #111827; color: white;
-            padding: 16px; border-radius: 50px; border: none;
-            font-size: 14px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+        .btn-footer-half {
+            flex: 1; /* Divide o espaço igualmente */
+            background: #111827; color: white;
+            padding: 14px; border-radius: 50px; border: none;
+            font-size: 13px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            text-decoration: none; /* Para links */
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn-footer-half:active { transform: scale(0.96); }
+        .btn-instagram-footer {
+            background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D);
+            /* Degradê clássico do Instagram ou cor sólida, aqui usei o degradê */
+            box-shadow: 0 8px 20px rgba(193, 53, 132, 0.3);
         }
 
         /* --- MODALS --- */
@@ -363,73 +373,22 @@
         <div class="brand"><h1>Super Cestas Dona Antônia</h1></div>
     </header>
 
-    <!-- SLIDE DIDÁTICO (NOVA ESTRATÉGIA) -->
-    <section class="didactic-section">
-        <div class="didactic-slide">
-            <h2 class="ds-title">Tenho 6 informações que você precisa saber:</h2>
-            
-            <div class="ds-list">
-                <!-- Ponto 1: Local -->
-                <div class="ds-item">
-                    <div class="ds-number">1</div>
-                    <div class="ds-text">
-                        Entregamos em <span class="ds-strong">Cuiabá e VG</span> (Consulte seu bairro).
-                    </div>
-                </div>
-
-                <!-- Ponto 2: Segurança -->
-                <div class="ds-item">
-                    <div class="ds-number">2</div>
-                    <div class="ds-text">
-                        Você só paga a sua cesta <span class="ds-strong">quando ela chega</span> na sua casa.
-                    </div>
-                </div>
-
-                <!-- Ponto 3: Agilidade -->
-                <div class="ds-item">
-                    <div class="ds-number">3</div>
-                    <div class="ds-text">
-                        Não cobramos taxa de entrega. Encomende pela manhã que <span class="ds-strong">a cesta vai no mesmo dia.</span>
-                    </div>
-                </div>
-
-                <!-- Ponto 4: Liberdade -->
-                <div class="ds-item">
-                    <div class="ds-number">4</div>
-                    <div class="ds-text">
-                        Você pode <span class="ds-strong">personalizar a sua cesta</span> trocando os produtos que você não quer.
-                    </div>
-                </div>
-
-                <!-- Ponto 5: Qualidade -->
-                <div class="ds-item">
-                    <div class="ds-number">5</div>
-                    <div class="ds-text">
-                        Só usamos <span class="ds-strong">marcas boas</span>. A nossa cesta compensa. Você economiza tempo e dinheiro.
-                    </div>
-                </div>
-
-                <!-- Ponto 6: Pagamento -->
-                <div class="ds-item">
-                    <div class="ds-number">6</div>
-                    <div class="ds-text">
-                        Não vendemos pra 30 dias, mas <span class="ds-strong">parcelamos em 3x sem juros</span> no cartão de crédito e aceitamos cartões Alimentação e Refeição.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- CATALOG MOUNT POINT -->
     <main id="catalog-mount" class="catalog-container">
-        <!-- JS INJECTION -->
+        <!-- JS INJECTION (BASKETS + DIDACTIC SECTION) -->
     </main>
 
-    <!-- FOOTER FLUTUANTE -->
+    <!-- FOOTER FLUTUANTE DUPLO -->
     <footer class="app-footer">
-        <button onclick="openModal('company')" class="btn-footer-company">
-            <i class="ph-bold ph-buildings"></i> Quem Somos & Contatos
+        <!-- Botão 1: Contato (Modal) -->
+        <button onclick="openModal('company')" class="btn-footer-half">
+            <i class="ph-bold ph-buildings" style="font-size:18px;"></i> Contatos
         </button>
+
+        <!-- Botão 2: Instagram (Link Direto) -->
+        <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="btn-footer-half btn-instagram-footer" onclick="trackEvent('ClickFooterSocial', {network: 'Instagram'})">
+            <i class="ph-bold ph-instagram-logo" style="font-size:18px;"></i> Instagram
+        </a>
     </footer>
 
     <!-- MODAL COMPANY -->
@@ -580,7 +539,43 @@
             revealed: { 'PEQUENA': true }
         };
 
-        // --- IMAGENS (LOGICA RESTAURADA COMPLETAMENTE) ---
+        // --- HTML DO CARD DIDÁTICO (INJETADO VIA JS) ---
+        const DIDACTIC_SECTION_HTML = `
+        <section class="didactic-section">
+            <div class="didactic-slide">
+                <h2 class="ds-title">Tenho 6 informações que você precisa saber:</h2>
+                
+                <div class="ds-list">
+                    <div class="ds-item">
+                        <div class="ds-number">1</div>
+                        <div class="ds-text">Entregamos em <span class="ds-strong">Cuiabá e VG</span> (Consulte seu bairro).</div>
+                    </div>
+                    <div class="ds-item">
+                        <div class="ds-number">2</div>
+                        <div class="ds-text">Você só paga a sua cesta <span class="ds-strong">quando ela chega</span> na sua casa.</div>
+                    </div>
+                    <div class="ds-item">
+                        <div class="ds-number">3</div>
+                        <div class="ds-text">Não cobramos taxa de entrega. Encomende pela manhã que <span class="ds-strong">a cesta vai no mesmo dia.</span></div>
+                    </div>
+                    <div class="ds-item">
+                        <div class="ds-number">4</div>
+                        <div class="ds-text">Você pode <span class="ds-strong">personalizar a sua cesta</span> trocando os produtos que você não quer.</div>
+                    </div>
+                    <div class="ds-item">
+                        <div class="ds-number">5</div>
+                        <div class="ds-text">Só usamos <span class="ds-strong">marcas boas</span>. A nossa cesta compensa. Você economiza tempo e dinheiro.</div>
+                    </div>
+                    <div class="ds-item">
+                        <div class="ds-number">6</div>
+                        <div class="ds-text">Não vendemos pra 30 dias, mas <span class="ds-strong">parcelamos em 3x sem juros</span> no cartão de crédito e aceitamos cartões Alimentação e Refeição.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        `;
+
+        // --- IMAGENS ---
         function getImg(n) {
             const low = n.toLowerCase();
             const f = 'img/alimento/';
@@ -637,7 +632,7 @@
                 const data = BASKETS[key];
                 const isRevealed = STATE.revealed[key];
                 
-                // Opções estilo "Lista Selecionável" (Mais App-like)
+                // Opções
                 const optsHtml = data.opts.map((o, idx) => `
                     <div class="opt-row ${o.sel ? 'selected' : ''}" onclick="selectOption('${key}', ${idx})">
                         <div class="opt-info">
@@ -651,10 +646,9 @@
                     </div>
                 `).join('');
                 
+                // Itens
                 const itemsHtml = data.items.map(i => {
                     const qtyText = i.q === 1 ? '1 un' : `${i.q} un`;
-                    
-                    // Lógica para trocar a imagem do arroz conforme seleção
                     let imgName = i.n;
                     if(i.n.toLowerCase().includes('arroz')) {
                         const sel = data.opts.find(o => o.sel);
@@ -678,6 +672,7 @@
                          <i class="ph-bold ph-caret-down" style="font-size:20px;"></i> VER TODOS OS ITENS
                        </button>`;
 
+                // Montagem do Card da Cesta
                 html += `
                     <section class="product-section" id="basket-${key}">
                         <div class="p-main-content">
@@ -700,6 +695,12 @@
                         </div>
                     </section>
                 `;
+
+                // LOGICA DE INJEÇÃO DO CARD DIDÁTICO
+                // Insere APÓS a Cesta Pequena (que é a primeira do array 'keys')
+                if (key === 'PEQUENA') {
+                    html += DIDACTIC_SECTION_HTML;
+                }
             });
 
             container.innerHTML = html;
