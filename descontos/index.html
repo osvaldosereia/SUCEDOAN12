@@ -269,22 +269,34 @@
         /* CONTEUDO EXPANSÍVEL */
         .p-expand-content { background: #FAFAFA; border-top: 1px solid #F3F4F6; padding: 24px; }
         
-        .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        /* ATUALIZADO: Grid em 2 Colunas para itens maiores */
+        .items-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); /* Mudado de 3 para 2 */
+            gap: 12px; 
+        }
+        
+        /* ATUALIZADO: Card maior e fontes maiores */
         .item-card {
-            background: white; border-radius: 10px; padding: 8px 4px; 
-            text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+            background: white; border-radius: 12px; padding: 12px 8px; 
+            text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
             border: 1px solid rgba(0,0,0,0.02);
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
         }
         .item-img { 
-            width: 100%; aspect-ratio: 1/1; object-fit: contain; margin-bottom: 6px; 
+            width: 100%; aspect-ratio: 1/1; object-fit: contain; margin-bottom: 8px; 
             mix-blend-mode: multiply; 
         }
         .item-qty { 
             display: inline-block; background: #EFF6FF; color: #2563EB; 
-            font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 100px; 
-            margin-bottom: 4px;
+            font-size: 11px; /* Aumentado */
+            font-weight: 700; padding: 4px 8px; border-radius: 100px; 
+            margin-bottom: 6px;
         }
-        .item-name { font-size: 10px; font-weight: 600; color: var(--text-main); line-height: 1.2; }
+        .item-name { 
+            font-size: 13px; /* Aumentado */
+            font-weight: 600; color: var(--text-main); line-height: 1.3; 
+        }
 
         .section-separator-title {
             text-align: center; margin: 40px 0 20px; position: relative;
@@ -299,28 +311,38 @@
             height: 1px; background: #E5E7EB; z-index: 0;
         }
 
-        /* FOOTER FLUTUANTE ATUALIZADO (2 BOTOES) */
+        /* VINHETA ESCURA DISCRETA PARA FOOTER */
+        .footer-vignette {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            height: 120px;
+            background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+            pointer-events: none; /* Deixa clicar através dela */
+            z-index: 90;
+        }
+
+        /* FOOTER FLUTUANTE ATUALIZADO (Mais baixo) */
         .app-footer {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: calc(100% - 32px); max-width: 500px; z-index: 100;
-            display: flex; gap: 10px; /* Espaço entre os botões */
+            position: fixed; bottom: 10px; /* Mais perto da base */
+            left: 50%; transform: translateX(-50%);
+            width: calc(100% - 20px); max-width: 500px; 
+            z-index: 100;
+            display: flex; gap: 10px; 
         }
         .btn-footer-half {
-            flex: 1; /* Divide o espaço igualmente */
+            flex: 1; 
             background: #111827; color: white;
             padding: 14px; border-radius: 50px; border: none;
             font-size: 13px; font-weight: 700;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-            text-decoration: none; /* Para links */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Sombra ajustada */
+            text-decoration: none; 
             cursor: pointer;
             transition: transform 0.1s;
         }
         .btn-footer-half:active { transform: scale(0.96); }
         .btn-instagram-footer {
             background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D);
-            /* Degradê clássico do Instagram ou cor sólida, aqui usei o degradê */
-            box-shadow: 0 8px 20px rgba(193, 53, 132, 0.3);
+            box-shadow: 0 4px 10px rgba(193, 53, 132, 0.4);
         }
 
         /* --- MODALS --- */
@@ -377,6 +399,9 @@
     <main id="catalog-mount" class="catalog-container">
         <!-- JS INJECTION (BASKETS + DIDACTIC SECTION) -->
     </main>
+
+    <!-- VINHETA DE FUNDO PARA OS BOTOES -->
+    <div class="footer-vignette"></div>
 
     <!-- FOOTER FLUTUANTE DUPLO -->
     <footer class="app-footer">
