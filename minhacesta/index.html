@@ -88,18 +88,27 @@
             align-items: center; /* Centraliza verticalmente */
             gap: 12px;
             width: 100%;
+            overflow: visible; /* PERMITE O VAZAMENTO DO LOGO */
         }
 
-        /* LOGO */
+        /* LOGO TIPO "SELO" */
         .header-brand {
-            flex-shrink: 0; /* Não encolhe */
+            flex-shrink: 0; 
             display: flex; align-items: center;
+            position: relative;
+            width: 60px; /* Espaço reservado para fluxo */
+            height: 100%;
+            overflow: visible;
         }
         .logo-header { 
-            width: 44px; height: 44px; 
+            width: 80px; height: 80px; /* DOBRO DO TAMANHO (Selo Gigante) */
             border-radius: 50%; object-fit: cover; 
-            border: 2px solid white; 
-            box-shadow: var(--shadow-card); 
+            border: 2px solid white; /* Borda grossa destaque */
+            box-shadow: 0 6px 15px rgba(0,0,0,0.25); /* Sombra flutuante */
+            position: absolute;
+            top: 5px; /* Posicionamento para vazar */
+            left: 0;
+            z-index: 60; /* Acima de tudo */
         }
         
         /* TÍTULO (ESCONDIDO NO MOBILE) */
@@ -111,6 +120,7 @@
             flex: 1; /* Ocupa todo espaço restante */
             overflow: hidden; /* Evita scroll */
             padding: 0;
+            margin-left: 20px; /* Compensar o logo vazado */
         }
         .cat-btn {
             flex: 1; /* Divide espaço igualmente */
@@ -131,9 +141,14 @@
         /* DESKTOP HEADER (AJUSTES PARA TELAS GRANDES) */
         @media (min-width: 768px) {
             .app-header { padding: 0 32px; height: 70px; justify-content: space-between; }
-            .brand { display: block; margin-left: 12px; } /* Mostra título no desktop */
+            .header-brand { width: auto; overflow: visible; margin-right: 20px; }
+            .logo-header { 
+                /* No desktop, mantemos o selo mas ajustamos posição se necessário */
+                position: absolute; top: -5px; width: 100px; height: 100px;
+            }
+            .brand { display: block; margin-left: 110px; } /* Empurra titulo pro lado do selo */
             .brand h1 { font-size: 18px; font-weight: 800; color: var(--text-main); margin: 0; }
-            .category-nav { flex: 0 0 auto; gap: 12px; } /* Nav não estica no desktop */
+            .category-nav { flex: 0 0 auto; gap: 12px; margin-left: 0; } 
             .cat-btn { padding: 8px 20px; border-radius: 50px; font-size: 14px; }
         }
 
