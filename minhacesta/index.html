@@ -266,7 +266,7 @@
 
     <!-- HEADER (ORIGINAL) -->
     <header class="app-header">
-        <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
+        <img src="../img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
              class="logo-header" alt="Logo Dona Antônia" onerror="this.src='https://placehold.co/80x80'">
         <div class="brand"><h1>Monte Sua Cesta</h1></div>
     </header>
@@ -399,12 +399,12 @@
             { id: 60, type: 'clean', name: "Esponja de Louça", price: 1.50 }
         ];
 
-        // --- MAPA EXATO DE IMAGENS (CONFORME SUA LISTA) ---
-        // A chave é o texto parcial ou nome exato para busca
+        // --- MAPA EXATO DE IMAGENS (CONFORME SUA LISTA E ESTRUTURA) ---
+        // Agora usando '../' para sair da pasta 'minhacesta' e acessar a raiz
         function getExactImgPath(productName) {
             const name = productName.toLowerCase();
-            const f = 'descontos/img/alimento/';
-            const c = 'descontos/img/limpeza/';
+            const f = '../descontos/img/alimento/';
+            const c = '../descontos/img/limpeza/';
 
             // Mapeamento direto baseado na sua lista de arquivos
             if (name.includes('tio alvino')) return f + 'arroztioalvino.jpg';
@@ -432,8 +432,6 @@
             if (name.includes('assolan')) return f + 'esponja assolan.webp';
 
             // Itens de limpeza (Tentar adivinhar ou usar placeholder se não fornecido)
-            // Como sua lista de limpeza só tinha logo/anuncio, vamos usar placeholder para os demais
-            // para não ficar quebrado.
             if (name.includes('sabão pó') || name.includes('omo')) return 'https://placehold.co/150x150/e2e8f0/64748b?text=OMO';
             
             return `https://placehold.co/150x150/e2e8f0/64748b?text=${encodeURIComponent(productName.substring(0,4))}`;
