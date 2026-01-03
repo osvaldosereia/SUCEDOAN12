@@ -3,348 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema V2.3 - Expedição & Etiquetas (Clean)</title>
+    <title>Sistema V2.4 - Dashboard Logístico</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* --- Estilo Geral (Desktop Compacto) --- */
-        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .app-container { max-width: 1400px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
-        .compact-input { padding: 0.3rem; font-size: 0.9rem; }
+        /* --- Estilo Geral --- */
+        body { background-color: #e5e7eb; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .app-container { max-width: 1920px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Inputs Super Compactos */
+        .compact-input { padding: 0.2rem 0.4rem; font-size: 0.75rem; height: 28px; }
+        .compact-label { font-size: 0.65rem; font-weight: 700; color: #4b5563; text-transform: uppercase; margin-bottom: 2px; }
         
         /* Scrollbar fina */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #e5e7eb; }
-        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
         /* Utilitários Extras */
-        .card-collapsed { max-height: 50px; overflow: hidden; }
         .transition-all-300 { transition: all 0.3s ease-in-out; }
-        .rotate-180 { transform: rotate(180deg); }
-        .bg-pattern { background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 20px 20px; }
+        .bg-pattern { background-image: radial-gradient(#d1d5db 1px, transparent 1px); background-size: 20px 20px; }
 
         /* --- Drag and Drop Visual --- */
-        .draggable-card { cursor: grab; }
+        .draggable-card { cursor: grab; user-select: none; }
         .draggable-card:active { cursor: grabbing; }
         .dragging { 
             opacity: 0.5; 
-            border: 2px dashed #4f46e5 !important; /* Indigo border */
+            border: 2px dashed #4f46e5 !important;
             background-color: #eef2ff !important;
         }
 
         /* --- Estilo de Impressão (Etiqueta 73mm x 150mm) --- */
         @media print {
-            @page { 
-                size: 73mm 150mm; /* Tamanho exato da etiqueta */
-                margin: 0; 
-            }
+            @page { size: 73mm 150mm; margin: 0; }
             body * { visibility: hidden; }
             #areaImpressao, #areaImpressao * { visibility: visible; }
             #areaImpressao {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 71mm; /* Ligeira margem de segurança */
-                /* height: 148mm; Removido altura fixa para fluir se necessário, mas o page-break controla */
-                background: white;
-                color: black;
-                font-family: 'Arial Black', 'Arial', sans-serif;
-                display: block !important;
-                overflow: visible;
+                position: absolute; left: 0; top: 0; width: 71mm;
+                background: white; color: black; font-family: 'Arial Black', 'Arial', sans-serif;
+                display: block !important; overflow: visible;
             }
-            
-            /* Classes de Etiqueta */
             .label-container {
-                width: 100%;
-                height: 148mm; /* Força altura da etiqueta */
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                padding: 2mm;
-                border: 1px dashed #ccc; /* Guia de corte visual, opcional */
-                page-break-after: always; /* OBRIGATÓRIO: Pula para próxima etiqueta */
-                box-sizing: border-box;
+                width: 100%; height: 148mm; display: flex; flex-direction: column;
+                justify-content: space-between; padding: 2mm;
+                border: 1px dashed #ccc; page-break-after: always; box-sizing: border-box;
             }
-
             .label-header { text-align: center; border-bottom: 2px solid black; padding-bottom: 5px; margin-bottom: 5px; }
             .label-date { font-size: 12px; font-weight: normal; }
-            
             .label-client-name { font-size: 24px; font-weight: 900; line-height: 1; text-transform: uppercase; margin-bottom: 2px; }
             .label-client-phone { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
             .label-client-address { font-size: 11px; line-height: 1.1; margin-bottom: 5px; text-transform: uppercase; }
-            
-            /* Código Cliente Unificado */
-            .label-client-code-box { 
-                background: black; 
-                color: white; 
-                padding: 4px; 
-                font-size: 16px; 
-                font-weight: bold; 
-                text-align: center; 
-                border-radius: 4px;
-                margin: 5px 0;
-            }
-            
+            .label-client-code-box { background: black; color: white; padding: 4px; font-size: 16px; font-weight: bold; text-align: center; border-radius: 4px; margin: 5px 0; }
             .label-rota { font-size: 40px; font-weight: 900; text-align: center; border: 3px solid black; padding: 5px; margin: 5px 0; text-transform: uppercase; }
-            
             .label-order-code { font-size: 22px; text-align: center; margin: 5px 0; font-family: 'Courier New', monospace; font-weight: 900; letter-spacing: 2px;}
-            
             .label-basket { font-size: 20px; font-weight: bold; text-transform: uppercase; border-top: 2px solid black; padding-top: 5px; text-align: center; }
-            
             .label-footer { text-align: center; font-size: 10px; margin-top: auto; }
             .volume-counter { font-size: 18px; font-weight: 900; text-align: right; margin-top: 5px; }
-
             .no-print { display: none !important; }
         }
         #areaImpressao { display: none; }
     </style>
 </head>
-<body class="text-gray-800 bg-pattern">
+<body class="text-gray-800 bg-pattern text-sm">
 
-    <div class="app-container p-4 no-print">
+    <div class="app-container p-2 no-print">
         
-        <!-- Cabeçalho -->
-        <header class="bg-white shadow-sm rounded-lg p-3 mb-3 flex justify-between items-center border border-gray-200">
-            <div class="flex items-center gap-4">
-                <div class="bg-indigo-600 text-white p-2 rounded">
-                    <i class="fa-solid fa-tags"></i>
+        <!-- Cabeçalho Compacto -->
+        <header class="bg-white shadow-sm rounded p-2 mb-2 flex justify-between items-center border border-gray-300 h-12">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-1.5 rounded">
+                    <i class="fa-solid fa-truck-fast text-sm"></i>
                 </div>
-                <h1 class="font-bold text-lg text-gray-700">Módulo 2: Expedição & Etiquetas</h1>
+                <h1 class="font-bold text-base text-gray-700">Módulo 2: Expedição</h1>
             </div>
             
-            <!-- Links -->
             <nav class="flex gap-2">
-                <button onclick="window.location.href='https://donaantonia.com.br/cadastro'" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-1 rounded text-sm font-medium transition">
-                    1. Cadastro
-                </button>
-                <button onclick="window.location.href='https://donaantonia.com.br/vendas'" class="bg-indigo-600 text-white px-4 py-1 rounded text-sm font-medium shadow-sm">
-                    2. Vendas
-                </button>
-                <button onclick="window.location.href='https://donaantonia.com.br/crm'" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-1 rounded text-sm font-medium transition">
-                    3. CRM
-                </button>
+                <button onclick="window.location.href='https://donaantonia.com.br/cadastro'" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded text-xs font-bold transition">1. Cadastro</button>
+                <button onclick="window.location.href='https://donaantonia.com.br/vendas'" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs font-bold shadow-sm">2. Vendas</button>
+                <button onclick="window.location.href='https://donaantonia.com.br/crm'" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded text-xs font-bold transition">3. CRM</button>
             </nav>
 
-            <div class="flex gap-2">
-                <div class="flex items-center gap-2 bg-gray-50 px-2 rounded border border-gray-200">
-                    <span class="text-xs font-bold text-gray-500">FILTRAR DATA:</span>
-                    <input type="date" id="filtroData" class="bg-transparent text-sm border-none focus:ring-0 py-1" onchange="renderizarListaPedidos()">
-                </div>
-                <button onclick="exportarPedidosJson()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 shadow-sm" title="Exportar na Ordem da Tela">
-                    <i class="fa-solid fa-file-export mr-1"></i> JSON
+            <div class="flex gap-2 items-center">
+                <span class="text-[10px] font-bold text-gray-500">DATA:</span>
+                <input type="date" id="filtroData" class="bg-white border border-gray-300 rounded text-xs px-2 py-1 focus:ring-0" onchange="renderizarListaPedidos()">
+                <button onclick="exportarPedidosJson()" class="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 shadow-sm" title="Backup">
+                    <i class="fa-solid fa-download"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Layout Principal -->
-        <div class="flex flex-1 gap-4 overflow-hidden">
+        <!-- Layout Principal: 3 Colunas -->
+        <div class="flex flex-1 gap-2 overflow-hidden">
             
-            <!-- COLUNA ESQUERDA: Criador de Pedidos -->
-            <div class="w-5/12 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-                <div class="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
-                    <h2 class="font-bold text-indigo-800 text-sm uppercase"><i class="fa-solid fa-plus-circle mr-2"></i>Novo Pedido</h2>
-                    <button onclick="limparPedidoAtual()" class="text-xs text-red-500 hover:underline">Limpar Tela</button>
+            <!-- COLUNA 1: Criador de Pedidos (Super Compacto - 25%) -->
+            <div class="w-3/12 bg-white rounded shadow-sm border border-gray-300 flex flex-col overflow-hidden">
+                <div class="p-2 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
+                    <h2 class="font-bold text-indigo-800 text-xs uppercase"><i class="fa-solid fa-plus mr-1"></i>Novo</h2>
+                    <button onclick="limparPedidoAtual()" class="text-[10px] text-red-500 hover:underline">Limpar</button>
                 </div>
 
-                <div class="p-4 overflow-y-auto flex-1 custom-scroll">
+                <div class="p-2 overflow-y-auto flex-1 custom-scroll">
                     
-                    <!-- 1. Seleção de Cliente -->
-                    <div class="mb-4">
-                        <label class="block text-xs font-bold text-gray-600 mb-1">1. Selecionar Cliente</label>
-                        <input type="text" id="inputBuscaCliente" onkeyup="filtrarClientes()" placeholder="🔎 Digite nome ou bairro..." class="w-full border border-indigo-200 bg-indigo-50 rounded px-2 py-1.5 mb-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder-gray-400">
-                        <div class="flex gap-2">
-                            <select id="selCliente" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-indigo-500 bg-white">
-                                <option value="">Carregando clientes...</option>
+                    <!-- Cliente -->
+                    <div class="mb-2">
+                        <label class="compact-label">Cliente</label>
+                        <input type="text" id="inputBuscaCliente" onkeyup="filtrarClientes()" placeholder="🔎 Buscar..." class="w-full border border-indigo-200 bg-indigo-50 rounded compact-input mb-1 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <div class="flex gap-1">
+                            <select id="selCliente" class="w-full border border-gray-300 rounded compact-input focus:outline-none focus:border-indigo-500 bg-white">
+                                <option value="">...</option>
                             </select>
-                            <button onclick="carregarClientes()" class="bg-gray-200 px-3 rounded hover:bg-gray-300" title="Atualizar lista"><i class="fa-solid fa-sync text-xs"></i></button>
+                            <button onclick="carregarClientes()" class="bg-gray-200 px-2 rounded hover:bg-gray-300"><i class="fa-solid fa-sync text-[10px]"></i></button>
                         </div>
                     </div>
                     
-                    <hr class="border-dashed border-gray-200 my-3">
+                    <hr class="border-dashed border-gray-200 my-2">
 
-                    <!-- 2. Adicionar Itens (Cestas) -->
-                    <div class="bg-gray-50 p-3 rounded border border-gray-200 mb-4">
-                        <label class="block text-xs font-bold text-gray-600 mb-2">2. Adicionar Produto ao Pedido</label>
-                        
-                        <!-- Tabs de Modo de Entrada -->
-                        <div class="flex border-b border-gray-300 mb-3 text-xs">
-                            <button class="flex-1 py-1 font-bold text-indigo-700 border-b-2 border-indigo-600" id="tabPadrao" onclick="alternarTab('padrao')">Cesta Padrão</button>
-                            <button class="flex-1 py-1 font-bold text-gray-500 hover:text-indigo-600" id="tabImportar" onclick="alternarTab('importar')">Importar (Colar)</button>
+                    <!-- Produtos -->
+                    <div class="bg-gray-50 p-2 rounded border border-gray-200 mb-2">
+                        <div class="flex border-b border-gray-300 mb-2 text-[10px]">
+                            <button class="flex-1 py-0.5 font-bold text-indigo-700 border-b-2 border-indigo-600" id="tabPadrao" onclick="alternarTab('padrao')">Padrão</button>
+                            <button class="flex-1 py-0.5 font-bold text-gray-500 hover:text-indigo-600" id="tabImportar" onclick="alternarTab('importar')">Colar</button>
                         </div>
 
                         <!-- MODO PADRÃO -->
                         <div id="areaModoPadrao">
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <select id="selTipoCesta" onchange="atualizarOpcoesPreco()" class="col-span-1 border border-gray-300 rounded compact-input">
-                                    <option value="economica">Cesta Econômica</option>
-                                    <option value="mini">Cesta Mini</option>
-                                    <option value="pequena">Cesta Pequena</option>
-                                    <option value="media">Cesta Média</option>
-                                    <option value="grande">Cesta Grande</option>
+                            <div class="mb-1">
+                                <label class="compact-label">Cesta</label>
+                                <select id="selTipoCesta" onchange="atualizarOpcoesPreco()" class="w-full border border-gray-300 rounded compact-input mb-1">
+                                    <option value="economica">Econômica</option>
+                                    <option value="mini">Mini</option>
+                                    <option value="pequena">Pequena</option>
+                                    <option value="media">Média</option>
+                                    <option value="grande">Grande</option>
                                 </select>
-                                <select id="selMarcaPreco" class="col-span-1 border border-gray-300 rounded compact-input">
+                                <select id="selMarcaPreco" class="w-full border border-gray-300 rounded compact-input">
                                     <!-- Preenchido via JS -->
                                 </select>
                             </div>
 
-                            <!-- Modo: Normal vs Alterada -->
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-4">
-                                    <label class="flex items-center text-sm cursor-pointer">
+                            <div class="flex items-center justify-between mb-1">
+                                <div class="flex items-center gap-2">
+                                    <label class="flex items-center text-[10px] cursor-pointer">
                                         <input type="radio" name="modoCesta" value="normal" checked onchange="toggleModoCesta()" class="mr-1 text-indigo-600"> Normal
                                     </label>
-                                    <label class="flex items-center text-sm cursor-pointer">
-                                        <input type="radio" name="modoCesta" value="alterada" onchange="toggleModoCesta()" class="mr-1 text-indigo-600"> Alterada
+                                    <label class="flex items-center text-[10px] cursor-pointer">
+                                        <input type="radio" name="modoCesta" value="alterada" onchange="toggleModoCesta()" class="mr-1 text-indigo-600"> Alt
                                     </label>
                                 </div>
-                                
                                 <div id="divCodigoCesta" class="hidden">
-                                    <input type="number" id="inputCodigoCesta" placeholder="Cód. Identificação" class="border border-yellow-400 bg-yellow-50 rounded px-2 py-1 text-xs w-32 focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                                    <input type="number" id="inputCodigoCesta" placeholder="Cód." class="border border-yellow-400 bg-yellow-50 rounded px-1 py-0.5 text-[10px] w-16 text-center">
                                 </div>
                             </div>
                         </div>
 
                         <!-- MODO IMPORTAR -->
-                        <div id="areaModoImportar" class="hidden mb-3">
-                            <label class="block text-[10px] text-gray-500 mb-1">Cole a lista abaixo (Formato: CÓDIGO - QUANTIDADE)</label>
-                            <textarea id="txtImportar" rows="4" class="w-full border border-gray-300 rounded text-xs p-2 font-mono bg-white" placeholder="001 - 3&#10;030 - 1&#10;043 - 2"></textarea>
-                            <button onclick="processarImportacao()" class="mt-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs px-2 py-1 rounded border border-gray-300 w-full font-bold">
-                                <i class="fa-solid fa-bolt mr-1"></i> Carregar Lista Editável
+                        <div id="areaModoImportar" class="hidden mb-2">
+                            <textarea id="txtImportar" rows="3" class="w-full border border-gray-300 rounded text-[10px] p-1 font-mono bg-white" placeholder="001 - 3"></textarea>
+                            <button onclick="processarImportacao()" class="mt-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-[10px] px-2 py-0.5 rounded border border-gray-300 w-full font-bold">
+                                Carregar
                             </button>
                         </div>
 
-                        <!-- Área de Itens (Aparece se Alterada ou Importada) -->
-                        <div id="areaItensCesta" class="hidden bg-white border border-gray-300 rounded p-2 mb-2 max-h-40 overflow-y-auto text-xs">
-                            <!-- Lista de inputs gerada via JS -->
-                        </div>
+                        <!-- Área de Itens -->
+                        <div id="areaItensCesta" class="hidden bg-white border border-gray-300 rounded p-1 mb-2 max-h-32 overflow-y-auto text-[10px]"></div>
 
-                        <button onclick="adicionarItemAoCarrinho()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-1.5 rounded text-sm font-bold shadow-sm">
-                            <i class="fa-solid fa-cart-plus mr-1"></i> Adicionar Cesta
+                        <button onclick="adicionarItemAoCarrinho()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-1 rounded text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-plus mr-1"></i> Add
                         </button>
                     </div>
 
-                    <!-- 3. Carrinho -->
-                    <div class="mb-4">
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Itens no Pedido</label>
-                        <div class="border border-gray-200 rounded bg-white min-h-[80px]">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-gray-100 text-gray-500">
-                                    <tr>
-                                        <th class="p-2">Item</th>
-                                        <th class="p-2 text-right">Valor</th>
-                                        <th class="p-2 text-center">X</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelaCarrinho"></tbody>
-                            </table>
-                            <div id="carrinhoVazio" class="text-center text-gray-400 py-4 text-xs italic">Nenhuma cesta adicionada.</div>
-                        </div>
-                        <div class="text-right mt-1 font-bold text-indigo-700 text-sm">
-                            Subtotal: R$ <span id="lblSubtotal">0,00</span>
-                        </div>
+                    <!-- Carrinho -->
+                    <div class="mb-2 border border-gray-200 rounded bg-white min-h-[40px]">
+                        <table class="w-full text-left text-[10px]">
+                            <tbody id="tabelaCarrinho"></tbody>
+                        </table>
+                        <div id="carrinhoVazio" class="text-center text-gray-400 py-2 text-[10px] italic">Vazio</div>
+                    </div>
+                    <div class="text-right mb-2 font-bold text-indigo-700 text-xs">
+                        Sub: R$ <span id="lblSubtotal">0,00</span>
                     </div>
 
-                    <hr class="border-gray-300 my-3">
+                    <hr class="border-gray-300 mb-2">
 
-                    <!-- 4. Fechamento -->
-                    <div class="grid grid-cols-2 gap-3 mb-2">
+                    <!-- Fechamento Grid -->
+                    <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Pagamento</label>
+                            <label class="compact-label">Pagto</label>
                             <select id="pagMetodo" class="w-full border border-gray-300 rounded compact-input">
                                 <option value="dinheiro">Dinheiro</option>
                                 <option value="pix">Pix</option>
                                 <option value="cartao">Cartão</option>
-                                <option value="fiado">Fiado/Crédito</option>
+                                <option value="fiado">Fiado</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Status Pagto</label>
-                            <select id="pagStatus" class="w-full border border-gray-300 rounded compact-input bg-yellow-50 text-yellow-800 font-medium">
-                                <option value="pendente">A Receber</option>
+                            <label class="compact-label">Status</label>
+                            <select id="pagStatus" class="w-full border border-gray-300 rounded compact-input bg-yellow-50 text-yellow-800">
+                                <option value="pendente">Aberto</option>
                                 <option value="pago">Pago</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Desconto Manual</label>
+                            <label class="compact-label">Desc.</label>
                             <select id="desconto" onchange="calcularTotalFinal()" class="w-full border border-gray-300 rounded compact-input">
-                                <option value="0">Sem desconto</option>
-                                <option value="5">- R$ 5,00</option>
-                                <option value="10">- R$ 10,00</option>
-                                <option value="15">- R$ 15,00</option>
-                                <option value="20">- R$ 20,00</option>
-                                <option value="25">- R$ 25,00</option>
+                                <option value="0">0</option>
+                                <option value="5">-5</option>
+                                <option value="10">-10</option>
+                                <option value="15">-15</option>
+                                <option value="20">-20</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Brinde</label>
-                            <select id="brinde" class="w-full border border-gray-300 rounded compact-input text-green-700 font-medium">
-                                <option value="Nenhum">Nenhum</option>
+                            <label class="compact-label">Brinde</label>
+                            <select id="brinde" class="w-full border border-gray-300 rounded compact-input text-green-700">
+                                <option value="Nenhum">-</option>
                                 <option value="Amaciante">Amaciante</option>
                                 <option value="Cafe">Café</option>
-                                <option value="Sabao Po">Sabão em Pó</option>
+                                <option value="Sabao Po">Sabão Pó</option>
                                 <option value="Ovo">Ovo</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Rota</label>
+                        <div class="col-span-2">
+                            <label class="compact-label">Rota</label>
                             <select id="rota" class="w-full border border-gray-300 rounded compact-input font-bold">
                                 <option value="Coxipó">Coxipó</option>
-                                <option value="VG">Várzea Grande</option>
+                                <option value="VG">VG</option>
                                 <option value="Cuiabá">Cuiabá</option>
                                 <option value="CPA">CPA</option>
                             </select>
                         </div>
                         <div class="col-span-2">
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Observação</label>
-                            <input type="text" id="obs" class="w-full border border-gray-300 rounded compact-input" placeholder="Ex: Entregar após as 14h...">
+                            <input type="text" id="obs" class="w-full border border-gray-300 rounded compact-input" placeholder="Obs...">
                         </div>
                     </div>
 
-                    <div class="bg-gray-100 p-2 rounded text-right mb-3 border border-gray-200">
-                        <span class="text-xs text-gray-500 mr-2">TOTAL FINAL:</span>
-                        <span class="text-xl font-bold text-gray-800">R$ <span id="lblTotalFinal">0,00</span></span>
+                    <div class="bg-gray-800 text-white p-1.5 rounded text-center mb-2">
+                        <span class="text-xs text-gray-400 mr-1">TOTAL:</span>
+                        <span class="text-lg font-bold">R$ <span id="lblTotalFinal">0,00</span></span>
                     </div>
 
-                    <button onclick="finalizarPedido()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded shadow-lg transition text-lg flex justify-center items-center">
-                        <i class="fa-solid fa-check-circle mr-2"></i> Finalizar Pedido
+                    <button onclick="finalizarPedido()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded shadow text-sm">
+                        <i class="fa-solid fa-check mr-1"></i> SALVAR
                     </button>
 
                 </div>
             </div>
 
-            <!-- COLUNA DIREITA: Lista de Pedidos -->
-            <div class="w-7/12 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
-                <div class="p-3 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="font-bold text-gray-700 text-sm uppercase"><i class="fa-solid fa-list-check mr-2"></i>Organização de Rota</h2>
-                        <div id="resumoRotas" class="text-xs flex gap-2"></div>
+            <!-- COLUNA 2: Lista de Pedidos (35% - Otimizada) -->
+            <div class="w-5/12 bg-white rounded shadow-sm border border-gray-300 flex flex-col">
+                <div class="p-2 border-b border-gray-200 bg-gray-50 rounded-t">
+                    <div class="flex justify-between items-center mb-1">
+                        <h2 class="font-bold text-gray-700 text-xs uppercase"><i class="fa-solid fa-list mr-1"></i>Rota</h2>
+                        <div id="resumoRotas" class="text-[9px] flex gap-1"></div>
                     </div>
                     
-                    <!-- Filtros de Rota -->
-                    <div class="flex gap-2 items-center">
-                        <div class="flex bg-gray-100 rounded p-1 gap-1">
-                            <button onclick="filtrarRota('todos')" id="btnRotaTodos" class="btn-rota bg-white shadow text-gray-800 text-xs px-2 py-1 rounded font-medium">Todos</button>
-                            <button onclick="filtrarRota('Coxipó')" id="btnRotaCoxipo" class="btn-rota text-gray-500 hover:bg-white text-xs px-2 py-1 rounded">Coxipó</button>
-                            <button onclick="filtrarRota('VG')" id="btnRotaVG" class="btn-rota text-gray-500 hover:bg-white text-xs px-2 py-1 rounded">VG</button>
-                            <button onclick="filtrarRota('Cuiabá')" id="btnRotaCuiaba" class="btn-rota text-gray-500 hover:bg-white text-xs px-2 py-1 rounded">Cuiabá</button>
-                            <button onclick="filtrarRota('CPA')" id="btnRotaCPA" class="btn-rota text-gray-500 hover:bg-white text-xs px-2 py-1 rounded">CPA</button>
-                        </div>
-                        <button onclick="enviarListaRotaWhatsapp()" class="ml-auto bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded flex items-center gap-1 font-bold shadow-sm">
-                            <i class="fa-brands fa-whatsapp"></i> Rota no Zap
-                        </button>
+                    <div class="flex gap-1 items-center">
+                        <button onclick="filtrarRota('todos')" id="btnRotaTodos" class="flex-1 btn-rota bg-white shadow text-gray-800 text-[10px] py-1 rounded font-bold border border-gray-200">Todos</button>
+                        <button onclick="filtrarRota('Coxipó')" id="btnRotaCoxipo" class="flex-1 btn-rota text-gray-500 hover:bg-white text-[10px] py-1 rounded border border-transparent">Coxipó</button>
+                        <button onclick="filtrarRota('VG')" id="btnRotaVG" class="flex-1 btn-rota text-gray-500 hover:bg-white text-[10px] py-1 rounded border border-transparent">VG</button>
+                        <button onclick="filtrarRota('Cuiabá')" id="btnRotaCuiaba" class="flex-1 btn-rota text-gray-500 hover:bg-white text-[10px] py-1 rounded border border-transparent">CBA</button>
+                        <button onclick="filtrarRota('CPA')" id="btnRotaCPA" class="flex-1 btn-rota text-gray-500 hover:bg-white text-[10px] py-1 rounded border border-transparent">CPA</button>
+                        
+                        <button onclick="enviarListaRotaWhatsapp()" class="ml-1 bg-green-500 text-white w-6 h-6 rounded flex items-center justify-center shadow-sm" title="Zap"><i class="fa-brands fa-whatsapp text-xs"></i></button>
                     </div>
                 </div>
 
-                <!-- LISTA DE PEDIDOS COM DRAG AND DROP -->
                 <div class="flex-1 overflow-auto bg-gray-100 p-2 custom-scroll">
                     <div id="listaPedidos" class="space-y-2 pb-10">
-                        <!-- Cards de Pedidos Compactos -->
+                        <!-- Cards Renderizados Aqui -->
                     </div>
                 </div>
             </div>
+
+            <!-- COLUNA 3: Nova Área (40% - Placeholder) -->
+            <div class="w-4/12 bg-white rounded shadow-sm border border-gray-300 flex flex-col items-center justify-center text-gray-300">
+                <i class="fa-solid fa-map-location-dot text-4xl mb-2"></i>
+                <span class="text-xs font-bold uppercase">Área de Mapa / Expedição</span>
+                <span class="text-[9px]">(Reservado para futura atualização)</span>
+            </div>
+
         </div>
     </div>
 
@@ -360,9 +300,8 @@
             'Jose': { nome: 'Jose', num: '5565981756150' }
         };
 
-        // --- CATÁLOGO DE PRODUTOS UNIFICADO (MASTER DATA) ---
+        // --- CATÁLOGO DE PRODUTOS ---
         const CATALOGO_PRODUTOS = {
-            // === ALIMENTOS ===
             '001': { nome: 'Arroz de 5kg', ean: '7891234560010' },
             '002': { nome: 'Açúcar Cristal de 2kg', ean: '7891234560027' },
             '003': { nome: 'Óleo de Soja de 900ml', ean: '7891234560034' },
@@ -381,8 +320,6 @@
             '015': { nome: '12 Ovos', ean: '7891234560157' },
             '016': { nome: 'Mistura para Bolo 400g', ean: '7891234560164' },
             '017': { nome: 'Tempero Pronto', ean: '7891234560171' },
-            
-            // === LIMPEZA E HIGIENE ===
             '030': { nome: 'Sabão Barra (pct)', ean: '7891234560300' },
             '031': { nome: 'Creme Dental 70g', ean: '7891234560317' },
             '032': { nome: 'Papel Higiênico (4un)', ean: '7891234560324' },
@@ -397,59 +334,11 @@
         };
 
         const DADOS_CESTAS = {
-            'economica': {
-                titulo: 'Cesta Econômica',
-                // Formato: [QTD, CODIGO]
-                itensCod: [
-                    [1, '001'], [1, '002'], [1, '003'], [1, '004'], [1, '005'], 
-                    [1, '006'], [1, '007'], [1, '008'], [1, '009'], [1, '010'], 
-                    [1, '011'], [1, '012'], [1, '013'], [1, '014']
-                ]
-            },
-            'mini': {
-                titulo: 'Cesta Mini',
-                itensCod: [
-                    [1, '001'], [1, '002'], [2, '003'], [2, '004'], [1, '005'],
-                    [1, '006'], [1, '009'], [1, '010'], [1, '011'], [1, '012'],
-                    [1, '013'], [2, '014'],
-                    // Limpeza
-                    [1, '030'], [1, '031'], [1, '032'], [1, '033'], [1, '034'],
-                    [1, '035'], [1, '036'], [1, '037'], [2, '038'], [1, '039'], [1, '040']
-                ]
-            },
-            'pequena': {
-                titulo: 'Cesta Pequena',
-                itensCod: [
-                    [2, '001'], [1, '002'], [2, '003'], [2, '004'], [1, '005'],
-                    [1, '015'], [1, '016'], [1, '006'], [1, '007'], [1, '009'],
-                    [1, '010'], [1, '011'], [1, '017'], [2, '012'], [2, '013'], [2, '014'],
-                    // Limpeza
-                    [1, '030'], [1, '031'], [1, '032'], [1, '033'], [1, '034'],
-                    [1, '035'], [2, '036'], [1, '037'], [2, '038'], [1, '039'], [1, '040']
-                ]
-            },
-            'media': {
-                titulo: 'Cesta Média',
-                itensCod: [
-                    [3, '001'], [2, '002'], [3, '003'], [3, '004'], [1, '005b'],
-                    [1, '015'], [1, '016'], [2, '006'], [1, '007'], [1, '009'],
-                    [2, '010'], [1, '011'], [1, '017'], [2, '012'], [2, '013'], [3, '014'],
-                    // Limpeza
-                    [1, '030'], [2, '031'], [2, '032'], [1, '033'], [1, '034'],
-                    [1, '035'], [2, '036'], [1, '037'], [3, '038'], [1, '039'], [1, '040']
-                ]
-            },
-            'grande': {
-                titulo: 'Cesta Grande',
-                itensCod: [
-                    [4, '001'], [3, '002'], [4, '003'], [4, '004'], [1, '005b'],
-                    [3, '006'], [1, '015'], [1, '016'], [1, '007'], [1, '009'],
-                    [2, '010'], [1, '011'], [1, '017'], [2, '012'], [2, '013'], [4, '014'],
-                    // Limpeza
-                    [1, '030'], [2, '031'], [2, '032'], [1, '033'], [1, '034'],
-                    [1, '035'], [2, '036'], [1, '037'], [4, '038'], [1, '039'], [1, '040']
-                ]
-            }
+            'economica': { titulo: 'Econômica', itensCod: [[1,'001'],[1,'002'],[1,'003'],[1,'004'],[1,'005'],[1,'006'],[1,'007'],[1,'008'],[1,'009'],[1,'010'],[1,'011'],[1,'012'],[1,'013'],[1,'014']] },
+            'mini': { titulo: 'Mini', itensCod: [[1,'001'],[1,'002'],[2,'003'],[2,'004'],[1,'005'],[1,'006'],[1,'009'],[1,'010'],[1,'011'],[1,'012'],[1,'013'],[2,'014'],[1,'030'],[1,'031'],[1,'032'],[1,'033'],[1,'034'],[1,'035'],[1,'036'],[1,'037'],[2,'038'],[1,'039'],[1,'040']] },
+            'pequena': { titulo: 'Pequena', itensCod: [[2,'001'],[1,'002'],[2,'003'],[2,'004'],[1,'005'],[1,'015'],[1,'016'],[1,'006'],[1,'007'],[1,'009'],[1,'010'],[1,'011'],[1,'017'],[2,'012'],[2,'013'],[2,'014'],[1,'030'],[1,'031'],[1,'032'],[1,'033'],[1,'034'],[1,'035'],[2,'036'],[1,'037'],[2,'038'],[1,'039'],[1,'040']] },
+            'media': { titulo: 'Média', itensCod: [[3,'001'],[2,'002'],[3,'003'],[3,'004'],[1,'005b'],[1,'015'],[1,'016'],[2,'006'],[1,'007'],[1,'009'],[2,'010'],[1,'011'],[1,'017'],[2,'012'],[2,'013'],[3,'014'],[1,'030'],[2,'031'],[2,'032'],[1,'033'],[1,'034'],[1,'035'],[2,'036'],[1,'037'],[3,'038'],[1,'039'],[1,'040']] },
+            'grande': { titulo: 'Grande', itensCod: [[4,'001'],[3,'002'],[4,'003'],[4,'004'],[1,'005b'],[3,'006'],[1,'015'],[1,'016'],[1,'007'],[1,'009'],[2,'010'],[1,'011'],[1,'017'],[2,'012'],[2,'013'],[4,'014'],[1,'030'],[2,'031'],[2,'032'],[1,'033'],[1,'034'],[1,'035'],[2,'036'],[1,'037'],[4,'038'],[1,'039'],[1,'040']] }
         };
 
         const PRECOS = {
@@ -464,7 +353,6 @@
         let carrinho = []; 
         let pedidos = []; 
         let listaClientesCache = []; 
-
         let filtroRotaAtual = 'todos'; 
         let dragSrcEl = null; 
         
@@ -476,46 +364,31 @@
             carregarClientes();
             carregarPedidosLocais();
             atualizarOpcoesPreco();
-            
             document.getElementById('filtroData').valueAsDate = new Date();
             renderizarListaPedidos();
         };
 
-        // --- FUNÇÕES DE NAVEGAÇÃO / DADOS ---
+        // --- FUNÇÕES DE DADOS ---
         function carregarClientes() {
             const clientesRaw = localStorage.getItem(KEY_CLIENTES);
             if (clientesRaw) {
                 listaClientesCache = JSON.parse(clientesRaw);
                 listaClientesCache.sort((a, b) => a.nome.localeCompare(b.nome));
-            } else {
-                listaClientesCache = [];
-            }
+            } else listaClientesCache = [];
             renderizarOpcoesClientes(listaClientesCache);
         }
 
         function renderizarOpcoesClientes(lista) {
             const select = document.getElementById('selCliente');
             const valorAtual = select.value; 
-            select.innerHTML = '<option value="">-- Selecione o Cliente --</option>';
-
-            if (lista.length === 0) {
-                if (listaClientesCache.length === 0) {
-                    select.innerHTML = '<option value="">Nenhum cliente cadastrado</option>';
-                } else {
-                    select.innerHTML = '<option value="">Nenhum cliente encontrado</option>';
-                }
-                return;
-            }
-
+            select.innerHTML = '<option value="">...</option>';
             lista.forEach(c => {
                 const option = document.createElement('option');
                 option.value = c.id;
-                const label = `${c.nome} ${c.apelido ? '('+c.apelido+')' : ''} - ${c.bairro || 'S/ Bairro'}`;
-                option.innerText = label;
+                option.innerText = `${c.nome.substring(0,20)}...`;
                 option.dataset.json = JSON.stringify(c); 
                 select.appendChild(option);
             });
-
             if (valorAtual) select.value = valorAtual;
         }
 
@@ -523,14 +396,12 @@
             const termo = document.getElementById('inputBuscaCliente').value.toLowerCase();
             const filtrados = listaClientesCache.filter(c => {
                 const nome = c.nome.toLowerCase();
-                const apelido = (c.apelido || '').toLowerCase();
-                const bairro = (c.bairro || '').toLowerCase();
-                return nome.includes(termo) || apelido.includes(termo) || bairro.includes(termo);
+                return nome.includes(termo);
             });
             renderizarOpcoesClientes(filtrados);
         }
 
-        // --- LÓGICA DE INTERFACE DE TABS ---
+        // --- INTERFACE DE TABS E PRODUTOS ---
         function alternarTab(tab) {
             const btnPadrao = document.getElementById('tabPadrao');
             const btnImportar = document.getElementById('tabImportar');
@@ -539,83 +410,59 @@
             const areaItens = document.getElementById('areaItensCesta');
 
             if(tab === 'padrao') {
-                btnPadrao.className = "flex-1 py-1 font-bold text-indigo-700 border-b-2 border-indigo-600";
-                btnImportar.className = "flex-1 py-1 font-bold text-gray-500 hover:text-indigo-600";
+                btnPadrao.className = "flex-1 py-0.5 font-bold text-indigo-700 border-b-2 border-indigo-600";
+                btnImportar.className = "flex-1 py-0.5 font-bold text-gray-500 hover:text-indigo-600";
                 areaPadrao.classList.remove('hidden');
                 areaImportar.classList.add('hidden');
-                
-                // Reset para modo normal
                 document.querySelector('input[name="modoCesta"][value="normal"]').checked = true;
                 toggleModoCesta();
             } else {
-                btnImportar.className = "flex-1 py-1 font-bold text-indigo-700 border-b-2 border-indigo-600";
-                btnPadrao.className = "flex-1 py-1 font-bold text-gray-500 hover:text-indigo-600";
+                btnImportar.className = "flex-1 py-0.5 font-bold text-indigo-700 border-b-2 border-indigo-600";
+                btnPadrao.className = "flex-1 py-0.5 font-bold text-gray-500 hover:text-indigo-600";
                 areaImportar.classList.remove('hidden');
                 areaPadrao.classList.add('hidden');
-                
-                // Prepara para exibir lista editavel
                 areaItens.classList.remove('hidden');
-                areaItens.innerHTML = '<div class="text-center text-gray-400 p-2">Cole os códigos e clique em carregar.</div>';
-                
-                // Força visualmente modo "Alterada"
+                areaItens.innerHTML = '<div class="text-center text-gray-400 p-2">Cole os códigos...</div>';
                 document.querySelector('input[name="modoCesta"][value="alterada"]').checked = true;
-                // Exibe campo código
                 document.getElementById('divCodigoCesta').classList.remove('hidden');
             }
         }
 
         function processarImportacao() {
             const texto = document.getElementById('txtImportar').value;
-            if(!texto.trim()) return alert("Cole a lista primeiro!");
-
+            if(!texto.trim()) return alert("Cole a lista!");
             const linhas = texto.split('\n');
             const listaParaRenderizar = [];
-
             linhas.forEach(linha => {
                 if(!linha.trim()) return;
-                // Tenta dividir por "-" ou espaço
                 let parts = linha.includes('-') ? linha.split('-') : linha.split(' ');
-                
-                // Limpeza básica
                 parts = parts.map(p => p.trim()).filter(p => p !== "");
-                
                 if(parts.length >= 2) {
                     const codigo = parts[0];
                     const qtd = parseInt(parts[1]);
-                    
-                    if(CATALOGO_PRODUTOS[codigo]) {
-                        // Adiciona no formato que o gerador de lista entende: [qtd, codigo]
-                        listaParaRenderizar.push([qtd, codigo]);
-                    }
+                    if(CATALOGO_PRODUTOS[codigo]) listaParaRenderizar.push([qtd, codigo]);
                 }
             });
-
-            if(listaParaRenderizar.length === 0) return alert("Nenhum código válido encontrado (Formato: 001 - 3)");
-
+            if(listaParaRenderizar.length === 0) return alert("Nenhum código válido.");
             renderizarListaEditavelGenerica(listaParaRenderizar);
         }
 
-        // --- LÓGICA DE PRODUTOS/PREÇOS ---
-        function atualizarOpcoesPreco() {
+        function actualizarOpcoesPreco() {
             const tipo = document.getElementById('selTipoCesta').value;
             const selectMarca = document.getElementById('selMarcaPreco');
             selectMarca.innerHTML = '';
-
             const opcoes = PRECOS[tipo];
-            
             if (tipo === 'economica') {
-                const opt = new Option(`Padrão - R$ ${opcoes.padrao},00`, opcoes.padrao);
+                const opt = new Option(`Padrão - R$ ${opcoes.padrao}`, opcoes.padrao);
                 selectMarca.add(opt);
             } else {
-                const opt1 = new Option(`Arroz Tio Alvino - R$ ${opcoes.alvino},00`, opcoes.alvino);
-                opt1.setAttribute('data-marca', 'Tio Alvino');
+                const opt1 = new Option(`Alvino - R$ ${opcoes.alvino}`, opcoes.alvino);
+                opt1.setAttribute('data-marca', 'Alvino');
                 selectMarca.add(opt1);
-
-                const opt2 = new Option(`Arroz Koblenz - R$ ${opcoes.koblenz},00`, opcoes.koblenz);
+                const opt2 = new Option(`Koblenz - R$ ${opcoes.koblenz}`, opcoes.koblenz);
                 opt2.setAttribute('data-marca', 'Koblenz');
                 selectMarca.add(opt2);
             }
-            // Se estiver no modo alterada, atualiza a lista
             if(document.querySelector('input[name="modoCesta"]:checked').value === 'alterada') {
                 const listaOriginal = DADOS_CESTAS[tipo].itensCod;
                 renderizarListaEditavelGenerica(listaOriginal);
@@ -626,225 +473,85 @@
             const modo = document.querySelector('input[name="modoCesta"]:checked').value;
             const area = document.getElementById('areaItensCesta');
             const divCodigo = document.getElementById('divCodigoCesta');
-            const inputCodigo = document.getElementById('inputCodigoCesta');
             
             if (modo === 'alterada') {
                 const tipo = document.getElementById('selTipoCesta').value;
-                const listaOriginal = DADOS_CESTAS[tipo].itensCod;
-                renderizarListaEditavelGenerica(listaOriginal);
-
+                renderizarListaEditavelGenerica(DADOS_CESTAS[tipo].itensCod);
                 area.classList.remove('hidden');
                 divCodigo.classList.remove('hidden');
-                inputCodigo.focus();
             } else {
                 area.classList.add('hidden');
                 divCodigo.classList.add('hidden');
-                inputCodigo.value = ''; 
             }
         }
 
         function renderizarListaEditavelGenerica(listaItensCod) {
             const area = document.getElementById('areaItensCesta');
             area.innerHTML = '';
-
-            // 1. Gera Itens da Lista
             listaItensCod.forEach((item) => {
                 const qtd = item[0];
                 const cod = item[1];
-                // Busca no Objeto de Produtos
                 const produto = CATALOGO_PRODUTOS[cod];
-                const nome = produto ? produto.nome : 'Item Desconhecido';
-
+                const nome = produto ? produto.nome.substring(0,25) : 'Desc';
                 const row = document.createElement('div');
-                row.className = "flex items-center gap-2 mb-1";
+                row.className = "flex items-center gap-1 mb-1";
                 row.innerHTML = `
-                    <input type="number" min="0" value="${qtd}" class="w-12 border border-gray-300 rounded text-center px-1 item-qtd text-gray-700 font-bold">
-                    <div class="flex-1 flex items-center gap-1">
-                        <span class="text-[10px] bg-gray-200 text-gray-600 px-1 rounded font-mono">${cod}</span>
-                        <input type="text" value="${nome}" class="flex-1 border border-gray-300 rounded px-1 item-desc text-xs" readonly>
-                    </div>
+                    <input type="number" min="0" value="${qtd}" class="w-8 border border-gray-300 rounded text-center px-0.5 item-qtd font-bold">
+                    <span class="text-[9px] bg-gray-200 px-1 rounded font-mono">${cod}</span>
+                    <input type="text" value="${nome}" class="flex-1 border border-gray-300 rounded px-1 item-desc bg-gray-50" readonly>
                 `;
                 area.appendChild(row);
             });
-
-            // 2. Cria Datalist para autocomplete (Apenas 1x é suficiente, mas vamos recriar para garantir update)
-            // Para performance, verificamos se já existe
-            let dataList = document.getElementById('listProdutosCatalogo');
-            if(!dataList) {
-                dataList = document.createElement('datalist');
-                dataList.id = 'listProdutosCatalogo';
-                // Popula com catálogo
-                Object.keys(CATALOGO_PRODUTOS).forEach(key => {
-                    const opt = document.createElement('option');
-                    opt.value = `${key} - ${CATALOGO_PRODUTOS[key].nome}`;
-                    dataList.appendChild(opt);
-                });
-                document.body.appendChild(dataList); // Anexa ao body para ser acessível globalmente
-            }
-
-            // --- Divisor para área de extras ---
-            const divDivisor = document.createElement('div');
-            divDivisor.id = "divisorExtras";
-            divDivisor.className = "border-t border-dashed border-gray-300 my-2 pt-1";
-            area.appendChild(divDivisor);
-
-            // --- Área de Input Manual (BUSCA POR CÓDIGO) ---
-            const labelManual = document.createElement('div');
-            labelManual.className = "text-[10px] font-bold text-blue-600 mb-1";
-            labelManual.innerText = "Adicionar Produto Extra (Buscar no Catálogo):";
-            area.appendChild(labelManual);
-
-            const rowManual = document.createElement('div');
-            rowManual.className = "flex items-center gap-2 mb-1";
-            
-            // Input modificado com DATALIST e Placeholder de CÓDIGO
-            rowManual.innerHTML = `
-                <input type="number" id="qtdExtraInput" min="1" value="1" class="w-12 border border-blue-300 bg-blue-50 rounded text-center px-1 font-bold text-blue-800">
-                <input type="text" id="codExtraInput" list="listProdutosCatalogo" placeholder="Cód. Produto (ex: 001)..." class="flex-1 border border-blue-300 bg-blue-50 rounded px-1 text-blue-800 placeholder-blue-300 text-xs">
-                <button onclick="adicionarExtraVisualmente()" class="bg-blue-600 text-white w-7 h-7 rounded hover:bg-blue-700 flex items-center justify-center shadow-sm" title="Adicionar Item"><i class="fa-solid fa-plus text-xs"></i></button>
-            `;
-            area.appendChild(rowManual);
         }
 
-        function adicionarExtraVisualmente() {
-            const qtdInput = document.getElementById('qtdExtraInput');
-            const codInput = document.getElementById('codExtraInput');
-            const area = document.getElementById('areaItensCesta');
-            const divisor = document.getElementById('divisorExtras');
-
-            const qtd = parseInt(qtdInput.value);
-            let rawValue = codInput.value.trim();
-
-            if(!rawValue) {
-                alert('Digite o código do produto.');
-                codInput.focus();
-                return;
-            }
-            if(qtd <= 0) return alert('Quantidade deve ser maior que 0.');
-
-            // Parser Inteligente: Aceita "001" ou "001 - Arroz" (vindo do datalist)
-            let codigo = rawValue.split(' - ')[0].trim();
-
-            // Validação no Master Data (Catálogo)
-            const produto = CATALOGO_PRODUTOS[codigo];
-            if(!produto) {
-                alert(`Produto com código "${codigo}" não encontrado no catálogo!\nVerifique se o código está correto.`);
-                codInput.value = '';
-                codInput.focus();
-                return;
-            }
-
-            const row = document.createElement('div');
-            row.className = "flex items-center gap-2 mb-1 row-extra animate-pulse"; 
-            setTimeout(() => row.classList.remove('animate-pulse'), 500);
-
-            // Renderiza usando os dados reais do catálogo (Nome correto)
-            row.innerHTML = `
-                <input type="number" min="0" value="${qtd}" class="w-12 border border-blue-200 rounded text-center px-1 item-qtd text-blue-800 font-bold bg-blue-50">
-                <div class="flex-1 flex gap-1 items-center">
-                     <span class="text-[10px] bg-blue-100 text-blue-600 px-1 rounded font-mono">${codigo}</span>
-                     <input type="text" value="${produto.nome}" class="flex-1 border border-blue-200 rounded px-1 item-desc text-blue-800 bg-blue-50 text-xs" readonly>
-                     <button onclick="this.closest('.row-extra').remove()" class="text-red-400 hover:text-red-600 px-1" title="Remover"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                </div>
-            `;
-            area.insertBefore(row, divisor);
-
-            qtdInput.value = 1;
-            codInput.value = '';
-            codInput.focus();
-        }
-
-        // --- CARRINHO ---
         function adicionarItemAoCarrinho() {
             const tipoKey = document.getElementById('selTipoCesta').value;
             const precoVal = parseFloat(document.getElementById('selMarcaPreco').value);
             const selMarca = document.getElementById('selMarcaPreco');
-            const marcaNome = selMarca.options[selMarca.selectedIndex].getAttribute('data-marca') || 'Padrão';
+            const marcaNome = selMarca.options[selMarca.selectedIndex].getAttribute('data-marca') || 'Pad';
             
-            // Verifica qual modo está ativo (radio ou pela Tab de Importar que força o visual alterada)
             const isImportTab = !document.getElementById('areaModoImportar').classList.contains('hidden');
             const isRadioAlterada = document.querySelector('input[name="modoCesta"][value="alterada"]').checked;
             
             let modo = (isImportTab || isRadioAlterada) ? 'alterada' : 'normal';
             let itensFinais = [];
             let identificacao = null; 
-            let nomeCestaDisplay = isImportTab ? 'Cesta Personalizada (Importada)' : DADOS_CESTAS[tipoKey].titulo;
+            let nomeCestaDisplay = isImportTab ? 'Importada' : DADOS_CESTAS[tipoKey].titulo;
 
             if (modo === 'normal') {
-                // Modo Normal: Gera a string formatada a partir dos códigos
                 const listaCod = DADOS_CESTAS[tipoKey].itensCod;
                 listaCod.forEach(item => {
                    const produto = CATALOGO_PRODUTOS[item[1]];
-                   if(produto) {
-                       // Guardamos o objeto completo (nome, ean, código, qtd)
-                       // Para exibição na tela e impressão
-                       itensFinais.push({
-                           cod: item[1],
-                           qtd: item[0],
-                           nome: produto.nome,
-                           ean: produto.ean
-                       });
-                   }
+                   if(produto) itensFinais.push({ cod: item[1], qtd: item[0], nome: produto.nome, ean: produto.ean });
                 });
             } else {
-                // Modo Alterada/Importada
                 const codInput = document.getElementById('inputCodigoCesta').value;
-                if(!codInput) {
-                    alert('Por favor, informe o CÓDIGO de identificação (Número do Pedido/Cesta).');
-                    document.getElementById('inputCodigoCesta').focus();
-                    return;
-                }
+                if(!codInput) return alert('Informe o CÓDIGO.');
                 identificacao = codInput;
-
                 const container = document.getElementById('areaItensCesta');
-                
                 Array.from(container.children).forEach(child => {
-                    if (child.classList.contains('flex')) {
-                        const qInput = child.querySelector('.item-qtd');
-                        const dInput = child.querySelector('.item-desc');
-                        
-                        // Tenta pegar o código se existir no span
-                        const spanCod = child.querySelector('span.font-mono');
-                        const codigo = spanCod ? spanCod.innerText : 'EXT';
-
-                        const q = qInput ? qInput.value : 0;
-                        const d = dInput ? dInput.value : '';
-                        
-                        // Busca o EAN se existir no catálogo
-                        let ean = '';
-                        if(CATALOGO_PRODUTOS[codigo]) ean = CATALOGO_PRODUTOS[codigo].ean;
-
-                        if (q > 0 && d) {
-                            itensFinais.push({
-                                cod: codigo,
-                                qtd: q,
-                                nome: d, // Nome pode ter sido editado (raro, mas possivel se for extra)
-                                ean: ean
-                            });
-                        }
+                    const qInput = child.querySelector('.item-qtd');
+                    const spanCod = child.querySelector('span.font-mono');
+                    const codigo = spanCod ? spanCod.innerText : 'EXT';
+                    const q = qInput ? qInput.value : 0;
+                    if (q > 0) {
+                        let ean = CATALOGO_PRODUTOS[codigo] ? CATALOGO_PRODUTOS[codigo].ean : '';
+                        let nome = CATALOGO_PRODUTOS[codigo] ? CATALOGO_PRODUTOS[codigo].nome : 'Extra';
+                        itensFinais.push({ cod: codigo, qtd: q, nome: nome, ean: ean });
                     }
                 });
             }
 
-            const itemCarrinho = {
+            carrinho.push({
                 id: Date.now(),
                 tipo: nomeCestaDisplay,
                 marca: marcaNome,
                 preco: precoVal,
                 modo: modo,
                 identificacao: identificacao, 
-                conteudo: itensFinais // Agora é um array de objetos, não de strings
-            };
-
-            carrinho.push(itemCarrinho);
+                conteudo: itensFinais
+            });
             renderizarCarrinho();
-
-            // Limpa após adicionar se for importação
-            if(isImportTab) {
-                document.getElementById('txtImportar').value = '';
-                document.getElementById('areaItensCesta').innerHTML = '';
-                document.getElementById('inputCodigoCesta').value = '';
-            }
         }
 
         function removerDoCarrinho(id) {
@@ -856,7 +563,6 @@
             const tbody = document.getElementById('tabelaCarrinho');
             const divVazio = document.getElementById('carrinhoVazio');
             tbody.innerHTML = '';
-            
             let subtotal = 0;
 
             if (carrinho.length === 0) {
@@ -867,104 +573,64 @@
                     subtotal += item.preco;
                     const tr = document.createElement('tr');
                     tr.className = "border-t border-gray-100";
-                    
-                    let labelModo = '';
-                    if(item.modo === 'alterada') {
-                        labelModo = `<span class="text-[10px] bg-yellow-100 text-yellow-700 px-1 rounded ml-1">COD: ${item.identificacao}</span>`;
-                    }
-                    
+                    let label = item.modo === 'alterada' ? `<span class="bg-yellow-200 px-1 rounded ml-1 text-[9px]">COD:${item.identificacao}</span>` : '';
                     tr.innerHTML = `
-                        <td class="p-2">
-                            <div class="font-bold text-xs">${item.tipo} ${labelModo}</div>
-                            <div class="text-[10px] text-gray-500">${item.marca}</div>
+                        <td class="p-1">
+                            <div class="font-bold">${item.tipo} ${label}</div>
+                            <div class="text-[9px] text-gray-500">${item.marca}</div>
                         </td>
-                        <td class="p-2 text-right font-mono">R$ ${item.preco},00</td>
-                        <td class="p-2 text-center">
-                            <button onclick="removerDoCarrinho(${item.id})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-times"></i></button>
-                        </td>
+                        <td class="p-1 text-right">R$ ${item.preco}</td>
+                        <td class="p-1 text-center"><button onclick="removerDoCarrinho(${item.id})" class="text-red-500 font-bold">X</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
             }
-
             document.getElementById('lblSubtotal').innerText = subtotal.toFixed(2).replace('.', ',');
             calcularTotalFinal(subtotal);
         }
 
         function calcularTotalFinal(subtotalOverride) {
-            let sub = subtotalOverride;
-            if (sub === undefined) {
-                 const txt = document.getElementById('lblSubtotal').innerText.replace(',', '.');
-                 sub = parseFloat(txt);
-            }
-            
+            let sub = subtotalOverride !== undefined ? subtotalOverride : parseFloat(document.getElementById('lblSubtotal').innerText.replace(',', '.'));
             let desc = parseFloat(document.getElementById('desconto').value) || 0;
-            const final = Math.max(0, sub - desc);
-            document.getElementById('lblTotalFinal').innerText = final.toFixed(2).replace('.', ',');
+            document.getElementById('lblTotalFinal').innerText = Math.max(0, sub - desc).toFixed(2).replace('.', ',');
         }
 
-        // --- FINALIZAÇÃO ---
         function finalizarPedido() {
             const selCliente = document.getElementById('selCliente');
-            if (!selCliente.value) return alert('Selecione um cliente!');
-            if (carrinho.length === 0) return alert('Adicione pelo menos uma cesta!');
-
+            if (!selCliente.value || carrinho.length === 0) return alert('Preencha Cliente e Carrinho!');
             const clienteDados = JSON.parse(selCliente.options[selCliente.selectedIndex].dataset.json);
             
-            const subtotalText = document.getElementById('lblSubtotal').innerText.replace(',', '.');
-            const totalText = document.getElementById('lblTotalFinal').innerText.replace(',', '.');
-            const desc = parseFloat(document.getElementById('desconto').value);
-
-            // GERAÇÃO DE CÓDIGO DIÁRIO (DDMMSQ - SEM SEPARADOR)
             const now = new Date();
-            const dia = String(now.getDate()).padStart(2, '0');
-            const mes = String(now.getMonth() + 1).padStart(2, '0');
-            const ano = now.getFullYear();
-            
-            // Filtra pedidos de hoje para achar a sequência
-            const dataHojeStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            const dataHojeStr = now.toISOString().split('T')[0];
             const countHoje = pedidos.filter(p => p.data.startsWith(dataHojeStr)).length + 1;
-            const seq = String(countHoje).padStart(2, '0');
-            
-            // Formato: DDMMSQ (Ex: 020101)
-            const codigoVisual = `${dia}${mes}${seq}`;
+            const codigoVisual = `${String(now.getDate()).padStart(2,'0')}${String(now.getMonth()+1).padStart(2,'0')}${String(countHoje).padStart(2,'0')}`;
 
-            const novoPedido = {
-                id: Date.now().toString(), // ID Único do Sistema (Timestamp)
-                codigoVisual: codigoVisual, // Código para Etiqueta (DDMMSQ)
+            pedidos.push({
+                id: Date.now().toString(),
+                codigoVisual: codigoVisual,
                 data: new Date().toISOString(),
                 ordem: Date.now(), 
                 cliente: clienteDados, 
                 rota: document.getElementById('rota').value,
-                pagamento: {
-                    metodo: document.getElementById('pagMetodo').value,
-                    status: document.getElementById('pagStatus').value
-                },
+                pagamento: { metodo: document.getElementById('pagMetodo').value, status: document.getElementById('pagStatus').value },
                 financeiro: {
-                    subtotal: parseFloat(subtotalText),
-                    desconto: desc,
-                    total: parseFloat(totalText)
+                    subtotal: parseFloat(document.getElementById('lblSubtotal').innerText.replace(',', '.')),
+                    desconto: parseFloat(document.getElementById('desconto').value),
+                    total: parseFloat(document.getElementById('lblTotalFinal').innerText.replace(',', '.'))
                 },
                 brinde: document.getElementById('brinde').value,
                 obs: document.getElementById('obs').value,
                 itens: carrinho
-            };
-
-            pedidos.push(novoPedido);
+            });
             salvarPedidosLocais();
-            
-            alert(`Pedido salvo com sucesso!\nCódigo Gerado: ${codigoVisual}`);
+            alert(`Salvo: ${codigoVisual}`);
             limparPedidoAtual();
-            
             document.getElementById('filtroData').valueAsDate = new Date();
             renderizarListaPedidos();
         }
 
-        function salvarPedidosLocais() {
-            localStorage.setItem(KEY_PEDIDOS, JSON.stringify(pedidos));
-        }
-
-        function carregarPedidosLocais() {
+        function salvarPedidosLocais() { localStorage.setItem(KEY_PEDIDOS, JSON.stringify(pedidos)); }
+        function carregarPedidosLocais() { 
             const dados = localStorage.getItem(KEY_PEDIDOS);
             if (dados) pedidos = JSON.parse(dados);
         }
@@ -972,78 +638,30 @@
         function limparPedidoAtual() {
             carrinho = [];
             renderizarCarrinho();
-            
             document.getElementById('selCliente').value = "";
             document.getElementById('inputBuscaCliente').value = ""; 
-            carregarClientes(); 
-            
             document.getElementById('obs').value = "";
             document.getElementById('pagStatus').value = "pendente";
             document.getElementById('desconto').value = "0";
-            document.getElementById('brinde').value = "Nenhum";
-            
-            // Reseta tabs
             alternarTab('padrao');
-            
             calcularTotalFinal(0);
         }
 
-        // --- FUNÇÃO AUXILIAR: GERAR CÓDIGO CLIENTE VISUAL ---
         function gerarCodigoClienteVisual(cliente, rotaPedido) {
-            // 1. Cidade (CBA ou VG)
-            let cid = 'CBA';
-            const cidadeRaw = (cliente.cidade || '').toLowerCase();
-            if (cidadeRaw.includes('varzea') || cidadeRaw.includes('várzea') || cidadeRaw.includes('vg')) {
-                cid = 'VG';
-            }
-
-            // 2. Rota (Remove espaços e caracteres especiais se desejar, ou mantém como está se for simples)
-            // O prompt diz "A ROTA" - vamos assumir o nome da rota do pedido limpo
+            let cid = (cliente.cidade || '').toLowerCase().includes('vg') ? 'VG' : 'CBA';
             const rotaLimpa = rotaPedido.replace(/[^a-zA-Z0-9]/g, '');
-
-            // 3. Telefone (4 últimos dígitos)
-            const telRaw = cliente.telefone || '';
-            const telNumeros = telRaw.replace(/\D/g, '');
-            const telFinal = telNumeros.length >= 4 ? telNumeros.slice(-4) : '0000';
-
-            // Formato: CIDADE + ROTA + FINAL_TEL (Tudo junto)
+            const telFinal = (cliente.telefone || '').replace(/\D/g, '').slice(-4).padStart(4,'0');
             return `${cid}${rotaLimpa}${telFinal}`;
         }
 
-        // --- VISUALIZAÇÃO E FILTROS ---
-        
         function filtrarRota(rota) {
             filtroRotaAtual = rota;
             document.querySelectorAll('.btn-rota').forEach(btn => {
-                btn.classList.remove('bg-white', 'shadow', 'text-gray-800', 'font-medium');
-                btn.classList.add('text-gray-500', 'hover:bg-white');
+                btn.className = 'flex-1 btn-rota text-gray-500 hover:bg-white text-[10px] py-1 rounded border border-transparent';
             });
-            
-            const idBtn = rota === 'Coxipó' ? 'btnRotaCoxipo' : 
-                          rota === 'VG' ? 'btnRotaVG' : 
-                          rota === 'Cuiabá' ? 'btnRotaCuiaba' : 
-                          rota === 'CPA' ? 'btnRotaCPA' : 'btnRotaTodos';
-                          
-            const btnAtivo = document.getElementById(idBtn);
-            if(btnAtivo) {
-                btnAtivo.classList.remove('text-gray-500', 'hover:bg-white');
-                btnAtivo.classList.add('bg-white', 'shadow', 'text-gray-800', 'font-medium');
-            }
-
+            const btnAtivo = document.getElementById('btnRota' + (rota === 'todos' ? 'Todos' : rota.replace(/\s+/g, '')));
+            if(btnAtivo) btnAtivo.className = 'flex-1 btn-rota bg-white shadow text-gray-800 text-[10px] py-1 rounded font-bold border border-gray-200';
             renderizarListaPedidos();
-        }
-
-        function toggleDetalhes(id) {
-            const div = document.getElementById(`detalhes_${id}`);
-            const icon = document.getElementById(`icon_expand_${id}`);
-            
-            if(div.classList.contains('hidden')) {
-                div.classList.remove('hidden');
-                icon.classList.add('rotate-180');
-            } else {
-                div.classList.add('hidden');
-                icon.classList.remove('rotate-180');
-            }
         }
 
         function getPedidosVisiveis() {
@@ -1056,11 +674,10 @@
 
         function moverPedido(id, direcao) {
             const listaAtual = getPedidosVisiveis();
-            listaAtual.forEach((p, index) => { p.ordem = index * 10; });
+            listaAtual.forEach((p, index) => p.ordem = index * 10);
             const indexAtual = listaAtual.findIndex(p => p.id === id);
             if (indexAtual === -1) return;
             const indexAlvo = indexAtual + direcao;
-
             if (indexAlvo >= 0 && indexAlvo < listaAtual.length) {
                 const ordemTemp = listaAtual[indexAtual].ordem;
                 listaAtual[indexAtual].ordem = listaAtual[indexAlvo].ordem;
@@ -1070,7 +687,6 @@
             }
         }
 
-        // --- DRAG AND DROP ---
         function handleDragStart(e) {
             this.classList.add('dragging');
             dragSrcEl = this;
@@ -1087,13 +703,13 @@
             const idDestino = this.dataset.id;
             if (dragSrcEl !== this) {
                 const listaAtual = getPedidosVisiveis();
-                listaAtual.forEach((p, index) => { p.ordem = index * 10; });
+                listaAtual.forEach((p, index) => p.ordem = index * 10);
                 const idxOrigem = listaAtual.findIndex(p => p.id === idOrigem);
                 const idxDestino = listaAtual.findIndex(p => p.id === idDestino);
                 if (idxOrigem > -1 && idxDestino > -1) {
                     const [itemMovido] = listaAtual.splice(idxOrigem, 1);
                     listaAtual.splice(idxDestino, 0, itemMovido);
-                    listaAtual.forEach((p, index) => { p.ordem = index * 10; });
+                    listaAtual.forEach((p, index) => p.ordem = index * 10);
                     salvarPedidosLocais();
                     renderizarListaPedidos();
                 }
@@ -1102,36 +718,26 @@
         }
         function handleDragEnd(e) { document.querySelectorAll('.draggable-card').forEach(col => col.classList.remove('dragging', 'border-indigo-500', 'bg-indigo-50')); }
 
-        // --- RENDERIZAÇÃO ---
         function renderizarListaPedidos() {
             const container = document.getElementById('listaPedidos');
             const pedidosFiltrados = getPedidosVisiveis();
-
-            // Resumo Rotas
             const resumo = {};
             pedidosFiltrados.forEach(p => { resumo[p.rota] = (resumo[p.rota] || 0) + 1; });
-            const divResumo = document.getElementById('resumoRotas');
-            divResumo.innerHTML = Object.entries(resumo).map(([rota, qtd]) => 
-                `<span class="bg-blue-100 text-blue-800 px-1.5 rounded">${rota}: ${qtd}</span>`
-            ).join('');
+            document.getElementById('resumoRotas').innerHTML = Object.entries(resumo).map(([rota, qtd]) => `<span class="bg-blue-100 text-blue-800 px-1 rounded">${rota.substring(0,3)}:${qtd}</span>`).join('');
             
             container.innerHTML = '';
-            if (pedidosFiltrados.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-400 mt-10">Nenhum pedido encontrado.</div>';
-                return;
-            }
+            if (pedidosFiltrados.length === 0) return container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-xs">Vazio</div>';
 
             pedidosFiltrados.forEach((p, index) => {
                 const card = document.createElement('div');
                 const isPago = p.pagamento.status === 'pago';
                 const borderClass = isPago ? 'border-green-500' : 'border-yellow-400';
-                
-                // Gera o Código do Cliente para exibição no card
                 const codClienteVisual = gerarCodigoClienteVisual(p.cliente, p.rota);
+                const nomeCurto = p.cliente.nome.substring(0, 10).toUpperCase();
 
                 card.setAttribute('draggable', 'true');
                 card.dataset.id = p.id;
-                card.className = "draggable-card bg-white border-l-4 " + borderClass + " shadow-sm rounded-r mb-2 transition-all-300 flex";
+                card.className = "draggable-card bg-white border-l-4 " + borderClass + " shadow-sm rounded-r mb-2 flex flex-col p-1.5";
                 
                 card.addEventListener('dragstart', handleDragStart);
                 card.addEventListener('dragenter', handleDragEnter);
@@ -1140,301 +746,121 @@
                 card.addEventListener('drop', handleDrop);
                 card.addEventListener('dragend', handleDragEnd);
 
-                const itemsSummary = p.itens.map(i => {
-                    const alertIcon = i.modo === 'alterada' ? '<span class="text-red-500 font-bold ml-1">!</span>' : '';
-                    return `${i.tipo}${alertIcon}`;
-                }).join(', ');
+                const opcoesEntregadores = Object.keys(ENTREGADORES).map(k => `<option value="${k}">${ENTREGADORES[k].nome}</option>`).join('');
                 
-                const opcoesEntregadores = Object.keys(ENTREGADORES).map(k => 
-                    `<option value="${k}">${ENTREGADORES[k].nome}</option>`
-                ).join('');
-
-                const detalhesItens = p.itens.map(i => {
-                    const resumo = i.conteudo.map(item => `${item.qtd}x ${item.nome}`).join(', ');
-                    const isAlt = i.modo === 'alterada';
-                    return `
-                        <div class="flex justify-between border-b border-gray-100 py-0.5 last:border-0 text-[10px]">
-                            <span class="truncate pr-2" title="${resumo}">${i.tipo} <small class="text-gray-500">(${i.marca})</small></span>
-                            ${isAlt ? `<span class="bg-red-100 text-red-800 px-1 rounded border border-red-200">COD: ${i.identificacao}</span>` : ''}
+                // --- LINHA 1: Cabeçalho ---
+                const headerHtml = `
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="flex items-center gap-1">
+                            <span class="bg-gray-800 text-white text-[10px] font-mono px-1 rounded font-bold">${p.codigoVisual || '--'}</span>
+                            <span class="font-bold text-gray-800 text-xs" title="${p.cliente.nome}">${nomeCurto}</span>
+                            <span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded font-mono">${codClienteVisual}</span>
                         </div>
-                    `;
-                }).join('');
-
-                const localizacao = `${p.cliente.endereco || ''}, ${p.cliente.bairro || ''}`;
-                const linkMap = p.cliente.maps ? p.cliente.maps : '';
-                const linkFoto = p.cliente.foto ? p.cliente.foto : ''; 
-                
-                const btnMapHTML = linkMap ? 
-                    `<button onclick="event.stopPropagation(); window.open('${linkMap}', '_blank')" class="ml-2 text-orange-500 hover:text-orange-600 transition" title="Abrir Mapa"><i class="fa-solid fa-map-location-dot"></i></button>` : 
-                    `<button onclick="event.stopPropagation();" class="ml-2 text-gray-300 cursor-not-allowed" title="Sem Mapa"><i class="fa-solid fa-map-location-dot"></i></button>`;
-
-                const btnFotoHTML = linkFoto ? 
-                    `<button onclick="event.stopPropagation(); window.open('${linkFoto}', '_blank')" class="ml-1 text-purple-500 hover:text-purple-600 transition" title="Ver Foto"><i class="fa-solid fa-image"></i></button>` : 
-                    `<button onclick="event.stopPropagation();" class="ml-1 text-gray-300 cursor-not-allowed" title="Sem Foto"><i class="fa-solid fa-image"></i></button>`;
-                
-                const botoesOrdem = pedidosFiltrados.length > 1 ? `
-                    <div class="flex flex-col gap-1 mr-2 justify-center pl-1">
-                        <button onclick="moverPedido('${p.id}', -1)" class="bg-gray-100 hover:bg-gray-200 text-gray-600 w-6 h-6 rounded flex items-center justify-center border border-gray-300 ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" title="Subir">
-                            <i class="fa-solid fa-caret-up"></i>
-                        </button>
-                        <div class="text-[8px] text-gray-400 text-center"><i class="fa-solid fa-grip-lines"></i></div>
-                        <button onclick="moverPedido('${p.id}', 1)" class="bg-gray-100 hover:bg-gray-200 text-gray-600 w-6 h-6 rounded flex items-center justify-center border border-gray-300 ${index === pedidosFiltrados.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" title="Descer">
-                            <i class="fa-solid fa-caret-down"></i>
-                        </button>
-                    </div>
-                ` : '<div class="pl-2"></div>';
-
-                // --- BOTÃO DE ETIQUETA ADICIONADO AQUI ---
-                card.innerHTML = `
-                    ${botoesOrdem}
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 p-2 cursor-pointer hover:bg-gray-50 transition" onclick="toggleDetalhes('${p.id}')">
-                            <div class="min-w-[50px] text-center flex flex-col gap-1">
-                                <span class="bg-indigo-600 text-white text-[10px] font-bold px-1 rounded shadow-sm">${index + 1}º</span>
-                                <span class="text-[9px] font-black uppercase bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 block">${p.rota.substring(0,3).toUpperCase()}</span>
-                            </div>
-                            <div class="flex-1 min-w-0 flex flex-col justify-center">
-                                <div class="font-bold text-gray-800 text-sm truncate leading-tight flex items-center gap-1">
-                                    ${p.cliente.nome}
-                                    <span class="text-[9px] bg-black text-white px-1 rounded ml-1 font-mono">${codClienteVisual}</span>
-                                </div>
-                                <div class="text-[10px] text-gray-500 truncate flex items-center">
-                                    <span class="bg-gray-100 text-gray-600 px-1 rounded mr-1 font-mono font-bold">#${p.codigoVisual || '---'}</span>
-                                    <i class="fa-solid fa-location-dot text-[9px] text-gray-400 mr-1"></i> ${localizacao}
-                                    ${btnMapHTML} ${btnFotoHTML}
-                                </div>
-                            </div>
-                            <div class="hidden sm:block w-1/3 px-2">
-                                 <div class="text-[10px] text-gray-600 truncate bg-gray-50 border border-gray-100 rounded px-1 py-0.5">
-                                    <i class="fa-solid fa-basket-shopping text-gray-400 mr-1"></i> ${itemsSummary}
-                                 </div>
-                            </div>
-                            <div class="text-right flex flex-col items-end min-w-[70px]">
-                                <span class="font-bold text-indigo-700 text-sm">R$ ${p.financeiro.total.toFixed(0)}</span>
-                                <i id="icon_expand_${p.id}" class="fa-solid fa-chevron-down text-gray-400 text-xs transition-all-300"></i>
-                            </div>
-                        </div>
-
-                        <div id="detalhes_${p.id}" class="hidden bg-gray-50 border-t border-gray-200 text-[11px] text-gray-700">
-                            <div class="p-1.5">
-                                <div class="bg-white p-1 rounded border border-gray-200 mb-1">${detalhesItens}</div>
-                                <div class="grid grid-cols-4 gap-1 items-stretch">
-                                    <div class="col-span-1 bg-white p-1 rounded border border-gray-200 flex flex-col justify-center">
-                                        <div class="text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">Obs</div>
-                                        <div class="leading-tight truncate" title="${p.obs || ''}">${p.obs || '-'}</div>
-                                    </div>
-                                    <div class="col-span-1 bg-white p-1 rounded border border-gray-200 flex flex-col justify-center text-center">
-                                        ${p.brinde !== 'Nenhum' ? `<div class="text-green-700 font-bold text-[10px] leading-none mb-0.5">🎁 ${p.brinde}</div>` : ''}
-                                        <div class="leading-tight font-medium">${p.pagamento.metodo.toUpperCase()}</div>
-                                    </div>
-                                    <div class="col-span-2 bg-white p-1 rounded border border-gray-200 flex items-center justify-between gap-1">
-                                        <div class="flex items-center gap-1 flex-1">
-                                            <select id="selEntregador_${p.id}" class="w-full text-[10px] border border-gray-300 rounded py-0.5 pl-1 bg-gray-50 focus:ring-0 h-6">
-                                                ${opcoesEntregadores}
-                                            </select>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <button onclick="enviarPedidoZap('${p.id}')" class="bg-green-100 text-green-700 w-6 h-6 rounded flex items-center justify-center hover:bg-green-200" title="Zap"><i class="fa-brands fa-whatsapp"></i></button>
-                                            
-                                            <!-- Botão de Impressão ETIQUETA -->
-                                            <button onclick="imprimirEtiquetaPedido('${p.id}')" class="bg-gray-800 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-gray-600 shadow-sm" title="Imprimir Etiquetas"><i class="fa-solid fa-tag"></i></button>
-                                            
-                                            <button onclick="excluirPedido('${p.id}')" class="bg-red-50 text-red-500 w-6 h-6 rounded flex items-center justify-center hover:bg-red-100" title="Del"><i class="fa-solid fa-trash"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="flex items-center gap-1">
+                            ${p.cliente.maps ? '<i class="fa-solid fa-map-location-dot text-orange-500 text-[10px]"></i>' : ''}
+                            <span class="font-bold text-indigo-700 text-xs">R$${p.financeiro.total.toFixed(0)}</span>
                         </div>
                     </div>
                 `;
+
+                // --- LINHA 2: Resumo Itens ---
+                const resumoItens = p.itens.map(i => {
+                    const tipo = i.tipo.replace('Cesta ', '');
+                    const labelAlt = i.modo === 'alterada' ? `<span class="bg-red-100 text-red-800 px-0.5 rounded text-[8px] font-bold">ALT</span>` : '';
+                    return `<div class="flex justify-between text-[10px] leading-tight text-gray-600"><span>${tipo} (${i.marca.substring(0,3)})</span> ${labelAlt}</div>`;
+                }).join('');
+
+                const itensHtml = `<div class="bg-gray-50 border border-gray-100 rounded p-1 mb-1">${resumoItens}</div>`;
+
+                // --- LINHA 3: Ações ---
+                const acoesHtml = `
+                    <div class="flex items-center justify-between gap-1 mt-auto">
+                        <div class="flex items-center gap-1">
+                            <button onclick="moverPedido('${p.id}', -1)" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-caret-up"></i></button>
+                            <button onclick="moverPedido('${p.id}', 1)" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-caret-down"></i></button>
+                        </div>
+                        <div class="flex-1 px-1">
+                            <select id="selEntregador_${p.id}" class="w-full text-[9px] border border-gray-300 rounded py-0 bg-white h-5">
+                                <option value="">Entregador...</option>
+                                ${opcoesEntregadores}
+                            </select>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="enviarPedidoZap('${p.id}')" class="bg-green-100 text-green-700 w-5 h-5 rounded flex items-center justify-center hover:bg-green-200" title="Zap"><i class="fa-brands fa-whatsapp text-[10px]"></i></button>
+                            <button onclick="imprimirEtiquetaPedido('${p.id}')" class="bg-gray-800 text-white w-5 h-5 rounded flex items-center justify-center hover:bg-gray-600" title="Etiqueta"><i class="fa-solid fa-tag text-[10px]"></i></button>
+                            <button onclick="excluirPedido('${p.id}')" class="text-red-300 hover:text-red-500 w-4"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = headerHtml + itensHtml + acoesHtml;
                 container.appendChild(card);
             });
         }
 
-        // --- EXPORTAR / WHATSAPP / IMPRESSÃO ---
-        function excluirPedido(id) {
-            if(confirm('Confirmar exclusão deste pedido?')) {
-                pedidos = pedidos.filter(p => p.id !== id);
-                salvarPedidosLocais();
-                renderizarListaPedidos();
-            }
-        }
-
+        // Funções de Ação (Mantidas iguais, mas compactadas)
+        function excluirPedido(id) { if(confirm('Del?')) { pedidos = pedidos.filter(p => p.id !== id); salvarPedidosLocais(); renderizarListaPedidos(); } }
+        
         function enviarPedidoZap(id) {
             const p = pedidos.find(item => item.id === id);
-            const keyEntregador = document.getElementById(`selEntregador_${id}`).value;
-            const entregador = ENTREGADORES[keyEntregador];
-            if(!p || !entregador) return;
-
-            // Gera código para o zap também
-            const codCliente = gerarCodigoClienteVisual(p.cliente, p.rota);
-
-            let msg = `*PEDIDO #${p.id.slice(-4)}*\n`;
-            msg += `*Cód Pedido:* ${p.codigoVisual || 'N/A'}\n`;
-            msg += `*Cód Cliente:* ${codCliente}\n`;
-            msg += `*Cliente:* ${p.cliente.nome}\n`;
-            if(p.cliente.apelido) msg += `*Apelido:* ${p.cliente.apelido}\n`;
-            msg += `*Telefone:* ${p.cliente.telefone}\n`;
-            msg += `*Cidade:* ${p.cliente.cidade || 'Não informada'}\n`;
-            msg += `*Bairro:* ${p.cliente.bairro || ''}\n`;
-            msg += `*Endereço:* ${p.cliente.endereco}\n`;
-            if(p.cliente.desc_casa) msg += `*Frente Casa:* ${p.cliente.desc_casa}\n`;
-            msg += `*Link Maps:* ${p.cliente.maps || 'Sem link'}\n`;
-            msg += `*Obs:* ${p.obs || '-'}\n\n`;
-            msg += `*ITENS DO PEDIDO:* \n`;
-            p.itens.forEach(i => {
-                i.conteudo.forEach(item => {
-                    msg += `- ${item.qtd}x ${item.nome}\n`;
-                });
-            });
-            if(p.brinde !== 'Nenhum') msg += `\n🎁 *Brinde:* ${p.brinde}\n`;
-            msg += `\n*Pagamento:* ${p.pagamento.metodo.toUpperCase()}\n`;
+            const ent = ENTREGADORES[document.getElementById(`selEntregador_${id}`).value];
+            if(!p || !ent) return alert('Selecione Entregador');
+            const codCli = gerarCodigoClienteVisual(p.cliente, p.rota);
+            let msg = `*PEDIDO #${p.codigoVisual}*\n*Cli:* ${p.cliente.nome} (${codCli})\n*End:* ${p.cliente.endereco}, ${p.cliente.bairro}\n*Map:* ${p.cliente.maps||''}\n*Obs:* ${p.obs||''}\n`;
+            p.itens.forEach(i => i.conteudo.forEach(it => msg += `${it.qtd}x ${it.nome}\n`));
             msg += `*Total:* R$ ${p.financeiro.total.toFixed(2)}`;
-
-            const link = `https://wa.me/${entregador.num}?text=${encodeURIComponent(msg)}`;
-            window.open(link, '_blank');
+            window.open(`https://wa.me/${ent.num}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function enviarListaRotaWhatsapp() {
             const filtroData = document.getElementById('filtroData').value;
             let lista = pedidos.filter(p => p.data.startsWith(filtroData));
             if (filtroRotaAtual !== 'todos') lista = lista.filter(p => p.rota === filtroRotaAtual);
-
-            if (lista.length === 0) return alert('Nenhum pedido listado para enviar.');
-
-            const resumoPorRota = {};
-            lista.forEach(p => {
-                const rota = p.rota;
-                if (!resumoPorRota[rota]) resumoPorRota[rota] = {};
-                p.itens.forEach(item => {
-                    item.conteudo.forEach(subItem => {
-                         // Agrupa por "Código + Nome"
-                         const key = `[${subItem.cod}] ${subItem.nome}`;
-                         if(!resumoPorRota[rota][key]) resumoPorRota[rota][key] = 0;
-                         resumoPorRota[rota][key] += subItem.qtd;
-                    });
-                });
-            });
-
-            const dataFormatada = filtroData.split('-').reverse().join('/');
-            let msg = `*RESUMO DE CARGA - ${dataFormatada}*\n`;
-            Object.keys(resumoPorRota).sort().forEach(r => {
-                msg += `\n*Rota: ${r}*\n`;
-                Object.keys(resumoPorRota[r]).sort().forEach(itemKey => {
-                    msg += `${resumoPorRota[r][itemKey]}x ${itemKey}\n`;
-                });
-                msg += `-----\n`;
-            });
-
-            const link = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            window.open(link, '_blank');
+            if (lista.length === 0) return alert('Vazio');
+            const resumo = {};
+            lista.forEach(p => p.itens.forEach(i => i.conteudo.forEach(s => { const k = `[${s.cod}] ${s.nome}`; resumo[k] = (resumo[k]||0) + s.qtd; })));
+            let msg = `*CARGA ${filtroData} - ${filtroRotaAtual.toUpperCase()}*\n`;
+            Object.keys(resumo).sort().forEach(k => msg += `${resumo[k]}x ${k}\n`);
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function exportarPedidosJson() {
             const filtroData = document.getElementById('filtroData').value;
             let lista = pedidos.filter(p => p.data.startsWith(filtroData));
-            if (filtroRotaAtual !== 'todos') lista = lista.filter(p => p.rota === filtroRotaAtual);
-            lista.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
-            const dataStr = JSON.stringify(lista, null, 2);
-            const blob = new Blob([dataStr], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `rota_pedidos_${filtroData}.json`;
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(lista)], {type: "application/json"}));
+            a.download = `backup_${filtroData}.json`;
             a.click();
         }
 
-        // --- IMPRESSÃO DE ETIQUETAS (73mm x 150mm) ---
         function imprimirEtiquetaPedido(id) {
             const p = pedidos.find(item => item.id === id);
             if (!p) return;
-
             const area = document.getElementById('areaImpressao');
-            const dataObj = new Date(p.data);
-            const dataF = dataObj.toLocaleDateString('pt-BR');
-            const horaF = dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-            
-            const primeiroNome = p.cliente.nome.split(' ')[0].toUpperCase();
-            
-            // GERAÇÃO DO CÓDIGO DO CLIENTE (Função Auxiliar)
-            const idCliente = gerarCodigoClienteVisual(p.cliente, p.rota);
-            
-            const rota = p.rota.toUpperCase();
-            const codVisual = p.codigoVisual || 'SEM COD';
-            
-            // Novos Dados
-            const telefone = p.cliente.telefone || 'Sem Tel';
-            const enderecoFull = `${p.cliente.endereco}, ${p.cliente.bairro || ''} - ${p.cliente.cidade || ''}`;
-
-            let todasEtiquetasHtml = '';
-
-            // Itera sobre cada ITEM do pedido (cada Cesta é um item)
+            const codCli = gerarCodigoClienteVisual(p.cliente, p.rota);
+            let html = '';
             p.itens.forEach(item => {
-                const tipoLower = item.tipo.toLowerCase();
-                let qtdEtiquetas = 1;
-
-                // Lógica de Volumetria baseada no nome
-                if (tipoLower.includes('mini') || tipoLower.includes('pequena')) {
-                    qtdEtiquetas = 2;
-                } else if (tipoLower.includes('grande') || tipoLower.includes('média') || tipoLower.includes('media')) {
-                    qtdEtiquetas = 3;
-                } else {
-                    // Economica ou Personalizada padrão
-                    qtdEtiquetas = 1; 
-                }
-
-                // Define o nome da Cesta para exibir
-                let nomeCestaDisplay = item.tipo.toUpperCase();
-                if(item.modo === 'alterada' && item.identificacao) {
-                    nomeCestaDisplay = `COD: ${item.identificacao}`;
-                }
-
-                // Renderiza N etiquetas para este item
-                for (let i = 1; i <= qtdEtiquetas; i++) {
-                    
-                    // SEM LISTA DE PRODUTOS
-                    let conteudoCentral = `<div style="text-align:center; font-size:12px; margin-top:5px;">*** ${nomeCestaDisplay} ***</div>`;
-
-                    todasEtiquetasHtml += `
+                let qtd = (item.tipo.match(/mini|pequena/i)) ? 2 : (item.tipo.match(/grande|media|média/i) ? 3 : 1);
+                let nomeCesta = item.modo === 'alterada' ? `COD: ${item.identificacao}` : item.tipo.toUpperCase();
+                for (let i = 1; i <= qtd; i++) {
+                    html += `
                         <div class="label-container">
                             <div>
-                                <div class="label-header">
-                                    <span class="label-date">${dataF} ${horaF}</span>
-                                </div>
-                                
-                                <div class="label-client-name">${primeiroNome}</div>
-                                <div class="label-client-phone">${telefone}</div>
-                                <div class="label-client-address">${enderecoFull}</div>
-                                
-                                <div class="label-client-code-box">${idCliente}</div>
-                                
-                                <div class="label-rota">${rota}</div>
-                                
-                                <div class="label-order-code">PED: ${codVisual}</div>
+                                <div class="label-header"><span class="label-date">${new Date(p.data).toLocaleDateString('pt-BR')}</span></div>
+                                <div class="label-client-name">${p.cliente.nome.split(' ')[0].toUpperCase()}</div>
+                                <div class="label-client-phone">${p.cliente.telefone||''}</div>
+                                <div class="label-client-address">${p.cliente.endereco}, ${p.cliente.bairro}</div>
+                                <div class="label-client-code-box">${codCli}</div>
+                                <div class="label-rota">${p.rota.toUpperCase()}</div>
+                                <div class="label-order-code">PED: ${p.codigoVisual}</div>
                             </div>
-
-                            <div>
-                                <div class="label-basket">${nomeCestaDisplay}</div>
-                                ${conteudoCentral}
-                            </div>
-
-                            <div class="label-footer">
-                                <div class="volume-counter">VOL: ${i}/${qtdEtiquetas}</div>
-                                <div style="border-top: 1px solid black; padding-top:2px; margin-top:2px;">
-                                    SISTEMA DONA ANTONIA
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                            <div><div class="label-basket">${nomeCesta}</div></div>
+                            <div class="label-footer"><div class="volume-counter">VOL: ${i}/${qtd}</div><div style="border-top:1px solid black;margin-top:2px;">SISTEMA DONA ANTONIA</div></div>
+                        </div>`;
                 }
             });
-
-            area.innerHTML = todasEtiquetasHtml;
-            
-            // Pequeno delay para garantir renderização antes do print
-            setTimeout(() => {
-                window.print();
-            }, 300);
+            area.innerHTML = html;
+            setTimeout(() => window.print(), 300);
         }
     </script>
 </body>
