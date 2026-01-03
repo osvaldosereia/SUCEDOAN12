@@ -132,6 +132,35 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
+    <!-- Modal Exportação -->
+    <div id="modalExportacao" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white rounded-lg shadow-xl w-80 p-5 transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-800 text-sm uppercase"><i class="fa-solid fa-file-arrow-down mr-2 text-blue-600"></i>Exportar do Dia</h3>
+                <button onclick="fecharModalExportacao()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Selecione a Rota</label>
+                <select id="selRotaExportacao" class="w-full border border-gray-300 rounded text-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-gray-50">
+                    <option value="todas">Todas as Rotas</option>
+                    <option value="Coxipó">Coxipó</option>
+                    <option value="VG">Várzea Grande (VG)</option>
+                    <option value="Cuiabá">Cuiabá (Centro/Norte)</option>
+                    <option value="CPA">CPA</option>
+                </select>
+                <p class="text-[10px] text-gray-400 mt-1">Isso filtrará os pedidos apenas de hoje.</p>
+            </div>
+            
+            <div class="flex gap-2 justify-end pt-2 border-t border-gray-100">
+                <button onclick="fecharModalExportacao()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded text-xs font-bold transition-colors">Cancelar</button>
+                <button onclick="confirmarExportacaoDia()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Baixar Arquivo
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container p-2 no-print">
         
         <!-- Header -->
@@ -166,7 +195,7 @@
                 <button onclick="exportarBackupGeral()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-2 transition-colors" title="Salva últimos 90 dias">
                     <i class="fa-solid fa-database"></i> BKP (90d)
                 </button>
-                <button onclick="exportarDoDia()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-2 transition-colors" title="Baixar apenas hoje">
+                <button onclick="abrirModalExportacao()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-2 transition-colors" title="Exportar pedidos de hoje">
                     <i class="fa-solid fa-download"></i> Hoje
                 </button>
             </div>
@@ -785,15 +814,41 @@
             showToast(`Backup de ${backup.length} pedidos (90 dias) gerado!`, 'success');
         }
 
-        // 2. Exportar Somente Hoje (Para fechamento)
-        function exportarDoDia() {
+        // --- EXPORTAÇÃO MODAL (NOVA LÓGICA) ---
+        function abrirModalExportacao() {
+            document.getElementById('modalExportacao').classList.remove('hidden');
+        }
+
+        function fecharModalExportacao() {
+            document.getElementById('modalExportacao').classList.add('hidden');
+        }
+
+        function confirmarExportacaoDia() {
+            const rotaSelecionada = document.getElementById('selRotaExportacao').value;
             const dataHoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            const doDia = pedidos.filter(p => p.data.startsWith(dataHoje));
             
-            if (doDia.length === 0) return showToast('Nenhum pedido hoje para baixar.', 'warning');
+            let doDia = pedidos.filter(p => p.data.startsWith(dataHoje));
             
-            downloadJSON(doDia, `FECHAMENTO_${dataHoje}.json`);
-            showToast(`Arquivo do dia (${doDia.length} pedidos) baixado!`, 'success');
+            if (rotaSelecionada !== 'todas') {
+                doDia = doDia.filter(p => p.rota === rotaSelecionada);
+            }
+            
+            if (doDia.length === 0) {
+                fecharModalExportacao();
+                return showToast('Nenhum pedido encontrado para esta seleção.', 'warning');
+            }
+            
+            const sufixo = rotaSelecionada === 'todas' ? 'GERAL' : rotaSelecionada.toUpperCase().replace(/\s+/g, '_');
+            downloadJSON(doDia, `FECHAMENTO_${sufixo}_${dataHoje}.json`);
+            
+            fecharModalExportacao();
+            showToast(`Arquivo (${rotaSelecionada}) com ${doDia.length} pedidos baixado!`, 'success');
+        }
+
+        // 2. Exportar Somente Hoje (Antigo - Mantido para referência se precisar, mas a UI usa o modal agora)
+        function exportarDoDia() {
+            // Redireciona para o modal agora
+            abrirModalExportacao();
         }
 
         // --- RENDERIZAÇÃO ---
