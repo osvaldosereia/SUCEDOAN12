@@ -72,24 +72,42 @@
             .label-page {
                 width: 76mm; height: 76mm;
                 page-break-after: always; break-after: page;
-                padding: 5mm; 
+                padding: 2mm 5mm 5mm 5mm; /* Ajustado padding superior */
                 box-sizing: border-box;
                 display: flex; flex-direction: column; justify-content: space-between;
                 border: 1px dashed #eee; 
+                position: relative;
             }
             
-            .label-date { font-size: 16px; font-weight: 900; text-align: center; border-bottom: 2px solid black; margin-bottom: 3px; }
-            .label-client-name { font-size: 18px; font-weight: 900; line-height: 1; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
-            .label-client-phone { font-size: 16px; font-weight: 900; margin-bottom: 2px; }
-            .label-client-address { font-size: 11px; line-height: 1.1; font-weight: normal; text-transform: uppercase; margin-bottom: 4px; }
+            /* Novo Estilo para Pedido Gigante */
+            .label-big-id {
+                font-size: 38px;
+                font-weight: 900;
+                text-align: center;
+                line-height: 1;
+                margin-bottom: 5px;
+                border-bottom: 2px solid black;
+            }
+
+            .label-date { font-size: 14px; font-weight: 900; text-align: center; border-bottom: 1px solid black; margin-bottom: 2px; }
+            .label-client-name { font-size: 16px; font-weight: 900; line-height: 1; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+            .label-client-phone { font-size: 14px; font-weight: 900; margin-bottom: 2px; }
+            .label-client-address { font-size: 10px; line-height: 1; font-weight: normal; text-transform: uppercase; margin-bottom: 2px; }
             
-            .info-row { display: flex; justify-content: space-between; gap: 5px; margin-bottom: 4px; }
-            .box-code { border: 2px solid black; font-weight: 900; padding: 2px 4px; font-size: 14px; text-transform: uppercase; border-radius: 4px; flex: 1; text-align: center; }
+            .info-row { display: flex; justify-content: space-between; gap: 5px; margin-bottom: 2px; }
+            .box-code { border: 2px solid black; font-weight: 900; padding: 1px 4px; font-size: 12px; text-transform: uppercase; border-radius: 4px; flex: 1; text-align: center; }
 
             .label-basket-info { font-size: 12px; font-weight: 900; text-transform: uppercase; border-top: 2px solid black; padding-top: 2px; }
             .label-brinde { font-size: 11px; font-weight: bold; margin-top: 1px; }
             
-            .label-footer { text-align: right; font-size: 16px; font-weight: 900; }
+            .label-footer { display: flex; justify-content: space-between; align-items: flex-end; font-size: 16px; font-weight: 900; }
+            
+            /* Linha Pontilhada no Final */
+            .label-cut-line {
+                width: 100%;
+                border-bottom: 4px dotted black;
+                margin-top: 5px;
+            }
 
             /* --- MONTAGEM / LISTA --- */
             .montagem-page { width: 76mm; padding: 2mm; box-sizing: border-box; page-break-after: always; }
@@ -807,28 +825,40 @@
             const header = getHeaderImpressao();
             let html = '';
 
-            p.itens.forEach(item => {
+            p.itens.forEach((item, idx) => {
                 let qtd = (item.tipo.match(/mini|pequena/i)) ? 2 : (item.tipo.match(/grande|media|média/i) ? 3 : 1);
                 let nomeCesta = `CESTA ${item.tipo.toUpperCase()} (${item.marca})`;
                 if(item.modo === 'alterada') nomeCesta += ` - ALTERADA (COD: ${item.identificacao})`;
                 
+                // Informação de item múltiplo (ex: Cesta 1 de 2 no pedido)
+                let infoItemExtra = p.itens.length > 1 ? `<span style="font-size:10px;">(ITEM ${idx+1}/${p.itens.length})</span>` : '';
+
                 for (let i = 1; i <= qtd; i++) {
                     html += `
-                        <div class="label-page"><div class="label-content">
-                            ${header}
-                            <div>
-                                <div class="label-date">${dataF}</div>
-                                <div class="label-client-name">${nomeCli}</div>
-                                <div class="label-client-phone">${p.cliente.telefone||''}</div>
-                                <div class="label-client-address">${p.cliente.endereco}, ${p.cliente.bairro}</div>
-                                <div class="info-row">
-                                    <div class="box-code">ROTA: ${p.rota.toUpperCase()}</div>
-                                    <div class="box-code">PED: ${p.codigoVisual}</div>
+                        <div class="label-page">
+                            <div class="label-big-id">#${p.codigoVisual}</div>
+                            <div class="label-content">
+                                ${header}
+                                <div>
+                                    <div class="label-date">${dataF}</div>
+                                    <div class="label-client-name">${nomeCli}</div>
+                                    <div class="label-client-phone">${p.cliente.telefone||''}</div>
+                                    <div class="label-client-address">${p.cliente.endereco}, ${p.cliente.bairro}</div>
+                                    <div class="info-row">
+                                        <div class="box-code">ROTA: ${p.rota.substring(0,10).toUpperCase()}</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="label-basket-info">${nomeCesta} ${infoItemExtra}</div>
+                                    <div class="label-brinde">${brinde}</div>
+                                </div>
+                                <div class="label-footer">
+                                    <div style="font-size:10px;">VOL</div>
+                                    <div class="volume-counter">${i}/${qtd}</div>
                                 </div>
                             </div>
-                            <div><div class="label-basket-info">${nomeCesta}</div><div class="label-brinde">${brinde}</div></div>
-                            <div class="label-footer"><div class="volume-counter">VOL: ${i}/${qtd}</div></div>
-                        </div></div>`;
+                            <div class="label-cut-line"></div>
+                        </div>`;
                 }
             });
             area.innerHTML = html; setTimeout(() => window.print(), 300);
@@ -841,8 +871,17 @@
             const horaF = new Date(p.data).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
             
             let htmlConteudo = '';
-            p.itens.forEach(item => {
-                let titulo = item.tipo.toUpperCase();
+            
+            // Loop modificado para exibir Marca e tratar múltiplos itens
+            p.itens.forEach((item, index) => {
+                // Título com Marca (Arroz) obrigatório
+                let titulo = `${item.tipo.toUpperCase()} - ${item.marca.toUpperCase()}`;
+                
+                // Se houver mais de uma cesta no pedido, enumera (Ex: Item 1: Pequena - Alvino)
+                if(p.itens.length > 1) {
+                    titulo = `ITEM ${index + 1}: ${titulo}`;
+                }
+
                 let lista = '';
                 if (item.modo === 'alterada') {
                     titulo += ` (COD: ${item.identificacao})`;
