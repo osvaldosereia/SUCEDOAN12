@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema V2.1 - Gestão de Vendas (SKU + EAN)</title>
+    <title>Sistema V2.2 - Expedição & Etiquetas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,10 +35,10 @@
             background-color: #eef2ff !important;
         }
 
-        /* --- Estilo de Impressão (Termica Bobina 76-80mm) --- */
+        /* --- Estilo de Impressão (Etiqueta 73mm x 150mm) --- */
         @media print {
             @page { 
-                size: 76mm auto; /* Ajustado para bobina solicitada */
+                size: 73mm 150mm; /* Tamanho exato da etiqueta */
                 margin: 0; 
             }
             body * { visibility: hidden; }
@@ -47,21 +47,44 @@
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 76mm; /* Largura fixa */
-                padding: 2mm 2mm; /* Margem segura */
+                width: 71mm; /* Ligeira margem de segurança */
+                /* height: 148mm; Removido altura fixa para fluir se necessário, mas o page-break controla */
                 background: white;
                 color: black;
-                font-family: 'Arial', sans-serif; /* Fonte sem serifa grossa */
+                font-family: 'Arial Black', 'Arial', sans-serif;
                 display: block !important;
                 overflow: visible;
             }
             
-            /* Classes utilitárias de impressão forçada */
-            .print-bold { font-weight: 900 !important; }
-            .print-big { font-size: 16px !important; line-height: 1.2 !important; }
-            .print-huge { font-size: 22px !important; line-height: 1.1 !important; text-transform: uppercase; }
-            .print-mono { font-family: 'Courier New', monospace !important; font-weight: bold; font-size: 14px; }
-            .print-line { border-bottom: 2px solid black !important; margin: 5px 0 !important; }
+            /* Classes de Etiqueta */
+            .label-container {
+                width: 100%;
+                height: 148mm; /* Força altura da etiqueta */
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 2mm;
+                border: 1px dashed #ccc; /* Guia de corte visual, opcional */
+                page-break-after: always; /* OBRIGATÓRIO: Pula para próxima etiqueta */
+                box-sizing: border-box;
+            }
+
+            .label-header { text-align: center; border-bottom: 2px solid black; padding-bottom: 5px; margin-bottom: 5px; }
+            .label-date { font-size: 12px; font-weight: normal; }
+            
+            .label-client-name { font-size: 28px; font-weight: 900; line-height: 1; text-transform: uppercase; margin-bottom: 5px; }
+            .label-client-id { font-size: 14px; background: black; color: white; padding: 2px 6px; display: inline-block; border-radius: 4px; }
+            
+            .label-rota { font-size: 40px; font-weight: 900; text-align: center; border: 3px solid black; padding: 5px; margin: 10px 0; text-transform: uppercase; }
+            
+            .label-order-code { font-size: 18px; text-align: center; margin: 5px 0; font-family: 'Courier New', monospace; font-weight: bold;}
+            
+            .label-basket { font-size: 20px; font-weight: bold; text-transform: uppercase; border-top: 2px solid black; padding-top: 5px; }
+            .label-basket-detail { font-size: 12px; font-weight: normal; }
+            
+            .label-footer { text-align: center; font-size: 10px; margin-top: auto; }
+            .volume-counter { font-size: 16px; font-weight: bold; text-align: right; margin-top: 5px; }
+
             .no-print { display: none !important; }
         }
         #areaImpressao { display: none; }
@@ -75,9 +98,9 @@
         <header class="bg-white shadow-sm rounded-lg p-3 mb-3 flex justify-between items-center border border-gray-200">
             <div class="flex items-center gap-4">
                 <div class="bg-indigo-600 text-white p-2 rounded">
-                    <i class="fa-solid fa-barcode"></i>
+                    <i class="fa-solid fa-tags"></i>
                 </div>
-                <h1 class="font-bold text-lg text-gray-700">Módulo 2: Vendas & Rota (SKU + EAN)</h1>
+                <h1 class="font-bold text-lg text-gray-700">Módulo 2: Expedição & Etiquetas</h1>
             </div>
             
             <!-- Links -->
@@ -883,8 +906,23 @@
             const totalText = document.getElementById('lblTotalFinal').innerText.replace(',', '.');
             const desc = parseFloat(document.getElementById('desconto').value);
 
+            // GERAÇÃO DE CÓDIGO DIÁRIO (DD-MM-SEQ)
+            const now = new Date();
+            const dia = String(now.getDate()).padStart(2, '0');
+            const mes = String(now.getMonth() + 1).padStart(2, '0');
+            const ano = now.getFullYear();
+            
+            // Filtra pedidos de hoje para achar a sequência
+            const dataHojeStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            const countHoje = pedidos.filter(p => p.data.startsWith(dataHojeStr)).length + 1;
+            const seq = String(countHoje).padStart(2, '0');
+            
+            // Formato: DD-MM-SQ (Ex: 02-01-01)
+            const codigoVisual = `${dia}-${mes}-${seq}`;
+
             const novoPedido = {
-                id: Date.now().toString(),
+                id: Date.now().toString(), // ID Único do Sistema (Timestamp)
+                codigoVisual: codigoVisual, // Código para Etiqueta (DD-MM-SQ)
                 data: new Date().toISOString(),
                 ordem: Date.now(), 
                 cliente: clienteDados, 
@@ -906,7 +944,7 @@
             pedidos.push(novoPedido);
             salvarPedidosLocais();
             
-            alert('Pedido salvo com sucesso!');
+            alert(`Pedido salvo com sucesso!\nCódigo Gerado: ${codigoVisual}`);
             limparPedidoAtual();
             
             document.getElementById('filtroData').valueAsDate = new Date();
@@ -1112,7 +1150,7 @@
                     </div>
                 ` : '<div class="pl-2"></div>';
 
-                // --- BOTÃO DE MONTAGEM ADICIONADO AQUI ---
+                // --- BOTÃO DE ETIQUETA ADICIONADO AQUI ---
                 card.innerHTML = `
                     ${botoesOrdem}
                     <div class="flex-1">
@@ -1124,6 +1162,7 @@
                             <div class="flex-1 min-w-0 flex flex-col justify-center">
                                 <div class="font-bold text-gray-800 text-sm truncate leading-tight">${p.cliente.nome}</div>
                                 <div class="text-[10px] text-gray-500 truncate flex items-center">
+                                    <span class="bg-gray-100 text-gray-600 px-1 rounded mr-1 font-mono font-bold">${p.codigoVisual || '---'}</span>
                                     <i class="fa-solid fa-location-dot text-[9px] text-gray-400 mr-1"></i> ${localizacao}
                                     ${btnMapHTML} ${btnFotoHTML}
                                 </div>
@@ -1160,11 +1199,8 @@
                                         <div class="flex items-center gap-1">
                                             <button onclick="enviarPedidoZap('${p.id}')" class="bg-green-100 text-green-700 w-6 h-6 rounded flex items-center justify-center hover:bg-green-200" title="Zap"><i class="fa-brands fa-whatsapp"></i></button>
                                             
-                                            <!-- Botão de Impressão Padrão -->
-                                            <button onclick="imprimirPedido('${p.id}')" class="bg-gray-100 text-gray-600 w-6 h-6 rounded flex items-center justify-center hover:bg-gray-200" title="Cupom Fiscal"><i class="fa-solid fa-print"></i></button>
-                                            
-                                            <!-- NOVO: Botão de Montagem -->
-                                            <button onclick="imprimirMontagem('${p.id}')" class="bg-blue-100 text-blue-700 w-6 h-6 rounded flex items-center justify-center hover:bg-blue-200 border border-blue-200" title="Montagem (Estoque)"><i class="fa-solid fa-box-open"></i></button>
+                                            <!-- Botão de Impressão ETIQUETA -->
+                                            <button onclick="imprimirEtiquetaPedido('${p.id}')" class="bg-gray-800 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-gray-600 shadow-sm" title="Imprimir Etiquetas"><i class="fa-solid fa-tag"></i></button>
                                             
                                             <button onclick="excluirPedido('${p.id}')" class="bg-red-50 text-red-500 w-6 h-6 rounded flex items-center justify-center hover:bg-red-100" title="Del"><i class="fa-solid fa-trash"></i></button>
                                         </div>
@@ -1194,6 +1230,7 @@
             if(!p || !entregador) return;
 
             let msg = `*PEDIDO #${p.id.slice(-4)}*\n`;
+            msg += `*Cód:* ${p.codigoVisual || 'N/A'}\n`;
             msg += `*Cliente:* ${p.cliente.nome}\n`;
             if(p.cliente.apelido) msg += `*Apelido:* ${p.cliente.apelido}\n`;
             msg += `*Telefone:* ${p.cliente.telefone}\n`;
@@ -1266,164 +1303,100 @@
             a.click();
         }
 
-        function imprimirPedido(id) {
+        // --- IMPRESSÃO DE ETIQUETAS (73mm x 150mm) ---
+        function imprimirEtiquetaPedido(id) {
             const p = pedidos.find(item => item.id === id);
             if (!p) return;
 
             const area = document.getElementById('areaImpressao');
-            const dataF = new Date(p.data).toLocaleDateString('pt-BR');
-            const horaF = new Date(p.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-
-            let htmlItens = '';
-            p.itens.forEach(item => {
-                let tituloShow = item.tipo;
-                if(item.modo === 'alterada' && item.identificacao) tituloShow += ` <b>(${item.identificacao})</b>`;
-                
-                // Formata linhas com EAN pequeno se existir
-                const linhasConteudo = item.conteudo.map(subItem => {
-                    const eanShow = subItem.ean ? `<span style="font-size:8px;">(EAN:${subItem.ean})</span>` : '';
-                    return `- <b>${subItem.qtd}x</b> ${subItem.nome} ${eanShow}`;
-                }).join('<br>');
-                
-                htmlItens += `
-                    <div style="margin-bottom: 5px; border-bottom: 1px dashed #ccc; padding-bottom: 2px;">
-                        <b>${tituloShow}</b> (${item.marca})
-                        <div style="float:right;">R$ ${item.preco},00</div>
-                        <br><span style="font-size:10px; margin-left: 5px; display:block;">${linhasConteudo}</span>
-                    </div>
-                `;
-            });
-
-            const obsBlock = p.obs ? `<div style="margin-top:5px; font-weight:bold; border: 1px solid #000; padding: 2px;">OBS: ${p.obs}</div>` : '';
-            const brindeBlock = p.brinde !== 'Nenhum' ? `<div style="margin-top:5px;">🎁 BRINDE: <b>${p.brinde}</b></div>` : '';
-
-            area.innerHTML = `
-                <div style="text-align:center; font-weight:bold; margin-bottom: 5px;">
-                    PEDIDO DE VENDA<br>${dataF} às ${horaF}
-                </div>
-                <div style="border-bottom: 1px solid #000; margin-bottom: 5px;"></div>
-                <div><b>CLIENTE:</b> ${p.cliente.nome}</div>
-                <div><b>TEL:</b> ${p.cliente.telefone}</div>
-                <div style="margin-top:3px;"><b>ROTA:</b> ${p.rota}</div>
-                <div style="font-size: 11px; margin-top:2px;">${p.cliente.endereco}, ${p.cliente.bairro || ''}</div>
-                <div style="border-bottom: 1px solid #000; margin: 10px 0;"></div>
-                ${htmlItens}
-                <div style="margin-top: 10px; text-align:right;">
-                    Subtotal: R$ ${p.financeiro.subtotal.toFixed(2)}<br>
-                    Desconto: - R$ ${p.financeiro.desconto.toFixed(2)}<br>
-                    <b style="font-size: 14px;">TOTAL: R$ ${p.financeiro.total.toFixed(2)}</b>
-                </div>
-                <div style="margin-top: 5px; font-size: 11px;">
-                    Pagamento: <b>${p.pagamento.metodo.toUpperCase()}</b> (${p.pagamento.status.toUpperCase()})
-                </div>
-                ${brindeBlock} ${obsBlock}
-                <div style="margin-top: 15px; text-align:center; font-size: 10px;">*** FIM DO PEDIDO ***</div>
-            `;
-            window.print();
-        }
-
-        // --- IMPRESSÃO MONTAGEM (EXPEDIÇÃO) ---
-        function imprimirMontagem(id) {
-            const p = pedidos.find(item => item.id === id);
-            if (!p) return;
-
-            const area = document.getElementById('areaImpressao');
-            const dataF = new Date(p.data).toLocaleDateString('pt-BR');
-            const horaF = new Date(p.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+            const dataObj = new Date(p.data);
+            const dataF = dataObj.toLocaleDateString('pt-BR');
+            const horaF = dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
             
             const primeiroNome = p.cliente.nome.split(' ')[0].toUpperCase();
-            
-            let htmlConteudo = '';
+            const idCliente = p.cliente.id || 'N/A';
+            const rota = p.rota.toUpperCase();
+            const codVisual = p.codigoVisual || 'SEM COD';
 
+            let todasEtiquetasHtml = '';
+
+            // Itera sobre cada ITEM do pedido (cada Cesta é um item)
             p.itens.forEach(item => {
-                let titulo = item.tipo.toUpperCase();
-                let subtitulo = `(${item.marca})`;
-                let listaItensHtml = '';
+                const tipoLower = item.tipo.toLowerCase();
+                let qtdEtiquetas = 1;
 
-                // Se for Alterada, montar lista com EAN VETORIAL
-                if (item.modo === 'alterada') {
-                    titulo += ' (ALTERADA/IMP)';
-                    subtitulo += ` - COD: ${item.identificacao || 'N/A'}`;
+                // Lógica de Volumetria baseada no nome
+                if (tipoLower.includes('mini') || tipoLower.includes('pequena')) {
+                    qtdEtiquetas = 2;
+                } else if (tipoLower.includes('grande') || tipoLower.includes('média') || tipoLower.includes('media')) {
+                    qtdEtiquetas = 3;
+                } else {
+                    // Economica ou Personalizada padrão
+                    qtdEtiquetas = 1; 
+                }
+
+                // Define o nome da Cesta para exibir
+                let nomeCestaDisplay = item.tipo.toUpperCase();
+                if(item.modo === 'alterada' && item.identificacao) {
+                    nomeCestaDisplay = `COD: ${item.identificacao}`;
+                }
+
+                // Renderiza N etiquetas para este item
+                for (let i = 1; i <= qtdEtiquetas; i++) {
                     
-                    listaItensHtml = item.conteudo.map(subItem => {
-                        let barcodeSvg = '';
-                        if(subItem.ean && subItem.ean.length > 5){
-                             // Placeholder para SVG que será renderizado pelo JsBarcode
-                             barcodeSvg = `<svg class="barcode_render"
-                                jsbarcode-value="${subItem.ean}"
-                                jsbarcode-format="auto"
-                                jsbarcode-width="2"
-                                jsbarcode-height="40"
-                                jsbarcode-fontSize="12"
-                                jsbarcode-displayValue="true">
-                             </svg>`;
-                        } else {
-                            barcodeSvg = `<div style="font-size:10px; padding:5px; border:1px solid #ccc;">(SEM CÓD. BARRAS)</div>`;
-                        }
-
-                        return `
-                            <div class="print-line" style="margin-top: 10px !important; padding-bottom:5px;">
-                                <div style="font-size: 14px; font-weight: bold;">${subItem.nome.toUpperCase()}</div>
-                                <div class="print-mono" style="font-size: 16px;">
-                                    COD: ${subItem.cod} | <b>QTD: ${subItem.qtd}</b>
-                                </div>
-                                <div style="text-align:center; margin-top:2px;">
-                                    ${barcodeSvg}
-                                </div>
+                    let conteudoCentral = '';
+                    
+                    // Se for Alterada ou Personalizada, mostra itens
+                    if (item.modo === 'alterada') {
+                        const lista = item.conteudo.map(subItem => 
+                            `<div>${subItem.cod} | ${subItem.ean || ''} | <b>QTD: ${subItem.qtd}</b></div>`
+                        ).join('');
+                        
+                        conteudoCentral = `
+                            <div class="label-basket-detail" style="margin-top:5px; border:1px solid #000; padding:2px;">
+                                ${lista}
                             </div>
                         `;
-                    }).join('');
-                }
+                    } else {
+                        conteudoCentral = `<div style="text-align:center; font-size:12px; margin-top:5px;">(CESTA PADRÃO)</div>`;
+                    }
 
-                htmlConteudo += `
-                    <div style="margin-bottom: 20px; border: 2px solid black; padding: 5px;">
-                        <div class="print-huge">${titulo}</div>
-                        <div style="font-size: 14px;">${subtitulo}</div>
-                        ${listaItensHtml ? `<div style="margin-top: 10px;">${listaItensHtml}</div>` : ''}
-                    </div>
-                `;
+                    todasEtiquetasHtml += `
+                        <div class="label-container">
+                            <div>
+                                <div class="label-header">
+                                    <span class="label-date">${dataF} ${horaF}</span>
+                                </div>
+                                <div class="label-client-name">${primeiroNome}</div>
+                                <div><span class="label-client-id">CLIENTE: ${idCliente}</span></div>
+                                
+                                <div class="label-rota">${rota}</div>
+                                
+                                <div class="label-order-code">PEDIDO: ${codVisual}</div>
+                            </div>
+
+                            <div>
+                                <div class="label-basket">${nomeCestaDisplay}</div>
+                                ${conteudoCentral}
+                            </div>
+
+                            <div class="label-footer">
+                                <div class="volume-counter">VOL: ${i}/${qtdEtiquetas}</div>
+                                <div style="border-top: 1px solid black; padding-top:2px; margin-top:2px;">
+                                    SISTEMA DONA ANTONIA
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
             });
 
-            const obsHtml = p.obs ? `<div style="font-size:16px; font-weight:bold; border: 2px solid black; padding: 5px; margin-top: 10px;">OBS: ${p.obs.toUpperCase()}</div>` : '';
-
-            area.innerHTML = `
-                <div class="print-big" style="text-align:center;">
-                    MONTAGEM / EXPEDIÇÃO<br>
-                    ${dataF} - ${horaF}
-                </div>
-                <div class="print-line"></div>
-                
-                <div class="print-huge">
-                    ${primeiroNome} | ${p.cliente.id || 'N/ID'}
-                </div>
-                <div class="print-huge" style="margin-top: 5px;">
-                    ROTA: ${p.rota.toUpperCase()}
-                </div>
-
-                <div class="print-line" style="border-bottom-width: 4px !important;"></div>
-                
-                <div style="margin-top: 10px;">
-                    ${htmlConteudo}
-                </div>
-
-                ${obsHtml}
-            `;
+            area.innerHTML = todasEtiquetasHtml;
             
-            // Renderiza os códigos de barras antes de imprimir
-            try {
-                if(window.JsBarcode) {
-                    JsBarcode(".barcode_render").init();
-                } else {
-                    console.error("Biblioteca JsBarcode não carregada.");
-                }
-            } catch (e) {
-                console.error("Erro ao gerar barcode", e);
-            }
-
-            // Pequeno delay para garantir que o SVG seja desenhado
+            // Pequeno delay para garantir renderização antes do print
             setTimeout(() => {
                 window.print();
-            }, 500);
+            }, 300);
         }
     </script>
 </body>
