@@ -69,6 +69,9 @@
         const Package = (props) => <IconBase {...props}><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></IconBase>;
         const XCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></IconBase>;
         const DollarSign = (props) => <IconBase {...props}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></IconBase>;
+        const Eye = (props) => <IconBase {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></IconBase>;
+        const StreetView = (props) => <IconBase {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></IconBase>; // Simplified Eye for Street View
+
         const ZapIcon = () => (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
@@ -173,15 +176,22 @@
                 window.open(url, '_blank');
             };
 
-            const openMap = (address, mapsLink) => {
-                if (mapsLink) {
-                    if(mapsLink.includes('http')) {
-                        window.open(mapsLink, '_blank');
+            const openMap = (address, mapsLink, mode = 'map') => {
+                const query = mapsLink || address;
+                
+                if (mode === 'streetview') {
+                    // Tenta forçar o modo Street View (layer=c)
+                    if (mapsLink && mapsLink.includes('http')) {
+                         window.open(mapsLink, '_blank');
                     } else {
-                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsLink)}`, '_blank');
+                         window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}&layer=c`, '_blank');
                     }
                 } else {
-                    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+                    if (mapsLink && mapsLink.includes('http')) {
+                        window.open(mapsLink, '_blank');
+                    } else {
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
+                    }
                 }
             };
 
@@ -312,125 +322,167 @@
                             displayedOrders.map((order) => {
                                 const isPending = order.status_entrega === 'pendente';
                                 const isCancelled = order.status_entrega === 'cancelado';
+                                const item = order.itens && order.itens[0] ? order.itens[0] : { tipo: 'Produto', marca: '' };
                                 
                                 return (
                                     <div 
                                         key={order.id} 
-                                        className={`rounded-xl shadow-lg overflow-hidden border-2 ${
+                                        className={`rounded-xl shadow-lg overflow-hidden border-2 transition-all ${
                                             isPending ? 'bg-white border-transparent' : 
                                             isCancelled ? 'bg-red-50 border-red-200 opacity-60' : 'bg-green-50 border-green-200 opacity-60'
                                         }`}
                                     >
-                                        {/* CABEÇALHO DO CARD */}
-                                        <div className="bg-gray-50 px-4 py-3 flex justify-between items-start border-b border-gray-100">
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <h2 className="text-lg font-bold text-gray-800">{order.cliente.nome}</h2>
-                                                    {order.cliente.apelido && <span className="text-xs bg-gray-200 px-2 py-0.5 rounded text-gray-600">{order.cliente.apelido}</span>}
-                                                </div>
-                                                <span className="inline-block mt-1 text-xs font-bold px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                                                    {order.rota}
-                                                </span>
-                                            </div>
-                                            <div className="text-right">
-                                                <span className={`block font-bold text-lg ${order.pagamento.status === 'pago' ? 'text-green-600' : 'text-orange-600'}`}>
-                                                    R$ {order.financeiro.total}
-                                                </span>
-                                                <span className="text-xs text-gray-500 uppercase">{order.pagamento.metodo}</span>
-                                            </div>
+                                        {/* --- HEADER NOVO: ROTA E VALOR --- */}
+                                        <div className="bg-gray-100 px-4 py-3 flex justify-between items-center border-b border-gray-200">
+                                            <span className="font-bold text-sm text-gray-500 uppercase flex items-center gap-1">
+                                               <Truck size={16} /> Rota: {order.rota}
+                                            </span>
+                                            <span className={`font-black text-xl ${order.pagamento.status === 'pago' ? 'text-green-600' : 'text-orange-600'}`}>
+                                                R$ {order.financeiro.total}
+                                            </span>
                                         </div>
 
-                                        {/* CORPO DO CARD */}
+                                        {/* --- CORPO DO CARD --- */}
                                         <div className="p-4">
-                                            <div className="mb-4">
-                                                <p className="text-gray-700 leading-snug flex items-start gap-2">
-                                                    <MapPin className="text-red-500 shrink-0 mt-1" size={18} />
+                                            
+                                            {/* NOME CLIENTE COM CÓDIGO DO PEDIDO (030101) */}
+                                            <h2 className="text-2xl font-black text-gray-900 leading-tight mb-1 uppercase flex flex-wrap gap-x-2">
+                                                <span className="text-blue-600">#{order.id}</span>
+                                                <span>{order.cliente.nome}</span>
+                                            </h2>
+                                            {order.cliente.apelido && (
+                                                <span className="inline-block text-xs bg-gray-200 px-2 py-0.5 rounded text-gray-600 mb-2 font-bold uppercase">
+                                                    {order.cliente.apelido}
+                                                </span>
+                                            )}
+
+                                            {/* ENDEREÇO & CIDADE */}
+                                            <div className="mt-2 mb-4 text-gray-700">
+                                                <p className="flex items-start gap-1 font-semibold text-lg leading-snug">
+                                                    <MapPin className="text-red-500 shrink-0 mt-1" size={20} />
                                                     {order.cliente.endereco}
                                                 </p>
-                                                {order.obs && (
-                                                    <p className="mt-2 text-sm bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-200 flex items-center gap-2">
-                                                        <Info size={16} /> <b>Obs:</b> {order.obs}
+                                                {order.cliente.cidade && (
+                                                    <p className="ml-6 text-sm text-gray-500 uppercase font-bold">
+                                                        {order.cliente.cidade}
                                                     </p>
                                                 )}
                                             </div>
 
-                                            {/* BOTÕES DE AÇÃO - APENAS SE PENDENTE */}
-                                            {isPending && (
-                                                <div className="space-y-3">
+                                            {/* GRID: PRODUTO & PAGAMENTO */}
+                                            <div className="grid grid-cols-2 gap-2 mb-3">
+                                                <div className="bg-blue-50 p-2 rounded border border-blue-100 flex flex-col justify-center">
+                                                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Produto</span>
+                                                    <span className="font-bold text-blue-900 leading-tight">{item.tipo}</span>
+                                                    <span className="text-xs text-blue-700 truncate">{item.marca}</span>
+                                                </div>
+                                                <div className="bg-gray-100 p-2 rounded border border-gray-200 flex flex-col justify-center text-right">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pagamento</span>
+                                                    <span className="font-bold text-gray-800 uppercase text-lg">{order.pagamento.metodo}</span>
+                                                    {order.pagamento.status === 'pago' && <span className="text-xs text-green-600 font-bold">JÁ PAGO</span>}
+                                                </div>
+                                            </div>
+
+                                            {/* OBSERVAÇÃO */}
+                                            {order.obs && (
+                                                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 rounded-r-lg">
+                                                    <span className="font-bold text-[10px] text-yellow-600 uppercase block mb-1">Observação</span>
+                                                    <p className="text-yellow-900 font-bold text-sm leading-snug">
+                                                        {order.obs}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* --- ÁREA DE BOTÕES --- */}
+                                            {isPending ? (
+                                                <div className="space-y-3 pt-2 border-t border-gray-100">
                                                     
-                                                    {/* AÇÕES RÁPIDAS (ZAP + MAPA) */}
-                                                    <div className="grid grid-cols-5 gap-2">
+                                                    {/* LINHA 1: MENSAGENS RÁPIDAS & CONTATO */}
+                                                    <div className="grid grid-cols-4 gap-2">
                                                         <button 
                                                             onClick={() => handleWhatsApp(order.cliente.telefone, `Olá ${order.cliente.nome}, entregador chegando com sua cesta!`)}
-                                                            className="col-span-1 bg-green-100 text-green-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-200"
+                                                            className="bg-sky-100 text-sky-700 h-12 rounded-lg flex flex-col items-center justify-center active:bg-sky-200 border border-sky-200"
                                                         >
                                                             <Truck size={20} />
-                                                            <span className="text-[10px] font-bold">Chegando</span>
+                                                            <span className="text-[9px] font-bold uppercase mt-0.5">Chegando</span>
                                                         </button>
+
                                                         <button 
                                                             onClick={() => handleWhatsApp(order.cliente.telefone, `Olá ${order.cliente.nome}, o entregador chegou! pode receber?`)}
-                                                            className="col-span-1 bg-green-100 text-green-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-200"
+                                                            className="bg-emerald-100 text-emerald-700 h-12 rounded-lg flex flex-col items-center justify-center active:bg-emerald-200 border border-emerald-200"
                                                         >
                                                             <CheckCircle size={20} />
-                                                            <span className="text-[10px] font-bold">Cheguei</span>
+                                                            <span className="text-[9px] font-bold uppercase mt-0.5">Cheguei</span>
                                                         </button>
-                                                         <button 
+                                                        
+                                                        <button 
                                                             onClick={() => handleWhatsApp(order.cliente.telefone, "")}
-                                                            className="col-span-1 bg-green-500 text-white py-2 rounded-lg flex flex-col items-center justify-center active:bg-green-600 shadow-sm"
+                                                            className="bg-green-500 text-white h-12 rounded-lg flex flex-col items-center justify-center active:bg-green-600 shadow-sm"
                                                         >
-                                                            <MessageCircle size={20} />
-                                                            <span className="text-[10px] font-bold">Zap</span>
+                                                            <MessageCircle size={24} />
+                                                            <span className="text-[9px] font-bold uppercase mt-0.5">Zap</span>
                                                         </button>
+                                                        
                                                         <a 
                                                             href={`tel:${order.cliente.telefone}`}
-                                                            className="col-span-1 bg-gray-100 text-gray-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-gray-200"
+                                                            className="bg-gray-200 text-gray-700 h-12 rounded-lg flex flex-col items-center justify-center active:bg-gray-300"
                                                         >
-                                                            <Phone size={20} />
-                                                            <span className="text-[10px] font-bold">Ligar</span>
+                                                            <Phone size={24} />
+                                                            <span className="text-[9px] font-bold uppercase mt-0.5">Ligar</span>
                                                         </a>
+                                                    </div>
+
+                                                    {/* LINHA 2: NAVEGAÇÃO */}
+                                                    <div className="grid grid-cols-2 gap-2">
                                                         <button 
-                                                            onClick={() => openMap(order.cliente.endereco, order.cliente.maps)}
-                                                            className="col-span-1 bg-blue-100 text-blue-700 py-2 rounded-lg flex flex-col items-center justify-center active:bg-blue-200"
+                                                            onClick={() => openMap(order.cliente.endereco, order.cliente.maps, 'map')}
+                                                            className="bg-blue-100 text-blue-700 h-10 rounded-lg flex items-center justify-center gap-2 active:bg-blue-200 border border-blue-200"
                                                         >
-                                                            <Navigation size={20} />
-                                                            <span className="text-[10px] font-bold">Mapa</span>
+                                                            <Navigation size={18} />
+                                                            <span className="text-xs font-bold uppercase">Abrir Mapa</span>
+                                                        </button>
+
+                                                        <button 
+                                                            onClick={() => openMap(order.cliente.endereco, order.cliente.maps, 'streetview')}
+                                                            className="bg-orange-100 text-orange-700 h-10 rounded-lg flex items-center justify-center gap-2 active:bg-orange-200 border border-orange-200"
+                                                        >
+                                                            <Eye size={18} />
+                                                            <span className="text-xs font-bold uppercase">Street View</span>
                                                         </button>
                                                     </div>
 
-                                                    <div className="flex gap-2">
+                                                    {/* LINHA 3: AÇÃO PRINCIPAL (Detalhes, Cancelar, Entregue) */}
+                                                    <div className="grid grid-cols-12 gap-2 h-14">
                                                         <button 
                                                             onClick={() => setDetailsModal({ open: true, order })}
-                                                            className="flex-1 bg-indigo-50 text-indigo-700 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 border border-indigo-100"
+                                                            className="col-span-3 bg-indigo-50 text-indigo-700 rounded-lg font-bold text-xs flex flex-col items-center justify-center border border-indigo-100 active:bg-indigo-100"
                                                         >
-                                                            <Package size={18} /> Ver Detalhes
+                                                            <Package size={20} className="mb-0.5" />
+                                                            Detalhes
                                                         </button>
-                                                    </div>
 
-                                                    <hr className="border-gray-100 my-2" />
-
-                                                    {/* AÇÕES PRINCIPAIS (ENTREGUE / CANCELADO) */}
-                                                    <div className="grid grid-cols-2 gap-3">
                                                         <button 
                                                             onClick={() => handleCancel(order)}
-                                                            className="bg-red-50 text-red-600 py-4 rounded-lg font-bold text-lg border border-red-200 active:bg-red-100 flex items-center justify-center gap-2"
+                                                            className="col-span-3 bg-red-50 text-red-600 rounded-lg font-bold text-xs flex flex-col items-center justify-center border border-red-200 active:bg-red-100"
                                                         >
-                                                            <XCircle size={24} /> Cancelar
+                                                            <XCircle size={20} className="mb-0.5" />
+                                                            Cancelar
                                                         </button>
+
                                                         <button 
                                                             onClick={() => openDeliveryModal(order)}
-                                                            className="bg-green-600 text-white py-4 rounded-lg font-bold text-lg shadow-md active:bg-green-700 flex items-center justify-center gap-2"
+                                                            className="col-span-6 bg-green-600 text-white rounded-lg font-black text-lg shadow-md active:bg-green-700 flex items-center justify-center gap-2 uppercase tracking-wide"
                                                         >
                                                             <CheckCircle size={24} /> ENTREGUE
                                                         </button>
                                                     </div>
-                                                </div>
-                                            )}
 
-                                            {/* STATUS FINALIZADO */}
-                                            {!isPending && (
-                                                <div className={`p-3 rounded-lg text-center font-bold flex items-center justify-center gap-2 ${isCancelled ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
+                                                </div>
+                                            ) : (
+                                                /* STATUS FINALIZADO */
+                                                <div className={`mt-2 p-3 rounded-lg text-center font-bold flex items-center justify-center gap-2 ${isCancelled ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
                                                     {isCancelled ? <XCircle /> : <CheckCircle />}
-                                                    {isCancelled ? 'PEDIDO CANCELADO' : 'PEDIDO ENTREGUE'}
+                                                    {isCancelled ? 'CANCELADO' : 'ENTREGUE'}
                                                 </div>
                                             )}
                                         </div>
@@ -579,7 +631,7 @@
 
                                                 {/* Código da Cesta */}
                                                 <div className="p-3 rounded-lg border-2 bg-gray-50 border-gray-300 text-center flex flex-col justify-center">
-                                                    <span className="text-xs font-bold uppercase text-gray-500 mb-1">Código / ID</span>
+                                                    <span className="text-xs font-bold uppercase text-gray-500 mb-1">Código Cesta</span>
                                                     <span className="font-black text-3xl text-gray-800 tracking-tighter">
                                                         {item.identificacao || '-'}
                                                     </span>
