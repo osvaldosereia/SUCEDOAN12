@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema V3.2 - Etiquetas Quadradas</title>
+    <title>Sistema V3.4 - Expedição (Correção Preços)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -131,7 +131,7 @@
                 <div class="bg-indigo-600 text-white p-1.5 rounded">
                     <i class="fa-solid fa-truck-fast text-sm"></i>
                 </div>
-                <h1 class="font-bold text-base text-gray-700">Módulo 2: Expedição V3.2</h1>
+                <h1 class="font-bold text-base text-gray-700">Módulo 2: Expedição V3.4</h1>
             </div>
             
             <nav class="flex gap-2">
@@ -260,6 +260,8 @@
                         <button onclick="filtrarRota('VG')" id="btnRotaVG" class="flex-1 btn-rota text-gray-500 hover:bg-white text-[10px] py-1 rounded border border-transparent">VG</button>
                         <button onclick="filtrarRota('Cuiabá')" id="btnRotaCuiaba" class="flex-1 btn-rota text-gray-500 hover:bg-white text-[10px] py-1 rounded border border-transparent">CBA</button>
                         <button onclick="filtrarRota('CPA')" id="btnRotaCPA" class="flex-1 btn-rota text-gray-500 hover:bg-white text-[10px] py-1 rounded border border-transparent">CPA</button>
+                        <!-- BOTÃO DE CONFERÊNCIA ADICIONADO -->
+                        <button onclick="imprimirRelatorioConferencia()" class="bg-purple-600 text-white w-6 h-6 rounded flex items-center justify-center shadow-sm ml-1 hover:bg-purple-500" title="Relatório Conferência"><i class="fa-solid fa-clipboard-list text-[10px]"></i></button>
                     </div>
                 </div>
                 <div class="flex-1 overflow-auto bg-gray-100 p-2 custom-scroll">
@@ -353,7 +355,7 @@
         window.onload = () => {
             carregarClientes();
             carregarPedidosLocais();
-            atualizarOpcoesPreco(); 
+            atualizarOpcoesPreco(); // Função corrigida (Nome correto)
             document.getElementById('filtroData').valueAsDate = new Date();
             renderizarListaPedidos();
         };
@@ -427,18 +429,27 @@
             renderizarListaEditavelGenerica(listaParaRenderizar);
         }
 
-        function actualizarOpcoesPreco() {
+        // AQUI ESTAVA O ERRO DE DIGITAÇÃO "actualizar"
+        function atualizarOpcoesPreco() {
             const tipo = document.getElementById('selTipoCesta').value;
             const selectMarca = document.getElementById('selMarcaPreco');
             selectMarca.innerHTML = '';
             const opcoes = PRECOS[tipo];
+            
             if (tipo === 'economica') {
                 selectMarca.add(new Option(`Padrão - R$ ${opcoes.padrao}`, opcoes.padrao));
             } else {
                 const opt1 = new Option(`Alvino - R$ ${opcoes.alvino}`, opcoes.alvino); opt1.setAttribute('data-marca', 'Alvino'); selectMarca.add(opt1);
                 const opt2 = new Option(`Koblenz - R$ ${opcoes.koblenz}`, opcoes.koblenz); opt2.setAttribute('data-marca', 'Koblenz'); selectMarca.add(opt2);
             }
-            if (selectMarca.options.length <= 1) selectMarca.classList.add('hidden'); else selectMarca.classList.remove('hidden');
+            
+            // Lógica para esconder seletor se só tiver 1 opção
+            if (selectMarca.options.length <= 1) {
+                selectMarca.classList.add('hidden');
+            } else {
+                selectMarca.classList.remove('hidden');
+            }
+
             if(document.querySelector('input[name="modoCesta"]:checked').value === 'alterada') {
                 const listaOriginal = DADOS_CESTAS[tipo].itensCod;
                 renderizarListaEditavelGenerica(listaOriginal);
@@ -472,6 +483,7 @@
             
             const selMarca = document.getElementById('selMarcaPreco');
             let isKoblenz = false;
+            // Se o seletor não está escondido e tem valor selecionado
             if (selMarca && !selMarca.classList.contains('hidden') && selMarca.selectedIndex >= 0) {
                  const opt = selMarca.options[selMarca.selectedIndex];
                  if(opt.getAttribute('data-marca') === 'Koblenz') isKoblenz = true;
@@ -497,6 +509,7 @@
 
         function adicionarItemAoCarrinho() {
             const tipoKey = document.getElementById('selTipoCesta').value;
+            // Garante que o preço seja capturado mesmo se o seletor estiver hidden (ele ainda tem valor)
             const precoVal = parseFloat(document.getElementById('selMarcaPreco').value) || 0;
             const selMarca = document.getElementById('selMarcaPreco');
             const marcaNome = selMarca.options[selMarca.selectedIndex] ? (selMarca.options[selMarca.selectedIndex].getAttribute('data-marca') || 'Pad') : 'Pad';
@@ -838,6 +851,65 @@
                     </div>
                 </div>
             `;
+        }
+        
+        // --- RELATÓRIO CONFERÊNCIA ---
+        function imprimirRelatorioConferencia() {
+            const dataInput = document.getElementById('filtroData').value;
+            // Filter orders by date
+            let lista = pedidos.filter(p => p.data.startsWith(dataInput));
+            
+            if (lista.length === 0) return alert('Sem pedidos para esta data.');
+
+            // Sort by Route then Client Name
+            lista.sort((a, b) => {
+                if (a.rota < b.rota) return -1;
+                if (a.rota > b.rota) return 1;
+                return a.cliente.nome.localeCompare(b.cliente.nome);
+            });
+
+            // Group
+            const rotas = {};
+            lista.forEach(p => {
+                if (!rotas[p.rota]) rotas[p.rota] = [];
+                rotas[p.rota].push(p);
+            });
+
+            let html = '';
+            // Header
+            const dataF = new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR');
+            const headerHtml = getHeaderImpressao(); 
+
+            html += headerHtml;
+            html += `<div style="text-align:center; font-weight:900; font-size:16px; margin:10px 0; border-bottom:2px solid black;">RELATÓRIO DE CONFERÊNCIA - ${dataF}</div>`;
+
+            for (const [rota, itens] of Object.entries(rotas)) {
+                html += `<div style="font-size:14px; font-weight:900; background:#eee; padding:5px; margin-top:10px; border-top: 1px solid #000; text-transform:uppercase;">ROTA: ${rota} (${itens.length})</div>`;
+                html += `<table style="width:100%; border-collapse:collapse; font-size:11px; font-family:'Arial', sans-serif;">`;
+                html += `<tr style="border-bottom:1px solid #000;"><th style="text-align:left; padding:2px;">PED</th><th style="text-align:left; padding:2px;">CLIENTE</th><th style="text-align:left; padding:2px;">CESTA / PRODUTO</th></tr>`;
+                
+                itens.forEach(p => {
+                    let infoCestas = p.itens.map(i => {
+                        let desc = i.tipo;
+                        if(i.marca && i.marca !== 'Pad') desc += ` (${i.marca})`;
+                        if(i.modo === 'alterada') desc += ` [ALT]`;
+                        return desc;
+                    }).join(', ');
+
+                    html += `
+                        <tr style="border-bottom:1px dashed #ccc;">
+                            <td style="padding:4px 2px; font-weight:bold; width: 60px;">${p.codigoVisual}</td>
+                            <td style="padding:4px 2px; width: 30%;">${p.cliente.nome.substring(0,25)}</td>
+                            <td style="padding:4px 2px;">${infoCestas}</td>
+                        </tr>
+                    `;
+                });
+                html += `</table>`;
+            }
+
+            const area = document.getElementById('areaImpressao');
+            area.innerHTML = html;
+            setTimeout(() => window.print(), 300);
         }
 
         // --- IMPRESSÃO ETIQUETA ---
