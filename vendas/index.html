@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema V2.1 - Gestão de Vendas (SKU + EAN)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -1339,17 +1340,35 @@
                 let subtitulo = `(${item.marca})`;
                 let listaItensHtml = '';
 
-                // Se for Alterada, montar lista
+                // Se for Alterada, montar lista com EAN VETORIAL
                 if (item.modo === 'alterada') {
                     titulo += ' (ALTERADA/IMP)';
                     subtitulo += ` - COD: ${item.identificacao || 'N/A'}`;
                     
                     listaItensHtml = item.conteudo.map(subItem => {
+                        let barcodeSvg = '';
+                        if(subItem.ean && subItem.ean.length > 5){
+                             // Placeholder para SVG que será renderizado pelo JsBarcode
+                             barcodeSvg = `<svg class="barcode_render"
+                                jsbarcode-value="${subItem.ean}"
+                                jsbarcode-format="auto"
+                                jsbarcode-width="2"
+                                jsbarcode-height="40"
+                                jsbarcode-fontSize="12"
+                                jsbarcode-displayValue="true">
+                             </svg>`;
+                        } else {
+                            barcodeSvg = `<div style="font-size:10px; padding:5px; border:1px solid #ccc;">(SEM CÓD. BARRAS)</div>`;
+                        }
+
                         return `
-                            <div class="print-line" style="margin-top: 10px !important;">
+                            <div class="print-line" style="margin-top: 10px !important; padding-bottom:5px;">
                                 <div style="font-size: 14px; font-weight: bold;">${subItem.nome.toUpperCase()}</div>
                                 <div class="print-mono" style="font-size: 16px;">
-                                    ${subItem.cod} | ${subItem.ean || 'SEM EAN'} | <b>QTD: ${subItem.qtd}</b>
+                                    COD: ${subItem.cod} | <b>QTD: ${subItem.qtd}</b>
+                                </div>
+                                <div style="text-align:center; margin-top:2px;">
+                                    ${barcodeSvg}
                                 </div>
                             </div>
                         `;
@@ -1390,7 +1409,21 @@
                 ${obsHtml}
             `;
             
-            window.print();
+            // Renderiza os códigos de barras antes de imprimir
+            try {
+                if(window.JsBarcode) {
+                    JsBarcode(".barcode_render").init();
+                } else {
+                    console.error("Biblioteca JsBarcode não carregada.");
+                }
+            } catch (e) {
+                console.error("Erro ao gerar barcode", e);
+            }
+
+            // Pequeno delay para garantir que o SVG seja desenhado
+            setTimeout(() => {
+                window.print();
+            }, 500);
         }
     </script>
 </body>
