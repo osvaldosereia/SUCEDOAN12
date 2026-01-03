@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema V2.8 - Centro de Comando Logístico</title>
+    <title>Sistema V2.9 - Expedição 77mm</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,36 +33,112 @@
         .draggable-card:active { cursor: grabbing; }
         .dragging { opacity: 0.5; border: 2px dashed #4f46e5 !important; background-color: #eef2ff !important; }
 
-        /* --- Estilo de Impressão (Etiqueta 73mm x 150mm) --- */
+        /* --- Estilo de Impressão (Etiqueta 77mm x 77mm) --- */
         @media print {
-            @page { size: 73mm 150mm; margin: 0; }
+            @page { size: 77mm 77mm; margin: 0; }
             body * { visibility: hidden; }
             #areaImpressao, #areaImpressao * { visibility: visible; }
             #areaImpressao {
-                position: absolute; left: 0; top: 0; width: 71mm;
-                background: white; color: black; font-family: 'Arial Black', 'Arial', sans-serif;
+                position: absolute; left: 0; top: 0; width: 77mm;
+                background: white; color: black; font-family: 'Arial', sans-serif;
                 display: block !important; overflow: visible;
+                padding: 0 2mm; /* Margem lateral mínima para segurança na impressora */
             }
-            /* Classes de Etiqueta */
-            .label-container { width: 100%; height: 148mm; display: flex; flex-direction: column; justify-content: space-between; padding: 2mm; border: 1px dashed #ccc; page-break-after: always; box-sizing: border-box; }
-            .label-header { text-align: center; border-bottom: 2px solid black; padding-bottom: 5px; margin-bottom: 5px; }
-            .label-date { font-size: 12px; font-weight: normal; }
-            .label-client-name { font-size: 24px; font-weight: 900; line-height: 1; text-transform: uppercase; margin-bottom: 2px; }
-            .label-client-phone { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-            .label-client-address { font-size: 11px; line-height: 1.1; margin-bottom: 5px; text-transform: uppercase; }
-            .label-client-code-box { background: black; color: white; padding: 4px; font-size: 16px; font-weight: bold; text-align: center; border-radius: 4px; margin: 5px 0; }
-            .label-rota { font-size: 40px; font-weight: 900; text-align: center; border: 3px solid black; padding: 5px; margin: 5px 0; text-transform: uppercase; }
-            .label-order-code { font-size: 22px; text-align: center; margin: 5px 0; font-family: 'Courier New', monospace; font-weight: 900; letter-spacing: 2px;}
-            .label-basket { font-size: 20px; font-weight: bold; text-transform: uppercase; border-top: 2px solid black; padding-top: 5px; text-align: center; }
-            .label-footer { text-align: center; font-size: 10px; margin-top: auto; }
-            .volume-counter { font-size: 18px; font-weight: 900; text-align: right; margin-top: 5px; }
             
-            /* Classes de Montagem (A4 Simplificada ou Bobina Continua) */
-            .montagem-item { border-bottom: 1px dashed #000; padding: 5px 0; font-family: 'Arial', sans-serif; }
-            .montagem-header { font-size: 18px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
-            .montagem-prod { font-size: 14px; font-weight: bold; }
-            .montagem-meta { font-size: 16px; font-family: 'Courier New', monospace; }
+            /* Classes de Etiqueta (77x77) */
+            .label-container {
+                width: 100%;
+                height: 76mm; /* Ajuste fino para não pular página */
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                padding: 1mm 0;
+                border-bottom: 1px dashed #ccc; 
+                page-break-after: always; 
+                box-sizing: border-box;
+                position: relative;
+            }
 
+            /* 1. Cabeçalho: Data Grande */
+            .label-date { 
+                font-size: 16px; 
+                font-weight: 900; 
+                text-align: center; 
+                border-bottom: 2px solid black; 
+                margin-bottom: 3px; 
+            }
+            
+            /* 2. Cliente: Nome e Telefone */
+            .label-client-name { 
+                font-size: 18px; 
+                font-weight: 900; 
+                line-height: 1; 
+                text-transform: uppercase; 
+                margin-bottom: 2px;
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis;
+            }
+            .label-client-phone { 
+                font-size: 18px; 
+                font-weight: 900; 
+                margin-bottom: 3px; 
+            }
+            
+            /* 3. Endereço Normal */
+            .label-client-address { 
+                font-size: 12px; 
+                line-height: 1.1; 
+                margin-bottom: 5px; 
+                text-transform: uppercase; 
+                font-weight: normal;
+            }
+            
+            /* 4. Códigos: Cliente Texto Normal, Rota e Pedido em Caixas */
+            .info-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+            .label-client-code { font-size: 14px; font-weight: bold; }
+            
+            .box-code {
+                border: 2px solid black;
+                font-weight: 900;
+                padding: 1px 4px;
+                font-size: 14px;
+                text-transform: uppercase;
+                border-radius: 4px;
+            }
+
+            /* 5. Cesta e Brinde */
+            .label-basket-info {
+                font-size: 13px;
+                font-weight: bold;
+                text-transform: uppercase;
+                border-top: 1px solid black;
+                padding-top: 2px;
+                margin-top: 2px;
+            }
+            .label-brinde {
+                font-size: 12px;
+                font-weight: bold;
+                margin-top: 2px;
+            }
+            
+            /* 6. Rodapé */
+            .label-footer { 
+                position: absolute;
+                bottom: 2px;
+                right: 0;
+                width: 100%;
+                text-align: right;
+            }
+            .volume-counter { font-size: 20px; font-weight: 900; }
+            
+            /* Classes de Montagem */
+            .montagem-item { border-bottom: 1px solid #000; padding: 8px 0; font-family: 'Arial', sans-serif; display: flex; align-items: center; justify-content: space-between; }
+            .montagem-header { font-size: 20px; font-weight: 900; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
+            .montagem-prod { font-size: 14px; font-weight: bold; flex: 1; padding-right: 5px; }
+            /* CÓDIGO E QTD MAIORES */
+            .montagem-meta { font-size: 24px; font-family: 'Courier New', monospace; font-weight: 900; text-align: right; }
+            
             .no-print { display: none !important; }
         }
         #areaImpressao { display: none; }
@@ -78,7 +154,7 @@
                 <div class="bg-indigo-600 text-white p-1.5 rounded">
                     <i class="fa-solid fa-truck-fast text-sm"></i>
                 </div>
-                <h1 class="font-bold text-base text-gray-700">Módulo 2: Expedição V2.8</h1>
+                <h1 class="font-bold text-base text-gray-700">Módulo 2: Expedição V2.9</h1>
             </div>
             
             <nav class="flex gap-2">
@@ -372,7 +448,7 @@
             renderizarListaEditavelGenerica(listaParaRenderizar);
         }
 
-        function atualizarOpcoesPreco() {
+        function actualizarOpcoesPreco() {
             const tipo = document.getElementById('selTipoCesta').value;
             const selectMarca = document.getElementById('selMarcaPreco');
             selectMarca.innerHTML = '';
@@ -583,6 +659,37 @@
             }
         }
 
+        function handleDragStart(e) {
+            this.classList.add('dragging');
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.id);
+        }
+        function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
+        function handleDragEnter(e) { this.classList.add('border-indigo-500', 'bg-indigo-50'); }
+        function handleDragLeave(e) { this.classList.remove('border-indigo-500', 'bg-indigo-50'); }
+        function handleDrop(e) {
+            if (e.stopPropagation) e.stopPropagation(); 
+            document.querySelectorAll('.draggable-card').forEach(col => col.classList.remove('dragging', 'border-indigo-500', 'bg-indigo-50'));
+            const idOrigem = dragSrcEl.dataset.id;
+            const idDestino = this.dataset.id;
+            if (dragSrcEl !== this) {
+                const listaAtual = getPedidosVisiveis();
+                listaAtual.forEach((p, index) => p.ordem = index * 10);
+                const idxOrigem = listaAtual.findIndex(p => p.id === idOrigem);
+                const idxDestino = listaAtual.findIndex(p => p.id === idDestino);
+                if (idxOrigem > -1 && idxDestino > -1) {
+                    const [itemMovido] = listaAtual.splice(idxOrigem, 1);
+                    listaAtual.splice(idxDestino, 0, itemMovido);
+                    listaAtual.forEach((p, index) => p.ordem = index * 10);
+                    salvarPedidosLocais();
+                    renderizarListaPedidos();
+                }
+            }
+            return false;
+        }
+        function handleDragEnd(e) { document.querySelectorAll('.draggable-card').forEach(col => col.classList.remove('dragging', 'border-indigo-500', 'bg-indigo-50')); }
+
         function renderizarListaPedidos() {
             const container = document.getElementById('listaPedidos');
             const lista = getPedidosVisiveis();
@@ -677,7 +784,7 @@
             const p = pedidos.find(item => item.id === id);
             
             if(!p) {
-                painel.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-gray-400"><i class="fa-solid fa-hand-pointer text-4xl mb-2 text-gray-300"></i><span class="text-xs">Selecione um pedido</span></div>';
+                painel.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-gray-400"><i class="fa-solid fa-hand-pointer text-4xl mb-2 text-gray-300"></i><span class="text-xs">Selecione um pedido na rota</span></div>';
                 return;
             }
 
@@ -779,31 +886,59 @@
             const p = pedidos.find(item => item.id === id); if (!p) return;
             const area = document.getElementById('areaImpressao');
             const codCli = gerarCodigoClienteVisual(p.cliente, p.rota);
+            const nomeCli = p.cliente.nome.split(' ').slice(0, 2).join(' ').toUpperCase();
+            
+            // Dados para o HTML da etiqueta
+            const dataF = new Date(p.data).toLocaleDateString('pt-BR');
+            const tel = p.cliente.telefone || '';
+            const end = `${p.cliente.endereco}, ${p.cliente.bairro}`;
+            
+            // Lógica de Brinde
+            const brindeTexto = (p.brinde && p.brinde !== 'Nenhum') ? `BRINDE: ${p.brinde.toUpperCase()}` : 'SEM BRINDE';
+
             let html = '';
             p.itens.forEach(item => {
                 let qtd = (item.tipo.match(/mini|pequena/i)) ? 2 : (item.tipo.match(/grande|media|média/i) ? 3 : 1);
-                let nomeCesta = item.modo === 'alterada' ? `COD: ${item.identificacao}` : item.tipo.toUpperCase();
+                
+                // Monta string da Cesta: TIPO + MARCA
+                let nomeCesta = `${item.tipo.toUpperCase()} (${item.marca})`;
+                // Se alterada, adiciona o aviso
+                if(item.modo === 'alterada') {
+                    nomeCesta += ` - ALTERADA (COD: ${item.identificacao})`;
+                }
+
                 for (let i = 1; i <= qtd; i++) {
                     html += `
                         <div class="label-container">
                             <div>
-                                <div class="label-header"><span class="label-date">${new Date(p.data).toLocaleDateString('pt-BR')}</span></div>
-                                <div class="label-client-name">${p.cliente.nome.split(' ')[0].toUpperCase()}</div>
-                                <div class="label-client-phone">${p.cliente.telefone||''}</div>
-                                <div class="label-client-address">${p.cliente.endereco}, ${p.cliente.bairro}</div>
-                                <div class="label-client-code-box">${codCli}</div>
-                                <div class="label-rota">${p.rota.toUpperCase()}</div>
-                                <div class="label-order-code">PED: ${p.codigoVisual}</div>
+                                <div class="label-date">${dataF}</div>
+                                
+                                <div class="label-client-name">${nomeCli}</div>
+                                <div class="label-client-phone">${tel}</div>
+                                <div class="label-client-address">${end}</div>
+                                
+                                <div class="info-row">
+                                    <div class="label-client-code">${codCli}</div>
+                                    <div class="box-code">ROTA: ${p.rota.toUpperCase()}</div>
+                                    <div class="box-code">PED: ${p.codigoVisual}</div>
+                                </div>
                             </div>
-                            <div><div class="label-basket">${nomeCesta}</div></div>
-                            <div class="label-footer"><div class="volume-counter">VOL: ${i}/${qtd}</div><div style="border-top:1px solid black;margin-top:2px;">SISTEMA DONA ANTONIA</div></div>
+
+                            <div>
+                                <div class="label-basket-info">${nomeCesta}</div>
+                                <div class="label-brinde">${brindeTexto}</div>
+                            </div>
+
+                            <div class="label-footer">
+                                <div class="volume-counter">VOL: ${i}/${qtd}</div>
+                            </div>
                         </div>`;
                 }
             });
             area.innerHTML = html; setTimeout(() => window.print(), 300);
         }
 
-        // --- IMPRESSÃO MONTAGEM (SEM CÓDIGO DE BARRAS) ---
+        // --- IMPRESSÃO MONTAGEM ---
         function imprimirMontagem(id) {
             const p = pedidos.find(item => item.id === id); if (!p) return;
             const area = document.getElementById('areaImpressao');
@@ -815,13 +950,12 @@
                 let titulo = item.tipo.toUpperCase();
                 let listaItensHtml = '';
 
-                // Se for Alterada, lista os produtos (SEM BARCODE, SÓ TEXTO)
                 if (item.modo === 'alterada') {
                     titulo += ` (COD: ${item.identificacao})`;
                     listaItensHtml = item.conteudo.map(subItem => `
                         <div class="montagem-item">
                             <div class="montagem-prod">${subItem.nome.toUpperCase()}</div>
-                            <div class="montagem-meta">COD: ${subItem.cod} | <b>QTD: ${subItem.qtd}</b></div>
+                            <div class="montagem-meta">${subItem.cod} | <b>${subItem.qtd}x</b></div>
                         </div>
                     `).join('');
                 } else {
@@ -837,10 +971,10 @@
             });
 
             area.innerHTML = `
-                <div class="print-big" style="text-align:center; margin-bottom:10px;"><b>MONTAGEM</b><br>${dataF} ${horaF}</div>
-                <div class="print-huge">${p.cliente.nome.split(' ')[0]} | #${p.codigoVisual}</div>
-                <div class="print-line" style="border-bottom-width: 4px !important;"></div>
-                <div style="margin-top: 10px;">${htmlConteudo}</div>
+                <div style="text-align:center; font-size:16px; font-weight:900; margin-bottom:10px;">MONTAGEM <br>${dataF} ${horaF}</div>
+                <div style="font-size:24px; font-weight:900; margin-bottom:5px;">${p.cliente.nome.split(' ')[0]} | #${p.codigoVisual}</div>
+                <div style="border-bottom: 4px solid black; margin-bottom:10px;"></div>
+                <div>${htmlConteudo}</div>
                 ${p.obs ? `<div style="font-size:16px; font-weight:bold; border: 2px solid black; padding: 5px; margin-top: 10px;">OBS: ${p.obs.toUpperCase()}</div>` : ''}
             `;
             setTimeout(() => window.print(), 300);
