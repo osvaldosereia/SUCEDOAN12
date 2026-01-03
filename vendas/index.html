@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema V3.0 - Branding & Retenção</title>
+    <title>Sistema V3.2 - Etiquetas Quadradas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,60 +33,73 @@
         .draggable-card:active { cursor: grabbing; }
         .dragging { opacity: 0.5; border: 2px dashed #4f46e5 !important; background-color: #eef2ff !important; }
 
-        /* --- Estilo de Impressão (Etiqueta 76mm x 100mm) --- */
+        /* --- Estilo de Impressão (Etiqueta 76mm x 76mm) --- */
         @media print {
-            @page { size: 76mm 100mm; margin: 0; }
+            @page { size: 76mm 76mm; margin: 0; }
             body * { visibility: hidden; }
             #areaImpressao, #areaImpressao * { visibility: visible; }
             #areaImpressao {
-                position: absolute; left: 0; top: 0; width: 76mm;
+                position: absolute; left: 0; top: 0; width: 76mm; height: 76mm;
                 background: white; color: black; font-family: 'Arial', sans-serif;
-                display: block !important; overflow: visible;
-                padding: 0 2mm; 
+                display: block !important; overflow: hidden; /* Evita vazamento */
+                padding: 5mm; /* Margem de Respiro Solicitada */
+                box-sizing: border-box;
             }
             
-            /* --- CABEÇALHO PADRÃO (LOGO + ZAP) --- */
+            /* --- CABEÇALHO TEXTUAL --- */
             .print-header-brand {
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
                 justify-content: space-between;
                 border-bottom: 2px solid black;
-                padding-bottom: 5px;
-                margin-bottom: 5px;
+                padding-bottom: 3px;
+                margin-bottom: 3px;
             }
-            .brand-logo img { width: 50px; height: 50px; object-fit: contain; }
+            .brand-text {
+                font-weight: 900;
+                font-size: 11px;
+                line-height: 1;
+                text-transform: uppercase;
+                letter-spacing: -0.5px;
+            }
             .brand-info { text-align: right; }
-            .brand-whatsapp { font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
-            .brand-site { font-size: 10px; font-weight: bold; margin-top: 2px; text-transform: uppercase;}
+            .brand-whatsapp { font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+            .brand-site { font-size: 8px; font-weight: bold; margin-top: 1px; text-transform: uppercase;}
 
             /* Classes de Etiqueta */
             .label-container {
                 width: 100%;
-                height: 98mm; /* Ajuste para etiqueta de 100mm */
+                height: 100%;
                 display: flex;
                 flex-direction: column;
-                justify-content: flex-start;
-                padding: 1mm 0;
-                border-bottom: 1px dashed #ccc; 
+                justify-content: space-between;
                 page-break-after: always; 
-                box-sizing: border-box;
                 position: relative;
             }
 
-            .label-date { font-size: 14px; font-weight: 900; text-align: center; border-bottom: 1px solid black; margin-bottom: 3px; }
-            .label-client-name { font-size: 20px; font-weight: 900; line-height: 1; text-transform: uppercase; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-            .label-client-phone { font-size: 16px; font-weight: 900; margin-bottom: 3px; }
-            .label-client-address { font-size: 12px; line-height: 1.1; margin-bottom: 5px; text-transform: uppercase; font-weight: normal; }
+            .label-date { font-size: 14px; font-weight: 900; text-align: center; border-bottom: 1px solid black; margin-bottom: 2px; }
             
-            .info-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
-            .label-client-code { font-size: 14px; font-weight: bold; }
-            .box-code { border: 2px solid black; font-weight: 900; padding: 1px 4px; font-size: 14px; text-transform: uppercase; border-radius: 4px; }
+            .label-client-name { 
+                font-size: 18px; 
+                font-weight: 900; 
+                line-height: 1; 
+                text-transform: uppercase; 
+                margin-bottom: 1px; 
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis;
+            }
+            .label-client-phone { font-size: 14px; font-weight: 900; margin-bottom: 1px; }
+            .label-client-address { font-size: 10px; line-height: 1; margin-bottom: 3px; text-transform: uppercase; font-weight: normal; }
+            
+            .info-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+            .box-code { border: 2px solid black; font-weight: 900; padding: 1px 4px; font-size: 12px; text-transform: uppercase; border-radius: 4px; }
 
-            .label-basket-info { font-size: 13px; font-weight: bold; text-transform: uppercase; border-top: 1px solid black; padding-top: 2px; margin-top: 2px; }
-            .label-brinde { font-size: 12px; font-weight: bold; margin-top: 2px; }
+            .label-basket-info { font-size: 12px; font-weight: 900; text-transform: uppercase; border-top: 1px solid black; padding-top: 2px; margin-top: 2px; }
+            .label-brinde { font-size: 10px; font-weight: bold; margin-top: 1px; }
             
-            .label-footer { position: absolute; bottom: 2px; right: 0; width: 100%; text-align: right; }
-            .volume-counter { font-size: 18px; font-weight: 900; }
+            .label-footer { text-align: right; margin-top: auto; }
+            .volume-counter { font-size: 16px; font-weight: 900; }
             
             /* Classes de Montagem */
             .montagem-item { border-bottom: 1px solid #000; padding: 5px 0; font-family: 'Arial', sans-serif; display: flex; align-items: center; justify-content: space-between; }
@@ -95,13 +108,13 @@
             .montagem-meta { font-size: 20px; font-family: 'Courier New', monospace; font-weight: 900; text-align: right; }
             
             /* Classes do Cupom de Desconto */
-            .cupom-container { text-align: center; font-family: 'Arial', sans-serif; padding-top: 10px; }
-            .cupom-title { font-size: 20px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
-            .cupom-box { border: 3px dashed black; padding: 10px; margin: 10px 0; border-radius: 8px; }
-            .cupom-price-label { font-size: 12px; font-weight: bold; }
-            .cupom-price-value { font-size: 32px; font-weight: 900; }
-            .cupom-validity { font-size: 12px; margin-top: 5px; }
-            .cupom-footer { font-size: 10px; margin-top: 10px; font-style: italic; }
+            .cupom-container { text-align: center; font-family: 'Arial', sans-serif; padding-top: 5px; }
+            .cupom-title { font-size: 16px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+            .cupom-box { border: 3px dashed black; padding: 5px; margin: 5px 0; border-radius: 8px; }
+            .cupom-price-label { font-size: 10px; font-weight: bold; }
+            .cupom-price-value { font-size: 28px; font-weight: 900; }
+            .cupom-validity { font-size: 10px; margin-top: 2px; }
+            .cupom-footer { font-size: 9px; margin-top: 5px; font-style: italic; }
 
             .no-print { display: none !important; }
         }
@@ -118,7 +131,7 @@
                 <div class="bg-indigo-600 text-white p-1.5 rounded">
                     <i class="fa-solid fa-truck-fast text-sm"></i>
                 </div>
-                <h1 class="font-bold text-base text-gray-700">Módulo 2: Expedição V3.0</h1>
+                <h1 class="font-bold text-base text-gray-700">Módulo 2: Expedição V3.2</h1>
             </div>
             
             <nav class="flex gap-2">
@@ -802,8 +815,8 @@
 
         function excluirPedido(id) { if(confirm('Excluir este pedido?')) { pedidos = pedidos.filter(p => p.id !== id); salvarPedidosLocais(); if(pedidoSelecionadoId===id) pedidoSelecionadoId=null; renderizarListaPedidos(); renderizarDetalhesPedido(pedidoSelecionadoId); } }
         function gerarCodigoClienteVisual(c, r) {
-            let cid = (c.cidade || '').toLowerCase().includes('vg') ? 'VG' : 'CBA';
-            return `${cid}${r.replace(/[^a-zA-Z0-9]/g, '')}${(c.telefone || '').replace(/\D/g, '').slice(-4).padStart(4,'0')}`;
+            // Lógica simplificada: Apenas 4 dígitos numéricos (Final do Telefone)
+            return (c.telefone || '').replace(/\D/g, '').slice(-4).padStart(4, '0');
         }
         function exportarPedidosJson() {
             const f = document.getElementById('filtroData').value;
@@ -815,8 +828,9 @@
         function getHeaderImpressao() {
             return `
                 <div class="print-header-brand">
-                    <div class="brand-logo">
-                        <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.jpg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/869/869636.png'" alt="Logo">
+                    <div class="brand-text">
+                        <div>SUPER CESTAS</div>
+                        <div>DONA ANTONIA</div>
                     </div>
                     <div class="brand-info">
                         <div class="brand-whatsapp"><i class="fa-brands fa-whatsapp"></i> 65 99815-0975</div>
@@ -830,7 +844,6 @@
         function imprimirEtiquetaPedido(id) {
             const p = pedidos.find(item => item.id === id); if (!p) return;
             const area = document.getElementById('areaImpressao');
-            const codCli = gerarCodigoClienteVisual(p.cliente, p.rota);
             const nomeCli = p.cliente.nome.split(' ').slice(0, 2).join(' ').toUpperCase();
             
             const dataF = new Date(p.data).toLocaleDateString('pt-BR');
@@ -843,8 +856,12 @@
 
             p.itens.forEach(item => {
                 let qtd = (item.tipo.match(/mini|pequena/i)) ? 2 : (item.tipo.match(/grande|media|média/i) ? 3 : 1);
-                let nomeCesta = `${item.tipo.toUpperCase()} (${item.marca})`;
-                if(item.modo === 'alterada') nomeCesta += ` - ALTERADA (COD: ${item.identificacao})`;
+                
+                // NOME CESTA LOGICA
+                let nomeCesta = `CESTA ${item.tipo.toUpperCase()} (${item.marca})`;
+                if(item.modo === 'alterada') {
+                    nomeCesta += ` - ALTERADA (COD: ${item.identificacao})`;
+                }
 
                 for (let i = 1; i <= qtd; i++) {
                     html += `
@@ -856,7 +873,6 @@
                                 <div class="label-client-phone">${tel}</div>
                                 <div class="label-client-address">${end}</div>
                                 <div class="info-row">
-                                    <div class="label-client-code">${codCli}</div>
                                     <div class="box-code">ROTA: ${p.rota.toUpperCase()}</div>
                                     <div class="box-code">PED: ${p.codigoVisual}</div>
                                 </div>
