@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo Expedição & WMS (Local-First)</title>
+    
+    <!-- 1. TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. ESTILOS EXTRAS -->
+    <style>
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.3s ease-out; }
+        
+        /* Estilo para impressão de etiquetas (oculto na tela) */
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; }
+        }
+    </style>
+
+    <!-- 3. IMPORTMAP REACT + LUCIDE -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+      }
+    }
+    </script>
+    
+    <!-- 4. BABEL -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans h-full overflow-hidden">
+    
+    <div id="root" class="h-full"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+          Package, Truck, Printer, CheckCircle, Clock, 
+          AlertTriangle, ArrowRight, RotateCcw, Trash2, 
+          Menu, X, Box, FileText, MapPin, User
+        } from 'lucide-react';
+
+        // --- UTILITÁRIOS ---
+        const useStickyState = (key, defaultValue) => {
+          const [value, setValue] = useState(() => {
+            const stickyValue = window.localStorage.getItem(key);
+            return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+          });
+          useEffect(() => {
+            window.localStorage.setItem(key, JSON.stringify(value));
+          }, [key, value]);
+          return [value, setValue];
+        };
+
+        const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+        // --- APP PRINCIPAL ---
+        function App() {
+          // CONEXÃO COM O "BANCO DE DADOS" LOCAL (Mesmas chaves dos outros módulos)
+          const [sales, setSales] = useStickyState('db_sales_v3', []);
+          const [clients] = useStickyState('db_clients_v3', []);
+          const [products, setProducts] = useStickyState('db_products_v3', []);
+          
+          const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+          return (
+            <div className="flex flex-col lg:flex-row h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
+                {/* MOBILE HEADER */}
+                <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center shrink-0 z-50 shadow-md">
+                    <div className="flex items-center gap-2">
+                        <div className="bg-orange-500 text-white p-1 rounded font-bold text-xs">WMS</div>
+                        <h1 className="font-bold tracking-wider">EXPEDIÇÃO</h1>
+                    </div>
+                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-slate-800 rounded">
+                        {mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}
+                    </button>
+                </div>
+
+                {/* SIDEBAR */}
+                <aside className={`fixed inset-y-0 left-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 w-64 lg:static lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+                    <div className="h-16 hidden lg:flex items-center justify-start px-6 border-b border-slate-800">
+                        <div className="bg-orange-500 text-white p-1.5 rounded font-bold mr-2">WMS</div>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">EXPEDIÇÃO <span className="text-gray-400 text-xs font-normal ml-1">v1.0</span></h1>
+                    </div>
+                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
+                        <button className="w-full flex items-center justify-start gap-3 p-3 lg:px-6 transition-all duration-200 bg-slate-800 text-white border-r-4 border-orange-500">
+                            <Package size={20}/>
+                            <span className="font-medium text-sm">Painel de Separação</span>
+                        </button>
+                    </nav>
+                    <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+                        Módulo Isolado<br/>Foco em Picking/Packing
+                    </div>
+                </aside>
+                
+                {/* MAIN CONTENT AREA */}
+                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full overflow-hidden relative">
+                    <header className="h-16 bg-white border-b hidden lg:flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
+                        <div><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">Controle de Fluxo de Pedidos</h2></div>
+                        <div className="flex items-center gap-2">
+                             <span className="bg-orange-100 text-orange-800 text-xs font-bold px-3 py-1 rounded-full">{sales.filter(s => s.status === 'Pendente').length} Pendentes</span>
+                             <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">{sales.filter(s => s.status === 'Montagem').length} Em Montagem</span>
+                        </div>
+                    </header>
+                    
+                    <div className="flex-1 overflow-hidden relative bg-gray-50">
+                        <ExpeditionBoard 
+                            sales={sales} 
+                            setSales={setSales} 
+                            clients={clients} 
+                            products={products} 
+                            setProducts={setProducts} 
+                        />
+                    </div>
+                </main>
+                
+                {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
+            </div>
+          );
+        }
+
+        // --- COMPONENTE KANBAN ---
+        function ExpeditionBoard({ sales, setSales, clients, products, setProducts }) {
+            
+            // --- AÇÕES DO KANBAN ---
+            
+            const updateStatus = (saleId, newStatus) => {
+                setSales(sales.map(s => s.id === saleId ? { ...s, status: newStatus } : s));
+            };
+
+            // Função crítica: Devolver itens ao estoque se cancelar/excluir
+            const returnStock = (sale) => {
+                 const newProducts = [...products];
+                 sale.items.forEach(item => {
+                  const dbProd = newProducts.find(p => p.id === item.id);
+                  if (dbProd) {
+                    if (dbProd.isCombo) { 
+                        item.comboItems?.forEach(ing => { 
+                            const dbIng = newProducts.find(p => p.id === ing.id); 
+                            if (dbIng) { 
+                                dbIng.stock += ing.qty; 
+                                if(!dbIng.stockHistory) dbIng.stockHistory = [];
+                                dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_EXPEDITION', qty: ing.qty }); 
+                            } 
+                        }); 
+                    } else { 
+                        dbProd.stock += 1; 
+                        if(!dbProd.stockHistory) dbProd.stockHistory = [];
+                        dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_EXPEDITION', qty: 1 }); 
+                    }
+                  }
+                 });
+                 setProducts(newProducts);
+            };
+
+            const deleteSale = (sale) => { 
+                if (!confirm(`ATENÇÃO: Excluir permanentemente o pedido #${sale.id}?\nIsso devolverá os itens ao estoque.`)) return; 
+                returnStock(sale); 
+                setSales(sales.filter(s => s.id !== sale.id)); 
+                alert("Pedido excluído e estoque estornado.");
+            };
+
+            const revertStatus = (sale) => {
+                if (sale.status === 'Rota') updateStatus(sale.id, 'Montagem');
+                else if (sale.status === 'Montagem') updateStatus(sale.id, 'Pendente');
+            };
+
+            // --- IMPRESSÃO ---
+
+            const printLabel = (sale, client) => {
+                const volCount = sale.volumes || 1; 
+                const regionDisplay = sale.regionOverride || client.region || 'GERAL';
+                let labelsHtml = '';
+                
+                for (let i = 1; i <= volCount; i++) { 
+                    labelsHtml += `
+                        <div style="border:2px solid #000; width:380px; height:500px; padding:20px; margin:0 auto 20px auto; page-break-after:always; font-family: sans-serif; box-sizing: border-box; position: relative;">
+                            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                                <h1 style="font-size:60px; margin:0; line-height: 1;">#${sale.id}</h1>
+                                <span style="font-size: 14px; text-transform: uppercase;">Pedido de Venda</span>
+                            </div>
+                            
+                            <div style="background: #000; color: #fff; text-align: center; font-size: 32px; font-weight: bold; padding: 10px; margin-bottom: 20px;">
+                                ${regionDisplay}
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <p style="font-size: 12px; color: #666; margin: 0; text-transform: uppercase;">Destinatário:</p>
+                                <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">${client.name}</p>
+                                <p style="font-size: 16px; margin: 0;">${client.district || 'Sem Bairro'}</p>
+                                <p style="font-size: 14px; margin: 5px 0;">${client.city || 'Cuiabá'} - MT</p>
+                            </div>
+
+                            <div style="margin-bottom: 20px; border-top: 1px dashed #000; pt-4;">
+                                <p style="font-size: 14px; margin: 10px 0;"><strong>Volumes:</strong> <span style="font-size: 28px;">${i} / ${volCount}</span></p>
+                            </div>
+
+                            <div style="position: absolute; bottom: 20px; left: 20px; right: 20px; font-size: 12px; text-align: center; border-top: 1px solid #ccc; padding-top: 10px;">
+                                Obs: ${sale.obs || '-'}
+                            </div>
+                        </div>
+                    `; 
+                }
+                
+                const w = window.open('', '', 'width=450,height=600'); 
+                w.document.write(`<html><head><title>Etiquetas #${sale.id}</title></head><body style="margin:0; padding:20px;">${labelsHtml}<script>window.onload=function(){window.print();window.close();}<\/script></body></html>`); 
+                w.document.close();
+            };
+
+            const printPickingList = (sale, client) => {
+                 let itemsHtml = '';
+                 sale.items.forEach(item => { 
+                     if (item.isCombo) { 
+                         itemsHtml += `<li style="margin-bottom: 8px;"><strong>${item.name} (KIT)</strong><ul style="margin-top:4px; font-size: 12px; color: #555;">`; 
+                         item.comboItems.forEach(ci => { 
+                             if(ci.qty>0) itemsHtml += `<li>• ${ci.qty}x ${products.find(p=>p.id===ci.id)?.name || 'Item Removido'}</li>`; 
+                         }); 
+                         itemsHtml += `</ul></li>`; 
+                     } else { 
+                         itemsHtml += `<li style="margin-bottom: 8px; font-size: 14px;">[__] <strong>${item.name}</strong></li>`; 
+                     } 
+                 });
+                 
+                 const html = `
+                    <html>
+                    <body style="font-family: monospace; padding: 20px; max-width: 300px; margin: 0 auto;">
+                        <h2 style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px;">SEPARAÇÃO #${sale.id}</h2>
+                        <p><strong>Cliente:</strong> ${client.name}</p>
+                        <p><strong>Bairro:</strong> ${client.district}</p>
+                        <p><strong>Rota:</strong> ${sale.regionOverride || client.region}</p>
+                        <hr style="border: 0; border-top: 1px dashed #000; margin: 15px 0;"/>
+                        <ul style="list-style: none; padding: 0;">${itemsHtml}</ul>
+                        <hr style="border: 0; border-top: 1px dashed #000; margin: 15px 0;"/>
+                        <p><strong>Obs:</strong> ${sale.obs||'Nenhuma'}</p>
+                        <br/>
+                        <p style="text-align: center; font-size: 12px;">Conferido por: _________________</p>
+                        <script>window.onload=function(){window.print();window.close();}<\/script>
+                    </body>
+                    </html>
+                 `;
+                 
+                 const w = window.open('', '', 'width=350,height=600'); 
+                 w.document.write(html); 
+                 w.document.close();
+            };
+
+            // Filtra apenas vendas ativas e ordena por data
+            const activeSales = sales
+                .filter(s => s.status !== 'Entregue' && s.status !== 'Concluído' && s.status !== 'Cancelado')
+                .sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            return (
+                <div className="p-4 lg:p-6 pb-20 overflow-x-auto h-full">
+                    <div className="flex flex-col md:flex-row gap-6 h-full min-w-full md:min-w-0">
+                        
+                        {/* COLUNA 1: PENDENTE (CHEGOU DO PDV) */}
+                        <KanbanColumn title="Aguardando Separação" status="Pendente" color="orange" count={activeSales.filter(s => s.status === 'Pendente').length}>
+                            {activeSales.filter(s => s.status === 'Pendente').map(s => {
+                                const client = clients.find(c=>c.id===s.clientId) || {name: 'Consumidor Final'};
+                                return (
+                                    <OrderCard key={s.id} sale={s} client={client} borderColor="border-orange-200">
+                                        <div className="flex gap-2 mb-3">
+                                            <button onClick={() => printPickingList(s, client)} className="flex-1 bg-white border border-gray-300 text-gray-700 py-1.5 rounded text-xs font-bold hover:bg-gray-50 flex items-center justify-center gap-1">
+                                                <FileText size={14}/> Lista
+                                            </button>
+                                            <button onClick={() => printLabel(s, client)} className="flex-1 bg-white border border-gray-300 text-gray-700 py-1.5 rounded text-xs font-bold hover:bg-gray-50 flex items-center justify-center gap-1">
+                                                <Printer size={14}/> Etiqueta
+                                            </button>
+                                        </div>
+                                        <button onClick={() => updateStatus(s.id, 'Montagem')} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg text-sm shadow-sm transition flex items-center justify-center gap-2">
+                                            INICIAR MONTAGEM <ArrowRight size={16}/>
+                                        </button>
+                                        <div className="mt-2 flex justify-end">
+                                            <button onClick={() => deleteSale(s)} className="text-xs text-red-400 hover:text-red-600 underline flex items-center gap-1">
+                                                <Trash2 size={12}/> Cancelar/Excluir
+                                            </button>
+                                        </div>
+                                    </OrderCard>
+                                );
+                            })}
+                        </KanbanColumn>
+                        
+                        {/* COLUNA 2: EM MONTAGEM (CONFERÊNCIA) */}
+                        <KanbanColumn title="Em Conferência / Montagem" status="Montagem" color="blue" count={activeSales.filter(s => s.status === 'Montagem').length}>
+                            {activeSales.filter(s => s.status === 'Montagem').map(s => {
+                                const client = clients.find(c=>c.id===s.clientId) || {name: 'Consumidor Final'};
+                                return (
+                                    <OrderCard key={s.id} sale={s} client={client} borderColor="border-blue-200">
+                                        <div className="bg-blue-50 p-2 rounded text-xs text-blue-800 mb-3 border border-blue-100 flex items-start gap-2">
+                                            <Box size={14} className="mt-0.5 shrink-0"/>
+                                            <span>Verifique se todos os <strong>{s.items.length} itens</strong> estão na caixa antes de liberar.</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => revertStatus(s)} className="p-2 bg-gray-100 text-gray-500 rounded hover:bg-gray-200" title="Voltar Status"><RotateCcw size={18}/></button>
+                                            <button onClick={() => updateStatus(s.id, 'Rota')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-sm shadow-sm transition flex items-center justify-center gap-2">
+                                                <CheckCircle size={16}/> PRONTO P/ ROTA
+                                            </button>
+                                        </div>
+                                    </OrderCard>
+                                );
+                            })}
+                        </KanbanColumn>
+                        
+                        {/* COLUNA 3: PRONTO PARA ROTA (LOGÍSTICA ASSUME DAQUI) */}
+                        <KanbanColumn title="Pronto para Rota (Expedido)" status="Rota" color="green" count={activeSales.filter(s => s.status === 'Rota').length}>
+                            {activeSales.filter(s => s.status === 'Rota').map(s => {
+                                const client = clients.find(c=>c.id===s.clientId) || {name: 'Consumidor Final'};
+                                return (
+                                    <OrderCard key={s.id} sale={s} client={client} borderColor="border-green-200">
+                                        <div className="text-center py-4 bg-green-50 border border-green-100 rounded-lg">
+                                            <Truck size={32} className="mx-auto text-green-500 mb-2"/>
+                                            <p className="text-sm font-bold text-green-800">Aguardando Motorista</p>
+                                            <p className="text-xs text-green-600">Pedido liberado para logística</p>
+                                        </div>
+                                        <div className="mt-3 text-center">
+                                            <button onClick={() => revertStatus(s)} className="text-xs text-gray-400 hover:text-gray-600 underline">Corrigir (Voltar p/ Montagem)</button>
+                                        </div>
+                                    </OrderCard>
+                                );
+                            })}
+                        </KanbanColumn>
+
+                    </div>
+                </div>
+            );
+        }
+
+        // --- SUB-COMPONENTES VISUAIS ---
+
+        const KanbanColumn = ({ title, color, count, children }) => (
+            <div className="flex flex-col h-full min-w-[320px] flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+                <div className={`p-4 font-bold text-sm uppercase text-${color}-800 bg-${color}-100 border-b border-${color}-200 flex justify-between items-center sticky top-0 z-10`}>
+                    <span className="flex items-center gap-2">
+                        {color === 'orange' && <Clock size={16}/>}
+                        {color === 'blue' && <Box size={16}/>}
+                        {color === 'green' && <CheckCircle size={16}/>}
+                        {title}
+                    </span>
+                    <span className="bg-white px-2.5 py-0.5 rounded-full text-xs font-extrabold shadow-sm">{count}</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
+                    {children}
+                    {count === 0 && (
+                        <div className="h-32 flex flex-col items-center justify-center text-gray-300 italic text-xs">
+                            <Package size={32} className="mb-2 opacity-50"/>
+                            Nenhum pedido aqui
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+
+        const OrderCard = ({ sale, client, borderColor, children }) => (
+            <div className={`bg-white p-4 rounded-xl shadow-sm border ${borderColor} hover:shadow-md transition group animate-in relative`}>
+                <div className="flex justify-between items-start mb-3">
+                    <div>
+                        <span className="font-mono font-bold text-lg text-slate-700 bg-slate-100 px-2 py-0.5 rounded">#{sale.id}</span>
+                        <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                            <Clock size={10}/> {new Date(sale.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider">{sale.regionOverride || client.region || 'S/ ROTA'}</span>
+                        {sale.volumes > 1 && <span className="inline-block bg-purple-100 text-purple-700 text-[10px] font-bold px-1.5 rounded mt-1">{sale.volumes} Vols</span>}
+                    </div>
+                </div>
+                
+                <div className="mb-4">
+                    <h3 className="font-bold text-gray-800 leading-tight flex items-start gap-1">
+                        <User size={14} className="mt-0.5 text-gray-400 shrink-0"/> {client.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 ml-5 mt-0.5 truncate">{client.district || 'Bairro N/D'}</p>
+                    {sale.obs && (
+                        <div className="mt-2 bg-yellow-50 text-yellow-800 text-xs p-2 rounded border border-yellow-100 flex items-start gap-1">
+                            <AlertTriangle size={12} className="mt-0.5 shrink-0"/> 
+                            <span className="font-medium">{sale.obs}</span>
+                        </div>
+                    )}
+                </div>
+
+                {children}
+            </div>
+        );
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
