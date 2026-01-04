@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Logística Local-First v8.0</title>
+    
+    <!-- 1. TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. ESTILOS EXTRAS -->
+    <style>
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        .input-field {
+            width: 100%;
+            padding: 0.6rem; 
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+        .btn-primary {
+            background-color: #1e293b;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover { background-color: #334155; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.3s ease-out; }
+        
+        .nav-item.active { background-color: #334155; border-right: 4px solid #34d399; }
+    </style>
+
+    <!-- 3. IMPORTMAP REACT + ZOD -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+        "zod": "https://esm.sh/zod@3.22.4"
+      }
+    }
+    </script>
+    
+    <!-- 4. BABEL -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans h-full">
+    
+    <div id="root" class="h-full"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { z } from 'zod';
+        import { 
+          Save, Truck, Package, ShoppingCart, Users, MapPin, 
+          Printer, Share2, Download, Upload, Trash2, Plus, 
+          Minus, CheckCircle, Search, Navigation, Edit2, 
+          ArrowUp, ArrowDown, History, MessageCircle, XCircle,
+          AlertTriangle, FileText, Banknote, List, Tag, Percent, 
+          Calendar, Filter, Phone, Database, Clipboard, Box, ExternalLink,
+          Clock, Home, DollarSign, CreditCard, Check, ShieldCheck, ClipboardList,
+          ArrowRight, ArrowLeft, LayoutDashboard, Settings, Menu, BarChart2, TrendingUp, PieChart,
+          MessageSquare, HeartHandshake, RefreshCcw, ThumbsUp, Star, Activity, LineChart, ChevronDown, Gift, X, Wallet, Ban, BoxSelect
+        } from 'lucide-react';
+
+        // --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
+        const ClientSchema = z.object({
+            id: z.string(),
+            name: z.string().min(1),
+            code: z.string().nullish().or(z.literal('')),
+            phone: z.string().nullish().or(z.literal('')),
+            phone2: z.string().nullish().or(z.literal('')), 
+            address: z.string().nullish().or(z.literal('')),
+            city: z.string().nullish().or(z.literal('')),
+            district: z.string().nullish().or(z.literal('')),
+            region: z.string().nullish().or(z.literal('')),
+            mapLink: z.string().nullish().or(z.literal('')),
+            photoLink: z.string().nullish().or(z.literal('')),
+            obs: z.string().nullish().or(z.literal(''))
+        });
+
+        const ProductSchema = z.object({
+            id: z.string(),
+            name: z.string().min(1),
+            internalCode: z.string().nullish().or(z.literal('')),
+            category: z.string().nullish().or(z.literal('')),
+            ncm: z.string().nullish().or(z.literal('')),
+            barcode: z.string().nullish().or(z.literal('')),
+            cost: z.any().transform(v => Number(v) || 0), 
+            price: z.any().transform(v => Number(v) || 0),
+            stock: z.any().transform(v => Number(v) || 0),
+            isCombo: z.boolean().optional(),
+            comboItems: z.array(z.object({
+                id: z.string(),
+                qty: z.number(),
+                internalPrice: z.number().optional() 
+            })).optional(),
+            stockHistory: z.array(z.any()).optional()
+        });
+
+        const SaleItemSchema = z.object({
+            id: z.string(),
+            name: z.string(),
+            price: z.any().transform(v => Number(v) || 0),
+            tempId: z.string().optional(),
+            qty: z.number().optional(), 
+            isCombo: z.boolean().optional(),
+            comboItems: z.array(z.any()).optional()
+        }).passthrough(); 
+
+        const SaleSchema = z.object({
+            id: z.string(),
+            fullId: z.string().optional(),
+            clientId: z.string(),
+            items: z.array(SaleItemSchema),
+            subTotal: z.number(),
+            discount: z.number(),
+            total: z.number(),
+            payMethod: z.string(),
+            changeFor: z.any().optional(),
+            obs: z.string().nullish().or(z.literal('')),
+            date: z.string(),
+            status: z.string(),
+            printedLabel: z.boolean().optional(),
+            printedList: z.boolean().optional(),
+            volumes: z.number().optional(),
+            routeId: z.any().optional(),
+            regionOverride: z.string().nullish(),
+            gift: z.string().nullish(),
+            isPaid: z.boolean().optional(),
+            cashbackValue: z.number().optional()
+        });
+
+        const BackupSchema = z.object({
+            version: z.string().optional(),
+            exportedAt: z.string().optional(),
+            clients: z.array(ClientSchema).optional(),
+            products: z.array(ProductSchema).optional(),
+            sales: z.array(SaleSchema).optional(),
+            companyPhone: z.string().optional(),
+            postSaleLog: z.record(z.any()).optional()
+        });
+        
+        // --- UTILITÁRIOS ---
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+        const generateDailyId = (sales) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const todaysSales = sales.filter(s => s.date.startsWith(today));
+            const count = todaysSales.length + 1;
+            return count > 99 ? count.toString() : count.toString().padStart(2, '0');
+        };
+        const generateClientCode = (existingClients) => {
+           let code;
+           let attempts = 0;
+           do {
+             code = Math.floor(1000 + Math.random() * 9000).toString();
+             attempts++;
+             if(attempts > 1000) break; 
+           } while (existingClients.some(c => c.code === code));
+           return code;
+        };
+        const useStickyState = (key, defaultValue) => {
+          const [value, setValue] = useState(() => {
+            const stickyValue = window.localStorage.getItem(key);
+            return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+          });
+          useEffect(() => {
+            window.localStorage.setItem(key, JSON.stringify(value));
+          }, [key, value]);
+          return [value, setValue];
+        };
+        const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        const formatPercent = (value) => new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value);
+        const formatDate = (dateString) => (!dateString) ? '-' : new Date(dateString).toLocaleDateString('pt-BR');
+
+        // --- APP PRINCIPAL ---
+        function App() {
+          const [clients, setClients] = useStickyState('db_clients_v3', []);
+          const [products, setProducts] = useStickyState('db_products_v3', []);
+          const [sales, setSales] = useStickyState('db_sales_v3', []);
+          const [companyPhone, setCompanyPhone] = useStickyState('db_config_phone', '65998150975');
+          const [postSaleLog, setPostSaleLog] = useStickyState('db_postsale_log', {}); 
+          
+          const [viewMode, setViewMode] = useState('dashboard');
+          // Alterado para iniciar em 'pos' (PDV) pois dashboard foi removido
+          const [activeTab, setActiveTab] = useState('pos'); 
+          const [showStockManager, setShowStockManager] = useState(false);
+          const [driverData, setDriverData] = useState(null);
+          const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+          
+          const [saleToEdit, setSaleToEdit] = useState(null);
+          const [backupType, setBackupType] = useState('all'); 
+
+          useEffect(() => {
+            const checkHash = () => {
+                const hash = window.location.hash;
+                if (hash.startsWith('#driver=')) {
+                  try {
+                    const encoded = hash.replace('#driver=', '');
+                    const decoded = JSON.parse(atob(decodeURIComponent(encoded)));
+                    setDriverData(decoded);
+                    setViewMode('driver');
+                  } catch (e) {
+                    console.error("Link inválido", e);
+                    alert("Erro ao abrir link do entregador.");
+                  }
+                } else {
+                    if (viewMode === 'driver') setViewMode('dashboard');
+                }
+            };
+            checkHash();
+            window.addEventListener('hashchange', checkHash);
+            return () => window.removeEventListener('hashchange', checkHash);
+          }, []);
+
+          const handleBackup = () => {
+            let data = { version: '8.0', exportedAt: new Date().toISOString() };
+            let filename = 'backup';
+            if (backupType === 'all') { 
+                data = { ...data, clients, products, sales, companyPhone, postSaleLog }; 
+                filename = 'backup_completo'; 
+            } else if (backupType === 'clients') { 
+                data = { ...data, clients }; 
+                filename = 'backup_clientes'; 
+            } else if (backupType === 'products') { 
+                data = { ...data, products }; 
+                filename = 'backup_produtos'; 
+            }
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); 
+            a.href = url; 
+            a.download = `${filename}_${new Date().toISOString().slice(0,10)}.json`; 
+            a.click();
+          };
+
+          const handleRestore = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              try {
+                const rawData = JSON.parse(event.target.result);
+                const result = BackupSchema.safeParse(rawData);
+                if (!result.success) return alert(`FALHA DE INTEGRIDADE (ZOD): Arquivo inválido.`);
+                const data = result.data;
+                if (confirm("SEGURANÇA: Dados validados.\nSobrescrever base local?")) {
+                  if (data.clients) setClients(data.clients);
+                  if (data.products) setProducts(data.products);
+                  if (data.sales) setSales(data.sales);
+                  if (data.companyPhone) setCompanyPhone(data.companyPhone);
+                  if (data.postSaleLog) setPostSaleLog(data.postSaleLog);
+                  alert("Importação concluída.");
+                }
+              } catch (err) { alert("Erro ao ler JSON."); }
+            };
+            reader.readAsText(file);
+          };
+
+          if (viewMode === 'driver') return <DriverView data={driverData} onExit={() => { window.location.hash = ''; setViewMode('dashboard'); }} />;
+
+          const renderContent = () => {
+             switch(activeTab) {
+                case 'pos': return <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} saleToEdit={saleToEdit} setSaleToEdit={setSaleToEdit} />;
+                case 'expedition': return <ExpeditionView sales={sales} setSales={setSales} clients={clients} products={products} setProducts={setProducts} onEditSale={(sale) => { setSaleToEdit(sale); setActiveTab('pos'); }} />;
+                case 'logistics': return <LogisticsView sales={sales} setSales={setSales} clients={clients} companyPhone={companyPhone} products={products} setProducts={setProducts} />;
+                case 'crm': return <RegistryView clients={clients} setClients={setClients} products={products} setProducts={setProducts} />;
+                case 'postsale': return <PostSalesView sales={sales} setSales={setSales} clients={clients} postSaleLog={postSaleLog} setPostSaleLog={setPostSaleLog} companyPhone={companyPhone} products={products} setProducts={setProducts} />;
+                default: return <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} saleToEdit={saleToEdit} setSaleToEdit={setSaleToEdit} />;
+             }
+          };
+
+          return (
+            <div className="flex flex-col lg:flex-row h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
+                {/* MOBILE HEADER */}
+                <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center shrink-0 z-50 shadow-md">
+                    <div className="flex items-center gap-2">
+                        <div className="bg-yellow-500 text-slate-900 p-1 rounded font-bold text-xs">LOG</div>
+                        <h1 className="font-bold tracking-wider">SISTEMA v8.0</h1>
+                    </div>
+                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-slate-800 rounded">
+                        {mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}
+                    </button>
+                </div>
+
+                {/* SIDEBAR (Desktop & Mobile Drawer) */}
+                <aside className={`fixed inset-y-0 left-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 w-64 lg:static lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+                    <div className="h-16 hidden lg:flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
+                        <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V8.0</span></h1>
+                    </div>
+                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
+                        {/* Removido Visão Geral */}
+                        <NavItem icon={<ShoppingCart size={20}/>} label="Caixa (PDV)" active={activeTab === 'pos'} onClick={() => {setActiveTab('pos'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<Package size={20}/>} label="Expedição" active={activeTab === 'expedition'} onClick={() => {setActiveTab('expedition'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<Truck size={20}/>} label="Logística" active={activeTab === 'logistics'} onClick={() => {setActiveTab('logistics'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<Database size={20}/>} label="Cadastros" active={activeTab === 'crm'} onClick={() => {setActiveTab('crm'); setMobileMenuOpen(false);}} />
+                        {/* Removido Inteligência (BI) */}
+                        <NavItem icon={<HeartHandshake size={20}/>} label="Pós-Venda" active={activeTab === 'postsale'} onClick={() => {setActiveTab('postsale'); setMobileMenuOpen(false);}} />
+                    </nav>
+                    <div className="p-4 border-t border-slate-800 space-y-3 pb-8 lg:pb-4">
+                        <button onClick={() => {setShowStockManager(true); setMobileMenuOpen(false);}} className="w-full flex items-center justify-start gap-3 p-2 rounded hover:bg-slate-800 transition text-slate-400 hover:text-white">
+                            <ClipboardList size={20} /> <span className="text-sm font-medium">Estoque Rápido</span>
+                        </button>
+                        <div className="pt-2 border-t border-slate-800">
+                            <div className="flex gap-2 mb-2">
+                                <select className="bg-slate-800 text-xs text-white p-1.5 rounded border border-slate-700 flex-1 outline-none" value={backupType} onChange={(e) => setBackupType(e.target.value)}>
+                                    <option value="all">Geral</option><option value="clients">Clientes</option><option value="products">Produtos</option>
+                                </select>
+                                <button onClick={handleBackup} className="bg-emerald-600 hover:bg-emerald-500 p-1.5 rounded text-white transition"><Download size={14} /></button>
+                            </div>
+                            <label className="flex items-center gap-2 text-xs text-slate-400 hover:text-white cursor-pointer transition">
+                                <Upload size={14} /> Importar JSON <input type="file" className="hidden" accept=".json" onChange={handleRestore} />
+                            </label>
+                        </div>
+                    </div>
+                </aside>
+                
+                {/* MAIN CONTENT AREA */}
+                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full overflow-hidden relative">
+                    <header className="h-16 bg-white border-b hidden lg:flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
+                        <div><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">{activeTab === 'pos' ? 'Ponto de Venda' : activeTab === 'expedition' ? 'Expedição' : activeTab === 'logistics' ? 'Logística' : activeTab === 'crm' ? 'Cadastros' : 'Pós-Venda & Fidelização'}</h2></div>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border">
+                                <Phone size={14} /><input className="bg-transparent w-24 outline-none" value={companyPhone} onChange={e => setCompanyPhone(e.target.value)} />
+                            </div>
+                            <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-bold">OP</div>
+                        </div>
+                    </header>
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden relative bg-gray-50">
+                        {renderContent()}
+                    </div>
+                </main>
+
+                {showStockManager && <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 animate-in"><div className="bg-white w-full max-w-5xl h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden"><div className="bg-slate-800 text-white p-4 flex justify-between items-center shrink-0"><h2 className="font-bold flex items-center gap-2 text-lg"><ClipboardList size={20}/> GERENCIADOR DE ESTOQUE</h2><button onClick={() => setShowStockManager(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition"><XCircle size={24}/></button></div><StockManager products={products} setProducts={setProducts} /></div></div>}
+                {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
+            </div>
+          );
+        }
+
+        const NavItem = ({ icon, label, active, onClick }) => (
+            <button onClick={onClick} className={`w-full flex items-center justify-start gap-3 p-3 lg:px-6 transition-all duration-200 nav-item ${active ? 'active text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`} title={label}>{icon}<span className="font-medium text-sm">{label}</span></button>
+        );
+
+        // --- PÓS-VENDA VIEW ---
+        function PostSalesView({ sales, setSales, clients, postSaleLog, setPostSaleLog, companyPhone, products, setProducts }) {
+            const [displayLimit, setDisplayLimit] = useState(10);
+            const validSales = useMemo(() => {
+                return sales
+                    .filter(s => s.status === 'Entregue' || s.status === 'Concluído' || s.status === 'Pendente')
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+            }, [sales]);
+            const visibleSales = validSales.slice(0, displayLimit);
+            const loadMore = () => setDisplayLimit(prev => prev + 10);
+
+            const sendThankYou = (sale, client) => {
+                if (!client) return alert("Cliente não encontrado");
+                const clientName = client.name.split(' ')[0];
+                const cleanPhone = client.phone.replace(/\D/g, '');
+                const itemsSummary = sale.items.map(i => `${i.qty || 1}x ${i.name}`).join(', ');
+                const msg = `Olá ${clientName}! 👋\n\nPassando para agradecer pela compra de hoje! ❤\n\nVocê pediu: ${itemsSummary}.\n\nEsperamos que goste! Qualquer dúvida estamos à disposição. Até a próxima! 🚀`;
+                setPostSaleLog(prev => ({ ...prev, [`${sale.id}_thankyou`]: { date: new Date().toISOString(), type: 'thank_you' } }));
+                window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            };
+
+            const cancelSale = (sale) => {
+                if (!confirm(`TEM CERTEZA QUE DESEJA CANCELAR A VENDA #${sale.id}?\n\nOs itens voltarão automaticamente para o estoque.`)) return;
+                const newProducts = [...products];
+                sale.items.forEach(item => {
+                    const dbProd = newProducts.find(p => p.id === item.id);
+                    if (dbProd) {
+                        if (dbProd.isCombo) {
+                            item.comboItems?.forEach(ing => {
+                                const dbIng = newProducts.find(p => p.id === ing.id);
+                                if (dbIng) { dbIng.stock += ing.qty * (item.qty || 1); dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_POSTSALE', qty: ing.qty * (item.qty || 1) }); }
+                            });
+                        } else {
+                            dbProd.stock += (item.qty || 1);
+                            dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_POSTSALE', qty: (item.qty || 1) });
+                        }
+                    }
+                });
+                setProducts(newProducts);
+                const updatedSales = sales.map(s => s.id === sale.id ? { ...s, status: 'Cancelado' } : s);
+                setSales(updatedSales);
+                alert("Venda cancelada e estoque reposto!");
+            };
+
+            return (
+                <div className="p-4 lg:p-6 pb-20">
+                    <div className="flex justify-between items-center mb-6">
+                         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><HeartHandshake className="text-pink-600"/> Pós-Venda & Fidelização</h2>
+                         <div className="text-xs text-gray-500 font-medium">Exibindo {visibleSales.length} de {validSales.length} vendas</div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[800px] lg:min-w-0">
+                                <thead className="bg-gray-100 text-gray-600 uppercase text-xs font-bold sticky top-0 z-10">
+                                    <tr>
+                                        <th className="p-4 border-b">Data</th>
+                                        <th className="p-4 border-b">Cliente</th>
+                                        <th className="p-4 border-b">Localização</th>
+                                        <th className="p-4 border-b">Cesta</th>
+                                        <th className="p-4 border-b">Pagamento</th>
+                                        <th className="p-4 border-b text-center">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-sm divide-y divide-gray-100">
+                                    {visibleSales.map(sale => {
+                                        const client = clients.find(c => c.id === sale.clientId);
+                                        const saleDate = new Date(sale.date);
+                                        return (
+                                            <tr key={sale.id} className="hover:bg-gray-50 transition">
+                                                <td className="p-4">
+                                                    <div className="font-bold text-gray-800">{saleDate.toLocaleDateString('pt-BR')}</div>
+                                                    <div className="text-xs text-gray-400">{saleDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
+                                                </td>
+                                                <td className="p-4">{client ? (<div><div className="font-bold text-gray-700">{client.name}</div><div className="text-xs text-gray-400">{client.phone}</div></div>) : <span className="text-red-400">Cliente Removido</span>}</td>
+                                                <td className="p-4 text-gray-600">{client ? (<><div className="font-medium">{client.district || '-'}</div><div className="text-xs text-gray-400">{client.city || '-'}</div></>) : '-'}</td>
+                                                <td className="p-4">
+                                                    <div className="max-w-[200px] truncate text-gray-600" title={sale.items.map(i => i.name).join(', ')}>
+                                                        {sale.items.length} itens: {sale.items[0]?.name} {sale.items.length > 1 ? `+${sale.items.length - 1}` : ''}
+                                                    </div>
+                                                    <div className="font-bold text-xs text-emerald-600 mt-1">{formatCurrency(sale.total)}</div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-medium w-fit">{sale.payMethod}</span>
+                                                        {sale.cashbackValue > 0 && <span className="text-[10px] font-bold text-pink-600 flex items-center gap-1"><Wallet size={10}/> -{formatCurrency(sale.cashbackValue)}</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <div className="flex justify-center gap-2">
+                                                        <button onClick={() => sendThankYou(sale, client)} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm hover:shadow">
+                                                            <MessageCircle size={14} /> <span>Agradecer</span>
+                                                        </button>
+                                                        <button onClick={() => cancelSale(sale)} className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm">
+                                                            <Ban size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                        {visibleSales.length < validSales.length && (
+                            <div className="p-4 border-t bg-gray-50 flex justify-center">
+                                <button onClick={loadMore} className="flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 transition shadow-sm">
+                                    <ChevronDown size={16}/> Carregar mais vendas
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- POS (PDV) ---
+        function POSView({ clients, products, setProducts, sales, setSales, saleToEdit, setSaleToEdit }) {
+             const [selectedClient, setSelectedClient] = useState('');
+             const [clientSearch, setClientSearch] = useState('');
+             const [cart, setCart] = useState([]);
+             const [saleRegion, setSaleRegion] = useState('');
+             const [isPaid, setIsPaid] = useState(false);
+             const [gift, setGift] = useState('Nenhum');
+             const [discount, setDiscount] = useState(0);
+             const [useCashback, setUseCashback] = useState(false);
+             const [cashbackVal, setCashbackVal] = useState(0);
+             const [payMethod, setPayMethod] = useState('Pix');
+             const [changeFor, setChangeFor] = useState(''); 
+             const [obs, setObs] = useState(''); 
+             const [searchProd, setSearchProd] = useState('');
+             const [selectedCategory, setSelectedCategory] = useState('todas');
+             const [editingItem, setEditingItem] = useState(null); 
+             const [volumes, setVolumes] = useState(1); 
+             const [tempQty, setTempQty] = useState({});
+             
+             const productSalesCount = useMemo(() => {
+                 const counts = {};
+                 sales.forEach(s => s.items.forEach(i => { counts[i.name] = (counts[i.name] || 0) + (i.qty || 1); }));
+                 return counts;
+             }, [sales]);
+
+             const subTotal = useMemo(() => cart.reduce((acc, item) => acc + Number(item.price), 0), [cart]);
+             const totalFinal = Math.max(0, subTotal - discount - (useCashback ? cashbackVal : 0));
+
+             useEffect(() => {
+                if (saleToEdit) {
+                  const client = clients.find(c => c.id === saleToEdit.clientId);
+                  if (client) { setSelectedClient(client.id); setClientSearch(client.name); }
+                  setCart(saleToEdit.items.map(i => ({...i, tempId: generateId()})));
+                  setObs(saleToEdit.obs); setPayMethod(saleToEdit.payMethod);
+                  if (saleToEdit.changeFor) setChangeFor(saleToEdit.changeFor);
+                  setVolumes(saleToEdit.volumes || 1);
+                  setSaleRegion(saleToEdit.regionOverride || (client ? client.region : ''));
+                  setIsPaid(saleToEdit.isPaid || false); setGift(saleToEdit.gift || 'Nenhum'); setDiscount(saleToEdit.discount || 0);
+                  if (saleToEdit.cashbackValue > 0) { setUseCashback(true); setCashbackVal(saleToEdit.cashbackValue); }
+                  setSaleToEdit(null); 
+                }
+              }, [saleToEdit, clients]);
+    
+             const addToCart = (product) => {
+                const qty = tempQty[product.id] || 1;
+                if (!product.isCombo && product.stock < qty) if (!confirm(`Estoque baixo (${product.stock}). Adicionar ${qty}?`)) return;
+                const itemsToAdd = [];
+                for(let i=0; i<qty; i++) itemsToAdd.push({ ...product, tempId: generateId(), comboItems: product.isCombo ? product.comboItems.map(ci => ({ ...ci, internalPrice: 0 })) : [] });
+                setCart([...cart, ...itemsToAdd]);
+                setTempQty({...tempQty, [product.id]: 1}); 
+             };
+
+             const removeFromCart = (tempId) => setCart(cart.filter(item => item.tempId !== tempId));
+
+             const finalizeSale = () => {
+                if (!selectedClient) return alert('Selecione um cliente');
+                if (cart.length === 0) return alert('Carrinho vazio');
+                const newProducts = [...products];
+                cart.forEach(cartItem => {
+                  const dbProd = newProducts.find(p => p.id === cartItem.id);
+                  if (dbProd) {
+                    if (dbProd.isCombo) cartItem.comboItems?.forEach(ing => { const dbIng = newProducts.find(p => p.id === ing.id); if (dbIng) dbIng.stock = Math.max(0, dbIng.stock - ing.qty); });
+                    else dbProd.stock = Number(dbProd.stock) - 1;
+                  }
+                });
+                setProducts(newProducts);
+                const shortId = generateDailyId(sales);
+                const newSale = { id: shortId, fullId: generateId(), clientId: selectedClient, items: cart, subTotal, discount, total: totalFinal, payMethod, changeFor, obs, date: new Date().toISOString(), status: 'Pendente', volumes, regionOverride: saleRegion, gift, isPaid, cashbackValue: useCashback ? cashbackVal : 0 };
+                setSales([...sales, newSale]);
+                setCart([]); setSelectedClient(''); setClientSearch(''); setObs(''); setChangeFor(''); setVolumes(1); setSaleRegion(''); setIsPaid(false); setGift('Nenhum'); setDiscount(0); setUseCashback(false); setCashbackVal(0);
+                alert(`Venda #${shortId} Realizada!`);
+             };
+
+             const filteredProducts = products.filter(p => (selectedCategory === 'todas' || p.category === selectedCategory) && p.name.toLowerCase().includes(searchProd.toLowerCase()));
+             const categories = ['todas', ...new Set(products.map(p => p.category))];
+
+             return (
+                <div className="flex flex-col lg:flex-row min-h-full">
+                    <div className="flex-1 flex flex-col lg:border-r bg-white p-4 h-[500px] lg:h-auto overflow-hidden">
+                        <div className="flex gap-2 lg:gap-4 mb-4 shrink-0">
+                            <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-gray-400" size={20}/><input className="w-full pl-10 pr-4 py-2 border rounded-lg bg-gray-50 outline-none" placeholder="Buscar produto..." value={searchProd} onChange={e => setSearchProd(e.target.value)} /></div>
+                            <select className="border rounded-lg px-2 bg-white outline-none" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}><option value="todas">Todas</option>{categories.filter(c=>c!=='todas').map(c => <option key={c} value={c}>{c}</option>)}</select>
+                        </div>
+                        <div className="flex-1 overflow-y-auto scrollbar-thin border rounded-lg">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-gray-100 text-gray-600 text-xs uppercase sticky top-0 z-10 shadow-sm"><tr><th className="p-2 border-b">Produto</th><th className="p-2 border-b text-center">Est</th><th className="p-2 border-b text-right">Preço</th><th className="p-2 border-b text-center">Add</th></tr></thead>
+                                <tbody className="text-sm divide-y divide-gray-100">
+                                    {filteredProducts.map(p => (
+                                        <tr key={p.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => addToCart(p)}>
+                                            <td className="p-2"><div className="font-bold text-gray-800">{p.name}</div></td>
+                                            <td className="p-2 text-center font-bold text-xs"><span className={p.stock < 5 ? 'text-red-600' : 'text-green-600'}>{p.stock}</span></td>
+                                            <td className="p-2 text-right font-bold text-emerald-600">{formatCurrency(p.price)}</td>
+                                            <td className="p-2 text-center"><button className="bg-blue-600 text-white p-1 rounded"><Plus size={16}/></button></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="w-full lg:w-[420px] flex flex-col bg-gray-50 border-t lg:border-l shadow-xl z-20 shrink-0">
+                        <div className="p-4 bg-white border-b space-y-3">
+                            <label className="text-xs font-bold text-gray-500 uppercase block">Cliente</label>
+                            <input className="w-full p-3 border rounded-lg outline-none" placeholder="Buscar Cliente..." value={clientSearch} onChange={e => setClientSearch(e.target.value)} />
+                        </div>
+                        <div className="p-4 space-y-2 flex-1 overflow-y-auto">
+                            {cart.map(item => (
+                                <div key={item.tempId} className="bg-white p-3 rounded-lg border flex justify-between items-center">
+                                    <div className="text-sm font-bold text-gray-800">{item.name}</div>
+                                    <div className="flex items-center gap-3"><span className="text-emerald-600 font-bold">{formatCurrency(item.price)}</span><button onClick={() => removeFromCart(item.tempId)} className="text-red-400"><XCircle size={16}/></button></div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white border-t p-4 pb-20 lg:pb-4 shadow-lg">
+                            <div className="flex justify-between items-center mb-4"><span className="text-gray-500 font-bold uppercase text-xs">Total Final</span><span className="text-2xl font-bold text-emerald-600">{formatCurrency(totalFinal)}</span></div>
+                            <button onClick={finalizeSale} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center text-lg">FINALIZAR VENDA</button>
+                        </div>
+                    </div>
+                </div>
+             );
+        }
+
+        // --- EXPEDITION ---
+        function ExpeditionView({ sales, setSales, clients, products, setProducts, onEditSale }) {
+            const updateStatus = (saleId, newStatus) => setSales(sales.map(s => s.id === saleId ? { ...s, status: newStatus } : s));
+            const activeSales = sales.filter(s => s.status !== 'Entregue' && s.status !== 'Cancelado').sort((a,b) => new Date(a.date) - new Date(b.date));
+            const KanbanColumn = ({ title, color, children }) => (<div className="flex flex-col h-full min-w-[300px] flex-1 bg-gray-100 rounded-xl overflow-hidden border"><div className={`p-3 font-bold text-sm uppercase text-${color}-800 bg-${color}-100 border-b`}>{title} ({children.length})</div><div className="flex-1 overflow-y-auto p-3 space-y-3">{children}</div></div>);
+            
+            return (
+                <div className="p-4 lg:p-6 pb-20 overflow-x-auto flex gap-6 h-full">
+                    <KanbanColumn title="Pendente" color="orange">
+                        {activeSales.filter(s => s.status === 'Pendente').map(s => (
+                            <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border"><div className="font-bold mb-2">#{s.id} - {clients.find(c=>c.id===s.clientId)?.name}</div><button onClick={() => updateStatus(s.id, 'Montagem')} className="w-full bg-orange-500 text-white py-2 rounded text-xs font-bold">MONTAR</button></div>
+                        ))}
+                    </KanbanColumn>
+                    <KanbanColumn title="Em Montagem" color="blue">
+                        {activeSales.filter(s => s.status === 'Montagem').map(s => (
+                            <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border"><div className="font-bold mb-2">#{s.id}</div><button onClick={() => updateStatus(s.id, 'Rota')} className="w-full bg-blue-500 text-white py-2 rounded text-xs font-bold">PRONTO P/ ROTA</button></div>
+                        ))}
+                    </KanbanColumn>
+                </div>
+            );
+        }
+
+        // --- LOGISTICS ---
+        function LogisticsView({ sales, setSales, clients, companyPhone, products, setProducts }) {
+            const routeSales = sales.filter(s => s.status === 'Rota');
+            const forceDelivery = (id) => { if (confirm("Marcar entregue?")) setSales(sales.map(s => s.id === id ? { ...s, status: 'Entregue' } : s)); };
+            return (
+                <div className="p-4 lg:p-6 pb-20 max-w-4xl mx-auto">
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                        <div className="p-3 bg-indigo-50 border-b font-bold text-indigo-900 flex items-center gap-2"><Truck size={18}/> {routeSales.length} Entregas Pendentes</div>
+                        <div className="p-2 space-y-2">{routeSales.map((s, idx) => (<div key={s.id} className="bg-white p-3 rounded-lg border flex justify-between items-center"><div><div className="font-bold">#{s.id} - {clients.find(c=>c.id===s.clientId)?.name}</div><div className="text-xs text-gray-500">{s.payMethod} - {formatCurrency(s.total)}</div></div><button onClick={() => forceDelivery(s.id)} className="text-green-500"><CheckCircle size={24}/></button></div>))}</div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- REGISTRY ---
+        function RegistryView({ clients, setClients, products, setProducts }) {
+            const [tab, setTab] = useState('clients');
+            const [cForm, setCForm] = useState({ name: '', phone: '', address: '', district: '', region: 'CUIABÁ' });
+            const saveClient = () => { if (!cForm.name) return; setClients([...clients, { ...cForm, id: generateId() }]); setCForm({ name: '', phone: '', address: '', district: '', region: 'CUIABÁ' }); alert('Salvo!'); };
+            return (
+                <div className="flex flex-col lg:flex-row h-full">
+                    <div className="flex-1 bg-white border-r overflow-y-auto p-4">
+                        <div className="flex bg-gray-200 p-1 rounded-lg mb-4 w-48"><button onClick={() => setTab('clients')} className={`flex-1 py-1 text-xs font-bold rounded ${tab === 'clients' ? 'bg-white shadow' : ''}`}>CLIENTES</button><button onClick={() => setTab('products')} className={`flex-1 py-1 text-xs font-bold rounded ${tab === 'products' ? 'bg-white shadow' : ''}`}>PRODUTOS</button></div>
+                        <div className="space-y-2">{tab === 'clients' ? clients.map(c => <div key={c.id} className="p-3 border rounded shadow-sm">{c.name}</div>) : products.map(p => <div key={p.id} className="p-3 border rounded shadow-sm">{p.name} - {formatCurrency(p.price)}</div>)}</div>
+                    </div>
+                    <div className="w-full lg:w-[380px] bg-gray-50 p-6">
+                        <h2 className="font-bold mb-4 uppercase text-sm">Novo Cadastro</h2>
+                        {tab === 'clients' && <div className="space-y-3"><input className="input-field" placeholder="Nome" value={cForm.name} onChange={e=>setCForm({...cForm, name:e.target.value})} /><input className="input-field" placeholder="Telefone" value={cForm.phone} onChange={e=>setCForm({...cForm, phone:e.target.value})} /><button onClick={saveClient} className="w-full btn-primary">SALVAR</button></div>}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- STOCK MANAGER ---
+        function StockManager({ products, setProducts }) {
+             return (<div className="p-6 h-full overflow-y-auto"><h3 className="font-bold mb-4">Lista de Estoque</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-4">{products.map(p => (<div key={p.id} className="p-3 border rounded bg-gray-50 flex justify-between"><span>{p.name}</span><span className="font-bold text-blue-600">{p.stock}</span></div>))}</div></div>)
+        }
+        
+        // --- DRIVER VIEW (PARA LINKS EXTERNOS) ---
+        function DriverView({ data, onExit }) {
+          if (!data) return <div className="p-4 text-center">Dados inválidos.</div>;
+          return (<div className="h-screen bg-gray-50 p-4"><header className="bg-indigo-700 text-white p-4 rounded-xl mb-4 flex justify-between items-center"><h1 className="font-bold">ROTA: {data.route}</h1><button onClick={onExit} className="text-xs underline">Voltar</button></header><div className="space-y-4">{data.orders.map(o => (<div key={o.id} className="bg-white p-4 rounded-lg border shadow-sm"><div className="font-bold text-lg">{o.customer}</div><div className="text-sm text-gray-500 mb-2">{o.address}</div><div className="flex justify-between items-center"><span className="font-bold text-green-700">{formatCurrency(o.total)}</span><span className="bg-gray-100 px-2 py-1 rounded text-xs">{o.pay}</span></div></div>))}</div></div>);
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
