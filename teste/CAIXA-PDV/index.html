@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDV | Sistema Local-First</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .nav-item.active { background-color: #1e293b; border-right: 4px solid #34d399; color: white; }
+        .input-field { width: 100%; padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.9rem; outline: none; transition: all 0.2s; }
+        .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+    </style>
+    <script type="importmap">
+    { "imports": { "react": "https://esm.sh/react@18.2.0", "react-dom/client": "https://esm.sh/react-dom@18.2.0/client", "lucide-react": "https://esm.sh/lucide-react@0.263.1", "zod": "https://esm.sh/zod@3.22.4" } }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans h-full">
+    <div id="root" class="h-full"></div>
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { LayoutDashboard, ShoppingCart, Package, Truck, Database, LineChart, HeartHandshake, Menu, X, Search, Plus, XCircle, Wallet, Gift, CheckCircle } from 'lucide-react';
+
+        // --- UTILITÁRIOS ---
+        const useStickyState = (key, defaultValue) => {
+          const [value, setValue] = useState(() => {
+            const stickyValue = window.localStorage.getItem(key);
+            return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+          });
+          useEffect(() => { window.localStorage.setItem(key, JSON.stringify(value)); }, [key, value]);
+          return [value, setValue];
+        };
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+        const generateDailyId = (sales) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const count = sales.filter(s => s.date.startsWith(today)).length + 1;
+            return count > 99 ? count.toString() : count.toString().padStart(2, '0');
+        };
+
+        // --- SIDEBAR ---
+        const Sidebar = ({ mobileOpen }) => {
+            const NavItem = ({ icon, label, href, active }) => (
+                <a href={href} className={`w-full flex items-center justify-start gap-3 p-3 lg:px-6 transition-all duration-200 nav-item ${active ? 'active' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+                    {icon}<span className="font-medium text-sm">{label}</span>
+                </a>
+            );
+            return (
+                <aside className={`fixed inset-y-0 left-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 w-64 lg:static lg:translate-x-0 ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+                    <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
+                        <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V8.0</span></h1>
+                    </div>
+                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
+                        <NavItem icon={<LayoutDashboard size={20}/>} label="Visão Geral" href="../VISAOGERAL/" />
+                        <NavItem icon={<ShoppingCart size={20}/>} label="Caixa (PDV)" href="#" active={true} />
+                        <NavItem icon={<Package size={20}/>} label="Expedição" href="../EXPEDICAO/" />
+                        <NavItem icon={<Truck size={20}/>} label="Logística" href="../LOGISTICA/" />
+                        <NavItem icon={<Database size={20}/>} label="Cadastros" href="../CADASTROS/" />
+                        <NavItem icon={<LineChart size={20}/>} label="Relatórios" href="../RELATORIOS/" />
+                        <NavItem icon={<HeartHandshake size={20}/>} label="Pós-Venda" href="../POS-VENDA/" />
+                    </nav>
+                </aside>
+            );
+        };
+
+        // --- POS COMPONENT ---
+        function POSView({ clients, products, setProducts, sales, setSales }) {
+             const [selectedClient, setSelectedClient] = useState('');
+             const [clientSearch, setClientSearch] = useState('');
+             const [cart, setCart] = useState([]);
+             const [saleRegion, setSaleRegion] = useState('');
+             const [isPaid, setIsPaid] = useState(false);
+             const [gift, setGift] = useState('Nenhum');
+             const [discount, setDiscount] = useState(0);
+             const [useCashback, setUseCashback] = useState(false);
+             const [cashbackVal, setCashbackVal] = useState(0);
+             const [payMethod, setPayMethod] = useState('Pix');
+             const [changeFor, setChangeFor] = useState(''); 
+             const [obs, setObs] = useState(''); 
+             const [searchProd, setSearchProd] = useState('');
+             const [selectedCategory, setSelectedCategory] = useState('todas');
+             const [volumes, setVolumes] = useState(1); 
+
+             const subTotal = useMemo(() => cart.reduce((acc, item) => acc + Number(item.price), 0), [cart]);
+             const totalFinal = Math.max(0, subTotal - discount - (useCashback ? cashbackVal : 0));
+
+             const addToCart = (product) => {
+                const itemsToAdd = [];
+                const cartItem = { 
+                   ...product, tempId: generateId(), originalPrice: product.price,
+                   comboItems: product.isCombo ? product.comboItems.map(ci => ({ ...ci, internalPrice: 0 })) : []
+                };
+                setCart([...cart, cartItem]);
+             };
+
+             const finalizeSale = () => {
+                if (!selectedClient) return alert('Selecione um cliente');
+                if (cart.length === 0) return alert('Carrinho vazio');
+                
+                // Atualiza Estoque
+                const newProducts = [...products];
+                cart.forEach(cartItem => {
+                  const dbProd = newProducts.find(p => p.id === cartItem.id);
+                  if (dbProd) {
+                    if (dbProd.isCombo) {
+                      cartItem.comboItems?.forEach(ing => {
+                         const dbIng = newProducts.find(p => p.id === ing.id);
+                         if (dbIng) {
+                           dbIng.stock = Math.max(0, dbIng.stock - ing.qty);
+                           dbIng.stockHistory = [...(dbIng.stockHistory || []), { date: new Date().toISOString(), type: 'SALE_COMBO', qty: ing.qty }];
+                         }
+                      });
+                    } else {
+                      dbProd.stock = Number(dbProd.stock) - 1;
+                      dbProd.stockHistory = [...(dbProd.stockHistory || []), { date: new Date().toISOString(), type: 'SALE', qty: 1 }];
+                    }
+                  }
+                });
+                setProducts(newProducts);
+
+                const shortId = generateDailyId(sales);
+                const newSale = {
+                  id: shortId, fullId: generateId(), clientId: selectedClient, items: cart,
+                  subTotal, discount, total: totalFinal, payMethod, changeFor: payMethod === 'Dinheiro' ? changeFor : null, obs,
+                  date: new Date().toISOString(), status: 'Pendente', volumes, regionOverride: saleRegion, gift, isPaid, cashbackValue: useCashback ? cashbackVal : 0
+                };
+                setSales([...sales, newSale]);
+                setCart([]); setSelectedClient(''); setClientSearch(''); setObs(''); setDiscount(0); setUseCashback(false);
+                alert(`Venda #${shortId} Realizada!`);
+             };
+
+             const filteredProducts = products.filter(p => (selectedCategory === 'todas' || p.category === selectedCategory) && p.name.toLowerCase().includes(searchProd.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name));
+             const filteredClients = clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()));
+             const categories = ['todas', ...new Set(products.map(p => p.category))];
+
+             return (
+                <div className="flex flex-col lg:flex-row h-full">
+                    {/* LISTA PRODUTOS */}
+                    <div className="flex-1 flex flex-col lg:border-r bg-white p-4 h-[500px] lg:h-auto overflow-hidden">
+                        <div className="flex gap-2 mb-4">
+                            <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-gray-400" size={20}/><input className="w-full pl-10 pr-4 py-2 border rounded-lg bg-gray-50 outline-none" placeholder="Buscar..." value={searchProd} onChange={e => setSearchProd(e.target.value)} /></div>
+                            <select className="border rounded-lg px-2 bg-white outline-none" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}><option value="todas">Todas</option>{categories.filter(c=>c!=='todas').map(c => <option key={c} value={c}>{c}</option>)}</select>
+                        </div>
+                        <div className="flex-1 overflow-y-auto scrollbar-thin border rounded-lg">
+                            <table className="w-full text-left">
+                                <tbody className="divide-y divide-gray-100">
+                                    {filteredProducts.map(p => (
+                                        <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => addToCart(p)}>
+                                            <td className="p-3"><div className="font-bold text-gray-800">{p.name}</div><div className="text-xs text-gray-500">Estoque: <span className={p.stock<5?'text-red-500 font-bold':'text-green-600'}>{p.stock}</span></div></td>
+                                            <td className="p-3 text-right font-bold text-emerald-600">{formatCurrency(p.price)}</td>
+                                            <td className="p-3 text-center w-10"><Plus size={16} className="text-blue-600"/></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {/* CARRINHO */}
+                    <div className="w-full lg:w-[420px] flex flex-col bg-gray-50 shadow-xl z-20">
+                        <div className="p-4 bg-white border-b space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Cliente</label>
+                            <div className="relative">
+                                <input className={`w-full p-3 border rounded-lg outline-none ${selectedClient ? 'bg-green-50 border-green-500 font-bold text-green-800' : 'bg-white'}`} placeholder="Buscar Cliente..." value={clientSearch} onChange={e => { setClientSearch(e.target.value); setSelectedClient(''); }} />
+                                {clientSearch && !selectedClient && (<div className="absolute top-full left-0 w-full bg-white border shadow-xl max-h-60 overflow-y-auto z-50 rounded-b-lg">{filteredClients.map(c => (<div key={c.id} className="p-3 hover:bg-blue-50 cursor-pointer border-b" onClick={() => { setSelectedClient(c.id); setClientSearch(c.name); setSaleRegion(c.region || ''); }}>{c.name}</div>))}</div>)}
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                            {cart.map(item => (
+                                <div key={item.tempId} className="bg-white p-3 rounded-lg border shadow-sm flex justify-between items-center">
+                                    <div className="flex-1"><div className="font-bold text-sm">{item.name}</div><div className="text-xs text-green-600 font-bold">{formatCurrency(item.price)}</div></div>
+                                    <button onClick={() => setCart(cart.filter(i => i.tempId !== item.tempId))} className="text-red-400 hover:text-red-600"><XCircle size={18}/></button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white border-t p-4 shadow-inner pb-20 lg:pb-4">
+                            <div className="flex justify-between items-center mb-4 text-2xl font-bold text-emerald-600"><span>TOTAL</span><span>{formatCurrency(totalFinal)}</span></div>
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                                <select className="border rounded p-2 text-sm" value={payMethod} onChange={e => setPayMethod(e.target.value)}><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select>
+                                <button onClick={finalizeSale} className="bg-slate-900 text-white font-bold rounded p-2 hover:bg-slate-800 transition">FINALIZAR</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+             );
+        }
+
+        function App() {
+          const [clients] = useStickyState('db_clients_v3', []);
+          const [products, setProducts] = useStickyState('db_products_v3', []);
+          const [sales, setSales] = useStickyState('db_sales_v3', []);
+          const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+          return (
+            <div className="flex flex-col lg:flex-row h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
+                <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center shrink-0 z-50">
+                    <div className="flex items-center gap-2"><div className="bg-yellow-500 text-slate-900 p-1 rounded font-bold text-xs">LOG</div><h1 className="font-bold">PDV</h1></div>
+                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-slate-800 rounded">{mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}</button>
+                </div>
+                <Sidebar mobileOpen={mobileMenuOpen} />
+                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full relative">
+                     <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} />
+                </main>
+                {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
+            </div>
+          );
+        }
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
