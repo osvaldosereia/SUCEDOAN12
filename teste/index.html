@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Logística Local-First v6.2 (Full Data)</title>
+    <title>Sistema Logística Local-First v6.3 (Stable Fixed)</title>
     
     <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -156,7 +156,7 @@
             postSaleLog: z.record(z.object({
                 date: z.string(),
                 count: z.number(),
-                expirationDate: z.string().optional() // Adicionado validade
+                expirationDate: z.string().optional()
             })).optional()
         });
         
@@ -256,7 +256,7 @@
           }, []);
 
           const handleBackup = () => {
-            let data = { version: '6.2', exportedAt: new Date().toISOString() };
+            let data = { version: '6.3', exportedAt: new Date().toISOString() };
             let filename = 'backup';
             if (backupType === 'all') { 
                 data = { ...data, clients, products, sales, companyPhone, postSaleLog }; 
@@ -319,7 +319,7 @@
                 <aside className="w-20 lg:w-64 bg-slate-900 text-white flex flex-col shrink-0 transition-all duration-300 z-30 shadow-xl">
                     <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
                         <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
-                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V6.2</span></h1>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V6.3</span></h1>
                     </div>
                     <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
                         <NavItem icon={<LayoutDashboard size={20}/>} label="Visão Geral" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
@@ -403,7 +403,7 @@
             <div className={`bg-white p-5 rounded-xl shadow-sm border border-${color}-100 relative overflow-hidden group`}><div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110`}>{icon}</div><div className="relative z-10"><p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">{title}</p><h3 className="text-2xl font-bold text-gray-800 mb-1">{value}</h3><p className={`text-xs text-${color}-600 font-bold`}>{sub}</p></div></div>
         );
 
-        // --- PÓS-VENDA VIEW (ATUALIZADO V6.2) ---
+        // --- PÓS-VENDA VIEW ---
         function PostSalesView({ sales, clients, postSaleLog, setPostSaleLog, companyPhone }) {
             const clientLastSale = useMemo(() => {
                 const map = {};
@@ -470,7 +470,6 @@
                 const cleanPhone = item.client.phone.replace(/\D/g, '');
                 let msg = '';
                 
-                // Calcula validade
                 const validityDate = new Date();
                 validityDate.setDate(validityDate.getDate() + 7);
                 const validityStr = validityDate.toLocaleDateString('pt-BR');
@@ -558,7 +557,7 @@
             return (
                 <div className="h-full p-6 overflow-x-auto">
                     <div className="flex gap-6 h-full min-w-[1900px]">
-                        {/* NOVA COLUNA: CASHBACKS ATIVOS */}
+                        {/* COLUNA 0: CASHBACKS ATIVOS */}
                         <div className="flex-1 flex flex-col bg-slate-100 rounded-xl border border-slate-300 overflow-hidden min-w-0">
                              <div className="p-3 bg-slate-200 border-b border-slate-300 flex justify-between items-center"><h3 className="font-bold text-slate-800 flex items-center gap-2 text-xs lg:text-sm"><Award size={16}/> Cashbacks Ativos</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-slate-700">{activeCashbacks.length}</span></div>
                              <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">
@@ -575,31 +574,31 @@
                              </div>
                         </div>
 
-                        {/* COLUNA 1: HOJE (0 DIAS) */}
+                        {/* COLUNA 1: HOJE */}
                         <div className="flex-1 flex flex-col bg-blue-50 rounded-xl border border-blue-200 overflow-hidden min-w-0">
                             <div className="p-3 bg-blue-100 border-b border-blue-200 flex justify-between items-center"><h3 className="font-bold text-blue-900 flex items-center gap-2 text-xs lg:text-sm"><Star size={16}/> Hoje</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-blue-700">{buckets.today.length}</span></div>
                             <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.today.map(item => <PostSaleCard key={item.client.id} item={item} type="today" />)}</div>
                         </div>
 
-                        {/* COLUNA 2: ONTEM (1 DIA) */}
+                        {/* COLUNA 2: ONTEM */}
                         <div className="flex-1 flex flex-col bg-purple-50 rounded-xl border border-purple-200 overflow-hidden min-w-0">
                             <div className="p-3 bg-purple-100 border-b border-purple-200 flex justify-between items-center"><h3 className="font-bold text-purple-900 flex items-center gap-2 text-xs lg:text-sm"><ThumbsUp size={16}/> Ontem</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-purple-700">{buckets.yesterday.length}</span></div>
                             <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.yesterday.map(item => <PostSaleCard key={item.client.id} item={item} type="yesterday" />)}</div>
                         </div>
 
-                        {/* COLUNA 3: OPORTUNIDADE (25-30 DIAS) */}
+                        {/* COLUNA 3: OPORTUNIDADE */}
                         <div className="flex-1 flex flex-col bg-green-50 rounded-xl border border-green-200 overflow-hidden min-w-0">
                             <div className="p-3 bg-green-100 border-b border-green-200 flex justify-between items-center"><h3 className="font-bold text-green-900 flex items-center gap-2 text-xs lg:text-sm"><Clock size={16}/> Ideal (25-30d)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-green-700">{buckets.opportunity.length}</span></div>
                             <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.opportunity.map(item => <PostSaleCard key={item.client.id} item={item} type="opp" />)}</div>
                         </div>
 
-                        {/* COLUNA 4: ATENÇÃO (31-45 DIAS) */}
+                        {/* COLUNA 4: ATENÇÃO */}
                         <div className="flex-1 flex flex-col bg-yellow-50 rounded-xl border border-yellow-200 overflow-hidden min-w-0">
                             <div className="p-3 bg-yellow-100 border-b border-yellow-200 flex justify-between items-center"><h3 className="font-bold text-yellow-900 flex items-center gap-2 text-xs lg:text-sm"><AlertTriangle size={16}/> Atenção (31d+)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-yellow-700">{buckets.attention.length}</span></div>
                             <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.attention.map(item => <PostSaleCard key={item.client.id} item={item} type="att" />)}</div>
                         </div>
 
-                        {/* COLUNA 5: RISCO (46+ DIAS) */}
+                        {/* COLUNA 5: RISCO */}
                         <div className="flex-1 flex flex-col bg-red-50 rounded-xl border border-red-200 overflow-hidden min-w-0">
                             <div className="p-3 bg-red-100 border-b border-red-200 flex justify-between items-center"><h3 className="font-bold text-red-900 flex items-center gap-2 text-xs lg:text-sm"><XCircle size={16}/> Risco (46d+)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-red-700">{buckets.risk.length}</span></div>
                             <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.risk.map(item => <PostSaleCard key={item.client.id} item={item} type="risk" />)}</div>
@@ -627,7 +626,7 @@
             const topClients = Object.entries(clientSpend).sort((a,b) => b[1] - a[1]).slice(0, 5);
             const payMethods = {}; filteredSales.forEach(s => payMethods[s.payMethod] = (payMethods[s.payMethod] || 0) + 1);
             
-            // Novos Relatórios V6.2
+            // Novos Relatórios
             const salesByCity = {};
             const salesByDistrict = {};
             filteredSales.forEach(s => {
@@ -669,7 +668,7 @@
             )
         }
 
-        // --- STOCK MANAGER (ATUALIZADO V6.2) ---
+        // --- STOCK MANAGER ---
         function StockManager({ products, setProducts }) {
              const [bulkIn, setBulkIn] = useState(''); const [bulkOut, setBulkOut] = useState(''); const sortedProducts = [...products].sort((a,b) => a.name.localeCompare(b.name));
              const processBulk = (text, type) => { 
@@ -679,7 +678,7 @@
                      const parts = line.split(/[|\t]+/); 
                      const code = parts[0]?.trim(); 
                      const qty = parseInt(parts[1]?.trim()); 
-                     const validity = parts[2]?.trim(); // Nova coluna Validade
+                     const validity = parts[2]?.trim();
 
                      if (!code || isNaN(qty)) return; 
                      const prodIndex = newProducts.findIndex(p => (p.internalCode && p.internalCode === code) || (p.barcode && p.barcode === code) || (p.name.toUpperCase() === code.toUpperCase())); 
@@ -687,7 +686,7 @@
                          const prod = newProducts[prodIndex]; const oldStock = prod.stock; 
                          if (type === 'IN') { 
                              prod.stock += qty; 
-                             prod.stockHistory.push({ date: new Date().toISOString(), type: 'BULK_IN', qty, validity }); // Salva validade
+                             prod.stockHistory.push({ date: new Date().toISOString(), type: 'BULK_IN', qty, validity }); 
                              log.push(`${prod.name}: ${oldStock} -> ${prod.stock}`); 
                          } else { 
                              prod.stock -= qty; 
@@ -701,24 +700,335 @@
              return (<div className="flex h-full"><div className="w-1/3 border-r bg-gray-50 p-4 overflow-y-auto scrollbar-thin">{sortedProducts.map(p => (<div key={p.id} className="flex justify-between items-center text-xs py-2 border-b"><div><span className="font-bold block">{p.name}</span><span className="text-[10px] text-gray-500">{p.internalCode}</span></div><span className={`font-bold px-2 py-1 rounded ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{p.stock}</span></div>))}</div><div className="flex-1 p-6 space-y-4 overflow-y-auto"><div className="grid grid-cols-2 gap-6"><div><h3 className="font-bold text-green-700 mb-2">Entrada (CÓD | QTD | VALIDADE)</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-green-50" placeholder="Ex: 101 | 5 | 10/12/2025" value={bulkIn} onChange={e=>setBulkIn(e.target.value)}></textarea><button onClick={()=>processBulk(bulkIn, 'IN')} className="btn-primary w-full bg-green-600 hover:bg-green-700 mt-2">PROCESSAR ENTRADA</button></div><div><h3 className="font-bold text-red-700 mb-2">Saída (CÓD | QTD)</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-red-50" placeholder="Ex: 101 | 1" value={bulkOut} onChange={e=>setBulkOut(e.target.value)}></textarea><button onClick={()=>processBulk(bulkOut, 'OUT')} className="btn-primary w-full bg-red-600 hover:bg-red-700 mt-2">PROCESSAR SAÍDA</button></div></div></div></div>)
         }
         
-        // --- DRIVER VIEW (MANTIDO V6.1) ---
+        // --- DRIVER VIEW ---
         function DriverView({ data, onExit }) {
-             // ... [Lógica DriverView V6.1 mantida integralmente - sem alterações] ...
-             const [deliveryModal, setDeliveryModal] = useState(null); 
-             const [filter, setFilter] = useState('Todas'); 
-             const [deliveryResults, setDeliveryResults] = useState({});
+          const [deliveryModal, setDeliveryModal] = useState(null); 
+          const [filter, setFilter] = useState('Todas'); 
+          const [deliveryResults, setDeliveryResults] = useState({});
+
+          if (!data) return <div className="p-4 text-center">Dados inválidos.</div>;
+          const companyPhone = data.companyPhone || '65998150975';
+          const uniqueRegions = [...new Set(data.orders.map(o => o.region || 'Geral').filter(Boolean))]; 
+          const regions = ['Todas', ...uniqueRegions]; 
+          const showChips = uniqueRegions.length > 1;
+
+          const filteredOrders = filter === 'Todas' ? data.orders : data.orders.filter(o => (o.region || 'Geral') === filter);
+          const visibleOrders = [...filteredOrders].sort((a, b) => { 
+             const aDone = !!deliveryResults[a.id];
+             const bDone = !!deliveryResults[b.id];
+             if (aDone === bDone) return 0;
+             return aDone ? 1 : -1;
+          });
+
+          const sendToCustomer = (phone, msg) => { 
+             if(!phone) return alert("Telefone não cadastrado.");
+             const cleanPhone = phone.replace(/\D/g,''); 
+             window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank'); 
+          };
+
+          const handleDeliveryConfirm = (method) => { 
+            if (!deliveryModal) return; 
+            const order = deliveryModal; 
+            setDeliveryResults(prev => ({ ...prev, [order.id]: { status: 'Entregue', payMethod: method } })); 
+            setDeliveryModal(null); 
+          };
+
+          const handleCancelDelivery = (order) => {
+              if(confirm("Deseja realmente CANCELAR esta entrega? O produto voltará ao estoque.")) {
+                  setDeliveryResults(prev => ({ ...prev, [order.id]: { status: 'Cancelado', payMethod: '-' } }));
+              }
+          };
+
+          const generateFinalReport = () => {
+              let report = `RELATÓRIO DE ENTREGA - ${new Date().toLocaleDateString()}\n--------------------------------\n`;
+              Object.entries(deliveryResults).forEach(([id, res]) => {
+                  report += `ID: ${id} | STATUS: ${res.status.toUpperCase()} | PGTO: ${res.payMethod}\n`;
+              });
+              const textArea = document.createElement("textarea");
+              textArea.value = report;
+              document.body.appendChild(textArea);
+              textArea.select();
+              document.execCommand('copy');
+              document.body.removeChild(textArea);
+              alert("RELATÓRIO COPIADO! Envie no WhatsApp da empresa.");
+              window.open(`https://wa.me/55${companyPhone}?text=${encodeURIComponent(report)}`, '_blank');
+          };
+
+          const completedCount = Object.keys(deliveryResults).length;
+          const progress = Math.round((completedCount / data.orders.length) * 100); 
+          const allFinished = completedCount === data.orders.length;
+
+          return (
+            <div className="min-h-screen bg-gray-50 text-gray-800 pb-20">
+               <header className="bg-indigo-700 text-white p-4 sticky top-0 z-10 shadow-md">
+                 <div className="flex justify-between items-center mb-2">
+                    <h1 className="font-bold text-lg">ROTA: {data.route}</h1>
+                    <button onClick={onExit} className="text-xs bg-indigo-800 px-2 py-1 rounded hover:bg-indigo-900 transition">Sair</button>
+                 </div>
+                 {showChips && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-1">{regions.map(r => (<button key={r} onClick={() => setFilter(r)} className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition border ${filter === r ? 'bg-white text-indigo-700 border-white' : 'bg-indigo-800 text-indigo-200 border-indigo-600 hover:bg-indigo-600'}`}>{r}</button>))}</div>)}
+                 <div className="flex justify-between items-end">
+                    <div className="text-xs opacity-80"><span>{completedCount}/{data.orders.length} Entregas</span></div>
+                    <div className="w-1/2 bg-indigo-900 rounded-full h-1.5 overflow-hidden"><div className="bg-green-400 h-full transition-all duration-500" style={{width: `${progress}%`}}></div></div>
+                 </div>
+               </header>
+               <div className="p-4 space-y-6">
+                  {visibleOrders.map((order) => {
+                    const result = deliveryResults[order.id];
+                    const isDone = !!result;
+                    const isCancelled = result?.status === 'Cancelado';
+                    const clientFirstName = order.customer.split(' ')[0];
+                    return (
+                        <div key={order.id} className={`rounded-lg shadow-sm border overflow-hidden relative transition-all duration-500 ${isDone ? 'bg-gray-100 border-gray-200 opacity-75' : 'bg-white'}`}>
+                        {isDone && (<div className={`absolute top-2 right-2 z-20 px-2 py-1 rounded-full flex items-center gap-1 shadow-sm font-bold text-[10px] text-white ${isCancelled ? 'bg-red-600' : 'bg-green-600'}`}>{isCancelled ? <XCircle size={12}/> : <Check size={12}/>} {result.status.toUpperCase()}</div>)}
+                        <div className={`p-3 border-b flex justify-between items-center ${isDone ? 'bg-gray-200 border-gray-300' : 'bg-indigo-50 border-indigo-100'}`}><span className={`font-bold px-3 py-1 rounded-full text-sm shadow-sm ${isDone ? 'bg-gray-300 text-gray-600' : 'text-indigo-900 bg-white'}`}>#{order.id}</span>{!isDone && <span className="font-bold text-indigo-900 text-sm">Pendente</span>}</div>
+                        <div className="p-4">
+                            <h2 className="font-bold text-xl text-gray-800 mb-1 leading-tight">{order.customer}</h2>
+                            <p className="text-gray-600 text-sm mb-4 flex items-start gap-1"><MapPin size={16} className="mt-0.5 shrink-0 text-gray-400"/> {order.address}, {order.district}</p>
+                            
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                                <a href={`tel:${order.phone}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition"><Phone size={20} className="text-gray-700 mb-1"/><span className="text-[10px] font-bold text-gray-600">LIGAR COMP.</span></a>
+                                {order.phone2 ? (<a href={`tel:${order.phone2}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition"><Phone size={20} className="text-blue-700 mb-1"/><span className="text-[10px] font-bold text-blue-600">LIGAR RECEB.</span></a>) : (<div className="flex flex-col items-center justify-center bg-gray-50 py-3 rounded opacity-50 cursor-not-allowed"><Phone size={20} className="text-gray-300 mb-1"/><span className="text-[10px] font-bold text-gray-400">SEM 2º TEL</span></div>)}
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                <button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! Sua entrega chega em aproximadamente 10 minutos. 🚚`)} className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded hover:bg-blue-100 active:scale-95 transition"><Clock size={20} className="text-blue-600 mb-1"/><span className="text-[10px] font-bold text-blue-700">10 MIN</span></button>
+                                <button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! O entregador chegou e está aguardando. 🏠`)} className="flex flex-col items-center justify-center bg-yellow-50 py-3 rounded hover:bg-yellow-100 active:scale-95 transition"><Home size={20} className="text-yellow-600 mb-1"/><span className="text-[10px] font-bold text-yellow-700">CHEGUEI</span></button>
+                                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" className="flex flex-col items-center justify-center bg-green-50 py-3 rounded hover:bg-green-100 active:scale-95 transition"><MapPin size={20} className="text-green-600 mb-1"/><span className="text-[10px] font-bold text-green-700">GPS</span></a>
+                            </div>
+
+                            <div className="flex gap-2">
+                                {isDone ? (<button disabled className="flex-1 bg-gray-200 text-gray-400 border border-gray-300 py-3 rounded font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed"><CheckCircle size={18}/> FINALIZADO</button>) : (<><button onClick={() => handleCancelDelivery(order)} className="w-1/3 bg-red-100 text-red-700 py-3 rounded font-bold text-sm hover:bg-red-200 flex items-center justify-center border border-red-200"><XCircle size={18}/> CANCELAR</button><button onClick={() => setDeliveryModal(order)} className="flex-1 bg-emerald-600 text-white py-3 rounded font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 shadow animate-pulse"><CheckCircle size={18}/> ENTREGAR</button></>)}
+                            </div>
+
+                            <div className={`p-3 rounded text-sm mt-3 border ${isDone ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className="flex justify-between mb-1"><span className="text-gray-500">Forma Pagto Prevista:</span><span className="font-bold uppercase">{order.pay}</span></div>
+                                <div className="flex justify-between items-center mb-1"><span className="text-gray-500">Valor Total:</span><span className={`font-bold text-xl ${isDone ? 'text-gray-600' : 'text-green-700'}`}>{formatCurrency(order.total)}</span></div>
+                                {order.change > 0 && <div className="text-xs text-orange-600 font-bold mt-1">Troco p/: {formatCurrency(order.change + order.total)}</div>}
+                            </div>
+                            {order.clientObs && <div className="text-xs text-purple-700 bg-purple-50 p-2 mt-2 rounded border border-purple-100 font-medium">⚠️ Obs Cliente: {order.clientObs}</div>}
+                        </div>
+                        </div>
+                    );
+                  })}
+               </div>
+               
+               {/* MODAL DE BAIXA */}
+               {deliveryModal && (
+                 <div className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center sm:items-center p-4 animate-in">
+                    <div className="bg-white w-full max-w-sm rounded-xl p-4 shadow-2xl">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 className="font-bold text-lg text-gray-800">Confirmar Pagamento</h3>
+                            <button onClick={() => setDeliveryModal(null)} className="bg-gray-200 p-1 rounded-full"><XCircle size={20}/></button>
+                        </div>
+                        <p className="text-xs text-center text-gray-500 mb-2">Selecione como você recebeu:</p>
+                        <div className="grid grid-cols-2 gap-3 mb-2">
+                            <button onClick={() => handleDeliveryConfirm('DINHEIRO')} className="bg-green-100 text-green-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-green-200"><DollarSign size={24}/> DINHEIRO</button>
+                            <button onClick={() => handleDeliveryConfirm('PIX')} className="bg-indigo-100 text-indigo-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-indigo-200"><Share2 size={24}/> PIX</button>
+                            <button onClick={() => handleDeliveryConfirm('CARTÃO')} className="bg-blue-100 text-blue-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-blue-200"><CreditCard size={24}/> CARTÃO</button>
+                            <button onClick={() => handleDeliveryConfirm('SÓ ENTREGUE')} className="bg-gray-100 text-gray-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-gray-200"><CheckCircle size={24}/> JÁ PAGO</button>
+                        </div>
+                    </div>
+                 </div>
+               )}
+
+               {allFinished && (
+                   <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t shadow-lg z-50 animate-in">
+                       <button onClick={generateFinalReport} className="w-full bg-green-600 text-white font-bold py-4 rounded-xl text-lg shadow-xl hover:bg-green-700 flex items-center justify-center gap-2">
+                           <MessageSquare size={24}/> FINALIZAR E ENVIAR RELATÓRIO
+                       </button>
+                   </div>
+               )}
+            </div>
+          );
+        }
+
+        // --- POSVIEW (MANTIDO V6.2) ---
+        function POSView({ clients, products, setProducts, sales, setSales, saleToEdit, setSaleToEdit }) {
+             // ... [Mantendo lógica do POSView intacta para garantir funcionamento] ...
+             const [selectedClient, setSelectedClient] = useState('');
+             const [clientSearch, setClientSearch] = useState('');
+             const [cart, setCart] = useState([]);
+             const [payMethod, setPayMethod] = useState('Pix');
+             const [changeFor, setChangeFor] = useState(''); 
+             const [obs, setObs] = useState(''); 
+             const [searchProd, setSearchProd] = useState('');
+             const [selectedCategory, setSelectedCategory] = useState('todas');
+             const [editingItem, setEditingItem] = useState(null); 
+             const [volumes, setVolumes] = useState(1); 
+             const [tempQty, setTempQty] = useState({});
+             const [manualTotal, setManualTotal] = useState('');
+
+             useEffect(() => {
+                if (saleToEdit) {
+                  const client = clients.find(c => c.id === saleToEdit.clientId);
+                  if (client) { setSelectedClient(client.id); setClientSearch(client.name); }
+                  setCart(saleToEdit.items.map(i => ({...i, tempId: generateId()})));
+                  setObs(saleToEdit.obs); setPayMethod(saleToEdit.payMethod);
+                  if (saleToEdit.changeFor) setChangeFor(saleToEdit.changeFor);
+                  setVolumes(saleToEdit.volumes || 1);
+                  setManualTotal(saleToEdit.total.toFixed(2)); 
+                  setSaleToEdit(null); 
+                }
+              }, [saleToEdit, clients]);
+    
+             const getQty = (id) => tempQty[id] || 1;
+             const incQty = (id) => setTempQty({...tempQty, [id]: getQty(id) + 1});
+             const decQty = (id) => setTempQty({...tempQty, [id]: Math.max(1, getQty(id) - 1)});
+
+             const addToCart = (product) => {
+                const qty = getQty(product.id);
+                if (!product.isCombo && product.stock < qty) {
+                  if (!confirm(`Estoque baixo (${product.stock}). Adicionar ${qty} mesmo assim?`)) return;
+                }
+                const itemsToAdd = [];
+                for(let i=0; i<qty; i++) {
+                   const cartItem = { 
+                       ...product, tempId: generateId(), originalPrice: product.price,
+                       comboItems: product.isCombo ? product.comboItems.map(ci => {
+                           const subProd = products.find(p => p.id === ci.id);
+                           const subTotalTable = product.comboItems.reduce((acc, item) => {
+                               const p = products.find(prod => prod.id === item.id);
+                               return acc + ((p?.price || 0) * item.qty);
+                           }, 0);
+                           const ratio = subTotalTable > 0 ? product.price / subTotalTable : 1;
+                           return { ...ci, internalPrice: (subProd?.price || 0) * ratio }; 
+                       }) : []
+                   };
+                   itemsToAdd.push(cartItem);
+                }
+                const newCart = [...cart, ...itemsToAdd];
+                setCart(newCart);
+                const newSum = newCart.reduce((acc, i) => acc + i.price, 0);
+                setManualTotal(newSum.toFixed(2));
+                setTempQty({...tempQty, [product.id]: 1}); 
+             };
+
+             const removeFromCart = (tempId) => {
+                 const newCart = cart.filter(item => item.tempId !== tempId);
+                 setCart(newCart);
+                 const newSum = newCart.reduce((acc, i) => acc + i.price, 0);
+                 setManualTotal(newSum.toFixed(2));
+             };
              
-             if (!data) return <div className="p-4 text-center">Dados inválidos.</div>;
-             const companyPhone = data.companyPhone || '65998150975';
-             const uniqueRegions = [...new Set(data.orders.map(o => o.region || 'Geral').filter(Boolean))]; const regions = ['Todas', ...uniqueRegions]; const showChips = uniqueRegions.length > 1;
-             const filteredOrders = filter === 'Todas' ? data.orders : data.orders.filter(o => (o.region || 'Geral') === filter);
-             const visibleOrders = [...filteredOrders].sort((a, b) => { const aDone = !!deliveryResults[a.id]; const bDone = !!deliveryResults[b.id]; if (aDone === bDone) return 0; return aDone ? 1 : -1; });
-             const sendToCustomer = (phone, msg) => { if(!phone) return alert("Telefone não cadastrado."); const cleanPhone = phone.replace(/\D/g,''); window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank'); };
-             const handleDeliveryConfirm = (method) => { if (!deliveryModal) return; const order = deliveryModal; setDeliveryResults(prev => ({ ...prev, [order.id]: { status: 'Entregue', payMethod: method } })); setDeliveryModal(null); };
-             const handleCancelDelivery = (order) => { if(confirm("Deseja realmente CANCELAR esta entrega? O produto voltará ao estoque.")) { setDeliveryResults(prev => ({ ...prev, [order.id]: { status: 'Cancelado', payMethod: '-' } })); } };
-             const generateFinalReport = () => { let report = `RELATÓRIO DE ENTREGA - ${new Date().toLocaleDateString()}\n--------------------------------\n`; Object.entries(deliveryResults).forEach(([id, res]) => { report += `ID: ${id} | STATUS: ${res.status.toUpperCase()} | PGTO: ${res.payMethod}\n`; }); const textArea = document.createElement("textarea"); textArea.value = report; document.body.appendChild(textArea); textArea.select(); document.execCommand('copy'); document.body.removeChild(textArea); alert("RELATÓRIO COPIADO! Envie no WhatsApp da empresa."); window.open(`https://wa.me/55${companyPhone}?text=${encodeURIComponent(report)}`, '_blank'); };
-             const completedCount = Object.keys(deliveryResults).length; const progress = Math.round((completedCount / data.orders.length) * 100); const allFinished = completedCount === data.orders.length;
-             return (<div className="min-h-screen bg-gray-50 text-gray-800 pb-20"><header className="bg-indigo-700 text-white p-4 sticky top-0 z-10 shadow-md"><div className="flex justify-between items-center mb-2"><h1 className="font-bold text-lg">ROTA: {data.route}</h1><button onClick={onExit} className="text-xs bg-indigo-800 px-2 py-1 rounded hover:bg-indigo-900 transition">Sair</button></div>{showChips && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-1">{regions.map(r => (<button key={r} onClick={() => setFilter(r)} className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition border ${filter === r ? 'bg-white text-indigo-700 border-white' : 'bg-indigo-800 text-indigo-200 border-indigo-600 hover:bg-indigo-600'}`}>{r}</button>))}</div>)}<div className="flex justify-between items-end"><div className="text-xs opacity-80"><span>{completedCount}/{data.orders.length} Entregas</span></div><div className="w-1/2 bg-indigo-900 rounded-full h-1.5 overflow-hidden"><div className="bg-green-400 h-full transition-all duration-500" style={{width: `${progress}%`}}></div></div></div></header><div className="p-4 space-y-6">{visibleOrders.map((order) => { const result = deliveryResults[order.id]; const isDone = !!result; const isCancelled = result?.status === 'Cancelado'; const clientFirstName = order.customer.split(' ')[0]; return (<div key={order.id} className={`rounded-lg shadow-sm border overflow-hidden relative transition-all duration-500 ${isDone ? 'bg-gray-100 border-gray-200 opacity-75' : 'bg-white'}`}>{isDone && (<div className={`absolute top-2 right-2 z-20 px-2 py-1 rounded-full flex items-center gap-1 shadow-sm font-bold text-[10px] text-white ${isCancelled ? 'bg-red-600' : 'bg-green-600'}`}>{isCancelled ? <XCircle size={12}/> : <Check size={12}/>} {result.status.toUpperCase()}</div>)}<div className={`p-3 border-b flex justify-between items-center ${isDone ? 'bg-gray-200 border-gray-300' : 'bg-indigo-50 border-indigo-100'}`}><span className={`font-bold px-3 py-1 rounded-full text-sm shadow-sm ${isDone ? 'bg-gray-300 text-gray-600' : 'text-indigo-900 bg-white'}`}>#{order.id}</span>{!isDone && <span className="font-bold text-indigo-900 text-sm">Pendente</span>}</div><div className="p-4"><h2 className="font-bold text-xl text-gray-800 mb-1 leading-tight">{order.customer}</h2><p className="text-gray-600 text-sm mb-4 flex items-start gap-1"><MapPin size={16} className="mt-0.5 shrink-0 text-gray-400"/> {order.address}, {order.district}</p><div className="grid grid-cols-2 gap-2 mb-4"><a href={`tel:${order.phone}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition"><Phone size={20} className="text-gray-700 mb-1"/><span className="text-[10px] font-bold text-gray-600">LIGAR COMP.</span></a>{order.phone2 ? (<a href={`tel:${order.phone2}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition"><Phone size={20} className="text-blue-700 mb-1"/><span className="text-[10px] font-bold text-blue-600">LIGAR RECEB.</span></a>) : (<div className="flex flex-col items-center justify-center bg-gray-50 py-3 rounded opacity-50 cursor-not-allowed"><Phone size={20} className="text-gray-300 mb-1"/><span className="text-[10px] font-bold text-gray-400">SEM 2º TEL</span></div>)}</div><div className="grid grid-cols-3 gap-2 mb-4"><button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! Sua entrega chega em aproximadamente 10 minutos. 🚚`)} className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded hover:bg-blue-100 active:scale-95 transition"><Clock size={20} className="text-blue-600 mb-1"/><span className="text-[10px] font-bold text-blue-700">10 MIN</span></button><button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! O entregador chegou e está aguardando. 🏠`)} className="flex flex-col items-center justify-center bg-yellow-50 py-3 rounded hover:bg-yellow-100 active:scale-95 transition"><Home size={20} className="text-yellow-600 mb-1"/><span className="text-[10px] font-bold text-yellow-700">CHEGUEI</span></button><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" className="flex flex-col items-center justify-center bg-green-50 py-3 rounded hover:bg-green-100 active:scale-95 transition"><MapPin size={20} className="text-green-600 mb-1"/><span className="text-[10px] font-bold text-green-700">GPS</span></a></div><div className="flex gap-2">{isDone ? (<button disabled className="flex-1 bg-gray-200 text-gray-400 border border-gray-300 py-3 rounded font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed"><CheckCircle size={18}/> FINALIZADO</button>) : (<><button onClick={() => handleCancelDelivery(order)} className="w-1/3 bg-red-100 text-red-700 py-3 rounded font-bold text-sm hover:bg-red-200 flex items-center justify-center border border-red-200"><XCircle size={18}/> CANCELAR</button><button onClick={() => setDeliveryModal(order)} className="flex-1 bg-emerald-600 text-white py-3 rounded font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 shadow animate-pulse"><CheckCircle size={18}/> ENTREGAR</button></>)}</div><div className={`p-3 rounded text-sm mt-3 border ${isDone ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-100'}`}><div className="flex justify-between mb-1"><span className="text-gray-500">Forma Pagto Prevista:</span><span className="font-bold uppercase">{order.pay}</span></div><div className="flex justify-between items-center mb-1"><span className="text-gray-500">Valor Total:</span><span className={`font-bold text-xl ${isDone ? 'text-gray-600' : 'text-green-700'}`}>{formatCurrency(order.total)}</span></div>{order.change > 0 && <div className="text-xs text-orange-600 font-bold mt-1">Troco p/: {formatCurrency(order.change + order.total)}</div>}</div>{order.clientObs && <div className="text-xs text-purple-700 bg-purple-50 p-2 mt-2 rounded border border-purple-100 font-medium">⚠️ Obs Cliente: {order.clientObs}</div>}</div></div>); })}</div>{deliveryModal && (<div className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center sm:items-center p-4 animate-in"><div className="bg-white w-full max-w-sm rounded-xl p-4 shadow-2xl"><div className="flex justify-between items-center mb-4 border-b pb-2"><h3 className="font-bold text-lg text-gray-800">Confirmar Pagamento</h3><button onClick={() => setDeliveryModal(null)} className="bg-gray-200 p-1 rounded-full"><XCircle size={20}/></button></div><p className="text-xs text-center text-gray-500 mb-2">Selecione como você recebeu:</p><div className="grid grid-cols-2 gap-3 mb-2"><button onClick={() => handleDeliveryConfirm('DINHEIRO')} className="bg-green-100 text-green-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-green-200"><DollarSign size={24}/> DINHEIRO</button><button onClick={() => handleDeliveryConfirm('PIX')} className="bg-indigo-100 text-indigo-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-indigo-200"><Share2 size={24}/> PIX</button><button onClick={() => handleDeliveryConfirm('CARTÃO')} className="bg-blue-100 text-blue-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-blue-200"><CreditCard size={24}/> CARTÃO</button><button onClick={() => handleDeliveryConfirm('SÓ ENTREGUE')} className="bg-gray-100 text-gray-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-gray-200"><CheckCircle size={24}/> JÁ PAGO</button></div></div></div>)}{allFinished && (<div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t shadow-lg z-50 animate-in"><button onClick={generateFinalReport} className="w-full bg-green-600 text-white font-bold py-4 rounded-xl text-lg shadow-xl hover:bg-green-700 flex items-center justify-center gap-2"><MessageSquare size={24}/> FINALIZAR E ENVIAR RELATÓRIO</button></div>)}</div>);
+             const handleManualTotalChange = (val) => {
+                 setManualTotal(val);
+                 const target = parseFloat(val);
+                 if (!isNaN(target) && cart.length > 0) {
+                     const newCart = distributeTotal(target, cart, (i)=>i.price, (i, v)=>i.price=v, ()=>1);
+                     setCart(newCart);
+                 }
+             };
+
+             const updateCartItemPrice = () => {
+                if (!editingItem) return;
+                const newCart = cart.map(i => i.tempId === editingItem.tempId ? { ...i, price: parseFloat(editingItem.price) } : i);
+                setCart(newCart);
+                const newSum = newCart.reduce((acc, i) => acc + i.price, 0);
+                setManualTotal(newSum.toFixed(2));
+                setEditingItem(null);
+             };
+
+             const updateComboItemQty = (cartItemTempId, subItemId, newQty) => {
+                 setCart(cart.map(item => {
+                    if (item.tempId !== cartItemTempId) return item;
+                    return { ...item, comboItems: item.comboItems.map(sub => sub.id === subItemId ? {...sub, qty: newQty} : sub) };
+                 }));
+             };
+
+             const subTotal = cart.reduce((acc, item) => acc + Number(item.price), 0);
+             
+             const finalizeSale = () => {
+                if (!selectedClient) return alert('Selecione um cliente');
+                if (cart.length === 0) return alert('Carrinho vazio');
+                
+                const finalTotal = parseFloat(manualTotal) || subTotal;
+
+                const newProducts = [...products];
+                cart.forEach(cartItem => {
+                  const dbProd = newProducts.find(p => p.id === cartItem.id);
+                  if (dbProd) {
+                    if (dbProd.isCombo) {
+                      cartItem.comboItems?.forEach(ing => {
+                         const dbIng = newProducts.find(p => p.id === ing.id);
+                         if (dbIng) {
+                           dbIng.stock = Math.max(0, dbIng.stock - ing.qty);
+                           dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'SALE_COMBO', qty: ing.qty, ref: cartItem.name });
+                         }
+                      });
+                    } else {
+                      dbProd.stock = Number(dbProd.stock) - 1;
+                      dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'SALE', qty: 1 });
+                    }
+                  }
+                });
+                
+                setProducts(newProducts);
+                const shortId = generateDailyId(sales);
+                const newSale = {
+                  id: shortId, fullId: generateId(), clientId: selectedClient, items: cart,
+                  subTotal: subTotal, 
+                  discount: subTotal - finalTotal,
+                  total: finalTotal, 
+                  payMethod, changeFor: payMethod === 'Dinheiro' ? changeFor : null, obs,
+                  date: new Date().toISOString(), status: 'Pendente', printedLabel: false, printedList: false, volumes: volumes, routeId: null
+                };
+                setSales([...sales, newSale]);
+                setCart([]); setSelectedClient(''); setClientSearch(''); setObs(''); setChangeFor(''); setVolumes(1); setManualTotal('');
+                alert(`Venda #${shortId} Realizada!`);
+             };
+
+             const filteredProducts = products.filter(p => (selectedCategory === 'todas' || p.category === selectedCategory) && p.name.toLowerCase().includes(searchProd.toLowerCase()));
+             const filteredClients = clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()));
+             const categories = ['todas', ...new Set(products.map(p => p.category))];
+
+             return (
+                <div className="flex h-full">
+                    <div className="flex-1 flex flex-col border-r bg-white p-4">
+                        <div className="flex gap-4 mb-4 shrink-0">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-2.5 text-gray-400" size={20}/><input className="w-full pl-10 pr-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" placeholder="Buscar produto..." value={searchProd} onChange={e => setSearchProd(e.target.value)} />
+                            </div>
+                            <select className="border rounded-lg px-4 bg-white outline-none focus:border-blue-500" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}><option value="todas">Todas</option>{categories.filter(c=>c!=='todas').map(c => <option key={c} value={c}>{c}</option>)}</select>
+                        </div>
+                        <div className="flex-1 overflow-y-auto scrollbar-thin">
+                            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">{filteredProducts.map(p => (<div key={p.id} className="bg-white border rounded-lg p-3 hover:shadow-md transition cursor-pointer flex flex-col h-32 relative group border-slate-200" onClick={() => addToCart(p)}><div className="flex justify-between items-start mb-1"><span className="bg-slate-100 text-slate-600 text-[10px] font-mono px-1.5 rounded">{p.internalCode || '-'}</span><span className={`text-[10px] px-1.5 rounded font-bold ${p.stock > 10 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{p.stock} un</span></div><h4 className="font-bold text-sm text-gray-800 leading-tight mb-auto line-clamp-2">{p.name}</h4><div className="flex justify-between items-end mt-2"><div className="text-lg font-bold text-green-700">{formatCurrency(p.price)}</div><button className="bg-blue-600 text-white p-1.5 rounded hover:bg-blue-700 transition shadow-sm opacity-0 group-hover:opacity-100"><Plus size={16}/></button></div></div>))}</div>
+                        </div>
+                    </div>
+                    <div className="w-[400px] flex flex-col bg-gray-50 h-full border-l shadow-xl z-10">
+                        <div className="p-4 bg-white border-b shrink-0 z-20">
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Cliente</label>
+                            <div className="relative">
+                                <input className={`w-full p-2 border rounded-lg outline-none ${selectedClient ? 'bg-green-50 border-green-500 text-green-800 font-bold' : 'bg-white'}`} placeholder="Buscar Cliente..." value={clientSearch} onChange={e => { setClientSearch(e.target.value); setSelectedClient(''); }} />
+                                {clientSearch && !selectedClient && (<div className="absolute top-full left-0 w-full bg-white border shadow-xl max-h-60 overflow-y-auto z-50 rounded-b-lg">{filteredClients.map(c => (<div key={c.id} className="p-3 hover:bg-blue-50 cursor-pointer border-b flex justify-between items-center" onClick={() => { setSelectedClient(c.id); setClientSearch(c.name); }}><div><div className="font-bold text-sm">{c.name}</div><div className="text-xs text-gray-500">{c.district}</div></div></div>))}</div>)}
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin">
+                            {cart.length === 0 && (<div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60"><ShoppingCart size={48} className="mb-2"/><p>Carrinho Vazio</p></div>)}
+                            {cart.map(item => (
+                                <div key={item.tempId} className="bg-white p-3 rounded-lg border shadow-sm relative group">
+                                    <div className="flex justify-between items-start mb-1"><div className="font-bold text-sm text-gray-800 pr-6">{item.name}</div><button onClick={() => removeFromCart(item.tempId)} className="text-gray-300 hover:text-red-500 absolute top-2 right-2"><XCircle size={16}/></button></div>
+                                    <div className="flex justify-between items-center"><button onClick={() => setEditingItem({tempId: item.tempId, price: item.price})} className="text-sm font-bold text-green-700 hover:underline">{formatCurrency(item.price)}</button><div className="text-xs text-gray-400">Unitário</div></div>
+                                    {item.isCombo && (<div className="mt-2 bg-yellow-50 p-2 rounded border border-yellow-100">{item.comboItems.map(ci => (<div key={ci.id} className="flex justify-between items-center text-xs py-1 border-b border-yellow-100 last:border-0"><span className="text-gray-600 truncate max-w-[150px]">{products.find(p => p.id === ci.id)?.name || 'Item'}</span><div className="flex items-center bg-white border rounded"><button className="px-1.5 hover:bg-gray-100" onClick={() => updateComboItemQty(item.tempId, ci.id, Math.max(0, ci.qty - 1))}>-</button><span className="w-5 text-center font-bold">{ci.qty}</span><button className="px-1.5 hover:bg-gray-100" onClick={() => updateComboItemQty(item.tempId, ci.id, ci.qty + 1)}>+</button></div></div>))}</div>)}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-gray-500 font-bold uppercase text-xs">Total Final (Editável)</span>
+                                <input className="font-bold text-2xl text-right w-32 border-b-2 border-emerald-500 focus:outline-none text-emerald-600" value={manualTotal} onChange={(e) => handleManualTotalChange(e.target.value)} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Pagamento</label><select className="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value={payMethod} onChange={e => setPayMethod(e.target.value)}><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
+                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Volumes</label><select className="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value={volumes} onChange={e => setVolumes(e.target.value)}>{[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}</select></div>
+                            </div>
+                            {payMethod === 'Dinheiro' && (<div className="mb-4"><label className="text-[10px] font-bold text-gray-400 uppercase">Troco Para</label><input className="w-full border rounded p-2 text-sm bg-gray-50 outline-none" type="number" placeholder="R$ 0,00" value={changeFor} onChange={e => setChangeFor(e.target.value)} /></div>)}
+                            <input className="w-full border rounded p-2 text-sm bg-gray-50 outline-none mb-4" placeholder="Observações..." value={obs} onChange={e => setObs(e.target.value)} />
+                            <button onClick={finalizeSale} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition shadow-lg flex justify-between items-center px-6"><span>FINALIZAR</span><span className="text-emerald-400 text-xl">{formatCurrency(parseFloat(manualTotal) || 0)}</span></button>
+                        </div>
+                    </div>
+                    {editingItem && (<div className="absolute inset-0 bg-black/50 z-50 flex flex-col items-center justify-center p-4"><div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col gap-4 w-72"><h3 className="text-sm font-bold text-center">Ajustar Preço</h3><input type="number" autoFocus className="text-3xl font-bold text-center border-b-2 border-blue-500 outline-none pb-2 w-full" value={editingItem.price} onChange={e => setEditingItem({...editingItem, price: e.target.value})}/><div className="flex gap-2"><button onClick={() => setEditingItem(null)} className="flex-1 bg-gray-100 py-2 rounded font-bold text-gray-500">Cancelar</button><button onClick={updateCartItemPrice} className="flex-1 bg-blue-600 text-white py-2 rounded font-bold">Salvar</button></div></div></div>)}
+                </div>
+             );
         }
 
         // --- REGISTRY VIEW (ATUALIZADO V6.2) ---
