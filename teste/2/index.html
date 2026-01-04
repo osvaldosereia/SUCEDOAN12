@@ -27,7 +27,7 @@
 
     <!-- 3. GLOBAL STYLES -->
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; margin: 0; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
         /* Custom Scrollbar */
@@ -52,28 +52,31 @@
     </style>
 
     <!-- 4. REACT & LIBS -->
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
-      }
-    }
-    </script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     
-    <div id="root" class="h-screen w-screen flex flex-col"></div>
+    <div id="root" class="h-screen w-screen flex flex-col items-center justify-center bg-slate-100">
+        <div id="loader" class="text-slate-500 font-medium animate-pulse">Iniciando WMS Local-First...</div>
+    </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { 
-          Package, Search, Plus, Trash2, Save, Box, Layers, 
-          AlertTriangle, ArrowRight, Filter, Settings, Wrench, RefreshCw
-        } from 'lucide-react';
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- ICON WRAPPER FOR LUCIDE ---
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const ref = React.useRef(null);
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
 
         // --- UTILS ---
         const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -81,14 +84,23 @@
         
         const useStickyState = (key, defaultValue) => {
           const [value, setValue] = useState(() => {
-            const sticky = window.localStorage.getItem(key);
-            return sticky ? JSON.parse(sticky) : defaultValue;
+            try {
+                const sticky = window.localStorage.getItem(key);
+                return sticky ? JSON.parse(sticky) : defaultValue;
+            } catch (e) {
+                console.warn("LocalStorage bloqueado:", e);
+                return defaultValue;
+            }
           });
-          useEffect(() => { window.localStorage.setItem(key, JSON.stringify(value)); }, [key, value]);
+          useEffect(() => { 
+            try {
+                window.localStorage.setItem(key, JSON.stringify(value)); 
+            } catch (e) {}
+          }, [key, value]);
           return [value, setValue];
         };
 
-        const CATEGORIES = ["ALIMENTO", "LIMPEZA", "HIGIENTE", "KIT ALIMENTO", "KIT ARROZ", "KIT LIMPEZA E HIGIENE"];
+        const CATEGORIES = ["ALIMENTO", "LIMPEZA", "HIGIENTE", "KIT ALIMENTO", "KIT ARROZ", "KIT LIMPEZA E HIGIENE", "OUTROS"];
 
         // --- APP COMPONENT ---
         function App() {
@@ -114,16 +126,13 @@
             const filteredProducts = useMemo(() => {
                 return products.filter(p => {
                     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
-                                      p.internalCode.includes(search);
+                                      (p.internalCode && p.internalCode.includes(search));
                     const matchCat = catFilter ? p.category === catFilter : true;
-                    
-                    // Low Stock Strategy: Critical is defined as Stock <= MinStock
                     const isCritical = p.stock <= (p.minStock || 0);
                     const matchCritical = showCriticalOnly ? isCritical : true;
 
                     return matchSearch && matchCat && matchCritical;
                 }).sort((a,b) => {
-                    // Critical items float to top if filter is off but we want some ordering
                     if (showCriticalOnly) return a.stock - b.stock;
                     return a.name.localeCompare(b.name);
                 });
@@ -164,12 +173,11 @@
 
                 if (editingId) {
                     setProducts(products.map(p => p.id === editingId ? payload : p));
+                    alert("Produto atualizado.");
                 } else {
                     setProducts([...products, payload]);
+                    handleNew();
                 }
-                
-                if (!editingId) handleNew(); // Reset if new, keep if edit
-                else alert("Produto salvo com sucesso!");
             };
 
             const handleDelete = () => {
@@ -178,12 +186,8 @@
                 handleNew();
             };
 
-            // --- KIT LOGIC: ASSEMBLY LINE ---
             const executeAssembly = (direction) => {
-                // direction: 1 = Montar (Tira avulso, Põe Kit)
-                // direction: -1 = Desmontar (Tira Kit, Põe avulso)
-                
-                if (!form.isCombo || form.comboItems.length === 0) return alert("Kit sem composição definida.");
+                if (!form.isCombo || !form.comboItems || form.comboItems.length === 0) return alert("Kit sem composição definida.");
                 
                 const qty = Number(assemblyQty);
                 if (qty <= 0) return;
@@ -191,11 +195,9 @@
                 const newProducts = [...products];
                 const currentKit = newProducts.find(p => p.id === editingId);
                 
-                if (!currentKit) return; // Should not happen
+                if (!currentKit) return;
 
-                // Validação de Estoque
                 if (direction === 1) {
-                    // Montar: Verificar se tem avulsos suficientes
                     for (let item of form.comboItems) {
                         const source = newProducts.find(p => p.id === item.id);
                         if (!source || source.stock < (item.qty * qty)) {
@@ -203,84 +205,70 @@
                         }
                     }
                 } else {
-                    // Desmontar: Verificar se tem Kit suficiente
                     if (currentKit.stock < qty) {
                         return alert(`ERRO DE DESMONTAGEM:\nEstoque de Kits insuficiente.\nAtual: ${currentKit.stock}`);
                     }
                 }
 
-                // Executar Movimentação
                 let log = direction === 1 ? "MONTAGEM REALIZADA:\n" : "DESMONTAGEM REALIZADA:\n";
 
-                // 1. Atualizar Avulsos
                 form.comboItems.forEach(item => {
                     const pIndex = newProducts.findIndex(p => p.id === item.id);
                     if (pIndex > -1) {
-                        // Se montar (1), subtrai avulso. Se desmontar (-1), soma avulso.
-                        // operation: stock - (qty * itemQty * direction)
                         const change = item.qty * qty * direction;
                         newProducts[pIndex].stock -= change;
                         log += `- ${newProducts[pIndex].name}: ${change > 0 ? 'Saiu' : 'Entrou'} ${Math.abs(change)}\n`;
                     }
                 });
 
-                // 2. Atualizar Kit
                 const kitIndex = newProducts.findIndex(p => p.id === editingId);
                 newProducts[kitIndex].stock += (qty * direction);
                 
-                // 3. Atualizar UI
                 setProducts(newProducts);
-                setForm(prev => ({ ...prev, stock: prev.stock + (qty * direction) })); // Update local form state immediately
-                
+                setForm(prev => ({ ...prev, stock: prev.stock + (qty * direction) }));
                 alert(log + `\nSaldo Final do Kit: ${newProducts[kitIndex].stock}`);
             };
 
-            // --- RENDER HELPERS ---
             const getStockStatus = (p) => {
-                if (p.stock <= 0) return <span className="text-red-600 font-bold text-xs bg-red-100 px-2 py-1 rounded">ESGOTADO</span>;
-                if (p.stock <= (p.minStock || 0)) return <span className="text-orange-600 font-bold text-xs bg-orange-100 px-2 py-1 rounded animate-pulse">BAIXO</span>;
-                return <span className="text-emerald-600 font-bold text-xs bg-emerald-100 px-2 py-1 rounded">OK</span>;
+                if (p.stock <= 0) return <span className="text-red-600 font-bold text-[10px] bg-red-100 px-2 py-0.5 rounded">ESGOTADO</span>;
+                if (p.stock <= (p.minStock || 0)) return <span className="text-orange-600 font-bold text-[10px] bg-orange-100 px-2 py-0.5 rounded animate-pulse">BAIXO</span>;
+                return <span className="text-emerald-600 font-bold text-[10px] bg-emerald-100 px-2 py-0.5 rounded">OK</span>;
             };
 
             return (
-                <div className="flex h-full w-full bg-slate-200">
+                <div className="flex h-full w-full bg-slate-200 overflow-hidden">
                     
-                    {/* === PAINEL ESQUERDO: GRID GERENCIAL (65%) === */}
-                    <aside className="w-[65%] flex flex-col bg-white border-r border-slate-300 shadow-xl z-10">
-                        
-                        {/* HEADER DA LISTAGEM */}
+                    {/* ASIDE LIST */}
+                    <aside className="w-[65%] flex flex-col bg-white border-r border-slate-300 shadow-xl z-10 overflow-hidden">
                         <div className="p-4 bg-slate-50 border-b border-slate-200 space-y-3">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                    <Layers className="text-primary-600" size={20}/>
+                                    <Icon name="layers" className="text-primary-600"/>
                                     Gestão de Estoque
                                 </h2>
-                                <div className="flex gap-2">
-                                    <button 
-                                        onClick={() => setShowCriticalOnly(!showCriticalOnly)}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold transition border ${showCriticalOnly ? 'bg-red-100 text-red-700 border-red-300' : 'bg-white text-slate-600 border-slate-300'}`}
-                                    >
-                                        <AlertTriangle size={14} className={showCriticalOnly ? "animate-pulse" : ""}/>
-                                        {showCriticalOnly ? 'Filtrando Críticos' : `Alertas (${criticalCount})`}
-                                    </button>
-                                </div>
+                                <button 
+                                    onClick={() => setShowCriticalOnly(!showCriticalOnly)}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold transition border ${showCriticalOnly ? 'bg-red-100 text-red-700 border-red-300' : 'bg-white text-slate-600 border-slate-300'}`}
+                                >
+                                    <Icon name="alert-triangle" size={14} className={showCriticalOnly ? "animate-pulse" : ""}/>
+                                    {showCriticalOnly ? 'Críticos' : `Alertas (${criticalCount})`}
+                                </button>
                             </div>
                             
-                            {/* Toolbar de Filtros */}
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-2.5 text-slate-400" size={16}/>
+                                    <Icon name="search" size={16} className="absolute left-3 top-2.5 text-slate-400"/>
                                     <input 
                                         value={search}
                                         onChange={e => setSearch(e.target.value)}
-                                        placeholder="Buscar por Nome ou Código..."
-                                        className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded focus:border-primary-600 outline-none"
+                                        placeholder="Buscar SKU..."
+                                        className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded outline-none"
                                     />
                                 </div>
                                 <select 
                                     value={catFilter} 
                                     onChange={e => setCatFilter(e.target.value)}
-                                    className="w-40 py-2 px-3 text-sm border border-slate-300 rounded bg-white focus:border-primary-600 outline-none"
+                                    className="w-40 py-2 px-3 text-sm border border-slate-300 rounded bg-white outline-none"
                                 >
                                     <option value="">Todas Categorias</option>
                                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -288,244 +276,142 @@
                             </div>
                         </div>
 
-                        {/* GRID DE DADOS (EXPANDIDO) */}
-                        <div className="flex-1 overflow-auto bg-white relative">
+                        <div className="flex-1 overflow-auto bg-white">
                             <table className="w-full text-left border-collapse text-sm">
-                                <thead className="text-xs uppercase text-slate-500 bg-slate-100 font-bold sticky top-0 shadow-sm z-10">
+                                <thead className="text-xs uppercase text-slate-500 bg-slate-100 font-bold sticky top-0 z-20 shadow-sm">
                                     <tr>
-                                        <th className="p-3 sticky-header w-16">Cód.</th>
-                                        <th className="p-3 sticky-header">Nome do Produto</th>
-                                        <th className="p-3 sticky-header w-32">Categoria</th>
-                                        <th className="p-3 sticky-header text-right w-24">Custo</th>
-                                        <th className="p-3 sticky-header text-right w-24">Venda</th>
-                                        <th className="p-3 sticky-header text-center w-28 bg-blue-50/50">Est. Avulso</th>
-                                        <th className="p-3 sticky-header text-center w-24 bg-amber-50/50">Est. Kit</th>
-                                        <th className="p-3 sticky-header text-center w-24">Status</th>
+                                        <th className="p-3 w-16">Cód.</th>
+                                        <th className="p-3">Produto</th>
+                                        <th className="p-3 w-24 text-right">Preço</th>
+                                        <th className="p-3 w-24 text-center bg-blue-50/50">Avulso</th>
+                                        <th className="p-3 w-24 text-center bg-amber-50/50">Kit</th>
+                                        <th className="p-3 w-20 text-center">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {filteredProducts.map(p => {
-                                        const active = editingId === p.id;
-                                        const isLow = p.stock <= (p.minStock || 0);
-                                        return (
-                                            <tr 
-                                                key={p.id} 
-                                                onClick={() => handleEdit(p)}
-                                                className={`cursor-pointer transition-colors hover:bg-slate-50 
-                                                    ${active ? 'bg-blue-50 border-l-4 border-primary-600' : 'border-l-4 border-transparent'}
-                                                    ${isLow && !active ? 'bg-red-50/30' : ''}
-                                                `}
-                                            >
-                                                <td className="p-3 font-mono text-xs text-slate-500">{p.internalCode}</td>
-                                                <td className="p-3 font-medium text-slate-700">
-                                                    {p.name}
-                                                    {p.isCombo && <span className="ml-2 text-[10px] bg-amber-100 text-amber-800 px-1.5 rounded border border-amber-200 font-bold">KIT</span>}
-                                                </td>
-                                                <td className="p-3 text-xs text-slate-500 truncate max-w-[100px]">{p.category}</td>
-                                                <td className="p-3 text-right text-slate-500 text-xs">{formatBRL(p.cost)}</td>
-                                                <td className="p-3 text-right font-bold text-slate-700">{formatBRL(p.price)}</td>
-                                                
-                                                {/* Lógica de Colunas de Estoque */}
-                                                <td className="p-3 text-center bg-blue-50/30 font-mono text-slate-600">
-                                                    {!p.isCombo ? p.stock : '-'}
-                                                </td>
-                                                <td className="p-3 text-center bg-amber-50/30 font-mono text-amber-700 font-bold">
-                                                    {p.isCombo ? p.stock : '-'}
-                                                </td>
-                                                
-                                                <td className="p-3 text-center">{getStockStatus(p)}</td>
-                                            </tr>
-                                        );
-                                    })}
+                                    {filteredProducts.map(p => (
+                                        <tr key={p.id} onClick={() => handleEdit(p)} className={`cursor-pointer hover:bg-slate-50 ${editingId === p.id ? 'bg-blue-50' : ''}`}>
+                                            <td className="p-3 font-mono text-xs text-slate-400">{p.internalCode}</td>
+                                            <td className="p-3">
+                                                <div className="font-medium text-slate-700">{p.name}</div>
+                                                <div className="text-[10px] text-slate-400 uppercase">{p.category}</div>
+                                            </td>
+                                            <td className="p-3 text-right font-bold text-slate-600">{formatBRL(p.price)}</td>
+                                            <td className="p-3 text-center bg-blue-50/20 font-mono">{!p.isCombo ? p.stock : '-'}</td>
+                                            <td className="p-3 text-center bg-amber-50/20 font-mono text-amber-700">{p.isCombo ? p.stock : '-'}</td>
+                                            <td className="p-3 text-center">{getStockStatus(p)}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
-                            {filteredProducts.length === 0 && (
-                                <div className="p-10 text-center text-slate-400">
-                                    Nenhum produto encontrado com os filtros atuais.
-                                </div>
-                            )}
                         </div>
                     </aside>
 
-                    {/* === PAINEL DIREITO: FORMULÁRIO (35%) === */}
-                    <main className="w-[35%] h-full bg-slate-100 flex flex-col border-l border-white shadow-inner relative">
-                        
-                        {/* Topbar Form */}
+                    {/* MAIN FORM */}
+                    <main className="w-[35%] h-full bg-slate-100 flex flex-col overflow-hidden">
                         <div className="h-16 bg-white border-b border-slate-200 px-4 flex items-center justify-between shrink-0">
-                            <div>
-                                <h1 className="font-bold text-slate-800 text-sm uppercase tracking-wide">
-                                    {editingId ? 'Editar SKU' : 'Novo Cadastro'}
-                                </h1>
-                                <span className="text-[10px] text-slate-400 font-mono">{form.id || 'NOVO REGISTRO'}</span>
-                            </div>
+                            <h1 className="font-bold text-slate-800 text-xs uppercase">{editingId ? 'Editar Produto' : 'Novo SKU'}</h1>
                             <div className="flex gap-2">
-                                <button onClick={handleNew} className="p-2 hover:bg-slate-100 rounded text-slate-500" title="Limpar"><Plus size={18}/></button>
-                                {editingId && <button onClick={handleDelete} className="p-2 hover:bg-red-50 text-red-500 rounded" title="Excluir"><Trash2 size={18}/></button>}
-                                <button onClick={handleSave} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded text-xs font-bold hover:bg-slate-800 shadow-lg">
-                                    <Save size={16}/> SALVAR
-                                </button>
+                                <button onClick={handleNew} className="p-2 hover:bg-slate-100 rounded" title="Novo"><Icon name="plus" size={18}/></button>
+                                {editingId && <button onClick={handleDelete} className="p-2 hover:bg-red-50 text-red-500 rounded"><Icon name="trash-2" size={18}/></button>}
+                                <button onClick={handleSave} className="bg-slate-900 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2"><Icon name="save" size={16}/> SALVAR</button>
                             </div>
                         </div>
 
-                        {/* Scrollable Form Area */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            
-                            {/* CARD: DADOS BÁSICOS */}
                             <div className="bg-white p-4 rounded shadow-sm border border-slate-200 space-y-3">
                                 <div className="flex gap-3">
                                     <div className="w-1/3">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase">Código</label>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">Cód</label>
                                         <input className="input-dense font-mono text-center bg-slate-50" value={form.internalCode} onChange={e => setForm({...form, internalCode: e.target.value})} />
                                     </div>
                                     <div className="w-2/3">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase">Categoria</label>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">Categoria</label>
                                         <select className="input-dense" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
                                             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Nome do Produto</label>
-                                    <input className="input-dense font-medium text-lg" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Ex: Cesta Básica Tipo 1" />
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Nome do Produto</label>
+                                    <input className="input-dense font-medium" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                                 </div>
                             </div>
 
-                            {/* CARD: VALORES */}
                             <div className="bg-white p-4 rounded shadow-sm border border-slate-200 grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Custo (R$)</label>
-                                    <input type="number" step="0.01" className="input-dense" value={form.cost} onChange={e => setForm({...form, cost: e.target.value})} placeholder="0.00" />
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Custo R$</label>
+                                    <input type="number" className="input-dense" value={form.cost} onChange={e => setForm({...form, cost: e.target.value})} />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-primary-600 uppercase">Venda (R$)</label>
-                                    <input type="number" step="0.01" className="input-dense font-bold text-primary-700 border-primary-200 bg-blue-50/20" value={form.price} onChange={e => setForm({...form, price: e.target.value})} placeholder="0.00" />
+                                    <label className="text-[10px] font-bold text-primary-600 uppercase">Venda R$</label>
+                                    <input type="number" className="input-dense font-bold text-primary-700" value={form.price} onChange={e => setForm({...form, price: e.target.value})} />
                                 </div>
                             </div>
 
-                            {/* CARD: TIPO DE PRODUTO & ESTOQUE */}
-                            <div className="bg-white p-4 rounded shadow-sm border border-slate-200">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <input 
-                                        type="checkbox" 
-                                        id="isCombo" 
-                                        checked={form.isCombo} 
-                                        onChange={e => setForm({...form, isCombo: e.target.checked})}
-                                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 border-gray-300"
-                                    />
-                                    <label htmlFor="isCombo" className="text-sm font-bold text-slate-700 select-none">
-                                        Este produto é um KIT?
-                                    </label>
+                            <div className="bg-white p-4 rounded shadow-sm border border-slate-200 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <input type="checkbox" id="iskit" checked={form.isCombo} onChange={e => setForm({...form, isCombo: e.target.checked})} />
+                                    <label htmlFor="iskit" className="text-sm font-bold text-slate-700">Este é um KIT?</label>
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded border border-slate-100">
+                                <div className="grid grid-cols-2 gap-3 bg-slate-50 p-2 rounded">
                                     <div>
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Estoque {form.isCombo ? 'Kit' : 'Avulso'}</label>
-                                        <input 
-                                            type="number" 
-                                            className="input-dense text-center font-bold text-lg bg-white" 
-                                            value={form.stock} 
-                                            onChange={e => setForm({...form, stock: e.target.value})}
-                                            disabled={form.isCombo} // Kits só mudam via montagem
-                                        />
-                                        {form.isCombo && <span className="text-[9px] text-amber-600 font-bold mt-1 block text-center">Use Montagem Abaixo</span>}
+                                        <label className="text-[10px] font-bold text-slate-500 block">Estoque</label>
+                                        <input type="number" className="input-dense text-center" value={form.stock} disabled={form.isCombo} onChange={e => setForm({...form, stock: e.target.value})} />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold text-red-500 uppercase block mb-1">Estoque Mínimo</label>
-                                        <input 
-                                            type="number" 
-                                            className="input-dense text-center text-red-600 font-bold bg-red-50 border-red-100" 
-                                            value={form.minStock} 
-                                            onChange={e => setForm({...form, minStock: e.target.value})}
-                                        />
+                                        <label className="text-[10px] font-bold text-red-400 block">Min Estoque</label>
+                                        <input type="number" className="input-dense text-center" value={form.minStock} onChange={e => setForm({...form, minStock: e.target.value})} />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* CARD: COMPOSIÇÃO DO KIT (CONDICIONAL) */}
                             {form.isCombo && (
                                 <div className="space-y-4 animate-fade-in">
-                                    {/* 1. Definição da Receita */}
-                                    <div className="bg-amber-50 rounded border border-amber-200 p-3">
-                                        <h4 className="text-xs font-bold text-amber-800 uppercase mb-2 flex items-center gap-2">
-                                            <Settings size={12}/> Receita do Kit
-                                        </h4>
-                                        <div className="bg-white border border-amber-100 rounded max-h-40 overflow-y-auto p-1 scrollbar-thin">
+                                    <div className="bg-amber-50 p-3 rounded border border-amber-200">
+                                        <h4 className="text-[10px] font-bold text-amber-800 uppercase mb-2">Composição</h4>
+                                        <div className="bg-white rounded max-h-40 overflow-auto border border-amber-100">
                                             {products.filter(p => !p.isCombo && p.id !== editingId).map(p => {
-                                                const item = form.comboItems.find(i => i.id === p.id);
+                                                const item = form.comboItems?.find(i => i.id === p.id);
                                                 return (
-                                                    <div key={p.id} className={`flex justify-between items-center p-2 border-b border-slate-50 text-xs ${item ? 'bg-amber-50' : ''}`}>
-                                                        <span className="truncate flex-1 font-medium text-slate-700">{p.name}</span>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[9px] text-slate-400">Qtd:</span>
-                                                            <input 
-                                                                type="number" 
-                                                                min="0"
-                                                                className="w-12 text-center border border-slate-200 rounded p-1 font-bold"
-                                                                value={item?.qty || ''}
-                                                                onChange={(e) => {
-                                                                    const val = parseInt(e.target.value) || 0;
-                                                                    const newItems = form.comboItems.filter(i => i.id !== p.id);
-                                                                    if (val > 0) newItems.push({ id: p.id, qty: val });
-                                                                    setForm({...form, comboItems: newItems});
-                                                                }}
-                                                            />
-                                                        </div>
+                                                    <div key={p.id} className="p-2 border-b flex justify-between items-center text-xs">
+                                                        <span className="truncate">{p.name}</span>
+                                                        <input 
+                                                            type="number" className="w-12 text-center border p-0.5 rounded" 
+                                                            value={item?.qty || ''}
+                                                            onChange={e => {
+                                                                const val = parseInt(e.target.value) || 0;
+                                                                const others = (form.comboItems || []).filter(i => i.id !== p.id);
+                                                                setForm({...form, comboItems: val > 0 ? [...others, {id: p.id, qty: val}] : others});
+                                                            }}
+                                                        />
                                                     </div>
                                                 )
                                             })}
                                         </div>
                                     </div>
 
-                                    {/* 2. Painel de Montagem (SOMENTE SE EDITANDO) */}
                                     {editingId && (
-                                        <div className="bg-slate-800 text-white rounded p-4 shadow-lg border border-slate-700">
-                                            <h4 className="text-xs font-bold text-amber-400 uppercase mb-3 flex items-center gap-2">
-                                                <Wrench size={14}/> Linha de Montagem
-                                            </h4>
-                                            
-                                            <div className="flex items-center justify-between mb-4 bg-slate-700/50 p-2 rounded">
-                                                <span className="text-xs font-bold text-slate-300 uppercase">Quantidade a processar:</span>
-                                                <input 
-                                                    type="number" 
-                                                    min="1" 
-                                                    value={assemblyQty} 
-                                                    onChange={e => setAssemblyQty(e.target.value)}
-                                                    className="w-20 text-center font-bold text-lg bg-slate-900 border border-slate-600 rounded text-white"
-                                                />
+                                        <div className="bg-slate-800 p-4 rounded text-white shadow-lg">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className="text-xs font-bold uppercase text-amber-400">Montagem</span>
+                                                <input type="number" className="w-16 bg-slate-900 border border-slate-600 rounded p-1 text-center" value={assemblyQty} onChange={e => setAssemblyQty(e.target.value)} />
                                             </div>
-
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <button 
-                                                    onClick={() => executeAssembly(1)}
-                                                    className="bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded text-xs font-bold flex flex-col items-center gap-1 transition shadow border border-emerald-500"
-                                                >
-                                                    <Box size={16}/> 
-                                                    MONTAR KIT
-                                                    <span className="text-[9px] opacity-75 font-normal">Baixa insumos, cria Kit</span>
-                                                </button>
-                                                <button 
-                                                    onClick={() => executeAssembly(-1)}
-                                                    className="bg-slate-700 hover:bg-slate-600 text-white py-2 rounded text-xs font-bold flex flex-col items-center gap-1 transition border border-slate-600"
-                                                >
-                                                    <RefreshCw size={16}/> 
-                                                    DESMONTAR
-                                                    <span className="text-[9px] opacity-75 font-normal">Baixa Kit, devolve insumos</span>
-                                                </button>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button onClick={() => executeAssembly(1)} className="bg-emerald-600 p-2 rounded text-[10px] font-bold flex flex-col items-center"><Icon name="box" size={14}/> MONTAR</button>
+                                                <button onClick={() => executeAssembly(-1)} className="bg-slate-600 p-2 rounded text-[10px] font-bold flex flex-col items-center"><Icon name="refresh-cw" size={14}/> DESMONTAR</button>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             )}
-
-                            <div className="h-10"></div>
                         </div>
                     </main>
-
                 </div>
             );
         }
 
-        const root = createRoot(document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
