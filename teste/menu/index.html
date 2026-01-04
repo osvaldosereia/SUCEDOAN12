@@ -38,31 +38,30 @@
                 LOGÍSTICA
             </div>
             
-            <!-- NAVEGAÇÃO (Abas) -->
+            <!-- NAVEGAÇÃO (Abas) - URLs Atualizadas -->
             <nav class="flex h-full" id="main-nav">
-                <!-- Os links aqui apontam para os arquivos HTML que você já tem -->
-                <a data-src="https://donaantonia.com.br/teste/1/" class="nav-item active" onclick="loadTab(this)">
+                <a data-src="https://donaantonia.com.br/teste/1" class="nav-item active" onclick="loadTab(this)">
                     <i data-lucide="layout-dashboard" class="nav-icon"></i> Visão Geral
                 </a>
-                <a data-src="pdv.html" class="nav-item" onclick="loadTab(this)">
+                <a data-src="https://donaantonia.com.br/teste/2" class="nav-item" onclick="loadTab(this)">
                     <i data-lucide="shopping-cart" class="nav-icon"></i> Caixa (PDV)
                 </a>
-                <a data-src="expedicao.html" class="nav-item" onclick="loadTab(this)">
+                <a data-src="https://donaantonia.com.br/teste/3" class="nav-item" onclick="loadTab(this)">
                     <i data-lucide="package" class="nav-icon"></i> Expedição
                 </a>
-                <a data-src="logistica.html" class="nav-item" onclick="loadTab(this)">
+                <a data-src="https://donaantonia.com.br/teste/4" class="nav-item" onclick="loadTab(this)">
                     <i data-lucide="truck" class="nav-icon"></i> Logística
                 </a>
-                <a data-src="estoque.html" class="nav-item" onclick="loadTab(this)">
+                <a data-src="https://donaantonia.com.br/teste/5" class="nav-item" onclick="loadTab(this)">
                     <i data-lucide="clipboard-list" class="nav-icon"></i> Estoque
                 </a>
-                <a data-src="cadastros.html" class="nav-item" onclick="loadTab(this)">
+                <a data-src="https://donaantonia.com.br/teste/6" class="nav-item" onclick="loadTab(this)">
                     <i data-lucide="database" class="nav-icon"></i> Cadastros
                 </a>
-                <a data-src="relatorios.html" class="nav-item" onclick="loadTab(this)">
+                <a data-src="https://donaantonia.com.br/teste/7" class="nav-item" onclick="loadTab(this)">
                     <i data-lucide="line-chart" class="nav-icon"></i> BI
                 </a>
-                <a data-src="pos_venda.html" class="nav-item" onclick="loadTab(this)">
+                <a data-src="https://donaantonia.com.br/teste/8" class="nav-item" onclick="loadTab(this)">
                     <i data-lucide="heart-handshake" class="nav-icon"></i> Pós-Venda
                 </a>
             </nav>
@@ -79,7 +78,7 @@
     </header>
 
     <!-- ÁREA DO CONTEÚDO (IFRAME) -->
-    <!-- O 'src' inicial aponta para o dashboard. Se não tiver dashboard.html, crie um ou mude para pdv.html -->
+    <!-- O 'src' inicial aponta para a primeira aba -->
     <iframe id="content-frame" src="about:blank" name="content-frame"></iframe>
 
     <script>
@@ -108,7 +107,6 @@
             // Tenta carregar a primeira aba definida ou uma padrão
             const firstTab = document.querySelector('.nav-item.active') || document.querySelector('.nav-item');
             if(firstTab) {
-                // Se o arquivo não existir, o iframe mostrará erro 404, o que é esperado
                 loadTab(firstTab); 
             } else {
                 // Fallback caso não ache arquivos
