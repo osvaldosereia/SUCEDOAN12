@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Logística Local-First v6.0 (Closed-Loop)</title>
+    <title>Sistema Logística Local-First v6.1 (CRM Action)</title>
     
     <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -79,7 +79,7 @@
           Calendar, Filter, Phone, Database, Clipboard, Box, ExternalLink,
           Clock, Home, DollarSign, CreditCard, Check, ShieldCheck, ClipboardList,
           ArrowRight, ArrowLeft, LayoutDashboard, Settings, Menu, BarChart2, TrendingUp, PieChart,
-          MessageSquare, HeartHandshake, RefreshCcw, ThumbsUp, Star
+          MessageSquare, HeartHandshake, RefreshCcw, ThumbsUp, Star, Instagram, Award, Users2
         } from 'lucide-react';
 
         // --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
@@ -255,7 +255,7 @@
           }, []);
 
           const handleBackup = () => {
-            let data = { version: '6.0', exportedAt: new Date().toISOString() };
+            let data = { version: '6.1', exportedAt: new Date().toISOString() };
             let filename = 'backup';
             if (backupType === 'all') { 
                 data = { ...data, clients, products, sales, companyPhone, postSaleLog }; 
@@ -319,7 +319,7 @@
                 <aside className="w-20 lg:w-64 bg-slate-900 text-white flex flex-col shrink-0 transition-all duration-300 z-30 shadow-xl">
                     <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
                         <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
-                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V6.0</span></h1>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V6.1</span></h1>
                     </div>
                     <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
                         <NavItem icon={<LayoutDashboard size={20}/>} label="Visão Geral" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
@@ -403,7 +403,7 @@
             <div className={`bg-white p-5 rounded-xl shadow-sm border border-${color}-100 relative overflow-hidden group`}><div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110`}>{icon}</div><div className="relative z-10"><p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">{title}</p><h3 className="text-2xl font-bold text-gray-800 mb-1">{value}</h3><p className={`text-xs text-${color}-600 font-bold`}>{sub}</p></div></div>
         );
 
-        // --- PÓS-VENDA VIEW ---
+        // --- PÓS-VENDA VIEW (ATUALIZADO V6.1) ---
         function PostSalesView({ sales, clients, postSaleLog, setPostSaleLog, companyPhone }) {
             const clientLastSale = useMemo(() => {
                 const map = {};
@@ -443,21 +443,35 @@
                 else if (diffDays >= 46) buckets.risk.push(data);
             });
 
-            const sendWhatsApp = (item) => {
+            const LINKS = {
+                instagram: "https://instagram.com/cestas.dona.antonia.cuiaba.vg",
+                google: "https://g.page/r/CaIREJtO1L6WEBE/review", 
+                vip: "https://chat.whatsapp.com/IOI3gSBLRVk4jGK2QMunp1"
+            };
+
+            const sendWhatsApp = (item, type = 'cashback') => {
                 const log = postSaleLog[item.client.id];
                 const isReminder = !!log;
                 const clientName = item.client.name.split(' ')[0];
                 const cleanPhone = item.client.phone.replace(/\D/g, '');
                 let msg = '';
                 
-                if (item.diffDays === 0) {
-                    msg = `Olá ${clientName}! ✨ Muito obrigado pela compra de hoje! Já geramos um *Cashback de ${formatCurrency(item.cashback)}* para sua próxima visita. Até breve!`;
-                } else if (item.diffDays === 1) {
-                    msg = `Oi ${clientName}! 📦 Tudo certo com sua entrega de ontem? Só lembrando que você tem um *Cashback de ${formatCurrency(item.cashback)}* disponível!`;
-                } else if (!isReminder) { 
-                    msg = `Olá ${clientName}! 🌟 Faz ${item.diffDays} dias que não te vemos. Como agradecimento, liberamos um *Cashback de ${formatCurrency(item.cashback)}* para sua próxima compra! 💰 Validade: 7 dias. Aproveite!`; 
-                } else { 
-                    msg = `Oi ${clientName}! ⏳ Passando pra lembrar do seu *Cashback de ${formatCurrency(item.cashback)}*! Prorroguei a validade por mais 7 dias pra você aproveitar. Vem conferir as novidades!`; 
+                if (type === 'cashback') {
+                    if (item.diffDays === 0) {
+                        msg = `Olá ${clientName}! ✨ Muito obrigado pela compra de hoje! Já geramos um *Cashback de ${formatCurrency(item.cashback)}* para sua próxima visita. Até breve!`;
+                    } else if (item.diffDays === 1) {
+                        msg = `Oi ${clientName}! 📦 Tudo certo com sua entrega de ontem? Só lembrando que você tem um *Cashback de ${formatCurrency(item.cashback)}* disponível!`;
+                    } else if (!isReminder) { 
+                        msg = `Olá ${clientName}! 🌟 Faz ${item.diffDays} dias que não te vemos. Como agradecimento, liberamos um *Cashback de ${formatCurrency(item.cashback)}* para sua próxima compra! 💰 Validade: 7 dias. Aproveite!`; 
+                    } else { 
+                        msg = `Oi ${clientName}! ⏳ Passando pra lembrar do seu *Cashback de ${formatCurrency(item.cashback)}*! Prorroguei a validade por mais 7 dias pra você aproveitar. Vem conferir as novidades!`; 
+                    }
+                } else if (type === 'insta') {
+                    msg = `Olá ${clientName}! 📸 Já segue a gente no Insta? Postamos novidades todo dia! Segue lá: ${LINKS.instagram}`;
+                } else if (type === 'google') {
+                    msg = `Oi ${clientName}! ⭐ Poderia nos avaliar no Google? Ajuda muito! Link: ${LINKS.google}`;
+                } else if (type === 'vip') {
+                    msg = `Ei ${clientName}! 🚀 Entre no nosso Grupo VIP de descontos: ${LINKS.vip}`;
                 }
                 
                 setPostSaleLog(prev => ({ ...prev, [item.client.id]: { date: new Date().toISOString(), count: (prev[item.client.id]?.count || 0) + 1 } }));
@@ -465,49 +479,96 @@
             };
 
             const PostSaleCard = ({ item, type }) => {
+                const [showMenu, setShowMenu] = useState(false);
                 const log = postSaleLog[item.client.id];
                 const lastMsgDate = log ? new Date(log.date).toLocaleDateString('pt-BR') : 'Nunca';
-                return (<div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex flex-col gap-2"><div className="flex justify-between items-start"><span className="font-bold text-gray-800 text-sm truncate">{item.client.name}</span><span className="text-[10px] font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{item.diffDays}d</span></div><div className="text-xs text-gray-500">Última: {formatCurrency(item.sale.total)} <br/><span className="text-[10px]">Msg: {lastMsgDate}</span></div><div className="flex items-center justify-between mt-1 pt-2 border-t border-dashed"><div className="text-green-700 font-bold text-sm">🎁 {formatCurrency(item.cashback)}</div><button onClick={() => sendWhatsApp(item)} className={`px-3 py-1.5 rounded text-xs font-bold text-white flex items-center gap-1 transition ${log ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-green-600 hover:bg-green-700'}`}>{log ? <RefreshCcw size={12}/> : <MessageSquare size={12}/>}{log ? 'Lembrar' : 'Enviar'}</button></div></div>);
+                
+                // Modo Menu Expandido para Hoje/Ontem
+                if ((type === 'today' || type === 'yesterday') && showMenu) {
+                    return (
+                        <div className="bg-white p-3 rounded-lg shadow-md border border-blue-200 flex flex-col gap-2 relative animate-in">
+                             <div className="flex justify-between items-center border-b pb-2 mb-1">
+                                <span className="font-bold text-xs text-blue-800">Ações: {item.client.name.split(' ')[0]}</span>
+                                <button onClick={() => setShowMenu(false)} className="text-gray-400 hover:text-red-500"><XCircle size={16}/></button>
+                             </div>
+                             <div className="grid grid-cols-2 gap-2">
+                                <button onClick={() => sendWhatsApp(item, 'cashback')} className="bg-green-100 text-green-800 p-2 rounded flex flex-col items-center gap-1 text-[10px] font-bold hover:bg-green-200"><MessageSquare size={16}/> Cashback</button>
+                                <button onClick={() => sendWhatsApp(item, 'insta')} className="bg-pink-100 text-pink-800 p-2 rounded flex flex-col items-center gap-1 text-[10px] font-bold hover:bg-pink-200"><Instagram size={16}/> Seguir</button>
+                                <button onClick={() => sendWhatsApp(item, 'google')} className="bg-orange-100 text-orange-800 p-2 rounded flex flex-col items-center gap-1 text-[10px] font-bold hover:bg-orange-200"><Star size={16}/> Avaliar</button>
+                                <button onClick={() => sendWhatsApp(item, 'vip')} className="bg-blue-100 text-blue-800 p-2 rounded flex flex-col items-center gap-1 text-[10px] font-bold hover:bg-blue-200"><Users2 size={16}/> Grupo VIP</button>
+                             </div>
+                        </div>
+                    )
+                }
+
+                return (
+                    <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex flex-col gap-2">
+                        <div className="flex justify-between items-start">
+                            <span className="font-bold text-gray-800 text-sm truncate">{item.client.name}</span>
+                            <span className="text-[10px] font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{item.diffDays}d</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                            Última: {formatCurrency(item.sale.total)} <br/>
+                            <span className="text-[10px]">Msg: {lastMsgDate}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1 pt-2 border-t border-dashed">
+                            <div className="text-green-700 font-bold text-sm">
+                                🎁 {formatCurrency(item.cashback)}
+                            </div>
+                            {(type === 'today' || type === 'yesterday') ? (
+                                <button onClick={() => setShowMenu(true)} className="px-3 py-1.5 rounded text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-1">
+                                    <Menu size={12}/> OPÇÕES
+                                </button>
+                            ) : (
+                                <button onClick={() => sendWhatsApp(item)} className={`px-3 py-1.5 rounded text-xs font-bold text-white flex items-center gap-1 transition ${log ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-green-600 hover:bg-green-700'}`}>
+                                    {log ? <RefreshCcw size={12}/> : <MessageSquare size={12}/>}
+                                    {log ? 'Lembrar' : 'Enviar'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                );
             };
 
             return (
-                <div className="h-full p-6 overflow-x-auto">
-                    <div className="flex gap-6 h-full min-w-[1600px]">
+                <div className="h-full p-6 overflow-hidden flex flex-col">
+                    <div className="flex-1 grid grid-cols-5 gap-4 min-w-0">
                         {/* COLUNA 1: HOJE (0 DIAS) */}
-                        <div className="flex-1 flex flex-col bg-blue-50 rounded-xl border border-blue-200 overflow-hidden">
-                            <div className="p-3 bg-blue-100 border-b border-blue-200 flex justify-between items-center"><h3 className="font-bold text-blue-900 flex items-center gap-2"><Star size={16}/> Hoje (Agradecer)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-blue-700">{buckets.today.length}</span></div>
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">{buckets.today.map(item => <PostSaleCard key={item.client.id} item={item} type="today" />)}</div>
+                        <div className="flex flex-col bg-blue-50 rounded-xl border border-blue-200 overflow-hidden min-w-0">
+                            <div className="p-3 bg-blue-100 border-b border-blue-200 flex justify-between items-center"><h3 className="font-bold text-blue-900 flex items-center gap-2 text-xs lg:text-sm"><Star size={16}/> Hoje</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-blue-700">{buckets.today.length}</span></div>
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.today.map(item => <PostSaleCard key={item.client.id} item={item} type="today" />)}</div>
                         </div>
 
                         {/* COLUNA 2: ONTEM (1 DIA) */}
-                        <div className="flex-1 flex flex-col bg-purple-50 rounded-xl border border-purple-200 overflow-hidden">
-                            <div className="p-3 bg-purple-100 border-b border-purple-200 flex justify-between items-center"><h3 className="font-bold text-purple-900 flex items-center gap-2"><ThumbsUp size={16}/> Ontem (Pesquisa)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-purple-700">{buckets.yesterday.length}</span></div>
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">{buckets.yesterday.map(item => <PostSaleCard key={item.client.id} item={item} type="yesterday" />)}</div>
+                        <div className="flex flex-col bg-purple-50 rounded-xl border border-purple-200 overflow-hidden min-w-0">
+                            <div className="p-3 bg-purple-100 border-b border-purple-200 flex justify-between items-center"><h3 className="font-bold text-purple-900 flex items-center gap-2 text-xs lg:text-sm"><ThumbsUp size={16}/> Ontem</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-purple-700">{buckets.yesterday.length}</span></div>
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.yesterday.map(item => <PostSaleCard key={item.client.id} item={item} type="yesterday" />)}</div>
                         </div>
 
                         {/* COLUNA 3: OPORTUNIDADE (25-30 DIAS) */}
-                        <div className="flex-1 flex flex-col bg-green-50 rounded-xl border border-green-200 overflow-hidden">
-                            <div className="p-3 bg-green-100 border-b border-green-200 flex justify-between items-center"><h3 className="font-bold text-green-900 flex items-center gap-2"><Clock size={16}/> Momento Ideal (25-30d)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-green-700">{buckets.opportunity.length}</span></div>
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">{buckets.opportunity.map(item => <PostSaleCard key={item.client.id} item={item} type="opp" />)}</div>
+                        <div className="flex flex-col bg-green-50 rounded-xl border border-green-200 overflow-hidden min-w-0">
+                            <div className="p-3 bg-green-100 border-b border-green-200 flex justify-between items-center"><h3 className="font-bold text-green-900 flex items-center gap-2 text-xs lg:text-sm"><Clock size={16}/> Ideal (25-30d)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-green-700">{buckets.opportunity.length}</span></div>
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.opportunity.map(item => <PostSaleCard key={item.client.id} item={item} type="opp" />)}</div>
                         </div>
 
                         {/* COLUNA 4: ATENÇÃO (31-45 DIAS) */}
-                        <div className="flex-1 flex flex-col bg-yellow-50 rounded-xl border border-yellow-200 overflow-hidden">
-                            <div className="p-3 bg-yellow-100 border-b border-yellow-200 flex justify-between items-center"><h3 className="font-bold text-yellow-900 flex items-center gap-2"><AlertTriangle size={16}/> Atenção (31-45d)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-yellow-700">{buckets.attention.length}</span></div>
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">{buckets.attention.map(item => <PostSaleCard key={item.client.id} item={item} type="att" />)}</div>
+                        <div className="flex flex-col bg-yellow-50 rounded-xl border border-yellow-200 overflow-hidden min-w-0">
+                            <div className="p-3 bg-yellow-100 border-b border-yellow-200 flex justify-between items-center"><h3 className="font-bold text-yellow-900 flex items-center gap-2 text-xs lg:text-sm"><AlertTriangle size={16}/> Atenção (31d+)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-yellow-700">{buckets.attention.length}</span></div>
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.attention.map(item => <PostSaleCard key={item.client.id} item={item} type="att" />)}</div>
                         </div>
 
                         {/* COLUNA 5: RISCO (46+ DIAS) */}
-                        <div className="flex-1 flex flex-col bg-red-50 rounded-xl border border-red-200 overflow-hidden">
-                            <div className="p-3 bg-red-100 border-b border-red-200 flex justify-between items-center"><h3 className="font-bold text-red-900 flex items-center gap-2"><XCircle size={16}/> Risco de Churn (46d+)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-red-700">{buckets.risk.length}</span></div>
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">{buckets.risk.map(item => <PostSaleCard key={item.client.id} item={item} type="risk" />)}</div>
+                        <div className="flex flex-col bg-red-50 rounded-xl border border-red-200 overflow-hidden min-w-0">
+                            <div className="p-3 bg-red-100 border-b border-red-200 flex justify-between items-center"><h3 className="font-bold text-red-900 flex items-center gap-2 text-xs lg:text-sm"><XCircle size={16}/> Risco (46d+)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-red-700">{buckets.risk.length}</span></div>
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">{buckets.risk.map(item => <PostSaleCard key={item.client.id} item={item} type="risk" />)}</div>
                         </div>
                     </div>
                 </div>
             );
         }
 
-        // --- POS ---
+        // --- POS, REGISTRY, REPORTS, ETC... (MANTIDOS DA V6.0) ---
+        
         function POSView({ clients, products, setProducts, sales, setSales, saleToEdit, setSaleToEdit }) {
              const [selectedClient, setSelectedClient] = useState('');
              const [clientSearch, setClientSearch] = useState('');
