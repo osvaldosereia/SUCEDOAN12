@@ -45,13 +45,6 @@
         .animate-in { animation: fadeIn 0.3s ease-out; }
         
         .nav-item.active { background-color: #334155; border-right: 4px solid #34d399; }
-
-        /* Gráficos simples via CSS */
-        .bar-container { display: flex; align-items: flex-end; gap: 4px; height: 100px; }
-        .bar { background-color: #3b82f6; border-radius: 4px 4px 0 0; transition: height 0.5s; position: relative; }
-        .bar:hover { opacity: 0.8; }
-        .bar-tooltip { visibility: hidden; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 10px; white-space: nowrap; z-index: 10; margin-bottom: 4px; }
-        .bar:hover .bar-tooltip { visibility: visible; }
     </style>
 
     <!-- 3. IMPORTMAP REACT + ZOD -->
@@ -86,7 +79,8 @@
           Calendar, Filter, Phone, Database, Clipboard, Box, ExternalLink,
           Clock, Home, DollarSign, CreditCard, Check, ShieldCheck, ClipboardList,
           ArrowRight, ArrowLeft, LayoutDashboard, Settings, Menu, BarChart2, TrendingUp, PieChart,
-          MessageSquare, HeartHandshake, RefreshCcw, ThumbsUp, Star, Activity, LineChart, ChevronDown, Gift, X, Wallet, Ban, BoxSelect
+          MessageSquare, HeartHandshake, RefreshCcw, ThumbsUp, Star, Activity, LineChart, ChevronDown, Gift, X, Wallet, Ban, BoxSelect,
+          GanttChart
         } from 'lucide-react';
 
         // --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
@@ -207,8 +201,8 @@
           const [companyPhone, setCompanyPhone] = useStickyState('db_config_phone', '65998150975');
           const [postSaleLog, setPostSaleLog] = useStickyState('db_postsale_log', {}); 
           
-          const [viewMode, setViewMode] = useState('pos');
-          const [activeTab, setActiveTab] = useState('pos');
+          const [viewMode, setViewMode] = useState('operations');
+          const [activeTab, setActiveTab] = useState('operations');
           const [showStockManager, setShowStockManager] = useState(false);
           const [driverData, setDriverData] = useState(null);
           const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -230,7 +224,7 @@
                     alert("Erro ao abrir link do entregador.");
                   }
                 } else {
-                    if (viewMode === 'driver') setViewMode('pos');
+                    if (viewMode === 'driver') setViewMode('operations');
                 }
             };
             checkHash();
@@ -282,15 +276,22 @@
             reader.readAsText(file);
           };
 
-          if (viewMode === 'driver') return <DriverView data={driverData} onExit={() => { window.location.hash = ''; setViewMode('pos'); }} />;
+          if (viewMode === 'driver') return <DriverView data={driverData} onExit={() => { window.location.hash = ''; setViewMode('operations'); }} />;
 
           const renderContent = () => {
              switch(activeTab) {
-                case 'pos': return <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} saleToEdit={saleToEdit} setSaleToEdit={setSaleToEdit} />;
-                case 'expedition': return <ExpeditionView sales={sales} setSales={setSales} clients={clients} products={products} setProducts={setProducts} onEditSale={(sale) => { setSaleToEdit(sale); setActiveTab('pos'); }} />;
-                case 'logistics': return <LogisticsView sales={sales} setSales={setSales} clients={clients} companyPhone={companyPhone} products={products} setProducts={setProducts} />;
+                case 'operations': 
+                    return (
+                        <OperationsView 
+                            clients={clients} 
+                            products={products} setProducts={setProducts} 
+                            sales={sales} setSales={setSales} 
+                            saleToEdit={saleToEdit} setSaleToEdit={setSaleToEdit} 
+                            companyPhone={companyPhone}
+                        />
+                    );
                 case 'crm': return <RegistryView clients={clients} setClients={setClients} products={products} setProducts={setProducts} />;
-                default: return <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} saleToEdit={saleToEdit} setSaleToEdit={setSaleToEdit} />;
+                default: return <OperationsView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} saleToEdit={saleToEdit} setSaleToEdit={setSaleToEdit} companyPhone={companyPhone} />;
              }
           };
 
@@ -314,9 +315,7 @@
                         <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V8.0</span></h1>
                     </div>
                     <nav className="flex-1 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
-                        <NavItem icon={<ShoppingCart size={20}/>} label="Caixa (PDV)" active={activeTab === 'pos'} onClick={() => {setActiveTab('pos'); setMobileMenuOpen(false);}} />
-                        <NavItem icon={<Package size={20}/>} label="Expedição" active={activeTab === 'expedition'} onClick={() => {setActiveTab('expedition'); setMobileMenuOpen(false);}} />
-                        <NavItem icon={<Truck size={20}/>} label="Logística" active={activeTab === 'logistics'} onClick={() => {setActiveTab('logistics'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<GanttChart size={20}/>} label="Operações" active={activeTab === 'operations'} onClick={() => {setActiveTab('operations'); setMobileMenuOpen(false);}} />
                         <NavItem icon={<Database size={20}/>} label="Cadastros" active={activeTab === 'crm'} onClick={() => {setActiveTab('crm'); setMobileMenuOpen(false);}} />
                     </nav>
                     <div className="p-4 border-t border-slate-800 space-y-3 pb-8 lg:pb-4">
@@ -340,7 +339,7 @@
                 {/* MAIN CONTENT AREA */}
                 <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full overflow-hidden relative">
                     <header className="h-16 bg-white border-b hidden lg:flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
-                        <div><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">{activeTab === 'pos' ? 'Ponto de Venda' : activeTab === 'expedition' ? 'Expedição' : activeTab === 'logistics' ? 'Logística' : activeTab === 'crm' ? 'Cadastros' : 'Início'}</h2></div>
+                        <div><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">{activeTab === 'operations' ? 'Painel de Operações' : 'Cadastros'}</h2></div>
                         <div className="flex items-center gap-4">
                             <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border">
                                 <Phone size={14} /><input className="bg-transparent w-24 outline-none" value={companyPhone} onChange={e => setCompanyPhone(e.target.value)} />
@@ -365,7 +364,50 @@
             <button onClick={onClick} className={`w-full flex items-center justify-start gap-3 p-3 lg:px-6 transition-all duration-200 nav-item ${active ? 'active text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`} title={label}>{icon}<span className="font-medium text-sm">{label}</span></button>
         );
 
-        // --- POS (PDV Otimizado v7.4 - LAYOUT FLUIDO + ORDENAÇÃO + CASHBACK) ---
+        // --- ABA UNIFICADA DE OPERAÇÕES ---
+        function OperationsView(props) {
+            const [subTab, setSubTab] = useState('pos'); // pos, expedition, logistics
+
+            return (
+                <div className="flex flex-col h-full bg-white">
+                    {/* SUB-NAVEGAÇÃO INTERNA */}
+                    <div className="flex bg-slate-100 p-2 border-b gap-2 shrink-0 overflow-x-auto scrollbar-thin">
+                        <button 
+                            onClick={() => setSubTab('pos')}
+                            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase transition shadow-sm ${subTab === 'pos' ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 hover:bg-slate-200'}`}
+                        >
+                            <ShoppingCart size={16}/> Caixa (PDV)
+                        </button>
+                        <button 
+                            onClick={() => setSubTab('expedition')}
+                            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase transition shadow-sm ${subTab === 'expedition' ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 hover:bg-slate-200'}`}
+                        >
+                            <Package size={16}/> Expedição
+                        </button>
+                        <button 
+                            onClick={() => setSubTab('logistics')}
+                            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase transition shadow-sm ${subTab === 'logistics' ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 hover:bg-slate-200'}`}
+                        >
+                            <Truck size={16}/> Logística
+                        </button>
+                    </div>
+
+                    {/* CONTEÚDO DINÂMICO */}
+                    <div className="flex-1 overflow-hidden">
+                        {subTab === 'pos' && <POSView {...props} />}
+                        {subTab === 'expedition' && (
+                            <ExpeditionView 
+                                {...props} 
+                                onEditSale={(sale) => { props.setSaleToEdit(sale); setSubTab('pos'); }} 
+                            />
+                        )}
+                        {subTab === 'logistics' && <LogisticsView {...props} />}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- POS (PDV Otimizado v7.4) ---
         function POSView({ clients, products, setProducts, sales, setSales, saleToEdit, setSaleToEdit }) {
              const [selectedClient, setSelectedClient] = useState('');
              const [clientSearch, setClientSearch] = useState('');
@@ -603,7 +645,7 @@
                             </div>
                         </div>
 
-                        <div className="p-4 space-y-2">
+                        <div className="p-4 space-y-2 overflow-y-auto scrollbar-thin max-h-[300px] lg:max-h-none flex-1">
                             {cart.length === 0 && (<div className="h-32 flex flex-col items-center justify-center text-gray-400 opacity-60"><ShoppingCart size={48} className="mb-2"/><p>Carrinho Vazio</p></div>)}
                             {cart.map(item => (
                                 <div key={item.tempId} className="bg-white p-3 rounded-lg border shadow-sm relative group">
@@ -614,7 +656,7 @@
                             ))}
                         </div>
 
-                        <div className="bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-20 lg:pb-4">
+                        <div className="bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-4">
                             <div className="flex justify-between items-end mb-2">
                                 <div><label className="text-[10px] font-bold text-gray-400 uppercase">Subtotal</label><div className="text-sm text-gray-600">{formatCurrency(subTotal)}</div></div>
                                 <div><label className="text-[10px] font-bold text-gray-400 uppercase">Desconto (R$)</label><input type="number" className="w-24 border-b border-gray-300 text-right text-sm outline-none focus:border-red-500 text-red-500 p-1" value={discount} onChange={e => handleDiscountChange(e.target.value)} /></div>
@@ -689,7 +731,7 @@
                 </div>
             );
             return (
-                <div className="p-4 lg:p-6 pb-20 overflow-x-auto"><div className="flex flex-col md:flex-row gap-6 h-full min-w-full md:min-w-0">
+                <div className="p-4 lg:p-6 h-full overflow-x-auto"><div className="flex flex-col md:flex-row gap-6 h-full min-w-full md:min-w-0">
                     <KanbanColumn title="Pendente" status="Pendente" color="orange">
                         {activeSales.filter(s => s.status === 'Pendente').map(s => (
                             <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition group relative">
@@ -791,9 +833,9 @@
                                             if (dbProd.isCombo) { 
                                                 item.comboItems?.forEach(ing => { 
                                                     const dbIng = newProducts.find(p => p.id === ing.id); 
-                                                    if (dbIng) { dbIng.stock += ing.qty; dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_DRIVER', qty: ing.qty }); } 
+                                                    if (dbIng) { dbIng.stock += ing.qty; dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_RETURN', qty: ing.qty }); } 
                                                 }); 
-                                            } else { dbProd.stock += 1; dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_DRIVER', qty: 1 }); }
+                                            } else { dbProd.stock += 1; dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_RETURN', qty: 1 }); }
                                         }
                                      });
                                 }
@@ -808,7 +850,7 @@
                 } else { alert("Nenhum pedido processado. Verifique o formato."); }
             };
             return (
-                <div className="p-4 lg:p-6 pb-20 max-w-5xl mx-auto">
+                <div className="p-4 lg:p-6 h-full flex flex-col">
                     <div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex gap-4 items-center w-full md:w-auto">
                             <span className="font-bold text-gray-500 uppercase text-xs shrink-0">Região:</span>
@@ -819,9 +861,9 @@
                             <button onClick={() => setShowImport(true)} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 flex items-center gap-2"><Upload size={16}/> PROCESSAR RETORNO</button>
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
-                        <div className="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><span className="font-bold text-indigo-900 text-sm flex items-center gap-2"><Truck size={16}/> {routeSales.length} Entregas Pendentes</span><button onClick={generateDriverLink} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">GERAR LINK MOTORISTA</button></div>
-                        <div className="overflow-y-auto p-2 space-y-2 bg-gray-50 max-h-[600px]">{routeSales.map((s, idx) => { const client = clients.find(c => c.id === s.clientId) || {}; return (<div key={s.id} className="bg-white p-3 rounded-lg border shadow-sm flex gap-4 items-center"><div className="flex flex-col gap-1"><button onClick={() => moveOrder(idx, 'up')} className="p-1 hover:bg-gray-100 rounded"><ArrowUp size={14} className="text-gray-400"/></button><span className="font-bold text-sm text-center text-indigo-600 w-6">{idx + 1}</span><button onClick={() => moveOrder(idx, 'down')} className="p-1 hover:bg-gray-100 rounded"><ArrowDown size={14} className="text-gray-400"/></button></div><div className="flex-1"><div className="flex justify-between"><h4 className="font-bold text-gray-800">{client.name}</h4><span className="font-mono text-xs bg-gray-100 px-2 rounded text-gray-500">#{s.id}</span></div><p className="text-sm text-gray-500">{client.address}, {client.district}</p><div className="flex flex-wrap gap-2 mt-2 text-xs"><span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">{s.payMethod}{s.isPaid ? ' (PAGO)' : ''}</span><span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold">{formatCurrency(s.total)}</span>{s.gift && s.gift !== 'Nenhum' && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold flex items-center gap-1"><Gift size={10}/> {s.gift}</span>}</div></div><button onClick={() => forceDelivery(s.id)} className="p-3 hover:bg-green-50 text-gray-300 hover:text-green-600 rounded-full transition"><CheckCircle size={24}/></button></div>); })}</div>
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col flex-1">
+                        <div className="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center shrink-0"><span className="font-bold text-indigo-900 text-sm flex items-center gap-2"><Truck size={16}/> {routeSales.length} Entregas Pendentes</span><button onClick={generateDriverLink} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">GERAR LINK MOTORISTA</button></div>
+                        <div className="overflow-y-auto p-2 space-y-2 bg-gray-50 flex-1">{routeSales.map((s, idx) => { const client = clients.find(c => c.id === s.clientId) || {}; return (<div key={s.id} className="bg-white p-3 rounded-lg border shadow-sm flex gap-4 items-center"><div className="flex flex-col gap-1"><button onClick={() => moveOrder(idx, 'up')} className="p-1 hover:bg-gray-100 rounded"><ArrowUp size={14} className="text-gray-400"/></button><span className="font-bold text-sm text-center text-indigo-600 w-6">{idx + 1}</span><button onClick={() => moveOrder(idx, 'down')} className="p-1 hover:bg-gray-100 rounded"><ArrowDown size={14} className="text-gray-400"/></button></div><div className="flex-1"><div className="flex justify-between"><h4 className="font-bold text-gray-800">{client.name}</h4><span className="font-mono text-xs bg-gray-100 px-2 rounded text-gray-500">#{s.id}</span></div><p className="text-sm text-gray-500">{client.address}, {client.district}</p><div className="flex flex-wrap gap-2 mt-2 text-xs"><span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">{s.payMethod}{s.isPaid ? ' (PAGO)' : ''}</span><span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold">{formatCurrency(s.total)}</span>{s.gift && s.gift !== 'Nenhum' && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold flex items-center gap-1"><Gift size={10}/> {s.gift}</span>}</div></div><button onClick={() => forceDelivery(s.id)} className="p-3 hover:bg-green-50 text-gray-300 hover:text-green-600 rounded-full transition"><CheckCircle size={24}/></button></div>); })}</div>
                     </div>
                     {showImport && (<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"><div className="bg-white w-full max-w-lg rounded-xl p-6 shadow-2xl"><h3 className="text-lg font-bold mb-4">Processar Retorno do Motorista</h3><p className="text-xs text-gray-500 mb-2">Cole aqui o relatório enviado pelo motorista no WhatsApp.</p><textarea className="w-full h-48 border rounded p-2 text-xs font-mono mb-4 bg-gray-50" placeholder="Cole o relatório aqui..." value={importText} onChange={e => setImportText(e.target.value)} /><div className="flex gap-2"><button onClick={() => setShowImport(false)} className="flex-1 bg-gray-200 py-2 rounded font-bold text-gray-600">Cancelar</button><button onClick={processReturnReport} className="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded font-bold text-white">PROCESSAR BAIXA</button></div></div></div>)}
                 </div>
