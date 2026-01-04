@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Logística Local-First v5.9 (Fixed Post-Sales)</title>
+    <title>Sistema Logística Local-First v6.0 (Closed-Loop)</title>
     
     <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -88,6 +88,7 @@
             name: z.string().min(1),
             code: z.string().optional().or(z.literal('')),
             phone: z.string().optional().or(z.literal('')),
+            phone2: z.string().optional().or(z.literal('')), // Novo campo
             address: z.string().optional().or(z.literal('')),
             city: z.string().optional().or(z.literal('')),
             district: z.string().optional().or(z.literal('')),
@@ -254,7 +255,7 @@
           }, []);
 
           const handleBackup = () => {
-            let data = { version: '5.9', exportedAt: new Date().toISOString() };
+            let data = { version: '6.0', exportedAt: new Date().toISOString() };
             let filename = 'backup';
             if (backupType === 'all') { 
                 data = { ...data, clients, products, sales, companyPhone, postSaleLog }; 
@@ -304,7 +305,8 @@
                 case 'dashboard': return <DashboardView sales={sales} products={products} clients={clients} />;
                 case 'pos': return <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} saleToEdit={saleToEdit} setSaleToEdit={setSaleToEdit} />;
                 case 'expedition': return <ExpeditionView sales={sales} setSales={setSales} clients={clients} products={products} setProducts={setProducts} onEditSale={(sale) => { setSaleToEdit(sale); setActiveTab('pos'); }} />;
-                case 'logistics': return <LogisticsView sales={sales} setSales={setSales} clients={clients} companyPhone={companyPhone} />;
+                // Logistics agora recebe products e setProducts para processar devoluções em massa
+                case 'logistics': return <LogisticsView sales={sales} setSales={setSales} clients={clients} companyPhone={companyPhone} products={products} setProducts={setProducts} />;
                 case 'crm': return <RegistryView clients={clients} setClients={setClients} products={products} setProducts={setProducts} />;
                 case 'reports': return <ReportsView sales={sales} clients={clients} products={products} />;
                 case 'postsale': return <PostSalesView sales={sales} clients={clients} postSaleLog={postSaleLog} setPostSaleLog={setPostSaleLog} companyPhone={companyPhone} />;
@@ -317,7 +319,7 @@
                 <aside className="w-20 lg:w-64 bg-slate-900 text-white flex flex-col shrink-0 transition-all duration-300 z-30 shadow-xl">
                     <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
                         <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
-                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V5.9</span></h1>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V6.0</span></h1>
                     </div>
                     <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
                         <NavItem icon={<LayoutDashboard size={20}/>} label="Visão Geral" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
@@ -401,7 +403,7 @@
             <div className={`bg-white p-5 rounded-xl shadow-sm border border-${color}-100 relative overflow-hidden group`}><div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110`}>{icon}</div><div className="relative z-10"><p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">{title}</p><h3 className="text-2xl font-bold text-gray-800 mb-1">{value}</h3><p className={`text-xs text-${color}-600 font-bold`}>{sub}</p></div></div>
         );
 
-        // --- PÓS-VENDA VIEW (CORRIGIDO V5.9) ---
+        // --- PÓS-VENDA VIEW ---
         function PostSalesView({ sales, clients, postSaleLog, setPostSaleLog, companyPhone }) {
             const clientLastSale = useMemo(() => {
                 const map = {};
@@ -410,22 +412,22 @@
             }, [sales]);
             
             const now = new Date();
-            now.setHours(0,0,0,0); // Normaliza para meia-noite
+            now.setHours(0,0,0,0); 
 
             const buckets = { 
-                today: [],      // 0 dias
-                yesterday: [],  // 1 dia
-                opportunity: [], // 25-30 dias
-                attention: [],   // 31-45 dias
-                risk: []         // 46+ dias
+                today: [],      
+                yesterday: [],  
+                opportunity: [], 
+                attention: [],   
+                risk: []         
             };
 
             Object.values(clientLastSale).forEach(sale => {
                 const saleDate = new Date(sale.date);
-                saleDate.setHours(0,0,0,0); // Normaliza para meia-noite
+                saleDate.setHours(0,0,0,0); 
                 
                 const diffTime = now - saleDate;
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Diferença exata em dias inteiros
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
                 
                 const client = clients.find(c => c.id === sale.clientId);
                 if (!client) return;
@@ -505,9 +507,7 @@
             );
         }
 
-        // --- RESTO DO CÓDIGO (POS, REGISTRY, REPORTS, ETC) MANTIDO IGUAL À V5.7 PARA INTEGRIDADE ---
-        // (Reutilizando os componentes já validados nas etapas anteriores para evitar cortes)
-        
+        // --- POS ---
         function POSView({ clients, products, setProducts, sales, setSales, saleToEdit, setSaleToEdit }) {
              const [selectedClient, setSelectedClient] = useState('');
              const [clientSearch, setClientSearch] = useState('');
@@ -695,6 +695,7 @@
              );
         }
 
+        // --- EXPEDIÇÃO VIEW ---
         function ExpeditionView({ sales, setSales, clients, products, setProducts, onEditSale }) {
             const updateStatus = (saleId, newStatus) => setSales(sales.map(s => s.id === saleId ? { ...s, status: newStatus } : s));
             const returnStock = (sale) => {
@@ -724,42 +725,177 @@
             const KanbanColumn = ({ title, status, color, children }) => (<div className="flex flex-col h-full min-w-[320px] max-w-md flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200"><div className={`p-3 font-bold text-sm uppercase text-${color}-800 bg-${color}-100 border-b border-${color}-200 flex justify-between`}>{title}<span className="bg-white px-2 rounded-full text-xs flex items-center">{children.length}</span></div><div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">{children}</div></div>);
             return (
                 <div className="h-full overflow-x-auto p-6"><div className="flex gap-6 h-full min-w-max">
-                    <KanbanColumn title="Pendente" status="Pendente" color="orange">{activeSales.filter(s => s.status === 'Pendente').map(s => <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition group"><div className="flex justify-between items-start mb-2"><span className="font-bold text-lg text-slate-700">#{s.id}</span><div className="flex gap-1 opacity-0 group-hover:opacity-100 transition"><button onClick={() => handleEdit(s)} className="p-1 hover:bg-blue-50 text-blue-500 rounded"><Edit2 size={14}/></button><button onClick={() => deleteSale(s)} className="p-1 hover:bg-red-50 text-red-500 rounded"><Trash2 size={14}/></button></div></div><div className="font-bold text-sm mb-1">{clients.find(c=>c.id===s.clientId)?.name}</div><div className="flex gap-2 mb-3"><button onClick={() => printLabel(s, clients.find(c=>c.id===s.clientId))} className="flex-1 border rounded py-1 text-xs">Etiqueta</button><button onClick={() => printPickingList(s, clients.find(c=>c.id===s.clientId))} className="flex-1 border rounded py-1 text-xs">Lista</button></div><button onClick={() => updateStatus(s.id, 'Montagem')} className="w-full bg-orange-500 text-white font-bold py-2 rounded text-xs">INICIAR MONTAGEM</button></div>)}</KanbanColumn>
-                    <KanbanColumn title="Em Montagem" status="Montagem" color="blue">{activeSales.filter(s => s.status === 'Montagem').map(s => <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition group"><div className="flex justify-between items-start mb-2"><span className="font-bold text-lg text-slate-700">#{s.id}</span></div><div className="font-bold text-sm mb-1">{clients.find(c=>c.id===s.clientId)?.name}</div><button onClick={() => updateStatus(s.id, 'Rota')} className="w-full bg-blue-500 text-white font-bold py-2 rounded text-xs mt-4">PRONTO PARA ROTA</button></div>)}</KanbanColumn>
-                    <KanbanColumn title="Pronto p/ Rota" status="Rota" color="green">{activeSales.filter(s => s.status === 'Rota').map(s => <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition group"><div className="flex justify-between items-start mb-2"><span className="font-bold text-lg text-slate-700">#{s.id}</span></div><div className="font-bold text-sm mb-1">{clients.find(c=>c.id===s.clientId)?.name}</div><div className="text-center text-xs font-bold text-green-600 bg-green-50 py-2 rounded border border-green-100 mt-4">AGUARDANDO ENTREGA</div></div>)}</KanbanColumn>
+                    <KanbanColumn title="Pendente" status="Pendente" color="orange">{activeSales.filter(s => s.status === 'Pendente').map(s => <SaleCard key={s.id} sale={s} />)}</KanbanColumn>
+                    <KanbanColumn title="Em Montagem" status="Montagem" color="blue">{activeSales.filter(s => s.status === 'Montagem').map(s => <SaleCard key={s.id} sale={s} />)}</KanbanColumn>
+                    <KanbanColumn title="Pronto p/ Rota" status="Rota" color="green">{activeSales.filter(s => s.status === 'Rota').map(s => <SaleCard key={s.id} sale={s} />)}</KanbanColumn>
                 </div></div>
             );
         }
 
-        function LogisticsView({ sales, setSales, clients, companyPhone }) {
+        function LogisticsView({ sales, setSales, clients, companyPhone, products, setProducts }) {
             const [selectedRoute, setSelectedRoute] = useState('Todas');
             const [routeSales, setRouteSales] = useState([]); 
+            const [showImport, setShowImport] = useState(false);
+            const [importText, setImportText] = useState('');
+
             useEffect(() => { const ready = sales.filter(s => s.status === 'Rota'); const filtered = selectedRoute === 'Todas' ? ready : ready.filter(s => { const c = clients.find(cl => cl.id === s.clientId); const region = c?.region || c?.route; return region === selectedRoute; }); setRouteSales(filtered); }, [sales, selectedRoute, clients]);
             const routes = [...new Set(clients.map(c => c.region || c.route).filter(Boolean))];
             const moveOrder = (index, direction) => { const newOrder = [...routeSales]; if (direction === 'up' && index > 0) { [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]]; } else if (direction === 'down' && index < newOrder.length - 1) { [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]; } setRouteSales(newOrder); };
-            const generateDriverLink = () => { if (routeSales.length === 0) return alert("Nada para entregar!"); const payload = { route: selectedRoute, companyPhone, generatedAt: new Date(), orders: routeSales.map(s => { const c = clients.find(cl => cl.id === s.clientId); return { id: s.id, customer: c.name, phone: c.phone, address: c.address, district: c.district, region: c.region, map: c.mapLink, total: s.total, pay: s.payMethod, change: s.changeFor ? s.changeFor - s.total : 0, obs: s.obs, clientObs: c.obs }; }) }; const encoded = encodeURIComponent(btoa(JSON.stringify(payload))); const link = `${window.location.origin}${window.location.pathname}#driver=${encoded}`; const copyToClipboardFallback = (text) => { const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { document.execCommand('copy'); alert("LINK COPIADO!"); } catch (err) { prompt("Copie:", text); } document.body.removeChild(textArea); }; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(link).then(() => alert("LINK COPIADO!")).catch(() => copyToClipboardFallback(link)); } else { copyToClipboardFallback(link); } };
+            
+            const generateDriverLink = () => { 
+                if (routeSales.length === 0) return alert("Nada para entregar!"); 
+                const payload = { 
+                    route: selectedRoute, companyPhone, generatedAt: new Date(), 
+                    orders: routeSales.map(s => { 
+                        const c = clients.find(cl => cl.id === s.clientId); 
+                        return { 
+                            id: s.id, customer: c.name, phone: c.phone, phone2: c.phone2, 
+                            address: c.address, district: c.district, region: c.region, map: c.mapLink, 
+                            total: s.total, pay: s.payMethod, change: s.changeFor ? s.changeFor - s.total : 0, 
+                            obs: s.obs, clientObs: c.obs 
+                        }; 
+                    }) 
+                }; 
+                const encoded = encodeURIComponent(btoa(JSON.stringify(payload))); 
+                const link = `${window.location.origin}${window.location.pathname}#driver=${encoded}`; 
+                const copyToClipboardFallback = (text) => { const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { document.execCommand('copy'); alert("LINK COPIADO!"); } catch (err) { prompt("Copie:", text); } document.body.removeChild(textArea); }; 
+                if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(link).then(() => alert("LINK COPIADO!")).catch(() => copyToClipboardFallback(link)); } else { copyToClipboardFallback(link); } 
+            };
+            
             const forceDelivery = (id) => { if (confirm("Marcar entregue?")) setSales(sales.map(s => s.id === id ? { ...s, status: 'Entregue' } : s)); };
             const totalValue = routeSales.reduce((acc, s) => acc + s.total, 0);
+
+            // --- LÓGICA DE BAIXA POR RELATÓRIO (RETORNO DE ESTOQUE E STATUS) ---
+            const processReturnReport = () => {
+                const lines = importText.split('\n');
+                let updatedCount = 0;
+                let newSales = [...sales];
+                let newProducts = [...products];
+
+                lines.forEach(line => {
+                    // Espera formato: ID: 105 | STATUS: ENTREGUE | PGTO: PIX
+                    const idMatch = line.match(/ID:\s*#?(\S+)/);
+                    const statusMatch = line.match(/STATUS:\s*(\w+)/);
+                    const payMatch = line.match(/PGTO:\s*([A-Za-zÀ-ú\s]+)/);
+
+                    if (idMatch && statusMatch) {
+                        const id = idMatch[1];
+                        const status = statusMatch[1].toUpperCase() === 'ENTREGUE' ? 'Entregue' : 
+                                       statusMatch[1].toUpperCase() === 'CANCELADO' ? 'Cancelado' : null;
+                        const payMethod = payMatch ? payMatch[1].trim() : null;
+
+                        if (status) {
+                            const saleIndex = newSales.findIndex(s => s.id === id);
+                            if (saleIndex > -1) {
+                                const sale = newSales[saleIndex];
+                                // Se for cancelamento e ainda não estava cancelado, devolve estoque
+                                if (status === 'Cancelado' && sale.status !== 'Cancelado') {
+                                     sale.items.forEach(item => {
+                                        const dbProd = newProducts.find(p => p.id === item.id);
+                                        if (dbProd) {
+                                            if (dbProd.isCombo) { 
+                                                item.comboItems?.forEach(ing => { 
+                                                    const dbIng = newProducts.find(p => p.id === ing.id); 
+                                                    if (dbIng) { 
+                                                        dbIng.stock += ing.qty; 
+                                                        dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_DRIVER', qty: ing.qty }); 
+                                                    } 
+                                                }); 
+                                            } else { 
+                                                dbProd.stock += 1; 
+                                                dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_DRIVER', qty: 1 }); 
+                                            }
+                                        }
+                                     });
+                                }
+                                
+                                newSales[saleIndex] = { 
+                                    ...sale, 
+                                    status, 
+                                    payMethod: payMethod || sale.payMethod 
+                                };
+                                updatedCount++;
+                            }
+                        }
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    setSales(newSales);
+                    setProducts(newProducts);
+                    setImportText('');
+                    setShowImport(false);
+                    alert(`${updatedCount} pedidos atualizados com sucesso!`);
+                } else {
+                    alert("Nenhum pedido processado. Verifique o formato.");
+                }
+            };
+
             return (
-                <div className="h-full flex flex-col p-6 max-w-5xl mx-auto"><div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center"><div className="flex gap-4 items-center"><span className="font-bold text-gray-500 uppercase text-xs">Região:</span><select className="border rounded-lg p-2 bg-gray-50 outline-none" value={selectedRoute} onChange={e => setSelectedRoute(e.target.value)}><option value="Todas">Todas</option>{routes.map(r => <option key={r} value={r}>{r}</option>)}</select></div><div className="text-right"><div className="text-xs text-gray-400 font-bold uppercase">Total da Rota</div><div className="text-2xl font-bold text-green-700">{formatCurrency(totalValue)}</div></div></div><div className="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col"><div className="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><span className="font-bold text-indigo-900 text-sm flex items-center gap-2"><Truck size={16}/> {routeSales.length} Entregas Pendentes</span><button onClick={generateDriverLink} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">GERAR LINK MOTORISTA</button></div><div className="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50">{routeSales.map((s, idx) => { const client = clients.find(c => c.id === s.clientId) || {}; return (<div key={s.id} className="bg-white p-3 rounded-lg border shadow-sm flex gap-4 items-center"><div className="flex flex-col gap-1"><button onClick={() => moveOrder(idx, 'up')} className="p-1 hover:bg-gray-100 rounded"><ArrowUp size={14} className="text-gray-400"/></button><span className="font-bold text-sm text-center text-indigo-600 w-6">{idx + 1}</span><button onClick={() => moveOrder(idx, 'down')} className="p-1 hover:bg-gray-100 rounded"><ArrowDown size={14} className="text-gray-400"/></button></div><div className="flex-1"><div className="flex justify-between"><h4 className="font-bold text-gray-800">{client.name}</h4><span className="font-mono text-xs bg-gray-100 px-2 rounded text-gray-500">#{s.id}</span></div><p className="text-sm text-gray-500">{client.address}, {client.district}</p><div className="flex gap-2 mt-2 text-xs"><span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">{s.payMethod}</span><span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold">{formatCurrency(s.total)}</span></div></div><button onClick={() => forceDelivery(s.id)} className="p-3 hover:bg-green-50 text-gray-300 hover:text-green-600 rounded-full transition"><CheckCircle size={24}/></button></div>); })}</div></div></div>
+                <div className="h-full flex flex-col p-6 max-w-5xl mx-auto">
+                    <div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
+                        <div className="flex gap-4 items-center">
+                            <span className="font-bold text-gray-500 uppercase text-xs">Região:</span>
+                            <select className="border rounded-lg p-2 bg-gray-50 outline-none" value={selectedRoute} onChange={e => setSelectedRoute(e.target.value)}><option value="Todas">Todas</option>{routes.map(r => <option key={r} value={r}>{r}</option>)}</select>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-right">
+                                <div className="text-xs text-gray-400 font-bold uppercase">Total da Rota</div>
+                                <div className="text-2xl font-bold text-green-700">{formatCurrency(totalValue)}</div>
+                            </div>
+                            <button onClick={() => setShowImport(true)} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 flex items-center gap-2"><Upload size={16}/> PROCESSAR RETORNO</button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
+                        <div className="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><span className="font-bold text-indigo-900 text-sm flex items-center gap-2"><Truck size={16}/> {routeSales.length} Entregas Pendentes</span><button onClick={generateDriverLink} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">GERAR LINK MOTORISTA</button></div>
+                        <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50">{routeSales.map((s, idx) => { const client = clients.find(c => c.id === s.clientId) || {}; return (<div key={s.id} className="bg-white p-3 rounded-lg border shadow-sm flex gap-4 items-center"><div className="flex flex-col gap-1"><button onClick={() => moveOrder(idx, 'up')} className="p-1 hover:bg-gray-100 rounded"><ArrowUp size={14} className="text-gray-400"/></button><span className="font-bold text-sm text-center text-indigo-600 w-6">{idx + 1}</span><button onClick={() => moveOrder(idx, 'down')} className="p-1 hover:bg-gray-100 rounded"><ArrowDown size={14} className="text-gray-400"/></button></div><div className="flex-1"><div className="flex justify-between"><h4 className="font-bold text-gray-800">{client.name}</h4><span className="font-mono text-xs bg-gray-100 px-2 rounded text-gray-500">#{s.id}</span></div><p className="text-sm text-gray-500">{client.address}, {client.district}</p><div className="flex gap-2 mt-2 text-xs"><span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">{s.payMethod}</span><span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold">{formatCurrency(s.total)}</span></div></div><button onClick={() => forceDelivery(s.id)} className="p-3 hover:bg-green-50 text-gray-300 hover:text-green-600 rounded-full transition"><CheckCircle size={24}/></button></div>); })}</div>
+                    </div>
+
+                    {showImport && (
+                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white w-full max-w-lg rounded-xl p-6 shadow-2xl">
+                                <h3 className="text-lg font-bold mb-4">Processar Retorno do Motorista</h3>
+                                <p className="text-xs text-gray-500 mb-2">Cole aqui o relatório enviado pelo motorista no WhatsApp.</p>
+                                <textarea className="w-full h-48 border rounded p-2 text-xs font-mono mb-4 bg-gray-50" placeholder="Cole o relatório aqui..." value={importText} onChange={e => setImportText(e.target.value)} />
+                                <div className="flex gap-2">
+                                    <button onClick={() => setShowImport(false)} className="flex-1 bg-gray-200 py-2 rounded font-bold text-gray-600">Cancelar</button>
+                                    <button onClick={processReturnReport} className="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded font-bold text-white">PROCESSAR BAIXA</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
             );
         }
 
         function RegistryView({ clients, setClients, products, setProducts }) {
             const [tab, setTab] = useState('clients');
-            const [cForm, setCForm] = useState({ name: '', code: '', phone: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' });
+            const [cForm, setCForm] = useState({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' });
             const [pForm, setPForm] = useState({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] });
             const [editingClientId, setEditingClientId] = useState(null);
             const [editingProductId, setEditingProductId] = useState(null);
             const [search, setSearch] = useState('');
 
-            const saveClient = () => { if (!cForm.name) return alert('Nome obrigatório'); if (editingClientId) { setClients(clients.map(c => c.id === editingClientId ? { ...cForm, id: editingClientId, code: c.code || cForm.code } : c)); setEditingClientId(null); alert('Atualizado!'); } else { const newCode = generateClientCode(clients); setClients([...clients, { ...cForm, id: generateId(), code: newCode }]); alert(`Criado: ${newCode}`); } setCForm({ name: '', code: '', phone: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }); };
+            const saveClient = () => { 
+                if (!cForm.name) return alert('Nome obrigatório'); 
+                if (editingClientId) { 
+                    setClients(clients.map(c => c.id === editingClientId ? { ...cForm, id: editingClientId, code: c.code || cForm.code } : c)); 
+                    setEditingClientId(null); 
+                    alert('Atualizado!'); 
+                } else { 
+                    const newCode = generateClientCode(clients); 
+                    setClients([...clients, { ...cForm, id: generateId(), code: newCode }]); 
+                    alert(`Criado: ${newCode}`); 
+                } 
+                setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }); 
+            };
             const saveProduct = () => { if (!pForm.name) return alert('Nome obrigatório'); if (editingProductId) { setProducts(products.map(p => p.id === editingProductId ? { ...pForm, id: editingProductId, stock: p.stock, stockHistory: p.stockHistory } : p)); setEditingProductId(null); alert('Atualizado!'); } else { const newProd = { ...pForm, id: generateId(), stockHistory: [{ date: new Date().toISOString(), type: 'INITIAL', qty: Number(pForm.stock) }] }; setProducts([...products, newProd]); alert('Criado!'); } setPForm({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] }); };
             
             const list = tab === 'clients' ? clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name)) : products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name));
 
             return (
-                <div className="flex h-full"><div className="w-1/3 border-r bg-white flex flex-col"><div className="p-4 border-b"><div className="flex bg-gray-100 p-1 rounded-lg mb-4"><button onClick={() => setTab('clients')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'clients' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>CLIENTES</button><button onClick={() => setTab('products')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'products' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>PRODUTOS</button></div><input className="w-full bg-gray-50 border rounded p-2 text-sm outline-none" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div><div className="flex-1 overflow-y-auto">{list.map(item => (<div key={item.id} className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${(editingClientId === item.id || editingProductId === item.id) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`} onClick={() => { if(tab === 'clients') { setCForm(item); setEditingClientId(item.id); } else { setPForm(item); setEditingProductId(item.id); } }}><div className="font-bold text-sm text-gray-800">{item.name}</div><div className="text-xs text-gray-500">{tab === 'clients' ? item.district : `${formatCurrency(item.price)} • Est: ${item.stock}`}</div></div>))}</div><div className="p-3 border-t bg-gray-50 text-center"><button onClick={() => { tab === 'clients' ? (setCForm({ name: '', code: '', phone: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }), setEditingClientId(null)) : (setPForm({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] }), setEditingProductId(null)) }} className="text-xs font-bold text-blue-600 flex items-center justify-center gap-1 w-full py-2 hover:bg-blue-100 rounded"><Plus size={14}/> NOVO CADASTRO</button></div></div><div className="flex-1 bg-gray-50 p-8 overflow-y-auto"><div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border"><h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-2">{tab === 'clients' ? (editingClientId ? 'Editar Cliente' : 'Novo Cliente') : (editingProductId ? 'Editar Produto' : 'Novo Produto')}</h2>{tab === 'clients' ? (<div className="space-y-4"><div className="grid grid-cols-4 gap-4"><div className="col-span-3"><label className="text-xs font-bold text-gray-500 uppercase">Nome</label><input className="input-field" value={cForm.name} onChange={e => setCForm({...cForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Código</label><input className="input-field bg-gray-100" value={cForm.code} disabled /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Telefone</label><input className="input-field" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Bairro</label><input className="input-field" value={cForm.district} onChange={e => setCForm({...cForm, district: e.target.value})} /></div></div><div><label className="text-xs font-bold text-gray-500 uppercase">Endereço</label><input className="input-field" value={cForm.address} onChange={e => setCForm({...cForm, address: e.target.value})} /></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Região / Rota</label><select className="input-field" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}><option value="CUIABÁ">CUIABÁ (Centro)</option><option value="COXIPO">COXIPO</option><option value="VARZEA GRANDE">VARZEA GRANDE</option><option value="CPA">CPA</option></select></div><div><label className="text-xs font-bold text-gray-500 uppercase">Link Maps</label><input className="input-field" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} /></div></div><button onClick={saveClient} className="w-full btn-primary mt-4">SALVAR CLIENTE</button></div>) : (<div className="space-y-4"><div className="grid grid-cols-3 gap-4"><div className="col-span-2"><label className="text-xs font-bold text-gray-500 uppercase">Nome Produto</label><input className="input-field" value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Cód Interno</label><input className="input-field" value={pForm.internalCode} onChange={e => setPForm({...pForm, internalCode: e.target.value})} /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Preço Venda</label><input className="input-field font-bold text-green-700" type="number" value={pForm.price} onChange={e => setPForm({...pForm, price: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Estoque Atual</label><input className="input-field bg-gray-100" type="number" value={pForm.stock} disabled={pForm.isCombo} onChange={e => setPForm({...pForm, stock: Number(e.target.value)})} /></div></div><div className="flex items-center gap-2 pt-2 border-t"><input type="checkbox" checked={pForm.isCombo} onChange={e => setPForm({...pForm, isCombo: e.target.checked})} /><label className="font-bold text-sm">Este produto é um Combo/Kit?</label></div>{pForm.isCombo && (<div className="bg-yellow-50 p-4 rounded border border-yellow-200"><h4 className="font-bold text-yellow-800 text-xs uppercase mb-2">Composição do Kit</h4><div className="space-y-2 max-h-48 overflow-y-auto">{products.filter(p => !p.isCombo).map(p => (<div key={p.id} className="flex justify-between items-center text-sm border-b border-yellow-100 pb-1"><span>{p.name}</span><input type="number" className="w-16 border rounded text-center p-1" placeholder="0" value={pForm.comboItems.find(i => i.id === p.id)?.qty || ''} onChange={(e) => { const qty = Number(e.target.value); const existing = pForm.comboItems.filter(i => i.id !== p.id); if (qty > 0) setPForm({...pForm, comboItems: [...existing, {id: p.id, qty}]}); else setPForm({...pForm, comboItems: existing}); }} /></div>))}</div></div>)}<button onClick={saveProduct} className="w-full btn-primary mt-4">SALVAR PRODUTO</button></div>)}</div></div></div>
+                <div className="flex h-full"><div className="w-1/3 border-r bg-white flex flex-col"><div className="p-4 border-b"><div className="flex bg-gray-100 p-1 rounded-lg mb-4"><button onClick={() => setTab('clients')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'clients' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>CLIENTES</button><button onClick={() => setTab('products')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'products' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>PRODUTOS</button></div><input className="w-full bg-gray-50 border rounded p-2 text-sm outline-none" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div><div className="flex-1 overflow-y-auto">{list.map(item => (<div key={item.id} className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${(editingClientId === item.id || editingProductId === item.id) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`} onClick={() => { if(tab === 'clients') { setCForm(item); setEditingClientId(item.id); } else { setPForm(item); setEditingProductId(item.id); } }}><div className="font-bold text-sm text-gray-800">{item.name}</div><div className="text-xs text-gray-500">{tab === 'clients' ? item.district : `${formatCurrency(item.price)} • Est: ${item.stock}`}</div></div>))}</div><div className="p-3 border-t bg-gray-50 text-center"><button onClick={() => { tab === 'clients' ? (setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }), setEditingClientId(null)) : (setPForm({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] }), setEditingProductId(null)) }} className="text-xs font-bold text-blue-600 flex items-center justify-center gap-1 w-full py-2 hover:bg-blue-100 rounded"><Plus size={14}/> NOVO CADASTRO</button></div></div><div className="flex-1 bg-gray-50 p-8 overflow-y-auto"><div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border"><h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-2">{tab === 'clients' ? (editingClientId ? 'Editar Cliente' : 'Novo Cliente') : (editingProductId ? 'Editar Produto' : 'Novo Produto')}</h2>{tab === 'clients' ? (<div className="space-y-4"><div className="grid grid-cols-4 gap-4"><div className="col-span-3"><label className="text-xs font-bold text-gray-500 uppercase">Nome</label><input className="input-field" value={cForm.name} onChange={e => setCForm({...cForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Código</label><input className="input-field bg-gray-100" value={cForm.code} disabled /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Celular (Comprador)</label><input className="input-field" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Celular (Recebedor)</label><input className="input-field" value={cForm.phone2} onChange={e => setCForm({...cForm, phone2: e.target.value})} /></div></div><div><label className="text-xs font-bold text-gray-500 uppercase">Endereço</label><input className="input-field" value={cForm.address} onChange={e => setCForm({...cForm, address: e.target.value})} /></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Bairro</label><input className="input-field" value={cForm.district} onChange={e => setCForm({...cForm, district: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Região / Rota</label><select className="input-field" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}><option value="CUIABÁ">CUIABÁ (Centro)</option><option value="COXIPO">COXIPO</option><option value="VARZEA GRANDE">VARZEA GRANDE</option><option value="CPA">CPA</option></select></div></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Link Maps</label><input className="input-field" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Observações</label><input className="input-field" value={cForm.obs} onChange={e => setCForm({...cForm, obs: e.target.value})} /></div></div><button onClick={saveClient} className="w-full btn-primary mt-4">SALVAR CLIENTE</button></div>) : (<div className="space-y-4"><div className="grid grid-cols-3 gap-4"><div className="col-span-2"><label className="text-xs font-bold text-gray-500 uppercase">Nome Produto</label><input className="input-field" value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Cód Interno</label><input className="input-field" value={pForm.internalCode} onChange={e => setPForm({...pForm, internalCode: e.target.value})} /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Preço Venda</label><input className="input-field font-bold text-green-700" type="number" value={pForm.price} onChange={e => setPForm({...pForm, price: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Estoque Atual</label><input className="input-field bg-gray-100" type="number" value={pForm.stock} disabled={pForm.isCombo} onChange={e => setPForm({...pForm, stock: Number(e.target.value)})} /></div></div><div className="flex items-center gap-2 pt-2 border-t"><input type="checkbox" checked={pForm.isCombo} onChange={e => setPForm({...pForm, isCombo: e.target.checked})} /><label className="font-bold text-sm">Este produto é um Combo/Kit?</label></div>{pForm.isCombo && (<div className="bg-yellow-50 p-4 rounded border border-yellow-200"><h4 className="font-bold text-yellow-800 text-xs uppercase mb-2">Composição do Kit</h4><div className="space-y-2 max-h-48 overflow-y-auto">{products.filter(p => !p.isCombo).map(p => (<div key={p.id} className="flex justify-between items-center text-sm border-b border-yellow-100 pb-1"><span>{p.name}</span><input type="number" className="w-16 border rounded text-center p-1" placeholder="0" value={pForm.comboItems.find(i => i.id === p.id)?.qty || ''} onChange={(e) => { const qty = Number(e.target.value); const existing = pForm.comboItems.filter(i => i.id !== p.id); if (qty > 0) setPForm({...pForm, comboItems: [...existing, {id: p.id, qty}]}); else setPForm({...pForm, comboItems: existing}); }} /></div>))}</div></div>)}<button onClick={saveProduct} className="w-full btn-primary mt-4">SALVAR PRODUTO</button></div>)}</div></div></div>
             );
         }
 
@@ -804,18 +940,198 @@
              return (<div className="flex h-full"><div className="w-1/3 border-r bg-gray-50 p-4 overflow-y-auto scrollbar-thin">{sortedProducts.map(p => (<div key={p.id} className="flex justify-between items-center text-xs py-2 border-b"><div><span className="font-bold block">{p.name}</span><span className="text-[10px] text-gray-500">{p.internalCode}</span></div><span className={`font-bold px-2 py-1 rounded ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{p.stock}</span></div>))}</div><div className="flex-1 p-6 space-y-4 overflow-y-auto"><div className="grid grid-cols-2 gap-6"><div><h3 className="font-bold text-green-700 mb-2">Entrada em Massa</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-green-50" placeholder="COD | QTD" value={bulkIn} onChange={e=>setBulkIn(e.target.value)}></textarea><button onClick={()=>processBulk(bulkIn, 'IN')} className="btn-primary w-full bg-green-600 hover:bg-green-700 mt-2">PROCESSAR ENTRADA</button></div><div><h3 className="font-bold text-red-700 mb-2">Saída em Massa</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-red-50" placeholder="COD | QTD" value={bulkOut} onChange={e=>setBulkOut(e.target.value)}></textarea><button onClick={()=>processBulk(bulkOut, 'OUT')} className="btn-primary w-full bg-red-600 hover:bg-red-700 mt-2">PROCESSAR SAÍDA</button></div></div></div></div>)
         }
         
-        // --- DRIVER VIEW ---
+        // --- DRIVER VIEW (ATUALIZADO V6.0) ---
         function DriverView({ data, onExit }) {
-          const [deliveryModal, setDeliveryModal] = useState(null); const [filter, setFilter] = useState('Todas'); const [completedIds, setCompletedIds] = useState([]);
+          const [deliveryModal, setDeliveryModal] = useState(null); 
+          const [filter, setFilter] = useState('Todas'); 
+          // Agora usamos um objeto para rastrear o status e pagamento de cada ID
+          const [deliveryResults, setDeliveryResults] = useState({}); // { [id]: { status: 'Entregue'|'Cancelado', payMethod: '...' } }
+
           if (!data) return <div className="p-4 text-center">Dados inválidos.</div>;
           const companyPhone = data.companyPhone || '65998150975';
-          const uniqueRegions = [...new Set(data.orders.map(o => o.region || 'Geral').filter(Boolean))]; const regions = ['Todas', ...uniqueRegions]; const showChips = uniqueRegions.length > 1;
+          const uniqueRegions = [...new Set(data.orders.map(o => o.region || 'Geral').filter(Boolean))]; 
+          const regions = ['Todas', ...uniqueRegions]; 
+          const showChips = uniqueRegions.length > 1;
+
           const filteredOrders = filter === 'Todas' ? data.orders : data.orders.filter(o => (o.region || 'Geral') === filter);
-          const visibleOrders = [...filteredOrders].sort((a, b) => { const aDone = completedIds.includes(a.id); const bDone = completedIds.includes(b.id); if (aDone === bDone) return 0; return aDone ? 1 : -1; });
-          const sendToCustomer = (phone, msg) => { const cleanPhone = phone.replace(/\D/g,''); window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank'); };
-          const handleDeliveryConfirm = (method) => { if (!deliveryModal) return; const order = deliveryModal; const msg = `✅ *ENTREGA REALIZADA*\n\n🆔 Pedido: #${order.id}\n💰 Valor: ${formatCurrency(order.total)}\n💵 Recebido via: *${method}*`; window.open(`https://wa.me/55${companyPhone}?text=${encodeURIComponent(msg)}`, '_blank'); setCompletedIds(prev => [...prev, order.id]); setDeliveryModal(null); };
-          const progress = Math.round((completedIds.length / data.orders.length) * 100); const allFinished = completedIds.length === data.orders.length;
-          return (<div className="min-h-screen bg-gray-50 text-gray-800 pb-16"><header className="bg-indigo-700 text-white p-4 sticky top-0 z-10 shadow-md"><div className="flex justify-between items-center mb-2"><h1 className="font-bold text-lg">ROTA: {data.route}</h1><button onClick={onExit} className="text-xs bg-indigo-800 px-2 py-1 rounded hover:bg-indigo-900 transition">Sair</button></div>{showChips && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-1">{regions.map(r => (<button key={r} onClick={() => setFilter(r)} className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition border ${filter === r ? 'bg-white text-indigo-700 border-white' : 'bg-indigo-800 text-indigo-200 border-indigo-600 hover:bg-indigo-600'}`}>{r}</button>))}</div>)}<div className="flex justify-between items-end"><div className="text-xs opacity-80"><span>{completedIds.length}/{data.orders.length} Entregas</span></div><div className="w-1/2 bg-indigo-900 rounded-full h-1.5 overflow-hidden"><div className="bg-green-400 h-full transition-all duration-500" style={{width: `${progress}%`}}></div></div></div></header><div className="p-4 space-y-6">{visibleOrders.map((order) => { const isDelivered = completedIds.includes(order.id); const clientFirstName = order.customer.split(' ')[0]; return (<div key={order.id} className={`rounded-lg shadow-sm border overflow-hidden relative transition-all duration-500 ${isDelivered ? 'bg-gray-100 border-gray-200 opacity-75' : 'bg-white'}`}>{isDelivered && <div className="absolute top-2 right-2 z-20"><span className="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm"><Check size={12}/> ENTREGUE</span></div>}<div className={`p-3 border-b flex justify-between items-center ${isDelivered ? 'bg-gray-200 border-gray-300' : 'bg-indigo-50 border-indigo-100'}`}><span className={`font-bold px-3 py-1 rounded-full text-sm shadow-sm ${isDelivered ? 'bg-gray-300 text-gray-600' : 'text-indigo-900 bg-white'}`}>#{order.id}</span>{!isDelivered && <span className="font-bold text-indigo-900 text-sm">Pendente</span>}</div><div className="p-4"><h2 className="font-bold text-xl text-gray-800 mb-1 leading-tight">{order.customer}</h2><p className="text-gray-600 text-sm mb-4 flex items-start gap-1"><MapPin size={16} className="mt-0.5 shrink-0 text-gray-400"/> {order.address}, {order.district}</p><div className="grid grid-cols-3 gap-2 mb-4"><a href={`tel:${order.phone}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition"><Phone size={20} className="text-gray-700 mb-1"/><span className="text-[10px] font-bold text-gray-600">LIGAR</span></a><button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! Sua entrega chega em aproximadamente 10 minutos. 🚚`)} className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded hover:bg-blue-100 active:scale-95 transition"><Clock size={20} className="text-blue-600 mb-1"/><span className="text-[10px] font-bold text-blue-700">10 MIN</span></button><button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! O entregador chegou e está aguardando. 🏠`)} className="flex flex-col items-center justify-center bg-yellow-50 py-3 rounded hover:bg-yellow-100 active:scale-95 transition"><Home size={20} className="text-yellow-600 mb-1"/><span className="text-[10px] font-bold text-yellow-700">CHEGUEI</span></button></div><div className="grid grid-cols-2 gap-2 mb-4"><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" className={`${isDelivered ? 'bg-gray-400 cursor-default' : 'bg-blue-600 hover:bg-blue-700 shadow'} text-white py-3 rounded font-bold text-sm flex items-center justify-center gap-2 transition`}><MapPin size={18}/> ABRIR GPS</a>{isDelivered ? <button disabled className="bg-gray-200 text-gray-400 border border-gray-300 py-3 rounded font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed"><CheckCircle size={18}/> CONCLUÍDO</button> : <button onClick={() => setDeliveryModal(order)} className="bg-emerald-600 text-white py-3 rounded font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 shadow animate-pulse"><CheckCircle size={18}/> ENTREGUE</button>}</div><div className={`p-3 rounded text-sm mb-3 border ${isDelivered ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-100'}`}><div className="flex justify-between mb-1"><span className="text-gray-500">Forma Pagto:</span><span className="font-bold uppercase">{order.pay}</span></div><div className="flex justify-between items-center mb-1"><span className="text-gray-500">Valor Total:</span><span className={`font-bold text-xl ${isDelivered ? 'text-gray-600' : 'text-green-700'}`}>{formatCurrency(order.total)}</span></div></div></div></div>); })}</div>{deliveryModal && (<div className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center sm:items-center p-4 animate-in"><div className="bg-white w-full max-w-sm rounded-xl p-4 shadow-2xl"><div className="flex justify-between items-center mb-4 border-b pb-2"><h3 className="font-bold text-lg text-gray-800">Confirmar Recebimento</h3><button onClick={() => setDeliveryModal(null)} className="bg-gray-200 p-1 rounded-full"><XCircle size={20}/></button></div><div className="grid grid-cols-2 gap-3 mb-2"><button onClick={() => handleDeliveryConfirm('DINHEIRO')} className="bg-green-100 text-green-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-green-200"><DollarSign size={24}/> DINHEIRO</button><button onClick={() => handleDeliveryConfirm('PIX')} className="bg-indigo-100 text-indigo-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-indigo-200"><Share2 size={24}/> PIX</button><button onClick={() => handleDeliveryConfirm('CARTÃO')} className="bg-blue-100 text-blue-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-blue-200"><CreditCard size={24}/> CARTÃO</button><button onClick={() => handleDeliveryConfirm('SÓ ENTREGUE')} className="bg-gray-100 text-gray-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-gray-200"><CheckCircle size={24}/> JÁ PAGO</button></div></div></div>)}<div className={`fixed bottom-0 left-0 w-full p-3 text-center text-xs font-bold shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors ${allFinished ? 'bg-green-600 text-white' : 'bg-white text-gray-400 border-t'}`}>{allFinished ? '✅ ROTA FINALIZADA COM SUCESSO' : 'Rota em Andamento...'}</div></div>);
+          const visibleOrders = [...filteredOrders].sort((a, b) => { 
+             const aDone = !!deliveryResults[a.id];
+             const bDone = !!deliveryResults[b.id];
+             if (aDone === bDone) return 0;
+             return aDone ? 1 : -1;
+          });
+
+          const sendToCustomer = (phone, msg) => { 
+             if(!phone) return alert("Telefone não cadastrado.");
+             const cleanPhone = phone.replace(/\D/g,''); 
+             window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank'); 
+          };
+
+          const handleDeliveryConfirm = (method) => { 
+            if (!deliveryModal) return; 
+            const order = deliveryModal; 
+            
+            setDeliveryResults(prev => ({
+                ...prev,
+                [order.id]: { status: 'Entregue', payMethod: method }
+            }));
+            
+            setDeliveryModal(null); 
+          };
+
+          const handleCancelDelivery = (order) => {
+              if(confirm("Deseja realmente CANCELAR esta entrega? O produto voltará ao estoque.")) {
+                  setDeliveryResults(prev => ({
+                    ...prev,
+                    [order.id]: { status: 'Cancelado', payMethod: '-' }
+                  }));
+              }
+          };
+
+          // Geração do relatório final para copiar
+          const generateFinalReport = () => {
+              let report = `RELATÓRIO DE ENTREGA - ${new Date().toLocaleDateString()}\n--------------------------------\n`;
+              Object.entries(deliveryResults).forEach(([id, res]) => {
+                  report += `ID: ${id} | STATUS: ${res.status.toUpperCase()} | PGTO: ${res.payMethod}\n`;
+              });
+              
+              const textArea = document.createElement("textarea");
+              textArea.value = report;
+              document.body.appendChild(textArea);
+              textArea.select();
+              document.execCommand('copy');
+              document.body.removeChild(textArea);
+              
+              alert("RELATÓRIO COPIADO! Envie no WhatsApp da empresa.");
+              window.open(`https://wa.me/55${companyPhone}?text=${encodeURIComponent(report)}`, '_blank');
+          };
+
+          const completedCount = Object.keys(deliveryResults).length;
+          const progress = Math.round((completedCount / data.orders.length) * 100); 
+          const allFinished = completedCount === data.orders.length;
+
+          return (
+            <div className="min-h-screen bg-gray-50 text-gray-800 pb-20">
+               <header className="bg-indigo-700 text-white p-4 sticky top-0 z-10 shadow-md">
+                 <div className="flex justify-between items-center mb-2">
+                    <h1 className="font-bold text-lg">ROTA: {data.route}</h1>
+                    <button onClick={onExit} className="text-xs bg-indigo-800 px-2 py-1 rounded hover:bg-indigo-900 transition">Sair</button>
+                 </div>
+                 {showChips && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-1">{regions.map(r => (<button key={r} onClick={() => setFilter(r)} className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition border ${filter === r ? 'bg-white text-indigo-700 border-white' : 'bg-indigo-800 text-indigo-200 border-indigo-600 hover:bg-indigo-600'}`}>{r}</button>))}</div>)}
+                 <div className="flex justify-between items-end">
+                    <div className="text-xs opacity-80"><span>{completedCount}/{data.orders.length} Entregas</span></div>
+                    <div className="w-1/2 bg-indigo-900 rounded-full h-1.5 overflow-hidden"><div className="bg-green-400 h-full transition-all duration-500" style={{width: `${progress}%`}}></div></div>
+                 </div>
+               </header>
+               <div className="p-4 space-y-6">
+                  {visibleOrders.map((order) => {
+                    const result = deliveryResults[order.id];
+                    const isDone = !!result;
+                    const isCancelled = result?.status === 'Cancelado';
+                    const clientFirstName = order.customer.split(' ')[0];
+                    
+                    return (
+                        <div key={order.id} className={`rounded-lg shadow-sm border overflow-hidden relative transition-all duration-500 ${isDone ? 'bg-gray-100 border-gray-200 opacity-75' : 'bg-white'}`}>
+                        {isDone && (
+                            <div className={`absolute top-2 right-2 z-20 px-2 py-1 rounded-full flex items-center gap-1 shadow-sm font-bold text-[10px] text-white ${isCancelled ? 'bg-red-600' : 'bg-green-600'}`}>
+                                {isCancelled ? <XCircle size={12}/> : <Check size={12}/>} {result.status.toUpperCase()}
+                            </div>
+                        )}
+                        <div className={`p-3 border-b flex justify-between items-center ${isDone ? 'bg-gray-200 border-gray-300' : 'bg-indigo-50 border-indigo-100'}`}>
+                            <span className={`font-bold px-3 py-1 rounded-full text-sm shadow-sm ${isDone ? 'bg-gray-300 text-gray-600' : 'text-indigo-900 bg-white'}`}>#{order.id}</span>
+                            {!isDone && <span className="font-bold text-indigo-900 text-sm">Pendente</span>}
+                        </div>
+                        <div className="p-4">
+                            <h2 className="font-bold text-xl text-gray-800 mb-1 leading-tight">{order.customer}</h2>
+                            <p className="text-gray-600 text-sm mb-4 flex items-start gap-1"><MapPin size={16} className="mt-0.5 shrink-0 text-gray-400"/> {order.address}, {order.district}</p>
+                            
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                                <a href={`tel:${order.phone}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition">
+                                    <Phone size={20} className="text-gray-700 mb-1"/>
+                                    <span className="text-[10px] font-bold text-gray-600">LIGAR COMP.</span>
+                                </a>
+                                {order.phone2 ? (
+                                    <a href={`tel:${order.phone2}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition">
+                                        <Phone size={20} className="text-blue-700 mb-1"/>
+                                        <span className="text-[10px] font-bold text-blue-600">LIGAR RECEB.</span>
+                                    </a>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center bg-gray-50 py-3 rounded opacity-50 cursor-not-allowed">
+                                        <Phone size={20} className="text-gray-300 mb-1"/>
+                                        <span className="text-[10px] font-bold text-gray-400">SEM 2º TEL</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                <button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! Sua entrega chega em aproximadamente 10 minutos. 🚚`)} className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded hover:bg-blue-100 active:scale-95 transition">
+                                    <Clock size={20} className="text-blue-600 mb-1"/><span className="text-[10px] font-bold text-blue-700">10 MIN</span>
+                                </button>
+                                <button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! O entregador chegou e está aguardando. 🏠`)} className="flex flex-col items-center justify-center bg-yellow-50 py-3 rounded hover:bg-yellow-100 active:scale-95 transition">
+                                    <Home size={20} className="text-yellow-600 mb-1"/><span className="text-[10px] font-bold text-yellow-700">CHEGUEI</span>
+                                </button>
+                                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" className="flex flex-col items-center justify-center bg-green-50 py-3 rounded hover:bg-green-100 active:scale-95 transition">
+                                    <MapPin size={20} className="text-green-600 mb-1"/><span className="text-[10px] font-bold text-green-700">GPS</span>
+                                </a>
+                            </div>
+
+                            <div className="flex gap-2">
+                                {isDone ? (
+                                    <button disabled className="flex-1 bg-gray-200 text-gray-400 border border-gray-300 py-3 rounded font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed">
+                                        <CheckCircle size={18}/> FINALIZADO
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button onClick={() => handleCancelDelivery(order)} className="w-1/3 bg-red-100 text-red-700 py-3 rounded font-bold text-sm hover:bg-red-200 flex items-center justify-center border border-red-200">
+                                            <XCircle size={18}/> CANCELAR
+                                        </button>
+                                        <button onClick={() => setDeliveryModal(order)} className="flex-1 bg-emerald-600 text-white py-3 rounded font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 shadow animate-pulse">
+                                            <CheckCircle size={18}/> ENTREGAR
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className={`p-3 rounded text-sm mt-3 border ${isDone ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className="flex justify-between mb-1"><span className="text-gray-500">Forma Pagto Prevista:</span><span className="font-bold uppercase">{order.pay}</span></div>
+                                <div className="flex justify-between items-center mb-1"><span className="text-gray-500">Valor Total:</span><span className={`font-bold text-xl ${isDone ? 'text-gray-600' : 'text-green-700'}`}>{formatCurrency(order.total)}</span></div>
+                                {order.change > 0 && <div className="text-xs text-orange-600 font-bold mt-1">Troco p/: {formatCurrency(order.change + order.total)}</div>}
+                            </div>
+                            {order.clientObs && <div className="text-xs text-purple-700 bg-purple-50 p-2 mt-2 rounded border border-purple-100 font-medium">⚠️ Obs Cliente: {order.clientObs}</div>}
+                        </div>
+                        </div>
+                    );
+                  })}
+               </div>
+               
+               {/* MODAL DE BAIXA */}
+               {deliveryModal && (
+                 <div className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center sm:items-center p-4 animate-in">
+                    <div className="bg-white w-full max-w-sm rounded-xl p-4 shadow-2xl">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 className="font-bold text-lg text-gray-800">Confirmar Pagamento</h3>
+                            <button onClick={() => setDeliveryModal(null)} className="bg-gray-200 p-1 rounded-full"><XCircle size={20}/></button>
+                        </div>
+                        <p className="text-xs text-center text-gray-500 mb-2">Selecione como você recebeu:</p>
+                        <div className="grid grid-cols-2 gap-3 mb-2">
+                            <button onClick={() => handleDeliveryConfirm('DINHEIRO')} className="bg-green-100 text-green-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-green-200"><DollarSign size={24}/> DINHEIRO</button>
+                            <button onClick={() => handleDeliveryConfirm('PIX')} className="bg-indigo-100 text-indigo-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-indigo-200"><Share2 size={24}/> PIX</button>
+                            <button onClick={() => handleDeliveryConfirm('CARTÃO')} className="bg-blue-100 text-blue-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-blue-200"><CreditCard size={24}/> CARTÃO</button>
+                            <button onClick={() => handleDeliveryConfirm('SÓ ENTREGUE')} className="bg-gray-100 text-gray-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-gray-200"><CheckCircle size={24}/> JÁ PAGO</button>
+                        </div>
+                    </div>
+                 </div>
+               )}
+
+               {allFinished && (
+                   <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t shadow-lg z-50 animate-in">
+                       <button onClick={generateFinalReport} className="w-full bg-green-600 text-white font-bold py-4 rounded-xl text-lg shadow-xl hover:bg-green-700 flex items-center justify-center gap-2">
+                           <MessageSquare size={24}/> FINALIZAR E ENVIAR RELATÓRIO
+                       </button>
+                   </div>
+               )}
+            </div>
+          );
         }
 
         const root = createRoot(document.getElementById('root'));
