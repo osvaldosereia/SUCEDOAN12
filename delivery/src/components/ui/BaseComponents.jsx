@@ -1,40 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { UserPlus, Trash2 } from 'lucide-react';
 
-// Card: O fundo branco arredondado usado em todos os módulos
-export const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-slate-200 ${className}`}>
-    {children}
-  </div>
-);
+// Importando os componentes visuais que criamos acima
+import { Card, Button, Input } from '../../components/ui/BaseComponents';
 
-// Button: Botão padrão do sistema com cores variáveis
-export const Button = ({ children, onClick, variant = 'primary', className = "", disabled = false, component="button", ...props }) => {
-  const baseStyle = "px-4 py-2 rounded-md font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
-  
-  const variants = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700",
-    secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
-    success: "bg-emerald-600 text-white hover:bg-emerald-700",
-    danger: "bg-red-500 text-white hover:bg-red-600",
-    outline: "border border-slate-300 text-slate-700 hover:bg-slate-50",
-    ghost: "text-slate-500 hover:bg-slate-100 p-2 rounded-full"
+export default function ClientsModule({ clients = [], onAddClient = () => {}, onRemoveClient = () => {} }) {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.phone) return alert('Preencha nome e telefone');
+    
+    onAddClient({ 
+      ...formData, 
+      id: Date.now(), 
+      orders: 0 
+    });
+    
+    setIsFormOpen(false);
+    setFormData({ name: '', phone: '', address: '' });
   };
 
-  if (component === 'label') {
-    return <label className={`${baseStyle} ${variants[variant]} ${className} cursor-pointer`} {...props}>{children}</label>;
-  }
-
   return (
-    <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`} {...props}>
-      {children}
-    </button>
-  );
-};
-
-// Input: Caixa de texto padronizada
-export const Input = ({ label, className = "", ...props }) => (
-  <div className={`mb-3 ${className}`}>
-    {label && <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>}
-    <input className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none" {...props} />
-  </div>
-);
+    <div className="space-y-6 animate-in fade-in p-4 bg-slate-50 min-h-screen">
+      {/* Cabeçalho do Módulo */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Gestão de Clientes</h2>
+          <p className="text-sm text-slate-500">{clients.length} clientes cadastrados</p>
+        </div>
+        <Button onClick={() => setIsFormOpen(true)}>
+          <UserPlus size={18} /> Novo Cliente
+        </Button>
+      </div>
