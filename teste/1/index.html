@@ -3,51 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo Cadastro de Clientes (Local-First)</title>
+    <title>Módulo Clientes (Micro-frontend)</title>
     
     <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#151e2e' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
     
-    <!-- 2. ESTILOS EXTRAS (Idênticos ao Original) -->
+    <!-- 2. GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 3. ESTILOS GLOBAIS -->
     <style>
-        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Scrollbar Moderna */
+        .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Inputs */
+        .input-label {
+            display: block;
+            font-size: 0.70rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
         
         .input-field {
             width: 100%;
-            padding: 0.6rem; 
-            border: 1px solid #d1d5db;
+            padding: 0.5rem 0.75rem; 
+            background-color: #fff;
+            border: 1px solid #e2e8f0;
             border-radius: 0.375rem;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
+            color: #1e293b;
             outline: none;
             transition: all 0.2s;
         }
         .input-field:focus {
             border-color: #3b82f6;
-            box-shadow: 0 0 0 1px #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
         }
+        .input-field:disabled {
+            background-color: #f8fafc;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Botões */
         .btn-primary {
-            background-color: #1e293b;
+            background-color: #0f172a;
             color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
+            padding: 0.6rem 1rem;
+            border-radius: 0.375rem;
             font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            font-weight: 500;
             transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
         .btn-primary:hover { background-color: #334155; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.3s ease-out; }
-        
-        .nav-item.active { background-color: #334155; border-right: 4px solid #34d399; }
+        .btn-secondary {
+            background-color: #fff;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            padding: 0.6rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn-secondary:hover { background-color: #f8fafc; border-color: #cbd5e1; }
     </style>
 
-    <!-- 3. IMPORTMAP REACT + ZOD -->
+    <!-- 4. IMPORTMAP -->
     <script type="importmap">
     {
       "imports": {
@@ -59,10 +110,10 @@
     }
     </script>
     
-    <!-- 4. BABEL -->
+    <!-- 5. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans h-full">
+<body class="bg-gray-50 h-screen overflow-hidden text-slate-800">
     
     <div id="root" class="h-full"></div>
 
@@ -71,28 +122,13 @@
         import { createRoot } from 'react-dom/client';
         import { z } from 'zod';
         import { 
-          Users, MapPin, Trash2, Plus, Search, 
-          MessageCircle, Phone, Menu, X, Database, Save
+          Users, Search, Plus, Save, Trash2, 
+          Phone, MapPin, MessageCircle, FileText, 
+          ChevronRight
         } from 'lucide-react';
 
-        // --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
-        // Mantido idêntico ao original para compatibilidade de dados
-        const ClientSchema = z.object({
-            id: z.string(),
-            name: z.string().min(1),
-            code: z.string().nullish().or(z.literal('')),
-            phone: z.string().nullish().or(z.literal('')),
-            phone2: z.string().nullish().or(z.literal('')), 
-            address: z.string().nullish().or(z.literal('')),
-            city: z.string().nullish().or(z.literal('')),
-            district: z.string().nullish().or(z.literal('')),
-            region: z.string().nullish().or(z.literal('')),
-            mapLink: z.string().nullish().or(z.literal('')),
-            photoLink: z.string().nullish().or(z.literal('')),
-            obs: z.string().nullish().or(z.literal(''))
-        });
-
-        // --- UTILITÁRIOS ---
+        // --- 1. CORE & UTILS ---
+        
         const generateId = () => Math.random().toString(36).substr(2, 9);
         
         const generateClientCode = (existingClients) => {
@@ -117,254 +153,251 @@
           return [value, setValue];
         };
 
-        // --- APP PRINCIPAL ---
-        function App() {
-          // Usa a mesma chave de localStorage 'db_clients_v3' para compartilhar dados se estiver no mesmo domínio
-          const [clients, setClients] = useStickyState('db_clients_v3', []);
-          const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-          return (
-            <div className="flex flex-col lg:flex-row h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
-                {/* MOBILE HEADER */}
-                <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center shrink-0 z-50 shadow-md">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-emerald-500 text-slate-900 p-1 rounded font-bold text-xs">CRM</div>
-                        <h1 className="font-bold tracking-wider">CLIENTES</h1>
-                    </div>
-                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-slate-800 rounded">
-                        {mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}
-                    </button>
-                </div>
-
-                {/* SIDEBAR (Reduzida para foco no módulo) */}
-                <aside className={`fixed inset-y-0 left-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 w-64 lg:static lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
-                    <div className="h-16 hidden lg:flex items-center justify-start px-6 border-b border-slate-800">
-                        <div className="bg-emerald-500 text-slate-900 p-1.5 rounded font-bold mr-2">CRM</div>
-                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">CLIENTES <span className="text-gray-400 text-xs font-normal ml-1">v1.0</span></h1>
-                    </div>
-                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
-                        <button className="w-full flex items-center justify-start gap-3 p-3 lg:px-6 transition-all duration-200 bg-slate-800 text-white border-r-4 border-emerald-500">
-                            <Users size={20}/>
-                            <span className="font-medium text-sm">Cadastro de Clientes</span>
-                        </button>
-                    </nav>
-                    <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
-                        Módulo Isolado
-                    </div>
-                </aside>
-                
-                {/* MAIN CONTENT AREA */}
-                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full overflow-hidden relative">
-                    <header className="h-16 bg-white border-b hidden lg:flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
-                        <div><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">Gerenciamento de Base de Clientes</h2></div>
-                        <div className="flex items-center gap-2">
-                             <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">{clients.length} Cadastrados</span>
-                        </div>
-                    </header>
-                    
-                    <div className="flex-1 overflow-hidden relative bg-gray-50">
-                        <RegistryView clients={clients} setClients={setClients} />
-                    </div>
-                </main>
-                
-                {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
-            </div>
-          );
-        }
-
-        // --- COMPONENTE DE REGISTRO DE CLIENTES (Extraído e Limpo) ---
-        function RegistryView({ clients, setClients }) {
+        // --- 2. MÓDULO DE CLIENTES (Core View) ---
+        
+        function ClientsModule({ clients, setClients }) {
             const [cForm, setCForm] = useState({ 
                 name: '', code: '', phone: '', phone2: '', 
                 address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', 
-                mapLink: '', photoLink: '', obs: '' 
+                mapLink: '', obs: '' 
             });
             const [editingClientId, setEditingClientId] = useState(null);
             const [search, setSearch] = useState('');
 
+            // Lógica de Persistência
             const saveClient = () => { 
-                if (!cForm.name) return alert('Nome é obrigatório'); 
+                if (!cForm.name) return alert('O campo Nome é obrigatório.'); 
                 
                 if (editingClientId) { 
                     setClients(clients.map(c => c.id === editingClientId ? { ...cForm, id: editingClientId, code: c.code || cForm.code } : c)); 
-                    setEditingClientId(null); 
-                    alert('Cliente atualizado com sucesso!'); 
+                    alert('Registro atualizado.'); 
                 } else { 
                     const newCode = generateClientCode(clients); 
                     setClients([...clients, { ...cForm, id: generateId(), code: newCode }]); 
-                    alert(`Cliente cadastrado! Código gerado: ${newCode}`); 
+                    setEditingClientId(null);
+                    setCForm(prev => ({...prev, name: '', phone: '', code: ''})); 
+                    alert(`Cliente cadastrado: ${newCode}`); 
                 } 
-                // Reset Form
-                setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }); 
+                startNew();
             };
 
             const deleteItem = () => {
                 if(!editingClientId) return;
-                if(!confirm("TEM CERTEZA? Excluir este cliente é irreversível e afetará o histórico.")) return;
+                if(!confirm("Esta ação é irreversível. Deseja excluir?")) return;
                 setClients(clients.filter(c => c.id !== editingClientId));
-                setEditingClientId(null);
-                setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' });
-                alert("Cliente excluído.");
+                startNew();
             };
 
             const startNew = () => {
-                setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }); 
+                setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', obs: '' }); 
                 setEditingClientId(null);
             };
 
-            // Filtragem e Ordenação
-            const list = clients.filter(c => 
-                c.name.toLowerCase().includes(search.toLowerCase()) || 
-                (c.code && c.code.includes(search)) || 
-                (c.phone && c.phone.includes(search))
-            ).sort((a,b) => a.name.localeCompare(b.name));
+            const list = useMemo(() => {
+                return clients.filter(c => 
+                    c.name.toLowerCase().includes(search.toLowerCase()) || 
+                    (c.code && c.code.includes(search)) || 
+                    (c.phone && c.phone.includes(search))
+                ).sort((a,b) => a.name.localeCompare(b.name));
+            }, [clients, search]);
 
             return (
-                <div className="flex flex-col lg:flex-row h-full pb-20 lg:pb-0">
-                    {/* LEFT COLUMN - LIST */}
-                    <div className="flex-1 border-r bg-white flex flex-col overflow-hidden order-2 lg:order-1">
-                        <div className="p-4 border-b shrink-0 bg-gray-50/50">
+                <div className="flex h-full bg-slate-100 overflow-hidden">
+                    
+                    {/* COLUNA ESQUERDA: LISTAGEM (MASTER) */}
+                    <aside className="w-full md:w-[350px] lg:w-[400px] flex flex-col bg-white border-r border-slate-200 shrink-0 z-10">
+                        {/* Header da Lista */}
+                        <div className="p-4 border-b border-slate-100 bg-white">
+                            <div className="flex justify-between items-center mb-3">
+                                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                                    <Users size={16} className="text-emerald-600"/>
+                                    Base de Clientes
+                                </h2>
+                                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">{clients.length}</span>
+                            </div>
                             <div className="relative">
-                                <Search className="absolute left-3 top-2.5 text-gray-400" size={18}/>
+                                <Search className="absolute left-3 top-2.5 text-slate-400" size={16}/>
                                 <input 
-                                    className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm outline-none focus:border-blue-500 transition" 
-                                    placeholder="Buscar por Nome, Código ou Telefone..." 
+                                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded text-sm focus:bg-white focus:border-emerald-500 outline-none transition" 
+                                    placeholder="Buscar (Nome, Tel, Cód)..." 
                                     value={search} 
                                     onChange={e => setSearch(e.target.value)} 
                                 />
                             </div>
                         </div>
-                        
-                        <div className="flex-1 overflow-auto scrollbar-thin">
-                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                                <thead className="bg-gray-100 text-gray-600 sticky top-0 z-10 font-bold uppercase shadow-sm">
-                                    <tr>
-                                        <th className="p-3 border-b">Nome</th>
-                                        <th className="p-3 border-b text-center hidden sm:table-cell">Cód</th>
-                                        <th className="p-3 border-b hidden md:table-cell">Cidade</th>
-                                        <th className="p-3 border-b">Bairro</th>
-                                        <th className="p-3 border-b text-center hidden lg:table-cell">Rota</th>
-                                        <th className="p-3 border-b text-center">Contato</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
+
+                        {/* Lista Scrollável */}
+                        <div className="flex-1 overflow-y-auto scrollbar-thin">
+                            {list.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400 text-sm">
+                                    Nenhum registro encontrado.
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-50">
                                     {list.map(c => {
-                                        const isSelected = editingClientId === c.id;
+                                        const isActive = editingClientId === c.id;
                                         return (
-                                            <tr key={c.id} onClick={() => { setCForm(c); setEditingClientId(c.id); }} className={`hover:bg-blue-50 cursor-pointer transition ${isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}>
-                                                <td className="p-3 font-medium text-gray-800">{c.name}</td>
-                                                <td className="p-3 text-center text-gray-500 hidden sm:table-cell font-mono">{c.code || '-'}</td>
-                                                <td className="p-3 text-gray-500 hidden md:table-cell">{c.city}</td>
-                                                <td className="p-3 text-gray-500">{c.district}</td>
-                                                <td className="p-3 text-center text-gray-500 hidden lg:table-cell">{c.region}</td>
-                                                <td className="p-3 text-center">
-                                                    <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                                        {c.phone && (
-                                                            <button onClick={() => window.open(`https://wa.me/55${c.phone?.replace(/\D/g, '')}`, '_blank')} className="p-1.5 bg-green-100 text-green-600 rounded hover:bg-green-200" title="WhatsApp">
-                                                                <MessageCircle size={16}/>
-                                                            </button>
-                                                        )}
-                                                        {c.phone && (
-                                                            <button onClick={() => window.open(`tel:${c.phone}`, '_self')} className="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200" title="Ligar">
-                                                                <Phone size={16}/>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                            <div 
+                                                key={c.id} 
+                                                onClick={() => { setCForm(c); setEditingClientId(c.id); }}
+                                                className={`p-4 cursor-pointer transition-all hover:bg-slate-50 relative group ${isActive ? 'bg-emerald-50/50' : ''}`}
+                                            >
+                                                {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>}
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className={`font-semibold text-sm ${isActive ? 'text-emerald-900' : 'text-slate-700'}`}>{c.name}</span>
+                                                    {c.code && <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 rounded">{c.code}</span>}
+                                                </div>
+                                                <div className="flex items-center gap-3 text-xs text-slate-500">
+                                                    {c.phone && <span className="flex items-center gap-1"><Phone size={10}/> {c.phone}</span>}
+                                                    {c.district && <span className="flex items-center gap-1"><MapPin size={10}/> {c.district}</span>}
+                                                </div>
+                                            </div>
                                         );
                                     })}
-                                    {list.length === 0 && (
-                                        <tr>
-                                            <td colSpan="6" className="text-center p-8 text-gray-400">
-                                                Nenhum cliente encontrado.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {/* RIGHT COLUMN - FORM */}
-                    <div className="w-full lg:w-[380px] bg-gray-50 border-l shadow-xl z-20 flex flex-col order-1 lg:order-2 shrink-0 h-[500px] lg:h-full">
-                        <div className="p-4 border-b bg-white flex justify-between items-center shadow-sm">
-                            <h2 className="font-bold text-gray-800 text-sm uppercase tracking-wide">
-                                {editingClientId ? 'Editar Cliente' : 'Novo Cliente'}
-                            </h2>
-                            <div className="flex gap-2">
-                                {editingClientId && (
-                                    <button onClick={deleteItem} className="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded font-bold transition flex items-center gap-1">
-                                        <Trash2 size={14}/> EXCLUIR
-                                    </button>
-                                )}
-                                <button onClick={startNew} className="text-xs bg-blue-100 text-blue-600 hover:bg-blue-200 px-3 py-1.5 rounded font-bold transition flex items-center gap-1">
-                                    <Plus size={14}/> NOVO
-                                </button>
-                            </div>
+                                </div>
+                            )}
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Nome Completo *</label>
-                                    <input className="input-field" value={cForm.name} onChange={e => setCForm({...cForm, name: e.target.value})} placeholder="Ex: João da Silva" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase">Código</label>
-                                        <input className="input-field bg-gray-100 text-gray-500" value={cForm.code} placeholder="Automático" disabled />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase">Celular (WhatsApp)</label>
-                                        <input className="input-field" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} placeholder="659..." />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Telefone Secundário</label>
-                                    <input className="input-field" value={cForm.phone2} onChange={e => setCForm({...cForm, phone2: e.target.value})} placeholder="Recados..." />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase">Cidade</label>
-                                        <input className="input-field" value={cForm.city} onChange={e => setCForm({...cForm, city: e.target.value})} />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase">Bairro</label>
-                                        <input className="input-field" value={cForm.district} onChange={e => setCForm({...cForm, district: e.target.value})} />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Endereço Completo</label>
-                                    <input className="input-field" value={cForm.address} onChange={e => setCForm({...cForm, address: e.target.value})} placeholder="Rua, Número, Comp..." />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Região / Rota</label>
-                                        <select className="input-field" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}>
-                                            <option value="CUIABÁ">CUIABÁ (Centro)</option>
-                                            <option value="COXIPO">COXIPO</option>
-                                            <option value="VARZEA GRANDE">VARZEA GRANDE</option>
-                                            <option value="CPA">CPA</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Link Google Maps</label>
-                                        <input className="input-field" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} placeholder="https://maps..." />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Observações</label>
-                                    <textarea className="input-field h-24 resize-none" value={cForm.obs} onChange={e => setCForm({...cForm, obs: e.target.value})} placeholder="Preferências, pontos de referência, etc..." />
-                                </div>
-                                <button onClick={saveClient} className="w-full btn-primary mt-2 flex items-center justify-center gap-2">
-                                    <Save size={18}/> {editingClientId ? 'ATUALIZAR DADOS' : 'SALVAR NOVO CLIENTE'}
+                        {/* Botão Flutuante Mobile */}
+                        <div className="p-4 border-t border-slate-100 md:hidden">
+                            <button onClick={startNew} className="btn-primary w-full justify-center">
+                                <Plus size={16}/> Novo Cliente
+                            </button>
+                        </div>
+                    </aside>
+
+                    {/* COLUNA DIREITA: FORMULÁRIO (DETAIL) */}
+                    <main className="flex-1 flex flex-col h-full bg-slate-50/50 overflow-hidden relative">
+                        {/* Toolbar do Formulário */}
+                        <div className="h-14 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-lg font-bold text-slate-800">
+                                    {editingClientId ? 'Editando Registro' : 'Novo Cadastro'}
+                                </h1>
+                                {editingClientId && <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">EM EDIÇÃO</span>}
+                            </div>
+                            <div className="flex gap-2">
+                                {editingClientId && (
+                                    <button onClick={deleteItem} className="text-red-600 hover:bg-red-50 p-2 rounded transition" title="Excluir">
+                                        <Trash2 size={18}/>
+                                    </button>
+                                )}
+                                <button onClick={startNew} className="btn-secondary text-xs">
+                                    <Plus size={14}/>
+                                    <span className="hidden sm:inline">Limpar / Novo</span>
+                                </button>
+                                <button onClick={saveClient} className="btn-primary shadow-sm hover:shadow-md">
+                                    <Save size={16}/>
+                                    <span className="hidden sm:inline">Salvar Alterações</span>
+                                    <span className="sm:hidden">Salvar</span>
                                 </button>
                             </div>
                         </div>
-                    </div>
+
+                        {/* Área do Formulário Scrollável */}
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin">
+                            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-slate-200 p-6 md:p-8">
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                                    
+                                    {/* Seção 1: Identificação */}
+                                    <div className="md:col-span-12">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b pb-2">Dados Principais</h3>
+                                    </div>
+
+                                    <div className="md:col-span-8">
+                                        <label className="input-label">Nome Completo</label>
+                                        <input 
+                                            className="input-field font-medium text-lg" 
+                                            value={cForm.name} 
+                                            onChange={e => setCForm({...cForm, name: e.target.value})} 
+                                            placeholder="Nome do Cliente ou Empresa" 
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="md:col-span-4">
+                                        <label className="input-label">Código (Auto)</label>
+                                        <input className="input-field bg-slate-50 text-slate-500 font-mono text-center" value={cForm.code} placeholder="Gerado ao salvar" disabled />
+                                    </div>
+
+                                    <div className="md:col-span-6">
+                                        <label className="input-label flex items-center gap-1"><MessageCircle size={12} className="text-green-500"/> Celular (WhatsApp)</label>
+                                        <div className="flex gap-2">
+                                            <input className="input-field" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} placeholder="(00) 00000-0000" />
+                                            {cForm.phone && (
+                                                <button onClick={() => window.open(`https://wa.me/55${cForm.phone?.replace(/\D/g, '')}`, '_blank')} className="px-3 bg-green-50 border border-green-200 text-green-600 rounded hover:bg-green-100 transition">
+                                                    <ChevronRight size={16}/>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="md:col-span-6">
+                                        <label className="input-label">Telefone Secundário</label>
+                                        <input className="input-field" value={cForm.phone2} onChange={e => setCForm({...cForm, phone2: e.target.value})} placeholder="Fixo ou Recado" />
+                                    </div>
+
+                                    {/* Seção 2: Localização */}
+                                    <div className="md:col-span-12 mt-4">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b pb-2">Endereço & Logística</h3>
+                                    </div>
+
+                                    <div className="md:col-span-3">
+                                        <label className="input-label">Cidade</label>
+                                        <input className="input-field" value={cForm.city} onChange={e => setCForm({...cForm, city: e.target.value})} />
+                                    </div>
+                                    <div className="md:col-span-4">
+                                        <label className="input-label">Bairro</label>
+                                        <input className="input-field" value={cForm.district} onChange={e => setCForm({...cForm, district: e.target.value})} />
+                                    </div>
+                                    <div className="md:col-span-5">
+                                        <label className="input-label">Região / Rota</label>
+                                        <select className="input-field cursor-pointer" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}>
+                                            <option value="CUIABÁ">CUIABÁ (CENTRO)</option>
+                                            <option value="COXIPO">COXIPÓ</option>
+                                            <option value="VARZEA GRANDE">VÁRZEA GRANDE</option>
+                                            <option value="CPA">CPA / MORADA DO OURO</option>
+                                            <option value="OUTRA">OUTRA</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="md:col-span-8">
+                                        <label className="input-label">Endereço Completo</label>
+                                        <input className="input-field" value={cForm.address} onChange={e => setCForm({...cForm, address: e.target.value})} placeholder="Rua, Número, Complemento" />
+                                    </div>
+                                    <div className="md:col-span-4">
+                                        <label className="input-label flex items-center gap-1"><MapPin size={12} /> Link Maps</label>
+                                        <input className="input-field" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} placeholder="Cole o link aqui" />
+                                    </div>
+
+                                    {/* Seção 3: Obs */}
+                                    <div className="md:col-span-12 mt-4">
+                                        <label className="input-label">Observações Internas</label>
+                                        <textarea 
+                                            className="input-field h-32 resize-none leading-relaxed" 
+                                            value={cForm.obs} 
+                                            onChange={e => setCForm({...cForm, obs: e.target.value})} 
+                                            placeholder="Detalhes sobre entrega, preferências do cliente ou histórico breve..." 
+                                        />
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div className="h-10"></div> {/* Spacer bottom */}
+                        </div>
+                    </main>
                 </div>
             );
+        }
+
+        // --- 3. APP PRINCIPAL ---
+        function App() {
+          const [clients, setClients] = useStickyState('db_clients_v3', []);
+          
+          return (
+            <div className="h-screen bg-slate-100 font-sans text-slate-800 overflow-hidden">
+                <ClientsModule clients={clients} setClients={setClients} />
+            </div>
+          );
         }
 
         const root = createRoot(document.getElementById('root'));
