@@ -3,23 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo Logística & Entregas (Local-First)</title>
+    <title>Módulo Logística (Micro-frontend)</title>
     
-    <!-- 1. TAILWIND CSS -->
+    <!-- 1. TAILWIND CSS (PROTOCOL) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 
+                            850: '#151e2e', 
+                            900: '#0f172a' 
+                        },
+                        primary: { 
+                            600: '#0284c7', 
+                            700: '#0369a1' 
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    boxShadow: {
+                        'sharp': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                        'input': '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    </script>
     
-    <!-- 2. ESTILOS EXTRAS -->
+    <!-- 2. GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- 3. ESTILOS GLOBAIS (PROTOCOL) -->
     <style>
-        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        
+        /* Scrollbar */
+        .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #e2e8f0; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; border: 2px solid #e2e8f0; }
+        
+        /* Botões Protocolo */
+        .btn-primary {
+            background-color: #0f172a; color: white;
+            padding: 0.65rem 1.25rem; border-radius: 0.375rem;
+            font-size: 0.875rem; font-weight: 600; letter-spacing: 0.025em;
+            transition: background-color 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            text-transform: uppercase;
+        }
+        .btn-primary:hover { background-color: #1e293b; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background-color: #ffffff; border: 1px solid #cbd5e1; color: #334155;
+            padding: 0.65rem 1.25rem; border-radius: 0.375rem;
+            font-size: 0.875rem; font-weight: 600;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            text-transform: uppercase;
+        }
+        .btn-secondary:hover { background-color: #f8fafc; border-color: #94a3b8; color: #0f172a; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.3s ease-out; }
+        .animate-in { animation: fadeIn 0.2s ease-out; }
     </style>
 
-    <!-- 3. IMPORTMAP REACT + LUCIDE -->
+    <!-- 4. IMPORTMAP -->
     <script type="importmap">
     {
       "imports": {
@@ -30,10 +82,10 @@
     }
     </script>
     
-    <!-- 4. BABEL -->
+    <!-- 5. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans h-full overflow-hidden">
+<body class="bg-slate-100 h-screen overflow-hidden text-slate-900">
     
     <div id="root" class="h-full"></div>
 
@@ -46,7 +98,7 @@
           MessageSquare, Menu, X, Gift, Home, Clock
         } from 'lucide-react';
 
-        // --- UTILITÁRIOS ---
+        // --- UTILS ---
         const useStickyState = (key, defaultValue) => {
           const [value, setValue] = useState(() => {
             const stickyValue = window.localStorage.getItem(key);
@@ -60,19 +112,17 @@
 
         const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-        // --- APP PRINCIPAL ---
+        // --- APP CONTAINER ---
         function App() {
-          // Estados Globais
           const [sales, setSales] = useStickyState('db_sales_v3', []);
           const [clients] = useStickyState('db_clients_v3', []);
-          const [products, setProducts] = useStickyState('db_products_v3', []); // Para devolução de estoque
+          const [products, setProducts] = useStickyState('db_products_v3', []);
           const [companyPhone] = useStickyState('db_config_phone', '5565999999999'); 
           
-          const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' ou 'driver'
+          const [viewMode, setViewMode] = useState('dashboard');
           const [driverData, setDriverData] = useState(null);
-          const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-          // Roteamento via Hash para o Motorista
+          // Hash Routing (Driver Link)
           useEffect(() => {
             const checkHash = () => {
                 const hash = window.location.hash;
@@ -95,72 +145,53 @@
             return () => window.removeEventListener('hashchange', checkHash);
           }, []);
 
-          // Se estiver no modo motorista, renderiza a DriverView
           if (viewMode === 'driver') {
               return <DriverView data={driverData} onExit={() => { window.location.hash = ''; setViewMode('dashboard'); }} />;
           }
 
           return (
-            <div className="flex flex-col lg:flex-row h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
-                {/* MOBILE HEADER */}
-                <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center shrink-0 z-50 shadow-md">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-indigo-500 text-white p-1 rounded font-bold text-xs">LOG</div>
-                        <h1 className="font-bold tracking-wider">LOGÍSTICA</h1>
-                    </div>
-                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-slate-800 rounded">
-                        {mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}
-                    </button>
-                </div>
-
-                {/* SIDEBAR */}
-                <aside className={`fixed inset-y-0 left-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 w-64 lg:static lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
-                    <div className="h-16 hidden lg:flex items-center justify-start px-6 border-b border-slate-800">
-                        <div className="bg-indigo-500 text-white p-1.5 rounded font-bold mr-2">LOG</div>
-                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">LOGÍSTICA <span className="text-gray-400 text-xs font-normal ml-1">v1.0</span></h1>
-                    </div>
-                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
-                        <button className="w-full flex items-center justify-start gap-3 p-3 lg:px-6 transition-all duration-200 bg-slate-800 text-white border-r-4 border-indigo-500">
-                            <Truck size={20}/>
-                            <span className="font-medium text-sm">Gestão de Rotas</span>
-                        </button>
-                    </nav>
-                    <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
-                        Módulo Isolado<br/>Foco em Last Mile
-                    </div>
-                </aside>
-                
-                {/* MAIN CONTENT AREA */}
-                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full overflow-hidden relative">
-                    <header className="h-16 bg-white border-b hidden lg:flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
-                        <div><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">Gestão de Rotas e Entregadores</h2></div>
-                        <div className="flex items-center gap-2">
-                             <span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">{sales.filter(s => s.status === 'Rota').length} Entregas Pendentes</span>
-                        </div>
-                    </header>
-                    
-                    <div className="flex-1 overflow-hidden relative bg-gray-50">
-                        <LogisticsManager 
-                            sales={sales} setSales={setSales} 
-                            clients={clients} companyPhone={companyPhone}
-                            products={products} setProducts={setProducts} 
-                        />
-                    </div>
-                </main>
-                
-                {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
+            <div className="h-screen bg-slate-100 font-sans text-slate-900 overflow-hidden relative flex flex-col">
+                <LogisticsHeader sales={sales} />
+                <LogisticsManager 
+                    sales={sales} setSales={setSales} 
+                    clients={clients} companyPhone={companyPhone}
+                    products={products} setProducts={setProducts} 
+                />
             </div>
           );
         }
 
-        // --- GESTÃO DE LOGÍSTICA (PAINEL) ---
+        // --- HEADER COMPONENT ---
+        function LogisticsHeader({ sales }) {
+            const routeCount = sales.filter(s => s.status === 'Rota').length;
+
+            return (
+                <header className="h-16 bg-white border-b border-slate-300 px-6 flex items-center justify-between shrink-0 shadow-sm z-20">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-1 bg-slate-900 rounded-full"></div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 leading-tight uppercase tracking-tight">Logística</h2>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Gestão de Rotas</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="text-right">
+                            <span className="block text-[10px] font-bold text-slate-400 uppercase">Na Rua</span>
+                            <span className="block text-lg font-bold text-primary-600 leading-none">{routeCount} Entregas</span>
+                        </div>
+                    </div>
+                </header>
+            );
+        }
+
+        // --- MANAGER DASHBOARD ---
         function LogisticsManager({ sales, setSales, clients, companyPhone, products, setProducts }) {
             const [selectedRoute, setSelectedRoute] = useState('Todas');
             const [routeSales, setRouteSales] = useState([]); 
             const [showImport, setShowImport] = useState(false);
             const [importText, setImportText] = useState('');
 
-            // Filtra e organiza as vendas prontas para rota
+            // Filter Logic
             useEffect(() => { 
                 const ready = sales.filter(s => s.status === 'Rota'); 
                 const filtered = selectedRoute === 'Todas' ? ready : ready.filter(s => { 
@@ -172,10 +203,9 @@
                 setRouteSales(filtered); 
             }, [sales, selectedRoute, clients]);
             
-            // Extrai rotas únicas
             const routes = [...new Set(clients.map(c => c.region || c.route).filter(Boolean))];
             
-            // Reordenar (Drag & Drop simulado com setas)
+            // Reorder
             const moveOrder = (index, direction) => { 
                 const newOrder = [...routeSales]; 
                 if (direction === 'up' && index > 0) { 
@@ -186,54 +216,40 @@
                 setRouteSales(newOrder); 
             };
             
-            // GERA O LINK PARA O MOTORISTA
+            // Generate Link
             const generateDriverLink = () => { 
                 if (routeSales.length === 0) return alert("Nada para entregar!"); 
-                
                 const payload = { 
                     route: selectedRoute, 
                     companyPhone, 
                     generatedAt: new Date(), 
                     orders: routeSales.map(s => { 
-                        const c = clients.find(cl => cl.id === s.clientId); 
+                        const c = clients.find(cl => cl.id === s.clientId) || {}; 
                         let finalPay = s.payMethod;
                         if (s.isPaid) finalPay += " (JÁ PAGO)";
-
                         return { 
                             id: s.id, 
-                            customer: c.name, 
-                            phone: c.phone, 
-                            phone2: c.phone2, 
-                            address: c.address, 
-                            district: c.district, 
+                            customer: c.name || 'Consumidor', 
+                            phone: c.phone, phone2: c.phone2, 
+                            address: c.address, district: c.district, 
                             region: s.regionOverride || c.region, 
-                            map: c.mapLink, 
-                            total: s.total, 
-                            pay: finalPay, 
-                            change: s.changeFor ? s.changeFor - s.total : 0, 
-                            obs: s.obs, 
-                            clientObs: c.obs, 
-                            isPaid: s.isPaid, 
-                            gift: s.gift
+                            map: c.mapLink, total: s.total, 
+                            pay: finalPay, change: s.changeFor ? s.changeFor - s.total : 0, 
+                            obs: s.obs, clientObs: c.obs, isPaid: s.isPaid, gift: s.gift
                         }; 
                     }) 
                 }; 
-                
-                // Codifica em Base64 para URL
                 const encoded = encodeURIComponent(btoa(JSON.stringify(payload))); 
                 const link = `${window.location.origin}${window.location.pathname}#driver=${encoded}`; 
                 
-                // Tenta copiar para o clipboard
-                const copyToClipboardFallback = (text) => { const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { document.execCommand('copy'); alert("LINK COPIADO! Envie para o motorista."); } catch (err) { prompt("Copie o link:", text); } document.body.removeChild(textArea); }; 
-                if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(link).then(() => alert("LINK COPIADO! Envie para o motorista.")).catch(() => copyToClipboardFallback(link)); } else { copyToClipboardFallback(link); } 
+                const copyFallback = (text) => { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert("LINK COPIADO!"); }; 
+                if (navigator.clipboard) { navigator.clipboard.writeText(link).then(() => alert("LINK COPIADO!")).catch(() => copyFallback(link)); } else { copyFallback(link); } 
             };
             
-            // Força entrega manual (Admin)
-            const forceDelivery = (id) => { if (confirm("Marcar entregue manualmente?")) setSales(sales.map(s => s.id === id ? { ...s, status: 'Entregue' } : s)); };
+            // Force Delivery
+            const forceDelivery = (id) => { if (confirm("Confirmar baixa manual?")) setSales(sales.map(s => s.id === id ? { ...s, status: 'Entregue' } : s)); };
             
-            const totalValue = routeSales.reduce((acc, s) => acc + s.total, 0);
-
-            // PROCESSAMENTO DE RETORNO (TEXTO)
+            // Process Return
             const processReturnReport = () => {
                 const lines = importText.split('\n');
                 let updatedCount = 0;
@@ -255,7 +271,6 @@
                             const saleIndex = newSales.findIndex(s => s.id === id);
                             if (saleIndex > -1) {
                                 const sale = newSales[saleIndex];
-                                // Se for cancelamento, devolve ao estoque
                                 if (status === 'Cancelado' && sale.status !== 'Cancelado') {
                                      sale.items.forEach(item => {
                                         const dbProd = newProducts.find(p => p.id === item.id);
@@ -263,9 +278,9 @@
                                             if (dbProd.isCombo) { 
                                                 item.comboItems?.forEach(ing => { 
                                                     const dbIng = newProducts.find(p => p.id === ing.id); 
-                                                    if (dbIng) { dbIng.stock += ing.qty; dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_DRIVER', qty: ing.qty }); } 
+                                                    if (dbIng) { dbIng.stock += ing.qty; } 
                                                 }); 
-                                            } else { dbProd.stock += 1; dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_DRIVER', qty: 1 }); }
+                                            } else { dbProd.stock += 1; }
                                         }
                                      });
                                 }
@@ -277,312 +292,242 @@
                 });
                 
                 if (updatedCount > 0) {
-                    setSales(newSales); setProducts(newProducts); setImportText(''); setShowImport(false); alert(`${updatedCount} pedidos atualizados com sucesso!`);
-                } else { alert("Nenhum pedido processado. Verifique o formato do texto."); }
+                    setSales(newSales); setProducts(newProducts); setImportText(''); setShowImport(false); alert(`${updatedCount} pedidos processados.`);
+                } else { alert("Nenhum pedido processado."); }
             };
 
+            const totalValue = routeSales.reduce((acc, s) => acc + s.total, 0);
+
             return (
-                <div className="p-4 lg:p-6 pb-20 max-w-5xl mx-auto h-full overflow-y-auto">
-                    {/* TOOLBAR */}
-                    <div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div className="flex gap-4 items-center w-full md:w-auto">
-                            <span className="font-bold text-gray-500 uppercase text-xs shrink-0">Filtrar Rota:</span>
-                            <select className="border rounded-lg p-2 bg-gray-50 outline-none w-full md:w-auto text-sm" value={selectedRoute} onChange={e => setSelectedRoute(e.target.value)}>
-                                <option value="Todas">Todas as Rotas</option>
-                                {routes.map(r => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-4 w-full md:w-auto justify-between">
-                            <div className="text-right">
-                                <div className="text-xs text-gray-400 font-bold uppercase">Total da Carga</div>
-                                <div className="text-2xl font-bold text-green-700">{formatCurrency(totalValue)}</div>
+                <div className="flex-1 overflow-y-auto p-6 bg-slate-100">
+                    <div className="max-w-5xl mx-auto">
+                        
+                        {/* CONTROLS */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-300 mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="flex items-center gap-3 w-full md:w-auto">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">Filtrar:</span>
+                                <select className="input-field py-1.5 text-sm w-full md:w-48" value={selectedRoute} onChange={e => setSelectedRoute(e.target.value)}>
+                                    <option value="Todas">Todas as Rotas</option>
+                                    {routes.map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
                             </div>
-                            <button onClick={() => setShowImport(true)} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 flex items-center gap-2 shadow-sm">
-                                <Upload size={16}/> PROCESSAR BAIXA
-                            </button>
+                            <div className="flex items-center gap-4 w-full md:w-auto justify-between">
+                                <div className="text-right">
+                                    <span className="block text-[10px] font-bold text-slate-400 uppercase">Total Carga</span>
+                                    <span className="block text-xl font-bold text-slate-800 leading-none">{formatCurrency(totalValue)}</span>
+                                </div>
+                                <button onClick={() => setShowImport(true)} className="btn-secondary text-[10px]">
+                                    <Upload size={14}/> BAIXA RÁPIDA
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* LISTA DE ENTREGAS */}
-                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col mb-20">
-                        <div className="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
-                            <span className="font-bold text-indigo-900 text-sm flex items-center gap-2"><Truck size={16}/> {routeSales.length} Entregas na Lista</span>
-                            <button onClick={generateDriverLink} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow flex items-center gap-2">
-                                <Share2 size={16}/> GERAR LINK MOTORISTA
-                            </button>
+                        {/* LIST */}
+                        <div className="bg-white rounded-lg shadow-sm border border-slate-300 overflow-hidden flex flex-col mb-12">
+                            <div className="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                                <span className="font-bold text-slate-700 text-sm flex items-center gap-2 uppercase tracking-wide">
+                                    <Truck size={16}/> {routeSales.length} Entregas
+                                </span>
+                                <button onClick={generateDriverLink} className="btn-primary text-[10px] py-1.5">
+                                    <Share2 size={14}/> LINK MOTORISTA
+                                </button>
+                            </div>
+                            <div className="overflow-y-auto p-2 space-y-2 bg-slate-100 max-h-[600px]">
+                                {routeSales.length === 0 && <div className="p-8 text-center text-slate-400 text-sm font-bold uppercase">Sem entregas.</div>}
+                                {routeSales.map((s, idx) => { 
+                                    const client = clients.find(c => c.id === s.clientId) || {}; 
+                                    return (
+                                        <div key={s.id} className="bg-white p-3 rounded border border-slate-200 shadow-sm flex gap-4 items-center group hover:border-slate-300 transition">
+                                            <div className="flex flex-col gap-1 items-center justify-center w-8">
+                                                <button onClick={() => moveOrder(idx, 'up')} className="text-slate-300 hover:text-slate-600"><ArrowUp size={14}/></button>
+                                                <span className="font-bold text-sm text-slate-800">{idx + 1}</span>
+                                                <button onClick={() => moveOrder(idx, 'down')} className="text-slate-300 hover:text-slate-600"><ArrowDown size={14}/></button>
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between mb-1">
+                                                    <h4 className="font-bold text-slate-800 text-sm uppercase">{client.name}</h4>
+                                                    <span className="font-mono text-[10px] font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-600">#{s.id}</span>
+                                                </div>
+                                                <p className="text-xs text-slate-500 uppercase font-medium">{client.address}, {client.district}</p>
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold border border-slate-200 uppercase">{s.payMethod}{s.isPaid ? ' (PAGO)' : ''}</span>
+                                                    <span className="bg-primary-600 text-white px-1.5 py-0.5 rounded text-[10px] font-bold border border-primary-700">{formatCurrency(s.total)}</span>
+                                                    {s.gift && s.gift !== 'Nenhum' && <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded text-[10px] font-bold border border-amber-200 flex items-center gap-1"><Gift size={10}/> {s.gift}</span>}
+                                                </div>
+                                            </div>
+                                            <button onClick={() => forceDelivery(s.id)} className="p-2 text-slate-300 hover:text-green-600 hover:bg-green-50 rounded transition" title="Baixa Manual">
+                                                <CheckCircle size={20}/>
+                                            </button>
+                                        </div>
+                                    ); 
+                                })}
+                            </div>
                         </div>
-                        <div className="overflow-y-auto p-2 space-y-2 bg-gray-50 max-h-[600px]">
-                            {routeSales.length === 0 && <div className="p-8 text-center text-gray-400">Nenhuma entrega pronta para esta rota.</div>}
-                            {routeSales.map((s, idx) => { 
-                                const client = clients.find(c => c.id === s.clientId) || {}; 
-                                return (
-                                    <div key={s.id} className="bg-white p-3 rounded-lg border shadow-sm flex gap-4 items-center group hover:shadow-md transition">
-                                        <div className="flex flex-col gap-1">
-                                            <button onClick={() => moveOrder(idx, 'up')} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-indigo-600"><ArrowUp size={14}/></button>
-                                            <span className="font-bold text-sm text-center text-indigo-600 w-6">{idx + 1}</span>
-                                            <button onClick={() => moveOrder(idx, 'down')} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-indigo-600"><ArrowDown size={14}/></button>
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between">
-                                                <h4 className="font-bold text-gray-800">{client.name}</h4>
-                                                <span className="font-mono text-xs bg-gray-100 px-2 rounded text-gray-500 py-0.5">#{s.id}</span>
-                                            </div>
-                                            <p className="text-sm text-gray-500">{client.address}, {client.district}</p>
-                                            <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                                                <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium border border-blue-100">{s.payMethod}{s.isPaid ? ' (PAGO)' : ''}</span>
-                                                <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold border border-green-100">{formatCurrency(s.total)}</span>
-                                                {s.gift && s.gift !== 'Nenhum' && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold flex items-center gap-1 border border-purple-200"><Gift size={10}/> {s.gift}</span>}
-                                            </div>
-                                        </div>
-                                        <button onClick={() => forceDelivery(s.id)} className="p-3 bg-gray-50 hover:bg-green-100 text-gray-300 hover:text-green-600 rounded-full transition" title="Baixa Manual">
-                                            <CheckCircle size={24}/>
-                                        </button>
+
+                        {/* MODAL IMPORT */}
+                        {showImport && (
+                            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in">
+                                <div className="bg-white w-full max-w-lg rounded-lg p-6 shadow-2xl border border-slate-300">
+                                    <h3 className="text-sm font-black uppercase text-slate-800 mb-4 flex items-center gap-2"><Upload size={16}/> Processar Retorno</h3>
+                                    <textarea className="input-field h-48 font-mono text-xs mb-4 resize-none" placeholder="Cole o relatório do WhatsApp aqui..." value={importText} onChange={e => setImportText(e.target.value)} />
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setShowImport(false)} className="btn-secondary flex-1 justify-center text-xs">Cancelar</button>
+                                        <button onClick={processReturnReport} className="btn-primary flex-1 justify-center text-xs bg-green-600 hover:bg-green-700">PROCESSAR BAIXA</button>
                                     </div>
-                                ); 
-                            })}
-                        </div>
-                    </div>
-
-                    {/* MODAL DE IMPORTAÇÃO */}
-                    {showImport && (
-                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-in">
-                            <div className="bg-white w-full max-w-lg rounded-xl p-6 shadow-2xl">
-                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Upload size={20}/> Processar Retorno</h3>
-                                <p className="text-xs text-gray-500 mb-2">Cole aqui o relatório enviado pelo motorista no WhatsApp para dar baixa automaticamente.</p>
-                                <textarea className="w-full h-48 border rounded p-3 text-xs font-mono mb-4 bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none" placeholder="Ex: RELATÓRIO DE ENTREGA... ID: #001 | STATUS: ENTREGUE..." value={importText} onChange={e => setImportText(e.target.value)} />
-                                <div className="flex gap-2">
-                                    <button onClick={() => setShowImport(false)} className="flex-1 bg-gray-200 py-3 rounded-lg font-bold text-gray-600 hover:bg-gray-300 transition">Cancelar</button>
-                                    <button onClick={processReturnReport} className="flex-1 bg-green-600 hover:bg-green-700 py-3 rounded-lg font-bold text-white transition shadow-lg">PROCESSAR BAIXA</button>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             );
         }
         
-        // --- VISÃO DO MOTORISTA (MOBILE APP) ---
+        // --- DRIVER VIEW (Mobile optimized but Slate themed) ---
         function DriverView({ data, onExit }) {
           const [deliveryModal, setDeliveryModal] = useState(null); 
           const [filter, setFilter] = useState('Todas'); 
-          const [deliveryResults, setDeliveryResults] = useState({}); // Estado local das entregas
+          const [deliveryResults, setDeliveryResults] = useState({});
 
-          if (!data) return <div className="p-10 text-center text-gray-500 font-bold">Link inválido ou expirado.</div>;
+          if (!data) return <div className="p-10 text-center text-slate-500 font-bold uppercase text-sm">Link expirado.</div>;
           
           const companyPhone = data.companyPhone || '5565999999999';
-          const uniqueRegions = [...new Set(data.orders.map(o => o.region || 'Geral').filter(Boolean))]; 
-          const regions = ['Todas', ...uniqueRegions]; 
-          const showChips = uniqueRegions.length > 1;
-
+          const regions = ['Todas', ...new Set(data.orders.map(o => o.region || 'Geral').filter(Boolean))]; 
           const filteredOrders = filter === 'Todas' ? data.orders : data.orders.filter(o => (o.region || 'Geral') === filter);
-          
-          // Ordena para jogar os finalizados para o final
           const visibleOrders = [...filteredOrders].sort((a, b) => { 
              const aDone = !!deliveryResults[a.id];
              const bDone = !!deliveryResults[b.id];
-             if (aDone === bDone) return 0;
-             return aDone ? 1 : -1;
+             return aDone === bDone ? 0 : aDone ? 1 : -1;
           });
 
           const sendToCustomer = (phone, msg) => { 
-             if(!phone) return alert("Telefone não cadastrado.");
-             const cleanPhone = phone.replace(/\D/g,''); 
-             window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank'); 
+             if(!phone) return alert("Sem telefone.");
+             window.open(`https://wa.me/55${phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank'); 
           };
 
           const handleDeliveryConfirm = (method) => { 
             if (!deliveryModal) return; 
-            const order = deliveryModal; 
-            setDeliveryResults(prev => ({ ...prev, [order.id]: { status: 'Entregue', payMethod: method } })); 
+            setDeliveryResults(prev => ({ ...prev, [deliveryModal.id]: { status: 'Entregue', payMethod: method } })); 
             setDeliveryModal(null); 
-          };
-
-          const handleCancelDelivery = (order) => {
-              if(confirm("Deseja realmente CANCELAR esta entrega? O produto voltará ao estoque.")) {
-                  setDeliveryResults(prev => ({ ...prev, [order.id]: { status: 'Cancelado', payMethod: '-' } }));
-              }
           };
 
           const generateFinalReport = () => {
               let report = `RELATÓRIO DE ENTREGA - ${new Date().toLocaleDateString()}\n--------------------------------\n`;
-              Object.entries(deliveryResults).forEach(([id, res]) => {
-                  report += `ID: ${id} | STATUS: ${res.status.toUpperCase()} | PGTO: ${res.payMethod}\n`;
-              });
-              
-              // Tenta copiar e abre WhatsApp
-              const copyFallback = () => {
-                   const textArea = document.createElement("textarea");
-                   textArea.value = report;
-                   document.body.appendChild(textArea);
-                   textArea.select();
-                   document.execCommand('copy');
-                   document.body.removeChild(textArea);
-              };
-
-              try { navigator.clipboard.writeText(report).catch(copyFallback); } catch(e) { copyFallback(); }
-              
-              alert("RELATÓRIO COPIADO! Cole no WhatsApp da empresa.");
+              Object.entries(deliveryResults).forEach(([id, res]) => { report += `ID: ${id} | STATUS: ${res.status.toUpperCase()} | PGTO: ${res.payMethod}\n`; });
+              const copy = (t) => { const el = document.createElement("textarea"); el.value = t; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); };
+              try { navigator.clipboard.writeText(report).catch(() => copy(report)); } catch(e) { copy(report); }
+              alert("COPIADO!");
               window.open(`https://wa.me/55${companyPhone}?text=${encodeURIComponent(report)}`, '_blank');
           };
 
           const completedCount = Object.keys(deliveryResults).length;
           const progress = Math.round((completedCount / data.orders.length) * 100); 
-          const allFinished = completedCount === data.orders.length;
 
           return (
-            <div className="h-screen flex flex-col bg-gray-50 text-gray-800">
-               {/* Header Motorista */}
-               <header className="bg-indigo-700 text-white p-4 shrink-0 shadow-md z-10">
+            <div className="h-screen flex flex-col bg-slate-100 text-slate-900 font-sans">
+               {/* Mobile Header */}
+               <header className="bg-slate-900 text-white p-4 shrink-0 shadow-md z-10">
                  <div className="flex justify-between items-center mb-2">
-                    <h1 className="font-bold text-lg">ROTA: {data.route}</h1>
-                    <button onClick={onExit} className="text-xs bg-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-900 transition font-bold border border-indigo-600">SAIR</button>
+                    <h1 className="font-bold text-base uppercase tracking-wider">Rota: {data.route}</h1>
+                    <button onClick={onExit} className="text-[10px] font-bold border border-slate-600 px-2 py-1 rounded hover:bg-slate-800">SAIR</button>
                  </div>
-                 {showChips && (
+                 {regions.length > 1 && (
                      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-1">
                          {regions.map(r => (
-                             <button key={r} onClick={() => setFilter(r)} className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition border ${filter === r ? 'bg-white text-indigo-700 border-white' : 'bg-indigo-800 text-indigo-200 border-indigo-600'}`}>{r}</button>
+                             <button key={r} onClick={() => setFilter(r)} className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition border ${filter === r ? 'bg-white text-slate-900 border-white' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>{r}</button>
                          ))}
                      </div>
                  )}
                  <div className="flex justify-between items-end mt-2">
-                    <div className="text-xs opacity-80 font-mono"><span>{completedCount}/{data.orders.length} Entregas</span></div>
-                    <div className="w-1/2 bg-indigo-900 rounded-full h-1.5 overflow-hidden"><div className="bg-green-400 h-full transition-all duration-500" style={{width: `${progress}%`}}></div></div>
+                    <div className="text-[10px] font-mono text-slate-400"><span>{completedCount}/{data.orders.length}</span></div>
+                    <div className="w-1/2 bg-slate-800 rounded-full h-1 overflow-hidden"><div className="bg-green-500 h-full transition-all duration-500" style={{width: `${progress}%`}}></div></div>
                  </div>
                </header>
                
-               {/* Lista de Cards Mobile */}
-               <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
+               {/* Mobile List */}
+               <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
                   {visibleOrders.map((order) => {
                     const result = deliveryResults[order.id];
                     const isDone = !!result;
                     const isCancelled = result?.status === 'Cancelado';
-                    const clientFirstName = order.customer.split(' ')[0];
                     
                     return (
-                        <div key={order.id} className={`rounded-xl shadow-sm border overflow-hidden relative transition-all duration-300 ${isDone ? 'bg-gray-100 border-gray-200 opacity-80 grayscale-[0.5]' : 'bg-white border-indigo-100'}`}>
-                            {/* Status Badge */}
+                        <div key={order.id} className={`rounded-lg shadow-sm border overflow-hidden relative transition-all ${isDone ? 'bg-slate-200 border-slate-300 opacity-70 grayscale' : 'bg-white border-slate-300'}`}>
                             {isDone && (
-                                <div className={`absolute top-0 right-0 z-20 px-3 py-1 rounded-bl-xl font-bold text-[10px] text-white shadow-sm flex items-center gap-1 ${isCancelled ? 'bg-red-600' : 'bg-green-600'}`}>
-                                    {isCancelled ? <XCircle size={12}/> : <CheckCircle size={12}/>} {result.status.toUpperCase()}
+                                <div className={`absolute top-0 right-0 z-20 px-3 py-1 rounded-bl-lg font-bold text-[10px] text-white flex items-center gap-1 ${isCancelled ? 'bg-red-600' : 'bg-green-600'}`}>
+                                    {isCancelled ? <XCircle size={10}/> : <CheckCircle size={10}/>} {result.status.toUpperCase()}
                                 </div>
                             )}
 
-                            {/* Card Header */}
-                            <div className={`p-3 border-b flex justify-between items-center ${isDone ? 'bg-gray-200' : 'bg-indigo-50'}`}>
-                                <span className={`font-bold px-3 py-1 rounded-full text-sm shadow-sm ${isDone ? 'bg-gray-300 text-gray-600' : 'text-indigo-900 bg-white border border-indigo-100'}`}>#{order.id}</span>
-                                {!isDone && <span className="font-bold text-indigo-900 text-xs uppercase tracking-wider">Pendente</span>}
+                            <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                                <span className="font-mono font-bold text-xs text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">#{order.id}</span>
+                                {!isDone && <span className="font-bold text-slate-400 text-[10px] uppercase">Pendente</span>}
                             </div>
 
-                            {/* Card Body */}
                             <div className="p-4">
-                                <h2 className="font-bold text-xl text-gray-800 mb-1 leading-tight">{order.customer}</h2>
-                                <p className="text-gray-600 text-sm mb-4 flex items-start gap-1">
-                                    <MapPin size={16} className="mt-0.5 shrink-0 text-gray-400"/> {order.address}, {order.district}
+                                <h2 className="font-black text-lg text-slate-800 mb-1 leading-tight uppercase">{order.customer}</h2>
+                                <p className="text-slate-500 text-xs mb-4 flex items-start gap-1 font-medium uppercase">
+                                    <MapPin size={14} className="mt-0.5 shrink-0 text-slate-400"/> {order.address}, {order.district}
                                 </p>
                                 
-                                {/* Ações Rápidas */}
                                 <div className="grid grid-cols-2 gap-2 mb-4">
-                                    <a href={`tel:${order.phone}`} className="flex flex-col items-center justify-center bg-gray-50 py-3 rounded-lg border border-gray-100 active:scale-95 transition hover:bg-gray-100">
-                                        <Phone size={20} className="text-gray-700 mb-1"/>
-                                        <span className="text-[10px] font-bold text-gray-600">LIGAR COMP.</span>
+                                    <a href={`tel:${order.phone}`} className="btn-secondary text-[10px] justify-center h-10 flex-col gap-0 leading-none">
+                                        <Phone size={14} className="mb-0.5"/> LIGAR
                                     </a>
-                                    {order.phone2 ? (
-                                        <a href={`tel:${order.phone2}`} className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded-lg border border-blue-100 active:scale-95 transition hover:bg-blue-100">
-                                            <Phone size={20} className="text-blue-700 mb-1"/>
-                                            <span className="text-[10px] font-bold text-blue-600">LIGAR RECEB.</span>
-                                        </a>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center bg-gray-50 py-3 rounded-lg border border-gray-100 opacity-50 cursor-not-allowed">
-                                            <Phone size={20} className="text-gray-300 mb-1"/>
-                                            <span className="text-[10px] font-bold text-gray-400">SEM 2º TEL</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-2 mb-4">
-                                    <button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! Sua entrega chega em aproximadamente 10 minutos. 🚚`)} className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded-lg border border-blue-100 active:scale-95 transition hover:bg-blue-100">
-                                        <Clock size={20} className="text-blue-600 mb-1"/>
-                                        <span className="text-[10px] font-bold text-blue-700">10 MIN</span>
-                                    </button>
-                                    <button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! O entregador chegou e está aguardando. 🏠`)} className="flex flex-col items-center justify-center bg-yellow-50 py-3 rounded-lg border border-yellow-100 active:scale-95 transition hover:bg-yellow-100">
-                                        <Home size={20} className="text-yellow-600 mb-1"/>
-                                        <span className="text-[10px] font-bold text-yellow-700">CHEGUEI</span>
-                                    </button>
-                                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" className="flex flex-col items-center justify-center bg-green-50 py-3 rounded-lg border border-green-100 active:scale-95 transition hover:bg-green-100">
-                                        <MapPin size={20} className="text-green-600 mb-1"/>
-                                        <span className="text-[10px] font-bold text-green-700">GPS</span>
+                                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" className="btn-secondary text-[10px] justify-center h-10 flex-col gap-0 leading-none text-green-700 border-green-200 bg-green-50 hover:bg-green-100">
+                                        <MapPin size={14} className="mb-0.5"/> GPS
                                     </a>
                                 </div>
 
-                                {/* Botões de Finalização */}
                                 <div className="flex gap-2">
-                                    {isDone ? (
-                                        <button disabled className="w-full bg-gray-100 text-gray-400 border border-gray-200 py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed">
-                                            <CheckCircle size={18}/> FINALIZADO
-                                        </button>
-                                    ) : (
+                                    {!isDone && (
                                         <>
-                                            <button onClick={() => handleCancelDelivery(order)} className="w-1/3 bg-red-50 text-red-600 py-3 rounded-lg font-bold text-sm hover:bg-red-100 flex items-center justify-center border border-red-100 transition active:scale-95">
+                                            <button onClick={() => { if(confirm("CANCELAR ENTREGA?")) setDeliveryResults(prev => ({ ...prev, [order.id]: { status: 'Cancelado', payMethod: '-' } })); }} className="w-12 bg-red-50 text-red-600 rounded border border-red-200 flex items-center justify-center hover:bg-red-100">
                                                 <XCircle size={18}/>
                                             </button>
-                                            <button onClick={() => setDeliveryModal(order)} className="flex-1 bg-emerald-600 text-white py-3 rounded-lg font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 active:scale-95 transition">
-                                                <CheckCircle size={18}/> ENTREGAR
+                                            <button onClick={() => setDeliveryModal(order)} className="btn-primary flex-1 justify-center text-xs bg-green-600 hover:bg-green-700 border-transparent shadow-md">
+                                                <CheckCircle size={16}/> ENTREGAR
                                             </button>
                                         </>
                                     )}
                                 </div>
 
-                                {/* Resumo Financeiro */}
-                                <div className={`p-3 rounded-lg text-sm mt-3 border ${isDone ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className="p-2 rounded mt-3 bg-slate-100 border border-slate-200 text-xs">
                                     <div className="flex justify-between mb-1">
-                                        <span className="text-gray-500 text-xs uppercase font-bold">Pagamento Previsto</span>
-                                        <span className="font-bold uppercase text-xs bg-white px-2 rounded border">{order.pay}</span>
+                                        <span className="text-slate-400 font-bold uppercase text-[10px]">Pgto</span>
+                                        <span className="font-bold uppercase text-slate-700">{order.pay}</span>
                                     </div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-gray-500 text-xs uppercase font-bold">Valor Total</span>
-                                        <span className={`font-bold text-xl ${isDone ? 'text-gray-600' : 'text-green-700'}`}>{formatCurrency(order.total)}</span>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-slate-400 font-bold uppercase text-[10px]">Valor</span>
+                                        <span className="font-black text-lg text-slate-800">{formatCurrency(order.total)}</span>
                                     </div>
-                                    {order.change > 0 && <div className="text-xs text-orange-600 font-bold mt-1 bg-orange-50 p-1 rounded border border-orange-100 text-center">Troco p/: {formatCurrency(order.change + order.total)}</div>}
+                                    {order.change > 0 && <div className="text-[10px] text-orange-600 font-bold mt-1 text-right">Troco p/: {formatCurrency(order.change + order.total)}</div>}
                                 </div>
-                                {order.clientObs && <div className="text-xs text-purple-700 bg-purple-50 p-2 mt-2 rounded border border-purple-100 font-medium">⚠️ {order.clientObs}</div>}
                             </div>
                         </div>
                     ); 
                   })}
                </div>
 
-               {/* MODAL DE CONFIRMAÇÃO (MOBILE) */}
+               {/* Mobile Modal */}
                {deliveryModal && (
-                   <div className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center sm:items-center p-4 animate-in">
-                       <div className="bg-white w-full max-w-sm rounded-2xl p-4 shadow-2xl">
-                           <div className="flex justify-between items-center mb-4 border-b pb-2">
-                               <h3 className="font-bold text-lg text-gray-800">Confirmar Recebimento</h3>
-                               <button onClick={() => setDeliveryModal(null)} className="bg-gray-100 p-1 rounded-full"><XCircle size={20}/></button>
+                   <div className="fixed inset-0 bg-slate-900/80 z-50 flex items-end justify-center sm:items-center p-4 animate-in">
+                       <div className="bg-white w-full max-w-sm rounded-t-xl sm:rounded-xl p-6 shadow-2xl">
+                           <h3 className="font-bold text-lg text-slate-800 mb-4 text-center uppercase">Confirmar Pagamento</h3>
+                           <div className="grid grid-cols-2 gap-3">
+                               <button onClick={() => handleDeliveryConfirm('DINHEIRO')} className="p-3 rounded border border-slate-200 bg-slate-50 font-bold text-xs hover:bg-green-50 hover:text-green-800 hover:border-green-200 transition">DINHEIRO</button>
+                               <button onClick={() => handleDeliveryConfirm('PIX')} className="p-3 rounded border border-slate-200 bg-slate-50 font-bold text-xs hover:bg-indigo-50 hover:text-indigo-800 hover:border-indigo-200 transition">PIX</button>
+                               <button onClick={() => handleDeliveryConfirm('CARTÃO')} className="p-3 rounded border border-slate-200 bg-slate-50 font-bold text-xs hover:bg-blue-50 hover:text-blue-800 hover:border-blue-200 transition">CARTÃO</button>
+                               <button onClick={() => handleDeliveryConfirm('JÁ PAGO')} className="p-3 rounded border border-slate-200 bg-slate-50 font-bold text-xs hover:bg-slate-200 transition">JÁ PAGO</button>
                            </div>
-                           <p className="text-sm text-center text-gray-500 mb-4">Como o cliente pagou?</p>
-                           <div className="grid grid-cols-2 gap-3 mb-2">
-                               <button onClick={() => handleDeliveryConfirm('DINHEIRO')} className="bg-green-50 border border-green-100 text-green-800 p-4 rounded-xl font-bold flex flex-col items-center gap-1 hover:bg-green-100 active:scale-95 transition">
-                                   <DollarSign size={24}/> DINHEIRO
-                               </button>
-                               <button onClick={() => handleDeliveryConfirm('PIX')} className="bg-indigo-50 border border-indigo-100 text-indigo-800 p-4 rounded-xl font-bold flex flex-col items-center gap-1 hover:bg-indigo-100 active:scale-95 transition">
-                                   <Share2 size={24}/> PIX
-                               </button>
-                               <button onClick={() => handleDeliveryConfirm('CARTÃO')} className="bg-blue-50 border border-blue-100 text-blue-800 p-4 rounded-xl font-bold flex flex-col items-center gap-1 hover:bg-blue-100 active:scale-95 transition">
-                                   <CreditCard size={24}/> CARTÃO
-                               </button>
-                               <button onClick={() => handleDeliveryConfirm('SÓ ENTREGUE')} className="bg-gray-50 border border-gray-100 text-gray-800 p-4 rounded-xl font-bold flex flex-col items-center gap-1 hover:bg-gray-100 active:scale-95 transition">
-                                   <CheckCircle size={24}/> JÁ PAGO
-                               </button>
-                           </div>
+                           <button onClick={() => setDeliveryModal(null)} className="mt-4 w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600">CANCELAR</button>
                        </div>
                    </div>
                )}
                
-               {/* BOTÃO FLUTUANTE DE RELATÓRIO FINAL */}
-               {allFinished && (
-                   <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-40 animate-in">
-                       <button onClick={generateFinalReport} className="w-full bg-green-600 text-white font-bold py-4 rounded-xl text-lg shadow-xl hover:bg-green-700 flex items-center justify-center gap-2 active:scale-[0.98] transition">
-                           <MessageSquare size={24}/> FINALIZAR E ENVIAR
+               {completedCount === data.orders.length && (
+                   <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-slate-200 z-40 animate-in">
+                       <button onClick={generateFinalReport} className="btn-primary w-full py-4 text-sm justify-center bg-green-600 hover:bg-green-700 border-transparent shadow-xl">
+                           <MessageSquare size={18}/> ENVIAR RELATÓRIO
                        </button>
                    </div>
                )}
