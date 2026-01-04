@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Logística Local-First v7.2 (PDV Otimizado)</title>
+    <title>Sistema Logística Local-First v7.3 (Mobile Flow)</title>
     
     <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,10 +17,10 @@
         
         .input-field {
             width: 100%;
-            padding: 0.5rem;
+            padding: 0.75rem; /* Mais espaçamento para toque */
             border: 1px solid #d1d5db;
-            border-radius: 0.25rem;
-            font-size: 0.875rem; 
+            border-radius: 0.5rem;
+            font-size: 1rem; /* Fonte maior para mobile */
             outline: none;
             transition: all 0.2s;
         }
@@ -31,8 +31,8 @@
         .btn-primary {
             background-color: #1e293b;
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
             font-size: 0.875rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -69,9 +69,9 @@
     <!-- 4. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans overflow-hidden">
+<body class="bg-gray-100 text-gray-800 font-sans h-full">
     
-    <div id="root"></div>
+    <div id="root" class="h-full"></div>
 
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo } from 'react';
@@ -86,7 +86,7 @@
           Calendar, Filter, Phone, Database, Clipboard, Box, ExternalLink,
           Clock, Home, DollarSign, CreditCard, Check, ShieldCheck, ClipboardList,
           ArrowRight, ArrowLeft, LayoutDashboard, Settings, Menu, BarChart2, TrendingUp, PieChart,
-          MessageSquare, HeartHandshake, RefreshCcw, ThumbsUp, Star, Activity, LineChart, ChevronDown, Gift
+          MessageSquare, HeartHandshake, RefreshCcw, ThumbsUp, Star, Activity, LineChart, ChevronDown, Gift, X
         } from 'lucide-react';
 
         // --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
@@ -237,6 +237,7 @@
           const [activeTab, setActiveTab] = useState('dashboard');
           const [showStockManager, setShowStockManager] = useState(false);
           const [driverData, setDriverData] = useState(null);
+          const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
           
           const [saleToEdit, setSaleToEdit] = useState(null);
           const [backupType, setBackupType] = useState('all'); 
@@ -264,7 +265,7 @@
           }, []);
 
           const handleBackup = () => {
-            let data = { version: '7.2', exportedAt: new Date().toISOString() };
+            let data = { version: '7.3', exportedAt: new Date().toISOString() };
             let filename = 'backup';
             if (backupType === 'all') { 
                 data = { ...data, clients, products, sales, companyPhone, postSaleLog }; 
@@ -323,26 +324,38 @@
           };
 
           return (
-            <div className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
-                <aside className="w-20 lg:w-64 bg-slate-900 text-white flex flex-col shrink-0 transition-all duration-300 z-30 shadow-xl">
-                    <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
-                        <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
-                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V7.2</span></h1>
+            <div className="flex flex-col lg:flex-row h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
+                {/* MOBILE HEADER */}
+                <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center shrink-0 z-50 shadow-md">
+                    <div className="flex items-center gap-2">
+                        <div className="bg-yellow-500 text-slate-900 p-1 rounded font-bold text-xs">LOG</div>
+                        <h1 className="font-bold tracking-wider">SISTEMA v7.3</h1>
                     </div>
-                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
-                        <NavItem icon={<LayoutDashboard size={20}/>} label="Visão Geral" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-                        <NavItem icon={<ShoppingCart size={20}/>} label="Caixa (PDV)" active={activeTab === 'pos'} onClick={() => setActiveTab('pos')} />
-                        <NavItem icon={<Package size={20}/>} label="Expedição" active={activeTab === 'expedition'} onClick={() => setActiveTab('expedition')} />
-                        <NavItem icon={<Truck size={20}/>} label="Logística" active={activeTab === 'logistics'} onClick={() => setActiveTab('logistics')} />
-                        <NavItem icon={<Database size={20}/>} label="Cadastros" active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
-                        <NavItem icon={<LineChart size={20}/>} label="Inteligência (BI)" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
-                        <NavItem icon={<HeartHandshake size={20}/>} label="Pós-Venda" active={activeTab === 'postsale'} onClick={() => setActiveTab('postsale')} />
+                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-slate-800 rounded">
+                        {mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}
+                    </button>
+                </div>
+
+                {/* SIDEBAR (Desktop & Mobile Drawer) */}
+                <aside className={`fixed inset-y-0 left-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 w-64 lg:static lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+                    <div className="h-16 hidden lg:flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
+                        <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V7.3</span></h1>
+                    </div>
+                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
+                        <NavItem icon={<LayoutDashboard size={20}/>} label="Visão Geral" active={activeTab === 'dashboard'} onClick={() => {setActiveTab('dashboard'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<ShoppingCart size={20}/>} label="Caixa (PDV)" active={activeTab === 'pos'} onClick={() => {setActiveTab('pos'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<Package size={20}/>} label="Expedição" active={activeTab === 'expedition'} onClick={() => {setActiveTab('expedition'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<Truck size={20}/>} label="Logística" active={activeTab === 'logistics'} onClick={() => {setActiveTab('logistics'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<Database size={20}/>} label="Cadastros" active={activeTab === 'crm'} onClick={() => {setActiveTab('crm'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<LineChart size={20}/>} label="Inteligência (BI)" active={activeTab === 'reports'} onClick={() => {setActiveTab('reports'); setMobileMenuOpen(false);}} />
+                        <NavItem icon={<HeartHandshake size={20}/>} label="Pós-Venda" active={activeTab === 'postsale'} onClick={() => {setActiveTab('postsale'); setMobileMenuOpen(false);}} />
                     </nav>
-                    <div className="p-4 border-t border-slate-800 space-y-3">
-                        <button onClick={() => setShowStockManager(true)} className="w-full flex items-center justify-center lg:justify-start gap-3 p-2 rounded hover:bg-slate-800 transition text-slate-400 hover:text-white">
-                            <ClipboardList size={20} /> <span className="hidden lg:inline text-sm font-medium">Estoque Rápido</span>
+                    <div className="p-4 border-t border-slate-800 space-y-3 pb-8 lg:pb-4">
+                        <button onClick={() => {setShowStockManager(true); setMobileMenuOpen(false);}} className="w-full flex items-center justify-start gap-3 p-2 rounded hover:bg-slate-800 transition text-slate-400 hover:text-white">
+                            <ClipboardList size={20} /> <span className="text-sm font-medium">Estoque Rápido</span>
                         </button>
-                        <div className="pt-2 border-t border-slate-800 hidden lg:block">
+                        <div className="pt-2 border-t border-slate-800">
                             <div className="flex gap-2 mb-2">
                                 <select className="bg-slate-800 text-xs text-white p-1.5 rounded border border-slate-700 flex-1 outline-none" value={backupType} onChange={(e) => setBackupType(e.target.value)}>
                                     <option value="all">Geral</option><option value="clients">Clientes</option><option value="products">Produtos</option>
@@ -355,10 +368,11 @@
                         </div>
                     </div>
                 </aside>
-                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full">
-                    <header className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
-                        <div className="flex items-center gap-2 lg:hidden"><div className="bg-yellow-500 text-slate-900 p-1 rounded font-bold">LOG</div></div>
-                        <div className="hidden lg:block"><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">{activeTab === 'dashboard' ? 'Visão Geral' : activeTab === 'pos' ? 'Ponto de Venda' : activeTab === 'expedition' ? 'Expedição' : activeTab === 'logistics' ? 'Logística' : activeTab === 'crm' ? 'Cadastros' : activeTab === 'postsale' ? 'Pós-Venda & Fidelização' : 'Inteligência de Negócios'}</h2></div>
+                
+                {/* MAIN CONTENT AREA */}
+                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full overflow-hidden relative">
+                    <header className="h-16 bg-white border-b hidden lg:flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
+                        <div><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">{activeTab === 'dashboard' ? 'Visão Geral' : activeTab === 'pos' ? 'Ponto de Venda' : activeTab === 'expedition' ? 'Expedição' : activeTab === 'logistics' ? 'Logística' : activeTab === 'crm' ? 'Cadastros' : activeTab === 'postsale' ? 'Pós-Venda & Fidelização' : 'Inteligência de Negócios'}</h2></div>
                         <div className="flex items-center gap-4">
                             <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border">
                                 <Phone size={14} /><input className="bg-transparent w-24 outline-none" value={companyPhone} onChange={e => setCompanyPhone(e.target.value)} />
@@ -366,15 +380,22 @@
                             <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-bold">OP</div>
                         </div>
                     </header>
-                    <div className="flex-1 overflow-hidden relative">{renderContent()}</div>
+                    {/* SCROLLABLE CONTAINER FOR ALL VIEWS - CRITICAL FIX */}
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden relative bg-gray-50">
+                        {renderContent()}
+                    </div>
                 </main>
-                {showStockManager && <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-in"><div className="bg-white w-full max-w-5xl h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden"><div className="bg-slate-800 text-white p-4 flex justify-between items-center shrink-0"><h2 className="font-bold flex items-center gap-2 text-lg"><ClipboardList size={20}/> GERENCIADOR DE ESTOQUE</h2><button onClick={() => setShowStockManager(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition"><XCircle size={24}/></button></div><StockManager products={products} setProducts={setProducts} /></div></div>}
+
+                {showStockManager && <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 animate-in"><div className="bg-white w-full max-w-5xl h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden"><div className="bg-slate-800 text-white p-4 flex justify-between items-center shrink-0"><h2 className="font-bold flex items-center gap-2 text-lg"><ClipboardList size={20}/> GERENCIADOR DE ESTOQUE</h2><button onClick={() => setShowStockManager(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition"><XCircle size={24}/></button></div><StockManager products={products} setProducts={setProducts} /></div></div>}
+                
+                {/* Mobile Overlay */}
+                {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
             </div>
           );
         }
 
         const NavItem = ({ icon, label, active, onClick }) => (
-            <button onClick={onClick} className={`w-full flex items-center justify-center lg:justify-start gap-3 p-3 lg:px-6 transition-all duration-200 nav-item ${active ? 'active text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`} title={label}>{icon}<span className="hidden lg:inline font-medium text-sm">{label}</span></button>
+            <button onClick={onClick} className={`w-full flex items-center justify-start gap-3 p-3 lg:px-6 transition-all duration-200 nav-item ${active ? 'active text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`} title={label}>{icon}<span className="font-medium text-sm">{label}</span></button>
         );
 
         // --- DASHBOARD ---
@@ -386,8 +407,8 @@
             const lowStock = products.filter(p => !p.isCombo && p.stock <= 5).length;
             
             return (
-                <div className="p-6 h-full overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="p-4 lg:p-6 pb-20">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
                         <MetricCard title="Vendas Hoje" value={formatCurrency(totalToday)} icon={<DollarSign size={24} className="text-green-600"/>} color="green" sub={`${salesToday.length} pedidos`} />
                         <MetricCard title="Pedidos Pendentes" value={pendingOrders} icon={<Clock size={24} className="text-orange-600"/>} color="orange" sub="Aguardando montagem" />
                         <MetricCard title="Estoque Baixo" value={lowStock} icon={<AlertTriangle size={24} className="text-red-600"/>} color="red" sub="Produtos críticos" />
@@ -401,12 +422,11 @@
             <div className={`bg-white p-5 rounded-xl shadow-sm border border-${color}-100 relative overflow-hidden group`}><div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110`}>{icon}</div><div className="relative z-10"><p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">{title}</p><h3 className="text-2xl font-bold text-gray-800 mb-1">{value}</h3><p className={`text-xs text-${color}-600 font-bold`}>{sub}</p></div></div>
         );
 
-        // --- INTELLIGENCE / REPORTS VIEW (UPDATED V7.1 - REMOVED PEAK HOURS) ---
+        // --- INTELLIGENCE / REPORTS VIEW ---
         function ReportsView({ sales, clients, products, postSaleLog }) {
             const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
             const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
 
-            // Filtro Principal
             const filteredSales = useMemo(() => {
                 return sales.filter(s => {
                     const d = s.date.slice(0, 10);
@@ -414,10 +434,9 @@
                 });
             }, [sales, startDate, endDate]);
 
-            // --- CÁLCULOS FINANCEIROS (DRE Simplificado) ---
             const financialData = useMemo(() => {
-                let grossRevenue = 0; // Faturamento Bruto (Total pago pelo cliente)
-                let totalCost = 0;    // CMV (Custo da Mercadoria Vendida)
+                let grossRevenue = 0; 
+                let totalCost = 0;    
                 let totalDiscounts = 0; 
                 let totalItems = 0;
                 
@@ -429,7 +448,6 @@
                         totalItems += (item.qty || 1);
                         const prod = products.find(p => p.id === item.id);
                         if (prod) {
-                            // Cálculo de custo (suporta Combos explodidos)
                             if (prod.isCombo) {
                                 prod.comboItems?.forEach(ci => {
                                     const subProd = products.find(sp => sp.id === ci.id);
@@ -451,7 +469,6 @@
                 return { grossRevenue, totalCost, netProfit, margin, ticketAvg, totalOrders: filteredSales.length, totalItems };
             }, [filteredSales, products]);
 
-            // --- CURVA ABC PRODUTOS ---
             const productPerformance = useMemo(() => {
                 const map = {};
                 filteredSales.forEach(s => {
@@ -464,7 +481,6 @@
                 return Object.values(map).sort((a,b) => b.revenue - a.revenue);
             }, [filteredSales]);
 
-            // --- ANÁLISE TEMPORAL (Dia da Semana) - Hora removido ---
             const timeAnalysis = useMemo(() => {
                 const days = {0:'Dom', 1:'Seg', 2:'Ter', 3:'Qua', 4:'Qui', 5:'Sex', 6:'Sáb'};
                 const dayCounts = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
@@ -479,13 +495,11 @@
                 };
             }, [filteredSales]);
 
-            // --- GEOGRAFIA E PAGAMENTOS ---
             const miscStats = useMemo(() => {
                 const payMethods = {};
                 const regions = {};
                 filteredSales.forEach(s => {
                     payMethods[s.payMethod] = (payMethods[s.payMethod] || 0) + 1;
-                    // Prefer sale regionOverride if available, else client region
                     let region = s.regionOverride;
                     if (!region) {
                         const client = clients.find(c => c.id === s.clientId);
@@ -499,7 +513,6 @@
                 };
             }, [filteredSales, clients]);
 
-            // Componente de Gráfico de Barras Simples
             const BarChart = ({ data, color = 'blue', height = 60 }) => {
                 if (data.length === 0) return <div className="text-xs text-gray-400">Sem dados</div>;
                 const max = Math.max(...data.map(d => d.val));
@@ -521,21 +534,19 @@
             };
 
             return (
-                <div className="h-full flex flex-col p-6 overflow-y-auto bg-gray-50">
-                    {/* HEADER */}
+                <div className="p-4 lg:p-6 pb-20">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white p-4 rounded-xl shadow-sm border shrink-0">
                         <div>
                             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Activity className="text-blue-600"/> Inteligência de Negócios</h2>
                             <p className="text-xs text-gray-500">Analise a saúde financeira e operacional da sua empresa.</p>
                         </div>
-                        <div className="flex gap-4 items-end mt-4 md:mt-0">
+                        <div className="flex flex-wrap gap-4 items-end mt-4 md:mt-0">
                             <div><label className="text-[10px] font-bold text-gray-400 uppercase block">Início</label><input type="date" className="border p-2 rounded text-sm bg-gray-50" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
                             <div><label className="text-[10px] font-bold text-gray-400 uppercase block">Fim</label><input type="date" className="border p-2 rounded text-sm bg-gray-50" value={endDate} onChange={e => setEndDate(e.target.value)} /></div>
                             <button onClick={printReport} className="bg-slate-800 text-white p-2 rounded hover:bg-slate-700 transition" title="Imprimir Relatório"><Printer size={20}/></button>
                         </div>
                     </div>
 
-                    {/* BIG NUMBERS - DRE */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 shrink-0">
                         <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-500 flex flex-col justify-between">
                             <div><p className="text-xs font-bold text-gray-400 uppercase">Faturamento Bruto</p><h3 className="text-2xl font-bold text-slate-800">{formatCurrency(financialData.grossRevenue)}</h3></div>
@@ -555,10 +566,7 @@
                         </div>
                     </div>
 
-                    {/* GRÁFICOS E TABELAS */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                        
-                        {/* 1. TOP PRODUTOS (Revenue) */}
                         <div className="bg-white p-5 rounded-xl shadow-sm border lg:col-span-2 flex flex-col h-[320px]">
                             <h3 className="font-bold text-gray-700 text-sm uppercase mb-4 flex justify-between"><span>🏆 Top Produtos (Faturamento)</span> <span className="text-xs text-gray-400">{filteredSales.length > 0 ? 'Rankeado por valor total' : ''}</span></h3>
                             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-3">
@@ -579,9 +587,7 @@
                             </div>
                         </div>
 
-                        {/* 2. REGION & PAY METHODS */}
                         <div className="flex flex-col gap-6">
-                             {/* Pay Methods */}
                             <div className="bg-white p-5 rounded-xl shadow-sm border flex-1">
                                 <h3 className="font-bold text-gray-700 text-sm uppercase mb-4">Formas de Pagamento</h3>
                                 <div className="space-y-3">
@@ -597,7 +603,6 @@
                                 </div>
                             </div>
 
-                             {/* Geo Analysis Simple */}
                             <div className="bg-white p-5 rounded-xl shadow-sm border flex-1">
                                 <h3 className="font-bold text-gray-700 text-sm uppercase mb-4">Faturamento por Região</h3>
                                 <div className="space-y-2 overflow-y-auto max-h-[150px] scrollbar-thin">
@@ -612,23 +617,20 @@
                         </div>
                     </div>
 
-                    {/* GRÁFICOS DE TEMPO - Pico de Horário Removido */}
                     <div className="grid grid-cols-1 gap-6 pb-6">
                         <div className="bg-white p-5 rounded-xl shadow-sm border">
                             <h3 className="font-bold text-gray-700 text-sm uppercase mb-6">Fluxo Semanal (Pedidos)</h3>
                             <BarChart data={timeAnalysis.days} color="indigo" height={120} />
                         </div>
                     </div>
-
                 </div>
             );
         }
 
-        // --- PÓS-VENDA VIEW (NEW TABLE LAYOUT v7.1) ---
+        // --- PÓS-VENDA VIEW ---
         function PostSalesView({ sales, clients, postSaleLog, setPostSaleLog, companyPhone }) {
             const [displayLimit, setDisplayLimit] = useState(10);
 
-            // Filter valid sales and sort by date descending
             const validSales = useMemo(() => {
                 return sales
                     .filter(s => s.status === 'Entregue' || s.status === 'Concluído' || s.status === 'Pendente')
@@ -646,13 +648,9 @@
                 
                 const clientName = client.name.split(' ')[0];
                 const cleanPhone = client.phone.replace(/\D/g, '');
-                
-                // Simplified items list for message
                 const itemsSummary = sale.items.map(i => `${i.qty || 1}x ${i.name}`).join(', ');
-                
                 const msg = `Olá ${clientName}! 👋\n\nPassando para agradecer pela compra de hoje! ❤\n\nVocê pediu: ${itemsSummary}.\n\nEsperamos que goste! Qualquer dúvida estamos à disposição. Até a próxima! 🚀`;
 
-                // Log the interaction
                 setPostSaleLog(prev => ({
                     ...prev,
                     [`${sale.id}_thankyou`]: { date: new Date().toISOString(), type: 'thank_you' }
@@ -662,15 +660,15 @@
             };
 
             return (
-                <div className="h-full flex flex-col p-6 overflow-hidden bg-gray-50">
+                <div className="p-4 lg:p-6 pb-20">
                     <div className="flex justify-between items-center mb-6">
                          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><HeartHandshake className="text-pink-600"/> Pós-Venda & Fidelização</h2>
                          <div className="text-xs text-gray-500 font-medium">Exibindo {visibleSales.length} de {validSales.length} vendas</div>
                     </div>
 
-                    <div className="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
-                        <div className="overflow-x-auto flex-1">
-                            <table className="w-full text-left border-collapse">
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[800px] lg:min-w-0">
                                 <thead className="bg-gray-100 text-gray-600 uppercase text-xs font-bold sticky top-0 z-10">
                                     <tr>
                                         <th className="p-4 border-b">Data</th>
@@ -748,13 +746,13 @@
             );
         }
 
-        // --- POS (PDV Otimizado v7.2) ---
+        // --- POS (PDV Otimizado v7.3 - MOBILE FLOW + TABLE) ---
         function POSView({ clients, products, setProducts, sales, setSales, saleToEdit, setSaleToEdit }) {
              const [selectedClient, setSelectedClient] = useState('');
              const [clientSearch, setClientSearch] = useState('');
              const [cart, setCart] = useState([]);
              
-             // Novos Campos
+             // Campos Venda
              const [saleRegion, setSaleRegion] = useState('');
              const [isPaid, setIsPaid] = useState(false);
              const [gift, setGift] = useState('Nenhum');
@@ -769,28 +767,22 @@
              const [volumes, setVolumes] = useState(1); 
              const [tempQty, setTempQty] = useState({});
              
-             // Subtotal derivado do carrinho
              const subTotal = useMemo(() => cart.reduce((acc, item) => acc + Number(item.price), 0), [cart]);
-             // Total final derivado
              const totalFinal = Math.max(0, subTotal - discount);
 
              useEffect(() => {
                 if (saleToEdit) {
                   const client = clients.find(c => c.id === saleToEdit.clientId);
                   if (client) { setSelectedClient(client.id); setClientSearch(client.name); }
-                  
                   setCart(saleToEdit.items.map(i => ({...i, tempId: generateId()})));
                   setObs(saleToEdit.obs); 
                   setPayMethod(saleToEdit.payMethod);
                   if (saleToEdit.changeFor) setChangeFor(saleToEdit.changeFor);
                   setVolumes(saleToEdit.volumes || 1);
-                  
-                  // Carregar novos campos
                   setSaleRegion(saleToEdit.regionOverride || (client ? client.region : ''));
                   setIsPaid(saleToEdit.isPaid || false);
                   setGift(saleToEdit.gift || 'Nenhum');
                   setDiscount(saleToEdit.discount || 0);
-
                   setSaleToEdit(null); 
                 }
               }, [saleToEdit, clients]);
@@ -826,7 +818,6 @@
              };
 
              const handleManualTotalChange = (val) => {
-                 // Quando muda o total manualmente, ajusta o desconto
                  const target = parseFloat(val);
                  if (!isNaN(target)) {
                      const newDiscount = Math.max(0, subTotal - target);
@@ -856,7 +847,7 @@
              const handleSelectClient = (c) => {
                  setSelectedClient(c.id);
                  setClientSearch(c.name);
-                 setSaleRegion(c.region || ''); // Puxa região padrão
+                 setSaleRegion(c.region || ''); 
              };
 
              const finalizeSale = () => {
@@ -891,16 +882,13 @@
                   total: totalFinal, 
                   payMethod, changeFor: payMethod === 'Dinheiro' ? changeFor : null, obs,
                   date: new Date().toISOString(), status: 'Pendente', printedLabel: false, printedList: false, volumes: volumes, routeId: null,
-                  regionOverride: saleRegion, // Salva a região editada
+                  regionOverride: saleRegion, 
                   gift: gift,
                   isPaid: isPaid
                 };
                 setSales([...sales, newSale]);
-                
-                // Reset
                 setCart([]); setSelectedClient(''); setClientSearch(''); setObs(''); setChangeFor(''); setVolumes(1); 
                 setSaleRegion(''); setIsPaid(false); setGift('Nenhum'); setDiscount(0);
-                
                 alert(`Venda #${shortId} Realizada!`);
              };
 
@@ -909,30 +897,59 @@
              const categories = ['todas', ...new Set(products.map(p => p.category))];
 
              return (
-                <div className="flex h-full">
-                    <div className="flex-1 flex flex-col border-r bg-white p-4">
-                        <div className="flex gap-4 mb-4 shrink-0">
+                <div className="flex flex-col lg:flex-row h-full">
+                    {/* LEFT: PRODUCTS (Scrollable) */}
+                    <div className="flex-1 flex flex-col lg:border-r bg-white p-4 overflow-hidden min-h-[500px]">
+                        <div className="flex gap-2 lg:gap-4 mb-4 shrink-0">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-2.5 text-gray-400" size={20}/><input className="w-full pl-10 pr-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" placeholder="Buscar produto..." value={searchProd} onChange={e => setSearchProd(e.target.value)} />
                             </div>
-                            <select className="border rounded-lg px-4 bg-white outline-none focus:border-blue-500" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}><option value="todas">Todas</option>{categories.filter(c=>c!=='todas').map(c => <option key={c} value={c}>{c}</option>)}</select>
+                            <select className="border rounded-lg px-2 lg:px-4 bg-white outline-none focus:border-blue-500 max-w-[100px] lg:max-w-none" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}><option value="todas">Todas</option>{categories.filter(c=>c!=='todas').map(c => <option key={c} value={c}>{c}</option>)}</select>
                         </div>
-                        <div className="flex-1 overflow-y-auto scrollbar-thin">
-                            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">{filteredProducts.map(p => (<div key={p.id} className="bg-white border rounded-lg p-3 hover:shadow-md transition cursor-pointer flex flex-col h-32 relative group border-slate-200" onClick={() => addToCart(p)}><div className="flex justify-between items-start mb-1"><span className="bg-slate-100 text-slate-600 text-[10px] font-mono px-1.5 rounded">{p.internalCode || '-'}</span><span className={`text-[10px] px-1.5 rounded font-bold ${p.stock > 10 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{p.stock} un</span></div><h4 className="font-bold text-sm text-gray-800 leading-tight mb-auto line-clamp-2">{p.name}</h4><div className="flex justify-between items-end mt-2"><div className="text-lg font-bold text-green-700">{formatCurrency(p.price)}</div><button className="bg-blue-600 text-white p-1.5 rounded hover:bg-blue-700 transition shadow-sm opacity-0 group-hover:opacity-100"><Plus size={16}/></button></div></div>))}</div>
+                        <div className="flex-1 overflow-y-auto scrollbar-thin border rounded-lg">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-gray-100 text-gray-600 text-xs uppercase sticky top-0 z-10 shadow-sm">
+                                    <tr>
+                                        <th className="p-2 border-b">Produto</th>
+                                        <th className="p-2 border-b text-center hidden sm:table-cell">Categ</th>
+                                        <th className="p-2 border-b text-center">Est</th>
+                                        <th className="p-2 border-b text-right">Preço</th>
+                                        <th className="p-2 border-b text-center">Add</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-sm divide-y divide-gray-100">
+                                    {filteredProducts.map(p => (
+                                        <tr key={p.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => addToCart(p)}>
+                                            <td className="p-2">
+                                                <div className="font-bold text-gray-800 leading-tight">{p.name}</div>
+                                                <div className="text-[10px] text-gray-500 flex gap-2 items-center mt-0.5">
+                                                    {p.internalCode && <span>Cód: {p.internalCode}</span>}
+                                                    {p.isCombo && <span className="bg-yellow-100 text-yellow-800 px-1 rounded font-bold text-[9px]">COMBO</span>}
+                                                </div>
+                                            </td>
+                                            <td className="p-2 text-center hidden sm:table-cell"><span className="text-[10px] bg-gray-100 px-1.5 rounded text-gray-600">{p.category}</span></td>
+                                            <td className="p-2 text-center font-bold text-xs"><span className={p.stock < 5 ? 'text-red-600' : 'text-green-600'}>{p.stock}</span></td>
+                                            <td className="p-2 text-right font-bold text-emerald-600">{formatCurrency(p.price)}</td>
+                                            <td className="p-2 text-center"><button className="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded transition shadow-sm"><Plus size={16}/></button></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div className="w-[400px] flex flex-col bg-gray-50 h-full border-l shadow-xl z-10">
-                        {/* HEADER CLIENTE & REGIAO */}
-                        <div className="p-4 bg-white border-b shrink-0 z-20 space-y-3">
+
+                    {/* RIGHT: CART (Scrollable, below on mobile) */}
+                    <div className="w-full lg:w-[420px] flex flex-col bg-gray-50 border-t lg:border-t-0 lg:border-l shadow-xl z-20 shrink-0">
+                        {/* CLIENT SELECTOR */}
+                        <div className="p-4 bg-white border-b space-y-3">
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Cliente</label>
                                 <div className="relative">
-                                    <input className={`w-full p-2 border rounded-lg outline-none ${selectedClient ? 'bg-green-50 border-green-500 text-green-800 font-bold' : 'bg-white'}`} placeholder="Buscar Cliente..." value={clientSearch} onChange={e => { setClientSearch(e.target.value); setSelectedClient(''); }} />
+                                    <input className={`w-full p-3 border rounded-lg outline-none transition ${selectedClient ? 'bg-green-50 border-green-500 text-green-800 font-bold' : 'bg-white focus:border-blue-500'}`} placeholder="Buscar Cliente..." value={clientSearch} onChange={e => { setClientSearch(e.target.value); setSelectedClient(''); }} />
                                     {clientSearch && !selectedClient && (<div className="absolute top-full left-0 w-full bg-white border shadow-xl max-h-60 overflow-y-auto z-50 rounded-b-lg">{filteredClients.map(c => (<div key={c.id} className="p-3 hover:bg-blue-50 cursor-pointer border-b flex justify-between items-center" onClick={() => handleSelectClient(c)}><div><div className="font-bold text-sm">{c.name}</div><div className="text-xs text-gray-500">{c.district}</div></div></div>))}</div>)}
                                 </div>
                             </div>
                             
-                            {/* NOVA REGIÃO EDITÁVEL */}
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Rota / Região (Editável)</label>
                                 <select className="w-full border rounded p-2 text-sm bg-gray-50 outline-none focus:bg-white focus:border-blue-500" value={saleRegion} onChange={e => setSaleRegion(e.target.value)}>
@@ -941,14 +958,14 @@
                                     <option value="COXIPO">COXIPO</option>
                                     <option value="VARZEA GRANDE">VARZEA GRANDE</option>
                                     <option value="CPA">CPA</option>
-                                    {/* Adiciona opção atual se não estiver na lista padrão */}
                                     {!['CUIABÁ', 'COXIPO', 'VARZEA GRANDE', 'CPA', ''].includes(saleRegion) && <option value={saleRegion}>{saleRegion}</option>}
                                 </select>
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin">
-                            {cart.length === 0 && (<div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60"><ShoppingCart size={48} className="mb-2"/><p>Carrinho Vazio</p></div>)}
+                        {/* CART ITEMS */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 max-h-[300px] lg:max-h-none scrollbar-thin">
+                            {cart.length === 0 && (<div className="h-32 lg:h-full flex flex-col items-center justify-center text-gray-400 opacity-60"><ShoppingCart size={48} className="mb-2"/><p>Carrinho Vazio</p></div>)}
                             {cart.map(item => (
                                 <div key={item.tempId} className="bg-white p-3 rounded-lg border shadow-sm relative group">
                                     <div className="flex justify-between items-start mb-1"><div className="font-bold text-sm text-gray-800 pr-6">{item.name}</div><button onClick={() => removeFromCart(item.tempId)} className="text-gray-300 hover:text-red-500 absolute top-2 right-2"><XCircle size={16}/></button></div>
@@ -958,37 +975,35 @@
                             ))}
                         </div>
 
-                        <div className="bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
-                            {/* TOTAL E DESCONTOS */}
+                        {/* CHECKOUT FOOTER */}
+                        <div className="bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-20 lg:pb-4">
                             <div className="flex justify-between items-end mb-2">
                                 <div><label className="text-[10px] font-bold text-gray-400 uppercase">Subtotal</label><div className="text-sm text-gray-600">{formatCurrency(subTotal)}</div></div>
-                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Desconto (R$)</label><input type="number" className="w-20 border-b border-gray-300 text-right text-sm outline-none focus:border-red-500 text-red-500" value={discount} onChange={e => handleDiscountChange(e.target.value)} /></div>
+                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Desconto (R$)</label><input type="number" className="w-24 border-b border-gray-300 text-right text-sm outline-none focus:border-red-500 text-red-500 p-1" value={discount} onChange={e => handleDiscountChange(e.target.value)} /></div>
                             </div>
                             <div className="flex justify-between items-center mb-4 pt-2 border-t">
                                 <span className="text-gray-500 font-bold uppercase text-xs">Total Final</span>
                                 <input className="font-bold text-2xl text-right w-32 border-b-2 border-emerald-500 focus:outline-none text-emerald-600 bg-transparent" value={totalFinal.toFixed(2)} onChange={(e) => handleManualTotalChange(e.target.value)} />
                             </div>
 
-                            {/* CONFIGS FINAIS */}
                             <div className="grid grid-cols-2 gap-3 mb-2">
-                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Pagamento</label><select className="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value={payMethod} onChange={e => setPayMethod(e.target.value)}><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
-                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Brinde</label><select className="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value={gift} onChange={e => setGift(e.target.value)}><option value="Nenhum">Nenhum</option><option value="Amaciante">Amaciante</option><option value="Café">Café</option><option value="Ovo">Ovo</option></select></div>
+                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Pagamento</label><select className="w-full border rounded p-2 text-sm bg-gray-50 outline-none" value={payMethod} onChange={e => setPayMethod(e.target.value)}><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
+                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Brinde</label><select className="w-full border rounded p-2 text-sm bg-gray-50 outline-none" value={gift} onChange={e => setGift(e.target.value)}><option value="Nenhum">Nenhum</option><option value="Amaciante">Amaciante</option><option value="Café">Café</option><option value="Ovo">Ovo</option></select></div>
                             </div>
 
-                            {/* CHECKBOX PAGO - APENAS PARA PIX/CARTÃO */}
                             {(payMethod === 'Pix' || payMethod === 'Cartão') && (
-                                <label className="flex items-center gap-2 mb-3 bg-green-50 p-2 rounded border border-green-100 cursor-pointer">
-                                    <input type="checkbox" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} className="w-4 h-4 text-green-600 rounded focus:ring-green-500" />
+                                <label className="flex items-center gap-2 mb-3 bg-green-50 p-3 rounded border border-green-100 cursor-pointer">
+                                    <input type="checkbox" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} className="w-5 h-5 text-green-600 rounded focus:ring-green-500" />
                                     <span className="text-xs font-bold text-green-800">PEDIDO PAGO (SÓ ENTREGAR)</span>
                                 </label>
                             )}
 
                             {payMethod === 'Dinheiro' && (<div className="mb-4"><label className="text-[10px] font-bold text-gray-400 uppercase">Troco Para</label><input className="w-full border rounded p-2 text-sm bg-gray-50 outline-none" type="number" placeholder="R$ 0,00" value={changeFor} onChange={e => setChangeFor(e.target.value)} /></div>)}
                             
-                            <div className="mb-4"><label className="text-[10px] font-bold text-gray-400 uppercase">Volumes</label><select className="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value={volumes} onChange={e => setVolumes(e.target.value)}>{[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}</select></div>
+                            <div className="mb-4"><label className="text-[10px] font-bold text-gray-400 uppercase">Volumes</label><select className="w-full border rounded p-2 text-sm bg-gray-50 outline-none" value={volumes} onChange={e => setVolumes(e.target.value)}>{[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}</select></div>
                             <input className="w-full border rounded p-2 text-sm bg-gray-50 outline-none mb-4" placeholder="Observações..." value={obs} onChange={e => setObs(e.target.value)} />
                             
-                            <button onClick={finalizeSale} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition shadow-lg flex justify-between items-center px-6"><span>FINALIZAR</span><span className="text-emerald-400 text-xl">{formatCurrency(totalFinal)}</span></button>
+                            <button onClick={finalizeSale} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition shadow-lg flex justify-between items-center px-6 text-lg"><span>FINALIZAR</span><span className="text-emerald-400">{formatCurrency(totalFinal)}</span></button>
                         </div>
                     </div>
                     {editingItem && (<div className="absolute inset-0 bg-black/50 z-50 flex flex-col items-center justify-center p-4"><div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col gap-4 w-72"><h3 className="text-sm font-bold text-center">Ajustar Preço</h3><input type="number" autoFocus className="text-3xl font-bold text-center border-b-2 border-blue-500 outline-none pb-2 w-full" value={editingItem.price} onChange={e => setEditingItem({...editingItem, price: e.target.value})}/><div className="flex gap-2"><button onClick={() => setEditingItem(null)} className="flex-1 bg-gray-100 py-2 rounded font-bold text-gray-500">Cancelar</button><button onClick={updateCartItemPrice} className="flex-1 bg-blue-600 text-white py-2 rounded font-bold">Salvar</button></div></div></div>)}
@@ -1014,9 +1029,7 @@
             const handleEdit = (sale) => { if(!confirm("Editar venda? Itens voltarão ao carrinho.")) return; returnStock(sale); setSales(sales.filter(s => s.id !== sale.id)); onEditSale(sale); };
             const printLabel = (sale, client) => {
                 const volCount = sale.volumes || 1; let labelsHtml = '';
-                // Use override region if available, otherwise client region
                 const regionDisplay = sale.regionOverride || client.region || 'GERAL';
-                
                 for (let i = 1; i <= volCount; i++) { labelsHtml += `<div class="label" style="border:1px solid #000; width:300px; height:400px; padding:10px; margin-bottom:10px; page-break-after:always;"><h1 style="font-size:40px;margin:0;">#${sale.id}</h1><h2 style="margin:5px 0;">${regionDisplay}</h2><p style="font-size:18px;"><strong>${client.name}</strong><br/>${client.district}</p><p>Vol: ${i}/${volCount}</p><p style="font-size:12px;">Obs: ${sale.obs || '-'}</p></div>`; }
                 const w = window.open('', '', 'width=400,height=500'); w.document.write(`<html><body>${labelsHtml}<script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close();
             };
@@ -1026,9 +1039,9 @@
                  const w = window.open('', '', 'width=400,height=600'); w.document.write(`<html><body style="font-family:sans-serif; padding:20px;"><h2>SEPARAÇÃO #${sale.id}</h2><h3>${client.name}</h3><hr/>${itemsHtml}<hr/><p>Obs: ${sale.obs||''}</p><script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close();
             };
             const activeSales = sales.filter(s => s.status !== 'Entregue').sort((a,b) => new Date(a.date) - new Date(b.date));
-            const KanbanColumn = ({ title, status, color, children }) => (<div className="flex flex-col h-full min-w-[320px] max-w-md flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200"><div className={`p-3 font-bold text-sm uppercase text-${color}-800 bg-${color}-100 border-b border-${color}-200 flex justify-between`}>{title}<span className="bg-white px-2 rounded-full text-xs flex items-center">{children.length}</span></div><div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">{children}</div></div>);
+            const KanbanColumn = ({ title, status, color, children }) => (<div className="flex flex-col h-full min-w-[300px] flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200"><div className={`p-3 font-bold text-sm uppercase text-${color}-800 bg-${color}-100 border-b border-${color}-200 flex justify-between`}>{title}<span className="bg-white px-2 rounded-full text-xs flex items-center">{children.length}</span></div><div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">{children}</div></div>);
             return (
-                <div className="h-full overflow-x-auto p-6"><div className="flex gap-6 h-full min-w-max">
+                <div className="p-4 lg:p-6 pb-20 overflow-x-auto"><div className="flex flex-col md:flex-row gap-6 h-full min-w-full md:min-w-0">
                     <KanbanColumn title="Pendente" status="Pendente" color="orange">{activeSales.filter(s => s.status === 'Pendente').map(s => <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition group"><div className="flex justify-between items-start mb-2"><span className="font-bold text-lg text-slate-700">#{s.id}</span><div className="flex gap-1 opacity-0 group-hover:opacity-100 transition"><button onClick={() => handleEdit(s)} className="p-1 hover:bg-blue-50 text-blue-500 rounded"><Edit2 size={14}/></button><button onClick={() => deleteSale(s)} className="p-1 hover:bg-red-50 text-red-500 rounded"><Trash2 size={14}/></button></div></div><div className="font-bold text-sm mb-1">{clients.find(c=>c.id===s.clientId)?.name}</div><div className="flex gap-2 mb-3"><button onClick={() => printLabel(s, clients.find(c=>c.id===s.clientId))} className="flex-1 border rounded py-1 text-xs">Etiqueta</button><button onClick={() => printPickingList(s, clients.find(c=>c.id===s.clientId))} className="flex-1 border rounded py-1 text-xs">Lista</button></div><button onClick={() => updateStatus(s.id, 'Montagem')} className="w-full bg-orange-500 text-white font-bold py-2 rounded text-xs">INICIAR MONTAGEM</button></div>)}</KanbanColumn>
                     <KanbanColumn title="Em Montagem" status="Montagem" color="blue">{activeSales.filter(s => s.status === 'Montagem').map(s => <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition group"><div className="flex justify-between items-start mb-2"><span className="font-bold text-lg text-slate-700">#{s.id}</span></div><div className="font-bold text-sm mb-1">{clients.find(c=>c.id===s.clientId)?.name}</div><button onClick={() => updateStatus(s.id, 'Rota')} className="w-full bg-blue-500 text-white font-bold py-2 rounded text-xs mt-4">PRONTO PARA ROTA</button></div>)}</KanbanColumn>
                     <KanbanColumn title="Pronto p/ Rota" status="Rota" color="green">{activeSales.filter(s => s.status === 'Rota').map(s => <div key={s.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition group"><div className="flex justify-between items-start mb-2"><span className="font-bold text-lg text-slate-700">#{s.id}</span></div><div className="font-bold text-sm mb-1">{clients.find(c=>c.id===s.clientId)?.name}</div><div className="text-center text-xs font-bold text-green-600 bg-green-50 py-2 rounded border border-green-100 mt-4">AGUARDANDO ENTREGA</div></div>)}</KanbanColumn>
@@ -1046,9 +1059,7 @@
             useEffect(() => { 
                 const ready = sales.filter(s => s.status === 'Rota'); 
                 const filtered = selectedRoute === 'Todas' ? ready : ready.filter(s => { 
-                    // CRITICAL: Check override first
                     if (s.regionOverride) return s.regionOverride === selectedRoute;
-                    
                     const c = clients.find(cl => cl.id === s.clientId); 
                     const region = c?.region || c?.route; 
                     return region === selectedRoute; 
@@ -1065,7 +1076,6 @@
                     route: selectedRoute, companyPhone, generatedAt: new Date(), 
                     orders: routeSales.map(s => { 
                         const c = clients.find(cl => cl.id === s.clientId); 
-                        // Determine final pay text
                         let finalPay = s.payMethod;
                         if (s.isPaid) finalPay += " (JÁ PAGO)";
 
@@ -1132,20 +1142,20 @@
             };
 
             return (
-                <div className="h-full flex flex-col p-6 max-w-5xl mx-auto">
-                    <div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
-                        <div className="flex gap-4 items-center">
-                            <span className="font-bold text-gray-500 uppercase text-xs">Região:</span>
-                            <select className="border rounded-lg p-2 bg-gray-50 outline-none" value={selectedRoute} onChange={e => setSelectedRoute(e.target.value)}><option value="Todas">Todas</option>{routes.map(r => <option key={r} value={r}>{r}</option>)}</select>
+                <div className="p-4 lg:p-6 pb-20 max-w-5xl mx-auto">
+                    <div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="flex gap-4 items-center w-full md:w-auto">
+                            <span className="font-bold text-gray-500 uppercase text-xs shrink-0">Região:</span>
+                            <select className="border rounded-lg p-2 bg-gray-50 outline-none w-full md:w-auto" value={selectedRoute} onChange={e => setSelectedRoute(e.target.value)}><option value="Todas">Todas</option>{routes.map(r => <option key={r} value={r}>{r}</option>)}</select>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 w-full md:w-auto justify-between">
                             <div className="text-right"><div className="text-xs text-gray-400 font-bold uppercase">Total da Rota</div><div className="text-2xl font-bold text-green-700">{formatCurrency(totalValue)}</div></div>
                             <button onClick={() => setShowImport(true)} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 flex items-center gap-2"><Upload size={16}/> PROCESSAR RETORNO</button>
                         </div>
                     </div>
-                    <div className="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
                         <div className="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><span className="font-bold text-indigo-900 text-sm flex items-center gap-2"><Truck size={16}/> {routeSales.length} Entregas Pendentes</span><button onClick={generateDriverLink} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">GERAR LINK MOTORISTA</button></div>
-                        <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50">{routeSales.map((s, idx) => { const client = clients.find(c => c.id === s.clientId) || {}; return (<div key={s.id} className="bg-white p-3 rounded-lg border shadow-sm flex gap-4 items-center"><div className="flex flex-col gap-1"><button onClick={() => moveOrder(idx, 'up')} className="p-1 hover:bg-gray-100 rounded"><ArrowUp size={14} className="text-gray-400"/></button><span className="font-bold text-sm text-center text-indigo-600 w-6">{idx + 1}</span><button onClick={() => moveOrder(idx, 'down')} className="p-1 hover:bg-gray-100 rounded"><ArrowDown size={14} className="text-gray-400"/></button></div><div className="flex-1"><div className="flex justify-between"><h4 className="font-bold text-gray-800">{client.name}</h4><span className="font-mono text-xs bg-gray-100 px-2 rounded text-gray-500">#{s.id}</span></div><p className="text-sm text-gray-500">{client.address}, {client.district}</p><div className="flex gap-2 mt-2 text-xs"><span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">{s.payMethod}{s.isPaid ? ' (PAGO)' : ''}</span><span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold">{formatCurrency(s.total)}</span>{s.gift && s.gift !== 'Nenhum' && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold flex items-center gap-1"><Gift size={10}/> {s.gift}</span>}</div></div><button onClick={() => forceDelivery(s.id)} className="p-3 hover:bg-green-50 text-gray-300 hover:text-green-600 rounded-full transition"><CheckCircle size={24}/></button></div>); })}</div>
+                        <div className="overflow-y-auto p-2 space-y-2 bg-gray-50 max-h-[600px]">{routeSales.map((s, idx) => { const client = clients.find(c => c.id === s.clientId) || {}; return (<div key={s.id} className="bg-white p-3 rounded-lg border shadow-sm flex gap-4 items-center"><div className="flex flex-col gap-1"><button onClick={() => moveOrder(idx, 'up')} className="p-1 hover:bg-gray-100 rounded"><ArrowUp size={14} className="text-gray-400"/></button><span className="font-bold text-sm text-center text-indigo-600 w-6">{idx + 1}</span><button onClick={() => moveOrder(idx, 'down')} className="p-1 hover:bg-gray-100 rounded"><ArrowDown size={14} className="text-gray-400"/></button></div><div className="flex-1"><div className="flex justify-between"><h4 className="font-bold text-gray-800">{client.name}</h4><span className="font-mono text-xs bg-gray-100 px-2 rounded text-gray-500">#{s.id}</span></div><p className="text-sm text-gray-500">{client.address}, {client.district}</p><div className="flex flex-wrap gap-2 mt-2 text-xs"><span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">{s.payMethod}{s.isPaid ? ' (PAGO)' : ''}</span><span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold">{formatCurrency(s.total)}</span>{s.gift && s.gift !== 'Nenhum' && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold flex items-center gap-1"><Gift size={10}/> {s.gift}</span>}</div></div><button onClick={() => forceDelivery(s.id)} className="p-3 hover:bg-green-50 text-gray-300 hover:text-green-600 rounded-full transition"><CheckCircle size={24}/></button></div>); })}</div>
                     </div>
                     {showImport && (<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"><div className="bg-white w-full max-w-lg rounded-xl p-6 shadow-2xl"><h3 className="text-lg font-bold mb-4">Processar Retorno do Motorista</h3><p className="text-xs text-gray-500 mb-2">Cole aqui o relatório enviado pelo motorista no WhatsApp.</p><textarea className="w-full h-48 border rounded p-2 text-xs font-mono mb-4 bg-gray-50" placeholder="Cole o relatório aqui..." value={importText} onChange={e => setImportText(e.target.value)} /><div className="flex gap-2"><button onClick={() => setShowImport(false)} className="flex-1 bg-gray-200 py-2 rounded font-bold text-gray-600">Cancelar</button><button onClick={processReturnReport} className="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded font-bold text-white">PROCESSAR BAIXA</button></div></div></div>)}
                 </div>
@@ -1179,31 +1189,48 @@
             const list = tab === 'clients' ? clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name)) : products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name));
 
             return (
-                <div className="flex h-full"><div className="w-1/3 border-r bg-white flex flex-col"><div className="p-4 border-b"><div className="flex bg-gray-100 p-1 rounded-lg mb-4"><button onClick={() => setTab('clients')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'clients' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>CLIENTES</button><button onClick={() => setTab('products')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'products' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>PRODUTOS</button></div><input className="w-full bg-gray-50 border rounded p-2 text-sm outline-none" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div><div className="flex-1 overflow-y-auto">{list.map(item => (<div key={item.id} className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${(editingClientId === item.id || editingProductId === item.id) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`} onClick={() => { if(tab === 'clients') { setCForm(item); setEditingClientId(item.id); } else { setPForm(item); setEditingProductId(item.id); } }}><div className="font-bold text-sm text-gray-800">{item.name}</div><div className="text-xs text-gray-500">{tab === 'clients' ? item.district : `${formatCurrency(item.price)} • Est: ${item.stock}`}</div></div>))}</div><div className="p-3 border-t bg-gray-50 text-center"><button onClick={() => { tab === 'clients' ? (setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }), setEditingClientId(null)) : (setPForm({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] }), setEditingProductId(null)) }} className="text-xs font-bold text-blue-600 flex items-center justify-center gap-1 w-full py-2 hover:bg-blue-100 rounded"><Plus size={14}/> NOVO CADASTRO</button></div></div><div className="flex-1 bg-gray-50 p-8 overflow-y-auto"><div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border"><h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-2">{tab === 'clients' ? (editingClientId ? 'Editar Cliente' : 'Novo Cliente') : (editingProductId ? 'Editar Produto' : 'Novo Produto')}</h2>
-                {tab === 'clients' ? (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-4 gap-4"><div className="col-span-3"><label className="text-xs font-bold text-gray-500 uppercase">Nome</label><input className="input-field" value={cForm.name} onChange={e => setCForm({...cForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Código</label><input className="input-field bg-gray-100" value={cForm.code} disabled /></div></div>
-                        <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Celular (Comprador)</label><input className="input-field" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Celular (Recebedor)</label><input className="input-field" value={cForm.phone2} onChange={e => setCForm({...cForm, phone2: e.target.value})} /></div></div>
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="col-span-2"><label className="text-xs font-bold text-gray-500 uppercase">Cidade</label><input className="input-field" value={cForm.city} onChange={e => setCForm({...cForm, city: e.target.value})} /></div>
-                            <div><label className="text-xs font-bold text-gray-500 uppercase">Bairro</label><input className="input-field" value={cForm.district} onChange={e => setCForm({...cForm, district: e.target.value})} /></div>
+                <div className="flex flex-col lg:flex-row h-full pb-20 lg:pb-0">
+                    <div className="w-full lg:w-1/3 border-r bg-white flex flex-col h-[300px] lg:h-full">
+                        <div className="p-4 border-b">
+                            <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
+                                <button onClick={() => setTab('clients')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'clients' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>CLIENTES</button>
+                                <button onClick={() => setTab('products')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'products' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>PRODUTOS</button>
+                            </div>
+                            <input className="w-full bg-gray-50 border rounded p-2 text-sm outline-none" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} />
                         </div>
-                        <div><label className="text-xs font-bold text-gray-500 uppercase">Endereço</label><input className="input-field" value={cForm.address} onChange={e => setCForm({...cForm, address: e.target.value})} /></div>
-                        <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Região / Rota</label><select className="input-field" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}><option value="CUIABÁ">CUIABÁ (Centro)</option><option value="COXIPO">COXIPO</option><option value="VARZEA GRANDE">VARZEA GRANDE</option><option value="CPA">CPA</option></select></div><div><label className="text-xs font-bold text-gray-500 uppercase">Link Maps</label><input className="input-field" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} /></div></div>
-                        <div><label className="text-xs font-bold text-gray-500 uppercase">Observações</label><input className="input-field" value={cForm.obs} onChange={e => setCForm({...cForm, obs: e.target.value})} /></div>
-                        <button onClick={saveClient} className="w-full btn-primary mt-4">SALVAR CLIENTE</button>
+                        <div className="flex-1 overflow-y-auto">{list.map(item => (<div key={item.id} className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${(editingClientId === item.id || editingProductId === item.id) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`} onClick={() => { if(tab === 'clients') { setCForm(item); setEditingClientId(item.id); } else { setPForm(item); setEditingProductId(item.id); } }}><div className="font-bold text-sm text-gray-800">{item.name}</div><div className="text-xs text-gray-500">{tab === 'clients' ? item.district : `${formatCurrency(item.price)} • Est: ${item.stock}`}</div></div>))}</div>
+                        <div className="p-3 border-t bg-gray-50 text-center"><button onClick={() => { tab === 'clients' ? (setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }), setEditingClientId(null)) : (setPForm({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] }), setEditingProductId(null)) }} className="text-xs font-bold text-blue-600 flex items-center justify-center gap-1 w-full py-2 hover:bg-blue-100 rounded"><Plus size={14}/> NOVO CADASTRO</button></div>
                     </div>
-                ) : (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4"><div className="col-span-2"><label className="text-xs font-bold text-gray-500 uppercase">Nome Produto</label><input className="input-field" value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Cód Interno</label><input className="input-field" value={pForm.internalCode} onChange={e => setPForm({...pForm, internalCode: e.target.value})} /></div></div>
-                        <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Categoria</label><input className="input-field" value={pForm.category} onChange={e => setPForm({...pForm, category: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Cód Barras</label><input className="input-field" value={pForm.barcode} onChange={e => setPForm({...pForm, barcode: e.target.value})} /></div></div>
-                        <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">NCM</label><input className="input-field" value={pForm.ncm} onChange={e => setPForm({...pForm, ncm: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Custo (CMV)</label><input className="input-field" type="number" value={pForm.cost} onChange={e => setPForm({...pForm, cost: e.target.value})} /></div></div>
-                        <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Preço Venda</label><input className="input-field font-bold text-green-700" type="number" value={pForm.price} onChange={e => setPForm({...pForm, price: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Estoque Atual</label><input className="input-field bg-gray-100" type="number" value={pForm.stock} disabled={pForm.isCombo} onChange={e => setPForm({...pForm, stock: Number(e.target.value)})} /></div></div>
-                        <div className="flex items-center gap-2 pt-2 border-t"><input type="checkbox" checked={pForm.isCombo} onChange={e => setPForm({...pForm, isCombo: e.target.checked})} /><label className="font-bold text-sm">Este produto é um Combo/Kit?</label></div>
-                        {pForm.isCombo && (<div className="bg-yellow-50 p-4 rounded border border-yellow-200"><h4 className="font-bold text-yellow-800 text-xs uppercase mb-2">Composição do Kit</h4><div className="space-y-2 max-h-48 overflow-y-auto">{products.filter(p => !p.isCombo).map(p => (<div key={p.id} className="flex justify-between items-center text-sm border-b border-yellow-100 pb-1"><span>{p.name}</span><input type="number" className="w-16 border rounded text-center p-1" placeholder="0" value={pForm.comboItems.find(i => i.id === p.id)?.qty || ''} onChange={(e) => { const qty = Number(e.target.value); const existing = pForm.comboItems.filter(i => i.id !== p.id); if (qty > 0) setPForm({...pForm, comboItems: [...existing, {id: p.id, qty}]}); else setPForm({...pForm, comboItems: existing}); }} /></div>))}</div></div>)}
-                        <button onClick={saveProduct} className="w-full btn-primary mt-4">SALVAR PRODUTO</button>
+                    <div className="flex-1 bg-gray-50 p-4 lg:p-8 overflow-y-auto">
+                        <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border">
+                            <h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-2">{tab === 'clients' ? (editingClientId ? 'Editar Cliente' : 'Novo Cliente') : (editingProductId ? 'Editar Produto' : 'Novo Produto')}</h2>
+                            {tab === 'clients' ? (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4"><div className="md:col-span-3"><label className="text-xs font-bold text-gray-500 uppercase">Nome</label><input className="input-field" value={cForm.name} onChange={e => setCForm({...cForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Código</label><input className="input-field bg-gray-100" value={cForm.code} disabled /></div></div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Celular (Comprador)</label><input className="input-field" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Celular (Recebedor)</label><input className="input-field" value={cForm.phone2} onChange={e => setCForm({...cForm, phone2: e.target.value})} /></div></div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="md:col-span-2"><label className="text-xs font-bold text-gray-500 uppercase">Cidade</label><input className="input-field" value={cForm.city} onChange={e => setCForm({...cForm, city: e.target.value})} /></div>
+                                        <div><label className="text-xs font-bold text-gray-500 uppercase">Bairro</label><input className="input-field" value={cForm.district} onChange={e => setCForm({...cForm, district: e.target.value})} /></div>
+                                    </div>
+                                    <div><label className="text-xs font-bold text-gray-500 uppercase">Endereço</label><input className="input-field" value={cForm.address} onChange={e => setCForm({...cForm, address: e.target.value})} /></div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Região / Rota</label><select className="input-field" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}><option value="CUIABÁ">CUIABÁ (Centro)</option><option value="COXIPO">COXIPO</option><option value="VARZEA GRANDE">VARZEA GRANDE</option><option value="CPA">CPA</option></select></div><div><label className="text-xs font-bold text-gray-500 uppercase">Link Maps</label><input className="input-field" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} /></div></div>
+                                    <div><label className="text-xs font-bold text-gray-500 uppercase">Observações</label><input className="input-field" value={cForm.obs} onChange={e => setCForm({...cForm, obs: e.target.value})} /></div>
+                                    <button onClick={saveClient} className="w-full btn-primary mt-4">SALVAR CLIENTE</button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="md:col-span-2"><label className="text-xs font-bold text-gray-500 uppercase">Nome Produto</label><input className="input-field" value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Cód Interno</label><input className="input-field" value={pForm.internalCode} onChange={e => setPForm({...pForm, internalCode: e.target.value})} /></div></div>
+                                    <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Categoria</label><input className="input-field" value={pForm.category} onChange={e => setPForm({...pForm, category: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Cód Barras</label><input className="input-field" value={pForm.barcode} onChange={e => setPForm({...pForm, barcode: e.target.value})} /></div></div>
+                                    <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">NCM</label><input className="input-field" value={pForm.ncm} onChange={e => setPForm({...pForm, ncm: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Custo (CMV)</label><input className="input-field" type="number" value={pForm.cost} onChange={e => setPForm({...pForm, cost: e.target.value})} /></div></div>
+                                    <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Preço Venda</label><input className="input-field font-bold text-green-700" type="number" value={pForm.price} onChange={e => setPForm({...pForm, price: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Estoque Atual</label><input className="input-field bg-gray-100" type="number" value={pForm.stock} disabled={pForm.isCombo} onChange={e => setPForm({...pForm, stock: Number(e.target.value)})} /></div></div>
+                                    <div className="flex items-center gap-2 pt-2 border-t"><input type="checkbox" checked={pForm.isCombo} onChange={e => setPForm({...pForm, isCombo: e.target.checked})} /><label className="font-bold text-sm">Este produto é um Combo/Kit?</label></div>
+                                    {pForm.isCombo && (<div className="bg-yellow-50 p-4 rounded border border-yellow-200"><h4 className="font-bold text-yellow-800 text-xs uppercase mb-2">Composição do Kit</h4><div className="space-y-2 max-h-48 overflow-y-auto">{products.filter(p => !p.isCombo).map(p => (<div key={p.id} className="flex justify-between items-center text-sm border-b border-yellow-100 pb-1"><span>{p.name}</span><input type="number" className="w-16 border rounded text-center p-1" placeholder="0" value={pForm.comboItems.find(i => i.id === p.id)?.qty || ''} onChange={(e) => { const qty = Number(e.target.value); const existing = pForm.comboItems.filter(i => i.id !== p.id); if (qty > 0) setPForm({...pForm, comboItems: [...existing, {id: p.id, qty}]}); else setPForm({...pForm, comboItems: existing}); }} /></div>))}</div></div>)}
+                                    <button onClick={saveProduct} className="w-full btn-primary mt-4">SALVAR PRODUTO</button>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                )}</div></div></div>
+                </div>
             );
         }
 
@@ -1236,10 +1263,10 @@
                  }); 
                  setProducts(newProducts); let resultMsg = `${type === 'IN' ? 'ENTRADA' : 'SAÍDA'} PROCESSADA!\n\n`; if(log.length > 0) resultMsg += `Itens: ${log.length}\n`; if(errors.length > 0) resultMsg += `\nErros: ${errors.join(', ')}`; alert(resultMsg); if(type === 'IN') setBulkIn(''); else setBulkOut(''); 
             };
-             return (<div className="flex h-full"><div className="w-1/3 border-r bg-gray-50 p-4 overflow-y-auto scrollbar-thin">{sortedProducts.map(p => (<div key={p.id} className="flex justify-between items-center text-xs py-2 border-b"><div><span className="font-bold block">{p.name}</span><span className="text-[10px] text-gray-500">{p.internalCode}</span></div><span className={`font-bold px-2 py-1 rounded ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{p.stock}</span></div>))}</div><div className="flex-1 p-6 space-y-4 overflow-y-auto"><div className="grid grid-cols-2 gap-6"><div><h3 className="font-bold text-green-700 mb-2">Entrada em Massa</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-green-50" placeholder="COD | QTD" value={bulkIn} onChange={e=>setBulkIn(e.target.value)}></textarea><button onClick={()=>processBulk(bulkIn, 'IN')} className="btn-primary w-full bg-green-600 hover:bg-green-700 mt-2">PROCESSAR ENTRADA</button></div><div><h3 className="font-bold text-red-700 mb-2">Saída em Massa</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-red-50" placeholder="COD | QTD" value={bulkOut} onChange={e=>setBulkOut(e.target.value)}></textarea><button onClick={()=>processBulk(bulkOut, 'OUT')} className="btn-primary w-full bg-red-600 hover:bg-red-700 mt-2">PROCESSAR SAÍDA</button></div></div></div></div>)
+             return (<div className="flex h-full flex-col lg:flex-row"><div className="w-full lg:w-1/3 border-r bg-gray-50 p-4 overflow-y-auto scrollbar-thin h-[300px] lg:h-full">{sortedProducts.map(p => (<div key={p.id} className="flex justify-between items-center text-xs py-2 border-b"><div><span className="font-bold block">{p.name}</span><span className="text-[10px] text-gray-500">{p.internalCode}</span></div><span className={`font-bold px-2 py-1 rounded ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{p.stock}</span></div>))}</div><div className="flex-1 p-6 space-y-4 overflow-y-auto"><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><h3 className="font-bold text-green-700 mb-2">Entrada em Massa</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-green-50" placeholder="COD | QTD" value={bulkIn} onChange={e=>setBulkIn(e.target.value)}></textarea><button onClick={()=>processBulk(bulkIn, 'IN')} className="btn-primary w-full bg-green-600 hover:bg-green-700 mt-2">PROCESSAR ENTRADA</button></div><div><h3 className="font-bold text-red-700 mb-2">Saída em Massa</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-red-50" placeholder="COD | QTD" value={bulkOut} onChange={e=>setBulkOut(e.target.value)}></textarea><button onClick={()=>processBulk(bulkOut, 'OUT')} className="btn-primary w-full bg-red-600 hover:bg-red-700 mt-2">PROCESSAR SAÍDA</button></div></div></div></div>)
         }
         
-        // --- DRIVER VIEW (UPDATED V7.1 - SCROLL FIX) ---
+        // --- DRIVER VIEW ---
         function DriverView({ data, onExit }) {
           const [deliveryModal, setDeliveryModal] = useState(null); 
           const [filter, setFilter] = useState('Todas'); 
@@ -1297,7 +1324,6 @@
           const progress = Math.round((completedCount / data.orders.length) * 100); 
           const allFinished = completedCount === data.orders.length;
 
-          // Main Layout Change: h-screen flex flex-col to fix scrolling
           return (
             <div className="h-screen flex flex-col bg-gray-50 text-gray-800">
                <header className="bg-indigo-700 text-white p-4 shrink-0 shadow-md z-10">
@@ -1312,7 +1338,6 @@
                  </div>
                </header>
                
-               {/* Scrollable Area */}
                <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
                   {visibleOrders.map((order) => {
                     const result = deliveryResults[order.id];
