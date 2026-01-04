@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Integrado v9.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        iframe { border: none; width: 100%; height: calc(100% - 48px); /* 48px é a altura da topbar */ display: block; }
+        .nav-item { 
+            cursor: pointer; 
+            padding: 0 1rem; 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            font-size: 0.875rem; 
+            font-weight: 500; 
+            color: #94a3b8; 
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-item:hover { color: #f1f5f9; background-color: rgba(255,255,255,0.05); }
+        .nav-item.active { color: #f8fafc; border-bottom-color: #3b82f6; background-color: rgba(255,255,255,0.1); }
+        .nav-icon { width: 18px; height: 18px; }
+    </style>
+    <!-- Ícones Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-900 flex flex-col">
+
+    <!-- TOPBAR ESTREITA -->
+    <header class="h-12 bg-slate-900 text-white flex items-center justify-between px-4 shadow-lg shrink-0 z-50 border-b border-slate-800">
+        <div class="flex items-center gap-6 h-full">
+            <div class="font-bold text-lg tracking-wider flex items-center gap-2">
+                <span class="bg-indigo-600 text-white px-1.5 rounded text-xs py-0.5">SYS</span>
+                LOGÍSTICA
+            </div>
+            
+            <!-- NAVEGAÇÃO (Abas) -->
+            <nav class="flex h-full" id="main-nav">
+                <!-- Os links aqui apontam para os arquivos HTML que você já tem -->
+                <a data-src="dashboard.html" class="nav-item active" onclick="loadTab(this)">
+                    <i data-lucide="layout-dashboard" class="nav-icon"></i> Visão Geral
+                </a>
+                <a data-src="pdv.html" class="nav-item" onclick="loadTab(this)">
+                    <i data-lucide="shopping-cart" class="nav-icon"></i> Caixa (PDV)
+                </a>
+                <a data-src="expedicao.html" class="nav-item" onclick="loadTab(this)">
+                    <i data-lucide="package" class="nav-icon"></i> Expedição
+                </a>
+                <a data-src="logistica.html" class="nav-item" onclick="loadTab(this)">
+                    <i data-lucide="truck" class="nav-icon"></i> Logística
+                </a>
+                <a data-src="estoque.html" class="nav-item" onclick="loadTab(this)">
+                    <i data-lucide="clipboard-list" class="nav-icon"></i> Estoque
+                </a>
+                <a data-src="cadastros.html" class="nav-item" onclick="loadTab(this)">
+                    <i data-lucide="database" class="nav-icon"></i> Cadastros
+                </a>
+                <a data-src="relatorios.html" class="nav-item" onclick="loadTab(this)">
+                    <i data-lucide="line-chart" class="nav-icon"></i> BI
+                </a>
+                <a data-src="pos_venda.html" class="nav-item" onclick="loadTab(this)">
+                    <i data-lucide="heart-handshake" class="nav-icon"></i> Pós-Venda
+                </a>
+            </nav>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
+                <i data-lucide="user" class="w-3 h-3"></i> Admin
+            </div>
+            <button onclick="window.location.reload()" class="text-slate-400 hover:text-white" title="Recarregar Sistema">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ÁREA DO CONTEÚDO (IFRAME) -->
+    <!-- O 'src' inicial aponta para o dashboard. Se não tiver dashboard.html, crie um ou mude para pdv.html -->
+    <iframe id="content-frame" src="about:blank" name="content-frame"></iframe>
+
+    <script>
+        // Inicializa os ícones
+        lucide.createIcons();
+
+        function loadTab(element) {
+            // 1. Remove classe 'active' de todos
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // 2. Adiciona 'active' no clicado
+            element.classList.add('active');
+            
+            // 3. Carrega o arquivo no iframe
+            const src = element.getAttribute('data-src');
+            const iframe = document.getElementById('content-frame');
+            
+            // Simples verificação para não recarregar se já estiver lá (opcional)
+            if (iframe.getAttribute('src') !== src) {
+                iframe.src = src;
+            }
+        }
+
+        // Carregar a primeira aba automaticamente ao abrir
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tenta carregar a primeira aba definida ou uma padrão
+            const firstTab = document.querySelector('.nav-item.active') || document.querySelector('.nav-item');
+            if(firstTab) {
+                // Se o arquivo não existir, o iframe mostrará erro 404, o que é esperado
+                loadTab(firstTab); 
+            } else {
+                // Fallback caso não ache arquivos
+                document.getElementById('content-frame').srcdoc = '<div style="display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;"><h1>Bem-vindo! Selecione um módulo acima.</h1></div>';
+            }
+        });
+    </script>
+</body>
+</html>
