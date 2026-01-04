@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo Clientes (Micro-frontend)</title>
+    <title>Módulo Clientes v2.0 (Sales Edition)</title>
     
     <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,7 +13,9 @@
                 extend: {
                     colors: {
                         slate: { 850: '#151e2e', 900: '#0f172a' },
-                        primary: { 600: '#0284c7', 700: '#0369a1' } // Mudança para Azul Profundo (Melhor contraste que Emerald)
+                        primary: { 600: '#0284c7', 700: '#0369a1' },
+                        vip: { 500: '#8b5cf6', 600: '#7c3aed' }, // Roxo para VIP
+                        loyal: { 500: '#f59e0b', 600: '#d97706' } // Gold para Fiel
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     boxShadow: {
@@ -28,60 +30,46 @@
     <!-- 2. GOOGLE FONTS -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- 3. ESTILOS DE ALTO CONTRASTE -->
+    <!-- 3. ESTILOS -->
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; } /* Slate-100 base */
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         
-        /* Scrollbar Mais Visível */
+        /* Scrollbar */
         .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: #e2e8f0; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; border: 2px solid #e2e8f0; }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
-        /* Inputs High Contrast */
+        /* Inputs & Labels - Visibilidade Aumentada */
         .input-label {
-            display: block; font-size: 0.75rem; text-transform: uppercase;
-            letter-spacing: 0.05em; font-weight: 700; color: #475569; margin-bottom: 0.35rem;
+            display: block; font-size: 0.8rem; text-transform: uppercase;
+            letter-spacing: 0.05em; font-weight: 800; color: #475569; margin-bottom: 0.4rem;
         }
         
         .input-field {
-            width: 100%; padding: 0.6rem 0.75rem; 
+            width: 100%; padding: 0.7rem 0.8rem; 
             background-color: #ffffff; 
-            border: 1px solid #cbd5e1; /* Slate-300 (Mais escuro) */
-            border-radius: 0.375rem; font-size: 0.9rem; font-weight: 500; color: #0f172a;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.375rem; font-size: 1rem; font-weight: 600; color: #0f172a;
             outline: none; transition: all 0.15s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .input-field:focus { 
-            border-color: #0284c7; /* Primary-600 */
+            border-color: #0284c7; 
             box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15); 
-            background-color: #fff;
         }
-        .input-field:disabled { background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0; cursor: not-allowed; }
-        .input-field::placeholder { color: #94a3b8; font-weight: 400; }
 
-        /* Botões Fortes */
-        .btn-primary {
-            background-color: #0f172a; /* Slate-900 */
-            color: white; padding: 0.65rem 1.25rem; border-radius: 0.375rem;
-            font-size: 0.875rem; font-weight: 600; letter-spacing: 0.025em;
-            transition: background-color 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            border: 1px solid transparent;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        /* Botões de Ação Rápida (Card) */
+        .action-btn {
+            display: flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; border-radius: 6px;
+            transition: all 0.2s; cursor: pointer; border: 1px solid transparent;
         }
-        .btn-primary:hover { background-color: #1e293b; transform: translateY(-1px); }
-        .btn-primary:active { transform: translateY(0); }
-        
-        .btn-secondary {
-            background-color: #ffffff; border: 1px solid #cbd5e1; color: #334155;
-            padding: 0.65rem 1.25rem; border-radius: 0.375rem;
-            font-size: 0.875rem; font-weight: 600;
-            transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .btn-secondary:hover { background-color: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+        .action-btn:hover { transform: scale(1.05); }
+        .action-btn:active { transform: scale(0.95); }
+
+        .btn-whats { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .btn-call { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        .btn-share { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+        .btn-print { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
 
     </style>
 
@@ -108,7 +96,7 @@
         import { createRoot } from 'react-dom/client';
         import { 
           Users, Search, Plus, Save, Trash2, 
-          Phone, MapPin, MessageCircle, ChevronRight, AlertCircle, X
+          Phone, MapPin, Share2, Printer, Filter, Star, Zap, Crown
         } from 'lucide-react';
 
         // --- 1. CORE UTILS ---
@@ -137,16 +125,87 @@
           return [value, setValue];
         };
 
-        // --- 2. MÓDULO DE CLIENTES (High Contrast & Full Width) ---
+        // --- 2. LOGIC DE NEGÓCIO ---
+
+        const getClientSegment = (purchases) => {
+            const n = parseInt(purchases || 0);
+            if (n > 24) return { label: 'VIP', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: Crown };
+            if (n > 10) return { label: 'FIEL', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Star };
+            if (n >= 4) return { label: 'RECORRENTE', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Zap };
+            return { label: 'NOVO', color: 'bg-slate-100 text-slate-600 border-slate-200', icon: Users };
+        };
+
+        // --- 3. FUNÇÕES DE AÇÃO ---
+
+        const handleShare = (client) => {
+            if (!client) return;
+            const dest = prompt(`Compartilhar contato de ${client.name}.\n\nDigite o número do destinatário (WhatsApp):`);
+            if (dest) {
+                const text = `*Contato de Cliente*\nNome: ${client.name}\nTel: ${client.phone}\nEnd: ${client.address} - ${client.city}`;
+                window.open(`https://wa.me/55${dest.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+            }
+        };
+
+        const handlePrint = (client) => {
+            if (!client) return;
+            const printWindow = window.open('', '', 'width=400,height=600');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Print ${client.name}</title>
+                    <style>
+                        @page { size: 76mm 100mm; margin: 0; }
+                        body { font-family: sans-serif; padding: 10px; width: 76mm; margin: 0 auto; }
+                        .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+                        .label { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 5px; }
+                        .value { font-size: 14px; margin-bottom: 5px; word-wrap: break-word; }
+                        .big { font-size: 18px; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div style="font-size:12px">FICHA DE CLIENTE</div>
+                        <div style="font-size:24px; font-weight:bold">${client.code || '---'}</div>
+                    </div>
+                    <div class="label">NOME DO CLIENTE</div>
+                    <div class="value big">${client.name}</div>
+                    
+                    <div class="label">TELEFONE</div>
+                    <div class="value">${client.phone || '-'}</div>
+                    
+                    <div class="label">ENDEREÇO</div>
+                    <div class="value">${client.address || ''}</div>
+                    <div class="value">${client.district || ''} - ${client.city || ''}</div>
+                    
+                    <div class="label">OBSERVAÇÕES</div>
+                    <div class="value" style="font-size:12px">${client.obs || 'Sem observações.'}</div>
+                    
+                    <div style="margin-top:20px; text-align:center; font-size:10px;">
+                        Impresso em ${new Date().toLocaleDateString()}
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        };
+
+        // --- 4. COMPONENTE PRINCIPAL ---
         
         function ClientsModule({ clients, setClients }) {
+            // Form State agora inclui purchaseCount
             const [cForm, setCForm] = useState({ 
                 name: '', code: '', phone: '', phone2: '', 
                 address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', 
-                mapLink: '', obs: '' 
+                mapLink: '', obs: '', purchaseCount: 0
             });
             const [editingClientId, setEditingClientId] = useState(null);
             const [search, setSearch] = useState('');
+            const [segmentFilter, setSegmentFilter] = useState('ALL'); // ALL, NEW, RECURRING, LOYAL, VIP
 
             // Actions
             const saveClient = () => { 
@@ -154,12 +213,11 @@
                 
                 if (editingClientId) { 
                     setClients(clients.map(c => c.id === editingClientId ? { ...cForm, id: editingClientId, code: c.code || cForm.code } : c)); 
-                    // Feedback sutil poderia ser um toast, mas manteremos o alert simples por segurança
                 } else { 
                     const newCode = generateClientCode(clients); 
                     setClients([...clients, { ...cForm, id: generateId(), code: newCode }]); 
                     setEditingClientId(null);
-                    setCForm(prev => ({...prev, name: '', phone: '', code: ''})); 
+                    setCForm(prev => ({...prev, name: '', phone: '', code: '', purchaseCount: 0})); 
                 } 
                 startNew();
             };
@@ -171,36 +229,74 @@
             };
 
             const startNew = () => {
-                setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', obs: '' }); 
+                setCForm({ name: '', code: '', phone: '', phone2: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', obs: '', purchaseCount: 0 }); 
                 setEditingClientId(null);
             };
 
+            // Filtragem Robusta
             const list = useMemo(() => {
-                return clients.filter(c => 
+                let filtered = clients.filter(c => 
                     c.name.toLowerCase().includes(search.toLowerCase()) || 
                     (c.code && c.code.includes(search)) || 
                     (c.phone && c.phone.includes(search))
-                ).sort((a,b) => a.name.localeCompare(b.name));
-            }, [clients, search]);
+                );
+
+                if (segmentFilter !== 'ALL') {
+                    filtered = filtered.filter(c => {
+                        const count = parseInt(c.purchaseCount || 0);
+                        if (segmentFilter === 'VIP') return count > 24;
+                        if (segmentFilter === 'LOYAL') return count > 10 && count <= 24;
+                        if (segmentFilter === 'RECURRING') return count >= 4 && count <= 10;
+                        if (segmentFilter === 'NEW') return count < 4;
+                        return true;
+                    });
+                }
+
+                return filtered.sort((a,b) => a.name.localeCompare(b.name));
+            }, [clients, search, segmentFilter]);
 
             return (
                 <div className="flex h-full bg-slate-200 overflow-hidden">
                     
                     {/* COLUNA ESQUERDA: LISTAGEM (Visual Reforçado) */}
-                    <aside className="w-full md:w-[360px] lg:w-[420px] flex flex-col bg-white border-r border-slate-300 shrink-0 z-10 shadow-lg">
-                        {/* Header de Busca */}
-                        <div className="p-4 border-b border-slate-200 bg-slate-50">
-                            <div className="flex justify-between items-center mb-3">
-                                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                                    <Users size={18} className="text-blue-600"/>
-                                    Base de Clientes ({list.length})
+                    <aside className="w-full md:w-[400px] lg:w-[480px] flex flex-col bg-white border-r border-slate-300 shrink-0 z-10 shadow-lg">
+                        {/* Header de Busca e Filtro */}
+                        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col gap-3">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-base font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                    <Users size={20} className="text-blue-600"/>
+                                    Clientes ({list.length})
                                 </h2>
                             </div>
+                            
+                            {/* Segment Selector Compacto */}
+                            <div className="flex bg-slate-200 p-1 rounded-lg">
+                                {[
+                                    { id: 'ALL', label: 'Todos' },
+                                    { id: 'NEW', label: '-3' },
+                                    { id: 'RECURRING', label: '4-10' },
+                                    { id: 'LOYAL', label: '+10' },
+                                    { id: 'VIP', label: '+24' }
+                                ].map(seg => (
+                                    <button
+                                        key={seg.id}
+                                        onClick={() => setSegmentFilter(seg.id)}
+                                        className={`flex-1 text-[10px] font-bold py-1.5 rounded-md transition-all ${
+                                            segmentFilter === seg.id 
+                                            ? 'bg-white text-blue-700 shadow-sm' 
+                                            : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        {seg.label}
+                                    </button>
+                                ))}
+                            </div>
+
                             <div className="relative">
-                                <Search className="absolute left-3 top-2.5 text-slate-500" size={18}/>
+                                <Search className="absolute left-3 top-3 text-slate-500" size={18}/>
                                 <input 
-                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded text-sm font-medium focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-slate-900 placeholder:text-slate-400" 
-                                    placeholder="Buscar por Nome, Tel ou Cód..." 
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded text-sm font-bold focus:border-blue-600 outline-none text-slate-900 placeholder:text-slate-400" 
+                                    placeholder="BUSCAR NOME..." 
                                     value={search} 
                                     onChange={e => setSearch(e.target.value)} 
                                 />
@@ -211,35 +307,62 @@
                         <div className="flex-1 overflow-y-auto scrollbar-thin bg-white">
                             {list.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-48 text-slate-400">
-                                    <AlertCircle size={32} className="mb-2 opacity-50"/>
-                                    <span className="text-sm font-medium">Nenhum registro</span>
+                                    <Filter size={32} className="mb-2 opacity-50"/>
+                                    <span className="text-sm font-bold">Sem resultados</span>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-slate-100">
                                     {list.map(c => {
                                         const isActive = editingClientId === c.id;
+                                        const segment = getClientSegment(c.purchaseCount);
+                                        const SegmentIcon = segment.icon;
+
                                         return (
                                             <div 
                                                 key={c.id} 
-                                                onClick={() => { setCForm(c); setEditingClientId(c.id); }}
-                                                className={`p-4 cursor-pointer transition-all border-l-4 ${isActive ? 'bg-blue-50 border-blue-600' : 'border-transparent hover:bg-slate-50 hover:border-slate-300'}`}
+                                                className={`p-4 transition-all border-l-4 group ${isActive ? 'bg-blue-50 border-blue-600' : 'border-transparent hover:bg-slate-50 hover:border-slate-300'}`}
                                             >
-                                                <div className="flex justify-between items-start mb-1.5">
-                                                    <span className={`font-bold text-sm ${isActive ? 'text-blue-900' : 'text-slate-800'}`}>
-                                                        {c.name}
-                                                    </span>
-                                                    {c.code && <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded">{c.code}</span>}
-                                                </div>
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                                                        {c.phone ? (
-                                                            <span className="flex items-center gap-1.5 text-slate-600"><Phone size={12}/> {c.phone}</span>
-                                                        ) : <span className="text-slate-300 italic">Sem telefone</span>}
-                                                        
-                                                        {c.district && (
-                                                            <span className="flex items-center gap-1.5"><MapPin size={12}/> {c.district}</span>
-                                                        )}
+                                                {/* Card Header clickable */}
+                                                <div onClick={() => { setCForm(c); setEditingClientId(c.id); }} className="cursor-pointer">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <span className={`text-base font-black uppercase leading-tight ${isActive ? 'text-blue-900' : 'text-slate-800'}`}>
+                                                            {c.name}
+                                                        </span>
+                                                        <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border ${segment.color}`}>
+                                                            <SegmentIcon size={10} />
+                                                            {segment.label}
+                                                        </div>
                                                     </div>
+                                                    
+                                                    <div className="flex flex-col gap-1 mb-3">
+                                                        <div className="flex items-center gap-3 text-sm font-semibold text-slate-500">
+                                                            {c.phone ? (
+                                                                <span className="flex items-center gap-1.5 text-slate-700"><Phone size={14}/> {c.phone}</span>
+                                                            ) : <span className="text-slate-300 italic">--</span>}
+                                                            
+                                                            <span className="flex items-center gap-1.5 text-slate-500 uppercase"><MapPin size={14}/> {c.city || 'Cuiabá'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Mini Toolbar de Ações */}
+                                                <div className="flex gap-2 pt-2 border-t border-dashed border-slate-200 mt-2">
+                                                    {c.phone && (
+                                                        <>
+                                                            <button title="Mandar Zap" onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/55${c.phone.replace(/\D/g, '')}`, '_blank'); }} className="action-btn btn-whats">
+                                                                <Share2 size={16} /> {/* Ícone visualmente similar ao zap na falta de brand icons */}
+                                                            </button>
+                                                            <button title="Ligar Normal" onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${c.phone}`; }} className="action-btn btn-call">
+                                                                <Phone size={16} />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    <button title="Compartilhar Cadastro" onClick={(e) => { e.stopPropagation(); handleShare(c); }} className="action-btn btn-share">
+                                                        <Users size={16} />
+                                                    </button>
+                                                    <button title="Imprimir Etiqueta" onClick={(e) => { e.stopPropagation(); handlePrint(c); }} className="action-btn btn-print">
+                                                        <Printer size={16} />
+                                                    </button>
                                                 </div>
                                             </div>
                                         );
@@ -250,8 +373,8 @@
                         
                         {/* Botão Mobile */}
                         <div className="p-4 border-t border-slate-200 bg-slate-50 md:hidden">
-                            <button onClick={startNew} className="btn-primary w-full justify-center shadow-lg">
-                                <Plus size={18}/> NOVO CLIENTE
+                            <button onClick={startNew} className="w-full bg-slate-900 text-white py-3 rounded font-bold flex items-center justify-center gap-2 shadow-lg">
+                                <Plus size={20}/> NOVO CLIENTE
                             </button>
                         </div>
                     </aside>
@@ -259,104 +382,104 @@
                     {/* COLUNA DIREITA: FORMULÁRIO (Full & Clean) */}
                     <main className="flex-1 flex flex-col h-full bg-slate-100 overflow-hidden relative">
                         {/* Toolbar do Formulário */}
-                        <div className="h-16 border-b border-slate-300 bg-white px-6 md:px-8 flex items-center justify-between shrink-0 shadow-sm z-20">
-                            <div className="flex items-center gap-3">
-                                <div className={`h-8 w-1 rounded-full ${editingClientId ? 'bg-amber-500' : 'bg-blue-600'}`}></div>
+                        <div className="h-20 border-b border-slate-300 bg-white px-6 md:px-8 flex items-center justify-between shrink-0 shadow-sm z-20">
+                            <div className="flex items-center gap-4">
+                                <div className={`h-10 w-1.5 rounded-full ${editingClientId ? 'bg-amber-500' : 'bg-blue-600'}`}></div>
                                 <div>
-                                    <h1 className="text-xl font-bold text-slate-900 leading-tight">
-                                        {editingClientId ? 'Editando Cliente' : 'Novo Cadastro'}
+                                    <h1 className="text-2xl font-black text-slate-900 leading-none uppercase">
+                                        {editingClientId ? 'Editar Cadastro' : 'Novo Cliente'}
                                     </h1>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
                                         {editingClientId ? `ID: ${editingClientId.split('-')[0]}...` : 'Preencha os dados abaixo'}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex gap-3">
-                                {editingClientId && (
-                                    <button onClick={deleteItem} className="text-red-600 hover:bg-red-50 hover:text-red-700 px-3 py-2 rounded font-medium text-sm flex items-center gap-2 transition" title="Excluir">
-                                        <Trash2 size={18}/> <span className="hidden lg:inline">Excluir</span>
-                                    </button>
-                                )}
-                                <button onClick={startNew} className="btn-secondary hidden sm:flex">
-                                    <Plus size={16}/>
-                                    <span>Limpar</span>
+                                <button onClick={startNew} className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-600 font-bold rounded hover:bg-slate-50 transition">
+                                    <Plus size={18}/>
+                                    <span>LIMPAR</span>
                                 </button>
-                                <button onClick={saveClient} className="btn-primary shadow-md">
-                                    <Save size={18}/>
-                                    <span>SALVAR REGISTRO</span>
+                                <button onClick={saveClient} className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white font-bold rounded shadow-lg hover:bg-slate-800 transition transform active:scale-95">
+                                    <Save size={20}/>
+                                    <span>SALVAR</span>
                                 </button>
                             </div>
                         </div>
 
                         {/* Área do Formulário Scrollável */}
                         <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin">
-                            <div className="max-w-5xl mx-auto bg-white rounded-lg shadow border border-slate-300 p-6 md:p-10">
+                            <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm border border-slate-300 p-6 md:p-10">
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-x-6 gap-y-6">
                                     
                                     {/* Seção 1: Identificação */}
-                                    <div className="md:col-span-12 flex items-center gap-2 mb-2 border-b border-slate-100 pb-2">
-                                        <span className="bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded">1</span>
-                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Identificação</h3>
+                                    <div className="md:col-span-12 flex items-center gap-3 mb-2 border-b-2 border-slate-100 pb-2">
+                                        <div className="bg-slate-900 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded">1</div>
+                                        <h3 className="text-base font-black text-slate-800 uppercase tracking-wide">Identificação & Métricas</h3>
                                     </div>
 
-                                    <div className="md:col-span-9">
+                                    <div className="md:col-span-8">
                                         <label className="input-label">Nome Completo / Razão Social</label>
                                         <input 
                                             className="input-field text-lg border-slate-300" 
                                             value={cForm.name} 
                                             onChange={e => setCForm({...cForm, name: e.target.value})} 
-                                            placeholder="Ex: João da Silva ME" 
+                                            placeholder="Ex: João da Silva" 
                                             autoFocus
                                         />
                                     </div>
-                                    <div className="md:col-span-3">
-                                        <label className="input-label">Código</label>
-                                        <input className="input-field bg-slate-50 text-center font-mono font-bold text-slate-500" value={cForm.code} placeholder="AUTO" disabled />
+                                    <div className="md:col-span-2">
+                                        <label className="input-label">Cód. Interno</label>
+                                        <input className="input-field bg-slate-50 text-center font-mono font-bold text-slate-400" value={cForm.code} placeholder="AUTO" disabled />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="input-label text-blue-700">Nº Compras</label>
+                                        <input 
+                                            type="number"
+                                            className="input-field text-center font-bold text-blue-900 bg-blue-50 border-blue-200 focus:border-blue-500" 
+                                            value={cForm.purchaseCount} 
+                                            onChange={e => setCForm({...cForm, purchaseCount: e.target.value})} 
+                                            min="0"
+                                        />
                                     </div>
 
                                     <div className="md:col-span-6">
                                         <label className="input-label flex items-center justify-between">
-                                            <span>Celular (WhatsApp)</span>
-                                            {cForm.phone && <span className="text-[10px] text-green-600 font-bold bg-green-50 px-1 rounded">WHATSAPP LINK</span>}
+                                            <span>WhatsApp (Principal)</span>
+                                            {cForm.phone && <span className="text-[10px] text-green-700 font-bold bg-green-100 px-1.5 py-0.5 rounded">VALIDAR</span>}
                                         </label>
-                                        <div className="flex gap-2">
-                                            <input className="input-field font-medium" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} placeholder="(00) 00000-0000" />
-                                            {cForm.phone && (
-                                                <button onClick={() => window.open(`https://wa.me/55${cForm.phone?.replace(/\D/g, '')}`, '_blank')} className="px-4 bg-green-50 border border-green-200 text-green-700 rounded hover:bg-green-100 transition shadow-sm">
-                                                    <MessageCircle size={18}/>
-                                                </button>
-                                            )}
-                                        </div>
+                                        <input className="input-field font-mono" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} placeholder="(65) 99999-9999" />
                                     </div>
                                     <div className="md:col-span-6">
                                         <label className="input-label">Telefone Secundário</label>
-                                        <input className="input-field" value={cForm.phone2} onChange={e => setCForm({...cForm, phone2: e.target.value})} placeholder="Fixo ou Recado" />
+                                        <input className="input-field font-mono" value={cForm.phone2} onChange={e => setCForm({...cForm, phone2: e.target.value})} placeholder="Fixo ou Recado" />
                                     </div>
 
                                     {/* Seção 2: Localização */}
-                                    <div className="md:col-span-12 flex items-center gap-2 mt-6 mb-2 border-b border-slate-100 pb-2">
-                                        <span className="bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded">2</span>
-                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Endereço & Rota</h3>
+                                    <div className="md:col-span-12 flex items-center gap-3 mt-8 mb-2 border-b-2 border-slate-100 pb-2">
+                                        <div className="bg-slate-900 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded">2</div>
+                                        <h3 className="text-base font-black text-slate-800 uppercase tracking-wide">Logística</h3>
                                     </div>
 
-                                    <div className="md:col-span-3">
+                                    <div className="md:col-span-4">
                                         <label className="input-label">Cidade</label>
                                         <input className="input-field uppercase" value={cForm.city} onChange={e => setCForm({...cForm, city: e.target.value})} />
                                     </div>
+                                    
+                                    <div className="md:col-span-4">
+                                        <label className="input-label">Região / Setor</label>
+                                        <select className="input-field cursor-pointer bg-white" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}>
+                                            <option value="CUIABÁ">CUIABÁ (GERAL)</option>
+                                            <option value="COXIPÓ">COXIPÓ</option>
+                                            <option value="VÁRZEA GRANDE">VÁRZEA GRANDE</option>
+                                            <option value="CPA">CPA</option>
+                                            <option value="OUTRA">OUTRA</option>
+                                        </select>
+                                    </div>
+
                                     <div className="md:col-span-4">
                                         <label className="input-label">Bairro</label>
                                         <input className="input-field uppercase" value={cForm.district} onChange={e => setCForm({...cForm, district: e.target.value})} />
-                                    </div>
-                                    <div className="md:col-span-5">
-                                        <label className="input-label">Região / Setor</label>
-                                        <select className="input-field cursor-pointer bg-white" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}>
-                                            <option value="CUIABÁ">CUIABÁ (CENTRO)</option>
-                                            <option value="COXIPO">COXIPÓ</option>
-                                            <option value="VARZEA GRANDE">VÁRZEA GRANDE</option>
-                                            <option value="CPA">CPA / MORADA DO OURO</option>
-                                            <option value="OUTRA">OUTRA</option>
-                                        </select>
                                     </div>
 
                                     <div className="md:col-span-8">
@@ -364,8 +487,8 @@
                                         <input className="input-field" value={cForm.address} onChange={e => setCForm({...cForm, address: e.target.value})} placeholder="Rua, Número, Complemento" />
                                     </div>
                                     <div className="md:col-span-4">
-                                        <label className="input-label flex items-center gap-1"><MapPin size={12} /> Google Maps (Opcional)</label>
-                                        <input className="input-field text-blue-600 underline" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} placeholder="Cole o link aqui" />
+                                        <label className="input-label flex items-center gap-1"><MapPin size={14} /> Link Maps (Opcional)</label>
+                                        <input className="input-field text-blue-600 underline" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} placeholder="https://..." />
                                     </div>
 
                                     {/* Seção 3: Obs */}
@@ -375,25 +498,32 @@
                                             className="input-field h-32 resize-none leading-relaxed text-slate-600" 
                                             value={cForm.obs} 
                                             onChange={e => setCForm({...cForm, obs: e.target.value})} 
-                                            placeholder="Detalhes sobre entrega, preferências do cliente ou histórico breve..." 
+                                            placeholder="Preferências, horários de entrega, etc..." 
                                         />
                                     </div>
+                                    
+                                    {editingClientId && (
+                                        <div className="md:col-span-12 mt-4 pt-6 border-t border-slate-200 flex justify-end">
+                                             <button onClick={deleteItem} className="text-red-600 hover:bg-red-50 hover:text-red-700 px-4 py-2 rounded font-bold text-sm flex items-center gap-2 transition" title="Excluir">
+                                                <Trash2 size={18}/> Excluir Registro Permanentemente
+                                            </button>
+                                        </div>
+                                    )}
 
                                 </div>
                             </div>
-                            <div className="h-10"></div>
+                            <div className="h-20"></div>
                         </div>
                     </main>
                 </div>
             );
         }
 
-        // --- 3. APP PRINCIPAL ---
+        // --- 5. APP PRINCIPAL ---
         function App() {
-          const [clients, setClients] = useStickyState('db_clients_v3', []);
+          const [clients, setClients] = useStickyState('db_clients_v4', []);
           
           return (
-            // App Wrapper: Sem Sidebar, apenas container
             <div className="h-screen bg-slate-200 font-sans text-slate-900 overflow-hidden">
                 <ClientsModule clients={clients} setClients={setClients} />
             </div>
