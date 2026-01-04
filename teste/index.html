@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Logística Local-First v5.7 (Final Polished)</title>
+    <title>Sistema Logística Local-First v5.8 (Post-Sales Plus)</title>
     
     <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -79,7 +79,7 @@
           Calendar, Filter, Phone, Database, Clipboard, Box, ExternalLink,
           Clock, Home, DollarSign, CreditCard, Check, ShieldCheck, ClipboardList,
           ArrowRight, ArrowLeft, LayoutDashboard, Settings, Menu, BarChart2, TrendingUp, PieChart,
-          MessageSquare, HeartHandshake, RefreshCcw
+          MessageSquare, HeartHandshake, RefreshCcw, ThumbsUp
         } from 'lucide-react';
 
         // --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
@@ -262,7 +262,7 @@
           }, []);
 
           const handleBackup = () => {
-            let data = { version: '5.7', exportedAt: new Date().toISOString() };
+            let data = { version: '5.8', exportedAt: new Date().toISOString() };
             let filename = 'backup';
             if (backupType === 'all') { 
                 data = { ...data, clients, products, sales, companyPhone, postSaleLog }; 
@@ -333,7 +333,7 @@
                 <aside className="w-20 lg:w-64 bg-slate-900 text-white flex flex-col shrink-0 transition-all duration-300 z-30 shadow-xl">
                     <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
                         <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
-                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V5.7</span></h1>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V5.8</span></h1>
                     </div>
                     <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
                         <NavItem icon={<LayoutDashboard size={20}/>} label="Visão Geral" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
