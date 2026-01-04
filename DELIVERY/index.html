@@ -73,7 +73,7 @@
           ArrowUp, ArrowDown, History, MessageCircle, XCircle,
           AlertTriangle, FileText, Banknote, List, Tag, Percent, 
           Calendar, Filter, Phone, Database, Clipboard, Box, ExternalLink,
-          Clock, Home, DollarSign, CreditCard
+          Clock, Home, DollarSign, CreditCard, Check
         } from 'lucide-react';
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -319,6 +319,7 @@
         function DriverView({ data, onExit }) {
           const [deliveryModal, setDeliveryModal] = useState(null); 
           const [filter, setFilter] = useState('Todas'); // Estado para os chips de filtro
+          const [completedIds, setCompletedIds] = useState([]); // Rastreia entregas feitas na sessão
 
           if (!data) return <div className="p-4 text-center">Dados inválidos ou expirados.</div>;
 
@@ -335,9 +336,17 @@
           const showChips = uniqueRegions.length > 1;
 
           // Filtrar pedidos
-          const visibleOrders = filter === 'Todas' 
+          const filteredOrders = filter === 'Todas' 
             ? data.orders 
             : data.orders.filter(o => (o.region || 'Geral') === filter);
+
+          // Ordenar: Pendentes primeiro, Concluídos por último
+          const visibleOrders = [...filteredOrders].sort((a, b) => {
+             const aDone = completedIds.includes(a.id);
+             const bDone = completedIds.includes(b.id);
+             if (aDone === bDone) return 0;
+             return aDone ? 1 : -1;
+          });
 
           const handleDeliveryConfirm = (method) => {
             if (!deliveryModal) return;
@@ -367,11 +376,17 @@
                         `4️⃣ *Instagram:* ${genLink(msg4)}`;
 
             window.open(`https://wa.me/55${companyPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            
+            // Marca como concluído e joga pro final
+            setCompletedIds(prev => [...prev, order.id]);
             setDeliveryModal(null);
           };
           
+          const progress = Math.round((completedIds.length / data.orders.length) * 100);
+          const allFinished = completedIds.length === data.orders.length;
+
           return (
-            <div className="min-h-screen bg-gray-50 text-gray-800 pb-12">
+            <div className="min-h-screen bg-gray-50 text-gray-800 pb-16">
                <header className="bg-indigo-700 text-white p-4 sticky top-0 z-10 shadow-md">
                  <div className="flex justify-between items-center mb-2">
                     <h1 className="font-bold text-lg">ROTA: {data.route}</h1>
@@ -393,92 +408,117 @@
                      </div>
                  )}
 
-                 <div className="text-xs opacity-80 flex justify-between">
-                    <span>{visibleOrders.length} Entregas</span>
-                    <span>{new Date(data.generatedAt).toLocaleDateString()}</span>
+                 <div className="flex justify-between items-end">
+                    <div className="text-xs opacity-80">
+                        <span>{completedIds.length}/{data.orders.length} Entregas</span>
+                    </div>
+                    <div className="w-1/2 bg-indigo-900 rounded-full h-1.5 overflow-hidden">
+                        <div className="bg-green-400 h-full transition-all duration-500" style={{width: `${progress}%`}}></div>
+                    </div>
                  </div>
                </header>
                
                <div className="p-4 space-y-6">
-                  {visibleOrders.map((order, idx) => (
-                    <div key={order.id} className="bg-white rounded-lg shadow-sm border overflow-hidden relative">
-                       <div className="bg-indigo-50 p-3 border-b border-indigo-100 flex justify-between items-center">
-                          <span className="font-bold text-indigo-900 bg-white px-3 py-1 rounded-full text-sm shadow-sm">#{idx + 1}</span>
-                          <span className="font-bold text-indigo-900 text-lg">Pedido #{order.id}</span>
-                       </div>
-                       
-                       <div className="p-4">
-                          <h2 className="font-bold text-xl text-gray-800 mb-1 leading-tight">{order.customer}</h2>
-                          <p className="text-gray-600 text-sm mb-4 flex items-start gap-1">
-                             <MapPin size={16} className="mt-0.5 shrink-0 text-gray-400"/> 
-                             {order.address}, {order.district}
-                          </p>
+                  {visibleOrders.map((order, idx) => {
+                    const isDelivered = completedIds.includes(order.id);
+                    const clientFirstName = order.customer.split(' ')[0];
 
-                          {/* 1. OBS DO CLIENTE (Prioridade) */}
-                          {order.clientObs && (
-                             <div className="mb-4 bg-purple-50 p-3 rounded-lg border-l-4 border-purple-500 text-purple-900 shadow-sm">
-                                <p className="text-xs font-bold uppercase mb-1">⚠️ Obs do Cadastro:</p>
-                                <p className="font-semibold text-sm">{order.clientObs}</p>
-                             </div>
-                          )}
-
-                          {/* 2. PAINEL DE BOTÕES (GRID 3 COLUNAS) */}
-                          <div className="grid grid-cols-3 gap-2 mb-4">
-                             {/* Ligar */}
-                             <a href={`tel:${order.phone}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition">
-                                <Phone size={20} className="text-gray-700 mb-1"/>
-                                <span className="text-[10px] font-bold text-gray-600">LIGAR</span>
-                             </a>
-
-                             {/* 10 Min */}
-                             <button onClick={() => sendToCustomer(order.phone, "Olá! Sua entrega chega em aproximadamente 10 minutos. 🚚")} 
-                                className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded hover:bg-blue-100 active:scale-95 transition">
-                                <Clock size={20} className="text-blue-600 mb-1"/>
-                                <span className="text-[10px] font-bold text-blue-700">10 MIN</span>
-                             </button>
-
-                             {/* Cheguei */}
-                             <button onClick={() => sendToCustomer(order.phone, "Olá! O entregador chegou e está aguardando. 🏠")}
-                                className="flex flex-col items-center justify-center bg-yellow-50 py-3 rounded hover:bg-yellow-100 active:scale-95 transition">
-                                <Home size={20} className="text-yellow-600 mb-1"/>
-                                <span className="text-[10px] font-bold text-yellow-700">CHEGUEI</span>
-                             </button>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 mb-4">
-                             <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" className="bg-blue-600 text-white py-3 rounded font-bold text-sm hover:bg-blue-700 flex items-center justify-center gap-2 shadow">
-                                <MapPin size={18}/> ABRIR GPS
-                             </a>
-                             <button onClick={() => setDeliveryModal(order)} className="bg-emerald-600 text-white py-3 rounded font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 shadow animate-pulse">
-                                <CheckCircle size={18}/> ENTREGUE
-                             </button>
-                          </div>
-
-                          <div className="bg-gray-50 p-3 rounded text-sm mb-3 border border-gray-100">
-                             <div className="flex justify-between mb-1">
-                                <span className="text-gray-500">Forma Pagto:</span>
-                                <span className="font-bold uppercase">{order.pay}</span>
-                             </div>
-                             <div className="flex justify-between items-center mb-1">
-                                <span className="text-gray-500">Valor Total:</span>
-                                <span className="font-bold text-xl text-green-700">{formatCurrency(order.total)}</span>
-                             </div>
-                             {order.change > 0 && (
-                                <div className="flex justify-between text-red-600 font-bold bg-white border border-red-100 p-2 rounded mt-2">
-                                   <span className="flex items-center gap-1"><AlertTriangle size={14}/> LEVAR TROCO:</span>
-                                   <span className="text-lg">{formatCurrency(order.change)}</span>
-                                </div>
-                             )}
-                          </div>
-                          
-                          {order.obs && (
-                            <div className="text-xs bg-orange-50 p-3 rounded text-orange-900 border border-orange-200">
-                               <p><strong>📝 OBS DO PEDIDO:</strong> {order.obs}</p>
+                    return (
+                        <div key={order.id} className={`rounded-lg shadow-sm border overflow-hidden relative transition-all duration-500 ${isDelivered ? 'bg-gray-100 border-gray-200 opacity-75' : 'bg-white'}`}>
+                        {/* Overlay de Entregue */}
+                        {isDelivered && (
+                            <div className="absolute top-2 right-2 z-20">
+                                <span className="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                                    <Check size={12}/> ENTREGUE
+                                </span>
                             </div>
-                          )}
-                       </div>
-                    </div>
-                  ))}
+                        )}
+
+                        <div className={`p-3 border-b flex justify-between items-center ${isDelivered ? 'bg-gray-200 border-gray-300' : 'bg-indigo-50 border-indigo-100'}`}>
+                            <span className={`font-bold px-3 py-1 rounded-full text-sm shadow-sm ${isDelivered ? 'bg-gray-300 text-gray-600' : 'text-indigo-900 bg-white'}`}>#{order.id}</span>
+                            {!isDelivered && <span className="font-bold text-indigo-900 text-sm">Pendente</span>}
+                        </div>
+                        
+                        <div className="p-4">
+                            <h2 className="font-bold text-xl text-gray-800 mb-1 leading-tight">{order.customer}</h2>
+                            <p className="text-gray-600 text-sm mb-4 flex items-start gap-1">
+                                <MapPin size={16} className="mt-0.5 shrink-0 text-gray-400"/> 
+                                {order.address}, {order.district}
+                            </p>
+
+                            {/* 1. OBS DO CLIENTE (Prioridade) */}
+                            {order.clientObs && !isDelivered && (
+                                <div className="mb-4 bg-purple-50 p-3 rounded-lg border-l-4 border-purple-500 text-purple-900 shadow-sm">
+                                    <p className="text-xs font-bold uppercase mb-1">⚠️ Obs do Cadastro:</p>
+                                    <p className="font-semibold text-sm">{order.clientObs}</p>
+                                </div>
+                            )}
+
+                            {/* 2. PAINEL DE BOTÕES (GRID 3 COLUNAS) */}
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                {/* Ligar */}
+                                <a href={`tel:${order.phone}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition">
+                                    <Phone size={20} className="text-gray-700 mb-1"/>
+                                    <span className="text-[10px] font-bold text-gray-600">LIGAR</span>
+                                </a>
+
+                                {/* 10 Min - Personalizado */}
+                                <button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! Sua entrega chega em aproximadamente 10 minutos. 🚚`)} 
+                                    className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded hover:bg-blue-100 active:scale-95 transition">
+                                    <Clock size={20} className="text-blue-600 mb-1"/>
+                                    <span className="text-[10px] font-bold text-blue-700">10 MIN</span>
+                                </button>
+
+                                {/* Cheguei - Personalizado */}
+                                <button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! O entregador chegou e está aguardando. 🏠`)}
+                                    className="flex flex-col items-center justify-center bg-yellow-50 py-3 rounded hover:bg-yellow-100 active:scale-95 transition">
+                                    <Home size={20} className="text-yellow-600 mb-1"/>
+                                    <span className="text-[10px] font-bold text-yellow-700">CHEGUEI</span>
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" 
+                                   className={`${isDelivered ? 'bg-gray-400 cursor-default' : 'bg-blue-600 hover:bg-blue-700 shadow'} text-white py-3 rounded font-bold text-sm flex items-center justify-center gap-2 transition`}>
+                                    <MapPin size={18}/> ABRIR GPS
+                                </a>
+                                {isDelivered ? (
+                                    <button disabled className="bg-gray-200 text-gray-400 border border-gray-300 py-3 rounded font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed">
+                                        <CheckCircle size={18}/> CONCLUÍDO
+                                    </button>
+                                ) : (
+                                    <button onClick={() => setDeliveryModal(order)} className="bg-emerald-600 text-white py-3 rounded font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 shadow animate-pulse">
+                                        <CheckCircle size={18}/> ENTREGUE
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className={`p-3 rounded text-sm mb-3 border ${isDelivered ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className="flex justify-between mb-1">
+                                    <span className="text-gray-500">Forma Pagto:</span>
+                                    <span className="font-bold uppercase">{order.pay}</span>
+                                </div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-gray-500">Valor Total:</span>
+                                    <span className={`font-bold text-xl ${isDelivered ? 'text-gray-600' : 'text-green-700'}`}>{formatCurrency(order.total)}</span>
+                                </div>
+                                {order.change > 0 && !isDelivered && (
+                                    <div className="flex justify-between text-red-600 font-bold bg-white border border-red-100 p-2 rounded mt-2">
+                                    <span className="flex items-center gap-1"><AlertTriangle size={14}/> LEVAR TROCO:</span>
+                                    <span className="text-lg">{formatCurrency(order.change)}</span>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {order.obs && !isDelivered && (
+                                <div className="text-xs bg-orange-50 p-3 rounded text-orange-900 border border-orange-200">
+                                <p><strong>📝 OBS DO PEDIDO:</strong> {order.obs}</p>
+                                </div>
+                            )}
+                        </div>
+                        </div>
+                    );
+                  })}
                </div>
 
                {/* MODAL DE BAIXA */}
@@ -509,8 +549,8 @@
                  </div>
                )}
 
-               <div className="fixed bottom-0 left-0 w-full bg-white border-t p-2 text-center text-xs text-gray-400 shadow-lg">
-                  Fim da Rota
+               <div className={`fixed bottom-0 left-0 w-full p-3 text-center text-xs font-bold shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors ${allFinished ? 'bg-green-600 text-white' : 'bg-white text-gray-400 border-t'}`}>
+                  {allFinished ? '✅ ROTA FINALIZADA COM SUCESSO' : 'Rota em Andamento...'}
                </div>
             </div>
           );
