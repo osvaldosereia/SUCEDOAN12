@@ -1,683 +1,845 @@
 <!DOCTYPE html>
-<html lang="pt-BR" itemscope itemtype="https://schema.org/GroceryStore">
+<html lang="pt-BR">
 <head>
-    <!-- 1. META DADOS GLOBAIS (SEO) -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Logística Local-First v5.7 (Final Polished)</title>
     
-    <!-- Title: Palavra-chave + Cidade + USP -->
-    <title>Cestas Básicas em Cuiabá e VG | Dona Antônia | Entrega Grátis</title>
+    <!-- 1. TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Description: Pitch de Vendas -->
-    <meta name="description" content="Menor preço em Cesta Básica em Cuiabá e Várzea Grande? É na Dona Antônia! Atacado e Varejo com entrega grátis no CPA, Coxipó e região. Peça no WhatsApp.">
-    
-    <!-- Keywords: Termos focais -->
-    <meta name="keywords" content="cesta básica cuiabá, cesta básica várzea grande, comprar alimentos online cuiabá, sacolão cuiabá, doação de cesta básica mt, entrega grátis mercado, atacado de alimentos cuiabá, cesta de natal, pedra 90, cpa, coxipó">
-    
-    <!-- Canonical -->
-    <link rel="canonical" href="https://donaantonia.com.br/">
-    <meta name="theme-color" content="#2563EB">
-
-    <!-- 2. SEO LOCAL "NUCLEAR" (GeoTags) -->
-    <meta name="geo.region" content="BR-MT" />
-    <meta name="geo.placename" content="Cuiabá" />
-    <meta name="geo.position" content="-15.6025;-56.0968" />
-    <meta name="ICBM" content="-15.6025, -56.0968" />
-
-    <!-- 5. OTIMIZAÇÃO SOCIAL (Open Graph) -->
-    <meta property="og:locale" content="pt_BR" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Cestas Básicas em Cuiabá e VG | Dona Antônia | Entrega Grátis" />
-    <meta property="og:description" content="Cestas completas a partir de R$ 85,00. Entrega grátis em toda Cuiabá e Várzea Grande." />
-    <meta property="og:url" content="https://donaantonia.com.br/" />
-    <meta property="og:image" content="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" />
-    <meta property="og:site_name" content="Dona Antônia Alimentos" />
-
-    <!-- PILLAR 3: SECURITY & ANTI-CLONE -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'none';">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    
-    <!-- 3. SCHEMA MARKUP (JSON-LD ATUALIZADO) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "GroceryStore",
-      "name": "Super Cestas Básicas Dona Antônia",
-      "image": "https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif",
-      "description": "Distribuidora de Cestas Básicas e Sacolão com entrega grátis em Cuiabá e Várzea Grande.",
-      "telephone": "+5565998150975",
-      "priceRange": "$$",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "R. Trinta, 105 - Jardim Nossa Sra. Aparecida",
-        "addressLocality": "Cuiabá",
-        "addressRegion": "MT",
-        "postalCode": "78090-660",
-        "addressCountry": "BR"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": -15.6025,
-        "longitude": -56.0968
-      },
-      "openingHoursSpecification": [
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-          "opens": "09:00",
-          "closes": "18:00"
+    <!-- 2. ESTILOS EXTRAS -->
+    <style>
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        .input-field {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            font-size: 0.875rem; 
+            outline: none;
+            transition: all 0.2s;
         }
-      ],
-      "areaServed": ["Cuiabá", "Várzea Grande", "Coxipó", "CPA", "Cristo Rei"],
-      "sameAs": ["https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/"]
+        .input-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+        .btn-primary {
+            background-color: #1e293b;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover { background-color: #334155; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.3s ease-out; }
+        
+        .nav-item.active { background-color: #334155; border-right: 4px solid #34d399; }
+    </style>
+
+    <!-- 3. IMPORTMAP REACT + ZOD -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+        "zod": "https://esm.sh/zod@3.22.4"
+      }
     }
     </script>
-
-    <!-- 6. PERFORMANCE TÉCNICA -->
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
-    <script>
-        // Security Check
-        (function() {
-            try {
-                if (window.top !== window.self) { window.top.location = window.self.location; }
-            } catch(e) {}
-        })();
-    </script>
-
-    <style>
-        /* === CORE THEME & RESET === */
-        :root {
-            --primary: #2563EB;
-            --primary-dark: #1d4ed8;
-            --success: #16a34a;
-            --bg-color: #F8FAFC; 
-            --text-main: #0F172A;
-            --text-sub: #64748B;
-            --white: #ffffff;
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-            --radius-card: 24px;
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding-top: 80px; 
-            padding-bottom: 40px;
-            margin: 0 auto;
-            min-height: 100vh;
-        }
-
-        /* === HEADER FIXED === */
-        .site-header {
-            position: fixed; top: 0; left: 0; right: 0;
-            height: 70px; background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid #E2E8F0;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 1000; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        
-        .header-content {
-            width: 100%; max-width: 1000px; /* Largura expandida para desktop */
-            padding: 0 20px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .brand-area { display: flex; align-items: center; gap: 10px; }
-        .brand-logo { 
-            width: 40px; height: 40px; border-radius: 50%; 
-            object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-        }
-        .brand-text h1 { font-size: 16px; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; margin: 0; }
-        .brand-text p { font-size: 11px; color: var(--text-sub); font-weight: 500; margin: 0; }
-
-        .btn-contact-top {
-            background: var(--success); color: white;
-            font-size: 13px; font-weight: 700;
-            padding: 8px 16px; border-radius: 50px;
-            text-decoration: none; display: flex; align-items: center; gap: 6px;
-            transition: transform 0.2s; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
-        }
-        .btn-contact-top:active { transform: scale(0.95); }
-
-        /* === MAIN LAYOUT CONTAINER === */
-        .main-container { 
-            padding: 10px 16px; 
-            max-width: 1000px; /* Expandido */
-            margin: 0 auto;
-        }
-
-        /* === PRODUCT CARD - HYBRID LAYOUT === */
-        .modern-card {
-            background: var(--white);
-            border-radius: var(--radius-card);
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            border: 1px solid #E2E8F0;
-            position: relative;
-            /* Layout Mobile First (Stack) */
-            display: flex; flex-direction: column;
-        }
-
-        /* Desktop Grid Adaptation */
-        @media (min-width: 768px) {
-            .modern-card {
-                display: grid;
-                grid-template-columns: 1.2fr 0.8fr; /* Image Area | Info Area */
-                grid-template-rows: auto auto;
-            }
-            .card-header-img {
-                grid-row: 1 / 3;
-                border-right: 1px solid #E2E8F0;
-                height: 100% !important; /* Full height on desktop */
-                background: #F8FAFC;
-                justify-content: center !important;
-                padding-right: 20px !important; /* Remove gap for chips */
-            }
-            .card-img-main { max-height: 320px !important; }
-            .chips-float {
-                top: 20px !important; 
-                transform: none !important;
-                right: auto !important;
-                left: 20px !important;
-                flex-direction: row !important;
-                flex-wrap: wrap;
-                width: 100%;
-                max-height: none !important;
-                position: absolute;
-            }
-            .slider-section {
-                grid-column: 2;
-                border-bottom: none !important;
-            }
-            .card-footer {
-                grid-column: 2;
-                display: flex; flex-direction: column; justify-content: center;
-                background: #fff;
-            }
-        }
-
-        /* Imagem & Chips */
-        .card-header-img {
-            position: relative;
-            height: 280px; 
-            background: #F8FAFC;
-            display: flex; justify-content: flex-start; align-items: center;
-            padding: 20px; padding-right: 90px;
-        }
-        
-        .card-img-main {
-            width: auto; height: auto;
-            max-width: 100%; max-height: 240px; 
-            object-fit: contain; 
-            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.12));
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            pointer-events: none;
-        }
-        
-        .selo-modern {
-            position: absolute; top: 16px; right: 16px; /* Moved to right for desktop compatibility */
-            background: rgba(255,255,255,0.95);
-            padding: 6px 12px; border-radius: 20px;
-            font-size: 11px; font-weight: 800; color: #B45309;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #FEF3C7;
-            z-index: 2; display: flex; align-items: center; gap: 4px;
-        }
-
-        /* Chips Navigation */
-        .chips-float {
-            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 8px;
-            max-height: 90%; overflow-y: auto; padding: 4px; z-index: 5;
-            min-width: 85px;
-        }
-        .chip-modern {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            padding: 10px 12px; background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(4px); border-radius: 14px;
-            border: 1px solid #E2E8F0; color: var(--text-sub);
-            cursor: pointer; text-align: center;
-            transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .chip-modern.active {
-            background: var(--primary); color: white; border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(37,99,235,0.3); transform: scale(1.05);
-        }
-
-        /* Slider */
-        .slider-section {
-            padding: 20px 0; background: #fff;
-            border-bottom: 1px solid #F1F5F9;
-            position: relative;
-        }
-        .modern-slider {
-            display: flex; gap: 12px; overflow-x: auto; padding: 0 20px;
-            scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
-        }
-        .modern-slider::-webkit-scrollbar { display: none; }
-        
-        .slide-item {
-            flex: 0 0 100px;
-            background: #F8FAFC; border-radius: 16px;
-            padding: 10px 6px; text-align: center;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border: 1px solid #F1F5F9;
-        }
-        .slide-item img { 
-            width: 70px; height: 70px; 
-            object-fit: contain; margin-bottom: 8px; 
-            mix-blend-mode: multiply;
-        }
-        .slide-qty { font-size: 11px; font-weight: 800; color: var(--primary); }
-        .slide-name { font-size: 10px; color: var(--text-sub); line-height: 1.3; font-weight: 500; }
-
-        .nav-arrow {
-            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-            width: 36px; height: 36px; 
-            background: #F59E0B; color: white; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-size: 20px;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-            cursor: pointer; z-index: 10;
-        }
-
-        /* Footer / Prices */
-        .card-footer { padding: 20px; background: white; }
-        .price-val { font-weight: 800; color: var(--text-main); font-size: 18px; }
-        
-        .btn-order-main {
-            width: 100%; padding: 16px;
-            background: #16a34a; color: white; border: none; border-radius: 16px;
-            font-size: 16px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            cursor: pointer; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3);
-            text-transform: uppercase; transition: transform 0.2s;
-            margin-top: 16px;
-        }
-        .btn-order-main:active { transform: scale(0.97); }
-
-        /* === SECTIONS (Payment, Company, SEO) === */
-        .grid-layout {
-            display: grid; gap: 16px; margin-top: 16px;
-            grid-template-columns: 1fr;
-        }
-        @media (min-width: 768px) {
-            .grid-layout { grid-template-columns: 1fr 1fr; }
-        }
-
-        .info-card {
-            background: white; border-radius: 16px; border: 1px solid #E2E8F0;
-            padding: 20px; box-shadow: var(--shadow-md);
-        }
-        .section-title { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        
-        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .pay-item {
-            display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-sub);
-            background: #F8FAFC; padding: 8px 12px; border-radius: 8px;
-        }
-
-        .company-info p { font-size: 13px; color: var(--text-sub); line-height: 1.5; margin-bottom: 8px; }
-        .company-stat { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-main); margin-top: 4px; }
-        
-        .seo-footer {
-            margin-top: 30px; padding-top: 20px; border-top: 1px solid #E2E8F0;
-            font-size: 12px; color: var(--text-sub); line-height: 1.6;
-        }
-        .seo-footer h4 { color: var(--text-main); font-weight: 700; margin-top: 12px; margin-bottom: 4px; }
-
-        /* === MODAL SELEÇÃO DE ARROZ === */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-            z-index: 2000; display: none; align-items: flex-end; justify-content: center;
-        }
-        .modal-overlay.active { display: flex; animation: fadeIn 0.3s forwards; }
-        
-        .modal-content {
-            background: white; width: 100%; max-width: 500px;
-            border-top-left-radius: 24px; border-top-right-radius: 24px;
-            padding: 24px; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
-            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @media(min-width: 768px) {
-            .modal-overlay { align-items: center; }
-            .modal-content { border-radius: 24px; }
-        }
-
-        .modal-title { font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
-        .modal-sub { font-size: 14px; color: var(--text-sub); margin-bottom: 20px; }
-        
-        .option-btn {
-            width: 100%; display: flex; justify-content: space-between; align-items: center;
-            padding: 16px; margin-bottom: 12px;
-            border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .option-btn:active, .option-btn:hover { border-color: var(--primary); background: #EFF6FF; }
-        .opt-name { font-weight: 600; color: var(--text-main); }
-        .opt-price { font-weight: 700; color: var(--success); }
-
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-
-    </style>
+    <!-- 4. BABEL -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800 font-sans overflow-hidden">
+    
+    <div id="root"></div>
 
-    <!-- PILLAR 1: HEADER -->
-    <header class="site-header">
-        <div class="header-content">
-            <div class="brand-area">
-                <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
-                     class="brand-logo" 
-                     alt="Dona Antônia Logo"
-                     onerror="this.src='https://placehold.co/100x100/2563EB/ffffff?text=DA'">
-                <div class="brand-text">
-                    <h1>Dona Antônia</h1>
-                    <p>Super Cestas Básicas</p>
-                </div>
-            </div>
-            <a href="https://wa.me/5565998150975?text=Olá, vim pelo site e tenho uma dúvida." target="_blank" class="btn-contact-top" onclick="trackEvent('ContactClick', {type: 'Header'})">
-                <i class="ph-bold ph-whatsapp-logo"></i> Contato
-            </a>
-        </div>
-    </header>
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { z } from 'zod';
+        import { 
+          Save, Truck, Package, ShoppingCart, Users, MapPin, 
+          Printer, Share2, Download, Upload, Trash2, Plus, 
+          Minus, CheckCircle, Search, Navigation, Edit2, 
+          ArrowUp, ArrowDown, History, MessageCircle, XCircle,
+          AlertTriangle, FileText, Banknote, List, Tag, Percent, 
+          Calendar, Filter, Phone, Database, Clipboard, Box, ExternalLink,
+          Clock, Home, DollarSign, CreditCard, Check, ShieldCheck, ClipboardList,
+          ArrowRight, ArrowLeft, LayoutDashboard, Settings, Menu, BarChart2, TrendingUp, PieChart,
+          MessageSquare, HeartHandshake, RefreshCcw
+        } from 'lucide-react';
 
-    <main class="main-container">
+        // --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
+        const ClientSchema = z.object({
+            id: z.string(),
+            name: z.string().min(1),
+            code: z.string().optional().or(z.literal('')),
+            phone: z.string().optional().or(z.literal('')),
+            address: z.string().optional().or(z.literal('')),
+            city: z.string().optional().or(z.literal('')),
+            district: z.string().optional().or(z.literal('')),
+            region: z.string().optional().or(z.literal('')),
+            mapLink: z.string().optional().or(z.literal('')),
+            photoLink: z.string().optional().or(z.literal('')),
+            obs: z.string().optional().or(z.literal(''))
+        });
+
+        const ProductSchema = z.object({
+            id: z.string(),
+            name: z.string().min(1),
+            internalCode: z.string().optional().or(z.literal('')),
+            category: z.string().optional().or(z.literal('')),
+            ncm: z.string().optional().or(z.literal('')),
+            barcode: z.string().optional().or(z.literal('')),
+            cost: z.any().transform(v => Number(v) || 0), 
+            price: z.any().transform(v => Number(v) || 0),
+            stock: z.any().transform(v => Number(v) || 0),
+            isCombo: z.boolean().optional(),
+            comboItems: z.array(z.object({
+                id: z.string(),
+                qty: z.number(),
+                internalPrice: z.number().optional() 
+            })).optional(),
+            stockHistory: z.array(z.any()).optional()
+        });
+
+        const SaleItemSchema = z.object({
+            id: z.string(),
+            name: z.string(),
+            price: z.any().transform(v => Number(v) || 0),
+            tempId: z.string().optional(),
+            qty: z.number().optional(), 
+            isCombo: z.boolean().optional(),
+            comboItems: z.array(z.any()).optional()
+        }).passthrough(); 
+
+        const SaleSchema = z.object({
+            id: z.string(),
+            fullId: z.string().optional(),
+            clientId: z.string(),
+            items: z.array(SaleItemSchema),
+            subTotal: z.number(),
+            discount: z.number(),
+            total: z.number(),
+            payMethod: z.string(),
+            changeFor: z.any().optional(),
+            obs: z.string().optional().or(z.literal('')),
+            date: z.string(),
+            status: z.string(),
+            printedLabel: z.boolean().optional(),
+            printedList: z.boolean().optional(),
+            volumes: z.number().optional(),
+            routeId: z.any().optional()
+        });
+
+        // Schema atualizado para incluir o log de Pós-Venda
+        const BackupSchema = z.object({
+            version: z.string().optional(),
+            exportedAt: z.string().optional(),
+            clients: z.array(ClientSchema).optional(),
+            products: z.array(ProductSchema).optional(),
+            sales: z.array(SaleSchema).optional(),
+            companyPhone: z.string().optional(),
+            postSaleLog: z.record(z.object({
+                date: z.string(),
+                count: z.number()
+            })).optional()
+        });
         
-        <!-- H1 Principal para SEO -->
-        <h1 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 16px; color: var(--text-main);">
-            Cestas Básicas em Cuiabá e VG - Dona Antônia
-        </h1>
-
-        <!-- CARD PRODUTO (Híbrido Desktop/Mobile) -->
-        <div class="modern-card fade-in" id="product-card">
-            <!-- Content Injected via JS -->
-        </div>
-
-        <!-- LAYOUT GRID: PAGAMENTO & EMPRESA -->
-        <div class="grid-layout fade-in">
-            
-            <!-- FORMAS DE PAGAMENTO -->
-            <section class="info-card">
-                <h2 class="section-title"><i class="ph-fill ph-credit-card"></i> Formas de Pagamento</h2>
-                <div class="payment-grid">
-                    <div class="pay-item"><i class="ph-bold ph-money"></i> Pix / Dinheiro</div>
-                    <div class="pay-item"><i class="ph-bold ph-credit-card"></i> Cartão (Até 3x)</div>
-                    <div class="pay-item"><i class="ph-bold ph-ticket"></i> Vale Alimentação</div>
-                    <div class="pay-item"><i class="ph-bold ph-cards"></i> Alelo / Sodexo</div>
-                </div>
-                <div style="margin-top: 15px; padding: 10px; background: #FEF2F2; color: #DC2626; border: 1px dashed #FECACA; border-radius: 8px; font-size: 11px; text-align: center; font-weight: 700;">
-                    ⚠️ AINDA NÃO VENDEMOS A PRAZO
-                </div>
-            </section>
-
-            <!-- NOSSA EMPRESA -->
-            <section class="info-card company-info">
-                <h2 class="section-title"><i class="ph-fill ph-storefront"></i> Sobre a Empresa</h2>
-                <p>Somos uma empresa familiar, atendendo Cuiabá e Várzea Grande há mais de 8 anos com qualidade e preço justo.</p>
-                
-                <div class="company-stat">
-                    <i class="ph-fill ph-check-circle" style="color:var(--success)"></i> +30 Mil Cestas Entregues
-                </div>
-                <div class="company-stat">
-                    <i class="ph-fill ph-truck" style="color:var(--primary)"></i> Entrega Rápida Própria
-                </div>
-                
-                <a href="https://maps.app.goo.gl/XXXX" target="_blank" style="display:inline-block; margin-top:12px; font-size:12px; color:var(--primary); font-weight:600; text-decoration:none;">
-                    📍 Ver localização no Mapa
-                </a>
-            </section>
-        </div>
-
-        <!-- 4. ESTRATÉGIA DE CONTEÚDO ON-PAGE (SEO TEXT) -->
-        <footer class="seo-footer">
-            <h2 style="font-size:16px; margin-bottom:10px;">Atendemos toda a região metropolitana</h2>
-            
-            <h4>📍 Cuiabá - Região Norte (CPA):</h4>
-            <p>CPA I, II, III, IV, Morada da Serra, Três Barras, Jardim Vitória.</p>
-
-            <h4>📍 Cuiabá - Região Sul (Coxipó):</h4>
-            <p>Tijucal, Pedra 90, Osmar Cabral, São Gonçalo, Parque Cuiabá.</p>
-
-            <h4>📍 Cuiabá - Centro/Oeste:</h4>
-            <p>Jardim Imperial, Belvedere, Santa Rosa, Goiabeiras, Porto.</p>
-
-            <h4>📍 Várzea Grande:</h4>
-            <p>Cristo Rei, Jardim Glória, Mapim, Manga, Ipase.</p>
-
-            <div style="margin-top: 20px; text-align: center; font-size: 11px; opacity: 0.7;">
-                &copy; 2024 Dona Antônia Alimentos - CNPJ XX.XXX.XXX/0001-XX <br>
-                R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT
-            </div>
-        </footer>
-
-    </main>
-
-    <!-- MODAL DE SELEÇÃO DE ARROZ -->
-    <div id="rice-modal" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content">
-            <div class="modal-title">Escolha a marca do Arroz</div>
-            <p class="modal-sub">O valor da cesta muda de acordo com a marca selecionada.</p>
-            <div id="modal-options-container">
-                <!-- Botões gerados via JS -->
-            </div>
-            <button onclick="closeModal(null, true)" style="width:100%; margin-top:10px; padding:12px; background:transparent; border:none; color:var(--text-sub); font-weight:600;">Cancelar</button>
-        </div>
-    </div>
-
-    <script>
-        // === PILLAR 2: TRACKING ===
-        window.dataLayer = window.dataLayer || [];
-        function trackEvent(eventName, params = {}) {
-            window.dataLayer.push({ 'event': eventName, ...params });
-        }
-
-        const CONFIG = { whatsapp: "5565998150975" };
-
-        const CESTAS = [
-            {
-                id: 'economica', nome: 'Cesta Econômica', destaque: 'Mais Vendida', desconto: 5,
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
-                items: ['1 Arroz Koblenz 5kg', '1 Açúcar Doce Dia 2kg', '1 Óleo de Soja Liza 900ml', '1 Feijão Da Casa 1kg', '1 Café Caboclo 250g', '1 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Farinha de Mandioca Dona De 1Kg', '1 Sal 1kg', '1 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Bolacha MyBit Recheada', '1 Miojo Apti', '1 Suco Frisco'],
-                opcoes: [{ arroz: 'Valor Único', preco: '85,00', valor_num: 85.00 }]
-            },
-            {
-                id: 'mini', nome: 'Cesta Mini', destaque: null, desconto: 10,
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
-                items: ['1 Arroz Koblenz 5kg', '1 Açúcar Doce Dia 2kg', '2 Óleo de Soja Liza 900ml', '2 Feijão Da Casa 1kg', '1 Café Caboclo 250g', '1 Espaguete QDelicia 500g', '1 Sal 1kg', '1 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Bolacha MyBit Recheada', '1 Miojo Apti', '2 Suco Frisco', '1 Sabão Barra Ype 900g', '1 Creme Dental Sorriso 70g', '1 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '1 Detergente Ype 500ml', '1 Qboa 1 Litro', '2 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
-                opcoes: [{ arroz: 'Tio Alvino', preco: '165,00', valor_num: 165.00 }, { arroz: 'Koblenz', preco: '170,00', valor_num: 170.00 }]
-            },
-            {
-                id: 'pequena', nome: 'Cesta Pequena', destaque: 'Custo x Benefício', desconto: 15,
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
-                items: ['2 Arroz Koblenz 5kg', '1 Açúcar Doce Dia 2kg', '2 Óleo de Soja Liza 900ml', '2 Feijão Da Casa 1kg', '1 Café Caboclo 250g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '1 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '1 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '2 Suco Frisco', '1 Sabão Barra Ype 900g', '1 Creme Dental Sorriso 70g', '1 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '2 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
-                opcoes: [{ arroz: 'Tio Alvino', preco: '215,00', valor_num: 215.00 }, { arroz: 'Koblenz', preco: '220,00', valor_num: 220.00 }]
-            },
-            {
-                id: 'media', nome: 'Cesta Média', destaque: null, desconto: 20,
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
-                items: ['3 Arroz Koblenz 5kg', '2 Açúcar Doce Dia 2kg', '3 Óleo de Soja Liza 900ml', '3 Feijão Da Casa 1kg', '1 Café Caboclo 500g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '2 Espaguete QDelicia 500g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '2 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '3 Suco Frisco', '1 Sabão Barra Ype 900g', '2 Creme Dental Sorriso 70g', '2 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '3 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
-                opcoes: [{ arroz: 'Tio Alvino', preco: '320,00', valor_num: 320.00 }, { arroz: 'Koblenz', preco: '325,00', valor_num: 325.00 }]
-            },
-            {
-                id: 'grande', nome: 'Cesta Grande', destaque: 'Super Completa', desconto: 25,
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
-                items: ['4 Arroz Koblenz 5kg', '3 Açúcar Doce Dia 2kg', '4 Óleo de Soja Liza 900ml', '4 Feijão Da Casa 1kg', '1 Café Caboclo 500g', '3 Espaguete QDelicia 500g', '12 Ovos', '1 Bolo Apti Chocolate 400g', '1 Trigo Vitoriosa 1kg', '1 Sal 1kg', '2 Molho Fugini 340g', '1 Milho Verde Predileta', '1 Tempero Tio Jonas', '2 Bolacha MyBit Recheada', '2 Miojo Apti', '4 Suco Frisco', '1 Sabão Barra Ype 900g', '2 Creme Dental Sorriso 70g', '2 Papel Higiênico', '1 Amaciante Ype 2L', '1 Desinfetante Remmus 2L', '1 Sabão em Pó OMO 800g', '2 Detergente Ype 500ml', '1 Qboa 1 Litro', '4 Sabonete Palmolive 85g', '1 Lã de Aço Assolan', '1 Esponja de Lavar Louça'],
-                opcoes: [{ arroz: 'Tio Alvino', preco: '380,00', valor_num: 380.00 }, { arroz: 'Koblenz', preco: '390,00', valor_num: 390.00 }]
-            }
-        ];
-
-        // === IMAGE LOGIC ===
-        function getProductImage(text) {
-            const t = text.toLowerCase();
-            const folderAlimento = 'img/alimento/';
-            const folderLimpeza = 'img/limpeza/';
-            const placeholder = `https://placehold.co/100x100/f1f5f9/334155?text=${text.split(' ')[0]}`;
-
-            // Mapeamento simplificado
-            if(t.includes('arroz')) return folderAlimento + 'Arroz Koblenz 5kg.webp';
-            if(t.includes('feijão') || t.includes('feijao')) return folderAlimento + 'feijão da casa.webp';
-            if(t.includes('açúcar') || t.includes('acucar')) return folderAlimento + 'açucar doce dia 2 kg.webp';
-            if(t.includes('oleo') || t.includes('óleo')) return folderAlimento + 'oleo de soja liza.webp';
-            if(t.includes('café') || t.includes('cafe')) return folderAlimento + 'cafe caboclo 250g.webp';
-            if(t.includes('espaguete')) return folderAlimento + 'espaguete qdelicia.webp';
-            if(t.includes('trigo')) return folderAlimento + 'trigo vitoriosa.webp';
-            if(t.includes('sabão em pó') || t.includes('omo')) return folderLimpeza + 'sabão em pó omo 800g.webp';
-            if(t.includes('detergente')) return folderLimpeza + 'Detergente Ype 500ml.webp';
-            if(t.includes('amaciante')) return folderLimpeza + 'amaciante ype 2L.webp';
-            
-            return placeholder;
-        }
-
-        let currentBasketIdx = 0;
-
-        function renderCard() {
-            const container = document.getElementById('product-card');
-            const cesta = CESTAS[currentBasketIdx];
-
-            // Chips Navigation
-            const chips = CESTAS.map((c, i) => `
-                <div class="chip-modern ${i === currentBasketIdx ? 'active' : ''}" onclick="switchBasket(${i})">
-                    ${c.nome.replace('Cesta ', '')}
-                </div>
-            `).join('');
-
-            // Slider Items
-            const slides = cesta.items.map(item => {
-                const match = item.match(/^(\d+)\s+(.*)$/);
-                let qty = "1", nome = item;
-                if(match) { qty = match[1]; nome = match[2]; }
-                const imgPath = getProductImage(nome);
-                return `
-                <div class="slide-item">
-                    <img src="${imgPath}" loading="lazy" alt="${nome}" class="protected" onerror="this.src='https://placehold.co/60x60/f1f5f9/94a3b8?text=IMG'">
-                    <span class="slide-qty">${qty} un</span>
-                    <span class="slide-name">${nome}</span>
-                </div>`;
-            }).join('');
-
-            // Preço (Display)
-            const precos = cesta.opcoes.map(o => `
-                <div class="price-row" style="display:flex; justify-content:space-between; width:100%; margin-bottom:6px;">
-                    <span style="font-size:14px; color:var(--text-sub)">${o.arroz.includes('Valor') ? 'Valor Único' : 'Com ' + o.arroz}</span>
-                    <span class="price-val">R$ ${o.preco}</span>
-                </div>
-            `).join('');
-
-            const absoluteUrl = cesta.img;
-            const localFallback = 'img/' + absoluteUrl.split('/').pop();
-
-            container.innerHTML = `
-                <div class="card-header-img">
-                    ${cesta.destaque ? `<div class="selo-modern"><i class="ph-fill ph-star"></i> ${cesta.destaque}</div>` : ''}
-                    <img src="${absoluteUrl}" class="card-img-main protected" alt="${cesta.nome}" onerror="this.onerror=null;this.src='${localFallback}';">
-                    <!-- Chips: Posicionamento CSS ajustado no Desktop -->
-                    <div class="chips-float">${chips}</div>
-                </div>
-                
-                <div class="slider-section">
-                    <div class="modern-slider">
-                        ${slides}
-                        <div style="min-width:10px"></div>
-                    </div>
-                    <div class="nav-arrow" onclick="scrollSlider(this)"><i class="ph-bold ph-caret-right"></i></div>
-                </div>
-
-                <div class="card-footer">
-                    <div class="price-section">${precos}</div>
-                    
-                    <button class="btn-order-main" onclick="checkOrder()">
-                        <i class="ph-bold ph-whatsapp-logo"></i>
-                        Encomendar ${cesta.nome}
-                    </button>
-                </div>
-            `;
-        }
-
-        window.switchBasket = function(idx) {
-            if(idx === currentBasketIdx) return;
-            const container = document.getElementById('product-card');
-            container.style.opacity = '0.5';
-            setTimeout(() => {
-                currentBasketIdx = idx;
-                renderCard();
-                container.style.opacity = '1';
-            }, 150);
+        // --- UTILITÁRIOS ---
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+        const generateDailyId = (sales) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const todaysSales = sales.filter(s => s.date.startsWith(today));
+            const count = todaysSales.length + 1;
+            return count > 99 ? count.toString() : count.toString().padStart(2, '0');
         };
-
-        window.scrollSlider = function(btn) {
-            const slider = btn.parentElement.querySelector('.modern-slider');
-            if(slider) slider.scrollBy({ left: 220, behavior: 'smooth' });
+        const generateClientCode = (existingClients) => {
+           let code;
+           let attempts = 0;
+           do {
+             code = Math.floor(1000 + Math.random() * 9000).toString();
+             attempts++;
+             if(attempts > 1000) break; 
+           } while (existingClients.some(c => c.code === code));
+           return code;
         };
+        const useStickyState = (key, defaultValue) => {
+          const [value, setValue] = useState(() => {
+            const stickyValue = window.localStorage.getItem(key);
+            return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+          });
+          useEffect(() => {
+            window.localStorage.setItem(key, JSON.stringify(value));
+          }, [key, value]);
+          return [value, setValue];
+        };
+        const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        const formatDate = (dateString) => (!dateString) ? '-' : new Date(dateString).toLocaleDateString('pt-BR');
+        const formatDateTime = (dateString) => (!dateString) ? '-' : new Date(dateString).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
 
-        // === LOGIC: RICE SELECTION ===
-        window.checkOrder = function() {
-            const cesta = CESTAS[currentBasketIdx];
+        // Algoritmo de Distribuição Proporcional (Smart Pricing)
+        const distributeTotal = (targetTotal, items, getPrice, setPrice, getQty) => {
+            const currentSum = items.reduce((acc, item) => acc + (getPrice(item) * getQty(item)), 0);
+            if (currentSum === 0) return items;
+            const factor = targetTotal / currentSum;
             
-            // Se tiver apenas uma opção (Ex: Cesta Econômica), vai direto
-            if(cesta.opcoes.length === 1) {
-                finalizeOrder(cesta.opcoes[0]);
-            } else {
-                // Se tiver mais de uma, abre o modal
-                openModal(cesta);
-            }
-        };
-
-        function openModal(cesta) {
-            const modal = document.getElementById('rice-modal');
-            const container = document.getElementById('modal-options-container');
-            
-            // Gerar botões
-            container.innerHTML = cesta.opcoes.map((opt, i) => `
-                <div class="option-btn" onclick="finalizeOrderFromModal(${i})">
-                    <span class="opt-name">Com ${opt.arroz}</span>
-                    <span class="opt-price">R$ ${opt.preco}</span>
-                </div>
-            `).join('');
-
-            modal.classList.add('active');
-        }
-
-        window.closeModal = function(e, force=false) {
-            if(force || e.target.id === 'rice-modal') {
-                document.getElementById('rice-modal').classList.remove('active');
-            }
-        };
-
-        window.finalizeOrderFromModal = function(optIndex) {
-            const cesta = CESTAS[currentBasketIdx];
-            finalizeOrder(cesta.opcoes[optIndex]);
-            closeModal(null, true);
-        };
-
-        function finalizeOrder(opcao) {
-            const cesta = CESTAS[currentBasketIdx];
-            // Texto detalhado para facilitar o fechamento da venda
-            const arrozTexto = opcao.arroz.includes('Valor') ? '' : ` (Opção: ${opcao.arroz})`;
-            const msg = `Olá! Vim pelo site. Tenho interesse na *${cesta.nome}*${arrozTexto} por *R$ ${opcao.preco}*.`;
-            
-            trackEvent('Lead', { 
-                content_name: cesta.nome, 
-                value: opcao.valor_num, 
-                currency: 'BRL',
-                variant: opcao.arroz
+            // 1. Aplica fator e arredonda
+            const adjustedItems = items.map(item => {
+                const oldPrice = getPrice(item);
+                const newPrice = Math.round((oldPrice * factor) * 100) / 100;
+                const newItem = { ...item };
+                setPrice(newItem, newPrice);
+                return newItem;
             });
 
-            const link = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
-            window.open(link, '_blank');
+            // 2. Corrige centavos perdidos no arredondamento
+            const newSum = adjustedItems.reduce((acc, item) => acc + (getPrice(item) * getQty(item)), 0);
+            const diff = Math.round((targetTotal - newSum) * 100) / 100;
+
+            if (diff !== 0) {
+                // Aplica a diferença no item de maior valor para diluir impacto
+                const idx = adjustedItems.reduce((maxI, el, i, arr) => getPrice(el) > getPrice(arr[maxI]) ? i : maxI, 0);
+                const qty = getQty(adjustedItems[idx]);
+                if (qty > 0) {
+                    const priceAdjustment = diff / qty;
+                    const currentP = getPrice(adjustedItems[idx]);
+                    setPrice(adjustedItems[idx], currentP + priceAdjustment);
+                }
+            }
+            return adjustedItems;
+        };
+
+        // --- COMPONENTE PRINCIPAL ---
+        function App() {
+          const [clients, setClients] = useStickyState('db_clients_v3', []);
+          const [products, setProducts] = useStickyState('db_products_v3', []);
+          const [sales, setSales] = useStickyState('db_sales_v3', []);
+          const [companyPhone, setCompanyPhone] = useStickyState('db_config_phone', '65998150975');
+          const [postSaleLog, setPostSaleLog] = useStickyState('db_postsale_log', {}); 
+          
+          const [viewMode, setViewMode] = useState('dashboard');
+          const [activeTab, setActiveTab] = useState('dashboard');
+          const [showStockManager, setShowStockManager] = useState(false);
+          const [driverData, setDriverData] = useState(null);
+          
+          const [saleToEdit, setSaleToEdit] = useState(null);
+          const [backupType, setBackupType] = useState('all'); 
+
+          useEffect(() => {
+            const checkHash = () => {
+                const hash = window.location.hash;
+                if (hash.startsWith('#driver=')) {
+                  try {
+                    const encoded = hash.replace('#driver=', '');
+                    const decoded = JSON.parse(atob(decodeURIComponent(encoded)));
+                    setDriverData(decoded);
+                    setViewMode('driver');
+                  } catch (e) {
+                    console.error("Link inválido", e);
+                    alert("Erro ao abrir link do entregador.");
+                  }
+                } else {
+                    if (viewMode === 'driver') setViewMode('dashboard');
+                }
+            };
+            checkHash();
+            window.addEventListener('hashchange', checkHash);
+            return () => window.removeEventListener('hashchange', checkHash);
+          }, []);
+
+          const handleBackup = () => {
+            let data = { version: '5.7', exportedAt: new Date().toISOString() };
+            let filename = 'backup';
+            if (backupType === 'all') { 
+                data = { ...data, clients, products, sales, companyPhone, postSaleLog }; 
+                filename = 'backup_completo'; 
+            } else if (backupType === 'clients') { 
+                data = { ...data, clients }; 
+                filename = 'backup_clientes'; 
+            } else if (backupType === 'products') { 
+                data = { ...data, products }; 
+                filename = 'backup_produtos'; 
+            }
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); 
+            a.href = url; 
+            a.download = `${filename}_${new Date().toISOString().slice(0,10)}.json`; 
+            a.click();
+          };
+
+          const handleRestore = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              try {
+                const rawData = JSON.parse(event.target.result);
+                const result = BackupSchema.safeParse(rawData);
+                
+                if (!result.success) {
+                    console.error("Erro validação:", result.error);
+                    return alert(`FALHA DE INTEGRIDADE (ZOD): O arquivo não é compatível.`);
+                }
+                
+                const data = result.data;
+                if (confirm("SEGURANÇA: Dados validados.\nSobrescrever base local?")) {
+                  if (data.clients) setClients(data.clients);
+                  if (data.products) setProducts(data.products);
+                  if (data.sales) setSales(data.sales);
+                  if (data.companyPhone) setCompanyPhone(data.companyPhone);
+                  if (data.postSaleLog) setPostSaleLog(data.postSaleLog);
+                  alert("Importação concluída com sucesso.");
+                }
+              } catch (err) { 
+                  console.error(err);
+                  alert("Erro ao ler JSON."); 
+              }
+            };
+            reader.readAsText(file);
+          };
+
+          if (viewMode === 'driver') return <DriverView data={driverData} onExit={() => { window.location.hash = ''; setViewMode('dashboard'); }} />;
+
+          const renderContent = () => {
+             switch(activeTab) {
+                case 'dashboard': return <DashboardView sales={sales} products={products} clients={clients} />;
+                case 'pos': return <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} saleToEdit={saleToEdit} setSaleToEdit={setSaleToEdit} />;
+                case 'expedition': return <ExpeditionView sales={sales} setSales={setSales} clients={clients} products={products} setProducts={setProducts} onEditSale={(sale) => { setSaleToEdit(sale); setActiveTab('pos'); }} />;
+                case 'logistics': return <LogisticsView sales={sales} setSales={setSales} clients={clients} companyPhone={companyPhone} />;
+                case 'crm': return <RegistryView clients={clients} setClients={setClients} products={products} setProducts={setProducts} />;
+                case 'reports': return <ReportsView sales={sales} clients={clients} products={products} />;
+                case 'postsale': return <PostSalesView sales={sales} clients={clients} postSaleLog={postSaleLog} setPostSaleLog={setPostSaleLog} companyPhone={companyPhone} />;
+                default: return <DashboardView sales={sales} products={products} clients={clients} />;
+             }
+          };
+
+          return (
+            <div className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
+                <aside className="w-20 lg:w-64 bg-slate-900 text-white flex flex-col shrink-0 transition-all duration-300 z-30 shadow-xl">
+                    <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
+                        <div className="bg-yellow-500 text-slate-900 p-1.5 rounded font-bold mr-2">LOG</div>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">SISTEMA <span className="text-emerald-400 text-xs font-normal border border-emerald-500 rounded px-1 ml-1">V5.7</span></h1>
+                    </div>
+                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
+                        <NavItem icon={<LayoutDashboard size={20}/>} label="Visão Geral" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+                        <NavItem icon={<ShoppingCart size={20}/>} label="Caixa (PDV)" active={activeTab === 'pos'} onClick={() => setActiveTab('pos')} />
+                        <NavItem icon={<Package size={20}/>} label="Expedição" active={activeTab === 'expedition'} onClick={() => setActiveTab('expedition')} />
+                        <NavItem icon={<Truck size={20}/>} label="Logística" active={activeTab === 'logistics'} onClick={() => setActiveTab('logistics')} />
+                        <NavItem icon={<Database size={20}/>} label="Cadastros" active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
+                        <NavItem icon={<BarChart2 size={20}/>} label="Relatórios" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
+                        <NavItem icon={<HeartHandshake size={20}/>} label="Pós-Venda" active={activeTab === 'postsale'} onClick={() => setActiveTab('postsale')} />
+                    </nav>
+                    <div className="p-4 border-t border-slate-800 space-y-3">
+                        <button onClick={() => setShowStockManager(true)} className="w-full flex items-center justify-center lg:justify-start gap-3 p-2 rounded hover:bg-slate-800 transition text-slate-400 hover:text-white">
+                            <ClipboardList size={20} /> <span className="hidden lg:inline text-sm font-medium">Estoque Rápido</span>
+                        </button>
+                        <div className="pt-2 border-t border-slate-800 hidden lg:block">
+                            <div className="flex gap-2 mb-2">
+                                <select className="bg-slate-800 text-xs text-white p-1.5 rounded border border-slate-700 flex-1 outline-none" value={backupType} onChange={(e) => setBackupType(e.target.value)}>
+                                    <option value="all">Geral</option><option value="clients">Clientes</option><option value="products">Produtos</option>
+                                </select>
+                                <button onClick={handleBackup} className="bg-emerald-600 hover:bg-emerald-500 p-1.5 rounded text-white transition"><Download size={14} /></button>
+                            </div>
+                            <label className="flex items-center gap-2 text-xs text-slate-400 hover:text-white cursor-pointer transition">
+                                <Upload size={14} /> Importar JSON <input type="file" className="hidden" accept=".json" onChange={handleRestore} />
+                            </label>
+                        </div>
+                    </div>
+                </aside>
+                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full">
+                    <header className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
+                        <div className="flex items-center gap-2 lg:hidden"><div className="bg-yellow-500 text-slate-900 p-1 rounded font-bold">LOG</div></div>
+                        <div className="hidden lg:block"><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">{activeTab === 'dashboard' ? 'Visão Geral' : activeTab === 'pos' ? 'Ponto de Venda' : activeTab === 'expedition' ? 'Expedição' : activeTab === 'logistics' ? 'Logística' : activeTab === 'crm' ? 'Cadastros' : activeTab === 'postsale' ? 'Pós-Venda & Fidelização' : 'Relatórios'}</h2></div>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border">
+                                <Phone size={14} /><input className="bg-transparent w-24 outline-none" value={companyPhone} onChange={e => setCompanyPhone(e.target.value)} />
+                            </div>
+                            <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-bold">OP</div>
+                        </div>
+                    </header>
+                    <div className="flex-1 overflow-hidden relative">{renderContent()}</div>
+                </main>
+                {showStockManager && (
+                    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-in">
+                        <div className="bg-white w-full max-w-5xl h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+                            <div className="bg-slate-800 text-white p-4 flex justify-between items-center shrink-0">
+                                <h2 className="font-bold flex items-center gap-2 text-lg"><ClipboardList size={20}/> GERENCIADOR DE ESTOQUE</h2>
+                                <button onClick={() => setShowStockManager(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition"><XCircle size={24}/></button>
+                            </div>
+                            <StockManager products={products} setProducts={setProducts} />
+                        </div>
+                    </div>
+                )}
+            </div>
+          );
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', renderCard);
+        const NavItem = ({ icon, label, active, onClick }) => (
+            <button onClick={onClick} className={`w-full flex items-center justify-center lg:justify-start gap-3 p-3 lg:px-6 transition-all duration-200 nav-item ${active ? 'active text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`} title={label}>{icon}<span className="hidden lg:inline font-medium text-sm">{label}</span></button>
+        );
 
+        function DashboardView({ sales, products, clients }) {
+            const today = new Date().toISOString().slice(0, 10);
+            const salesToday = sales.filter(s => s.date.startsWith(today) && s.status !== 'Cancelado');
+            const totalToday = salesToday.reduce((acc, s) => acc + s.total, 0);
+            const pendingOrders = sales.filter(s => s.status === 'Pendente').length;
+            const lowStock = products.filter(p => !p.isCombo && p.stock <= 5).length;
+            
+            return (
+                <div className="p-6 h-full overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <MetricCard title="Vendas Hoje" value={formatCurrency(totalToday)} icon={<DollarSign size={24} className="text-green-600"/>} color="green" sub={`${salesToday.length} pedidos`} />
+                        <MetricCard title="Pedidos Pendentes" value={pendingOrders} icon={<Clock size={24} className="text-orange-600"/>} color="orange" sub="Aguardando montagem" />
+                        <MetricCard title="Estoque Baixo" value={lowStock} icon={<AlertTriangle size={24} className="text-red-600"/>} color="red" sub="Produtos críticos" />
+                        <MetricCard title="Total Clientes" value={clients.length} icon={<Users size={24} className="text-blue-600"/>} color="blue" sub="Base ativa" />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100%-140px)]">
+                        <div className="bg-white rounded-xl shadow-sm border p-4 lg:col-span-2 flex flex-col">
+                            <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2"><History size={18}/> Últimas Vendas</h3>
+                            <div className="flex-1 overflow-y-auto"><table className="w-full text-sm text-left"><thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs sticky top-0"><tr><th className="p-3">ID</th><th className="p-3">Cliente</th><th className="p-3">Status</th><th className="p-3 text-right">Valor</th></tr></thead><tbody className="divide-y">{[...sales].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 15).map(sale => (<tr key={sale.id} className="hover:bg-gray-50"><td className="p-3 font-mono font-bold text-slate-600">#{sale.id}</td><td className="p-3">{clients.find(c => c.id === sale.clientId)?.name || 'Consumidor'}</td><td className="p-3"><span className={`px-2 py-1 rounded text-xs font-bold ${sale.status === 'Pendente' ? 'bg-orange-100 text-orange-700' : sale.status === 'Entregue' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{sale.status}</span></td><td className="p-3 text-right font-bold text-gray-700">{formatCurrency(sale.total)}</td></tr>))}</tbody></table></div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-sm border p-4 flex flex-col">
+                            <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2"><AlertTriangle size={18}/> Alertas de Estoque</h3>
+                             <div className="flex-1 overflow-y-auto space-y-2">{products.filter(p => !p.isCombo && p.stock <= 5).map(p => (<div key={p.id} className="flex justify-between items-center p-3 bg-red-50 border border-red-100 rounded text-sm"><span className="font-medium text-red-900">{p.name}</span><span className="font-bold text-red-700 bg-white px-2 py-0.5 rounded border border-red-200">{p.stock} un</span></div>))}</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const MetricCard = ({ title, value, icon, color, sub }) => (
+            <div className={`bg-white p-5 rounded-xl shadow-sm border border-${color}-100 relative overflow-hidden group`}><div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110`}>{icon}</div><div className="relative z-10"><p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">{title}</p><h3 className="text-2xl font-bold text-gray-800 mb-1">{value}</h3><p className={`text-xs text-${color}-600 font-bold`}>{sub}</p></div></div>
+        );
+
+        function POSView({ clients, products, setProducts, sales, setSales, saleToEdit, setSaleToEdit }) {
+             const [selectedClient, setSelectedClient] = useState('');
+             const [clientSearch, setClientSearch] = useState('');
+             const [cart, setCart] = useState([]);
+             const [payMethod, setPayMethod] = useState('Pix');
+             const [changeFor, setChangeFor] = useState(''); 
+             const [obs, setObs] = useState(''); 
+             const [searchProd, setSearchProd] = useState('');
+             const [selectedCategory, setSelectedCategory] = useState('todas');
+             const [editingItem, setEditingItem] = useState(null); 
+             const [volumes, setVolumes] = useState(1); 
+             const [tempQty, setTempQty] = useState({});
+             const [manualTotal, setManualTotal] = useState('');
+
+             useEffect(() => {
+                if (saleToEdit) {
+                  const client = clients.find(c => c.id === saleToEdit.clientId);
+                  if (client) { setSelectedClient(client.id); setClientSearch(client.name); }
+                  setCart(saleToEdit.items.map(i => ({...i, tempId: generateId()})));
+                  setObs(saleToEdit.obs); setPayMethod(saleToEdit.payMethod);
+                  if (saleToEdit.changeFor) setChangeFor(saleToEdit.changeFor);
+                  setVolumes(saleToEdit.volumes || 1);
+                  setManualTotal(saleToEdit.total.toFixed(2)); 
+                  setSaleToEdit(null); 
+                }
+              }, [saleToEdit, clients]);
+    
+             const getQty = (id) => tempQty[id] || 1;
+             const incQty = (id) => setTempQty({...tempQty, [id]: getQty(id) + 1});
+             const decQty = (id) => setTempQty({...tempQty, [id]: Math.max(1, getQty(id) - 1)});
+
+             const addToCart = (product) => {
+                const qty = getQty(product.id);
+                if (!product.isCombo && product.stock < qty) {
+                  if (!confirm(`Estoque baixo (${product.stock}). Adicionar ${qty} mesmo assim?`)) return;
+                }
+                const itemsToAdd = [];
+                for(let i=0; i<qty; i++) {
+                   const cartItem = { 
+                       ...product, tempId: generateId(), originalPrice: product.price,
+                       comboItems: product.isCombo ? product.comboItems.map(ci => {
+                           const subProd = products.find(p => p.id === ci.id);
+                           const subTotalTable = product.comboItems.reduce((acc, item) => {
+                               const p = products.find(prod => prod.id === item.id);
+                               return acc + ((p?.price || 0) * item.qty);
+                           }, 0);
+                           const ratio = subTotalTable > 0 ? product.price / subTotalTable : 1;
+                           return { ...ci, internalPrice: (subProd?.price || 0) * ratio }; 
+                       }) : []
+                   };
+                   itemsToAdd.push(cartItem);
+                }
+                const newCart = [...cart, ...itemsToAdd];
+                setCart(newCart);
+                const newSum = newCart.reduce((acc, i) => acc + i.price, 0);
+                setManualTotal(newSum.toFixed(2));
+                setTempQty({...tempQty, [product.id]: 1}); 
+             };
+
+             const removeFromCart = (tempId) => {
+                 const newCart = cart.filter(item => item.tempId !== tempId);
+                 setCart(newCart);
+                 const newSum = newCart.reduce((acc, i) => acc + i.price, 0);
+                 setManualTotal(newSum.toFixed(2));
+             };
+             
+             const handleManualTotalChange = (val) => {
+                 setManualTotal(val);
+                 const target = parseFloat(val);
+                 if (!isNaN(target) && cart.length > 0) {
+                     const newCart = distributeTotal(target, cart, (i)=>i.price, (i, v)=>i.price=v, ()=>1);
+                     setCart(newCart);
+                 }
+             };
+
+             const updateCartItemPrice = () => {
+                if (!editingItem) return;
+                const newCart = cart.map(i => i.tempId === editingItem.tempId ? { ...i, price: parseFloat(editingItem.price) } : i);
+                setCart(newCart);
+                const newSum = newCart.reduce((acc, i) => acc + i.price, 0);
+                setManualTotal(newSum.toFixed(2));
+                setEditingItem(null);
+             };
+
+             const updateComboItemQty = (cartItemTempId, subItemId, newQty) => {
+                 setCart(cart.map(item => {
+                    if (item.tempId !== cartItemTempId) return item;
+                    return { ...item, comboItems: item.comboItems.map(sub => sub.id === subItemId ? {...sub, qty: newQty} : sub) };
+                 }));
+             };
+
+             const subTotal = cart.reduce((acc, item) => acc + Number(item.price), 0);
+             
+             const finalizeSale = () => {
+                if (!selectedClient) return alert('Selecione um cliente');
+                if (cart.length === 0) return alert('Carrinho vazio');
+                
+                const finalTotal = parseFloat(manualTotal) || subTotal;
+
+                const newProducts = [...products];
+                cart.forEach(cartItem => {
+                  const dbProd = newProducts.find(p => p.id === cartItem.id);
+                  if (dbProd) {
+                    if (dbProd.isCombo) {
+                      cartItem.comboItems?.forEach(ing => {
+                         const dbIng = newProducts.find(p => p.id === ing.id);
+                         if (dbIng) {
+                           dbIng.stock = Math.max(0, dbIng.stock - ing.qty);
+                           dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'SALE_COMBO', qty: ing.qty, ref: cartItem.name });
+                         }
+                      });
+                    } else {
+                      dbProd.stock = Number(dbProd.stock) - 1;
+                      dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'SALE', qty: 1 });
+                    }
+                  }
+                });
+                
+                setProducts(newProducts);
+                const shortId = generateDailyId(sales);
+                const newSale = {
+                  id: shortId, fullId: generateId(), clientId: selectedClient, items: cart,
+                  subTotal: subTotal, 
+                  discount: subTotal - finalTotal,
+                  total: finalTotal, 
+                  payMethod, changeFor: payMethod === 'Dinheiro' ? changeFor : null, obs,
+                  date: new Date().toISOString(), status: 'Pendente', printedLabel: false, printedList: false, volumes: volumes, routeId: null
+                };
+                setSales([...sales, newSale]);
+                setCart([]); setSelectedClient(''); setClientSearch(''); setObs(''); setChangeFor(''); setVolumes(1); setManualTotal('');
+                alert(`Venda #${shortId} Realizada!`);
+             };
+
+             const filteredProducts = products.filter(p => (selectedCategory === 'todas' || p.category === selectedCategory) && p.name.toLowerCase().includes(searchProd.toLowerCase()));
+             const filteredClients = clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()));
+             const categories = ['todas', ...new Set(products.map(p => p.category))];
+
+             return (
+                <div className="flex h-full">
+                    <div className="flex-1 flex flex-col border-r bg-white p-4">
+                        <div className="flex gap-4 mb-4 shrink-0">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-2.5 text-gray-400" size={20}/><input className="w-full pl-10 pr-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" placeholder="Buscar produto..." value={searchProd} onChange={e => setSearchProd(e.target.value)} />
+                            </div>
+                            <select className="border rounded-lg px-4 bg-white outline-none focus:border-blue-500" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}><option value="todas">Todas</option>{categories.filter(c=>c!=='todas').map(c => <option key={c} value={c}>{c}</option>)}</select>
+                        </div>
+                        <div className="flex-1 overflow-y-auto scrollbar-thin">
+                            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">{filteredProducts.map(p => (<div key={p.id} className="bg-white border rounded-lg p-3 hover:shadow-md transition cursor-pointer flex flex-col h-32 relative group border-slate-200" onClick={() => addToCart(p)}><div className="flex justify-between items-start mb-1"><span className="bg-slate-100 text-slate-600 text-[10px] font-mono px-1.5 rounded">{p.internalCode || '-'}</span><span className={`text-[10px] px-1.5 rounded font-bold ${p.stock > 10 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{p.stock} un</span></div><h4 className="font-bold text-sm text-gray-800 leading-tight mb-auto line-clamp-2">{p.name}</h4><div className="flex justify-between items-end mt-2"><div className="text-lg font-bold text-green-700">{formatCurrency(p.price)}</div><button className="bg-blue-600 text-white p-1.5 rounded hover:bg-blue-700 transition shadow-sm opacity-0 group-hover:opacity-100"><Plus size={16}/></button></div></div>))}</div>
+                        </div>
+                    </div>
+                    <div className="w-[400px] flex flex-col bg-gray-50 h-full border-l shadow-xl z-10">
+                        <div className="p-4 bg-white border-b shrink-0 z-20">
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Cliente</label>
+                            <div className="relative">
+                                <input className={`w-full p-2 border rounded-lg outline-none ${selectedClient ? 'bg-green-50 border-green-500 text-green-800 font-bold' : 'bg-white'}`} placeholder="Buscar Cliente..." value={clientSearch} onChange={e => { setClientSearch(e.target.value); setSelectedClient(''); }} />
+                                {clientSearch && !selectedClient && (<div className="absolute top-full left-0 w-full bg-white border shadow-xl max-h-60 overflow-y-auto z-50 rounded-b-lg">{filteredClients.map(c => (<div key={c.id} className="p-3 hover:bg-blue-50 cursor-pointer border-b flex justify-between items-center" onClick={() => { setSelectedClient(c.id); setClientSearch(c.name); }}><div><div className="font-bold text-sm">{c.name}</div><div className="text-xs text-gray-500">{c.district}</div></div></div>))}</div>)}
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin">
+                            {cart.length === 0 && (<div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60"><ShoppingCart size={48} className="mb-2"/><p>Carrinho Vazio</p></div>)}
+                            {cart.map(item => (
+                                <div key={item.tempId} className="bg-white p-3 rounded-lg border shadow-sm relative group">
+                                    <div className="flex justify-between items-start mb-1"><div className="font-bold text-sm text-gray-800 pr-6">{item.name}</div><button onClick={() => removeFromCart(item.tempId)} className="text-gray-300 hover:text-red-500 absolute top-2 right-2"><XCircle size={16}/></button></div>
+                                    <div className="flex justify-between items-center"><button onClick={() => setEditingItem({tempId: item.tempId, price: item.price})} className="text-sm font-bold text-green-700 hover:underline">{formatCurrency(item.price)}</button><div className="text-xs text-gray-400">Unitário</div></div>
+                                    {item.isCombo && (<div className="mt-2 bg-yellow-50 p-2 rounded border border-yellow-100">{item.comboItems.map(ci => (<div key={ci.id} className="flex justify-between items-center text-xs py-1 border-b border-yellow-100 last:border-0"><span className="text-gray-600 truncate max-w-[150px]">{products.find(p => p.id === ci.id)?.name || 'Item'}</span><div className="flex items-center bg-white border rounded"><button className="px-1.5 hover:bg-gray-100" onClick={() => updateComboItemQty(item.tempId, ci.id, Math.max(0, ci.qty - 1))}>-</button><span className="w-5 text-center font-bold">{ci.qty}</span><button className="px-1.5 hover:bg-gray-100" onClick={() => updateComboItemQty(item.tempId, ci.id, ci.qty + 1)}>+</button></div></div>))}</div>)}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-gray-500 font-bold uppercase text-xs">Total Final (Editável)</span>
+                                <input className="font-bold text-2xl text-right w-32 border-b-2 border-emerald-500 focus:outline-none text-emerald-600" value={manualTotal} onChange={(e) => handleManualTotalChange(e.target.value)} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Pagamento</label><select className="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value={payMethod} onChange={e => setPayMethod(e.target.value)}><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
+                                <div><label className="text-[10px] font-bold text-gray-400 uppercase">Volumes</label><select className="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value={volumes} onChange={e => setVolumes(e.target.value)}>{[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}</select></div>
+                            </div>
+                            {payMethod === 'Dinheiro' && (<div className="mb-4"><label className="text-[10px] font-bold text-gray-400 uppercase">Troco Para</label><input className="w-full border rounded p-2 text-sm bg-gray-50 outline-none" type="number" placeholder="R$ 0,00" value={changeFor} onChange={e => setChangeFor(e.target.value)} /></div>)}
+                            <input className="w-full border rounded p-2 text-sm bg-gray-50 outline-none mb-4" placeholder="Observações..." value={obs} onChange={e => setObs(e.target.value)} />
+                            <button onClick={finalizeSale} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition shadow-lg flex justify-between items-center px-6"><span>FINALIZAR</span><span className="text-emerald-400 text-xl">{formatCurrency(parseFloat(manualTotal) || 0)}</span></button>
+                        </div>
+                    </div>
+                    {editingItem && (<div className="absolute inset-0 bg-black/50 z-50 flex flex-col items-center justify-center p-4"><div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col gap-4 w-72"><h3 className="text-sm font-bold text-center">Ajustar Preço</h3><input type="number" autoFocus className="text-3xl font-bold text-center border-b-2 border-blue-500 outline-none pb-2 w-full" value={editingItem.price} onChange={e => setEditingItem({...editingItem, price: e.target.value})}/><div className="flex gap-2"><button onClick={() => setEditingItem(null)} className="flex-1 bg-gray-100 py-2 rounded font-bold text-gray-500">Cancelar</button><button onClick={updateCartItemPrice} className="flex-1 bg-blue-600 text-white py-2 rounded font-bold">Salvar</button></div></div></div>)}
+                </div>
+             );
+        }
+
+        // --- EXPEDIÇÃO VIEW ---
+        function ExpeditionView({ sales, setSales, clients, products, setProducts, onEditSale }) {
+            const updateStatus = (saleId, newStatus) => setSales(sales.map(s => s.id === saleId ? { ...s, status: newStatus } : s));
+            const returnStock = (sale) => {
+                 const newProducts = [...products];
+                 sale.items.forEach(item => {
+                  const dbProd = newProducts.find(p => p.id === item.id);
+                  if (dbProd) {
+                    if (dbProd.isCombo) { item.comboItems?.forEach(ing => { const dbIng = newProducts.find(p => p.id === ing.id); if (dbIng) { dbIng.stock += ing.qty; dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_RETURN', qty: ing.qty }); } }); } 
+                    else { dbProd.stock += 1; dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_RETURN', qty: 1 }); }
+                  }
+                 });
+                 setProducts(newProducts);
+            }
+            const deleteSale = (sale) => { if (!confirm(`Excluir permanentemente a venda #${sale.id}?`)) return; returnStock(sale); setSales(sales.filter(s => s.id !== sale.id)); };
+            const handleEdit = (sale) => { if(!confirm("Editar venda? Itens voltarão ao carrinho.")) return; returnStock(sale); setSales(sales.filter(s => s.id !== sale.id)); onEditSale(sale); };
+            
+            const printLabel = (sale, client) => {
+                const volCount = sale.volumes || 1; let labelsHtml = '';
+                for (let i = 1; i <= volCount; i++) { labelsHtml += `<div class="label" style="border:1px solid #000; width:300px; height:400px; padding:10px; margin-bottom:10px; page-break-after:always;"><h1 style="font-size:40px;margin:0;">#${sale.id}</h1><h2 style="margin:5px 0;">${client.region || 'GERAL'}</h2><p style="font-size:18px;"><strong>${client.name}</strong><br/>${client.district}</p><p>Vol: ${i}/${volCount}</p><p style="font-size:12px;">Obs: ${sale.obs || '-'}</p></div>`; }
+                const w = window.open('', '', 'width=400,height=500'); w.document.write(`<html><body>${labelsHtml}<script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close();
+            };
+            const printPickingList = (sale, client) => {
+                 let itemsHtml = '';
+                 sale.items.forEach(item => { if (item.isCombo) { itemsHtml += `<strong>${item.name}</strong><br/>`; item.comboItems.forEach(ci => { if(ci.qty>0) itemsHtml += ` - ${ci.qty}x ${products.find(p=>p.id===ci.id)?.name}<br/>`; }); } else { itemsHtml += `[ ] 1x ${item.name}<br/>`; } });
+                 const w = window.open('', '', 'width=400,height=600'); w.document.write(`<html><body style="font-family:sans-serif; padding:20px;"><h2>SEPARAÇÃO #${sale.id}</h2><h3>${client.name}</h3><hr/>${itemsHtml}<hr/><p>Obs: ${sale.obs||''}</p><script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close();
+            };
+            const activeSales = sales.filter(s => s.status !== 'Entregue').sort((a,b) => new Date(a.date) - new Date(b.date));
+            
+            const KanbanColumn = ({ title, status, color, children }) => (<div className="flex flex-col h-full min-w-[320px] max-w-md flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200"><div className={`p-3 font-bold text-sm uppercase text-${color}-800 bg-${color}-100 border-b border-${color}-200 flex justify-between`}>{title}<span className="bg-white px-2 rounded-full text-xs flex items-center">{children.length}</span></div><div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">{children}</div></div>);
+            
+            const SaleCard = ({ sale }) => {
+                const client = clients.find(c => c.id === sale.clientId) || {};
+                return (
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition group">
+                        <div className="flex justify-between items-start mb-2"><span className="font-bold text-lg text-slate-700">#{sale.id}</span><div className="flex gap-1 opacity-0 group-hover:opacity-100 transition"><button onClick={() => handleEdit(sale)} className="p-1 hover:bg-blue-50 text-blue-500 rounded"><Edit2 size={14}/></button><button onClick={() => deleteSale(sale)} className="p-1 hover:bg-red-50 text-red-500 rounded"><Trash2 size={14}/></button></div></div>
+                        <div className="font-bold text-sm mb-1">{client.name}</div>
+                        <div className="text-xs text-gray-500 mb-3">{client.district} • {client.region || 'GERAL'}</div>
+                        <div className="flex gap-2 mb-3"><button onClick={() => printLabel(sale, client)} className="flex-1 border rounded py-1 text-xs">Etiqueta</button><button onClick={() => printPickingList(sale, client)} className="flex-1 border rounded py-1 text-xs">Lista</button></div>
+                        {sale.status === 'Pendente' && <button onClick={() => updateStatus(sale.id, 'Montagem')} className="w-full bg-orange-500 text-white font-bold py-2 rounded text-xs">INICIAR MONTAGEM</button>}
+                        {sale.status === 'Montagem' && <button onClick={() => updateStatus(sale.id, 'Rota')} className="w-full bg-blue-500 text-white font-bold py-2 rounded text-xs">PRONTO PARA ROTA</button>}
+                        {sale.status === 'Rota' && <div className="text-center text-xs font-bold text-green-600 bg-green-50 py-2 rounded border border-green-100">AGUARDANDO ENTREGA</div>}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="h-full overflow-x-auto p-6"><div className="flex gap-6 h-full min-w-max">
+                    <KanbanColumn title="Pendente" status="Pendente" color="orange">{activeSales.filter(s => s.status === 'Pendente').map(s => <SaleCard key={s.id} sale={s} />)}</KanbanColumn>
+                    <KanbanColumn title="Em Montagem" status="Montagem" color="blue">{activeSales.filter(s => s.status === 'Montagem').map(s => <SaleCard key={s.id} sale={s} />)}</KanbanColumn>
+                    <KanbanColumn title="Pronto p/ Rota" status="Rota" color="green">{activeSales.filter(s => s.status === 'Rota').map(s => <SaleCard key={s.id} sale={s} />)}</KanbanColumn>
+                </div></div>
+            );
+        }
+
+        // --- LOGÍSTICA VIEW ---
+        function LogisticsView({ sales, setSales, clients, companyPhone }) {
+            const [selectedRoute, setSelectedRoute] = useState('Todas');
+            const [routeSales, setRouteSales] = useState([]); 
+            useEffect(() => { const ready = sales.filter(s => s.status === 'Rota'); const filtered = selectedRoute === 'Todas' ? ready : ready.filter(s => { const c = clients.find(cl => cl.id === s.clientId); const region = c?.region || c?.route; return region === selectedRoute; }); setRouteSales(filtered); }, [sales, selectedRoute, clients]);
+            const routes = [...new Set(clients.map(c => c.region || c.route).filter(Boolean))];
+            const moveOrder = (index, direction) => { const newOrder = [...routeSales]; if (direction === 'up' && index > 0) { [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]]; } else if (direction === 'down' && index < newOrder.length - 1) { [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]; } setRouteSales(newOrder); };
+            const generateDriverLink = () => { if (routeSales.length === 0) return alert("Nada para entregar!"); const payload = { route: selectedRoute, companyPhone, generatedAt: new Date(), orders: routeSales.map(s => { const c = clients.find(cl => cl.id === s.clientId); return { id: s.id, customer: c.name, phone: c.phone, address: c.address, district: c.district, region: c.region, map: c.mapLink, total: s.total, pay: s.payMethod, change: s.changeFor ? s.changeFor - s.total : 0, obs: s.obs, clientObs: c.obs }; }) }; const encoded = encodeURIComponent(btoa(JSON.stringify(payload))); const link = `${window.location.origin}${window.location.pathname}#driver=${encoded}`; const copyToClipboardFallback = (text) => { const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { document.execCommand('copy'); alert("LINK COPIADO!"); } catch (err) { prompt("Copie:", text); } document.body.removeChild(textArea); }; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(link).then(() => alert("LINK COPIADO!")).catch(() => copyToClipboardFallback(link)); } else { copyToClipboardFallback(link); } };
+            const forceDelivery = (id) => { if (confirm("Marcar entregue?")) setSales(sales.map(s => s.id === id ? { ...s, status: 'Entregue' } : s)); };
+            const totalValue = routeSales.reduce((acc, s) => acc + s.total, 0);
+            return (
+                <div className="h-full flex flex-col p-6 max-w-5xl mx-auto"><div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center"><div className="flex gap-4 items-center"><span className="font-bold text-gray-500 uppercase text-xs">Região:</span><select className="border rounded-lg p-2 bg-gray-50 outline-none" value={selectedRoute} onChange={e => setSelectedRoute(e.target.value)}><option value="Todas">Todas</option>{routes.map(r => <option key={r} value={r}>{r}</option>)}</select></div><div className="text-right"><div className="text-xs text-gray-400 font-bold uppercase">Total da Rota</div><div className="text-2xl font-bold text-green-700">{formatCurrency(totalValue)}</div></div></div><div className="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col"><div className="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><span className="font-bold text-indigo-900 text-sm flex items-center gap-2"><Truck size={16}/> {routeSales.length} Entregas Pendentes</span><button onClick={generateDriverLink} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">GERAR LINK MOTORISTA</button></div><div className="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50">{routeSales.map((s, idx) => { const client = clients.find(c => c.id === s.clientId) || {}; return (<div key={s.id} className="bg-white p-3 rounded-lg border shadow-sm flex gap-4 items-center"><div className="flex flex-col gap-1"><button onClick={() => moveOrder(idx, 'up')} className="p-1 hover:bg-gray-100 rounded"><ArrowUp size={14} className="text-gray-400"/></button><span className="font-bold text-sm text-center text-indigo-600 w-6">{idx + 1}</span><button onClick={() => moveOrder(idx, 'down')} className="p-1 hover:bg-gray-100 rounded"><ArrowDown size={14} className="text-gray-400"/></button></div><div className="flex-1"><div className="flex justify-between"><h4 className="font-bold text-gray-800">{client.name}</h4><span className="font-mono text-xs bg-gray-100 px-2 rounded text-gray-500">#{s.id}</span></div><p className="text-sm text-gray-500">{client.address}, {client.district}</p><div className="flex gap-2 mt-2 text-xs"><span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">{s.payMethod}</span><span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold">{formatCurrency(s.total)}</span></div></div><button onClick={() => forceDelivery(s.id)} className="p-3 hover:bg-green-50 text-gray-300 hover:text-green-600 rounded-full transition"><CheckCircle size={24}/></button></div>); })}</div></div></div>
+            );
+        }
+
+        // --- REGISTRY VIEW ---
+        function RegistryView({ clients, setClients, products, setProducts }) {
+            const [tab, setTab] = useState('clients');
+            const [cForm, setCForm] = useState({ name: '', code: '', phone: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' });
+            const [pForm, setPForm] = useState({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] });
+            const [editingClientId, setEditingClientId] = useState(null);
+            const [editingProductId, setEditingProductId] = useState(null);
+            const [search, setSearch] = useState('');
+
+            // Função descompactada para facilitar leitura
+            const saveClient = () => { 
+                if (!cForm.name) return alert('Nome obrigatório'); 
+                
+                if (editingClientId) { 
+                    setClients(clients.map(c => c.id === editingClientId 
+                        ? { ...cForm, id: editingClientId, code: c.code || cForm.code } 
+                        : c
+                    )); 
+                    setEditingClientId(null); 
+                    alert('Atualizado!'); 
+                } else { 
+                    const newCode = generateClientCode(clients); 
+                    setClients([...clients, { ...cForm, id: generateId(), code: newCode }]); 
+                    alert(`Criado: ${newCode}`); 
+                } 
+                setCForm({ name: '', code: '', phone: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }); 
+            };
+
+            const saveProduct = () => { 
+                if (!pForm.name) return alert('Nome obrigatório'); 
+                
+                if (editingProductId) { 
+                    setProducts(products.map(p => p.id === editingProductId 
+                        ? { ...pForm, id: editingProductId, stock: p.stock, stockHistory: p.stockHistory } 
+                        : p
+                    )); 
+                    setEditingProductId(null); 
+                    alert('Atualizado!'); 
+                } else { 
+                    const newProd = { 
+                        ...pForm, 
+                        id: generateId(), 
+                        stockHistory: [{ date: new Date().toISOString(), type: 'INITIAL', qty: Number(pForm.stock) }] 
+                    }; 
+                    setProducts([...products, newProd]); 
+                    alert('Criado!'); 
+                } 
+                setPForm({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] }); 
+            };
+            
+            const list = tab === 'clients' ? clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name)) : products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).sort((a,b) => a.name.localeCompare(b.name));
+
+            return (
+                <div className="flex h-full"><div className="w-1/3 border-r bg-white flex flex-col"><div className="p-4 border-b"><div className="flex bg-gray-100 p-1 rounded-lg mb-4"><button onClick={() => setTab('clients')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'clients' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>CLIENTES</button><button onClick={() => setTab('products')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${tab === 'products' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>PRODUTOS</button></div><input className="w-full bg-gray-50 border rounded p-2 text-sm outline-none" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div><div className="flex-1 overflow-y-auto">{list.map(item => (<div key={item.id} className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${(editingClientId === item.id || editingProductId === item.id) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`} onClick={() => { if(tab === 'clients') { setCForm(item); setEditingClientId(item.id); } else { setPForm(item); setEditingProductId(item.id); } }}><div className="font-bold text-sm text-gray-800">{item.name}</div><div className="text-xs text-gray-500">{tab === 'clients' ? item.district : `${formatCurrency(item.price)} • Est: ${item.stock}`}</div></div>))}</div><div className="p-3 border-t bg-gray-50 text-center"><button onClick={() => { tab === 'clients' ? (setCForm({ name: '', code: '', phone: '', address: '', city: 'CUIABÁ', district: '', region: 'CUIABÁ', mapLink: '', photoLink: '', obs: '' }), setEditingClientId(null)) : (setPForm({ name: '', internalCode: '', category: 'ALIMENTOS', ncm: '', barcode: '', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] }), setEditingProductId(null)) }} className="text-xs font-bold text-blue-600 flex items-center justify-center gap-1 w-full py-2 hover:bg-blue-100 rounded"><Plus size={14}/> NOVO CADASTRO</button></div></div><div className="flex-1 bg-gray-50 p-8 overflow-y-auto"><div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border"><h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-2">{tab === 'clients' ? (editingClientId ? 'Editar Cliente' : 'Novo Cliente') : (editingProductId ? 'Editar Produto' : 'Novo Produto')}</h2>{tab === 'clients' ? (<div className="space-y-4"><div className="grid grid-cols-4 gap-4"><div className="col-span-3"><label className="text-xs font-bold text-gray-500 uppercase">Nome</label><input className="input-field" value={cForm.name} onChange={e => setCForm({...cForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Código</label><input className="input-field bg-gray-100" value={cForm.code} disabled /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Telefone</label><input className="input-field" value={cForm.phone} onChange={e => setCForm({...cForm, phone: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Bairro</label><input className="input-field" value={cForm.district} onChange={e => setCForm({...cForm, district: e.target.value})} /></div></div><div><label className="text-xs font-bold text-gray-500 uppercase">Endereço</label><input className="input-field" value={cForm.address} onChange={e => setCForm({...cForm, address: e.target.value})} /></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Região / Rota</label><select className="input-field" value={cForm.region} onChange={e => setCForm({...cForm, region: e.target.value})}><option value="CUIABÁ">CUIABÁ (Centro)</option><option value="COXIPO">COXIPO</option><option value="VARZEA GRANDE">VARZEA GRANDE</option><option value="CPA">CPA</option></select></div><div><label className="text-xs font-bold text-gray-500 uppercase">Link Maps</label><input className="input-field" value={cForm.mapLink} onChange={e => setCForm({...cForm, mapLink: e.target.value})} /></div></div><button onClick={saveClient} className="w-full btn-primary mt-4">SALVAR CLIENTE</button></div>) : (<div className="space-y-4"><div className="grid grid-cols-3 gap-4"><div className="col-span-2"><label className="text-xs font-bold text-gray-500 uppercase">Nome Produto</label><input className="input-field" value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Cód Interno</label><input className="input-field" value={pForm.internalCode} onChange={e => setPForm({...pForm, internalCode: e.target.value})} /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-gray-500 uppercase">Preço Venda</label><input className="input-field font-bold text-green-700" type="number" value={pForm.price} onChange={e => setPForm({...pForm, price: e.target.value})} /></div><div><label className="text-xs font-bold text-gray-500 uppercase">Estoque Atual</label><input className="input-field bg-gray-100" type="number" value={pForm.stock} disabled={pForm.isCombo} onChange={e => setPForm({...pForm, stock: Number(e.target.value)})} /></div></div><div className="flex items-center gap-2 pt-2 border-t"><input type="checkbox" checked={pForm.isCombo} onChange={e => setPForm({...pForm, isCombo: e.target.checked})} /><label className="font-bold text-sm">Este produto é um Combo/Kit?</label></div>{pForm.isCombo && (<div className="bg-yellow-50 p-4 rounded border border-yellow-200"><h4 className="font-bold text-yellow-800 text-xs uppercase mb-2">Composição do Kit</h4><div className="space-y-2 max-h-48 overflow-y-auto">{products.filter(p => !p.isCombo).map(p => (<div key={p.id} className="flex justify-between items-center text-sm border-b border-yellow-100 pb-1"><span>{p.name}</span><input type="number" className="w-16 border rounded text-center p-1" placeholder="0" value={pForm.comboItems.find(i => i.id === p.id)?.qty || ''} onChange={(e) => { const qty = Number(e.target.value); const existing = pForm.comboItems.filter(i => i.id !== p.id); if (qty > 0) setPForm({...pForm, comboItems: [...existing, {id: p.id, qty}]}); else setPForm({...pForm, comboItems: existing}); }} /></div>))}</div></div>)}<button onClick={saveProduct} className="w-full btn-primary mt-4">SALVAR PRODUTO</button></div>)}</div></div></div>
+            );
+        }
+
+        // --- RELATÓRIOS VIEW ---
+        function ReportsView({ sales, clients, products }) {
+            const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
+            const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
+            const filteredSales = sales.filter(s => { const d = s.date.slice(0, 10); return d >= startDate && d <= endDate && s.status !== 'Cancelado'; });
+            const totalRevenue = filteredSales.reduce((acc, s) => acc + s.total, 0);
+            const totalOrders = filteredSales.length;
+            const ticketMedio = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+            let totalCost = 0; filteredSales.forEach(s => { s.items.forEach(item => { const prod = products.find(p => p.id === item.id); if (prod) { if (prod.isCombo) { prod.comboItems?.forEach(ci => { const subProd = products.find(sp => sp.id === ci.id); if (subProd) totalCost += (Number(subProd.cost) || 0) * ci.qty; }); } else { totalCost += (Number(prod.cost) || 0); } } }); });
+            const grossProfit = totalRevenue - totalCost;
+            const prodCount = {}; filteredSales.forEach(s => s.items.forEach(i => prodCount[i.name] = (prodCount[i.name] || 0) + 1));
+            const topProducts = Object.entries(prodCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const clientSpend = {}; filteredSales.forEach(s => { const cName = clients.find(c => c.id === s.clientId)?.name || 'N/A'; clientSpend[cName] = (clientSpend[cName] || 0) + s.total; });
+            const topClients = Object.entries(clientSpend).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const payMethods = {}; filteredSales.forEach(s => payMethods[s.payMethod] = (payMethods[s.payMethod] || 0) + 1);
+            const salesByCat = {}; filteredSales.forEach(s => s.items.forEach(i => { const cat = products.find(p => p.id === i.id)?.category || 'Outros'; salesByCat[cat] = (salesByCat[cat] || 0) + i.price; }));
+            const salesByDate = {}; filteredSales.forEach(s => { const date = new Date(s.date).toLocaleDateString('pt-BR'); salesByDate[date] = (salesByDate[date] || 0) + s.total; });
+            const last7Days = Object.entries(salesByDate).slice(-7);
+
+            return (
+                <div className="h-full flex flex-col p-6 overflow-y-auto bg-gray-50">
+                    <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border"><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><TrendingUp/> Relatórios & Inteligência</h2><div className="flex gap-2 items-center"><input type="date" className="border p-2 rounded text-sm" value={startDate} onChange={e => setStartDate(e.target.value)} /><span className="text-gray-400">até</span><input type="date" className="border p-2 rounded text-sm" value={endDate} onChange={e => setEndDate(e.target.value)} /></div></div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-blue-500"><p className="text-xs font-bold text-gray-400 uppercase">Faturamento</p><p className="text-2xl font-bold text-blue-700">{formatCurrency(totalRevenue)}</p></div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-emerald-500"><p className="text-xs font-bold text-gray-400 uppercase">Lucro Bruto (Est.)</p><p className="text-2xl font-bold text-emerald-700">{formatCurrency(grossProfit)}</p></div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-orange-500"><p className="text-xs font-bold text-gray-400 uppercase">Ticket Médio</p><p className="text-2xl font-bold text-orange-700">{formatCurrency(ticketMedio)}</p></div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-purple-500"><p className="text-xs font-bold text-gray-400 uppercase">Total Pedidos</p><p className="text-2xl font-bold text-purple-700">{totalOrders}</p></div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl shadow-sm border mb-6"><h3 className="font-bold text-gray-700 mb-4 text-sm uppercase border-b pb-2">Vendas Diárias (Últimos dias)</h3><div className="flex items-end gap-2 h-32">{last7Days.map(([date, val]) => { const height = Math.max(10, Math.min(100, (val / (Math.max(...Object.values(salesByDate)) || 1)) * 100)); return (<div key={date} className="flex-1 flex flex-col items-center gap-1 group"><div className="text-[10px] opacity-0 group-hover:opacity-100 font-bold">{formatCurrency(val)}</div><div className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-all" style={{height: `${height}%`}}></div><div className="text-[10px] text-gray-500">{date.slice(0,5)}</div></div>) })} {last7Days.length === 0 && <div className="text-gray-400 text-sm w-full text-center self-center">Sem dados no período</div>}</div></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><div className="bg-white p-4 rounded-xl shadow-sm border"><h3 className="font-bold text-gray-700 mb-4 text-sm uppercase border-b pb-2">Produtos Mais Vendidos</h3><div className="space-y-2">{topProducts.map(([name, qtd], i) => (<div key={i} className="flex justify-between items-center text-sm"><span className="text-gray-600">{i+1}. {name}</span><span className="font-bold bg-gray-100 px-2 rounded">{qtd}</span></div>))}</div></div><div className="bg-white p-4 rounded-xl shadow-sm border"><h3 className="font-bold text-gray-700 mb-4 text-sm uppercase border-b pb-2">Melhores Clientes</h3><div className="space-y-2">{topClients.map(([name, total], i) => (<div key={i} className="flex justify-between items-center text-sm"><span className="text-gray-600 truncate w-2/3">{i+1}. {name}</span><span className="font-bold text-green-700">{formatCurrency(total)}</span></div>))}</div></div><div className="bg-white p-4 rounded-xl shadow-sm border"><h3 className="font-bold text-gray-700 mb-4 text-sm uppercase border-b pb-2">Por Categoria</h3><div className="space-y-2">{Object.entries(salesByCat).sort((a,b)=>b[1]-a[1]).map(([cat, total], i) => (<div key={i} className="flex justify-between items-center text-sm"><span className="text-gray-600">{cat}</span><span className="font-bold text-blue-700">{formatCurrency(total)}</span></div>))}</div></div></div>
+                </div>
+            )
+        }
+
+        // --- PÓS-VENDA VIEW ---
+        function PostSalesView({ sales, clients, postSaleLog, setPostSaleLog, companyPhone }) {
+            const clientLastSale = useMemo(() => {
+                const map = {};
+                sales.forEach(s => { if (s.status === 'Cancelado') return; if (!map[s.clientId] || new Date(s.date) > new Date(map[s.clientId].date)) { map[s.clientId] = s; } });
+                return map;
+            }, [sales]);
+            const now = new Date();
+            const buckets = { opportunity: [], attention: [], risk: [] };
+            Object.values(clientLastSale).forEach(sale => {
+                const saleDate = new Date(sale.date);
+                const diffTime = Math.abs(now - saleDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const client = clients.find(c => c.id === sale.clientId);
+                if (!client) return;
+                let rawCashback = sale.total * 0.06;
+                let cashback = Math.max(5, Math.round(rawCashback / 5) * 5); 
+                const data = { client, sale, diffDays, cashback };
+                if (diffDays >= 25 && diffDays <= 30) buckets.opportunity.push(data);
+                else if (diffDays >= 31 && diffDays <= 45) buckets.attention.push(data);
+                else if (diffDays >= 46) buckets.risk.push(data);
+            });
+            const sendWhatsApp = (item) => {
+                const log = postSaleLog[item.client.id];
+                const isReminder = !!log;
+                const clientName = item.client.name.split(' ')[0];
+                const cleanPhone = item.client.phone.replace(/\D/g, '');
+                let msg = '';
+                if (!isReminder) { msg = `Olá ${clientName}! 🌟 Faz ${item.diffDays} dias que não te vemos. Como agradecimento, liberamos um *Cashback de ${formatCurrency(item.cashback)}* para sua próxima compra! 💰 Validade: 7 dias. Aproveite!`; } 
+                else { msg = `Oi ${clientName}! ⏳ Passando pra lembrar do seu *Cashback de ${formatCurrency(item.cashback)}*! Prorroguei a validade por mais 7 dias pra você aproveitar. Vem conferir as novidades!`; }
+                setPostSaleLog(prev => ({ ...prev, [item.client.id]: { date: new Date().toISOString(), count: (prev[item.client.id]?.count || 0) + 1 } }));
+                window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            };
+            const PostSaleCard = ({ item, type }) => {
+                const log = postSaleLog[item.client.id];
+                const lastMsgDate = log ? new Date(log.date).toLocaleDateString('pt-BR') : 'Nunca';
+                return (<div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex flex-col gap-2"><div className="flex justify-between items-start"><span className="font-bold text-gray-800 text-sm truncate">{item.client.name}</span><span className="text-[10px] font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{item.diffDays}d</span></div><div className="text-xs text-gray-500">Última: {formatCurrency(item.sale.total)} <br/><span className="text-[10px]">Msg: {lastMsgDate}</span></div><div className="flex items-center justify-between mt-1 pt-2 border-t border-dashed"><div className="text-green-700 font-bold text-sm">🎁 {formatCurrency(item.cashback)}</div><button onClick={() => sendWhatsApp(item)} className={`px-3 py-1.5 rounded text-xs font-bold text-white flex items-center gap-1 transition ${log ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-green-600 hover:bg-green-700'}`}>{log ? <RefreshCcw size={12}/> : <MessageSquare size={12}/>}{log ? 'Lembrar' : 'Enviar'}</button></div></div>);
+            };
+            return (
+                <div className="h-full p-6 overflow-x-auto"><div className="flex gap-6 h-full min-w-[1000px]"><div className="flex-1 flex flex-col bg-green-50 rounded-xl border border-green-200 overflow-hidden"><div className="p-3 bg-green-100 border-b border-green-200 flex justify-between items-center"><h3 className="font-bold text-green-900 flex items-center gap-2"><Clock size={16}/> Momento Ideal (25-30d)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-green-700">{buckets.opportunity.length}</span></div><div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">{buckets.opportunity.map(item => <PostSaleCard key={item.client.id} item={item} type="opp" />)}{buckets.opportunity.length === 0 && <div className="text-center text-xs text-green-400 mt-10">Nenhum cliente neste perfil.</div>}</div></div><div className="flex-1 flex flex-col bg-yellow-50 rounded-xl border border-yellow-200 overflow-hidden"><div className="p-3 bg-yellow-100 border-b border-yellow-200 flex justify-between items-center"><h3 className="font-bold text-yellow-900 flex items-center gap-2"><AlertTriangle size={16}/> Atenção (31-45d)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-yellow-700">{buckets.attention.length}</span></div><div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">{buckets.attention.map(item => <PostSaleCard key={item.client.id} item={item} type="att" />)}</div></div><div className="flex-1 flex flex-col bg-red-50 rounded-xl border border-red-200 overflow-hidden"><div className="p-3 bg-red-100 border-b border-red-200 flex justify-between items-center"><h3 className="font-bold text-red-900 flex items-center gap-2"><XCircle size={16}/> Risco de Churn (46d+)</h3><span className="bg-white px-2 rounded-full text-xs font-bold text-red-700">{buckets.risk.length}</span></div><div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">{buckets.risk.map(item => <PostSaleCard key={item.client.id} item={item} type="risk" />)}</div></div></div></div>
+            );
+        }
+
+        // --- STOCK MANAGER ---
+        function StockManager({ products, setProducts }) {
+             const [bulkIn, setBulkIn] = useState(''); const [bulkOut, setBulkOut] = useState(''); const sortedProducts = [...products].sort((a,b) => a.name.localeCompare(b.name));
+             const processBulk = (text, type) => { const lines = text.split('\n'); const newProducts = [...products]; let log = []; let errors = []; lines.forEach(line => { if(!line.trim()) return; const parts = line.split(/[|\t]+/); const code = parts[0]?.trim(); const qty = parseInt(parts[1]?.trim()); if (!code || isNaN(qty)) return; const prodIndex = newProducts.findIndex(p => (p.internalCode && p.internalCode === code) || (p.barcode && p.barcode === code) || (p.name.toUpperCase() === code.toUpperCase())); if (prodIndex !== -1) { const prod = newProducts[prodIndex]; const oldStock = prod.stock; if (type === 'IN') { prod.stock += qty; prod.stockHistory.push({ date: new Date().toISOString(), type: 'BULK_IN', qty }); log.push(`${prod.name}: ${oldStock} -> ${prod.stock}`); } else { prod.stock -= qty; prod.stockHistory.push({ date: new Date().toISOString(), type: 'BULK_OUT', qty }); log.push(`${prod.name}: ${oldStock} -> ${prod.stock}`); } } else { errors.push(code); } }); setProducts(newProducts); let resultMsg = `${type === 'IN' ? 'ENTRADA' : 'SAÍDA'} PROCESSADA!\n\n`; if(log.length > 0) resultMsg += `Itens: ${log.length}\n`; if(errors.length > 0) resultMsg += `\nErros: ${errors.join(', ')}`; alert(resultMsg); if(type === 'IN') setBulkIn(''); else setBulkOut(''); };
+             return (<div className="flex h-full"><div className="w-1/3 border-r bg-gray-50 p-4 overflow-y-auto scrollbar-thin">{sortedProducts.map(p => (<div key={p.id} className="flex justify-between items-center text-xs py-2 border-b"><div><span className="font-bold block">{p.name}</span><span className="text-[10px] text-gray-500">{p.internalCode}</span></div><span className={`font-bold px-2 py-1 rounded ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{p.stock}</span></div>))}</div><div className="flex-1 p-6 space-y-4 overflow-y-auto"><div className="grid grid-cols-2 gap-6"><div><h3 className="font-bold text-green-700 mb-2">Entrada em Massa</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-green-50" placeholder="COD | QTD" value={bulkIn} onChange={e=>setBulkIn(e.target.value)}></textarea><button onClick={()=>processBulk(bulkIn, 'IN')} className="btn-primary w-full bg-green-600 hover:bg-green-700 mt-2">PROCESSAR ENTRADA</button></div><div><h3 className="font-bold text-red-700 mb-2">Saída em Massa</h3><textarea className="w-full h-64 border p-2 text-xs font-mono bg-red-50" placeholder="COD | QTD" value={bulkOut} onChange={e=>setBulkOut(e.target.value)}></textarea><button onClick={()=>processBulk(bulkOut, 'OUT')} className="btn-primary w-full bg-red-600 hover:bg-red-700 mt-2">PROCESSAR SAÍDA</button></div></div></div></div>)
+        }
+        
+        // --- DRIVER VIEW ---
+        function DriverView({ data, onExit }) {
+          const [deliveryModal, setDeliveryModal] = useState(null); const [filter, setFilter] = useState('Todas'); const [completedIds, setCompletedIds] = useState([]);
+          if (!data) return <div className="p-4 text-center">Dados inválidos.</div>;
+          const companyPhone = data.companyPhone || '65998150975';
+          const uniqueRegions = [...new Set(data.orders.map(o => o.region || 'Geral').filter(Boolean))]; const regions = ['Todas', ...uniqueRegions]; const showChips = uniqueRegions.length > 1;
+          const filteredOrders = filter === 'Todas' ? data.orders : data.orders.filter(o => (o.region || 'Geral') === filter);
+          const visibleOrders = [...filteredOrders].sort((a, b) => { const aDone = completedIds.includes(a.id); const bDone = completedIds.includes(b.id); if (aDone === bDone) return 0; return aDone ? 1 : -1; });
+          const sendToCustomer = (phone, msg) => { const cleanPhone = phone.replace(/\D/g,''); window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank'); };
+          const handleDeliveryConfirm = (method) => { if (!deliveryModal) return; const order = deliveryModal; const msg = `✅ *ENTREGA REALIZADA*\n\n🆔 Pedido: #${order.id}\n💰 Valor: ${formatCurrency(order.total)}\n💵 Recebido via: *${method}*`; window.open(`https://wa.me/55${companyPhone}?text=${encodeURIComponent(msg)}`, '_blank'); setCompletedIds(prev => [...prev, order.id]); setDeliveryModal(null); };
+          const progress = Math.round((completedIds.length / data.orders.length) * 100); const allFinished = completedIds.length === data.orders.length;
+          return (<div className="min-h-screen bg-gray-50 text-gray-800 pb-16"><header className="bg-indigo-700 text-white p-4 sticky top-0 z-10 shadow-md"><div className="flex justify-between items-center mb-2"><h1 className="font-bold text-lg">ROTA: {data.route}</h1><button onClick={onExit} className="text-xs bg-indigo-800 px-2 py-1 rounded hover:bg-indigo-900 transition">Sair</button></div>{showChips && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-1">{regions.map(r => (<button key={r} onClick={() => setFilter(r)} className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition border ${filter === r ? 'bg-white text-indigo-700 border-white' : 'bg-indigo-800 text-indigo-200 border-indigo-600 hover:bg-indigo-600'}`}>{r}</button>))}</div>)}<div className="flex justify-between items-end"><div className="text-xs opacity-80"><span>{completedIds.length}/{data.orders.length} Entregas</span></div><div className="w-1/2 bg-indigo-900 rounded-full h-1.5 overflow-hidden"><div className="bg-green-400 h-full transition-all duration-500" style={{width: `${progress}%`}}></div></div></div></header><div className="p-4 space-y-6">{visibleOrders.map((order) => { const isDelivered = completedIds.includes(order.id); const clientFirstName = order.customer.split(' ')[0]; return (<div key={order.id} className={`rounded-lg shadow-sm border overflow-hidden relative transition-all duration-500 ${isDelivered ? 'bg-gray-100 border-gray-200 opacity-75' : 'bg-white'}`}>{isDelivered && <div className="absolute top-2 right-2 z-20"><span className="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm"><Check size={12}/> ENTREGUE</span></div>}<div className={`p-3 border-b flex justify-between items-center ${isDelivered ? 'bg-gray-200 border-gray-300' : 'bg-indigo-50 border-indigo-100'}`}><span className={`font-bold px-3 py-1 rounded-full text-sm shadow-sm ${isDelivered ? 'bg-gray-300 text-gray-600' : 'text-indigo-900 bg-white'}`}>#{order.id}</span>{!isDelivered && <span className="font-bold text-indigo-900 text-sm">Pendente</span>}</div><div className="p-4"><h2 className="font-bold text-xl text-gray-800 mb-1 leading-tight">{order.customer}</h2><p className="text-gray-600 text-sm mb-4 flex items-start gap-1"><MapPin size={16} className="mt-0.5 shrink-0 text-gray-400"/> {order.address}, {order.district}</p><div className="grid grid-cols-3 gap-2 mb-4"><a href={`tel:${order.phone}`} className="flex flex-col items-center justify-center bg-gray-100 py-3 rounded hover:bg-gray-200 active:scale-95 transition"><Phone size={20} className="text-gray-700 mb-1"/><span className="text-[10px] font-bold text-gray-600">LIGAR</span></a><button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! Sua entrega chega em aproximadamente 10 minutos. 🚚`)} className="flex flex-col items-center justify-center bg-blue-50 py-3 rounded hover:bg-blue-100 active:scale-95 transition"><Clock size={20} className="text-blue-600 mb-1"/><span className="text-[10px] font-bold text-blue-700">10 MIN</span></button><button onClick={() => sendToCustomer(order.phone, `Olá ${clientFirstName}! O entregador chegou e está aguardando. 🏠`)} className="flex flex-col items-center justify-center bg-yellow-50 py-3 rounded hover:bg-yellow-100 active:scale-95 transition"><Home size={20} className="text-yellow-600 mb-1"/><span className="text-[10px] font-bold text-yellow-700">CHEGUEI</span></button></div><div className="grid grid-cols-2 gap-2 mb-4"><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address + ', ' + order.district)}`} target="_blank" className={`${isDelivered ? 'bg-gray-400 cursor-default' : 'bg-blue-600 hover:bg-blue-700 shadow'} text-white py-3 rounded font-bold text-sm flex items-center justify-center gap-2 transition`}><MapPin size={18}/> ABRIR GPS</a>{isDelivered ? <button disabled className="bg-gray-200 text-gray-400 border border-gray-300 py-3 rounded font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed"><CheckCircle size={18}/> CONCLUÍDO</button> : <button onClick={() => setDeliveryModal(order)} className="bg-emerald-600 text-white py-3 rounded font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2 shadow animate-pulse"><CheckCircle size={18}/> ENTREGUE</button>}</div><div className={`p-3 rounded text-sm mb-3 border ${isDelivered ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-100'}`}><div className="flex justify-between mb-1"><span className="text-gray-500">Forma Pagto:</span><span className="font-bold uppercase">{order.pay}</span></div><div className="flex justify-between items-center mb-1"><span className="text-gray-500">Valor Total:</span><span className={`font-bold text-xl ${isDelivered ? 'text-gray-600' : 'text-green-700'}`}>{formatCurrency(order.total)}</span></div></div></div></div>); })}</div>{deliveryModal && (<div className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center sm:items-center p-4 animate-in"><div className="bg-white w-full max-w-sm rounded-xl p-4 shadow-2xl"><div className="flex justify-between items-center mb-4 border-b pb-2"><h3 className="font-bold text-lg text-gray-800">Confirmar Recebimento</h3><button onClick={() => setDeliveryModal(null)} className="bg-gray-200 p-1 rounded-full"><XCircle size={20}/></button></div><div className="grid grid-cols-2 gap-3 mb-2"><button onClick={() => handleDeliveryConfirm('DINHEIRO')} className="bg-green-100 text-green-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-green-200"><DollarSign size={24}/> DINHEIRO</button><button onClick={() => handleDeliveryConfirm('PIX')} className="bg-indigo-100 text-indigo-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-indigo-200"><Share2 size={24}/> PIX</button><button onClick={() => handleDeliveryConfirm('CARTÃO')} className="bg-blue-100 text-blue-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-blue-200"><CreditCard size={24}/> CARTÃO</button><button onClick={() => handleDeliveryConfirm('SÓ ENTREGUE')} className="bg-gray-100 text-gray-800 p-4 rounded-lg font-bold flex flex-col items-center gap-1 hover:bg-gray-200"><CheckCircle size={24}/> JÁ PAGO</button></div></div></div>)}<div className={`fixed bottom-0 left-0 w-full p-3 text-center text-xs font-bold shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors ${allFinished ? 'bg-green-600 text-white' : 'bg-white text-gray-400 border-t'}`}>{allFinished ? '✅ ROTA FINALIZADA COM SUCESSO' : 'Rota em Andamento...'}</div></div>);
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
