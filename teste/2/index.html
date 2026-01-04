@@ -3,571 +3,524 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo Gestão de Produtos (Micro-frontend)</title>
+    <title>WMS Local-First | Gestão de Kits & Avulsos</title>
     
-    <!-- 1. TAILWIND CSS (PROTOCOL) -->
+    <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        slate: { 
-                            850: '#151e2e', 
-                            900: '#0f172a' // Fundo de botões primários
-                        },
-                        primary: { 
-                            600: '#0284c7', // Azul Profundo
-                            700: '#0369a1' 
-                        }
+                        slate: { 850: '#151e2e', 900: '#0f172a' },
+                        primary: { 600: '#0284c7', 700: '#0369a1' },
+                        alert: { 500: '#ef4444', 600: '#dc2626' }
                     },
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    boxShadow: {
-                        'sharp': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-                        'input': '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
             }
         }
     </script>
     
-    <!-- 2. GOOGLE FONTS -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- 2. FONTS & ICONS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- 3. ESTILOS GLOBAIS (PROTOCOL) -->
+    <!-- 3. GLOBAL STYLES -->
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        /* Scrollbar */
-        .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: #e2e8f0; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; border: 2px solid #e2e8f0; }
-        
-        /* Inputs High Contrast */
-        .input-label {
-            display: block; font-size: 0.75rem; text-transform: uppercase;
-            letter-spacing: 0.05em; font-weight: 700; color: #475569; margin-bottom: 0.35rem;
-        }
-        
-        .input-field {
-            width: 100%; padding: 0.6rem 0.75rem; 
-            background-color: #ffffff; 
-            border: 1px solid #cbd5e1; /* Slate-300 */
-            border-radius: 0.375rem; font-size: 0.9rem; font-weight: 500; color: #0f172a;
-            outline: none; transition: all 0.15s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .input-field:focus { 
-            border-color: #0284c7; /* Primary-600 */
-            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15); 
-        }
-        .input-field:disabled { background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0; cursor: not-allowed; }
-        
-        /* Botões */
-        .btn-primary {
-            background-color: #0f172a; color: white;
-            padding: 0.65rem 1.25rem; border-radius: 0.375rem;
-            font-size: 0.875rem; font-weight: 600; letter-spacing: 0.025em;
-            transition: background-color 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .btn-primary:hover { background-color: #1e293b; transform: translateY(-1px); }
-        
-        .btn-secondary {
-            background-color: #ffffff; border: 1px solid #cbd5e1; color: #334155;
-            padding: 0.65rem 1.25rem; border-radius: 0.375rem;
-            font-size: 0.875rem; font-weight: 600;
-            transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .btn-secondary:hover { background-color: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.2s ease-out; }
+        /* Table Sticky Header */
+        th.sticky-header { position: sticky; top: 0; background: #f8fafc; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+        /* Inputs */
+        .input-dense {
+            width: 100%; padding: 0.5rem; font-size: 0.875rem;
+            border: 1px solid #cbd5e1; border-radius: 0.25rem;
+            transition: all 0.2s;
+        }
+        .input-dense:focus { border-color: #0284c7; outline: none; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.1); }
+        
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 
-    <!-- 4. IMPORTMAP -->
+    <!-- 4. REACT & LIBS -->
     <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@18.2.0",
         "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.263.1",
-        "zod": "https://esm.sh/zod@3.22.4"
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
       }
     }
     </script>
-    
-    <!-- 5. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-slate-100 h-screen overflow-hidden text-slate-900">
+<body>
     
-    <div id="root" class="h-full"></div>
+    <div id="root" class="h-screen w-screen flex flex-col"></div>
 
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { z } from 'zod';
         import { 
-          Package, Search, Plus, Trash2, Save, BoxSelect, 
-          ClipboardList, X, TrendingUp, AlertTriangle, ArrowRightLeft
+          Package, Search, Plus, Trash2, Save, Box, Layers, 
+          AlertTriangle, ArrowRight, Filter, Settings, Wrench, RefreshCw
         } from 'lucide-react';
 
         // --- UTILS ---
         const generateId = () => Math.random().toString(36).substr(2, 9);
-        const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
         
         const useStickyState = (key, defaultValue) => {
           const [value, setValue] = useState(() => {
-            const stickyValue = window.localStorage.getItem(key);
-            return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+            const sticky = window.localStorage.getItem(key);
+            return sticky ? JSON.parse(sticky) : defaultValue;
           });
-          useEffect(() => {
-            window.localStorage.setItem(key, JSON.stringify(value));
-          }, [key, value]);
+          useEffect(() => { window.localStorage.setItem(key, JSON.stringify(value)); }, [key, value]);
           return [value, setValue];
         };
 
-        // --- APP CONTAINER ---
+        const CATEGORIES = ["ALIMENTOS", "BEBIDAS", "LIMPEZA", "EMBALAGENS", "ELETRONICOS", "KITS", "OUTROS"];
+
+        // --- APP COMPONENT ---
         function App() {
-          const [products, setProducts] = useStickyState('db_products_v3', []);
-          const [showStockManager, setShowStockManager] = useState(false);
-
-          return (
-            <div className="h-screen bg-slate-200 font-sans text-slate-900 overflow-hidden relative">
-                
-                {/* Micro-frontend Layout */}
-                <ProductRegistry 
-                    products={products} 
-                    setProducts={setProducts} 
-                    onOpenStockManager={() => setShowStockManager(true)}
-                />
-
-                {/* Modal Global: Stock Manager */}
-                {showStockManager && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in">
-                        <div className="bg-white w-full max-w-5xl h-[90vh] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-slate-300">
-                            <div className="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center shrink-0">
-                                <h2 className="font-bold text-slate-800 flex items-center gap-2 text-lg uppercase tracking-tight">
-                                    <ClipboardList size={20} className="text-primary-600"/> Movimentação em Massa
-                                </h2>
-                                <button onClick={() => setShowStockManager(false)} className="hover:bg-slate-200 p-2 rounded-full transition text-slate-500 hover:text-red-600">
-                                    <X size={24}/>
-                                </button>
-                            </div>
-                            <StockManager products={products} setProducts={setProducts} />
-                        </div>
-                    </div>
-                )}
-            </div>
-          );
-        }
-
-        // --- MAIN MODULE ---
-        function ProductRegistry({ products, setProducts, onOpenStockManager }) {
-            const [pForm, setPForm] = useState({ 
-                name: '', internalCode: '', category: 'ALIMENTOS', 
-                cost: '', price: '', stock: 0, isCombo: false, comboItems: [] 
-            });
-            const [editingProductId, setEditingProductId] = useState(null);
+            const [products, setProducts] = useStickyState('db_products_v4', []);
+            const [editingId, setEditingId] = useState(null);
+            
+            // --- FILTROS & BUSCA ---
             const [search, setSearch] = useState('');
+            const [catFilter, setCatFilter] = useState('');
+            const [showCriticalOnly, setShowCriticalOnly] = useState(false);
 
-            // Logic
-            const getNextProductCode = () => {
-                const codes = products.map(p => parseInt(p.internalCode)).filter(n => !isNaN(n));
-                const max = codes.length > 0 ? Math.max(...codes) : 0;
-                return (max + 1).toString();
+            // --- FORM STATE ---
+            const [form, setForm] = useState({
+                id: '', name: '', internalCode: '', category: 'OUTROS',
+                cost: '', price: '', stock: 0, minStock: 5,
+                isCombo: false, comboItems: [] // { id, qty }
+            });
+
+            // --- KIT ASSEMBLY STATE ---
+            const [assemblyQty, setAssemblyQty] = useState(1);
+
+            // --- DERIVED DATA ---
+            const filteredProducts = useMemo(() => {
+                return products.filter(p => {
+                    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
+                                      p.internalCode.includes(search);
+                    const matchCat = catFilter ? p.category === catFilter : true;
+                    
+                    // Low Stock Strategy: Critical is defined as Stock <= MinStock
+                    const isCritical = p.stock <= (p.minStock || 0);
+                    const matchCritical = showCriticalOnly ? isCritical : true;
+
+                    return matchSearch && matchCat && matchCritical;
+                }).sort((a,b) => {
+                    // Critical items float to top if filter is off but we want some ordering
+                    if (showCriticalOnly) return a.stock - b.stock;
+                    return a.name.localeCompare(b.name);
+                });
+            }, [products, search, catFilter, showCriticalOnly]);
+
+            const criticalCount = products.filter(p => p.stock <= (p.minStock || 0)).length;
+
+            // --- ACTIONS ---
+            const handleNew = () => {
+                const nextCode = String(products.length + 1).padStart(4, '0');
+                setForm({ 
+                    id: '', name: '', internalCode: nextCode, category: 'OUTROS',
+                    cost: '', price: '', stock: 0, minStock: 5,
+                    isCombo: false, comboItems: []
+                });
+                setEditingId(null);
+                setAssemblyQty(1);
             };
 
-            const startNew = () => {
-                setPForm({ name: '', internalCode: getNextProductCode(), category: 'ALIMENTOS', cost: '', price: '', stock: 0, isCombo: false, comboItems: [] });
-                setEditingProductId(null);
+            const handleEdit = (p) => {
+                setForm({ ...p, comboItems: p.comboItems || [], minStock: p.minStock || 5 });
+                setEditingId(p.id);
+                setAssemblyQty(1);
             };
 
-            const saveProduct = () => { 
-                if (!pForm.name.trim()) return alert('ERRO: Nome do produto é obrigatório');
+            const handleSave = () => {
+                if (!form.name) return alert("Nome obrigatório");
                 
-                const cost = Number(pForm.cost) || 0;
-                const price = Number(pForm.price) || 0;
-                let margin = 0;
-                if (price > 0) margin = ((price - cost) / price) * 100;
+                const payload = {
+                    ...form,
+                    id: editingId || generateId(),
+                    cost: Number(form.cost),
+                    price: Number(form.price),
+                    stock: Number(form.stock),
+                    minStock: Number(form.minStock),
+                    updatedAt: new Date().toISOString()
+                };
+
+                if (editingId) {
+                    setProducts(products.map(p => p.id === editingId ? payload : p));
+                } else {
+                    setProducts([...products, payload]);
+                }
                 
-                if (margin < 20) {
-                    if(!confirm(`ALERTA DE SEGURANÇA:\nMargem de lucro muito baixa (${margin.toFixed(1)}%).\nDeseja confirmar?`)) return;
+                if (!editingId) handleNew(); // Reset if new, keep if edit
+                else alert("Produto salvo com sucesso!");
+            };
+
+            const handleDelete = () => {
+                if(!confirm("Tem certeza que deseja excluir?")) return;
+                setProducts(products.filter(p => p.id !== editingId));
+                handleNew();
+            };
+
+            // --- KIT LOGIC: ASSEMBLY LINE ---
+            const executeAssembly = (direction) => {
+                // direction: 1 = Montar (Tira avulso, Põe Kit)
+                // direction: -1 = Desmontar (Tira Kit, Põe avulso)
+                
+                if (!form.isCombo || form.comboItems.length === 0) return alert("Kit sem composição definida.");
+                
+                const qty = Number(assemblyQty);
+                if (qty <= 0) return;
+
+                const newProducts = [...products];
+                const currentKit = newProducts.find(p => p.id === editingId);
+                
+                if (!currentKit) return; // Should not happen
+
+                // Validação de Estoque
+                if (direction === 1) {
+                    // Montar: Verificar se tem avulsos suficientes
+                    for (let item of form.comboItems) {
+                        const source = newProducts.find(p => p.id === item.id);
+                        if (!source || source.stock < (item.qty * qty)) {
+                            return alert(`ERRO DE MONTAGEM:\nEstoque insuficiente de "${source?.name || 'Item'}".\nNecessário: ${item.qty * qty}\nDisponível: ${source?.stock || 0}`);
+                        }
+                    }
+                } else {
+                    // Desmontar: Verificar se tem Kit suficiente
+                    if (currentKit.stock < qty) {
+                        return alert(`ERRO DE DESMONTAGEM:\nEstoque de Kits insuficiente.\nAtual: ${currentKit.stock}`);
+                    }
                 }
 
-                if (editingProductId) { 
-                    setProducts(products.map(p => p.id === editingProductId ? { ...pForm, id: editingProductId, stock: p.stock, stockHistory: p.stockHistory } : p)); 
-                } else { 
-                    const newProd = { ...pForm, id: generateId(), stockHistory: [{ date: new Date().toISOString(), type: 'INITIAL', qty: Number(pForm.stock) }] }; 
-                    setProducts([...products, newProd]); 
-                } 
-                startNew();
+                // Executar Movimentação
+                let log = direction === 1 ? "MONTAGEM REALIZADA:\n" : "DESMONTAGEM REALIZADA:\n";
+
+                // 1. Atualizar Avulsos
+                form.comboItems.forEach(item => {
+                    const pIndex = newProducts.findIndex(p => p.id === item.id);
+                    if (pIndex > -1) {
+                        // Se montar (1), subtrai avulso. Se desmontar (-1), soma avulso.
+                        // operation: stock - (qty * itemQty * direction)
+                        const change = item.qty * qty * direction;
+                        newProducts[pIndex].stock -= change;
+                        log += `- ${newProducts[pIndex].name}: ${change > 0 ? 'Saiu' : 'Entrou'} ${Math.abs(change)}\n`;
+                    }
+                });
+
+                // 2. Atualizar Kit
+                const kitIndex = newProducts.findIndex(p => p.id === editingId);
+                newProducts[kitIndex].stock += (qty * direction);
+                
+                // 3. Atualizar UI
+                setProducts(newProducts);
+                setForm(prev => ({ ...prev, stock: prev.stock + (qty * direction) })); // Update local form state immediately
+                
+                alert(log + `\nSaldo Final do Kit: ${newProducts[kitIndex].stock}`);
             };
 
-            const deleteItem = () => {
-                if(!editingProductId || !confirm("AÇÃO IRREVERSÍVEL: Excluir este produto?")) return;
-                setProducts(products.filter(p => p.id !== editingProductId));
-                setEditingProductId(null);
-                startNew();
+            // --- RENDER HELPERS ---
+            const getStockStatus = (p) => {
+                if (p.stock <= 0) return <span className="text-red-600 font-bold text-xs bg-red-100 px-2 py-1 rounded">ESGOTADO</span>;
+                if (p.stock <= (p.minStock || 0)) return <span className="text-orange-600 font-bold text-xs bg-orange-100 px-2 py-1 rounded animate-pulse">BAIXO</span>;
+                return <span className="text-emerald-600 font-bold text-xs bg-emerald-100 px-2 py-1 rounded">OK</span>;
             };
-
-            const list = products.filter(p => 
-                p.name.toLowerCase().includes(search.toLowerCase()) || 
-                (p.internalCode && p.internalCode.includes(search))
-            ).sort((a,b) => a.name.localeCompare(b.name));
 
             return (
-                <div className="flex h-full bg-slate-200 overflow-hidden">
+                <div className="flex h-full w-full bg-slate-200">
                     
-                    {/* ESQUERDA: LISTAGEM */}
-                    <aside className="w-full md:w-[450px] lg:w-[500px] flex flex-col bg-white border-r border-slate-300 shrink-0 z-10 shadow-lg">
-                        {/* Header Busca */}
-                        <div className="p-4 border-b border-slate-200 bg-slate-50">
-                            <div className="flex justify-between items-center mb-3">
-                                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                                    <Package size={18} className="text-primary-600"/> Catálogo ({list.length})
+                    {/* === PAINEL ESQUERDO: GRID GERENCIAL (65%) === */}
+                    <aside className="w-[65%] flex flex-col bg-white border-r border-slate-300 shadow-xl z-10">
+                        
+                        {/* HEADER DA LISTAGEM */}
+                        <div className="p-4 bg-slate-50 border-b border-slate-200 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                    <Layers className="text-primary-600" size={20}/>
+                                    Gestão de Estoque
                                 </h2>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setShowCriticalOnly(!showCriticalOnly)}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold transition border ${showCriticalOnly ? 'bg-red-100 text-red-700 border-red-300' : 'bg-white text-slate-600 border-slate-300'}`}
+                                    >
+                                        <AlertTriangle size={14} className={showCriticalOnly ? "animate-pulse" : ""}/>
+                                        {showCriticalOnly ? 'Filtrando Críticos' : `Alertas (${criticalCount})`}
+                                    </button>
+                                </div>
                             </div>
-                            <div className="relative">
-                                <Search className="absolute left-3 top-2.5 text-slate-500" size={18}/>
-                                <input 
-                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded text-sm font-medium focus:border-primary-600 focus:ring-1 focus:ring-primary-600 outline-none text-slate-900 placeholder:text-slate-400" 
-                                    placeholder="Buscar (Nome, Cód)..." 
-                                    value={search} 
-                                    onChange={e => setSearch(e.target.value)} 
-                                />
+                            
+                            {/* Toolbar de Filtros */}
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-2.5 text-slate-400" size={16}/>
+                                    <input 
+                                        value={search}
+                                        onChange={e => setSearch(e.target.value)}
+                                        placeholder="Buscar por Nome ou Código..."
+                                        className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded focus:border-primary-600 outline-none"
+                                    />
+                                </div>
+                                <select 
+                                    value={catFilter} 
+                                    onChange={e => setCatFilter(e.target.value)}
+                                    className="w-40 py-2 px-3 text-sm border border-slate-300 rounded bg-white focus:border-primary-600 outline-none"
+                                >
+                                    <option value="">Todas Categorias</option>
+                                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
                             </div>
                         </div>
 
-                        {/* Tabela Scrollável */}
-                        <div className="flex-1 overflow-auto scrollbar-thin bg-white">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-100 text-slate-500 sticky top-0 z-10 text-[10px] uppercase font-bold tracking-wider shadow-sm">
+                        {/* GRID DE DADOS (EXPANDIDO) */}
+                        <div className="flex-1 overflow-auto bg-white relative">
+                            <table className="w-full text-left border-collapse text-sm">
+                                <thead className="text-xs uppercase text-slate-500 bg-slate-100 font-bold sticky top-0 shadow-sm z-10">
                                     <tr>
-                                        <th className="p-3 border-b border-slate-200">Produto</th>
-                                        <th className="p-3 border-b border-slate-200 text-right">Preço</th>
-                                        <th className="p-3 border-b border-slate-200 text-center">Estoque</th>
+                                        <th className="p-3 sticky-header w-16">Cód.</th>
+                                        <th className="p-3 sticky-header">Nome do Produto</th>
+                                        <th className="p-3 sticky-header w-32">Categoria</th>
+                                        <th className="p-3 sticky-header text-right w-24">Custo</th>
+                                        <th className="p-3 sticky-header text-right w-24">Venda</th>
+                                        <th className="p-3 sticky-header text-center w-28 bg-blue-50/50">Est. Avulso</th>
+                                        <th className="p-3 sticky-header text-center w-24 bg-amber-50/50">Est. Kit</th>
+                                        <th className="p-3 sticky-header text-center w-24">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {list.map(p => {
-                                        const isSelected = editingProductId === p.id;
+                                    {filteredProducts.map(p => {
+                                        const active = editingId === p.id;
+                                        const isLow = p.stock <= (p.minStock || 0);
                                         return (
                                             <tr 
                                                 key={p.id} 
-                                                onClick={() => { setPForm(p); setEditingProductId(p.id); }}
-                                                className={`cursor-pointer transition-all border-l-4 ${isSelected ? 'bg-blue-50 border-primary-600' : 'border-transparent hover:bg-slate-50 hover:border-slate-300'}`}
+                                                onClick={() => handleEdit(p)}
+                                                className={`cursor-pointer transition-colors hover:bg-slate-50 
+                                                    ${active ? 'bg-blue-50 border-l-4 border-primary-600' : 'border-l-4 border-transparent'}
+                                                    ${isLow && !active ? 'bg-red-50/30' : ''}
+                                                `}
                                             >
-                                                <td className="p-3">
-                                                    <div className="font-bold text-sm text-slate-800">{p.name}</div>
-                                                    <div className="flex gap-2 mt-1">
-                                                        <span className="text-[10px] font-mono bg-slate-100 px-1.5 rounded text-slate-500 border border-slate-200">{p.internalCode || 'S/C'}</span>
-                                                        {p.isCombo && <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 rounded border border-amber-200">KIT</span>}
-                                                    </div>
+                                                <td className="p-3 font-mono text-xs text-slate-500">{p.internalCode}</td>
+                                                <td className="p-3 font-medium text-slate-700">
+                                                    {p.name}
+                                                    {p.isCombo && <span className="ml-2 text-[10px] bg-amber-100 text-amber-800 px-1.5 rounded border border-amber-200 font-bold">KIT</span>}
                                                 </td>
-                                                <td className="p-3 text-right">
-                                                    <div className="font-bold text-sm text-primary-700">{formatCurrency(p.price)}</div>
-                                                    <div className="text-[10px] text-slate-400">Custo: {formatCurrency(p.cost)}</div>
+                                                <td className="p-3 text-xs text-slate-500 truncate max-w-[100px]">{p.category}</td>
+                                                <td className="p-3 text-right text-slate-500 text-xs">{formatBRL(p.cost)}</td>
+                                                <td className="p-3 text-right font-bold text-slate-700">{formatBRL(p.price)}</td>
+                                                
+                                                {/* Lógica de Colunas de Estoque */}
+                                                <td className="p-3 text-center bg-blue-50/30 font-mono text-slate-600">
+                                                    {!p.isCombo ? p.stock : '-'}
                                                 </td>
-                                                <td className="p-3 text-center">
-                                                    <span className={`font-bold px-2 py-0.5 rounded text-xs ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}>
-                                                        {p.stock}
-                                                    </span>
+                                                <td className="p-3 text-center bg-amber-50/30 font-mono text-amber-700 font-bold">
+                                                    {p.isCombo ? p.stock : '-'}
                                                 </td>
+                                                
+                                                <td className="p-3 text-center">{getStockStatus(p)}</td>
                                             </tr>
                                         );
                                     })}
-                                    {list.length === 0 && (
-                                        <tr><td colSpan="3" className="p-8 text-center text-slate-400 text-sm">Nenhum produto encontrado.</td></tr>
-                                    )}
                                 </tbody>
                             </table>
-                        </div>
-                        
-                        {/* Mobile Action */}
-                        <div className="p-4 border-t border-slate-200 bg-slate-50 md:hidden">
-                            <button onClick={startNew} className="btn-primary w-full shadow-lg">
-                                <Plus size={18}/> Novo Produto
-                            </button>
+                            {filteredProducts.length === 0 && (
+                                <div className="p-10 text-center text-slate-400">
+                                    Nenhum produto encontrado com os filtros atuais.
+                                </div>
+                            )}
                         </div>
                     </aside>
 
-                    {/* DIREITA: FORMULÁRIO (Full & Clean) */}
-                    <main className="flex-1 flex flex-col h-full bg-slate-100 overflow-hidden relative">
-                        {/* Topbar */}
-                        <div className="h-16 border-b border-slate-300 bg-white px-6 flex items-center justify-between shrink-0 shadow-sm z-20">
-                            <div className="flex items-center gap-3">
-                                <div className={`h-8 w-1 rounded-full ${editingProductId ? 'bg-amber-500' : 'bg-primary-600'}`}></div>
-                                <div>
-                                    <h1 className="text-xl font-bold text-slate-900 leading-tight">
-                                        {editingProductId ? 'Editando Produto' : 'Novo Cadastro'}
-                                    </h1>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                        WMS / ESTOQUE
-                                    </p>
-                                </div>
+                    {/* === PAINEL DIREITO: FORMULÁRIO (35%) === */}
+                    <main className="w-[35%] h-full bg-slate-100 flex flex-col border-l border-white shadow-inner relative">
+                        
+                        {/* Topbar Form */}
+                        <div className="h-16 bg-white border-b border-slate-200 px-4 flex items-center justify-between shrink-0">
+                            <div>
+                                <h1 className="font-bold text-slate-800 text-sm uppercase tracking-wide">
+                                    {editingId ? 'Editar SKU' : 'Novo Cadastro'}
+                                </h1>
+                                <span className="text-[10px] text-slate-400 font-mono">{form.id || 'NOVO REGISTRO'}</span>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={onOpenStockManager} className="btn-secondary hidden lg:flex" title="Ajuste em Massa">
-                                    <ClipboardList size={16}/> <span className="hidden xl:inline">Movimentar Estoque</span>
-                                </button>
-                                <div className="h-8 w-px bg-slate-200 mx-2 hidden lg:block"></div>
-                                {editingProductId && (
-                                    <button onClick={deleteItem} className="text-red-600 hover:bg-red-50 px-3 py-2 rounded transition border border-transparent hover:border-red-100">
-                                        <Trash2 size={18}/>
-                                    </button>
-                                )}
-                                <button onClick={startNew} className="btn-secondary hidden sm:flex">
-                                    <Plus size={16}/> Limpar
-                                </button>
-                                <button onClick={saveProduct} className="btn-primary shadow-md">
-                                    <Save size={18}/> SALVAR
+                                <button onClick={handleNew} className="p-2 hover:bg-slate-100 rounded text-slate-500" title="Limpar"><Plus size={18}/></button>
+                                {editingId && <button onClick={handleDelete} className="p-2 hover:bg-red-50 text-red-500 rounded" title="Excluir"><Trash2 size={18}/></button>}
+                                <button onClick={handleSave} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded text-xs font-bold hover:bg-slate-800 shadow-lg">
+                                    <Save size={16}/> SALVAR
                                 </button>
                             </div>
                         </div>
 
-                        {/* Form Content */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin">
-                            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow border border-slate-300 p-6 md:p-8">
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-12 gap-x-6 gap-y-6">
-                                    
-                                    {/* 1. Definição */}
-                                    <div className="md:col-span-12 flex items-center gap-2 mb-2 border-b border-slate-100 pb-2">
-                                        <span className="bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded">1</span>
-                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Definição do SKU</h3>
+                        {/* Scrollable Form Area */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            
+                            {/* CARD: DADOS BÁSICOS */}
+                            <div className="bg-white p-4 rounded shadow-sm border border-slate-200 space-y-3">
+                                <div className="flex gap-3">
+                                    <div className="w-1/3">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase">Código</label>
+                                        <input className="input-dense font-mono text-center bg-slate-50" value={form.internalCode} onChange={e => setForm({...form, internalCode: e.target.value})} />
                                     </div>
+                                    <div className="w-2/3">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase">Categoria</label>
+                                        <select className="input-dense" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Nome do Produto</label>
+                                    <input className="input-dense font-medium text-lg" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Ex: Cesta Básica Tipo 1" />
+                                </div>
+                            </div>
 
-                                    <div className="md:col-span-8">
-                                        <label className="input-label">Nome do Produto</label>
-                                        <input className="input-field text-lg" value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} placeholder="Ex: Coca Cola 350ml" />
-                                    </div>
-                                    <div className="md:col-span-4">
-                                        <label className="input-label">Código Interno</label>
-                                        <input className="input-field font-mono font-bold text-slate-600 bg-slate-50 text-center" value={pForm.internalCode} onChange={e => setPForm({...pForm, internalCode: e.target.value})} />
-                                    </div>
-                                    <div className="md:col-span-6">
-                                        <label className="input-label">Categoria</label>
-                                        <input className="input-field" value={pForm.category} onChange={e => setPForm({...pForm, category: e.target.value})} list="categories" placeholder="Selecione..." />
-                                        <datalist id="categories">
-                                            <option value="BEBIDAS"/><option value="ALIMENTOS"/><option value="LIMPEZA"/><option value="EMBALAGENS"/>
-                                        </datalist>
-                                    </div>
+                            {/* CARD: VALORES */}
+                            <div className="bg-white p-4 rounded shadow-sm border border-slate-200 grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Custo (R$)</label>
+                                    <input type="number" step="0.01" className="input-dense" value={form.cost} onChange={e => setForm({...form, cost: e.target.value})} placeholder="0.00" />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-primary-600 uppercase">Venda (R$)</label>
+                                    <input type="number" step="0.01" className="input-dense font-bold text-primary-700 border-primary-200 bg-blue-50/20" value={form.price} onChange={e => setForm({...form, price: e.target.value})} placeholder="0.00" />
+                                </div>
+                            </div>
 
-                                    {/* 2. Precificação */}
-                                    <div className="md:col-span-12 flex items-center gap-2 mt-4 mb-2 border-b border-slate-100 pb-2">
-                                        <span className="bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded">2</span>
-                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Custos & Preços</h3>
-                                    </div>
+                            {/* CARD: TIPO DE PRODUTO & ESTOQUE */}
+                            <div className="bg-white p-4 rounded shadow-sm border border-slate-200">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <input 
+                                        type="checkbox" 
+                                        id="isCombo" 
+                                        checked={form.isCombo} 
+                                        onChange={e => setForm({...form, isCombo: e.target.checked})}
+                                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 border-gray-300"
+                                    />
+                                    <label htmlFor="isCombo" className="text-sm font-bold text-slate-700 select-none">
+                                        Este produto é um KIT?
+                                    </label>
+                                </div>
 
-                                    <div className="md:col-span-4">
-                                        <label className="input-label">Custo (R$)</label>
-                                        <input className="input-field" type="number" step="0.01" value={pForm.cost} onChange={e => setPForm({...pForm, cost: e.target.value})} placeholder="0.00" />
-                                    </div>
-                                    <div className="md:col-span-4">
-                                        <label className="input-label text-primary-700">Preço de Venda (R$)</label>
-                                        <input className="input-field font-bold text-primary-700 border-primary-200 bg-blue-50/30" type="number" step="0.01" value={pForm.price} onChange={e => setPForm({...pForm, price: e.target.value})} placeholder="0.00" />
-                                    </div>
-                                    <div className="md:col-span-4 flex items-end pb-1">
-                                        {pForm.price > 0 && (
-                                            <div className="w-full bg-slate-100 p-2 rounded border border-slate-200 text-center">
-                                                <span className="text-[10px] uppercase font-bold text-slate-400 block">Margem Bruta</span>
-                                                <span className={`font-bold ${((pForm.price - pForm.cost)/pForm.price) < 0.2 ? 'text-red-600' : 'text-green-600'}`}>
-                                                    {(((pForm.price - pForm.cost)/pForm.price)*100).toFixed(1)}%
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* 3. Estoque */}
-                                    <div className="md:col-span-12 flex items-center gap-2 mt-4 mb-2 border-b border-slate-100 pb-2">
-                                        <span className="bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded">3</span>
-                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Controle de Estoque</h3>
-                                    </div>
-
-                                    <div className="md:col-span-4">
-                                        <label className="input-label">Estoque Atual</label>
+                                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded border border-slate-100">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Estoque {form.isCombo ? 'Kit' : 'Avulso'}</label>
                                         <input 
-                                            className="input-field text-center font-bold text-lg" 
                                             type="number" 
-                                            value={pForm.stock} 
-                                            disabled={pForm.isCombo}
-                                            onChange={e => setPForm({...pForm, stock: Number(e.target.value)})} 
+                                            className="input-dense text-center font-bold text-lg bg-white" 
+                                            value={form.stock} 
+                                            onChange={e => setForm({...form, stock: e.target.value})}
+                                            disabled={form.isCombo} // Kits só mudam via montagem
                                         />
-                                        {pForm.isCombo && <span className="text-[10px] text-amber-600 font-bold block mt-1 text-center">*Calculado pelo Kit*</span>}
+                                        {form.isCombo && <span className="text-[9px] text-amber-600 font-bold mt-1 block text-center">Use Montagem Abaixo</span>}
                                     </div>
-
-                                    <div className="md:col-span-8 flex items-center pt-6">
-                                        <label className={`flex items-center gap-3 cursor-pointer select-none p-3 rounded w-full border transition-all ${pForm.isCombo ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}`}>
-                                            <input type="checkbox" className="w-5 h-5 rounded text-amber-600" checked={pForm.isCombo} onChange={e => setPForm({...pForm, isCombo: e.target.checked})} />
-                                            <div>
-                                                <span className={`text-sm font-bold block ${pForm.isCombo ? 'text-amber-800' : 'text-slate-600'}`}>Produto Composto (Kit / Combo)</span>
-                                                <span className="text-[10px] text-slate-400">O estoque deste item dependerá dos insumos.</span>
-                                            </div>
-                                        </label>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-red-500 uppercase block mb-1">Estoque Mínimo</label>
+                                        <input 
+                                            type="number" 
+                                            className="input-dense text-center text-red-600 font-bold bg-red-50 border-red-100" 
+                                            value={form.minStock} 
+                                            onChange={e => setForm({...form, minStock: e.target.value})}
+                                        />
                                     </div>
+                                </div>
+                            </div>
 
-                                    {/* Config do Kit */}
-                                    {pForm.isCombo && (
-                                        <div className="md:col-span-12 bg-amber-50/50 rounded border border-amber-200 p-4 mt-2 animate-in">
-                                            <h4 className="font-bold text-amber-800 text-xs uppercase mb-3 flex items-center gap-2">
-                                                <BoxSelect size={14}/> Composição do Kit (Baixa Automática)
-                                            </h4>
-                                            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin bg-white border border-amber-100 rounded p-1">
-                                                {products.filter(p => !p.isCombo && p.id !== editingProductId).map(p => {
-                                                    const itemInCombo = pForm.comboItems.find(i => i.id === p.id);
-                                                    return (
-                                                        <div key={p.id} className={`flex justify-between items-center text-xs p-2 border-b border-slate-50 last:border-0 hover:bg-slate-50 ${itemInCombo ? 'bg-amber-50' : ''}`}>
-                                                            <div>
-                                                                <span className="font-bold text-slate-700 block">{p.name}</span>
-                                                                <span className="text-[10px] text-slate-400">Estoque: {p.stock}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-slate-400 text-[10px] uppercase font-bold">Qtd no Kit:</span>
-                                                                <input 
-                                                                    type="number" 
-                                                                    className="w-16 border border-slate-300 rounded text-center p-1.5 bg-white focus:border-amber-500 outline-none font-bold" 
-                                                                    placeholder="0" 
-                                                                    value={itemInCombo?.qty || ''} 
-                                                                    onChange={(e) => { 
-                                                                        const qty = Number(e.target.value); 
-                                                                        const existing = pForm.comboItems.filter(i => i.id !== p.id); 
-                                                                        if (qty > 0) setPForm({...pForm, comboItems: [...existing, {id: p.id, qty}]}); 
-                                                                        else setPForm({...pForm, comboItems: existing}); 
-                                                                    }} 
-                                                                />
-                                                            </div>
+                            {/* CARD: COMPOSIÇÃO DO KIT (CONDICIONAL) */}
+                            {form.isCombo && (
+                                <div className="space-y-4 animate-fade-in">
+                                    {/* 1. Definição da Receita */}
+                                    <div className="bg-amber-50 rounded border border-amber-200 p-3">
+                                        <h4 className="text-xs font-bold text-amber-800 uppercase mb-2 flex items-center gap-2">
+                                            <Settings size={12}/> Receita do Kit
+                                        </h4>
+                                        <div className="bg-white border border-amber-100 rounded max-h-40 overflow-y-auto p-1 scrollbar-thin">
+                                            {products.filter(p => !p.isCombo && p.id !== editingId).map(p => {
+                                                const item = form.comboItems.find(i => i.id === p.id);
+                                                return (
+                                                    <div key={p.id} className={`flex justify-between items-center p-2 border-b border-slate-50 text-xs ${item ? 'bg-amber-50' : ''}`}>
+                                                        <span className="truncate flex-1 font-medium text-slate-700">{p.name}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[9px] text-slate-400">Qtd:</span>
+                                                            <input 
+                                                                type="number" 
+                                                                min="0"
+                                                                className="w-12 text-center border border-slate-200 rounded p-1 font-bold"
+                                                                value={item?.qty || ''}
+                                                                onChange={(e) => {
+                                                                    const val = parseInt(e.target.value) || 0;
+                                                                    const newItems = form.comboItems.filter(i => i.id !== p.id);
+                                                                    if (val > 0) newItems.push({ id: p.id, qty: val });
+                                                                    setForm({...form, comboItems: newItems});
+                                                                }}
+                                                            />
                                                         </div>
-                                                    );
-                                                })}
-                                                {products.filter(p => !p.isCombo).length === 0 && <div className="p-4 text-center text-slate-400 text-xs italic">Nenhum produto simples disponível para compor o kit.</div>}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Painel de Montagem (SOMENTE SE EDITANDO) */}
+                                    {editingId && (
+                                        <div className="bg-slate-800 text-white rounded p-4 shadow-lg border border-slate-700">
+                                            <h4 className="text-xs font-bold text-amber-400 uppercase mb-3 flex items-center gap-2">
+                                                <Wrench size={14}/> Linha de Montagem
+                                            </h4>
+                                            
+                                            <div className="flex items-center justify-between mb-4 bg-slate-700/50 p-2 rounded">
+                                                <span className="text-xs font-bold text-slate-300 uppercase">Quantidade a processar:</span>
+                                                <input 
+                                                    type="number" 
+                                                    min="1" 
+                                                    value={assemblyQty} 
+                                                    onChange={e => setAssemblyQty(e.target.value)}
+                                                    className="w-20 text-center font-bold text-lg bg-slate-900 border border-slate-600 rounded text-white"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button 
+                                                    onClick={() => executeAssembly(1)}
+                                                    className="bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded text-xs font-bold flex flex-col items-center gap-1 transition shadow border border-emerald-500"
+                                                >
+                                                    <Box size={16}/> 
+                                                    MONTAR KIT
+                                                    <span className="text-[9px] opacity-75 font-normal">Baixa insumos, cria Kit</span>
+                                                </button>
+                                                <button 
+                                                    onClick={() => executeAssembly(-1)}
+                                                    className="bg-slate-700 hover:bg-slate-600 text-white py-2 rounded text-xs font-bold flex flex-col items-center gap-1 transition border border-slate-600"
+                                                >
+                                                    <RefreshCw size={16}/> 
+                                                    DESMONTAR
+                                                    <span className="text-[9px] opacity-75 font-normal">Baixa Kit, devolve insumos</span>
+                                                </button>
                                             </div>
                                         </div>
                                     )}
-
                                 </div>
-                            </div>
+                            )}
+
                             <div className="h-10"></div>
                         </div>
                     </main>
-                </div>
-            );
-        }
 
-        // --- SUB-MODAL: STOCK MANAGER (Design Refinado) ---
-        function StockManager({ products, setProducts }) {
-             const [bulkIn, setBulkIn] = useState(''); 
-             const [bulkOut, setBulkOut] = useState(''); 
-             const sortedProducts = [...products].sort((a,b) => a.name.localeCompare(b.name));
-             
-             const processBulk = (text, type) => { 
-                 const lines = text.split('\n'); 
-                 const newProducts = [...products]; 
-                 let count = 0;
-                 let errors = []; 
-                 
-                 lines.forEach(line => { 
-                     if(!line.trim()) return; 
-                     const parts = line.split(/[|\t]+/); 
-                     const code = parts[0]?.trim(); 
-                     const qty = parseInt(parts[1]?.trim()); 
-
-                     if (!code || isNaN(qty)) return; 
-                     
-                     const prodIndex = newProducts.findIndex(p => 
-                        (p.internalCode && p.internalCode === code) || 
-                        (p.name.toUpperCase() === code.toUpperCase())
-                     ); 
-                     
-                     if (prodIndex !== -1) { 
-                         const prod = newProducts[prodIndex]; 
-                         if (type === 'IN') prod.stock += qty; 
-                         else prod.stock -= qty; 
-                         count++;
-                     } else { 
-                        errors.push(code); 
-                     } 
-                 }); 
-                 
-                 setProducts(newProducts); 
-                 
-                 let msg = `${type === 'IN' ? 'ENTRADA' : 'SAÍDA'} CONCLUÍDA!\n${count} itens atualizados.`;
-                 if(errors.length > 0) msg += `\n❌ Não encontrados: ${errors.join(', ')}`;
-                 alert(msg);
-                 
-                 if(type === 'IN') setBulkIn(''); else setBulkOut(''); 
-            };
-
-             return (
-                <div className="flex h-full flex-col lg:flex-row bg-slate-100">
-                    {/* Lista Referência */}
-                    <div className="w-full lg:w-1/3 border-r border-slate-300 bg-white flex flex-col shadow-inner">
-                        <div className="p-3 bg-slate-50 border-b border-slate-200">
-                            <h4 className="font-bold text-slate-500 uppercase text-xs flex items-center gap-2">
-                                <Search size={12}/> Referência de Códigos
-                            </h4>
-                        </div>
-                        <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
-                            {sortedProducts.map(p => (
-                                <div key={p.id} className="flex justify-between items-center text-xs p-2 border-b border-slate-100 hover:bg-slate-50 rounded">
-                                    <div>
-                                        <span className="font-bold text-slate-800">{p.name}</span>
-                                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">{p.internalCode || 'S/ COD'}</div>
-                                    </div>
-                                    <span className="font-bold text-slate-500 bg-slate-100 px-1.5 rounded">{p.stock}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Área de Ação */}
-                    <div className="flex-1 p-6 space-y-4 overflow-y-auto bg-slate-100">
-                        <div className="bg-blue-50 border border-blue-200 p-4 rounded-md text-sm text-blue-800 flex gap-3">
-                            <AlertTriangle size={20} className="shrink-0"/>
-                            <div>
-                                <strong>Como usar:</strong> Cole linhas do Excel ou Bloco de Notas.<br/>
-                                Padrão: <code>CÓDIGO | QUANTIDADE</code> (Ex: <code>789100 | 50</code>)
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Entrada */}
-                            <div className="bg-white p-5 rounded-lg shadow-sm border border-emerald-200 flex flex-col h-[400px]">
-                                <h3 className="font-bold text-emerald-700 mb-3 flex items-center gap-2 uppercase text-sm">
-                                    <ArrowRightLeft size={16} className="rotate-90 md:rotate-0"/> Entrada de Estoque
-                                </h3>
-                                <textarea 
-                                    className="flex-1 w-full border border-slate-200 p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none rounded transition resize-none" 
-                                    placeholder="COLA AQUI..." 
-                                    value={bulkIn} 
-                                    onChange={e=>setBulkIn(e.target.value)}
-                                ></textarea>
-                                <button onClick={()=>processBulk(bulkIn, 'IN')} className="w-full bg-emerald-600 text-white font-bold py-3 rounded mt-3 hover:bg-emerald-700 transition shadow-sm uppercase text-sm tracking-wide">
-                                    Processar Entrada
-                                </button>
-                            </div>
-
-                            {/* Saída */}
-                            <div className="bg-white p-5 rounded-lg shadow-sm border border-rose-200 flex flex-col h-[400px]">
-                                <h3 className="font-bold text-rose-700 mb-3 flex items-center gap-2 uppercase text-sm">
-                                    <ArrowRightLeft size={16} className="rotate-90 md:rotate-0"/> Baixa / Saída
-                                </h3>
-                                <textarea 
-                                    className="flex-1 w-full border border-slate-200 p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:border-rose-500 outline-none rounded transition resize-none" 
-                                    placeholder="COLA AQUI..." 
-                                    value={bulkOut} 
-                                    onChange={e=>setBulkOut(e.target.value)}
-                                ></textarea>
-                                <button onClick={()=>processBulk(bulkOut, 'OUT')} className="w-full bg-rose-600 text-white font-bold py-3 rounded mt-3 hover:bg-rose-700 transition shadow-sm uppercase text-sm tracking-wide">
-                                    Processar Saída
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             );
         }
