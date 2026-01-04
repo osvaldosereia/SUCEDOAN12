@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo Pós-Venda & Fidelização (Local-First)</title>
+    
+    <!-- 1. TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. ESTILOS EXTRAS -->
+    <style>
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.3s ease-out; }
+    </style>
+
+    <!-- 3. IMPORTMAP REACT + LUCIDE -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+      }
+    }
+    </script>
+    
+    <!-- 4. BABEL -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans h-full overflow-hidden">
+    
+    <div id="root" class="h-full"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+          HeartHandshake, MessageCircle, Ban, Search, CheckCircle, 
+          Clock, Calendar, Wallet, ChevronDown, Menu, X, Star,
+          ThumbsUp, RefreshCcw, UserCheck
+        } from 'lucide-react';
+
+        // --- UTILITÁRIOS ---
+        const useStickyState = (key, defaultValue) => {
+          const [value, setValue] = useState(() => {
+            const stickyValue = window.localStorage.getItem(key);
+            return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+          });
+          useEffect(() => {
+            window.localStorage.setItem(key, JSON.stringify(value));
+          }, [key, value]);
+          return [value, setValue];
+        };
+
+        const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+        // --- APP PRINCIPAL ---
+        function App() {
+          // Estados Globais (Mesmas chaves dos outros módulos)
+          const [sales, setSales] = useStickyState('db_sales_v3', []);
+          const [clients] = useStickyState('db_clients_v3', []);
+          const [products, setProducts] = useStickyState('db_products_v3', []);
+          const [postSaleLog, setPostSaleLog] = useStickyState('db_postsale_log', {}); 
+          
+          const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+          return (
+            <div className="flex flex-col lg:flex-row h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
+                {/* MOBILE HEADER */}
+                <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center shrink-0 z-50 shadow-md">
+                    <div className="flex items-center gap-2">
+                        <div className="bg-pink-600 text-white p-1 rounded font-bold text-xs">CRM</div>
+                        <h1 className="font-bold tracking-wider">PÓS-VENDA</h1>
+                    </div>
+                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-slate-800 rounded">
+                        {mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}
+                    </button>
+                </div>
+
+                {/* SIDEBAR */}
+                <aside className={`fixed inset-y-0 left-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 w-64 lg:static lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+                    <div className="h-16 hidden lg:flex items-center justify-start px-6 border-b border-slate-800">
+                        <div className="bg-pink-600 text-white p-1.5 rounded font-bold mr-2">CRM</div>
+                        <h1 className="font-bold tracking-wider hidden lg:block text-lg">PÓS-VENDA <span className="text-gray-400 text-xs font-normal ml-1">v1.0</span></h1>
+                    </div>
+                    <nav className="flex-1 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
+                        <button className="w-full flex items-center justify-start gap-3 p-3 lg:px-6 transition-all duration-200 bg-slate-800 text-white border-r-4 border-pink-500">
+                            <HeartHandshake size={20}/>
+                            <span className="font-medium text-sm">Fidelização & SAC</span>
+                        </button>
+                    </nav>
+                    <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+                        Módulo Isolado<br/>Foco em Retenção
+                    </div>
+                </aside>
+                
+                {/* MAIN CONTENT AREA */}
+                <main className="flex-1 flex flex-col min-w-0 bg-gray-50 h-full overflow-hidden relative">
+                    <header className="h-16 bg-white border-b hidden lg:flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
+                        <div><h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">Gestão de Satisfação do Cliente</h2></div>
+                        <div className="flex items-center gap-2">
+                             <span className="bg-pink-100 text-pink-800 text-xs font-bold px-3 py-1 rounded-full">{sales.filter(s => s.status === 'Entregue').length} Entregas Concluídas</span>
+                        </div>
+                    </header>
+                    
+                    <div className="flex-1 overflow-hidden relative bg-gray-50">
+                        <PostSalesView 
+                            sales={sales} setSales={setSales} 
+                            clients={clients} 
+                            products={products} setProducts={setProducts}
+                            postSaleLog={postSaleLog} setPostSaleLog={setPostSaleLog}
+                        />
+                    </div>
+                </main>
+                
+                {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
+            </div>
+          );
+        }
+
+        // --- COMPONENTE PÓS-VENDA ---
+        function PostSalesView({ sales, setSales, clients, products, setProducts, postSaleLog, setPostSaleLog }) {
+            const [displayLimit, setDisplayLimit] = useState(15);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [filterStatus, setFilterStatus] = useState('Entregue'); // Entregue, Concluído, Todos
+
+            // Filtra apenas vendas finalizadas (Entregues/Concluídas) ou Pendentes se o usuário quiser ver
+            const validSales = useMemo(() => {
+                return sales
+                    .filter(s => {
+                        const statusMatch = filterStatus === 'Todos' 
+                            ? (s.status === 'Entregue' || s.status === 'Concluído' || s.status === 'Pendente') 
+                            : s.status === filterStatus;
+                        
+                        if (!statusMatch) return false;
+
+                        const client = clients.find(c => c.id === s.clientId);
+                        const searchLower = searchTerm.toLowerCase();
+                        
+                        return (
+                            (client && client.name.toLowerCase().includes(searchLower)) ||
+                            s.id.toLowerCase().includes(searchLower) ||
+                            (s.payMethod && s.payMethod.toLowerCase().includes(searchLower))
+                        );
+                    })
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+            }, [sales, searchTerm, filterStatus, clients]);
+
+            const visibleSales = validSales.slice(0, displayLimit);
+
+            const loadMore = () => {
+                setDisplayLimit(prev => prev + 15);
+            };
+
+            const sendThankYou = (sale, client) => {
+                if (!client) return alert("Cliente não encontrado");
+                
+                const clientName = client.name.split(' ')[0];
+                const cleanPhone = client.phone ? client.phone.replace(/\D/g, '') : '';
+                
+                if (!cleanPhone) return alert("Cliente sem telefone cadastrado.");
+
+                const itemsSummary = sale.items.map(i => `${i.qty || 1}x ${i.name}`).join(', ');
+                
+                // Mensagem Personalizada
+                const msg = `Olá ${clientName}! 👋\n\nPassando para agradecer pela compra de hoje! ❤\n\nVocê pediu: ${itemsSummary}.\n\nEsperamos que tenha gostado! Se puder, nos conte o que achou. Qualquer dúvida estamos à disposição. Até a próxima! 🚀`;
+
+                // Loga que o contato foi feito
+                setPostSaleLog(prev => ({
+                    ...prev,
+                    [`${sale.id}_thankyou`]: { date: new Date().toISOString(), type: 'thank_you', user: 'system' }
+                }));
+
+                window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            };
+            
+            const sendSurvey = (sale, client) => {
+                if (!client) return alert("Cliente não encontrado");
+                const clientName = client.name.split(' ')[0];
+                const cleanPhone = client.phone ? client.phone.replace(/\D/g, '') : '';
+                if (!cleanPhone) return alert("Cliente sem telefone cadastrado.");
+
+                const msg = `Oi ${clientName}, tudo bem? ⭐\n\nEstamos fazendo uma pesquisa rápida de qualidade. De 0 a 10, qual nota você daria para o nosso atendimento e produto hoje?\n\nSua opinião é muito importante pra gente melhorar! 🙌`;
+
+                setPostSaleLog(prev => ({
+                    ...prev,
+                    [`${sale.id}_survey`]: { date: new Date().toISOString(), type: 'survey', user: 'system' }
+                }));
+
+                window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            };
+
+            const cancelSale = (sale) => {
+                if (!confirm(`⚠ PERIGO: CANCELAR VENDA #${sale.id}?\n\nIsso fará o estorno automático dos produtos para o estoque.\nEssa ação não pode ser desfeita.`)) return;
+
+                // 1. Devolver estoque (Lógica inteligente para Kits)
+                const newProducts = [...products];
+                let logStock = [];
+
+                sale.items.forEach(item => {
+                    const dbProd = newProducts.find(p => p.id === item.id);
+                    if (dbProd) {
+                        if (dbProd.isCombo) {
+                            // Se for combo, devolve os ingredientes
+                            item.comboItems?.forEach(ing => {
+                                const dbIng = newProducts.find(p => p.id === ing.id);
+                                if (dbIng) {
+                                    const qtyToReturn = ing.qty * (item.qty || 1);
+                                    dbIng.stock += qtyToReturn;
+                                    if(!dbIng.stockHistory) dbIng.stockHistory = [];
+                                    dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_POSTSALE', qty: qtyToReturn, ref: `Venda #${sale.id}` });
+                                    logStock.push(`${dbIng.name} (+${qtyToReturn})`);
+                                }
+                            });
+                        } else {
+                            // Se for simples, devolve o produto
+                            const qtyToReturn = (item.qty || 1);
+                            dbProd.stock += qtyToReturn;
+                            if(!dbProd.stockHistory) dbProd.stockHistory = [];
+                            dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'CANCEL_POSTSALE', qty: qtyToReturn, ref: `Venda #${sale.id}` });
+                            logStock.push(`${dbProd.name} (+${qtyToReturn})`);
+                        }
+                    }
+                });
+                
+                setProducts(newProducts);
+
+                // 2. Atualizar status da venda
+                const updatedSales = sales.map(s => s.id === sale.id ? { ...s, status: 'Cancelado' } : s);
+                setSales(updatedSales);
+                
+                alert(`Venda cancelada com sucesso!\n\nItens devolvidos ao estoque:\n${logStock.join('\n')}`);
+            };
+
+            return (
+                <div className="p-4 lg:p-6 pb-20 h-full overflow-y-auto">
+                    {/* Toolbar */}
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm border">
+                        <div className="relative w-full md:w-96">
+                            <Search className="absolute left-3 top-2.5 text-gray-400" size={18}/>
+                            <input 
+                                className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm outline-none focus:border-pink-500 transition" 
+                                placeholder="Buscar venda por Cliente, ID ou Pagamento..." 
+                                value={searchTerm} 
+                                onChange={e => setSearchTerm(e.target.value)} 
+                            />
+                        </div>
+                        <div className="flex gap-2 w-full md:w-auto overflow-x-auto">
+                            {['Entregue', 'Concluído', 'Todos'].map(status => (
+                                <button 
+                                    key={status}
+                                    onClick={() => setFilterStatus(status)} 
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${filterStatus === status ? 'bg-pink-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    {status === 'Todos' ? 'Todas' : status}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Lista de Vendas */}
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[900px]">
+                                <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-bold sticky top-0 z-10 border-b">
+                                    <tr>
+                                        <th className="p-4">Data / Status</th>
+                                        <th className="p-4">Cliente</th>
+                                        <th className="p-4">Itens</th>
+                                        <th className="p-4">Pagamento</th>
+                                        <th className="p-4 text-center">Status Contato</th>
+                                        <th className="p-4 text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-sm divide-y divide-gray-100">
+                                    {visibleSales.map(sale => {
+                                        const client = clients.find(c => c.id === sale.clientId);
+                                        const saleDate = new Date(sale.date);
+                                        const isToday = new Date().toDateString() === saleDate.toDateString();
+                                        
+                                        // Verifica logs
+                                        const hasThanked = postSaleLog[`${sale.id}_thankyou`];
+                                        const hasSurvey = postSaleLog[`${sale.id}_survey`];
+                                        
+                                        return (
+                                            <tr key={sale.id} className="hover:bg-pink-50/30 transition group">
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="font-mono font-bold text-gray-700 bg-gray-100 px-1.5 rounded text-xs">#{sale.id}</span>
+                                                        {isToday && <span className="bg-green-100 text-green-700 text-[9px] px-1.5 rounded font-bold uppercase tracking-wider">HOJE</span>}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                                                        <Calendar size={10}/> {saleDate.toLocaleDateString('pt-BR')}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400 flex items-center gap-1">
+                                                        <Clock size={10}/> {saleDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    {client ? (
+                                                        <div>
+                                                            <div className="font-bold text-gray-800 flex items-center gap-1">
+                                                                {client.name}
+                                                                <button onClick={() => window.open(`https://wa.me/55${client.phone?.replace(/\D/g, '')}`, '_blank')} className="text-green-500 hover:text-green-600"><MessageCircle size={14}/></button>
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">{client.district || 'Bairro N/D'}</div>
+                                                        </div>
+                                                    ) : <span className="text-red-400 italic">Cliente Removido</span>}
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="max-w-[220px] truncate text-gray-600" title={sale.items.map(i => i.name).join(', ')}>
+                                                        <span className="font-bold text-gray-800">{sale.items.length} itens:</span> {sale.items[0]?.name} {sale.items.length > 1 ? `+${sale.items.length - 1}` : ''}
+                                                    </div>
+                                                    <div className="font-bold text-sm text-emerald-600 mt-1">{formatCurrency(sale.total)}</div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border">{sale.payMethod}</span>
+                                                        {sale.cashbackValue > 0 && <span className="text-[10px] font-bold text-pink-600 flex items-center gap-1 bg-pink-50 px-1.5 rounded border border-pink-100"><Wallet size={10}/> CASHBACK USADO</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <div className="flex flex-col gap-1 items-center">
+                                                        {hasThanked ? (
+                                                            <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                                                                <CheckCircle size={10}/> AGRADECIDO
+                                                            </span>
+                                                        ) : (
+                                                            <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border">
+                                                                <Clock size={10}/> PENDENTE
+                                                            </span>
+                                                        )}
+                                                        {hasSurvey && (
+                                                            <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                                <Star size={10}/> PESQUISA ENV.
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <div className="flex justify-center gap-2">
+                                                        <button 
+                                                            onClick={() => sendThankYou(sale, client)}
+                                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-sm border ${hasThanked ? 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-green-50 hover:text-green-600' : 'bg-green-600 text-white border-green-700 hover:bg-green-700'}`}
+                                                            title="Enviar Agradecimento"
+                                                        >
+                                                            <ThumbsUp size={14} /> <span className="hidden lg:inline">Agradecer</span>
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => sendSurvey(sale, client)}
+                                                            className="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-sm"
+                                                            title="Enviar Pesquisa de Satisfação"
+                                                        >
+                                                            <Star size={14} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => cancelSale(sale)}
+                                                            className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-sm"
+                                                            title="Cancelar Venda (Devolve Estoque)"
+                                                        >
+                                                            <Ban size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {visibleSales.length === 0 && (
+                                        <tr>
+                                            <td colSpan="6" className="p-12 text-center text-gray-400 flex flex-col items-center justify-center">
+                                                <UserCheck size={48} className="mb-4 opacity-20"/>
+                                                <p>Nenhuma venda encontrada com os filtros atuais.</p>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {visibleSales.length < validSales.length && (
+                            <div className="p-4 border-t bg-gray-50 flex justify-center">
+                                <button onClick={loadMore} className="flex items-center gap-2 bg-white border border-gray-300 px-6 py-2 rounded-full text-sm font-bold text-gray-600 hover:bg-gray-100 transition shadow-sm group">
+                                    <ChevronDown size={16} className="group-hover:translate-y-1 transition-transform"/> Carregar mais vendas
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
