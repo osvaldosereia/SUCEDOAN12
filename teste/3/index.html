@@ -3,29 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo PDV (Micro-frontend)</title>
+    <title>Módulo PDV (Local-First Edition)</title>
     
-    <!-- 1. TAILWIND CSS (PROTOCOL) -->
+    <!-- 1. TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        slate: { 
-                            850: '#151e2e', 
-                            900: '#0f172a' 
-                        },
-                        primary: { 
-                            600: '#0284c7', 
-                            700: '#0369a1' 
-                        }
+                        slate: { 850: '#151e2e', 900: '#0f172a' },
+                        primary: { 600: '#0284c7', 700: '#0369a1' }
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    boxShadow: {
-                        'sharp': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-                        'input': '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                    }
                 }
             }
         }
@@ -34,67 +24,51 @@
     <!-- 2. GOOGLE FONTS -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- 3. ESTILOS GLOBAIS (PROTOCOL) -->
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        
-        /* Scrollbar */
-        .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: #e2e8f0; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; border: 2px solid #e2e8f0; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
         
-        /* Inputs High Contrast */
         .input-label {
-            display: block; font-size: 0.75rem; text-transform: uppercase;
-            letter-spacing: 0.05em; font-weight: 700; color: #475569; margin-bottom: 0.35rem;
+            display: block; font-size: 0.7rem; text-transform: uppercase;
+            letter-spacing: 0.05em; font-weight: 800; color: #64748b; margin-bottom: 0.25rem;
         }
         
         .input-field {
-            width: 100%; padding: 0.6rem 0.75rem; 
+            width: 100%; padding: 0.5rem 0.75rem; 
             background-color: #ffffff; 
-            border: 1px solid #cbd5e1; /* Slate-300 */
-            border-radius: 0.375rem; font-size: 0.9rem; font-weight: 500; color: #0f172a;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; color: #0f172a;
             outline: none; transition: all 0.15s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .input-field:focus { 
-            border-color: #0284c7; /* Primary-600 */
-            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15); 
-        }
+        .input-field:focus { border-color: #0284c7; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.1); }
         
-        /* Botões */
         .btn-primary {
             background-color: #0f172a; color: white;
-            padding: 0.65rem 1.25rem; border-radius: 0.375rem;
-            font-size: 0.875rem; font-weight: 600; letter-spacing: 0.025em;
-            transition: background-color 0.2s;
+            padding: 0.75rem 1.25rem; border-radius: 0.375rem;
+            font-size: 0.875rem; font-weight: 700;
             display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: all 0.2s;
         }
         .btn-primary:hover { background-color: #1e293b; transform: translateY(-1px); }
-        .btn-primary:active { transform: translateY(0); }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.15s ease-out; }
     </style>
 
-    <!-- 4. IMPORTMAP -->
     <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@18.2.0",
         "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.263.1",
-        "zod": "https://esm.sh/zod@3.22.4"
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
       }
     }
     </script>
-    
-    <!-- 5. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-slate-100 h-screen overflow-hidden text-slate-900">
-    
     <div id="root" class="h-full"></div>
 
     <script type="text/babel" data-type="module">
@@ -103,20 +77,13 @@
         import { 
           ShoppingCart, Search, Plus, Trash2, XCircle, 
           CreditCard, Wallet, User, MapPin, 
-          CheckCircle, AlertTriangle, Box
+          CheckCircle, Box, Truck
         } from 'lucide-react';
 
         // --- UTILS ---
-        const generateId = () => Math.random().toString(36).substr(2, 9);
+        const generateId = () => Math.random().toString(36).substr(2, 6).toUpperCase();
         const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
         
-        const generateDailyId = (sales) => {
-            const today = new Date().toISOString().slice(0, 10);
-            const todaysSales = sales.filter(s => s.date.startsWith(today));
-            const count = todaysSales.length + 1;
-            return count > 99 ? count.toString() : count.toString().padStart(2, '0');
-        };
-
         const useStickyState = (key, defaultValue) => {
           const [value, setValue] = useState(() => {
             const stickyValue = window.localStorage.getItem(key);
@@ -128,14 +95,14 @@
           return [value, setValue];
         };
 
-        // --- MAIN APP ---
+        // --- APP ROOT ---
         function App() {
           const [clients] = useStickyState('db_clients_v3', []);
           const [products, setProducts] = useStickyState('db_products_v3', []);
           const [sales, setSales] = useStickyState('db_sales_v3', []);
 
           return (
-            <div className="h-screen bg-slate-200 font-sans text-slate-900 overflow-hidden relative">
+            <div className="h-screen bg-slate-200 overflow-hidden relative">
                 <POSView 
                     clients={clients} 
                     products={products} 
@@ -150,58 +117,44 @@
         // --- POS COMPONENT ---
         function POSView({ clients, products, setProducts, sales, setSales }) {
              // State
-             const [selectedClient, setSelectedClient] = useState('');
+             const [selectedClient, setSelectedClient] = useState(null);
              const [clientSearch, setClientSearch] = useState('');
              const [cart, setCart] = useState([]);
              
-             // Form
+             // Form fields
              const [saleRegion, setSaleRegion] = useState('');
+             const [saleRoute, setSaleRoute] = useState('Rota 1');
              const [isPaid, setIsPaid] = useState(false);
              const [discount, setDiscount] = useState(0);
              const [payMethod, setPayMethod] = useState('Pix');
-             const [changeFor, setChangeFor] = useState(''); 
              const [obs, setObs] = useState(''); 
              
              // UI
              const [searchProd, setSearchProd] = useState('');
              const [selectedCategory, setSelectedCategory] = useState('todas');
              const [editingItem, setEditingItem] = useState(null);
-             const [useCashback, setUseCashback] = useState(false);
-             const [cashbackVal, setCashbackVal] = useState(0);
 
-             // Ordenação por Popularidade
-             const productSalesCount = useMemo(() => {
-                 const counts = {};
-                 sales.forEach(s => s.items.forEach(i => counts[i.name] = (counts[i.name] || 0) + (i.qty || 1)));
-                 return counts;
-             }, [sales]);
+             const filteredProducts = products.filter(p => 
+                (selectedCategory === 'todas' || p.category === selectedCategory) && 
+                (p.name.toLowerCase().includes(searchProd.toLowerCase()) || p.id.toLowerCase().includes(searchProd.toLowerCase()))
+             );
 
-             const sortedProducts = useMemo(() => {
-                 return [...products].sort((a, b) => {
-                     const soldA = productSalesCount[a.name] || 0;
-                     const soldB = productSalesCount[b.name] || 0;
-                     if (soldB !== soldA) return soldB - soldA; 
-                     return a.name.localeCompare(b.name);
-                 });
-             }, [products, productSalesCount]);
-
-             const filteredProducts = sortedProducts.filter(p => (selectedCategory === 'todas' || p.category === selectedCategory) && p.name.toLowerCase().includes(searchProd.toLowerCase()));
              const categories = ['todas', ...new Set(products.map(p => p.category))];
-
-             // Totais
              const subTotal = useMemo(() => cart.reduce((acc, item) => acc + Number(item.price), 0), [cart]);
-             const totalFinal = Math.max(0, subTotal - discount - (useCashback ? cashbackVal : 0));
+             const totalFinal = Math.max(0, subTotal - discount);
 
-             // Actions
+             // Handle Client Selection
+             const handleSelectClient = (client) => {
+                 setSelectedClient(client);
+                 setClientSearch(client.name);
+                 setSaleRegion(client.region || 'Não informada');
+             };
+
              const addToCart = (product) => {
-                if (!product.isCombo && product.stock <= 0) {
-                  if (!confirm(`ALERTA: Estoque Zerado (${product.stock}). Adicionar mesmo assim?`)) return;
-                }
                 const cartItem = { 
                     ...product, 
-                    tempId: generateId(), 
-                    originalPrice: product.price,
-                    comboItems: product.isCombo ? product.comboItems : [] 
+                    tempId: Math.random().toString(36).substr(2, 9),
+                    originalPrice: product.price
                 };
                 setCart([...cart, cartItem]);
              };
@@ -210,62 +163,27 @@
                  setCart(cart.filter(item => item.tempId !== tempId));
              };
 
-             const updateCartItemPrice = () => {
-                if (!editingItem) return;
-                const newCart = cart.map(i => i.tempId === editingItem.tempId ? { ...i, price: parseFloat(editingItem.price) } : i);
-                setCart(newCart);
-                setEditingItem(null);
-             };
-
              const finalizeSale = () => {
-                if (!selectedClient) return alert('ERRO: Selecione um cliente.');
-                if (cart.length === 0) return alert('ERRO: Carrinho vazio.');
+                if (!selectedClient) return alert('Selecione um cliente primeiro.');
+                if (cart.length === 0) return alert('O carrinho está vazio.');
                 
-                // 1. Atualizar Estoque
-                const newProducts = [...products];
-                cart.forEach(cartItem => {
-                  const dbProd = newProducts.find(p => p.id === cartItem.id);
-                  if (dbProd) {
-                    if (dbProd.isCombo) {
-                      cartItem.comboItems?.forEach(ing => {
-                         const dbIng = newProducts.find(p => p.id === ing.id);
-                         if (dbIng) {
-                           dbIng.stock = Math.max(0, dbIng.stock - ing.qty);
-                           if (!dbIng.stockHistory) dbIng.stockHistory = [];
-                           dbIng.stockHistory.push({ date: new Date().toISOString(), type: 'SALE_COMBO', qty: ing.qty, ref: cartItem.name });
-                         }
-                      });
-                    } else {
-                      dbProd.stock = Number(dbProd.stock) - 1;
-                      if (!dbProd.stockHistory) dbProd.stockHistory = [];
-                      dbProd.stockHistory.push({ date: new Date().toISOString(), type: 'SALE', qty: 1 });
-                    }
-                  }
-                });
-                setProducts(newProducts);
-
-                // 2. Salvar Venda
-                const shortId = generateDailyId(sales);
                 const newSale = {
-                  id: shortId, 
-                  fullId: generateId(), 
-                  clientId: selectedClient, 
+                  id: generateId(), 
+                  clientName: selectedClient.name,
                   items: cart,
-                  subTotal, discount, total: totalFinal, 
-                  payMethod, changeFor: payMethod === 'Dinheiro' ? changeFor : null, 
-                  obs, date: new Date().toISOString(), 
-                  status: 'Pendente',
-                  regionOverride: saleRegion, 
-                  isPaid, cashbackValue: useCashback ? cashbackVal : 0
+                  total: totalFinal, 
+                  route: saleRoute,
+                  region: saleRegion,
+                  date: new Date().toISOString(),
+                  status: 'Finalizado'
                 };
                 
                 setSales([...sales, newSale]);
-
-                // 3. Reset
-                setCart([]); setSelectedClient(''); setClientSearch(''); setObs(''); setChangeFor(''); 
-                setSaleRegion(''); setIsPaid(false); setDiscount(0); setUseCashback(false); setCashbackVal(0);
-                
-                alert(`VENDA #${shortId} REGISTRADA!`);
+                setCart([]);
+                setSelectedClient(null);
+                setClientSearch('');
+                setSaleRegion('');
+                alert('Venda finalizada com sucesso!');
              };
 
              const filteredClients = clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()));
@@ -273,221 +191,177 @@
              return (
                 <div className="flex flex-col lg:flex-row h-full">
                     
-                    {/* ESQUERDA: CATÁLOGO DE PRODUTOS */}
-                    <div className="flex-1 flex flex-col bg-slate-100 lg:border-r border-slate-300 relative h-[60%] lg:h-full overflow-hidden">
-                        {/* Header */}
-                        <div className="bg-white border-b border-slate-200 p-4 shadow-sm shrink-0">
-                            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-2">
-                                <ShoppingCart size={18} className="text-primary-600"/> Catálogo de Vendas
-                            </h2>
-                            <div className="flex gap-3">
+                    {/* ESQUERDA: LISTAGEM TIPO PLANILHA */}
+                    <div className="flex-1 flex flex-col bg-white lg:border-r border-slate-300 h-[55%] lg:h-full overflow-hidden">
+                        <div className="p-4 border-b border-slate-200 bg-slate-50 shrink-0">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xs font-black text-slate-700 uppercase tracking-tighter flex items-center gap-2">
+                                    <Box size={16} className="text-primary-600"/> Catálogo de Produtos
+                                </h2>
+                                <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded-full font-bold text-slate-600">
+                                    {filteredProducts.length} Itens
+                                </span>
+                            </div>
+                            <div className="flex gap-2">
                                 <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-2.5 text-slate-400" size={18}/>
+                                    <Search className="absolute left-3 top-2.5 text-slate-400" size={16}/>
                                     <input 
-                                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded text-sm bg-white focus:border-primary-600 outline-none transition font-medium" 
-                                        placeholder="Buscar Produto..." 
+                                        className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm bg-white focus:border-primary-600 outline-none" 
+                                        placeholder="Filtrar por nome ou código..." 
                                         value={searchProd} 
                                         onChange={e => setSearchProd(e.target.value)} 
                                     />
                                 </div>
                                 <select 
-                                    className="border border-slate-300 rounded px-3 bg-white text-sm font-medium focus:border-primary-600 outline-none" 
+                                    className="border border-slate-300 rounded-md px-3 bg-white text-xs font-bold outline-none" 
                                     value={selectedCategory} 
                                     onChange={e => setSelectedCategory(e.target.value)}
                                 >
-                                    <option value="todas">Todas</option>
+                                    <option value="todas">Categorias</option>
                                     {categories.filter(c=>c!=='todas').map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
                         </div>
                         
-                        {/* Grid/Lista */}
-                        <div className="flex-1 overflow-y-auto scrollbar-thin p-0 bg-white">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-100 text-slate-500 text-[10px] uppercase font-bold sticky top-0 z-10 shadow-sm">
-                                    <tr>
-                                        <th className="p-3 border-b border-slate-200">Produto</th>
-                                        <th className="p-3 border-b border-slate-200 text-center">Estoque</th>
-                                        <th className="p-3 border-b border-slate-200 text-right">Preço</th>
-                                        <th className="p-3 border-b border-slate-200 text-center w-12"></th>
+                        <div className="flex-1 overflow-auto scrollbar-thin">
+                            <table className="w-full text-left border-collapse table-fixed">
+                                <thead className="bg-slate-100 text-slate-500 text-[10px] uppercase font-bold sticky top-0 z-10">
+                                    <tr className="border-b border-slate-200">
+                                        <th className="p-3 w-20">Código</th>
+                                        <th className="p-3 w-auto">Nome do Produto</th>
+                                        <th className="p-3 w-32">Categoria</th>
+                                        <th className="p-3 w-24 text-right">Venda</th>
+                                        <th className="p-3 w-24 text-center">Estoque</th>
+                                        <th className="p-3 w-12"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm divide-y divide-slate-100">
                                     {filteredProducts.map(p => (
-                                        <tr key={p.id} className="hover:bg-blue-50 cursor-pointer group transition-colors border-l-4 border-transparent hover:border-primary-600" onClick={() => addToCart(p)}>
-                                            <td className="p-3">
-                                                <div className="font-bold text-slate-800 leading-tight">{p.name}</div>
-                                                <div className="text-[10px] text-slate-400 flex gap-2 items-center mt-1">
-                                                    {productSalesCount[p.name] > 0 && <span className="text-amber-600 font-bold flex items-center gap-1">★ {productSalesCount[p.name]} vendas</span>}
-                                                    {p.isCombo && <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold text-[9px] border border-amber-200">KIT</span>}
-                                                </div>
-                                            </td>
-                                            <td className="p-3 text-center">
-                                                <span className={`px-2 py-1 rounded text-xs font-bold ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}>{p.stock}</span>
-                                            </td>
+                                        <tr key={p.id} className="hover:bg-slate-50 cursor-pointer group transition-colors" onClick={() => addToCart(p)}>
+                                            <td className="p-3 font-mono text-[11px] text-slate-400">{p.id || '---'}</td>
+                                            <td className="p-3 font-semibold text-slate-800 truncate">{p.name}</td>
+                                            <td className="p-3"><span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-medium">{p.category}</span></td>
                                             <td className="p-3 text-right font-bold text-primary-700">{formatCurrency(p.price)}</td>
                                             <td className="p-3 text-center">
-                                                <button className="text-slate-300 group-hover:text-primary-600 transition"><Plus size={20}/></button>
+                                                <span className={`text-xs font-bold ${p.stock <= 5 ? 'text-red-600' : 'text-slate-600'}`}>{p.stock} un</span>
+                                            </td>
+                                            <td className="p-3 text-center">
+                                                <button className="text-slate-300 group-hover:text-primary-600"><Plus size={18}/></button>
                                             </td>
                                         </tr>
                                     ))}
-                                    {filteredProducts.length === 0 && (
-                                        <tr><td colSpan="4" className="p-8 text-center text-slate-400 text-sm">Nenhum produto encontrado.</td></tr>
-                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    {/* DIREITA: CHECKOUT & CARRINHO */}
-                    <div className="w-full lg:w-[420px] xl:w-[480px] flex flex-col bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-300 shadow-xl z-20 shrink-0 h-[50%] lg:h-full">
+                    {/* DIREITA: CHECKOUT & LOGÍSTICA */}
+                    <div className="w-full lg:w-[400px] flex flex-col bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-300 shadow-2xl shrink-0 h-[45%] lg:h-full">
                         
-                        {/* Seletor de Cliente */}
-                        <div className="p-4 bg-white border-b border-slate-200 space-y-3 shadow-sm z-30">
+                        {/* Identificação Cliente */}
+                        <div className="p-4 bg-white border-b border-slate-200 space-y-3">
                             <div>
-                                <label className="input-label flex items-center gap-1"><User size={12}/> Cliente da Venda</label>
+                                <label className="input-label flex items-center gap-1"><User size={12}/> Cliente</label>
                                 <div className="relative">
                                     <input 
-                                        className={`w-full p-2.5 border rounded outline-none transition text-sm font-bold ${selectedClient ? 'bg-green-50 border-green-500 text-green-800' : 'bg-white border-slate-300 focus:border-primary-600 text-slate-900'}`} 
-                                        placeholder="Digite o nome..." 
+                                        className={`w-full p-2.5 border rounded-md outline-none transition text-sm font-bold ${selectedClient ? 'bg-blue-50 border-blue-400 text-blue-900' : 'bg-white border-slate-300 text-slate-900'}`} 
+                                        placeholder="Localizar cliente..." 
                                         value={clientSearch} 
-                                        onChange={e => { setClientSearch(e.target.value); setSelectedClient(''); }} 
+                                        onChange={e => { setClientSearch(e.target.value); setSelectedClient(null); }} 
                                     />
-                                    {/* Dropdown */}
                                     {clientSearch && !selectedClient && (
-                                        <div className="absolute top-full left-0 w-full bg-white border border-slate-300 shadow-xl max-h-48 overflow-y-auto z-50 rounded-b-lg">
+                                        <div className="absolute top-full left-0 w-full bg-white border border-slate-300 shadow-2xl max-h-40 overflow-y-auto z-50 rounded-b-md">
                                             {filteredClients.map(c => (
-                                                <div key={c.id} className="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0" onClick={() => { setSelectedClient(c.id); setClientSearch(c.name); setSaleRegion(c.region || ''); }}>
-                                                    <div className="font-bold text-sm text-slate-800">{c.name}</div>
-                                                    <div className="text-[10px] text-slate-500 uppercase">{c.district || '-'} • {c.city || '-'}</div>
+                                                <div key={c.id} className="p-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0" onClick={() => handleSelectClient(c)}>
+                                                    <div className="font-bold text-xs text-slate-800">{c.name}</div>
+                                                    <div className="text-[9px] text-slate-400">{c.city} - {c.region}</div>
                                                 </div>
                                             ))}
-                                            {filteredClients.length === 0 && <div className="p-3 text-xs text-slate-400 italic">Cliente não encontrado.</div>}
                                         </div>
                                     )}
                                 </div>
                             </div>
+
+                            {/* Info Região & Rota */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="input-label flex items-center gap-1"><MapPin size={12}/> Região</label>
+                                    <div className="p-2 bg-slate-100 rounded border border-slate-200 text-[11px] font-bold text-slate-600 uppercase truncate">
+                                        {saleRegion || 'Selecione o cliente'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="input-label flex items-center gap-1"><Truck size={12}/> Rota</label>
+                                    <select 
+                                        className="input-field py-1.5 text-xs font-bold appearance-none bg-slate-50"
+                                        value={saleRoute}
+                                        onChange={e => setSaleRoute(e.target.value)}
+                                    >
+                                        <option value="Rota 1">Rota 1</option>
+                                        <option value="Rota 2">Rota 2</option>
+                                        <option value="Rota 3">Rota 3</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Lista de Itens (Carrinho) */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-100 border-b border-slate-200 relative">
-                            {cart.length === 0 && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 opacity-50 pointer-events-none">
-                                    <ShoppingCart size={48} strokeWidth={1.5} className="mb-2"/>
-                                    <p className="font-medium text-sm">Carrinho Vazio</p>
+                        {/* Carrinho Compacto */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-100">
+                            {cart.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-slate-300 opacity-60">
+                                    <ShoppingCart size={32} className="mb-2"/>
+                                    <p className="text-[10px] font-bold uppercase">Aguardando itens...</p>
                                 </div>
+                            ) : (
+                                cart.map((item) => (
+                                    <div key={item.tempId} className="bg-white p-2 rounded border border-slate-200 shadow-sm flex justify-between items-center animate-in">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-bold text-xs text-slate-800 truncate">{item.name}</div>
+                                            <div className="text-[10px] text-primary-600 font-black">{formatCurrency(item.price)}</div>
+                                        </div>
+                                        <button onClick={() => removeFromCart(item.tempId)} className="p-1.5 text-slate-300 hover:text-red-500 transition"><Trash2 size={14}/></button>
+                                    </div>
+                                ))
                             )}
-                            {cart.map((item, idx) => (
-                                <div key={item.tempId} className="bg-white p-3 rounded border border-slate-200 shadow-sm relative group animate-in" style={{animationDelay: `${idx * 0.05}s`}}>
-                                    <div className="flex justify-between items-start mb-1">
-                                        <div className="font-bold text-sm text-slate-800 pr-6 leading-tight">{item.name}</div>
-                                        <button onClick={() => removeFromCart(item.tempId)} className="text-slate-300 hover:text-red-500 absolute top-2 right-2 transition"><XCircle size={16}/></button>
-                                    </div>
-                                    <div className="flex justify-between items-center mt-2">
-                                        <button onClick={() => setEditingItem({tempId: item.tempId, price: item.price})} className="text-xs font-bold text-primary-700 hover:bg-blue-50 px-2 py-0.5 rounded border border-transparent hover:border-blue-100 transition">
-                                            {formatCurrency(item.price)}
-                                        </button>
-                                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">UNIT</span>
-                                    </div>
-                                    {item.isCombo && (
-                                        <div className="mt-1.5 pt-1.5 border-t border-slate-100">
-                                            <div className="flex flex-wrap gap-1">
-                                                {item.comboItems.map((ci, i) => (
-                                                    <span key={i} className="text-[9px] bg-amber-50 px-1 rounded border border-amber-100 text-amber-800 font-medium">
-                                                        {ci.qty}x {products.find(p => p.id === ci.id)?.name || '?'}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
                         </div>
 
-                        {/* Footer Checkout */}
-                        <div className="bg-white p-4 z-30">
-                            {/* Subtotais */}
-                            <div className="flex justify-between items-end mb-3 pb-3 border-b border-slate-100">
-                                <div className="text-xs text-slate-500 font-bold uppercase">Subtotal</div>
-                                <div className="text-sm font-bold text-slate-700">{formatCurrency(subTotal)}</div>
-                            </div>
-                            
-                            {/* Desconto & Cashback */}
-                            <div className="grid grid-cols-2 gap-4 mb-3">
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Desconto (R$)</label>
-                                    <input type="number" className="w-full border-b border-slate-300 focus:border-red-500 text-red-600 font-bold text-sm py-1 outline-none transition" value={discount} onChange={e => setDiscount(parseFloat(e.target.value) || 0)} />
+                        {/* Checkout Footer */}
+                        <div className="bg-white p-4 border-t border-slate-200 space-y-4">
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+                                    <span>Subtotal</span>
+                                    <span>{formatCurrency(subTotal)}</span>
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Cashback (R$)</label>
-                                    <div className="flex items-center gap-2">
-                                        <input type="checkbox" checked={useCashback} onChange={e => setUseCashback(e.target.checked)} className="accent-pink-600"/>
-                                        <input type="number" disabled={!useCashback} className="w-full border-b border-slate-300 focus:border-pink-500 text-pink-600 font-bold text-sm py-1 outline-none transition disabled:opacity-50" value={cashbackVal} onChange={e => setCashbackVal(parseFloat(e.target.value) || 0)} />
-                                    </div>
+                                <div className="flex justify-between text-xs font-black text-slate-800 pt-1 border-t border-slate-100">
+                                    <span className="uppercase">Total Final</span>
+                                    <span className="text-lg text-primary-700">{formatCurrency(totalFinal)}</span>
                                 </div>
                             </div>
 
-                            {/* Total Final Gigante */}
-                            <div className="flex justify-between items-center bg-slate-50 p-3 rounded border border-slate-200 mb-4">
-                                <span className="text-slate-600 font-bold uppercase text-xs">Total a Pagar</span>
-                                <span className="font-bold text-2xl text-primary-700">{formatCurrency(totalFinal)}</span>
-                            </div>
-
-                            {/* Pagamento */}
-                            <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                    <label className="input-label">Método</label>
+                                    <label className="input-label">Pagamento</label>
                                     <select className="input-field py-1.5 text-xs" value={payMethod} onChange={e => setPayMethod(e.target.value)}>
                                         <option value="Pix">Pix</option>
-                                        <option value="Dinheiro">Dinheiro</option>
                                         <option value="Cartão">Cartão</option>
+                                        <option value="Dinheiro">Dinheiro</option>
                                     </select>
                                 </div>
                                 <div className="flex items-end">
-                                    <label className="flex items-center gap-2 cursor-pointer w-full bg-slate-50 border border-slate-200 rounded p-1.5 h-[34px]">
-                                        <input type="checkbox" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} className="accent-emerald-600 w-4 h-4" />
-                                        <span className={`text-[10px] font-bold uppercase ${isPaid ? 'text-emerald-700' : 'text-slate-400'}`}>Pedido Pago?</span>
-                                    </label>
+                                    <button 
+                                        onClick={() => setIsPaid(!isPaid)}
+                                        className={`w-full py-1.5 rounded border text-[10px] font-bold uppercase transition ${isPaid ? 'bg-emerald-500 border-emerald-600 text-white' : 'bg-white border-slate-300 text-slate-400'}`}
+                                    >
+                                        {isPaid ? 'Pago' : 'Pendente'}
+                                    </button>
                                 </div>
                             </div>
-                            
-                            {/* Troco (Condicional) */}
-                            {payMethod === 'Dinheiro' && (
-                                <div className="mb-4 animate-in">
-                                    <label className="input-label">Troco Para (R$)</label>
-                                    <input className="input-field bg-yellow-50 border-yellow-300 text-yellow-900 font-bold" type="number" placeholder="0,00" value={changeFor} onChange={e => setChangeFor(e.target.value)} />
-                                </div>
-                            )}
 
-                            {/* Botão Final */}
-                            <button onClick={finalizeSale} className="btn-primary w-full py-3.5 text-base justify-between shadow-lg hover:shadow-xl transition-all active:scale-[0.99]">
-                                <span className="flex items-center gap-2"><CheckCircle size={20}/> FINALIZAR VENDA</span>
+                            <button onClick={finalizeSale} className="btn-primary w-full py-3 shadow-lg active:scale-95">
+                                <CheckCircle size={18}/> FINALIZAR PEDIDO
                             </button>
                         </div>
                     </div>
-
-                    {/* MODAL AJUSTE PREÇO */}
-                    {editingItem && (
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4 animate-in">
-                            <div className="bg-white p-6 rounded-lg shadow-2xl w-72 border border-slate-300">
-                                <h3 className="text-xs font-bold text-center text-slate-500 uppercase mb-4">Ajustar Preço Unitário</h3>
-                                <div className="relative mb-4">
-                                    <span className="absolute left-3 top-2 text-slate-400 font-bold text-lg">R$</span>
-                                    <input 
-                                        type="number" 
-                                        autoFocus 
-                                        className="text-2xl font-bold text-center border rounded w-full py-2 pl-6 outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 text-slate-800" 
-                                        value={editingItem.price} 
-                                        onChange={e => setEditingItem({...editingItem, price: e.target.value})}
-                                    />
-                                </div>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setEditingItem(null)} className="btn-secondary flex-1 justify-center text-xs">Cancelar</button>
-                                    <button onClick={updateCartItemPrice} className="btn-primary flex-1 justify-center text-xs bg-primary-600 hover:bg-primary-700">Confirmar</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
              );
         }
