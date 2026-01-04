@@ -3,114 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Integrado v9.0</title>
+    <title>Sistema Dona Antonia v9.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
         iframe { border: none; width: 100%; height: calc(100% - 48px); /* 48px é a altura da topbar */ display: block; }
+        
+        /* Estilização da Navegação em Texto Puro */
         .nav-item { 
             cursor: pointer; 
             padding: 0 1rem; 
             height: 100%; 
             display: flex; 
             align-items: center; 
-            gap: 0.5rem; 
-            font-size: 0.875rem; 
-            font-weight: 500; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
             color: #94a3b8; 
             transition: all 0.2s;
-            border-bottom: 2px solid transparent;
+            text-transform: uppercase; /* Garante letra maiúscula */
+            letter-spacing: 0.05em;
+            position: relative;
         }
-        .nav-item:hover { color: #f1f5f9; background-color: rgba(255,255,255,0.05); }
-        .nav-item.active { color: #f8fafc; border-bottom-color: #3b82f6; background-color: rgba(255,255,255,0.1); }
-        .nav-icon { width: 18px; height: 18px; }
+
+        .nav-item:hover { color: #f1f5f9; }
+        .nav-item.active { color: #3b82f6; } /* Destaque azul apenas no texto */
+
+        /* Separador '|' via Pseudo-elemento */
+        .nav-item:not(:last-child)::after {
+            content: '|';
+            position: absolute;
+            right: 0;
+            color: #334155; /* Cor discreta para o separador */
+            font-weight: 400;
+        }
+
+        /* Ajuste para o separador não colar no texto se o padding for pequeno */
+        .nav-item {
+            margin-right: 2px;
+        }
     </style>
-    <!-- Ícones Lucide -->
+    <!-- Ícones Lucide (Apenas para utilitários do header) -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-900 flex flex-col">
 
     <!-- TOPBAR ESTREITA -->
     <header class="h-12 bg-slate-900 text-white flex items-center justify-between px-4 shadow-lg shrink-0 z-50 border-b border-slate-800">
-        <div class="flex items-center gap-6 h-full">
-            <div class="font-bold text-lg tracking-wider flex items-center gap-2">
+        <div class="flex items-center gap-8 h-full">
+            <!-- BRANDING -->
+            <div class="font-bold text-lg tracking-wider flex items-center gap-2 whitespace-nowrap">
                 <span class="bg-indigo-600 text-white px-1.5 rounded text-xs py-0.5">SYS</span>
-                LOGÍSTICA
+                DONA ANTONIA
             </div>
             
-            <!-- NAVEGAÇÃO (Abas) - URLs Atualizadas -->
-            <nav class="flex h-full" id="main-nav">
-                <a data-src="https://donaantonia.com.br/teste/1" class="nav-item active" onclick="loadTab(this)">
-                    <i data-lucide="layout-dashboard" class="nav-icon"></i> CLIENTE
+            <!-- NAVEGAÇÃO (Sem ícones, com separadores) -->
+            <nav class="flex h-full items-center overflow-x-auto no-scrollbar" id="main-nav">
+                <a data-src="https://donaantonia.com.br/teste/1" class="nav-item" onclick="loadTab(this)">
+                    Cliente
                 </a>
                 <a data-src="https://donaantonia.com.br/teste/2" class="nav-item" onclick="loadTab(this)">
-                    <i data-lucide="shopping-cart" class="nav-icon"></i> PRODUTO
+                    Produto
                 </a>
                 <a data-src="https://donaantonia.com.br/teste/3" class="nav-item" onclick="loadTab(this)">
-                    <i data-lucide="package" class="nav-icon"></i> Expedição
+                    Expedição
                 </a>
                 <a data-src="https://donaantonia.com.br/teste/4" class="nav-item" onclick="loadTab(this)">
-                    <i data-lucide="truck" class="nav-icon"></i> Logística
+                    Logística
                 </a>
                 <a data-src="https://donaantonia.com.br/teste/5" class="nav-item" onclick="loadTab(this)">
-                    <i data-lucide="clipboard-list" class="nav-icon"></i> Estoque
+                    Estoque
                 </a>
                 <a data-src="https://donaantonia.com.br/teste/6" class="nav-item" onclick="loadTab(this)">
-                    <i data-lucide="database" class="nav-icon"></i> Cadastros
+                    Cadastros
                 </a>
                 <a data-src="https://donaantonia.com.br/teste/7" class="nav-item" onclick="loadTab(this)">
-                    <i data-lucide="line-chart" class="nav-icon"></i> BI
+                    BI
                 </a>
                 <a data-src="https://donaantonia.com.br/teste/8" class="nav-item" onclick="loadTab(this)">
-                    <i data-lucide="heart-handshake" class="nav-icon"></i> Pós-Venda
+                    Pós-Venda
                 </a>
             </nav>
         </div>
 
-        <div class="flex items-center gap-4">
+        <!-- Utilitários (Mantidos para funcionalidade de sistema) -->
+        <div class="flex items-center gap-4 pl-4 border-l border-slate-800">
             <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
                 <i data-lucide="user" class="w-3 h-3"></i> Admin
             </div>
-            <button onclick="window.location.reload()" class="text-slate-400 hover:text-white" title="Recarregar Sistema">
+            <button onclick="forceReload()" class="text-slate-400 hover:text-white" title="Recarregar Sistema">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             </button>
         </div>
     </header>
 
     <!-- ÁREA DO CONTEÚDO (IFRAME) -->
-    <!-- O 'src' inicial aponta para a primeira aba -->
     <iframe id="content-frame" src="about:blank" name="content-frame"></iframe>
 
     <script>
-        // Inicializa os ícones
+        // Inicializa ícones apenas para o header utilitário
         lucide.createIcons();
 
         function loadTab(element) {
-            // 1. Remove classe 'active' de todos
+            if (!element) return;
+
+            // 1. UI: Gerencia classe 'active'
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            
-            // 2. Adiciona 'active' no clicado
             element.classList.add('active');
             
-            // 3. Carrega o arquivo no iframe
-            const src = element.getAttribute('data-src');
-            const iframe = document.getElementById('content-frame');
+            // 2. DATA: Recupera URL base
+            const baseUrl = element.getAttribute('data-src');
             
-            // Simples verificação para não recarregar se já estiver lá (opcional)
-            if (iframe.getAttribute('src') !== src) {
-                iframe.src = src;
-            }
+            // 3. CACHE BUSTING: Adiciona timestamp para forçar versão atual
+            // Verifica se a URL já tem parametros (?) ou não
+            const separator = baseUrl.includes('?') ? '&' : '?';
+            const timestamp = new Date().getTime();
+            const finalUrl = `${baseUrl}${separator}v=${timestamp}`;
+            
+            // 4. LOAD: Carrega no iframe
+            const iframe = document.getElementById('content-frame');
+            iframe.src = finalUrl;
+
+            // 5. PERSISTENCE: Salva a escolha do usuário
+            // Usamos o 'data-src' original como ID único
+            localStorage.setItem('donaAntonia_lastTab', baseUrl);
         }
 
-        // Carregar a primeira aba automaticamente ao abrir
+        // Função para recarregar tudo forçadamente
+        function forceReload() {
+            // Limpa cache se necessário ou apenas recarrega a página
+            window.location.reload();
+        }
+
+        // Inicialização Inteligente
         document.addEventListener('DOMContentLoaded', () => {
-            // Tenta carregar a primeira aba definida ou uma padrão
-            const firstTab = document.querySelector('.nav-item.active') || document.querySelector('.nav-item');
-            if(firstTab) {
-                loadTab(firstTab); 
+            const lastTabSrc = localStorage.getItem('donaAntonia_lastTab');
+            let tabToLoad = null;
+
+            // Tenta encontrar a última aba usada
+            if (lastTabSrc) {
+                tabToLoad = document.querySelector(`.nav-item[data-src="${lastTabSrc}"]`);
+            }
+
+            // Se não houver histórico ou a aba não existir mais, pega a primeira
+            if (!tabToLoad) {
+                tabToLoad = document.querySelector('.nav-item');
+            }
+
+            // Executa o carregamento
+            if (tabToLoad) {
+                loadTab(tabToLoad);
             } else {
-                // Fallback caso não ache arquivos
-                document.getElementById('content-frame').srcdoc = '<div style="display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;"><h1>Bem-vindo! Selecione um módulo acima.</h1></div>';
+                // Fallback de segurança
+                document.getElementById('content-frame').srcdoc = '<div style="display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;"><h1>Módulo não encontrado.</h1></div>';
             }
         });
     </script>
