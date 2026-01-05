@@ -14,10 +14,29 @@
         .nav-link.active { background: #2563eb; color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
         .custom-scroll::-webkit-scrollbar { width: 5px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Visualizador de Cupom Lateral */
+        #print-area:not(:empty) {
+            position: fixed;
+            top: 0; right: 0;
+            width: 380px;
+            height: 100vh;
+            background: white;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.15);
+            z-index: 100;
+            overflow-y: auto;
+            padding: 20px;
+            display: block;
+            border-left: 4px solid #2563eb;
+        }
+
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; color: black; background: white; }
+            #print-area { 
+                position: absolute; left: 0; top: 0; width: 100%; 
+                padding: 0; margin: 0; box-shadow: none; border: none;
+            }
             .no-print { display: none !important; }
         }
     </style>
@@ -237,6 +256,7 @@
         </main>
     </div>
 
+    <!-- ÁREA DE VISUALIZAÇÃO/IMPRESSÃO -->
     <div id="print-area"></div>
 
     <script>
@@ -371,13 +391,10 @@
                 e.preventDefault(); const p = t[0];
                 let objId = UI.get(`${p}-id`).value;
                 let obj = { id: objId || Date.now().toString() };
-                
-                // Correção: Venda não tem campo de código manual na UI
                 if(t !== 'venda') {
                     obj.nome = UI.get(`${p}-nome`).value;
                     obj.codigo = UI.get(`${p}-codigo`).value;
                 }
-
                 if(t === 'cliente') Object.assign(obj, { tel: UI.get('c-tel').value, cidade: UI.get('c-cidade').value, bairro: UI.get('c-bairro').value, endereco: UI.get('c-endereco').value });
                 else if(t === 'produto') {
                     Object.assign(obj, { ean: UI.get('p-ean').value, ncm: UI.get('p-ncm').value, categoria: UI.get('p-categoria').value, custo: UI.get('p-custo').value, valor: UI.get('p-valor').value, estoque: Number(UI.get('p-estoque').value), tipo: UI.get('p-tipo').value, isTemp: UI.get('p-isTemp').checked });
@@ -388,10 +405,7 @@
                     const db = DB.load();
                     const prod = db.produto.find(x => x.id === prodId);
                     if(!prod) return alert('Produto não selecionado!');
-                    
                     Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now(), obs: UI.get('v-obs').value });
-                    
-                    // Baixa de Estoque Real-time
                     const deduct = (id, q) => {
                         const target = db.produto.find(x => x.id === id);
                         if(target) target.estoque -= q;
@@ -405,29 +419,48 @@
                 UI.render(t);
             },
             printVenda: (id) => {
-                const db = DB.load(); const v = db.venda.find(x => x.id === id); const c = db.cliente.find(x => x.id === v.cliId); const p = db.produto.find(x => x.id === v.prodId);
+                const db = DB.load(); 
+                const v = db.venda.find(x => x.id === id); 
+                const c = db.cliente.find(x => x.id === v.cliId); 
+                const p = db.produto.find(x => x.id === v.prodId);
+                
                 let kitHtml = ""; 
                 if(p && p.tipo === 'kit' && p.items) {
-                    kitHtml = `<div style="border-top:1px dashed #000; padding-top:5px; margin-top:5px; font-size:11px;"><b>LISTA DE SEPARAÇÃO:</b><br>` + 
+                    kitHtml = `<div style="border-top:1px dashed #000; padding-top:5px; margin-top:5px; font-size:11px;"><b>SEPARAÇÃO (Kits):</b><br>` + 
                         p.items.map(ki => {
                             const sub = db.produto.find(x => x.id === ki.id);
                             return `• ${ki.qty * v.qty}x ${sub?.nome || 'Item Excl'}`;
                         }).join('<br>') + `</div>`;
                 }
                 UI.get('print-area').innerHTML = `
-                    <div style="font-family:monospace; width: 100%; max-width: 300px; padding: 10px;">
-                        <center><h1 style="font-size: 24px;">PEDIDO #${v.codigo}</h1><b style="background:#000;color:#fff;padding:2px 10px;">ROTA: ${v.rota}</b></center>
-                        <br><b>CLIENTE:</b> ${c?.nome || 'N/A'}<br>
-                        <b>CIDADE/BAIRRO:</b> ${c?.cidade || '-'}/${c?.bairro || '-'}<br>
-                        <b>ENDEREÇO:</b> ${c?.endereco || '-'}<br>
+                    <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+                        <button onclick="UI.get('print-area').innerHTML=''" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg text-xs transition uppercase">Fechar Visualização</button>
+                    </div>
+                    <div style="font-family:monospace; width: 100%; max-width: 320px; padding: 10px; border: 1px solid #eee;">
+                        <center>
+                            <h1 style="font-size: 24px; margin-bottom: 2px;">PEDIDO #${v.codigo}</h1>
+                            <div style="background:#000; color:#fff; padding:10px 0; margin-top:5px; font-size: 38px; font-weight: 900; line-height: 1;">ROTA: ${v.rota}</div>
+                        </center>
+                        <br>
+                        <div style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px;">
+                            <b>CLI:</b> [${c?.codigo || 'N/A'}] - ${c?.nome || 'N/A'}<br>
+                            <b>TEL:</b> ${c?.tel || 'N/A'}
+                        </div>
+                        <div style="margin-top: 5px; font-size: 12px;">
+                            <b>CID/BAIRRO:</b> ${c?.cidade || '-'}/${c?.bairro || '-'}<br>
+                            <b>ENDEREÇO:</b> ${c?.endereco || '-'}
+                        </div>
                         <hr style="border:1px solid #000;margin:10px 0">
                         <div style="font-size:16px;"><b>${v.qty}x ${p?.nome}</b></div>
                         ${kitHtml}
                         <hr style="border:1px solid #000;margin:10px 0">
-                        <b>PAGAMENTO:</b> ${v.pag.toUpperCase()}<br>
-                        <div style="font-size:20px; text-align:right;"><b>TOTAL: R$ ${v.total.toFixed(2)}</b></div>
+                        <b>FORMA PGTO:</b> <span style="font-size: 16px;">${v.pag.toUpperCase()}</span><br>
+                        <div style="font-size:22px; text-align:right; margin-top: 5px;"><b>TOTAL: R$ ${v.total.toFixed(2)}</b></div>
                         <br><b>OBS:</b> ${v.obs || '-'}<br>
-                        <center><br>ENTERPRISE CORE - LOGÍSTICA</center>
+                        <center style="font-size: 10px; margin-top: 20px;">
+                            ENTERPRISE CORE - LOGÍSTICA<br>
+                            Emissão: ${new Date().toLocaleString('pt-BR')}
+                        </center>
                     </div>`;
                 window.print();
             },
@@ -447,18 +480,12 @@
                 const db = DB.load();
                 const selectedIds = Array.from(document.querySelectorAll('.venda-select:checked')).map(cb => cb.dataset.id);
                 if(!selectedIds.length) return alert('Selecione ao menos uma venda!');
-
                 const report = selectedIds.map(id => {
                     const venda = db.venda.find(v => v.id === id);
                     const cliente = db.cliente.find(c => c.id === venda.cliId);
                     const produto = db.produto.find(p => p.id === venda.prodId);
-                    return {
-                        ...venda,
-                        detalhes_cliente: cliente || "Cliente excluído",
-                        detalhes_produto: produto || "Produto excluído"
-                    };
+                    return { ...venda, detalhes_cliente: cliente || "Cliente excluído", detalhes_produto: produto || "Produto excluído" };
                 });
-
                 const a = Object.assign(document.createElement('a'), { 
                     href: URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'})), 
                     download: `relatorio_vendas_${Date.now()}.json` 
