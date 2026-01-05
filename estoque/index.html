@@ -215,6 +215,16 @@
                             <option value="CBA">CBA</option><option value="CPA">CPA</option>
                         </select>
                     </div>
+
+                    <!-- SELETOR DE BRINDE -->
+                    <select id="v-brinde" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none font-bold text-purple-600">
+                        <option value="">Nenhum Brinde</option>
+                        <option value="Ovo">Brinde: Ovo</option>
+                        <option value="Café 250g">Brinde: Café 250g</option>
+                        <option value="Amaciante">Brinde: Amaciante</option>
+                        <option value="Omo">Brinde: Omo</option>
+                    </select>
+
                     <input type="number" id="v-desconto" step="0.01" placeholder="Desconto (R$)" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none">
                     <textarea id="v-obs" rows="2" placeholder="Observações" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none"></textarea>
                     <div class="p-3 bg-slate-900 rounded-xl text-white flex justify-between items-center">
@@ -492,6 +502,7 @@
                     UI.toggleKit('normal');
                 } else if(t === 'venda') {
                     UI.get('v-total').innerText = 'R$ 0,00';
+                    UI.get('v-brinde').value = ''; // Reset brinde
                 }
             },
             updateNextProductCode: (isTemp) => {
@@ -518,7 +529,6 @@
         const App = {
             init: () => {
                 const db = DB.load(); 
-                // Ajuste solicitado: Remove produtos temporários cujo prazo de 24h após estoque zero expirou
                 db.produto = db.produto.filter(p => !p.deleteAt || p.deleteAt > Date.now());
                 DB.saveAll(db); 
                 UI.render('cliente'); UI.resetForm('cliente');
@@ -566,17 +576,15 @@
                     const db = DB.load();
                     const prod = db.produto.find(x => x.id === prodId);
                     if(!prod) return;
-                    Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now(), obs: UI.get('v-obs').value });
+                    Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, brinde: UI.get('v-brinde').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now(), obs: UI.get('v-obs').value });
                     
                     const deduct = (id, q) => {
                         const target = db.produto.find(x => x.id === id);
                         if(target) {
                             target.estoque -= q;
-                            // Ajuste solicitado: Se produto temporário atingir estoque zero, agenda exclusão em 24h
                             if(target.isTemp && target.estoque <= 0) {
                                 target.deleteAt = Date.now() + (24 * 60 * 60 * 1000);
                             } else {
-                                // Se o estoque voltar a ser positivo (edição futura), remove marcador de exclusão
                                 if(target.deleteAt && target.estoque > 0) delete target.deleteAt;
                             }
                         }
@@ -615,6 +623,7 @@
                         ${kitHtml}
                         <hr style="border:1px solid #000;margin:10px 0">
                         <b>PGTO:</b> <span style="font-size: 16px;">${v.pag.toUpperCase()}</span><br>
+                        ${v.brinde ? `<b>BRINDE:</b> <span style="font-size: 14px; color:#5b21b6;">${v.brinde.toUpperCase()}</span><br>` : ''}
                         <div style="font-size:22px; text-align:right; margin-top: 5px;"><b>TOTAL: R$ ${v.total.toFixed(2)}</b></div>
                         <br><b>OBS:</b> ${v.obs || '-'}<br>
                         <center style="font-size: 10px; margin-top: 20px;">ENTERPRISE CORE - LOGÍSTICA<br>${new Date().toLocaleString('pt-BR')}</center>
