@@ -1,605 +1,470 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS | Logística & Gestão de Kits v9.1</title>
-    
-    <!-- TAILWIND CSS -->
+    <title>Controle de Estoque Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        :root { font-family: 'Inter', sans-serif; }
-        
-        .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        .input-field {
-            width: 100%;
-            padding: 0.75rem; 
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            background-color: #f8fafc;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        .custom-scroll::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
         }
-        .input-field:focus {
-            background-color: #fff;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-            outline: none;
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
         }
-        
-        .btn-base {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.25rem;
-            border-radius: 0.625rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        
-        .btn-primary { background-color: #0f172a; color: white; }
-        .btn-primary:hover { background-color: #1e293b; transform: translateY(-1px); }
-        
-        .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .nav-item-active { background-color: #1e293b; color: #38bdf8; border-right: 4px solid #38bdf8; }
-
-        /* Estilo Planilha */
-        .spreadsheet {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-        .spreadsheet th {
-            position: sticky;
-            top: 0;
-            background: #f8fafc;
-            z-index: 10;
-            text-align: left;
-            padding: 12px 16px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .spreadsheet td {
-            padding: 10px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.875rem;
-            color: #334155;
-            vertical-align: middle;
-        }
-        .spreadsheet tr:hover td {
-            background-color: #f1f5f9;
-            cursor: pointer;
+        .modal-active {
+            display: flex !important;
         }
     </style>
-
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
-      }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-900 h-screen overflow-hidden">
-    <div id="root" class="h-full"></div>
+<body class="bg-gray-50 font-sans text-gray-900">
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { 
-          ShoppingCart, Package, Truck, Database, HeartHandshake, 
-          Settings, Search, Plus, Trash2, Edit2, CheckCircle, 
-          Layers, Box, Smartphone, Menu, X, ChevronRight, PackageCheck,
-          Tag, AlertCircle
-        } from 'lucide-react';
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span>📦 EstoquePrático</span>
+            </h1>
+            
+            <div class="flex items-center gap-2">
+                <!-- Botões de Importar/Exportar -->
+                <button onclick="exportDatabase()" class="bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold py-2 px-3 rounded flex items-center gap-1 transition">
+                    📥 Exportar Backup
+                </button>
+                <label class="bg-white hover:bg-gray-100 text-blue-600 text-xs font-bold py-2 px-3 rounded cursor-pointer flex items-center gap-1 transition">
+                    📤 Importar
+                    <input type="file" id="importInput" class="hidden" accept=".json" onchange="importDatabase(event)">
+                </label>
+                <span id="clock" class="text-xs opacity-80 hidden lg:block border-l pl-4 ml-2 border-blue-400"></span>
+            </div>
+        </div>
+    </header>
 
-        const useStickyState = (key, defaultValue) => {
-          const [value, setValue] = useState(() => {
-            const stickyValue = window.localStorage.getItem(key);
-            return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
-          });
-          useEffect(() => {
-            window.localStorage.setItem(key, JSON.stringify(value));
-          }, [key, value]);
-          return [value, setValue];
+    <main class="container mx-auto p-4 md:p-8">
+        <!-- Seção de Cadastro -->
+        <section class="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-200">
+            <h2 class="text-lg font-semibold mb-4 flex items-center justify-between">
+                <span>📝 Cadastro de Produto</span>
+                <button onclick="resetForm()" class="text-sm text-blue-600 hover:underline">Limpar Formulário</button>
+            </h2>
+            <form id="productForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="hidden" id="editIndex" value="-1">
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700">Nome do Produto</label>
+                    <input type="text" id="name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 border">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Código</label>
+                    <input type="text" id="code" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2 border font-mono text-blue-600" placeholder="Automático">
+                </div>
+
+                <div class="flex items-center mt-6">
+                    <input type="checkbox" id="isKit" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="isKit" class="ml-2 block text-sm font-medium text-gray-700">É um Kit?</label>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Preço de Custo (R$)</label>
+                    <input type="number" step="0.01" id="cost" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Preço de Venda (R$)</label>
+                    <input type="number" step="0.01" id="sale" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Estoque Inicial / Atual</label>
+                    <input type="number" id="stock" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                </div>
+
+                <div class="md:col-span-1 flex items-end">
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+                        Salvar Produto
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Seção de Lista de Produtos -->
+        <section class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="font-semibold">📋 Produtos Cadastrados (Planilha)</h2>
+                <div class="text-sm text-gray-500" id="stats">Total: 0 produtos</div>
+            </div>
+            
+            <div class="overflow-x-auto custom-scroll">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cód.</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Custo</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Venda</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estoque</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Gerado via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal para Configuração de Kit -->
+    <div id="kitModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-blue-50">
+                <h3 class="font-bold text-blue-800" id="kitModalTitle">🛠️ Configurar Itens do Kit</h3>
+                <button onclick="closeKitModal()" class="text-gray-500 hover:text-red-500">✕</button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4">Escolha os produtos e as quantidades para este kit. Só aparecem produtos que não são kits.</p>
+                
+                <div class="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scroll" id="kitSelectionList">
+                    <!-- Lista de produtos disponíveis -->
+                </div>
+
+                <div class="mt-6 flex justify-between items-center border-t pt-4">
+                    <div id="kitCountLabel" class="text-sm font-medium text-blue-600">0 itens selecionados</div>
+                    <div class="flex gap-3">
+                        <button onclick="closeKitModal()" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100 transition">Fechar</button>
+                        <button onclick="saveKitConfig()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-bold">Confirmar Seleção</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Estado Global ---
+        let products = [];
+        let currentKitComponents = []; 
+
+        // --- Inicialização ---
+        window.onload = () => {
+            loadFromLocalStorage();
+            updateCode();
+            renderProducts();
+            updateClock();
+            setInterval(updateClock, 1000);
         };
 
-        const generateId = () => Math.random().toString(36).substring(2, 11).toUpperCase();
-        const formatBRL = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleString('pt-BR');
+        }
 
-        function App() {
-            const [clients, setClients] = useStickyState('db_clients_v3', []);
-            const [products, setProducts] = useStickyState('db_products_v3', []);
-            const [sales, setSales] = useStickyState('db_sales_v3', []);
-            const [companyPhone, setCompanyPhone] = useStickyState('db_config_phone', '65998150975');
+        // --- Persistência e DB ---
+        function saveToLocalStorage() {
+            localStorage.setItem('inventory_db_app', JSON.stringify(products));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('inventory_db_app');
+            if (saved) {
+                try {
+                    products = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Erro ao carregar dados", e);
+                    products = [];
+                }
+            }
+        }
+
+        function exportDatabase() {
+            const dataStr = JSON.stringify(products, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
             
-            const [activeTab, setActiveTab] = useState('pos');
-            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-            const renderView = () => {
-                switch(activeTab) {
-                    case 'pos': return <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} />;
-                    case 'crm': return <CRMView clients={clients} setClients={setClients} products={products} setProducts={setProducts} />;
-                    case 'expedition': return <ExpeditionView sales={sales} setSales={setSales} clients={clients} products={products} setProducts={setProducts} />;
-                    default: return <POSView clients={clients} products={products} setProducts={setProducts} sales={sales} setSales={setSales} />;
-                }
-            };
-
-            return (
-                <div className="flex h-screen bg-slate-50">
-                    <aside className={`${isSidebarOpen ? 'w-72' : 'w-20'} bg-slate-900 text-slate-300 transition-all duration-300 flex flex-col z-50`}>
-                        <div className="h-20 flex items-center px-6 border-b border-slate-800 shrink-0">
-                            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">S</div>
-                            {isSidebarOpen && <span className="ml-3 font-bold text-white tracking-tight uppercase">Sistema <span className="text-blue-400 text-xs">v9.1</span></span>}
-                        </div>
-                        <nav className="flex-1 py-6 space-y-1">
-                            <button onClick={() => setActiveTab('pos')} className={`w-full flex items-center px-6 py-4 transition-all ${activeTab === 'pos' ? 'nav-item-active' : 'hover:bg-slate-800'}`}>
-                                <ShoppingCart size={20}/>
-                                {isSidebarOpen && <span className="ml-4 font-medium text-sm">Venda (PDV)</span>}
-                            </button>
-                            <button onClick={() => setActiveTab('expedition')} className={`w-full flex items-center px-6 py-4 transition-all ${activeTab === 'expedition' ? 'nav-item-active' : 'hover:bg-slate-800'}`}>
-                                <PackageCheck size={20}/>
-                                {isSidebarOpen && <span className="ml-4 font-medium text-sm">Expedição</span>}
-                            </button>
-                            <button onClick={() => setActiveTab('crm')} className={`w-full flex items-center px-6 py-4 transition-all ${activeTab === 'crm' ? 'nav-item-active' : 'hover:bg-slate-800'}`}>
-                                <Database size={20}/>
-                                {isSidebarOpen && <span className="ml-4 font-medium text-sm">Cadastros</span>}
-                            </button>
-                        </nav>
-                        <div className="p-4 border-t border-slate-800">
-                             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-full flex items-center justify-center p-3 rounded-lg hover:bg-slate-800 transition">
-                                {isSidebarOpen ? <X size={20}/> : <Menu size={20}/>}
-                             </button>
-                        </div>
-                    </aside>
-                    <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0">
-                            <h2 className="text-lg font-bold text-slate-800 capitalize">Módulo: {activeTab}</h2>
-                            <div className="flex items-center gap-4">
-                                <span className="text-xs text-slate-400 font-bold tracking-widest uppercase">Operação Local</span>
-                            </div>
-                        </header>
-                        <div className="flex-1 overflow-hidden">
-                            {renderView()}
-                        </div>
-                    </main>
-                </div>
-            );
+            const exportFileDefaultName = 'estoque_backup_' + new Date().toISOString().slice(0,10) + '.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
         }
 
-        /**
-         * VISTA PDV (VENDAS)
-         */
-        function POSView({ clients, products, setProducts, sales, setSales }) {
-            const [cart, setCart] = useState([]);
-            const [search, setSearch] = useState('');
-            const [selectedClientId, setSelectedClientId] = useState('');
+        function importDatabase(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-            const addToCart = (p) => {
-                const exist = cart.find(i => i.id === p.id);
-                if (exist) setCart(cart.map(i => i.id === p.id ? {...i, qty: i.qty + 1} : i));
-                else setCart([...cart, {...p, qty: 1}]);
-            };
-
-            const finalize = () => {
-                if (!selectedClientId || cart.length === 0) return alert("Selecione cliente e produtos");
-                
-                let updatedProducts = [...products];
-                
-                cart.forEach(item => {
-                    // Se for KIT, abate o stock dos componentes
-                    if (item.isKit && item.kitItems) {
-                        item.kitItems.forEach(ki => {
-                            const pIndex = updatedProducts.findIndex(up => up.id === ki.id);
-                            if (pIndex !== -1) {
-                                updatedProducts[pIndex].stock = Number(updatedProducts[pIndex].stock) - (Number(ki.qty) * item.qty);
-                            }
-                        });
-                    } else {
-                        // Venda simples
-                        const pIndex = updatedProducts.findIndex(up => up.id === item.id);
-                        if (pIndex !== -1) {
-                            updatedProducts[pIndex].stock = Number(updatedProducts[pIndex].stock) - item.qty;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        if (confirm("Isto irá substituir o seu banco de dados atual. Deseja continuar?")) {
+                            products = importedData;
+                            saveToLocalStorage();
+                            renderProducts();
+                            updateCode();
                         }
+                    } else {
+                        alert("Ficheiro inválido.");
                     }
-                });
-
-                const total = cart.reduce((acc, i) => acc + (Number(i.price) * i.qty), 0);
-                const newSale = {
-                    id: Math.random().toString(36).substring(2, 6).toUpperCase(),
-                    clientId: selectedClientId,
-                    items: cart,
-                    total,
-                    date: new Date().toISOString(),
-                    status: 'Pendente'
-                };
-
-                setSales([newSale, ...sales]);
-                setProducts(updatedProducts);
-                setCart([]);
-                setSelectedClientId('');
-                alert("Venda realizada! Stock atualizado.");
-            };
-
-            const filteredProducts = products.filter(p => 
-                p.name.toLowerCase().includes(search.toLowerCase()) || 
-                (p.category && p.category.toLowerCase().includes(search.toLowerCase()))
-            );
-
-            return (
-                <div className="flex h-full">
-                    {/* LISTA DE PRODUTOS */}
-                    <div className="flex-1 p-6 flex flex-col bg-white">
-                        <div className="mb-6 relative">
-                            <Search className="absolute left-4 top-3.5 text-slate-400" size={18}/>
-                            <input 
-                                className="input-field pl-12" 
-                                placeholder="Filtrar por nome, categoria ou código..." 
-                                value={search} 
-                                onChange={e => setSearch(e.target.value)} 
-                            />
-                        </div>
-                        <div className="flex-1 overflow-y-auto border border-slate-100 rounded-xl">
-                            <table className="spreadsheet">
-                                <thead>
-                                    <tr>
-                                        <th>Categoria</th>
-                                        <th>Nome do Produto</th>
-                                        <th className="text-center">Quantidade (Stock)</th>
-                                        <th className="text-right">Preço</th>
-                                        <th className="w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredProducts.map(p => (
-                                        <tr key={p.id} onClick={() => addToCart(p)}>
-                                            <td>
-                                                <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase">
-                                                    {p.category || 'Geral'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-slate-700">{p.name}</span>
-                                                    {p.isKit && <Layers size={14} className="text-indigo-500" title="Produto KIT"/>}
-                                                </div>
-                                            </td>
-                                            <td className="text-center">
-                                                {p.isKit ? (
-                                                    <span className="text-[10px] text-slate-400 italic">Dinâmico (KIT)</span>
-                                                ) : (
-                                                    <span className={`font-mono font-bold ${Number(p.stock) <= 5 ? 'text-red-500' : 'text-emerald-500'}`}>
-                                                        {p.stock}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="text-right font-black text-slate-900">{formatBRL(p.price)}</td>
-                                            <td><Plus size={16} className="text-blue-500"/></td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {/* CARRINHO */}
-                    <div className="w-96 bg-slate-50 border-l border-slate-200 flex flex-col p-6 shadow-2xl">
-                        <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
-                            <ShoppingCart size={16}/> Resumo do Pedido
-                        </h3>
-                        
-                        <div className="mb-6">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Cliente</label>
-                            <select 
-                                className="input-field mt-1" 
-                                value={selectedClientId} 
-                                onChange={e => setSelectedClientId(e.target.value)}
-                            >
-                                <option value="">Selecione o cliente...</option>
-                                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin">
-                            {cart.length === 0 && (
-                                <div className="h-full flex flex-col items-center justify-center text-slate-300">
-                                    <Box size={40} className="mb-2 opacity-20"/>
-                                    <span className="text-[10px] font-bold uppercase tracking-tighter">Carrinho Vazio</span>
-                                </div>
-                            )}
-                            {cart.map(item => (
-                                <div key={item.id} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center group animate-slide-up">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-sm text-slate-700 truncate">{item.name}</p>
-                                        <p className="text-[10px] text-slate-400 font-bold">{item.qty} UN x {formatBRL(item.price)}</p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="font-black text-blue-600 text-sm">{formatBRL(item.price * item.qty)}</span>
-                                        <button onClick={() => setCart(cart.filter(i => i.id !== item.id))} className="text-slate-300 hover:text-red-500 transition">
-                                            <Trash2 size={16}/>
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="mt-6 pt-6 border-t border-slate-200">
-                            <div className="flex justify-between items-end mb-6">
-                                <span className="text-xs font-black text-slate-400 uppercase">Total Geral</span>
-                                <span className="text-2xl font-black text-slate-900 tracking-tighter">
-                                    {formatBRL(cart.reduce((acc, i) => acc + (Number(i.price) * i.qty), 0))}
-                                </span>
-                            </div>
-                            <button 
-                                onClick={finalize}
-                                disabled={cart.length === 0 || !selectedClientId}
-                                className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 disabled:opacity-30 shadow-xl active:scale-95 transition"
-                            >
-                                FINALIZAR VENDA
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        /**
-         * CADASTROS (CRM)
-         */
-        function CRMView({ clients, setClients, products, setProducts }) {
-            const [view, setView] = useState('products');
-            const [showForm, setShowForm] = useState(false);
-            const [isKitMode, setIsKitMode] = useState(false);
-            const [formData, setFormData] = useState({ name: '', category: '', price: 0, stock: 0 });
-            const [kitItems, setKitItems] = useState([]);
-
-            const handleSave = () => {
-                if (!formData.name) return alert("Preencha o nome");
-                
-                if (view === 'products') {
-                    const newProduct = {
-                        ...formData,
-                        id: generateId(),
-                        isKit: isKitMode,
-                        kitItems: isKitMode ? kitItems : []
-                    };
-                    setProducts([newProduct, ...products]);
-                } else {
-                    setClients([{ ...formData, id: generateId() }, ...clients]);
+                } catch (err) {
+                    alert("Erro ao ler o ficheiro.");
                 }
-                
-                setShowForm(false);
-                resetForm();
             };
-
-            const resetForm = () => {
-                setFormData({ name: '', category: '', price: 0, stock: 0 });
-                setKitItems([]);
-                setIsKitMode(false);
-            };
-
-            const toggleKitItem = (prod) => {
-                const exist = kitItems.find(i => i.id === prod.id);
-                if (exist) setKitItems(kitItems.filter(i => i.id !== prod.id));
-                else setKitItems([...kitItems, { id: prod.id, name: prod.name, qty: 1 }]);
-            };
-
-            const updateKitQty = (id, val) => {
-                setKitItems(kitItems.map(i => i.id === id ? { ...i, qty: Number(val) } : i));
-            };
-
-            return (
-                <div className="p-8 h-full overflow-y-auto scrollbar-thin">
-                    <div className="flex justify-between items-center mb-8">
-                        <div className="flex bg-white p-1 rounded-xl border border-slate-200">
-                            <button onClick={() => setView('products')} className={`px-6 py-2 rounded-lg text-xs font-bold transition ${view === 'products' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}>PRODUTOS</button>
-                            <button onClick={() => setView('clients')} className={`px-6 py-2 rounded-lg text-xs font-bold transition ${view === 'clients' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}>CLIENTES</button>
-                        </div>
-                        <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-base btn-primary">
-                            <Plus size={18}/> Novo {view === 'products' ? 'Produto' : 'Cliente'}
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {(view === 'products' ? products : clients).map(item => (
-                            <div key={item.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col group relative">
-                                <div className="flex justify-between items-start mb-3">
-                                    <span className="text-[10px] font-black bg-slate-50 text-slate-400 px-2 py-1 rounded uppercase tracking-widest border border-slate-100">
-                                        {view === 'products' ? (item.category || 'GERAL') : 'CLIENTE'}
-                                    </span>
-                                    {item.isKit && <span className="text-[10px] font-black text-indigo-500 flex items-center gap-1"><Layers size={10}/> KIT</span>}
-                                </div>
-                                <h4 className="font-bold text-slate-800 mb-2 truncate">{item.name}</h4>
-                                {view === 'products' && <p className="text-xl font-black text-slate-900 mb-4">{formatBRL(item.price)}</p>}
-                                <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center text-xs">
-                                    {view === 'products' ? (
-                                        <span className="text-slate-400">Stock: <b className="text-slate-700">{item.isKit ? 'Kit' : item.stock}</b></span>
-                                    ) : (
-                                        <span className="text-slate-400 truncate">{item.phone || 'S/ Tel'}</span>
-                                    )}
-                                    <button 
-                                        onClick={() => view === 'products' ? setProducts(products.filter(p => p.id !== item.id)) : setClients(clients.filter(c => c.id !== item.id))}
-                                        className="text-slate-300 hover:text-red-500"
-                                    >
-                                        <Trash2 size={16}/>
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {showForm && (
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                            <div className="bg-white w-full max-w-2xl rounded-3xl p-8 animate-slide-up shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-thin">
-                                <h3 className="text-xl font-black text-slate-800 mb-8 tracking-tighter uppercase">Cadastro de {view === 'products' ? 'Produto' : 'Cliente'}</h3>
-                                
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Nome Completo</label>
-                                        <input className="input-field" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                                    </div>
-
-                                    {view === 'products' && (
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Categoria</label>
-                                                <input className="input-field" placeholder="Ex: Bebidas, Limpeza..." value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
-                                            </div>
-                                            <div>
-                                                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Preço de Venda</label>
-                                                <input type="number" className="input-field" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {view === 'products' && !isKitMode && (
-                                        <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Quantidade em Stock (UN)</label>
-                                            <input type="number" className="input-field" value={formData.stock} onChange={e => setFormData({...formData, stock: Number(e.target.value)})} />
-                                        </div>
-                                    )}
-
-                                    {view === 'products' && (
-                                        <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl">
-                                            <label className="flex items-center gap-3 cursor-pointer mb-4">
-                                                <input 
-                                                    type="checkbox" 
-                                                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                                    checked={isKitMode}
-                                                    onChange={e => setIsKitMode(e.target.checked)}
-                                                />
-                                                <span className="font-bold text-slate-700 text-sm">Este produto é um KIT (Combo de outros produtos)</span>
-                                            </label>
-
-                                            {isKitMode && (
-                                                <div className="space-y-4 animate-slide-up">
-                                                    <div className="bg-white border rounded-xl p-4">
-                                                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Selecionar Componentes do Kit:</p>
-                                                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1 scrollbar-thin">
-                                                            {products.filter(p => !p.isKit).map(p => (
-                                                                <button 
-                                                                    key={p.id} 
-                                                                    onClick={() => toggleKitItem(p)}
-                                                                    className={`text-left px-3 py-2 rounded-lg text-xs font-bold border transition ${kitItems.find(i => i.id === p.id) ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-100 hover:bg-slate-50'}`}
-                                                                >
-                                                                    {p.name}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-2">
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase ml-1">Definir Quantidades:</p>
-                                                        {kitItems.map(item => (
-                                                            <div key={item.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100">
-                                                                <span className="text-xs font-bold text-slate-700">{item.name}</span>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-[10px] text-slate-400 font-bold">QTD:</span>
-                                                                    <input 
-                                                                        type="number" 
-                                                                        className="w-16 p-1 border rounded text-center text-xs font-bold"
-                                                                        value={item.qty}
-                                                                        onChange={e => updateKitQty(item.id, e.target.value)}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="mt-8 flex gap-4">
-                                    <button onClick={() => setShowForm(false)} className="flex-1 py-4 border border-slate-200 rounded-2xl font-bold text-slate-400 hover:bg-slate-50 transition">CANCELAR</button>
-                                    <button onClick={handleSave} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition shadow-xl shadow-slate-900/10">SALVAR REGISTRO</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
+            reader.readAsText(file);
         }
 
-        /**
-         * EXPEDIÇÃO
-         */
-        function ExpeditionView({ sales, setSales, clients }) {
-            const handleFinish = (id) => {
-                setSales(sales.map(s => s.id === id ? { ...s, status: 'Entregue' } : s));
-            };
-
-            return (
-                <div className="p-8 h-full overflow-y-auto scrollbar-thin">
-                    <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-3">
-                        <Package size={24} className="text-blue-500"/> Fila de Expedição
-                    </h3>
-                    <div className="space-y-4">
-                        {sales.filter(s => s.status === 'Pendente').map(sale => {
-                            const client = clients.find(c => c.id === sale.clientId);
-                            return (
-                                <div key={sale.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center group hover:border-blue-300 transition animate-slide-up">
-                                    <div className="mb-4 md:mb-0">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded tracking-widest">PEDIDO #{sale.id}</span>
-                                            <span className="text-[10px] font-black text-orange-500 uppercase">AGUARDANDO SAÍDA</span>
-                                        </div>
-                                        <h4 className="font-bold text-slate-700 text-lg">{client?.name || 'Cliente Geral'}</h4>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            {sale.items.map(i => (
-                                                <span key={i.id} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded font-bold border border-slate-200">
-                                                    {i.qty}x {i.name}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-6">
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase">Valor do Pedido</p>
-                                            <p className="text-2xl font-black text-slate-900">{formatBRL(sale.total)}</p>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleFinish(sale.id)}
-                                            className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl hover:bg-emerald-600 hover:text-white transition shadow-sm active:scale-95"
-                                        >
-                                            <CheckCircle size={28}/>
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {sales.filter(s => s.status === 'Pendente').length === 0 && (
-                            <div className="p-20 text-center text-slate-300 border border-dashed rounded-3xl border-slate-200">
-                                <Box size={48} className="mx-auto mb-4 opacity-20"/>
-                                <p className="font-bold uppercase tracking-widest text-sm">Sem pedidos pendentes no momento</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
+        // --- Lógica de Geração de Código ---
+        function getNextCode() {
+            if (products.length === 0) return "0001";
+            const lastCode = products.reduce((max, p) => {
+                const num = parseInt(p.code);
+                return num > max ? num : max;
+            }, 0);
+            return String(lastCode + 1).padStart(4, '0');
         }
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function updateCode() {
+            const editIdx = document.getElementById('editIndex').value;
+            if (editIdx == "-1") {
+                document.getElementById('code').value = getNextCode();
+            }
+        }
+
+        // --- Formulário ---
+        const form = document.getElementById('productForm');
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            
+            const editIndex = parseInt(document.getElementById('editIndex').value);
+            const isKit = document.getElementById('isKit').checked;
+            
+            const productData = {
+                name: document.getElementById('name').value,
+                code: document.getElementById('code').value,
+                cost: parseFloat(document.getElementById('cost').value),
+                sale: parseFloat(document.getElementById('sale').value),
+                stock: parseInt(document.getElementById('stock').value),
+                isKit: isKit,
+                components: isKit ? [...currentKitComponents] : []
+            };
+
+            if (isKit && productData.components.length === 0) {
+                alert("Por favor, adicione componentes ao kit no modal.");
+                openKitModal();
+                return;
+            }
+
+            if (editIndex === -1) {
+                // Novo Produto
+                if (isKit) {
+                    if (!applyStockReduction(productData.components, productData.stock)) return;
+                }
+                products.push(productData);
+            } else {
+                // Edição
+                // Se era kit e mudou estoque ou componentes, aqui precisaria de uma lógica complexa de estorno
+                // Para este sistema simples, apenas atualizamos os dados
+                products[editIndex] = productData;
+            }
+
+            saveToLocalStorage();
+            resetForm();
+            renderProducts();
+        };
+
+        function applyStockReduction(components, kitQuantity) {
+            for (const comp of components) {
+                const prod = products.find(p => p.code === comp.code);
+                if (prod && prod.stock < (comp.quantity * kitQuantity)) {
+                    alert(`Estoque insuficiente para: ${prod.name}. Falta: ${(comp.quantity * kitQuantity) - prod.stock} unid.`);
+                    return false;
+                }
+            }
+
+            for (const comp of components) {
+                const prod = products.find(p => p.code === comp.code);
+                if (prod) prod.stock -= (comp.quantity * kitQuantity);
+            }
+            return true;
+        }
+
+        function resetForm() {
+            form.reset();
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('submitBtn').innerText = "Salvar Produto";
+            currentKitComponents = [];
+            updateCode();
+        }
+
+        // --- Tabela ---
+        function renderProducts() {
+            const tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = '';
+            
+            products.forEach((p, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">${p.code}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${p.isKit ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">
+                            ${p.isKit ? 'Kit' : 'Individual'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ ${p.cost.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ ${p.sale.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="${p.stock <= 5 ? 'text-red-600 font-bold' : 'text-gray-900'}">${p.stock}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
+                        <button onclick="editProduct(${index})" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-2 py-1 rounded">Editar</button>
+                        <button onclick="duplicateProduct(${index})" class="text-green-600 hover:text-green-900 bg-green-50 px-2 py-1 rounded">Duplicar</button>
+                        <button onclick="deleteProduct(${index})" class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1 rounded">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('stats').innerText = `Total: ${products.length} produtos`;
+        }
+
+        function editProduct(index) {
+            const p = products[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('name').value = p.name;
+            document.getElementById('code').value = p.code;
+            document.getElementById('cost').value = p.cost;
+            document.getElementById('sale').value = p.sale;
+            document.getElementById('stock').value = p.stock;
+            document.getElementById('isKit').checked = p.isKit;
+            
+            // Carrega componentes para edição se for kit
+            currentKitComponents = p.isKit ? [...p.components] : [];
+            
+            document.getElementById('submitBtn').innerText = "Atualizar Produto";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            if (p.isKit) {
+                openKitModal();
+            }
+        }
+
+        function duplicateProduct(index) {
+            const p = JSON.parse(JSON.stringify(products[index]));
+            p.code = getNextCode();
+            p.name = p.name + " (Cópia)";
+            products.push(p);
+            saveToLocalStorage();
+            renderProducts();
+            updateCode();
+        }
+
+        function deleteProduct(index) {
+            if (confirm("Deseja realmente excluir este produto?")) {
+                products.splice(index, 1);
+                saveToLocalStorage();
+                renderProducts();
+                updateCode();
+            }
+        }
+
+        // --- Kit Modal Avançado ---
+        const kitCheckbox = document.getElementById('isKit');
+        kitCheckbox.onchange = () => {
+            if (kitCheckbox.checked) {
+                openKitModal();
+            }
+        };
+
+        function openKitModal() {
+            const listDiv = document.getElementById('kitSelectionList');
+            listDiv.innerHTML = '';
+            
+            // Filtra produtos individuais (não podem ser kits) e exclui o próprio produto se estiver em edição
+            const currentEditingCode = document.getElementById('code').value;
+            const availableItems = products.filter(p => !p.isKit && p.code !== currentEditingCode);
+
+            if (availableItems.length === 0) {
+                listDiv.innerHTML = '<p class="text-center text-gray-500 py-4">Cadastre produtos individuais primeiro para compor um kit.</p>';
+            } else {
+                availableItems.forEach(item => {
+                    // Verifica se já está selecionado para o kit atual
+                    const savedComp = currentKitComponents.find(c => c.code === item.code);
+                    const qty = savedComp ? savedComp.quantity : 0;
+                    
+                    const itemRow = document.createElement('div');
+                    itemRow.className = `flex items-center justify-between p-3 border rounded-lg transition ${qty > 0 ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50 border-gray-200'}`;
+                    itemRow.innerHTML = `
+                        <div class="flex-1">
+                            <div class="font-bold text-sm text-gray-800">${item.name}</div>
+                            <div class="text-xs text-gray-500 font-mono">Cód: ${item.code} | Estoque: ${item.stock}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center border rounded overflow-hidden bg-white">
+                                <button type="button" onclick="changeQty('${item.code}', -1)" class="px-2 py-1 bg-gray-100 hover:bg-gray-200">-</button>
+                                <input type="number" min="0" value="${qty}" id="qty-${item.code}"
+                                    class="w-12 text-center text-sm border-none focus:ring-0" readonly>
+                                <button type="button" onclick="changeQty('${item.code}', 1)" class="px-2 py-1 bg-gray-100 hover:bg-gray-200">+</button>
+                            </div>
+                            <span class="text-xs text-gray-400 w-8">unid.</span>
+                        </div>
+                    `;
+                    listDiv.appendChild(itemRow);
+                });
+            }
+
+            updateKitCounter();
+            document.getElementById('kitModal').classList.add('modal-active');
+        }
+
+        function changeQty(code, delta) {
+            const input = document.getElementById(`qty-${code}`);
+            let val = parseInt(input.value) + delta;
+            if (val < 0) val = 0;
+            input.value = val;
+            
+            // Atualiza visual da linha
+            const row = input.closest('div.flex.items-center.justify-between');
+            if (val > 0) {
+                row.classList.add('border-blue-500', 'bg-blue-50');
+            } else {
+                row.classList.remove('border-blue-500', 'bg-blue-50');
+            }
+
+            // Atualiza array temporário
+            const index = currentKitComponents.findIndex(c => c.code === code);
+            if (val > 0) {
+                if (index > -1) {
+                    currentKitComponents[index].quantity = val;
+                } else {
+                    currentKitComponents.push({ code, quantity: val });
+                }
+            } else if (index > -1) {
+                currentKitComponents.splice(index, 1);
+            }
+            updateKitCounter();
+        }
+
+        function updateKitCounter() {
+            const count = currentKitComponents.length;
+            document.getElementById('kitCountLabel').innerText = `${count} ${count === 1 ? 'item selecionado' : 'itens selecionados'}`;
+        }
+
+        function saveKitConfig() {
+            if (currentKitComponents.length === 0) {
+                if (!confirm("O kit está vazio. Deseja desmarcar a opção de Kit?")) return;
+                document.getElementById('isKit').checked = false;
+            }
+            closeKitModal();
+        }
+
+        function closeKitModal() {
+            document.getElementById('kitModal').classList.remove('modal-active');
+        }
     </script>
 </body>
 </html>
