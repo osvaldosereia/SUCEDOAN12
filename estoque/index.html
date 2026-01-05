@@ -17,7 +17,7 @@
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 76mm; padding: 0; margin: 0; color: black; background: white; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; color: black; background: white; }
             .no-print { display: none !important; }
         }
     </style>
@@ -44,8 +44,8 @@
                 <i class="fa-solid fa-chart-line w-5"></i> <span>CRM</span>
             </button>
         </nav>
-        <button onclick="ExportEngine.export()" class="text-left px-4 py-2 text-slate-500 hover:text-emerald-400 text-xs transition">
-            <i class="fa-solid fa-database mr-2"></i> Backup Geral
+        <button onclick="ExportEngine.exportAll()" class="text-left px-4 py-2 text-slate-500 hover:text-emerald-400 text-xs transition">
+            <i class="fa-solid fa-database mr-2"></i> Backup Geral (DB)
         </button>
     </aside>
 
@@ -186,7 +186,12 @@
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
                     <div class="flex justify-between items-center">
                         <h3 class="text-xs font-bold uppercase text-slate-500 tracking-tighter">Histórico de Vendas</h3>
-                        <span class="text-[10px] font-bold text-slate-400 tracking-tighter uppercase">TOTAL: <b id="count-venda" class="text-slate-700">0</b></span>
+                        <div class="flex gap-2">
+                            <button onclick="ExportEngine.exportSelectedSales()" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-emerald-200 transition">
+                                <i class="fa-solid fa-file-export mr-1"></i> Exportar Selecionados
+                            </button>
+                            <span class="text-[10px] font-bold text-slate-400 tracking-tighter uppercase self-center">TOTAL: <b id="count-venda" class="text-slate-700">0</b></span>
+                        </div>
                     </div>
                     <div class="flex gap-2 items-center no-print">
                         <input type="date" id="v-filter-start" class="text-[10px] p-1.5 border rounded outline-none focus:border-blue-400">
@@ -196,12 +201,22 @@
                     </div>
                 </div>
                 <div class="flex-1 overflow-auto custom-scroll">
-                    <table class="w-full text-left text-sm"><tbody id="table-venda" class="divide-y divide-slate-100"></tbody></table>
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-[10px] uppercase text-slate-400 font-bold sticky top-0">
+                            <tr>
+                                <th class="p-4 w-10"><input type="checkbox" onclick="UI.toggleSelectAllSales(this)"></th>
+                                <th class="p-4">Pedido</th>
+                                <th class="p-4">Financeiro</th>
+                                <th class="p-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-venda" class="divide-y divide-slate-100"></tbody>
+                    </table>
                 </div>
             </section>
         </main>
         
-        <!-- CRM (Visual only update) -->
+        <!-- CRM -->
         <main id="view-crm" class="view-content flex-1 overflow-auto p-6 flex flex-col gap-6">
             <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between flex-shrink-0 no-print">
                 <div>
@@ -218,10 +233,6 @@
                 <div class="bg-white p-5 rounded-2xl border"><span class="text-[10px] font-bold text-slate-400 uppercase">Ticket Médio</span><h3 id="crm-avg-ticket" class="text-2xl font-black text-blue-600 leading-tight">R$ 0,00</h3></div>
                 <div class="bg-white p-5 rounded-2xl border"><span class="text-[10px] font-bold text-slate-400 uppercase">Pedidos</span><h3 id="crm-total-orders" class="text-2xl font-black text-slate-700 leading-tight">0</h3></div>
                 <div class="bg-white p-5 rounded-2xl border"><span class="text-[10px] font-bold text-slate-400 uppercase">Clientes</span><h3 id="crm-active-clients" class="text-2xl font-black text-orange-500 leading-tight">0</h3></div>
-            </section>
-            <section class="grid grid-cols-2 gap-6 flex-shrink-0">
-                <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-3 bg-slate-50 border-b font-bold text-[10px] uppercase text-slate-500">Top Compradores</div><table class="w-full text-xs text-left"><tbody id="crm-top-clients" class="divide-y"></tbody></table></div>
-                <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-3 bg-slate-50 border-b font-bold text-[10px] uppercase text-slate-500">Top Produtos</div><table class="w-full text-xs text-left"><tbody id="crm-top-products" class="divide-y"></tbody></table></div>
             </section>
         </main>
     </div>
@@ -289,6 +300,9 @@
                     .map(p => `<option value="${p.id}" data-price="${p.valor}">${p.codigo} - ${p.nome} (Est: ${p.estoque})</option>`).join('');
             },
             searchProduct: (val) => UI.renderVendaOptions(val),
+            toggleSelectAllSales: (master) => {
+                document.querySelectorAll('.venda-select').forEach(cb => cb.checked = master.checked);
+            },
             render: (type) => {
                 if(type === 'crm') return;
                 const db = DB.load(); let data = db[type];
@@ -305,8 +319,16 @@
                         return `<tr class="hover:bg-slate-50 transition"><td class="p-4 font-bold text-xs">${i.codigo}-${i.nome}</td><td class="p-4 font-black text-xs ${estColor}">${i.estoque} <span class="text-[8px] opacity-40">un</span></td><td class="p-4 text-[10px] font-bold text-emerald-600">R$ ${Number(i.valor).toFixed(2)}</td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.edit('produto','${i.id}')" class="text-blue-600 p-2"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="App.delete('produto','${i.id}')" class="text-red-400 p-2"><i class="fa-solid fa-trash text-xs"></i></button></td></tr>`;
                     }
                     if(type === 'venda') {
-                        const c = db.cliente.find(x => x.id === i.cliId); const p = db.produto.find(x => x.id === i.prodId);
-                        return `<tr class="hover:bg-slate-50 text-[11px]"><td class="p-4 font-bold">#${i.codigo} | ${c?.nome||'Excl'}</td><td class="p-4 font-bold text-emerald-700">R$ ${i.total.toFixed(2)}<br><span class="opacity-50 text-[9px] uppercase">${i.pag} | ${i.rota}</span></td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.printVenda('${i.id}')" class="text-slate-500 p-2"><i class="fa-solid fa-print text-xs"></i></button><button onclick="App.delete('venda','${i.id}')" class="text-red-300 p-2"><i class="fa-solid fa-times text-xs"></i></button></td></tr>`;
+                        const c = db.cliente.find(x => x.id === i.cliId); 
+                        const p = db.produto.find(x => x.id === i.prodId);
+                        return `<tr class="hover:bg-slate-50 text-[11px]">
+                            <td class="p-4"><input type="checkbox" class="venda-select" data-id="${i.id}"></td>
+                            <td class="p-4 font-bold">#${i.codigo} | ${c?.nome||'Excl'}</td>
+                            <td class="p-4 font-bold text-emerald-700">R$ ${i.total.toFixed(2)}<br><span class="opacity-50 text-[9px] uppercase">${i.pag} | ${i.rota}</span></td>
+                            <td class="p-4 text-right flex justify-end gap-1">
+                                <button onclick="App.printVenda('${i.id}')" class="text-slate-500 p-2" title="Imprimir Comanda"><i class="fa-solid fa-print text-xs"></i></button>
+                                <button onclick="App.delete('venda','${i.id}')" class="text-red-300 p-2" title="Excluir"><i class="fa-solid fa-times text-xs"></i></button>
+                            </td></tr>`;
                     }
                 }).join('');
             },
@@ -347,20 +369,29 @@
             },
             handleSave: (t, e) => {
                 e.preventDefault(); const p = t[0];
-                let obj = { id: UI.get(`${p}-id`).value || Date.now().toString(), codigo: UI.get(`${p}-codigo`).value };
-                if(t !== 'venda') obj.nome = UI.get(`${p}-nome`).value;
+                let objId = UI.get(`${p}-id`).value;
+                let obj = { id: objId || Date.now().toString() };
+                
+                // Correção: Venda não tem campo de código manual na UI
+                if(t !== 'venda') {
+                    obj.nome = UI.get(`${p}-nome`).value;
+                    obj.codigo = UI.get(`${p}-codigo`).value;
+                }
 
                 if(t === 'cliente') Object.assign(obj, { tel: UI.get('c-tel').value, cidade: UI.get('c-cidade').value, bairro: UI.get('c-bairro').value, endereco: UI.get('c-endereco').value });
                 else if(t === 'produto') {
                     Object.assign(obj, { ean: UI.get('p-ean').value, ncm: UI.get('p-ncm').value, categoria: UI.get('p-categoria').value, custo: UI.get('p-custo').value, valor: UI.get('p-valor').value, estoque: Number(UI.get('p-estoque').value), tipo: UI.get('p-tipo').value, isTemp: UI.get('p-isTemp').checked });
                     if(obj.tipo === 'kit') obj.items = Array.from(document.querySelectorAll('.kit-check:checked')).map(ck => ({ id: ck.dataset.pid, qty: Number(document.querySelector(`.kit-qty[data-pid="${ck.dataset.pid}"]`).value) }));
                 } else if(t === 'venda') {
-                    const prod = DB.load().produto.find(x => x.id === UI.get('v-produto').value);
-                    if(!prod) return;
-                    Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now() });
-                    
-                    // Baixa de Estoque
+                    const prodSelect = UI.get('v-produto');
+                    const prodId = prodSelect.value;
                     const db = DB.load();
+                    const prod = db.produto.find(x => x.id === prodId);
+                    if(!prod) return alert('Produto não selecionado!');
+                    
+                    Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now(), obs: UI.get('v-obs').value });
+                    
+                    // Baixa de Estoque Real-time
                     const deduct = (id, q) => {
                         const target = db.produto.find(x => x.id === id);
                         if(target) target.estoque -= q;
@@ -369,18 +400,72 @@
                     else deduct(prod.id, obj.qty);
                     DB.saveAll(db);
                 }
-                DB.save(t, obj); UI.resetForm(t); UI.render(t);
+                DB.save(t, obj); 
+                UI.resetForm(t); 
+                UI.render(t);
             },
             printVenda: (id) => {
                 const db = DB.load(); const v = db.venda.find(x => x.id === id); const c = db.cliente.find(x => x.id === v.cliId); const p = db.produto.find(x => x.id === v.prodId);
-                UI.get('print-area').innerHTML = `<div style="font-family:monospace; padding:10px;"><b>#${v.codigo}</b><br>CLI: ${c?.nome||'Excl'}<br>PROD: ${v.qty}x ${p?.nome||'Excl'}<br>ROTA: ${v.rota} | PAG: ${v.pag}</div>`;
+                let kitHtml = ""; 
+                if(p && p.tipo === 'kit' && p.items) {
+                    kitHtml = `<div style="border-top:1px dashed #000; padding-top:5px; margin-top:5px; font-size:11px;"><b>LISTA DE SEPARAÇÃO:</b><br>` + 
+                        p.items.map(ki => {
+                            const sub = db.produto.find(x => x.id === ki.id);
+                            return `• ${ki.qty * v.qty}x ${sub?.nome || 'Item Excl'}`;
+                        }).join('<br>') + `</div>`;
+                }
+                UI.get('print-area').innerHTML = `
+                    <div style="font-family:monospace; width: 100%; max-width: 300px; padding: 10px;">
+                        <center><h1 style="font-size: 24px;">PEDIDO #${v.codigo}</h1><b style="background:#000;color:#fff;padding:2px 10px;">ROTA: ${v.rota}</b></center>
+                        <br><b>CLIENTE:</b> ${c?.nome || 'N/A'}<br>
+                        <b>CIDADE/BAIRRO:</b> ${c?.cidade || '-'}/${c?.bairro || '-'}<br>
+                        <b>ENDEREÇO:</b> ${c?.endereco || '-'}<br>
+                        <hr style="border:1px solid #000;margin:10px 0">
+                        <div style="font-size:16px;"><b>${v.qty}x ${p?.nome}</b></div>
+                        ${kitHtml}
+                        <hr style="border:1px solid #000;margin:10px 0">
+                        <b>PAGAMENTO:</b> ${v.pag.toUpperCase()}<br>
+                        <div style="font-size:20px; text-align:right;"><b>TOTAL: R$ ${v.total.toFixed(2)}</b></div>
+                        <br><b>OBS:</b> ${v.obs || '-'}<br>
+                        <center><br>ENTERPRISE CORE - LOGÍSTICA</center>
+                    </div>`;
                 window.print();
             },
             edit: (t, id) => { const i = DB.load()[t].find(x => x.id === id); if(i) UI.fillForm(t, i); },
             delete: (t, id) => { if(confirm('Excluir definitivamente?')) { DB.delete(t, id); UI.render(t); } }
         };
 
-        const ExportEngine = { export: () => { const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(DB.load())], {type: 'application/json'})), download: 'backup.json' }); a.click(); } };
+        const ExportEngine = {
+            exportAll: () => { 
+                const a = Object.assign(document.createElement('a'), { 
+                    href: URL.createObjectURL(new Blob([JSON.stringify(DB.load())], {type: 'application/json'})), 
+                    download: `backup_completo_${Date.now()}.json` 
+                }); 
+                a.click(); 
+            },
+            exportSelectedSales: () => {
+                const db = DB.load();
+                const selectedIds = Array.from(document.querySelectorAll('.venda-select:checked')).map(cb => cb.dataset.id);
+                if(!selectedIds.length) return alert('Selecione ao menos uma venda!');
+
+                const report = selectedIds.map(id => {
+                    const venda = db.venda.find(v => v.id === id);
+                    const cliente = db.cliente.find(c => c.id === venda.cliId);
+                    const produto = db.produto.find(p => p.id === venda.prodId);
+                    return {
+                        ...venda,
+                        detalhes_cliente: cliente || "Cliente excluído",
+                        detalhes_produto: produto || "Produto excluído"
+                    };
+                });
+
+                const a = Object.assign(document.createElement('a'), { 
+                    href: URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'})), 
+                    download: `relatorio_vendas_${Date.now()}.json` 
+                }); 
+                a.click();
+            }
+        };
         window.onload = App.init;
     </script>
 </body>
