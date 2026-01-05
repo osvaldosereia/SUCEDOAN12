@@ -32,7 +32,6 @@
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-        /* Custom Checkbox */
         .cb-custom { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #cbd5e1; appearance: none; cursor: pointer; position: relative; }
         .cb-custom:checked { background-color: #4f46e5; border-color: #4f46e5; }
         .cb-custom:checked::after { content: '✓'; color: white; position: absolute; top: -2px; left: 3px; font-weight: bold; }
@@ -119,7 +118,7 @@
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                 <div class="p-3 bg-slate-50 border-b flex justify-between items-center">
                     <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Base de Clientes</span>
-                    <input type="text" id="search" oninput="renderClients()" placeholder="Buscar por nome ou cód..." class="text-xs border p-1.5 px-3 rounded-lg w-48 md:w-64">
+                    <input type="text" id="search" oninput="renderClients()" placeholder="Buscar..." class="text-xs border p-1.5 px-3 rounded-lg w-48">
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
@@ -143,33 +142,22 @@
                 <div class="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 text-xl">🚚</div>
                 <div>
                     <h2 class="text-sm font-black uppercase">Processamento de Entregas</h2>
-                    <p class="text-xs text-slate-400">Carregue o JSON de pedidos e selecione as rotas para exportar o App.</p>
+                    <p class="text-xs text-slate-400">Carregue o JSON de pedidos e selecione as rotas para enviar ao WhatsApp.</p>
                 </div>
                 <div class="flex flex-wrap justify-center gap-3">
                     <label class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold text-xs cursor-pointer shadow-md hover:bg-indigo-700 transition-all">
                         📂 Carregar Pedidos <input type="file" class="hidden" accept=".json" onchange="importOrders(event)">
                     </label>
-                    <button id="btn-export-app" onclick="exportSelectedRoutes()" class="hidden bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-md hover:bg-emerald-700 transition-all">📱 Exportar App Selecionado</button>
+                    <button id="btn-export-app" onclick="exportSelectedRoutes()" class="hidden bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-md hover:bg-emerald-700 transition-all">📱 Enviar App Selecionado</button>
                 </div>
             </div>
             <div id="route-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </section>
     </main>
 
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl">
-            <h3 class="font-black uppercase text-slate-800 mb-2">Confirmar Ação</h3>
-            <p id="confirm-text" class="text-sm text-slate-600 mb-6">Deseja realmente excluir este registo?</p>
-            <div class="flex gap-2">
-                <button onclick="closeConfirm()" class="flex-1 py-2 bg-slate-100 rounded-lg font-bold text-xs">Cancelar</button>
-                <button id="confirm-btn-ok" class="flex-1 py-2 bg-red-500 text-white rounded-lg font-bold text-xs">Sim, Excluir</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         let clients = [], importedOrders = [];
-        const adminPhone = "55998150975"; // Número do Admin
+        const adminPhone = "55998150975";
         const $ = i => document.getElementById(i);
 
         window.onload = () => {
@@ -212,7 +200,7 @@
             localStorage.setItem('elite_clients', JSON.stringify(clients));
             resetForm(); 
             renderClients();
-            showToast(idx === -1 ? "Cliente salvo!" : "Cadastro atualizado!");
+            showToast("Cadastro Processado!");
         };
 
         const resetForm = () => { $('client-form').reset(); $('edit-idx').value = -1; updateAutoCode(); };
@@ -226,24 +214,11 @@
                     <td class="p-4 font-bold text-slate-700">${c.name}</td>
                     <td class="p-4"><span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-black">${c.route}</span></td>
                     <td class="p-4 text-center flex justify-center gap-3">
-                        <button onclick="editClient(${clients.indexOf(c)})" class="hover:scale-125 transition-transform">✏️</button>
-                        <button onclick="confirmDelete(${clients.indexOf(c)})" class="hover:scale-125 transition-transform text-red-400">🗑️</button>
+                        <button onclick="editClient(${clients.indexOf(c)})">✏️</button>
+                        <button onclick="deleteClient(${clients.indexOf(c)})" class="text-red-400">🗑️</button>
                     </td>
                 </tr>`).join('');
         };
-
-        const confirmDelete = i => {
-            $('confirm-modal').classList.remove('hidden');
-            $('confirm-btn-ok').onclick = () => {
-                clients.splice(i, 1);
-                localStorage.setItem('elite_clients', JSON.stringify(clients));
-                renderClients();
-                closeConfirm();
-                showToast("Registo removido.");
-            };
-        };
-
-        const closeConfirm = () => $('confirm-modal').classList.add('hidden');
 
         const editClient = i => {
             const c = clients[i]; $('edit-idx').value = i; $('c-code').value = c.code; $('c-name').value = c.name;
@@ -251,6 +226,8 @@
             $('c-route').value = c.route; $('c-address').value = c.address; $('c-map').value = c.map; $('c-obs').value = c.obs || '';
             window.scrollTo({top: 0, behavior: 'smooth'});
         };
+
+        const deleteClient = i => { if(confirm("Excluir cliente?")) { clients.splice(i, 1); localStorage.setItem('elite_clients', JSON.stringify(clients)); renderClients(); } };
 
         const importOrders = e => {
             const f = e.target.files[0]; if(!f) return;
@@ -261,8 +238,7 @@
                     importedOrders = Array.isArray(d) ? d : (d.ords || []); 
                     $('btn-export-app').classList.remove('hidden'); 
                     processLogistics(); 
-                    showToast("Pedidos importados!");
-                } catch(e){ alert("Erro ao ler JSON."); } 
+                } catch(e){ alert("Erro no JSON."); } 
             };
             r.readAsText(f);
         };
@@ -270,13 +246,11 @@
         const processLogistics = () => {
             const cont = $('route-container'); cont.innerHTML = '';
             const routes = { "COXIPO": [], "VG": [], "CBA": [], "CPA": [], "DESCONHECIDO": [] };
-            
             importedOrders.forEach(o => { 
                 const c = clients.find(cl => cl.code === o.clientCode); 
                 const k = c ? c.route : "DESCONHECIDO"; 
                 routes[k].push({ o, c }); 
             });
-
             Object.keys(routes).forEach(k => {
                 if(routes[k].length === 0) return;
                 const card = document.createElement('div');
@@ -293,26 +267,19 @@
                         ${routes[k].map(it => `
                             <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm space-y-3">
                                 <div class="flex justify-between items-start border-b pb-2">
-                                    <div class="text-2xl font-black text-indigo-600 leading-none uppercase">#${it.o.code}</div>
-                                    <div class="text-lg font-black leading-none text-slate-800">R$ ${it.o.total.toFixed(2)}</div>
+                                    <div class="text-2xl font-black text-indigo-600 uppercase">#${it.o.code}</div>
+                                    <div class="text-lg font-black text-slate-800">R$ ${it.o.total.toFixed(2)}</div>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <div class="text-sm font-black uppercase text-slate-800">${it.c ? it.c.name : 'NÃO CADASTRADO'}</div>
-                                    <span class="text-[9px] font-black bg-slate-100 px-2 py-1 rounded border">${it.o.payment || 'A DEFINIR'}</span>
+                                    <span class="text-[9px] font-black bg-slate-100 px-2 py-1 rounded border uppercase">${it.o.payment || 'A DEFINIR'}</span>
                                 </div>
                                 <div class="bg-indigo-600 p-3 rounded-lg text-white">
-                                    <div class="text-base font-black leading-tight uppercase">${it.c ? it.c.address : 'Sem endereço'}</div>
+                                    <div class="text-base font-black uppercase">${it.c ? it.c.address : 'Sem endereço'}</div>
                                     <div class="text-[10px] font-bold opacity-80 uppercase">${it.c ? it.c.neighborhood + ' • ' + it.c.city : ''}</div>
                                 </div>
-                                ${it.c && it.c.obs ? `<div class="bg-orange-100 p-3 rounded-lg border-l-4 border-orange-500 text-xs font-bold text-orange-950 uppercase">REF: ${it.c.obs}</div>` : ''}
-                                ${it.o.obs ? `<div class="bg-blue-100 p-3 rounded-lg border-l-4 border-blue-500 text-xs font-bold text-blue-950 uppercase">NOTA: ${it.o.obs}</div>` : ''}
-                                <div class="space-y-1">
-                                    <div class="text-[9px] font-black text-slate-400 uppercase">Itens:</div>
-                                    ${it.o.items.map(p => `<div class="flex items-center gap-2 font-bold text-base uppercase"><span>${p.qty}x ${p.name}</span></div>`).join('')}
-                                </div>
                             </div>`).join('')}
-                    </div>
-                `;
+                    </div>`;
                 cont.appendChild(card);
             });
         };
@@ -320,6 +287,8 @@
         const exportSelectedRoutes = () => {
             const selected = Array.from(document.querySelectorAll('.route-sel:checked')).map(cb => cb.dataset.route);
             if(selected.length === 0) return alert("Selecione pelo menos uma rota!");
+            const driverPhone = prompt("Número do Entregador (com DDD):", "65");
+            if(!driverPhone) return;
 
             const filteredOrders = importedOrders.filter(o => {
                 const c = clients.find(cl => cl.code === o.clientCode);
@@ -328,21 +297,16 @@
 
             const payload = { orders: filteredOrders, clients: clients, admin: adminPhone };
             
-            // CONTEÚDO DO APP DO ENTREGADOR
-            const appHtml = `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Elite App</title><script src="https://cdn.tailwindcss.com"><\/script><style>body{font-family:sans-serif;background:#0f172a;color:#fff;-webkit-tap-highlight-color:transparent;}.done-card{filter:grayscale(1) opacity(0.6); pointer-events:none;}</style></head><body class="p-4"><div class="max-w-md mx-auto space-y-4"><header class="text-center py-4"><h1 class="text-3xl font-black text-indigo-400 uppercase tracking-tighter">Elite <span class="text-white font-light">App</span></h1></header><div class="bg-white/5 p-4 rounded-3xl border border-white/10 space-y-4 shadow-2xl"><div class="text-[10px] font-black text-indigo-400 uppercase tracking-widest text-center">Roteiro do Dia</div><select id="sel" class="w-full bg-slate-800 p-4 rounded-2xl text-lg font-black border-2 border-indigo-500/30 outline-none text-white appearance-none"><option value="">-- SELECIONE A ENTREGA --</option></select><button onclick="load()" class="w-full bg-indigo-600 p-5 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all">ABRIR ENTREGA</button></div><div id="disp" class="hidden"></div></div><div id="m-pay" class="hidden fixed inset-0 bg-slate-950/95 z-[100] flex items-center justify-center p-6"><div class="bg-white rounded-[2.5rem] p-8 w-full max-w-xs space-y-5 border-t-8 border-indigo-600 text-slate-900 shadow-2xl"><h3 class="text-xl font-black text-center">CONFIRMAR PAGAMENTO</h3><p class="text-center font-bold text-indigo-600">Forma Esperada: <span id="pay-exp" class="uppercase"></span></p><button onclick="finalDone(true)" class="w-full bg-emerald-600 text-white p-5 rounded-2xl font-black text-lg uppercase shadow-lg">✅ PAGOU TUDO CERTO</button><button onclick="finalDone(false)" class="w-full bg-orange-500 text-white p-5 rounded-2xl font-black text-lg uppercase shadow-lg">⚠️ PAGOU DIFERENTE</button><button onclick="showModal('m-pay',false)" class="w-full text-slate-400 font-bold py-2 uppercase text-xs">Voltar</button></div></div><script>const d=${JSON.stringify(payload)};let o=null,c=null;const doneIds=JSON.parse(localStorage.getItem('elite_done')||'[]');window.onload=()=>{const s=document.getElementById('sel');d.orders.forEach(x=>{if(doneIds.includes(x.id))return;const cl=d.clients.find(y=>y.code==x.clientCode);const op=document.createElement('option');op.value=x.id;op.innerText="#"+x.code+" - "+(cl?cl.name:"???");s.appendChild(op);});};function showModal(i,v){document.getElementById(i).classList.toggle('hidden',!v);}function load(){const id=document.getElementById('sel').value;if(!id)return;o=d.orders.find(x=>x.id==id);c=d.clients.find(x=>x.code==o.clientCode);const dv=document.getElementById('disp');dv.classList.remove('hidden');dv.innerHTML=\`<div class="bg-white p-6 rounded-[2.5rem] space-y-5 text-slate-900 border-4 border-indigo-500 shadow-2xl mt-4"><div class="flex justify-between items-center border-b border-slate-100 pb-3"><div class="text-4xl font-black text-indigo-600">#\${o.code}</div><div class="text-3xl font-black text-slate-800 text-right">R$ \${o.total.toFixed(2)}<br><span class="text-xs bg-slate-100 px-2 py-0.5 rounded uppercase">\${o.payment||'A DEFINIR'}</span></div></div><div class="text-2xl font-black uppercase text-slate-700 leading-tight">\${c?c.name:'NÃO ENCONTRADO'}</div><div class="bg-indigo-600 p-5 rounded-[2rem] text-white shadow-xl text-2xl font-black uppercase leading-tight">\${c?c.address:'---'}<br><span class="text-sm font-bold opacity-75">\${c?c.neighborhood:''}</span></div><div class="grid grid-cols-2 gap-3">\${c&&c.wa?\`<button onclick="msg('chegando')" class="bg-sky-500 text-white p-4 rounded-2xl text-center font-black text-xs shadow-md">📱 CHEGANDO</button><button onclick="msg('cheguei')" class="bg-emerald-500 text-white p-4 rounded-2xl text-center font-black text-xs shadow-md">🏠 CHEGUEI</button><a href="tel:\${c.wa}" class="bg-slate-800 text-white p-4 rounded-2xl text-center font-black text-xs shadow-md">📞 LIGAR</a>\`:''}\${c&&c.map?\`<a href="\${c.map}" class="bg-rose-600 text-white p-4 rounded-2xl text-center font-black text-xs shadow-md">📍 MAPA</a>\`:''}</div>\${c&&c.obs?\`<div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-base font-bold uppercase text-orange-950">REF: \${c.obs}</div>\`:''}<div class="bg-slate-50 p-5 rounded-3xl space-y-2"><div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">CONFERIR:</div>\${o.items.map(i=>\`<div class="flex items-center gap-3 font-black text-xl uppercase text-slate-800"><div class="w-6 h-6 border-4 border-indigo-400 rounded-lg"></div>\${i.qty}x \${i.name}</div>\`).join('')}</div><div class="grid gap-3"><button onclick="confirmFlow()" class="bg-emerald-600 text-white p-6 rounded-3xl font-black text-2xl uppercase shadow-xl">✅ ENTREGUE</button><button onclick="cancelDelivery()" class="bg-red-500 text-white p-4 rounded-2xl font-black text-lg uppercase shadow-xl">❌ CANCELADO</button></div></div>\`;window.scrollTo({top:dv.offsetTop-20,behavior:'smooth'});}function msg(t){const txt = t === 'chegando' ? \`Olá *\${c.name}*, aqui é da Elite. Estamos a caminho com sua entrega!\` : \`Oi *\${c.name}*, cheguei aqui na sua residência!\`; window.open("https://wa.me/55"+c.wa+"?text="+encodeURIComponent(txt),"_blank");}function confirmFlow(){document.getElementById('pay-exp').innerText = o.payment || 'A DEFINIR'; showModal('m-pay',true);}function finalDone(ok){const note = ok ? "" : "%0A⚠️ *AVISO: Pagamento foi feito de forma diferente!*"; const msg=\`✅ *ENTREGA CONCLUÍDA*%0A%0A*Pedido:* #\${o.code}%0A*Cliente:* \${c?c.name:'---'}%0A*Valor:* R$ \${o.total.toFixed(2)}%0A*Pagamento:* \${o.payment}\${note}\`; window.open("https://wa.me/"+d.admin+"?text="+msg,"_blank"); finish();}function cancelDelivery(){const msg=\`❌ *ENTREGA CANCELADA*%0A%0A*Pedido:* #\${o.code}%0A*Cliente:* \${c?c.name:'---'}%0A*Motivo:* Informe ao administrador.\`; window.open("https://wa.me/"+d.admin+"?text="+msg,"_blank"); finish();}function finish(){doneIds.push(o.id); localStorage.setItem('elite_done', JSON.stringify(doneIds)); location.reload();}<\/script></body></html>`;
+            const appHtml = `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Elite App</title><script src="https://cdn.tailwindcss.com"><\/script><style>body{font-family:sans-serif;background:#0f172a;color:#fff;-webkit-tap-highlight-color:transparent;}.done-item{opacity:0.6;filter:grayscale(1);pointer-events:none;}</style></head><body class="p-4"><div class="max-w-md mx-auto space-y-4"><header class="text-center py-4"><h1 class="text-3xl font-black text-indigo-400 uppercase tracking-tighter">Elite <span class="text-white font-light">App</span></h1></header><div class="bg-white/5 p-4 rounded-3xl border border-white/10 space-y-4 shadow-2xl"><div class="text-[10px] font-black text-indigo-400 uppercase tracking-widest text-center">Roteiro Ativo</div><select id="sel" class="w-full bg-slate-800 p-4 rounded-2xl text-lg font-black border-2 border-indigo-500/30 outline-none text-white appearance-none"><option value="">-- SELECIONE A ENTREGA --</option></select><button onclick="load()" class="w-full bg-indigo-600 p-5 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all">ABRIR ENTREGA</button></div><div id="disp" class="hidden"></div></div><div id="m-pay" class="hidden fixed inset-0 bg-slate-950/95 z-[100] flex items-center justify-center p-6"><div class="bg-white rounded-[2.5rem] p-8 w-full max-w-xs space-y-5 border-t-8 border-indigo-600 text-slate-900 shadow-2xl"><h3 class="text-xl font-black text-center uppercase">Confirmar Recebimento</h3><div id="pay-flow-btns" class="grid gap-3"></div><button onclick="showModal('m-pay',false)" class="w-full text-slate-400 font-bold py-2 uppercase text-[10px]">Voltar</button></div></div><script>const d=${JSON.stringify(payload)};let o=null,c=null;const doneIds=JSON.parse(localStorage.getItem('elite_done')||'[]');window.onload=()=>{const s=document.getElementById('sel');d.orders.forEach(x=>{const cl=d.clients.find(y=>y.code==x.clientCode);const op=document.createElement('option');op.value=x.id;const st=doneIds.includes(x.id)?" [FINALIZADO]":"";op.innerText="#"+x.code+" - "+(cl?cl.name:"???")+st;s.appendChild(op);});};function showModal(i,v){document.getElementById(i).classList.toggle('hidden',!v);}function load(){const id=document.getElementById('sel').value;if(!id)return;o=d.orders.find(x=>x.id==id);c=d.clients.find(x=>x.code==o.clientCode);const isDone=doneIds.includes(o.id);const dv=document.getElementById('disp');dv.classList.remove('hidden');dv.innerHTML=\`<div class="bg-white p-6 rounded-[2.5rem] space-y-5 text-slate-900 border-4 \${isDone?'border-slate-300':'border-indigo-500'} shadow-2xl mt-4 \${isDone?'opacity-70':''}">\${isDone?'<div class="bg-slate-800 text-white text-center py-2 rounded-full text-xs font-black uppercase">Entrega Já Finalizada</div>':''}<div class="flex justify-between items-center border-b pb-3"><div class="text-4xl font-black text-indigo-600">#\${o.code}</div><div class="text-3xl font-black text-slate-800 text-right">R$ \${o.total.toFixed(2)}<br><span class="text-xs bg-slate-100 px-2 py-0.5 rounded uppercase">\${o.payment||'A DEFINIR'}</span></div></div><div class="text-2xl font-black uppercase text-slate-700 leading-tight">\${c?c.name:'NÃO ENCONTRADO'}</div><div class="bg-indigo-600 p-5 rounded-[2rem] text-white shadow-xl text-2xl font-black uppercase leading-tight">\${c?c.address:'---'}<br><span class="text-sm font-bold opacity-75">\${c?c.neighborhood:''} • \${c?c.city:''}</span></div><div class="grid grid-cols-2 gap-3"><button onclick="msg('chegando')" class="bg-sky-500 text-white p-4 rounded-2xl text-center font-black text-[10px] shadow-md">📱 CHEGANDO</button><button onclick="msg('cheguei')" class="bg-emerald-500 text-white p-4 rounded-2xl text-center font-black text-[10px] shadow-md">🏠 CHEGUEI</button><a href="tel:\${c?c.wa:''}" class="bg-slate-800 text-white p-4 rounded-2xl text-center font-black text-[10px] shadow-md flex items-center justify-center">LIGAR</a>\${c&&c.map?\`<a href="\${c.map}" target="_blank" class="bg-rose-600 text-white p-4 rounded-2xl text-center font-black text-[10px] shadow-md flex items-center justify-center">MAPA</a>\`:''}</div>\${c&&c.obs?\`<div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-base font-bold uppercase text-orange-950 shadow-inner">REF: \${c.obs}</div>\`:''}<div class="bg-slate-50 p-5 rounded-3xl space-y-3"><div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Conferência:</div>\${o.items.map(i=>\`<div class="space-y-1"><div class="flex items-center gap-3 font-black text-xl uppercase text-slate-800"><div class="w-6 h-6 border-4 border-indigo-400 rounded-lg"></div>\${i.qty}x \${i.name}</div><div class="pl-9 text-xs font-bold text-indigo-500 uppercase">R$ \${i.price.toFixed(2)} | \${o.payment||'N/A'}</div></div>\`).join('')}</div>\${!isDone?\`<div class="grid gap-3"><button onclick="confirmFlow()" class="bg-emerald-600 text-white p-6 rounded-3xl font-black text-xl uppercase shadow-xl transition-all active:scale-95">PAGOU NO \${o.payment||'VALOR TOTAL'}</button><button onclick="payDiff()" class="bg-orange-500 text-white p-4 rounded-2xl font-black text-lg uppercase shadow-xl transition-all active:scale-95">⚠️ PAGOU DIFERENTE</button><button onclick="cancelDelivery()" class="bg-red-500 text-white p-4 rounded-2xl font-black text-lg uppercase shadow-xl transition-all active:scale-95">❌ CANCELADO</button></div>\`:''}</div>\`;window.scrollTo({top:dv.offsetTop-20,behavior:'smooth'});}function msg(t){const txt=t==='chegando'?\`Olá *\${c.name}*, aqui é da Elite. Estamos a caminho com sua entrega!\`:\`Oi *\${c.name}*, cheguei aqui na sua residência!\`;window.open("https://wa.me/55"+c.wa+"?text="+encodeURIComponent(txt),"_blank");}function confirmFlow(){finalDone(o.payment||'DINHEIRO');}function payDiff(){const b=$('pay-flow-btns');b.innerHTML=['DINHEIRO','CARTÃO','PIX'].map(m=>\`<button onclick="finalDone('\${m}')" class="bg-slate-100 hover:bg-indigo-500 hover:text-white p-4 rounded-2xl font-black text-lg uppercase transition-all shadow-sm">\${m}</button>\`).join('');showModal('m-pay',true);}function finalDone(m){const msg=\`✅ *ENTREGA CONCLUÍDA*%0A%0A*Pedido:* #\${o.code}%0A*Cliente:* \${c.name}%0A*Cidade:* \${c.city}%0A*Bairro:* \${c.neighborhood}%0A*Pagamento:* \${m}%0A*Valor:* R$ \${o.total.toFixed(2)}\`;window.open("https://wa.me/"+d.admin+"?text="+msg,"_blank");finish();}function cancelDelivery(){const msg=\`❌ *ENTREGA CANCELADA*%0A%0A*Pedido:* #\${o.code}%0A*Cliente:* \${c.name}%0A*Bairro:* \${c.neighborhood}%0A*Motivo:* Informe o motivo no chat.\`;window.open("https://wa.me/"+d.admin+"?text="+msg,"_blank");finish();}function finish(){if(!doneIds.includes(o.id))doneIds.push(o.id);localStorage.setItem('elite_done',JSON.stringify(doneIds));location.reload();}<\/script></body></html>`;
             
-            const blob = new Blob([appHtml], { type: 'text/html' });
-            const dl = document.createElement('a');
-            dl.href = URL.createObjectURL(blob);
-            dl.download = `elite_entregador_${selected.join('_')}.html`;
-            dl.click();
-            showToast("App Gerado para: " + selected.join(', '));
+            const waUrl = "https://wa.me/55" + driverPhone + "?text=" + encodeURIComponent("COPIE TODO O CÓDIGO ABAIXO E COLE NO NAVEGADOR:\n\n" + appHtml);
+            window.open(waUrl, "_blank");
+            showToast("Link enviado ao WhatsApp!");
         };
 
         const dbExport = () => {
             const dl = document.createElement('a'); dl.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clients));
-            dl.download = `backup_clientes_${new Date().toISOString().split('T')[0]}.json`; dl.click();
-            showToast("Backup feito!");
+            dl.download = `backup_clientes.json`; dl.click();
         };
 
         const dbImport = e => {
