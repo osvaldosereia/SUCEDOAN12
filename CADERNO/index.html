@@ -12,9 +12,8 @@
         .active { display:flex !important; }
         .btn-transition { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .btn-transition:active { transform: scale(0.95); }
-        input:focus, select:focus { outline: none; ring: 2px; ring-color: #3b82f6; border-color: #3b82f6; }
+        input:focus, select:focus, textarea:focus { outline: none; ring: 2px; ring-color: #3b82f6; border-color: #3b82f6; }
         @media print { .no-print { display: none; } }
-        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -22,7 +21,6 @@
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen pb-10">
 
-    <!-- Header Modernizado -->
     <header class="bg-blue-600 text-white shadow-lg no-print sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center gap-2">
@@ -47,7 +45,6 @@
 
     <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6 no-print">
         
-        <!-- Navegação Estilo Pill -->
         <nav class="flex bg-slate-200/50 p-1.5 rounded-xl w-fit mx-auto md:mx-0">
             <button onclick="tab('p')" id="tp" class="py-2.5 px-6 rounded-lg font-bold text-sm btn-transition bg-white text-blue-600 shadow-sm">
                 Produtos
@@ -57,7 +54,6 @@
             </button>
         </nav>
 
-        <!-- SEÇÃO PRODUTOS -->
         <section id="sp" class="space-y-6 animate-in fade-in duration-500">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <div class="flex justify-between items-center mb-6">
@@ -70,17 +66,14 @@
                 
                 <form id="f" class="grid grid-cols-1 md:grid-cols-12 gap-5" onsubmit="saveP(event)">
                     <input type="hidden" id="idx" value="-1">
-                    
                     <div class="md:col-span-6">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Nome Completo</label>
                         <input type="text" id="n" placeholder="Ex: Cerveja Lata 350ml" required class="w-full border-slate-200 border-2 p-3.5 rounded-xl bg-slate-50 focus:bg-white transition-all">
                     </div>
-
                     <div class="md:col-span-3">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Código ID</label>
                         <input type="text" id="c" readonly class="w-full bg-slate-100 border-slate-200 border-2 p-3.5 rounded-xl font-mono text-blue-600 font-bold">
                     </div>
-
                     <div class="md:col-span-3 flex items-center gap-4 pt-4 md:pt-0">
                         <label class="flex items-center gap-2 cursor-pointer group">
                             <input type="checkbox" id="ik" class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
@@ -91,32 +84,20 @@
                             <span class="text-sm font-semibold text-orange-700 group-hover:text-orange-600 transition">Temp.</span>
                         </label>
                     </div>
-
                     <div class="md:col-span-3">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Preço Custo</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
-                            <input type="number" step="0.01" id="ct" placeholder="0,00" required class="w-full border-slate-200 border-2 p-3.5 pl-11 rounded-xl bg-slate-50 focus:bg-white transition-all">
-                        </div>
+                        <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span><input type="number" step="0.01" id="ct" placeholder="0,00" required class="w-full border-slate-200 border-2 p-3.5 pl-11 rounded-xl bg-slate-50 focus:bg-white transition-all"></div>
                     </div>
-
                     <div class="md:col-span-3">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Preço Venda</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
-                            <input type="number" step="0.01" id="vd" placeholder="0,00" required class="w-full border-slate-200 border-2 p-3.5 pl-11 rounded-xl bg-slate-50 focus:bg-white transition-all">
-                        </div>
+                        <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span><input type="number" step="0.01" id="vd" placeholder="0,00" required class="w-full border-slate-200 border-2 p-3.5 pl-11 rounded-xl bg-slate-50 focus:bg-white transition-all"></div>
                     </div>
-
                     <div class="md:col-span-3">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Qtd em Estoque</label>
                         <input type="number" id="st" placeholder="0" required class="w-full border-slate-200 border-2 p-3.5 rounded-xl bg-slate-50 focus:bg-white transition-all">
                     </div>
-
                     <div class="md:col-span-3">
-                        <button type="submit" id="sb" class="w-full h-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg btn-transition flex items-center justify-center gap-2">
-                            <span>Salvar Produto</span>
-                        </button>
+                        <button type="submit" id="sb" class="w-full h-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg btn-transition flex items-center justify-center gap-2">Salvar Produto</button>
                     </div>
                 </form>
             </div>
@@ -130,12 +111,7 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-50 text-slate-400 text-[10px] uppercase font-black">
-                                <th class="p-4">Cód</th>
-                                <th class="p-4">Descrição</th>
-                                <th class="p-4">Status</th>
-                                <th class="p-4 text-right">Venda</th>
-                                <th class="p-4 text-center">Estoque</th>
-                                <th class="p-4 text-center">Gestão</th>
+                                <th class="p-4">Cód</th><th class="p-4">Descrição</th><th class="p-4">Status</th><th class="p-4 text-right">Venda</th><th class="p-4 text-center">Estoque</th><th class="p-4 text-center">Gestão</th>
                             </tr>
                         </thead>
                         <tbody id="tb" class="divide-y divide-slate-100 text-sm"></tbody>
@@ -144,7 +120,6 @@
             </div>
         </section>
 
-        <!-- SEÇÃO PEDIDOS -->
         <section id="so" class="hidden space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
@@ -154,7 +129,7 @@
                             <span class="w-2 h-6 bg-green-500 rounded-full"></span>
                             Novo Pedido
                         </h2>
-                        <div class="bg-blue-50 text-blue-700 font-mono font-black px-4 py-2 rounded-xl text-lg border border-blue-100 shadow-sm">
+                        <div class="bg-blue-50 text-blue-700 font-mono font-black px-4 py-2 rounded-xl text-lg border border-blue-100">
                             #<span id="on">00</span>
                         </div>
                     </div>
@@ -173,9 +148,14 @@
                         </div>
                     </div>
 
-                    <div class="mt-6">
+                    <div class="mt-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Observações do Pedido</label>
+                        <textarea id="o-obs" rows="2" placeholder="Ex: Entrega prioritária, cuidado com frágil..." class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50 focus:bg-white transition-all text-sm"></textarea>
+                    </div>
+
+                    <div class="mt-4">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Itens no Carrinho</label>
-                        <div class="border-2 border-slate-100 rounded-2xl min-h-[150px] max-h-[400px] overflow-y-auto bg-slate-50/30" id="ol">
+                        <div class="border-2 border-slate-100 rounded-2xl min-h-[150px] max-h-[300px] overflow-y-auto bg-slate-50/30" id="ol">
                             <p class="text-center text-slate-400 py-10 italic">Nenhum item adicionado...</p>
                         </div>
                     </div>
@@ -185,17 +165,16 @@
                             <p class="text-xs uppercase font-bold text-slate-400">Total a Pagar</p>
                             <h3 class="text-3xl font-black text-white" id="ov">R$ 0,00</h3>
                         </div>
-                        <button onclick="finO()" class="w-full md:w-auto bg-blue-500 hover:bg-blue-400 text-white font-black px-10 py-4 rounded-xl shadow-lg btn-transition text-lg uppercase tracking-tight">
-                            Finalizar Pedido
-                        </button>
+                        <button onclick="finO()" class="w-full md:w-auto bg-blue-500 hover:bg-blue-400 text-white font-black px-10 py-4 rounded-xl shadow-lg btn-transition text-lg uppercase tracking-tight">Finalizar Pedido</button>
                     </div>
                 </div>
 
                 <div class="lg:col-span-4 space-y-4">
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                        <h3 class="font-bold text-slate-800 border-b pb-3 mb-4 flex items-center gap-2">
-                            🕒 Histórico Recente
-                        </h3>
+                        <div class="flex justify-between items-center border-b pb-3 mb-4">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2">🕒 Histórico</h3>
+                            <button onclick="exportSelected()" class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-blue-100 btn-transition">Exportar Seleção</button>
+                        </div>
                         <div id="oh" class="space-y-3 max-h-[600px] overflow-y-auto pr-1"></div>
                     </div>
                 </div>
@@ -203,20 +182,14 @@
         </section>
     </main>
 
-    <!-- MODAL KIT -->
     <div id="km" class="modal">
-        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl mx-4 animate-in zoom-in-95 duration-200">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl mx-4">
             <div class="flex justify-between items-center border-b pb-4 mb-4">
                 <h3 class="text-xl font-black text-slate-800">Compor Kit</h3>
                 <button onclick="closeK()" class="text-slate-400 hover:text-slate-600 p-2">✕</button>
             </div>
-            <p class="text-sm text-slate-500 mb-4 bg-blue-50 p-3 rounded-xl border border-blue-100">
-                Os itens abaixo serão descontados do estoque quando este kit for vendido.
-            </p>
             <div id="kl" class="space-y-2 max-h-[40vh] overflow-y-auto pr-2"></div>
-            <button onclick="closeK()" class="w-full bg-slate-900 text-white mt-6 py-4 rounded-2xl font-black btn-transition shadow-lg">
-                Confirmar Composição
-            </button>
+            <button onclick="closeK()" class="w-full bg-slate-900 text-white mt-6 py-4 rounded-2xl font-black btn-transition shadow-lg">Confirmar Composição</button>
         </div>
     </div>
 
@@ -227,26 +200,20 @@
         window.onload = () => {
             try {
                 const sp = localStorage.getItem('p'), so = localStorage.getItem('o');
-                if(sp) ps = JSON.parse(sp); 
-                if(so) ords = JSON.parse(so);
+                if(sp) ps = JSON.parse(sp); if(so) ords = JSON.parse(so);
             } catch(e) { console.error("Erro no DB"); }
-            
-            setInterval(() => { 
-                const now = new Date();
-                $('clock').innerText = now.toLocaleDateString('pt-BR') + " • " + now.toLocaleTimeString('pt-BR'); 
-                checkExp(); 
-            }, 1000);
-            
+            setInterval(() => { const now = new Date(); $('clock').innerText = now.toLocaleDateString('pt-BR') + " • " + now.toLocaleTimeString('pt-BR'); checkExp(); }, 1000);
             updC(); render(); renderOH();
         };
 
         const updC = () => { if($('idx').value == -1) $('c').value = String(ps.reduce((m, p) => Math.max(m, parseInt(p.code) || 0), 0) + 1).padStart(4, '0'); };
         
         const tab = t => { 
-            $('sp').classList.toggle('hidden', t=='o'); 
-            $('so').classList.toggle('hidden', t=='p'); 
-            $('tp').className = t=='p' ? "py-2.5 px-6 rounded-lg font-bold text-sm btn-transition bg-white text-blue-600 shadow-sm" : "py-2.5 px-6 rounded-lg font-bold text-sm btn-transition text-slate-600"; 
-            $('to').className = t=='o' ? "py-2.5 px-6 rounded-lg font-bold text-sm btn-transition bg-white text-blue-600 shadow-sm" : "py-2.5 px-6 rounded-lg font-bold text-sm btn-transition text-slate-600"; 
+            $('sp').classList.toggle('hidden', t=='o'); $('so').classList.toggle('hidden', t=='p'); 
+            const activeClass = "py-2.5 px-6 rounded-lg font-bold text-sm btn-transition bg-white text-blue-600 shadow-sm";
+            const inactiveClass = "py-2.5 px-6 rounded-lg font-bold text-sm btn-transition text-slate-600";
+            $('tp').className = t=='p' ? activeClass : inactiveClass;
+            $('to').className = t=='o' ? activeClass : inactiveClass;
             if(t=='o') { updOS(); renderOH(); }
             updC();
         };
@@ -275,26 +242,11 @@
                 <tr class="hover:bg-slate-50 transition-colors">
                     <td class="p-4 font-mono font-bold text-blue-600">#${p.code}</td>
                     <td class="p-4 font-semibold text-slate-700">${p.name}</td>
-                    <td class="p-4">
-                        <div class="flex flex-wrap gap-1">
-                            ${p.isK?'<span class="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Kit</span>':''} 
-                            ${p.isT? (p.first?'<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Expirando</span>':'<span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Temp</span>'):''}
-                            ${!p.isK && !p.isT ? '<span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Padrão</span>' : ''}
-                        </div>
-                    </td>
+                    <td class="p-4"><div class="flex flex-wrap gap-1">${p.isK?'<span class="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Kit</span>':''} ${p.isT?(p.first?'<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Expirando</span>':'<span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Temp</span>'):''} ${!p.isK && !p.isT?'<span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Padrão</span>':''}</div></td>
                     <td class="p-4 text-right font-black text-slate-900">R$ ${p.sale.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
-                    <td class="p-4 text-center">
-                        <span class="inline-block px-3 py-1 rounded-lg font-black ${p.stock<5?'bg-red-50 text-red-600':'bg-slate-100 text-slate-700'}">${p.stock}</span>
-                    </td>
-                    <td class="p-4 text-center">
-                        <div class="flex justify-center gap-1">
-                            <button onclick="editP(${i})" title="Editar" class="p-2 hover:bg-blue-50 text-blue-600 rounded-lg btn-transition">✏️</button>
-                            <button onclick="dupP(${i})" title="Duplicar" class="p-2 hover:bg-green-50 text-green-600 rounded-lg btn-transition">📂</button>
-                            <button onclick="delP(${i})" title="Excluir" class="p-2 hover:bg-red-50 text-red-600 rounded-lg btn-transition">🗑️</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('') : `<tr><td colspan="6" class="p-10 text-center text-slate-400 font-medium italic">Nenhum produto cadastrado</td></tr>`;
+                    <td class="p-4 text-center"><span class="inline-block px-3 py-1 rounded-lg font-black ${p.stock<5?'bg-red-50 text-red-600':'bg-slate-100 text-slate-700'}">${p.stock}</span></td>
+                    <td class="p-4 text-center"><div class="flex justify-center gap-1"><button onclick="editP(${i})" class="p-2 hover:bg-blue-50 rounded-lg">✏️</button><button onclick="dupP(${i})" class="p-2 hover:bg-green-50 rounded-lg">📂</button><button onclick="delP(${i})" class="p-2 hover:bg-red-50 rounded-lg">🗑️</button></div></td>
+                </tr>`).join('') : `<tr><td colspan="6" class="p-10 text-center text-slate-400 font-medium italic">Nenhum produto cadastrado</td></tr>`;
             $('p-count').innerText = `${ps.length} Produtos`;
             $('on').innerText = getON();
         };
@@ -312,17 +264,17 @@
             window.scrollTo({top: 0, behavior: 'smooth'});
         };
 
-        const delP = i => { if(confirm('Excluir este produto permanentemente?')) { ps.splice(i,1); save(); render(); } };
+        const delP = i => { if(confirm('Excluir este produto?')) { ps.splice(i,1); save(); render(); } };
 
         const openK = () => {
             const av = ps.filter(p => !p.isK && p.code != $('c').value);
-            $('kl').innerHTML = av.length ? av.map(p => {
+            $('kl').innerHTML = av.map(p => {
                 const s = curK.find(c=>c.code==p.code);
                 return `<div class="flex justify-between items-center p-3 bg-slate-50 border border-slate-200 rounded-xl">
                     <div class="flex flex-col"><span class="font-bold text-slate-700 truncate max-w-[200px]">${p.name}</span><span class="text-[10px] font-mono text-slate-400">#${p.code}</span></div>
-                    <input type="number" min="0" value="${s?s.qty:0}" onchange="updK('${p.code}',this.value)" class="w-16 border-2 border-slate-200 p-2 rounded-lg text-center font-bold focus:border-blue-500">
+                    <input type="number" min="0" value="${s?s.qty:0}" onchange="updK('${p.code}',this.value)" class="w-16 border-2 border-slate-200 p-2 rounded-lg text-center font-bold">
                 </div>`;
-            }).join('') : `<p class="text-center text-slate-400 py-4">Cadastre produtos individuais antes.</p>`;
+            }).join('');
             $('km').classList.add('active');
         };
 
@@ -340,89 +292,73 @@
         };
 
         const renderO = () => {
-            let t = 0; 
-            if(!curO.length) { $('ol').innerHTML = '<p class="text-center text-slate-400 py-10 italic">Nenhum item adicionado...</p>'; $('ov').innerText = 'R$ 0,00'; return; }
+            let t = 0; if(!curO.length) { $('ol').innerHTML = '<p class="text-center text-slate-400 py-10 italic">Nenhum item adicionado...</p>'; $('ov').innerText = 'R$ 0,00'; return; }
             $('ol').innerHTML = curO.map((i,x) => {
-                t += i.price*i.qty; 
-                return `<div class="p-3 border-b border-slate-100 flex justify-between items-center group transition-colors">
-                    <div class="leading-tight">
-                        <b class="text-slate-800">${i.qty}x ${i.name}</b><br>
-                        <span class="text-[10px] text-slate-400 uppercase font-black">UNID: R$${i.price.toFixed(2)}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <b class="text-slate-900 font-mono">R$${(i.price*i.qty).toFixed(2)}</b>
-                        <button onclick="curO.splice(${x},1);renderO()" class="p-2 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">✕</button>
-                    </div>
+                t += i.price*i.qty; return `<div class="p-3 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <div class="leading-tight"><b class="text-slate-800">${i.qty}x ${i.name}</b><br><span class="text-[10px] text-slate-400 font-black">UNID: R$${i.price.toFixed(2)}</span></div>
+                    <div class="flex items-center gap-3"><b class="text-slate-900 font-mono">R$${(i.price*i.qty).toFixed(2)}</b><button onclick="curO.splice(${x},1);renderO()" class="p-2 text-red-300 hover:text-red-500 transition-all">✕</button></div>
                 </div>`;
             }).join('');
             $('ov').innerText = 'R$ ' + t.toLocaleString('pt-BR', {minimumFractionDigits: 2});
         };
 
         const finO = () => {
-            if(!curO.length) return alert('O carrinho está vazio!');
+            if(!curO.length) return alert('Carrinho vazio!');
+            const obs = $('o-obs').value;
             curO.forEach(i => { const p = ps.find(x=>x.code==i.code); p.stock -= i.qty; if(p.isT && !p.first) p.first = Date.now(); });
-            const n = {
-                code: getON(), 
-                date: new Date().toLocaleDateString('pt-BR'), 
-                time: new Date().toLocaleTimeString('pt-BR'), 
-                items: [...curO], 
-                total: curO.reduce((a,b)=>a+(b.price*b.qty),0)
-            };
-            ords.push(n); curO = []; save(); render(); renderO(); tab('o'); prt(n);
+            const n = { id: Date.now(), code: getON(), date: new Date().toLocaleDateString('pt-BR'), time: new Date().toLocaleTimeString('pt-BR'), items: [...curO], total: curO.reduce((a,b)=>a+(b.price*b.qty),0), obs: obs };
+            ords.push(n); curO = []; $('o-obs').value = ''; save(); render(); renderO(); renderOH(); prt(n);
         };
 
         const renderOH = () => {
             const t = new Date().toLocaleDateString('pt-BR');
             const filtered = ords.filter(o=>o.date==t).reverse();
             $('oh').innerHTML = filtered.length ? filtered.map(o => `
-                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center shadow-sm">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">${o.time}</span>
-                        <span class="font-black text-slate-800">PEDIDO #${o.code}</span>
-                        <span class="text-blue-600 font-bold text-sm">R$ ${o.total.toFixed(2)}</span>
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3 shadow-sm group">
+                    <input type="checkbox" class="order-select w-5 h-5 rounded border-slate-300 text-blue-600" data-id="${o.id}">
+                    <div class="flex-1 flex flex-col">
+                        <span class="text-[10px] text-slate-400 font-black uppercase">${o.time}</span>
+                        <span class="font-black text-slate-800">#${o.code}</span>
+                        ${o.obs ? `<span class="text-[9px] text-orange-600 font-bold truncate max-w-[120px] italic">${o.obs}</span>` : ''}
                     </div>
-                    <button onclick="prtByObj('${o.code}', '${o.time}')" class="bg-white border-2 border-slate-200 hover:border-blue-400 hover:text-blue-600 btn-transition px-4 py-2 rounded-xl text-sm font-black shadow-sm">
-                        🖨️
-                    </button>
-                </div>
-            `).join('') : '<p class="text-center text-slate-400 text-xs py-4">Sem pedidos hoje.</p>';
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="text-blue-600 font-black text-sm">R$ ${o.total.toFixed(2)}</span>
+                        <button onclick="prtByObj('${o.id}')" class="bg-white border p-2 rounded-lg text-xs">🖨️</button>
+                    </div>
+                </div>`).join('') : '<p class="text-center text-slate-400 text-xs py-4">Sem pedidos hoje.</p>';
         };
 
-        const prtByObj = (c, time) => { 
-            const o = ords.find(x => x.code == c && x.time == time); 
-            if(o) prt(o); 
+        const exportSelected = () => {
+            const checks = document.querySelectorAll('.order-select:checked');
+            if(!checks.length) return alert("Selecione ao menos um pedido no histórico!");
+            const ids = Array.from(checks).map(c => parseInt(c.dataset.id));
+            const selectedOrds = ords.filter(o => ids.includes(o.id));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(selectedOrds));
+            const dl = document.createElement('a'); dl.href = dataStr; dl.download = `pedidos_selecionados_${new Date().toISOString().slice(0,10)}.json`; dl.click();
         };
+
+        const prtByObj = id => { const o = ords.find(x => x.id == id); if(o) prt(o); };
 
         const prt = o => {
             const w = window.open('', '', 'width=300,height=600');
             const itemsHtml = o.items.map(i => {
-                let kitLines = '';
-                if(i.isK && i.comps) {
-                    kitLines = i.comps.map(c => {
-                        const compData = ps.find(x => x.code == c.code);
-                        return `<div style="padding-left:3mm; font-size:10px; opacity:0.7">- [${c.code}] ${compData ? compData.name : ''} (${c.qty * i.qty})</div>`;
-                    }).join('');
-                }
-                return `
-                    <div style="margin-bottom: 2mm">
-                        <div class="b">${i.qty}x ${i.name}</div>
-                        ${kitLines}
-                    </div>
-                `;
+                let kits = '';
+                if(i.isK && i.comps) kits = i.comps.map(c => { const p = ps.find(x=>x.code==c.code); return `<div style="padding-left:1mm;font-size:11px;opacity:0.8;line-height:1">- [${c.code}] ${p?p.name:''} (${c.qty*i.qty})</div>`; }).join('');
+                return `<div style="margin-bottom:3mm"><div class="item-font b">${i.qty}x ${i.name}</div>${kits}</div>`;
             }).join('');
-
             w.document.write(`<html><head><style>
-                body{width:58mm;font-family:monospace;font-size:12px;margin:0;padding:2mm;line-height:1.2;color:#000}
+                body{width:58mm;font-family:monospace;font-size:12px;margin:0;padding:0 3mm;line-height:1.1;color:#000}
                 .c{text-align:center} .b{font-weight:bold} .r{text-align:right} .s{border-top:2px dashed #000;margin:2mm 0}
-                .huge{font-size:36px; display:block; margin:2mm 0; line-height:1}
+                .huge{font-size:42px; display:block; margin:1mm 0; line-height:1} .item-font{font-size:22px; line-height:1.1; margin-bottom:1mm}
             </style></head><body>
-                <div class="c b">SEPARAÇÃO DE PEDIDO</div>
+                <div class="c b" style="font-size:14px">SEPARAÇÃO DE PEDIDO</div>
                 <div class="c">${o.date} ${o.time}</div>
                 <div class="c b huge">#${o.code}</div>
+                ${o.obs ? `<div class="c b" style="border:1px solid #000;padding:1mm;margin-top:1mm;font-size:11px">OBS: ${o.obs}</div>` : ''}
                 <div class="s"></div>
                 ${itemsHtml}
                 <div class="s"></div>
-                <div class="c b" style="font-size:14px">TOTAL: ${o.items.length} ITENS</div>
+                <div class="c b" style="font-size:16px">TOTAL: ${o.items.length} ITENS</div>
                 <script>setTimeout(()=>{window.print();window.close()},600)<\/script>
             </body></html>`);
             w.document.close();
@@ -431,29 +367,19 @@
         const checkExp = () => {
             const n = Date.now(), e = 24*3600*1000;
             const len = ps.length;
-            ps = ps.filter(p => !(p.isT && p.first && (n - p.first >= e)));
+            ps = ps.filter(p => !(p.isT && p.first && (n-p.first >= e)));
             if(ps.length !== len) { save(); render(); updOS(); }
         };
 
         const db = (a, e) => {
             if(a=='exp') {
-                const data = {ps, ords};
-                const l = document.createElement('a'); 
-                l.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-                l.download = `backup_estoque_${new Date().toISOString().slice(0,10)}.json`; 
-                l.click();
+                const dl = document.createElement('a'); dl.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ps, ords}));
+                dl.download = `backup_estoque_${new Date().toISOString().slice(0,10)}.json`; dl.click();
             } else {
-                const r = new FileReader(); 
-                r.onload = x => { 
-                    try {
-                        const d = JSON.parse(x.target.result); 
-                        ps = d.ps || []; 
-                        ords = d.ords || []; 
-                        save(); render(); renderOH(); tab('p');
-                        alert("Banco de dados importado com sucesso!");
-                    } catch(err) { alert("Arquivo inválido!"); }
-                };
-                r.readAsText(e.target.files[0]);
+                const r = new FileReader(); r.onload = x => { 
+                    try { const d = JSON.parse(x.target.result); ps = d.ps||[]; ords = d.ords||[]; save(); render(); renderOH(); tab('p'); alert("Importado!"); } 
+                    catch(err) { alert("Erro!"); }
+                }; r.readAsText(e.target.files[0]);
             }
         };
     </script>
