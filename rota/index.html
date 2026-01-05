@@ -11,10 +11,11 @@
             --primary: #2563eb;
             --secondary: #64748b;
             --success: #16a34a;
+            --whatsapp: #25d366;
             --card-bg: #ffffff;
         }
         
-        body { background-color: #f1f5f9; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: #f1f5f9; font-family: system-ui, -apple-system, sans-serif; padding-bottom: 50px; }
         .container { max-width: 500px; padding-top: 10px; }
         
         /* Dashboard de Status */
@@ -23,92 +24,116 @@
         .stat-card small { display: block; color: var(--secondary); font-size: 0.7rem; text-transform: uppercase; }
         .stat-card strong { font-size: 1.2rem; }
 
-        /* Cards de Entrega */
-        #listaEntregas { display: flex; flex-direction: column; gap: 12px; }
+        /* Seletor de Pedidos */
+        .selector-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        select { margin-bottom: 0; }
+
+        /* Card de Entrega Ativa */
+        #activeDelivery { min-height: 200px; }
         .delivery-card {
             background: var(--card-bg);
             border-radius: 16px;
             padding: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            border-left: 6px solid var(--primary);
-            transition: all 0.2s;
+            box-shadow: 0 4px 15px -1px rgba(0,0,0,0.1);
+            border-top: 6px solid var(--primary);
+            animation: slideIn 0.3s ease-out;
         }
-        .delivery-card.completed { border-left-color: var(--success); opacity: 0.6; transform: scale(0.98); }
-        
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; background: #e2e8f0; color: #475569; font-weight: bold; }
-        .client-name { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0; }
-        .address { font-size: 0.85rem; color: #475569; margin: 4px 0; line-height: 1.4; }
-        .product-info { font-size: 0.8rem; background: #f8fafc; padding: 8px; border-radius: 8px; margin-top: 10px; border: 1px solid #edf2f7; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Ações */
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn-action { margin-bottom: 0; font-size: 0.8rem; padding: 8px; border-radius: 8px; }
+        .delivery-card.completed { border-top-color: var(--success); }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .badge { font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; background: #e2e8f0; color: #475569; font-weight: bold; }
+        .client-name { font-size: 1.3rem; font-weight: 800; color: #1e293b; margin: 0; }
+        .address { font-size: 0.95rem; color: #475569; margin: 8px 0; line-height: 1.5; }
+
+        /* WhatsApp e Ações */
+        .wa-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .btn-wa { background-color: var(--whatsapp); border: none; font-size: 0.75rem; padding: 10px; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        
+        .main-actions { margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 20px; }
+        .btn-action { width: 100%; margin-bottom: 10px; font-weight: bold; }
         .btn-gps { background-color: #ef4444; border: none; }
         .btn-check { background-color: var(--success); border: none; }
-        .btn-undo { background-color: var(--secondary); border: none; }
 
-        /* Estilo do Upload */
+        /* Modal Customizado */
+        #paymentModal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        }
+        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; }
+
         .upload-screen { text-align: center; padding: 40px 20px; }
-        .upload-icon { font-size: 4rem; margin-bottom: 20px; display: block; }
-        
         .hidden { display: none !important; }
-        .sticky-search { position: sticky; top: 0; background: #f1f5f9; padding: 10px 0; z-index: 100; }
     </style>
 </head>
 <body>
 
     <main class="container">
-        <!-- Ecrã de Boas-vindas / Upload -->
+        <!-- Ecrã de Upload -->
         <section id="uploadSection" class="upload-screen">
-            <span class="upload-icon">🚚</span>
+            <span style="font-size: 4rem">🚚</span>
             <h2>Logística Express</h2>
-            <p>Carregue o relatório de vendas para gerar a sua rota de hoje.</p>
+            <p>Carregue o JSON para iniciar as entregas.</p>
             <input type="file" id="jsonInput" accept=".json" hidden>
-            <button onclick="document.getElementById('jsonInput').click()">Selecionar Ficheiro JSON</button>
+            <button onclick="document.getElementById('jsonInput').click()">Abrir Relatório</button>
         </section>
 
-        <!-- Painel Principal (Dashboard) -->
+        <!-- Painel Principal -->
         <section id="mainSection" class="hidden">
             <div class="stats-grid">
-                <div class="stat-card">
-                    <small>Total</small>
-                    <strong id="totalCount">0</strong>
-                </div>
-                <div class="stat-card">
-                    <small>Pendente</small>
-                    <strong id="pendingCount" style="color: var(--primary)">0</strong>
-                </div>
-                <div class="stat-card">
-                    <small>Feito</small>
-                    <strong id="doneCount" style="color: var(--success)">0</strong>
+                <div class="stat-card"><small>Total</small><strong id="totalCount">0</strong></div>
+                <div class="stat-card"><small>Pendente</small><strong id="pendingCount" style="color: var(--primary)">0</strong></div>
+                <div class="stat-card"><small>Feito</small><strong id="doneCount" style="color: var(--success)">0</strong></div>
+            </div>
+
+            <div class="selector-box">
+                <label for="orderSelector">Selecione o Próximo Pedido:</label>
+                <select id="orderSelector" onchange="loadOrder(this.value)">
+                    <option value="">-- Escolha um pedido --</option>
+                </select>
+            </div>
+
+            <div id="activeDelivery">
+                <!-- Card do pedido selecionado -->
+                <div id="emptyState" style="text-align: center; color: var(--secondary); margin-top: 40px;">
+                    <p>Selecione um pedido acima para ver os detalhes e iniciar a navegação.</p>
                 </div>
             </div>
 
-            <div class="sticky-search">
-                <div style="display: flex; gap: 8px;">
-                    <input type="search" id="searchInput" placeholder="Filtrar por Rota ou Bairro..." oninput="render()">
-                    <button class="outline" style="width: auto; padding: 0 15px;" onclick="resetApp()" title="Reset">♻️</button>
-                </div>
-            </div>
-
-            <div id="listaEntregas">
-                <!-- Cards injetados via JS -->
+            <div style="margin-top: 40px; text-align: center;">
+                <button class="outline contrast" onclick="resetApp()">Limpar Tudo / Novo Arquivo</button>
             </div>
         </section>
     </main>
 
+    <!-- Modal de Pagamento -->
+    <div id="paymentModal" class="hidden">
+        <div class="modal-content">
+            <h4>Confirmar Entrega</h4>
+            <p>Como o cliente pagou?</p>
+            <select id="paymentMethodSelect">
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="Pix">Pix</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Cartão de Débito">Cartão de Débito</option>
+                <option value="Pago no Site/App">Já estava pago</option>
+            </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                <button class="secondary" onclick="closeModal()">Cancelar</button>
+                <button onclick="confirmDeliveryFinal()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        /**
-         * SISTEMAS - Motor de Gestão de Rotas
-         * Persistência em LocalStorage
-         */
         const STORAGE_KEY = 'sistemas_rota_v1';
+        const ADMIN_WA = '5565998150974'; // Formato internacional
         let state = {
-            entregas: []
+            entregas: [],
+            selectedId: null
         };
 
-        // Inicialização
         window.addEventListener('load', () => {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
@@ -117,32 +142,30 @@
             }
         });
 
-        // Handler de Ficheiro
         document.getElementById('jsonInput').addEventListener('change', function(e) {
             const reader = new FileReader();
             reader.onload = function(event) {
                 try {
                     const rawData = JSON.parse(event.target.result);
-                    // Normalização e Injeção de Estado Inicial
                     state.entregas = rawData.map(item => ({
-                        id: item.id,
+                        id: item.codigo || item.id,
+                        db_id: item.id,
                         nome: item.detalhes_cliente.nome,
+                        primeiroNome: item.detalhes_cliente.nome.split(' ')[0],
                         tel: item.detalhes_cliente.tel,
-                        morada: `${item.detalhes_cliente.endereco}, ${item.detalhes_cliente.bairro}`,
-                        cidade: item.detalhes_cliente.cidade,
+                        morada: item.detalhes_cliente.endereco,
                         bairro: item.detalhes_cliente.bairro,
+                        cidade: item.detalhes_cliente.cidade,
                         rota: item.rota,
                         produto: item.detalhes_produto.nome,
                         qtd: item.qty,
                         total: item.total,
-                        pagamento: item.pag,
-                        concluido: false
+                        concluido: false,
+                        formaPagamento: ''
                     }));
                     saveState();
                     initApp();
-                } catch (err) {
-                    alert("Erro ao processar o JSON. Verifique o formato.");
-                }
+                } catch (err) { alert("Erro no JSON"); }
             };
             reader.readAsText(e.target.files[0]);
         });
@@ -154,70 +177,99 @@
         function initApp() {
             document.getElementById('uploadSection').classList.add('hidden');
             document.getElementById('mainSection').classList.remove('hidden');
-            render();
+            updateStats();
+            populateSelector();
+        }
+
+        function updateStats() {
+            document.getElementById('totalCount').innerText = state.entregas.length;
+            document.getElementById('pendingCount').innerText = state.entregas.filter(i => !i.concluido).length;
+            document.getElementById('doneCount').innerText = state.entregas.filter(i => i.concluido).length;
+        }
+
+        function populateSelector() {
+            const sel = document.getElementById('orderSelector');
+            sel.innerHTML = '<option value="">-- Escolha um pedido --</option>';
+            state.entregas.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.db_id;
+                opt.textContent = `${item.concluido ? '✅' : '📦'} ${item.id} - ${item.nome}`;
+                sel.appendChild(opt);
+            });
+        }
+
+        function loadOrder(dbId) {
+            if (!dbId) {
+                document.getElementById('activeDelivery').innerHTML = '<div id="emptyState" style="text-align: center; color: var(--secondary); margin-top: 40px;"><p>Selecione um pedido acima.</p></div>';
+                return;
+            }
+            state.selectedId = dbId;
+            const item = state.entregas.find(i => i.db_id === dbId);
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.morada + ', ' + item.bairro + ', ' + item.cidade)}`;
+            
+            const waPreMsg = encodeURIComponent(`Olá ${item.primeiroNome}! Aqui é do setor de entregas. Sua encomenda é a próxima da rota e já estou a caminho! 🚚`);
+            const waArrivedMsg = encodeURIComponent(`Olá ${item.primeiroNome}! Acabei de chegar no seu endereço para a entrega. 🔔`);
+
+            document.getElementById('activeDelivery').innerHTML = `
+                <div class="delivery-card ${item.concluido ? 'completed' : ''}">
+                    <div class="card-header">
+                        <span class="badge">PEDIDO: ${item.id}</span>
+                        <span class="badge" style="background:${item.concluido ? '#dcfce7' : '#fef3c7'}">${item.concluido ? 'CONCLUÍDO' : 'ROTA: ' + item.rota}</span>
+                    </div>
+                    <h3 class="client-name">${item.nome}</h3>
+                    <p class="address">📍 ${item.morada}<br>🏘️ ${item.bairro} - ${item.cidade}</p>
+                    
+                    <div class="wa-actions">
+                        <a href="https://wa.me/55${item.tel}?text=${waPreMsg}" target="_blank" class="btn-wa"><span>💬</span> A caminho</a>
+                        <a href="https://wa.me/55${item.tel}?text=${waArrivedMsg}" target="_blank" class="btn-wa"><span>🔔</span> Cheguei</a>
+                    </div>
+
+                    <div class="main-actions">
+                        <a href="${mapsUrl}" target="_blank" class="btn-action btn-gps" role="button">Abrir Rota no GPS</a>
+                        ${!item.concluido ? 
+                            `<button class="btn-action btn-check" onclick="openModal()">Confirmar Entrega</button>` : 
+                            `<p style="text-align:center; color:var(--success); font-weight:bold">✓ Pedido Finalizado</p>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        function openModal() { document.getElementById('paymentModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('paymentModal').classList.add('hidden'); }
+
+        function confirmDeliveryFinal() {
+            const method = document.getElementById('paymentMethodSelect').value;
+            const item = state.entregas.find(i => i.db_id === state.selectedId);
+            
+            item.concluido = true;
+            item.formaPagamento = method;
+            
+            saveState();
+            closeModal();
+            updateStats();
+            populateSelector();
+            loadOrder(state.selectedId);
+
+            // Relatório para o Admin via WhatsApp
+            const adminMsg = encodeURIComponent(
+                `🏁 *ENTREGA CONCLUÍDA*\n\n` +
+                `🆔 Pedido: ${item.id}\n` +
+                `👤 Cliente: ${item.nome}\n` +
+                `🚚 Rota: ${item.rota}\n` +
+                `📍 Local: ${item.cidade} / ${item.bairro}\n` +
+                `💰 Valor: R$ ${item.total.toFixed(2)}\n` +
+                `💳 Pago via: ${method}`
+            );
+            
+            window.open(`https://wa.me/${ADMIN_WA}?text=${adminMsg}`, '_blank');
         }
 
         function resetApp() {
-            if(confirm("Deseja apagar a rota atual e carregar um novo ficheiro?")) {
+            if(confirm("Deseja resetar todos os dados?")) {
                 localStorage.removeItem(STORAGE_KEY);
                 location.reload();
             }
-        }
-
-        function toggleStatus(id) {
-            state.entregas = state.entregas.map(item => 
-                item.id === id ? { ...item, concluido: !item.concluido } : item
-            );
-            saveState();
-            render();
-        }
-
-        function render() {
-            const container = document.getElementById('listaEntregas');
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            
-            // Filtro e Ordenação (Pendentes primeiro)
-            const filtered = state.entregas
-                .filter(i => i.rota.toLowerCase().includes(term) || i.bairro.toLowerCase().includes(term) || i.nome.toLowerCase().includes(term))
-                .sort((a, b) => a.concluido - b.concluido);
-
-            // Atualiza Stats
-            document.getElementById('totalCount').innerText = filtered.length;
-            document.getElementById('pendingCount').innerText = filtered.filter(i => !i.concluido).length;
-            document.getElementById('doneCount').innerText = filtered.filter(i => i.concluido).length;
-
-            container.innerHTML = '';
-
-            filtered.forEach(item => {
-                const card = document.createElement('div');
-                card.className = `delivery-card ${item.concluido ? 'completed' : ''}`;
-                
-                // URL do Google Maps
-                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.morada + ', ' + item.cidade)}`;
-                
-                card.innerHTML = `
-                    <div class="card-header">
-                        <span class="badge">ROTA: ${item.rota}</span>
-                        <span class="badge" style="background:#fef3c7; color:#92400e">${item.pagamento}</span>
-                    </div>
-                    <h3 class="client-name">${item.nome}</h3>
-                    <p class="address">
-                        📍 ${item.morada}<br>
-                        🏙️ ${item.cidade}
-                    </p>
-                    <div class="product-info">
-                        <strong>${item.produto}</strong> (x${item.qtd})<br>
-                        <span style="color: var(--primary); font-weight: bold;">VALOR: R$ ${item.total.toFixed(2)}</span>
-                    </div>
-                    <div class="actions">
-                        <a href="${mapsUrl}" target="_blank" class="btn-action btn-gps" role="button">Abrir GPS</a>
-                        <button class="btn-action ${item.concluido ? 'btn-undo' : 'btn-check'}" onclick="toggleStatus('${item.id}')">
-                            ${item.concluido ? 'Reabrir' : 'Concluir'}
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
         }
     </script>
 </body>
