@@ -286,23 +286,50 @@
     <div id="print-area"></div>
 
     <script>
+        const storageAvailable = (type) => {
+            try { var storage = window[type], x = '__storage_test__'; storage.setItem(x, x); storage.removeItem(x); return true; }
+            catch (e) { return false; }
+        };
+
         const DB = {
             key: 'enterprise_v5_db',
             load: () => {
-                const data = JSON.parse(localStorage.getItem(DB.key) || '{"cliente":[], "produto":[], "venda":[], "counters":{"cliente":0, "produto":0, "prodTemp":0, "venda":0}}');
-                if(!data.counters) data.counters = {cliente:0, produto:0, prodTemp:0, venda:0};
+                if (!storageAvailable('localStorage')) return {cliente:[], produto:[], venda:[], counters:{cliente:0, produto:0, prodTemp:0, venda:0, lastSaleDate: null}};
+                const data = JSON.parse(localStorage.getItem(DB.key) || '{"cliente":[], "produto":[], "venda":[], "counters":{"cliente":0, "produto":0, "prodTemp":0, "venda":0, "lastSaleDate": null}}');
+                if(!data.counters) data.counters = {cliente:0, produto:0, prodTemp:0, venda:0, lastSaleDate: null};
                 return data;
             },
-            saveAll: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
+            saveAll: (data) => {
+                if (storageAvailable('localStorage')) localStorage.setItem(DB.key, JSON.stringify(data));
+            },
             genCode: (type, options = {}) => {
                 const db = DB.load();
                 let code = "";
-                if(type === 'cliente') { db.counters.cliente++; code = `C${String(db.counters.cliente).padStart(4, '0')}`; }
-                else if(type === 'produto') {
-                    if(options.isTemp) { db.counters.prodTemp++; code = `PT${String(db.counters.prodTemp).padStart(3, '0')}`; }
-                    else { db.counters.produto++; code = `P${String(db.counters.produto).padStart(3, '0')}`; }
+                const today = new Date().toLocaleDateString('pt-BR');
+
+                if(type === 'cliente') { 
+                    db.counters.cliente++; 
+                    code = `C${String(db.counters.cliente).padStart(4, '0')}`; 
                 }
-                else if(type === 'venda') { db.counters.venda++; code = `V${String(db.counters.venda).padStart(4, '0')}`; }
+                else if(type === 'produto') {
+                    if(options.isTemp) { 
+                        db.counters.prodTemp++; 
+                        code = `PT${String(db.counters.prodTemp).padStart(3, '0')}`; 
+                    } else { 
+                        db.counters.produto++; 
+                        code = `P${String(db.counters.produto).padStart(3, '0')}`; 
+                    }
+                }
+                else if(type === 'venda') {
+                    // Reset diário de vendas
+                    if(db.counters.lastSaleDate !== today) {
+                        db.counters.venda = 0;
+                        db.counters.lastSaleDate = today;
+                    }
+                    db.counters.venda++; 
+                    code = `V${String(db.counters.venda).padStart(3, '0')}`; 
+                }
+                
                 DB.saveAll(db);
                 return code;
             },
@@ -420,10 +447,14 @@
 
         const App = {
             init: () => {
+                if (!storageAvailable('localStorage')) alert("Aviso: LocalStorage não disponível.");
                 const db = DB.load(); const now = Date.now();
                 db.produto = db.produto.filter(p => !p.deleteAt || p.deleteAt > now);
                 DB.saveAll(db); UI.render('cliente');
-                ['v-qty', 'v-desconto', 'v-produto'].forEach(id => UI.get(id).addEventListener('input', App.calcVenda));
+                ['v-qty', 'v-desconto', 'v-produto'].forEach(id => {
+                    const el = UI.get(id);
+                    if(el) el.addEventListener('input', App.calcVenda);
+                });
             },
             calcVenda: () => {
                 const p = UI.get('v-produto'); const price = p.options[p.selectedIndex]?.dataset.price || 0;
@@ -463,6 +494,7 @@
                     const prod = db.produto.find(x => x.id === prodId);
                     if(!prod) return alert('Produto não selecionado!');
                     Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now(), obs: UI.get('v-obs').value });
+                    
                     const deduct = (id, q) => {
                         const target = db.produto.find(x => x.id === id);
                         if(target) target.estoque -= q;
