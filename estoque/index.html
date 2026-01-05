@@ -22,7 +22,7 @@
     <aside class="w-64 bg-slate-900 flex flex-col p-4 gap-2 no-print">
         <div class="flex items-center gap-3 px-2 mb-8 text-white">
             <i class="fa-solid fa-rocket text-blue-500 text-2xl"></i>
-            <h1 class="font-bold tracking-tight">CORE ERP</h1>
+            <h1 class="font-bold tracking-tight uppercase text-sm">Enterprise Core</h1>
         </div>
         <nav class="flex-1 space-y-1">
             <button onclick="UI.switchView('cliente', this)" class="nav-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-users w-5"></i> <span>Clientes</span></button>
@@ -30,26 +30,26 @@
             <button onclick="UI.switchView('venda', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-cart-shopping w-5"></i> <span>Vendas</span></button>
             <button onclick="UI.switchView('crm', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-chart-line w-5"></i> <span>CRM</span></button>
         </nav>
-        <button onclick="ExportEngine.export()" class="text-left px-4 py-2 text-slate-500 hover:text-emerald-400 text-xs transition"><i class="fa-solid fa-database mr-2"></i> Backup Geral</button>
+        <button onclick="ExportEngine.export()" class="text-left px-4 py-2 text-slate-500 hover:text-emerald-400 text-xs transition"><i class="fa-solid fa-database mr-2"></i> Backup</button>
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">
         <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center no-print">
-            <h2 id="view-title" class="text-xl font-bold text-slate-800">Gestão de Clientes</h2>
+            <h2 id="view-title" class="text-xl font-bold text-slate-800">Clientes</h2>
             <div class="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">AD</div>
         </header>
 
         <!-- VIEW: CLIENTE -->
         <main id="view-cliente" class="view-content active flex-1 overflow-hidden p-6 gap-6">
             <section class="w-80 lg:w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between">
+                <div class="p-4 border-b border-slate-100 flex justify-between">
                     <span id="formLabel-cliente" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Novo Cliente</span>
                     <button onclick="UI.resetForm('cliente')" class="text-[10px] text-slate-400 hover:text-red-500">LIMPAR</button>
                 </div>
                 <form id="form-cliente" onsubmit="App.handleSave('cliente', event)" class="p-5 space-y-4 overflow-y-auto custom-scroll">
                     <input type="hidden" id="c-id">
-                    <input type="text" id="c-codigo" readonly placeholder="C0000" class="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-500">
-                    <input type="text" id="c-nome" required placeholder="Nome do Cliente" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+                    <input type="text" id="c-codigo" readonly placeholder="C0000" class="w-full bg-slate-100 border rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-500">
+                    <input type="text" id="c-nome" required placeholder="Nome do Cliente" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
                     <div class="grid grid-cols-2 gap-2">
                         <input type="tel" id="c-tel" required placeholder="WhatsApp" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
                         <input type="text" id="c-bairro" placeholder="Bairro" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
@@ -58,7 +58,7 @@
                         <option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option>
                     </select>
                     <textarea id="c-endereco" rows="2" placeholder="Endereço Completo" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none"></textarea>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition">SALVAR CLIENTE</button>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition uppercase text-xs">Salvar Cliente</button>
                 </form>
             </section>
             <section class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
@@ -83,7 +83,7 @@
                     <input type="hidden" id="p-id">
                     <div class="grid grid-cols-2 gap-2">
                         <input type="text" id="p-codigo" readonly placeholder="V000" class="bg-slate-100 border rounded-lg px-3 py-2 text-xs font-bold text-slate-500">
-                        <input type="text" id="p-ean" placeholder="EAN" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none">
+                        <input type="text" id="p-ean" placeholder="EAN" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs">
                     </div>
                     <input type="text" id="p-nome" required placeholder="Nome do Produto" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
                     <div class="grid grid-cols-2 gap-2">
@@ -92,25 +92,21 @@
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <input type="number" id="p-custo" step="0.01" placeholder="Custo" class="bg-slate-50 border rounded-lg px-2 py-2 text-xs">
-                        <input type="number" id="p-valor" step="0.01" required placeholder="Venda" class="bg-slate-50 border rounded-lg px-2 py-2 text-xs">
+                        <input type="number" id="p-valor" step="0.01" required placeholder="Venda" class="bg-slate-50 border rounded-lg px-2 py-2 text-xs font-bold text-emerald-600">
                         <input type="number" id="p-estoque" placeholder="Estoque" class="bg-slate-50 border rounded-lg px-2 py-2 text-xs">
                     </div>
-                    <select id="p-tipo" onchange="UI.toggleKit(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                        <option value="normal">Produto Normal</option>
-                        <option value="kit">Kit de Produtos</option>
-                    </select>
-                    
-                    <div id="p-kit-area" class="hidden space-y-3">
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Colar Lista (CÓDIGO | QUANTIDADE)</label>
-                            <textarea id="p-kit-bulk" rows="3" class="w-full p-2 text-[10px] font-mono border rounded outline-none" placeholder="V001 | 2&#10;V002 | 5"></textarea>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Seleção Manual:</label>
-                            <div id="p-kit-list" class="max-h-32 overflow-y-auto custom-scroll space-y-1"></div>
-                        </div>
+                    <div class="flex items-center gap-2 px-1">
+                        <input type="checkbox" id="p-isTemp" class="rounded border-slate-300">
+                        <label for="p-isTemp" class="text-[11px] font-bold text-slate-500 uppercase">Produto Temporário (24h)</label>
                     </div>
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition">SALVAR PRODUTO</button>
+                    <select id="p-tipo" onchange="UI.toggleKit(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
+                        <option value="normal">Normal</option><option value="kit">Kit</option>
+                    </select>
+                    <div id="p-kit-area" class="hidden space-y-3">
+                        <textarea id="p-kit-bulk" rows="2" class="w-full p-2 text-[10px] font-mono border rounded outline-none bg-slate-50" placeholder="V001 | 2 (Cole aqui)"></textarea>
+                        <div id="p-kit-list" class="max-h-24 overflow-y-auto custom-scroll space-y-1"></div>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-xs uppercase">Salvar Produto</button>
                 </form>
             </section>
             <section class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
@@ -123,24 +119,67 @@
                 </div>
             </section>
         </main>
-        <main id="view-venda" class="view-content flex-1 p-20 flex-col items-center justify-center text-slate-300"><i class="fa-solid fa-cart-shopping text-6xl mb-4"></i><p>Vendas em Breve</p></main>
-        <main id="view-crm" class="view-content flex-1 p-20 flex-col items-center justify-center text-slate-300"><i class="fa-solid fa-chart-line text-6xl mb-4"></i><p>CRM em Breve</p></main>
+
+        <!-- VIEW: VENDAS -->
+        <main id="view-venda" class="view-content flex-1 overflow-hidden p-6 gap-6">
+            <section class="w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between">
+                    <span class="text-[10px] font-bold text-orange-600 uppercase">Novo Pedido</span>
+                    <button onclick="UI.resetForm('venda')" class="text-[10px] text-slate-400 hover:text-red-500">CANCELAR</button>
+                </div>
+                <form id="form-venda" onsubmit="App.handleSave('venda', event)" class="p-5 space-y-3 overflow-y-auto custom-scroll">
+                    <select id="v-cliente" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none"></select>
+                    <div class="grid grid-cols-4 gap-2">
+                        <select id="v-produto" required class="col-span-3 bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none"></select>
+                        <input type="number" id="v-qty" value="1" min="1" class="bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="v-pagamento" required class="bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none">
+                            <option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option>
+                            <option value="Pix">Pix</option><option value="Só Entregar">Só Entregar</option>
+                        </select>
+                        <select id="v-rota" required class="bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none">
+                            <option value="CX">CX</option><option value="VF">VF</option>
+                            <option value="CBA">CBA</option><option value="CPA">CPA</option>
+                        </select>
+                    </div>
+                    <input type="number" id="v-desconto" step="0.01" placeholder="Desconto (R$)" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none">
+                    <textarea id="v-obs" rows="2" placeholder="Observações" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none"></textarea>
+                    <div class="p-3 bg-slate-900 rounded-xl text-white flex justify-between items-center">
+                        <span class="text-xs uppercase font-bold text-slate-400">Total Líquido</span>
+                        <span id="v-total" class="text-xl font-bold">R$ 0,00</span>
+                    </div>
+                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition text-xs uppercase">Finalizar Venda</button>
+                </form>
+            </section>
+            <section class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="text-xs font-bold uppercase text-slate-500">Histórico de Vendas</h3>
+                    <span class="text-[10px] font-bold text-slate-400">TOTAL: <b id="count-venda" class="text-slate-700">0</b></span>
+                </div>
+                <div class="flex-1 overflow-auto custom-scroll">
+                    <table class="w-full text-left text-sm"><tbody id="table-venda" class="divide-y divide-slate-100"></tbody></table>
+                </div>
+            </section>
+        </main>
+        
+        <main id="view-crm" class="view-content flex-1 p-20 flex-col items-center justify-center text-slate-300"><i class="fa-solid fa-chart-line text-6xl mb-4"></i><p>Relatórios em Breve</p></main>
     </div>
 
     <script>
         const DB = {
-            key: 'enterprise_v3_db',
-            load: () => JSON.parse(localStorage.getItem(DB.key) || '{"cliente":[], "produto":[]}'),
+            key: 'enterprise_v4_db',
+            load: () => JSON.parse(localStorage.getItem(DB.key) || '{"cliente":[], "produto":[], "venda":[]}'),
             saveAll: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
             genId: (type) => {
                 const list = DB.load()[type];
                 const count = list.length + 1;
-                return type === 'cliente' ? `C${String(count).padStart(4, '0')}` : `V${String(count).padStart(3, '0')}`;
+                return type === 'cliente' ? `C${String(count).padStart(4, '0')}` : (type === 'produto' ? `V${String(count).padStart(3, '0')}` : count);
             },
             save: (type, obj) => {
                 const db = DB.load();
                 if (obj.id) { const idx = db[type].findIndex(i => i.id === obj.id); db[type][idx] = obj; }
-                else { obj.id = Date.now().toString(); obj.codigo = DB.genId(type); db[type].push(obj); }
+                else { obj.id = Date.now().toString(); if(type !== 'venda') obj.codigo = DB.genId(type); db[type].push(obj); }
                 DB.saveAll(db);
             },
             delete: (type, id) => { const db = DB.load(); db[type] = db[type].filter(i => i.id !== id); DB.saveAll(db); }
@@ -151,98 +190,88 @@
             switchView: (view, btn) => {
                 document.querySelectorAll('.view-content, .nav-link').forEach(el => el.classList.remove('active'));
                 UI.get(`view-${view}`).classList.add('active'); btn.classList.add('active');
-                UI.get('view-title').innerText = `Gestão de ${view.charAt(0).toUpperCase() + view.slice(1)}s`;
+                UI.get('view-title').innerText = view.charAt(0).toUpperCase() + view.slice(1);
+                if(view === 'venda') UI.renderVendaOptions();
                 if(view === 'produto') UI.renderKitOptions();
                 UI.render(view);
             },
             toggleKit: (val) => UI.get('p-kit-area').classList.toggle('hidden', val !== 'kit'),
             renderKitOptions: () => {
                 const prods = DB.load().produto.filter(p => p.tipo !== 'kit');
-                UI.get('p-kit-list').innerHTML = prods.map(p => `
-                    <div class="flex items-center gap-2 p-1 hover:bg-white rounded text-[10px]">
-                        <input type="checkbox" data-pid="${p.id}" class="kit-check rounded border-slate-300">
-                        <span class="flex-1 font-medium">${p.codigo} - ${p.nome}</span>
-                        <input type="number" data-pid="${p.id}" value="1" min="1" class="kit-qty w-10 border text-center rounded outline-none">
-                    </div>`).join('');
+                UI.get('p-kit-list').innerHTML = prods.map(p => `<div class="flex items-center gap-2 p-1 text-[10px]"><input type="checkbox" data-pid="${p.id}" class="kit-check"><span class="flex-1">${p.codigo}-${p.nome}</span><input type="number" data-pid="${p.id}" value="1" class="kit-qty w-8 border rounded"></div>`).join('');
+            },
+            renderVendaOptions: () => {
+                const db = DB.load();
+                UI.get('v-cliente').innerHTML = '<option value="">Selecionar Cliente</option>' + db.cliente.map(c => `<option value="${c.id}">${c.codigo} - ${c.nome}</option>`).join('');
+                UI.get('v-produto').innerHTML = '<option value="">Selecionar Produto</option>' + db.produto.map(p => `<option value="${p.id}" data-price="${p.valor}">${p.codigo} - ${p.nome} (R$ ${p.valor})</option>`).join('');
             },
             render: (type) => {
-                const data = DB.load()[type];
+                const db = DB.load(); const data = db[type];
                 UI.get(`count-${type}`).innerText = data.length;
-                UI.get(`table-${type}`).innerHTML = data.map(i => `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4">
-                            <div class="font-bold text-slate-800">${i.codigo} - ${i.nome}</div>
-                            <div class="text-[10px] text-slate-500">${type === 'cliente' ? i.tel : 'EAN: ' + (i.ean || '-')}</div>
-                        </td>
-                        <td class="p-4 text-xs">
-                            ${type === 'cliente' ? `<span class="uppercase font-bold">${i.cidade}</span><br><span class="text-[10px] italic">${i.bairro || '-'}</span>` 
-                                : `<span class="text-emerald-600 font-bold">R$ ${Number(i.valor).toFixed(2)}</span><br><span class="text-[10px]">Estoque: ${i.estoque || 0}</span>`}
-                        </td>
-                        <td class="p-4 text-right">
-                            <button onclick="App.edit('${type}','${i.id}')" class="w-8 h-8 text-blue-600 hover:bg-blue-100 rounded-lg"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="App.delete('${type}','${i.id}')" class="w-8 h-8 text-red-400 hover:bg-red-100 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>`).join('');
+                UI.get(`table-${type}`).innerHTML = data.map(i => {
+                    if(type === 'cliente') return `<tr class="hover:bg-slate-50 transition"><td class="p-4"><div class="font-bold">${i.codigo}-${i.nome}</div><div class="text-[10px] text-slate-500">${i.tel}</div></td><td class="p-4 text-xs font-bold uppercase">${i.cidade}<br><span class="text-[10px] font-normal">${i.bairro || '-'}</span></td><td class="p-4 text-right"><button onclick="App.edit('cliente','${i.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="App.delete('cliente','${i.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                    if(type === 'produto') return `<tr class="hover:bg-slate-50 transition"><td class="p-4"><div class="font-bold">${i.codigo}-${i.nome}</div>${i.isTemp ? '<span class="text-[9px] bg-orange-100 text-orange-600 px-1 rounded">TEMP</span>':''}</td><td class="p-4 text-xs font-bold text-emerald-600">R$ ${Number(i.valor).toFixed(2)}<br><span class="text-slate-400 font-normal">Estoque: ${i.estoque||0}</span></td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.duplicate('${i.id}')" class="text-emerald-500 hover:bg-emerald-50 p-2 rounded-lg" title="Duplicar"><i class="fa-solid fa-copy"></i></button><button onclick="App.edit('produto','${i.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="App.delete('produto','${i.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                    if(type === 'venda') {
+                        const c = db.cliente.find(x => x.id === i.cliId); const p = db.produto.find(x => x.id === i.prodId);
+                        return `<tr class="hover:bg-slate-50 text-[11px]"><td class="p-4"><b>${c?.nome||'Excluído'}</b><br>${p?.nome||'Excluído'} (x${i.qty})</td><td class="p-4 font-bold text-slate-700">R$ ${i.total.toFixed(2)}<br><span class="text-slate-400 font-normal text-[9px] uppercase">${i.pag} | ${i.rota}</span></td><td class="p-4 text-right"><button onclick="App.delete('venda','${i.id}')" class="text-red-300 hover:text-red-500 p-2"><i class="fa-solid fa-times"></i></button></td></tr>`;
+                    }
+                }).join('');
             },
             resetForm: (t) => {
-                UI.get(`form-${t}`).reset(); UI.get(`${t[0]}-id`).value = ''; UI.get(`${t[0]}-codigo`).value = '';
-                UI.get(`formLabel-${t}`).innerText = `Novo ${t}`;
-                if(t === 'produto') { UI.toggleKit('normal'); UI.get('p-kit-bulk').value = ''; }
+                UI.get(`form-${t}`).reset(); if(t !== 'venda') { UI.get(`${t[0]}-id`).value = ''; UI.get(`${t[0]}-codigo`).value = ''; UI.get(`formLabel-${t}`).innerText = `Novo ${t}`; }
+                if(t === 'produto') UI.toggleKit('normal'); if(t === 'venda') UI.get('v-total').innerText = 'R$ 0,00';
             },
             fillForm: (t, i) => {
                 const p = t[0]; UI.get(`${p}-id`).value = i.id; UI.get(`${p}-codigo`).value = i.codigo; UI.get(`${p}-nome`).value = i.nome;
                 if(t === 'cliente') { UI.get('c-tel').value = i.tel; UI.get('c-cidade').value = i.cidade; UI.get('c-bairro').value = i.bairro || ''; UI.get('c-endereco').value = i.endereco; }
                 else {
                     ['ean','ncm','categoria','custo','valor','estoque','tipo'].forEach(k => UI.get(`p-${k}`).value = i[k]);
-                    UI.toggleKit(i.tipo);
-                    if(i.tipo === 'kit' && i.items) {
-                        i.items.forEach(ki => {
-                            const ck = document.querySelector(`.kit-check[data-pid="${ki.id}"]`);
-                            const qy = document.querySelector(`.kit-qty[data-pid="${ki.id}"]`);
-                            if(ck) ck.checked = true; if(qy) qy.value = ki.qty;
-                        });
-                    }
+                    UI.get('p-isTemp').checked = !!i.isTemp; UI.toggleKit(i.tipo);
+                    if(i.tipo === 'kit' && i.items) i.items.forEach(ki => { const ck = document.querySelector(`.kit-check[data-pid="${ki.id}"]`); const qy = document.querySelector(`.kit-qty[data-pid="${ki.id}"]`); if(ck) ck.checked = true; if(qy) qy.value = ki.qty; });
                 }
                 UI.get(`formLabel-${t}`).innerText = `Editando ${t}`;
-            },
-            filter: (t, v) => {
-                const filtered = DB.load()[t].filter(i => i.nome.toLowerCase().includes(v.toLowerCase()) || i.codigo.toLowerCase().includes(v.toLowerCase()));
-                // Reutiliza renderização mas para o filtrado
-                UI.get(`count-${t}`).innerText = filtered.length; // (Simulado para brevidade)
             }
         };
 
         const App = {
-            init: () => UI.render('cliente'),
+            init: () => {
+                const db = DB.load(); const now = Date.now();
+                db.produto = db.produto.filter(p => !p.deleteAt || p.deleteAt > now);
+                DB.saveAll(db); UI.render('cliente');
+                ['v-qty', 'v-desconto', 'v-produto'].forEach(id => UI.get(id).addEventListener('input', App.calcVenda));
+            },
+            calcVenda: () => {
+                const p = UI.get('v-produto'); const sel = p.options[p.selectedIndex];
+                const price = sel ? Number(sel.dataset.price || 0) : 0;
+                const total = (price * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value || 0);
+                UI.get('v-total').innerText = `R$ ${total.toFixed(2)}`;
+            },
             handleSave: (t, e) => {
-                e.preventDefault();
-                const p = t[0];
-                const obj = { id: UI.get(`${p}-id`).value, codigo: UI.get(`${p}-codigo`).value, nome: UI.get(`${p}-nome`).value };
-                if(t === 'cliente') { Object.assign(obj, { tel: UI.get('c-tel').value, cidade: UI.get('c-cidade').value, bairro: UI.get('c-bairro').value, endereco: UI.get('c-endereco').value }); }
-                else {
-                    Object.assign(obj, { ean: UI.get('p-ean').value, ncm: UI.get('p-ncm').value, categoria: UI.get('p-categoria').value, custo: UI.get('p-custo').value, valor: UI.get('p-valor').value, estoque: UI.get('p-estoque').value, tipo: UI.get('p-tipo').value });
+                e.preventDefault(); const p = t[0];
+                const obj = { id: UI.get(`${p}-id`)?.value, nome: UI.get(`${p}-nome`)?.value, codigo: UI.get(`${p}-codigo`)?.value };
+                if(t === 'cliente') Object.assign(obj, { tel: UI.get('c-tel').value, cidade: UI.get('c-cidade').value, bairro: UI.get('c-bairro').value, endereco: UI.get('c-endereco').value });
+                else if(t === 'produto') {
+                    Object.assign(obj, { ean: UI.get('p-ean').value, ncm: UI.get('p-ncm').value, categoria: UI.get('p-categoria').value, custo: UI.get('p-custo').value, valor: UI.get('p-valor').value, estoque: UI.get('p-estoque').value, tipo: UI.get('p-tipo').value, isTemp: UI.get('p-isTemp').checked });
                     if(obj.tipo === 'kit') {
-                        let kitItems = Array.from(document.querySelectorAll('.kit-check:checked')).map(ck => ({ id: ck.dataset.pid, qty: document.querySelector(`.kit-qty[data-pid="${ck.dataset.pid}"]`).value }));
-                        // Processa o Bulk Textarea
-                        const bulk = UI.get('p-kit-bulk').value.split('\n');
-                        const allProds = DB.load().produto;
-                        bulk.forEach(line => {
-                            const [code, qty] = line.split('|').map(s => s.trim());
-                            const found = allProds.find(x => x.codigo === code);
-                            if(found) kitItems.push({ id: found.id, qty: qty || 1 });
-                        });
-                        obj.items = kitItems;
+                        let kit = Array.from(document.querySelectorAll('.kit-check:checked')).map(ck => ({ id: ck.dataset.pid, qty: document.querySelector(`.kit-qty[data-pid="${ck.dataset.pid}"]`).value }));
+                        UI.get('p-kit-bulk').value.split('\n').forEach(l => { const [c, q] = l.split('|').map(s=>s.trim()); const f = DB.load().produto.find(x=>x.codigo===c); if(f) kit.push({id:f.id, qty:q||1}); });
+                        obj.items = kit;
                     }
+                } else {
+                    const db = DB.load(); const prod = db.produto.find(x => x.id === UI.get('v-produto').value);
+                    const v = { id: Date.now().toString(), cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, desc: Number(UI.get('v-desconto').value||0), obs: UI.get('v-obs').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now() };
+                    if(prod.isTemp) { prod.deleteAt = Date.now() + 86400000; DB.save('produto', prod); }
+                    DB.save('venda', v); UI.resetForm('venda'); UI.render('venda'); return;
                 }
                 DB.save(t, obj); UI.resetForm(t); UI.render(t);
             },
+            duplicate: (id) => { const p = {...DB.load().produto.find(x => x.id === id)}; delete p.id; delete p.codigo; p.nome += " (CÓPIA)"; DB.save('produto', p); UI.render('produto'); },
             edit: (t, id) => { const i = DB.load()[t].find(x => x.id === id); if(i) UI.fillForm(t, i); },
             delete: (t, id) => { if(confirm('Excluir?')) { DB.delete(t, id); UI.render(t); } }
         };
 
         const ExportEngine = {
-            export: () => { const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(DB.load())], {type: 'application/json'})), download: 'core_backup.json' }); a.click(); },
-            import: (e) => { const r = new FileReader(); r.onload = (ev) => { DB.saveAll(JSON.parse(ev.target.result)); UI.render('cliente'); }; r.readAsText(e.target.files[0]); }
+            export: () => { const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(DB.load())], {type: 'application/json'})), download: 'backup.json' }); a.click(); }
         };
 
         window.onload = App.init;
