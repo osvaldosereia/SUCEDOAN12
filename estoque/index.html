@@ -15,7 +15,6 @@
         .custom-scroll::-webkit-scrollbar { width: 5px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-        /* Visualizador de Cupom Lateral */
         #print-area:not(:empty) {
             position: fixed;
             top: 0; right: 0;
@@ -43,7 +42,6 @@
 </head>
 <body class="h-screen flex overflow-hidden">
 
-    <!-- SIDEBAR -->
     <aside class="w-64 bg-slate-900 flex flex-col p-4 gap-2 no-print flex-shrink-0">
         <div class="flex items-center gap-3 px-2 mb-8 text-white">
             <i class="fa-solid fa-rocket text-blue-500 text-2xl"></i>
@@ -261,7 +259,6 @@
             </section>
         </main>
         
-        <!-- CRM -->
         <main id="view-crm" class="view-content flex-1 overflow-auto p-6 flex flex-col gap-6">
             <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between flex-shrink-0 no-print">
                 <div>
@@ -282,7 +279,6 @@
         </main>
     </div>
 
-    <!-- ÁREA DE VISUALIZAÇÃO/IMPRESSÃO -->
     <div id="print-area"></div>
 
     <script>
@@ -294,60 +290,51 @@
         const DB = {
             key: 'enterprise_v5_db',
             load: () => {
-                const defaults = {cliente:[], produto:[], venda:[], counters:{cliente:0, produto:0, prodTemp:0, venda:0, lastSaleDate: null}};
+                const defaults = {cliente:[], produto:[], venda:[]};
                 if (!storageAvailable('localStorage')) return defaults;
-                const data = JSON.parse(localStorage.getItem(DB.key) || JSON.stringify(defaults));
-                if(!data.counters) data.counters = defaults.counters;
-                return data;
+                return JSON.parse(localStorage.getItem(DB.key) || JSON.stringify(defaults));
             },
             saveAll: (data) => {
                 if (storageAvailable('localStorage')) localStorage.setItem(DB.key, JSON.stringify(data));
             },
-            // Calcula o PRÓXIMO código (Sem incrementar ainda) para exibição na UI
-            peekNextCode: (type, options = {}) => {
+            // Lógica Centralizada: Lê o valor mais alto da lista existente e retorna o próximo
+            // Venda agora é sequencial contínuo sem reset diário
+            getNextCode: (type, options = {}) => {
                 const db = DB.load();
-                const today = new Date().toLocaleDateString('pt-BR');
-                if(type === 'cliente') return `C${String(db.counters.cliente + 1).padStart(4, '0')}`;
-                if(type === 'produto') {
-                    const count = options.isTemp ? db.counters.prodTemp + 1 : db.counters.produto + 1;
-                    const pref = options.isTemp ? 'PT' : 'P';
-                    return `${pref}${String(count).padStart(3, '0')}`;
+                let maxNum = 0;
+
+                if (type === 'cliente') {
+                    db.cliente.forEach(c => {
+                        const n = parseInt(c.codigo?.substring(1)) || 0;
+                        if (n > maxNum) maxNum = n;
+                    });
+                    return `C${String(maxNum + 1).padStart(4, '0')}`;
                 }
-                if(type === 'venda') {
-                    const count = (db.counters.lastSaleDate !== today) ? 1 : db.counters.venda + 1;
-                    return `V${String(count).padStart(3, '0')}`;
+
+                if (type === 'produto') {
+                    const isTemp = options.isTemp;
+                    const prefix = isTemp ? 'PT' : 'P';
+                    db.produto.forEach(p => {
+                        if (isTemp && p.codigo?.startsWith('PT')) {
+                            const n = parseInt(p.codigo.substring(2)) || 0;
+                            if (n > maxNum) maxNum = n;
+                        } else if (!isTemp && p.codigo?.startsWith('P') && !p.codigo?.startsWith('PT')) {
+                            const n = parseInt(p.codigo.substring(1)) || 0;
+                            if (n > maxNum) maxNum = n;
+                        }
+                    });
+                    return `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
+                }
+
+                if (type === 'venda') {
+                    // Escaneia todas as vendas para encontrar o maior número global
+                    db.venda.forEach(v => {
+                        const n = parseInt(v.codigo?.substring(1)) || 0;
+                        if (n > maxNum) maxNum = n;
+                    });
+                    return `V${String(maxNum + 1).padStart(3, '0')}`;
                 }
                 return "";
-            },
-            // Gera e INCREMENTA o contador de fato
-            consumeCode: (type, options = {}) => {
-                const db = DB.load();
-                let code = "";
-                const today = new Date().toLocaleDateString('pt-BR');
-
-                if(type === 'cliente') { 
-                    db.counters.cliente++; 
-                    code = `C${String(db.counters.cliente).padStart(4, '0')}`; 
-                }
-                else if(type === 'produto') {
-                    if(options.isTemp) { 
-                        db.counters.prodTemp++; 
-                        code = `PT${String(db.counters.prodTemp).padStart(3, '0')}`; 
-                    } else { 
-                        db.counters.produto++; 
-                        code = `P${String(db.counters.produto).padStart(3, '0')}`; 
-                    }
-                }
-                else if(type === 'venda') {
-                    if(db.counters.lastSaleDate !== today) {
-                        db.counters.venda = 0;
-                        db.counters.lastSaleDate = today;
-                    }
-                    db.counters.venda++; 
-                    code = `V${String(db.counters.venda).padStart(3, '0')}`; 
-                }
-                DB.saveAll(db);
-                return code;
             },
             save: (type, obj) => {
                 const db = DB.load();
@@ -356,8 +343,8 @@
                     db[type][idx] = obj; 
                 } else {
                     if(!obj.id) obj.id = Date.now().toString();
-                    // Se não tiver código (novo cadastro), gera agora
-                    if(!obj.codigo) obj.codigo = DB.consumeCode(type, {isTemp: obj.isTemp});
+                    // Garante que o código seja gerado com base no estado mais atual da lista
+                    if(!obj.codigo) obj.codigo = DB.getNextCode(type, {isTemp: obj.isTemp});
                     db[type].push(obj);
                 }
                 DB.saveAll(db);
@@ -373,11 +360,11 @@
                 UI.get(`view-${view}`).classList.add('active');
                 if(btn) btn.classList.add('active');
                 UI.get('view-title').innerText = view.charAt(0).toUpperCase() + view.slice(1);
+                UI.render(view);
+                UI.resetForm(view);
                 if(view === 'venda') UI.renderVendaOptions();
                 if(view === 'produto') UI.renderKitOptions();
                 if(view === 'crm') UI.renderCRM();
-                UI.render(view);
-                UI.resetForm(view);
             },
             toggleKit: (val) => UI.get('p-kit-area').classList.toggle('hidden', val !== 'kit'),
             renderKitOptions: () => {
@@ -442,39 +429,33 @@
                 UI.get(`${t[0]}-id`).value = '';
                 UI.get(`formLabel-${t}`).innerText = `Novo ${t}`;
                 
-                // Popula o código automaticamente ao abrir o formulário novo
+                // Atribui o próximo código baseado no valor mais alto da lista existente
                 if(t === 'cliente') {
-                    UI.get('c-codigo').value = DB.peekNextCode('cliente');
+                    UI.get('c-codigo').value = DB.getNextCode('cliente');
                 } else if(t === 'produto') {
                     UI.get('p-isTemp').checked = false;
-                    UI.get('p-codigo').value = DB.peekNextCode('produto', {isTemp: false});
+                    UI.get('p-codigo').value = DB.getNextCode('produto', {isTemp: false});
                     UI.toggleKit('normal');
                 } else if(t === 'venda') {
                     UI.get('v-total').innerText = 'R$ 0,00';
-                    UI.renderVendaOptions();
                 }
             },
             updateNextProductCode: (isTemp) => {
-                UI.get('p-codigo').value = DB.peekNextCode('produto', {isTemp});
+                UI.get('p-codigo').value = DB.getNextCode('produto', {isTemp});
             },
             fillForm: (t, i) => {
                 const p = t[0]; 
                 UI.get(`${p}-id`).value = i.id; 
                 UI.get(`${p}-codigo`).value = i.codigo;
                 if(t === 'cliente') { 
-                    UI.get('c-nome').value = i.nome; 
-                    UI.get('c-tel').value = i.tel; 
-                    UI.get('c-cidade').value = i.cidade; 
-                    UI.get('c-bairro').value = i.bairro || ''; 
-                    UI.get('c-endereco').value = i.endereco;
-                    UI.get('c-rota').value = i.rota || '';
-                    UI.get('c-maps').value = i.maps || '';
+                    UI.get('c-nome').value = i.nome; UI.get('c-tel').value = i.tel; UI.get('c-cidade').value = i.cidade; 
+                    UI.get('c-bairro').value = i.bairro || ''; UI.get('c-endereco').value = i.endereco;
+                    UI.get('c-rota').value = i.rota || ''; UI.get('c-maps').value = i.maps || '';
                 }
                 else if(t === 'produto') { 
                     UI.get('p-nome').value = i.nome; 
                     ['ean','ncm','categoria','custo','valor','estoque','tipo'].forEach(k => UI.get(`p-${k}`).value = i[k]); 
-                    UI.get('p-isTemp').checked = !!i.isTemp; 
-                    UI.toggleKit(i.tipo); 
+                    UI.get('p-isTemp').checked = !!i.isTemp; UI.toggleKit(i.tipo); 
                 }
                 UI.get(`formLabel-${t}`).innerText = `Editando ${t}`;
             }
@@ -482,13 +463,9 @@
 
         const App = {
             init: () => {
-                const db = DB.load();
-                DB.saveAll(db); 
-                UI.render('cliente');
-                UI.resetForm('cliente');
+                const db = DB.load(); DB.saveAll(db); UI.render('cliente'); UI.resetForm('cliente');
                 ['v-qty', 'v-desconto', 'v-produto'].forEach(id => {
-                    const el = UI.get(id);
-                    if(el) el.addEventListener('input', App.calcVenda);
+                    const el = UI.get(id); if(el) el.addEventListener('input', App.calcVenda);
                 });
             },
             calcVenda: () => {
@@ -497,14 +474,12 @@
                 UI.get('v-total').innerText = `R$ ${Math.max(0, total).toFixed(2)}`;
             },
             handleSave: (t, e) => {
-                e.preventDefault(); 
-                const p = t[0];
+                e.preventDefault(); const p = t[0];
                 let objId = UI.get(`${p}-id`).value;
-                let obj = { id: objId || null }; // null se for novo
+                let obj = { id: objId || null }; 
 
                 if(t !== 'venda') {
                     obj.nome = UI.get(`${p}-nome`).value;
-                    // Se for edição, mantém o código atual. Se for novo, gera no DB.save.
                     if(objId) obj.codigo = UI.get(`${p}-codigo`).value;
                 }
                 
@@ -520,8 +495,7 @@
                         if(bulkText) {
                             bulkText.split('\n').forEach(line => {
                                 const [code, qty] = line.split('|').map(s => s.trim());
-                                const db = DB.load();
-                                const found = db.produto.find(x => x.codigo === code);
+                                const found = DB.load().produto.find(x => x.codigo === code);
                                 if(found) kitItems.push({ id: found.id, qty: Number(qty) || 1 });
                             });
                         }
@@ -532,7 +506,7 @@
                     const prodId = prodSelect.value;
                     const db = DB.load();
                     const prod = db.produto.find(x => x.id === prodId);
-                    if(!prod) return alert('Produto não selecionado!');
+                    if(!prod) return;
                     Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now(), obs: UI.get('v-obs').value });
                     
                     const deduct = (id, q) => {
@@ -549,13 +523,11 @@
                 UI.resetForm(t);
             },
             printVenda: (id) => {
-                const db = DB.load(); 
-                const v = db.venda.find(x => x.id === id); 
-                const c = db.cliente.find(x => x.id === v.cliId); 
-                const p = db.produto.find(x => x.id === v.prodId);
+                const db = DB.load(); const v = db.venda.find(x => x.id === id); 
+                const c = db.cliente.find(x => x.id === v.cliId); const p = db.produto.find(x => x.id === v.prodId);
                 let kitHtml = ""; 
                 if(p && p.tipo === 'kit' && p.items) {
-                    kitHtml = `<div style="border-top:1px dashed #000; padding-top:5px; margin-top:5px; font-size:11px;"><b>SEPARAÇÃO (Kits):</b><br>` + 
+                    kitHtml = `<div style="border-top:1px dashed #000; padding-top:5px; margin-top:5px; font-size:11px;"><b>SEPARAÇÃO:</b><br>` + 
                         p.items.map(ki => {
                             const sub = db.produto.find(x => x.id === ki.id);
                             return `• ${ki.qty * v.qty}x ${sub?.nome || 'Item Excl'}`;
@@ -563,63 +535,47 @@
                 }
                 UI.get('print-area').innerHTML = `
                     <div class="no-print" style="margin-bottom: 20px; text-align: right;">
-                        <button onclick="UI.get('print-area').innerHTML=''" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg text-xs transition uppercase">Fechar Visualização</button>
+                        <button onclick="UI.get('print-area').innerHTML=''" class="bg-red-600 text-white py-2 px-6 rounded-lg text-xs uppercase font-bold">Fechar</button>
                     </div>
                     <div style="font-family:monospace; width: 100%; max-width: 320px; padding: 10px; border: 1px solid #eee;">
-                        <center>
-                            <h1 style="font-size: 24px; margin-bottom: 2px;">PEDIDO #${v.codigo}</h1>
-                            <div style="background:#000; color:#fff; padding:10px 0; margin-top:5px; font-size: 38px; font-weight: 900; line-height: 1;">ROTA: ${v.rota}</div>
-                        </center>
-                        <br>
-                        <div style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px;">
-                            <b>CLI:</b> [${c?.codigo || 'N/A'}] - ${c?.nome || 'N/A'}<br>
-                            <b>TEL:</b> ${c?.tel || 'N/A'}
-                        </div>
-                        <div style="margin-top: 5px; font-size: 12px;">
-                            <b>CID/BAIRRO:</b> ${c?.cidade || '-'}/${c?.bairro || '-'}<br>
-                            <b>ENDEREÇO:</b> ${c?.endereco || '-'}
-                        </div>
+                        <center><h1 style="font-size: 24px; margin-bottom: 2px;">PEDIDO #${v.codigo}</h1>
+                        <div style="background:#000; color:#fff; padding:10px 0; margin-top:5px; font-size: 38px; font-weight: 900;">ROTA: ${v.rota}</div></center>
+                        <br><div style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px;"><b>CLI:</b> [${c?.codigo}] - ${c?.nome}</div>
+                        <div style="margin-top: 5px; font-size: 12px;"><b>CIDADE:</b> ${c?.cidade}/${c?.bairro}<br><b>END:</b> ${c?.endereco}</div>
                         <hr style="border:1px solid #000;margin:10px 0">
                         <div style="font-size:16px;"><b>${v.qty}x ${p?.nome}</b></div>
                         ${kitHtml}
                         <hr style="border:1px solid #000;margin:10px 0">
-                        <b>FORMA PGTO:</b> <span style="font-size: 16px;">${v.pag.toUpperCase()}</span><br>
+                        <b>PGTO:</b> <span style="font-size: 16px;">${v.pag.toUpperCase()}</span><br>
                         <div style="font-size:22px; text-align:right; margin-top: 5px;"><b>TOTAL: R$ ${v.total.toFixed(2)}</b></div>
                         <br><b>OBS:</b> ${v.obs || '-'}<br>
-                        <center style="font-size: 10px; margin-top: 20px;">
-                            ENTERPRISE CORE - LOGÍSTICA<br>
-                            Emissão: ${new Date().toLocaleString('pt-BR')}
-                        </center>
+                        <center style="font-size: 10px; margin-top: 20px;">ENTERPRISE CORE - LOGÍSTICA<br>${new Date().toLocaleString('pt-BR')}</center>
                     </div>`;
                 window.print();
             },
             edit: (t, id) => { const i = DB.load()[t].find(x => x.id === id); if(i) UI.fillForm(t, i); },
-            delete: (t, id) => { if(confirm('Excluir definitivamente?')) { DB.delete(t, id); UI.render(t); } }
+            delete: (t, id) => { if(confirm('Excluir?')) { DB.delete(t, id); UI.render(t); } }
         };
 
         const ExportEngine = {
             exportAll: () => { 
                 const a = Object.assign(document.createElement('a'), { 
                     href: URL.createObjectURL(new Blob([JSON.stringify(DB.load())], {type: 'application/json'})), 
-                    download: `backup_completo_${Date.now()}.json` 
-                }); 
-                a.click(); 
+                    download: `backup_${Date.now()}.json` 
+                }); a.click(); 
             },
             exportSelectedSales: () => {
                 const db = DB.load();
                 const selectedIds = Array.from(document.querySelectorAll('.venda-select:checked')).map(cb => cb.dataset.id);
-                if(!selectedIds.length) return alert('Selecione ao menos uma venda!');
+                if(!selectedIds.length) return alert('Selecione uma venda!');
                 const report = selectedIds.map(id => {
-                    const venda = db.venda.find(v => v.id === id);
-                    const cliente = db.cliente.find(c => c.id === venda.cliId);
-                    const produto = db.produto.find(p => p.id === venda.prodId);
-                    return { ...venda, detalhes_cliente: cliente || "Cliente excluído", detalhes_produto: produto || "Produto excluído" };
+                    const v = db.venda.find(x => x.id === id);
+                    return { ...v, cliente: db.cliente.find(c => c.id === v.cliId), produto: db.produto.find(p => p.id === v.prodId) };
                 });
                 const a = Object.assign(document.createElement('a'), { 
                     href: URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'})), 
-                    download: `relatorio_vendas_${Date.now()}.json` 
-                }); 
-                a.click();
+                    download: `vendas_selecionadas_${Date.now()}.json` 
+                }); a.click();
             }
         };
         window.onload = App.init;
