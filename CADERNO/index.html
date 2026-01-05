@@ -107,11 +107,20 @@
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
-                        <div class="md:col-span-3">
+                        <div class="md:col-span-2">
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cód. Cliente</label>
                             <input type="text" id="o-cli" class="w-full border p-2 rounded-lg font-bold text-sm">
                         </div>
-                        <div class="md:col-span-9">
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Pagamento</label>
+                            <select id="o-pay" class="w-full border p-2 rounded-lg text-sm font-bold bg-slate-50">
+                                <option value="DINHEIRO">💵 DINHEIRO</option>
+                                <option value="CARTÃO">💳 CARTÃO</option>
+                                <option value="PIX">⚡ PIX</option>
+                                <option value="SÓ ENTREGAR">📦 SÓ ENTREGAR</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-7">
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Produto</label>
                             <select id="os" class="w-full border p-2 rounded-lg text-sm"></select>
                         </div>
@@ -142,7 +151,7 @@
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <div class="flex items-center gap-2">
                             <input type="checkbox" id="select-all-h" onchange="toggleAllH(this.checked)" class="w-4 h-4 rounded">
-                            <h3 class="font-black uppercase text-[10px] text-slate-500">Histórico de Hoje</h3>
+                            <h3 class="font-black uppercase text-[10px] text-slate-500">Histórico</h3>
                         </div>
                         <div class="flex gap-1">
                             <button onclick="deleteSelected()" class="text-[9px] bg-red-50 text-red-600 px-2 py-1 rounded font-black uppercase">Excluir</button>
@@ -259,8 +268,18 @@
 
         const finO = () => {
             if(!curO.length) return alert('Vazio');
-            const n = { id: Date.now(), code: getON(), date: new Date().toLocaleDateString('pt-BR'), time: new Date().toLocaleTimeString('pt-BR'), 
-                        clientCode: $('o-cli').value, items: [...curO], total: curO.reduce((a,b)=>a+(b.price*b.qty),0), obs: $('o-obs').value, processed: false };
+            const n = { 
+                id: Date.now(), 
+                code: getON(), 
+                date: new Date().toLocaleDateString('pt-BR'), 
+                time: new Date().toLocaleTimeString('pt-BR'), 
+                clientCode: $('o-cli').value, 
+                payment: $('o-pay').value,
+                items: [...curO], 
+                total: curO.reduce((a,b)=>a+(b.price*b.qty),0), 
+                obs: $('o-obs').value, 
+                processed: false 
+            };
             ords.push(n); curO = []; $('o-cli').value=''; $('o-obs').value=''; $('oq').value=1; save(); render(); renderO(); renderOH(); prt(n);
         };
 
@@ -282,7 +301,13 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2 border-t pt-2">
                         <input type="text" value="${o.clientCode||''}" onchange="updF('${o.id}','clientCode',this.value)" placeholder="Cód Cliente" class="bg-slate-50 p-1 rounded border-none font-bold text-blue-600">
-                        <input type="text" value="${o.obs||''}" onchange="updF('${o.id}','obs',this.value)" placeholder="Obs" class="bg-slate-50 p-1 rounded border-none italic">
+                        <select onchange="updF('${o.id}','payment',this.value)" class="bg-slate-50 p-1 rounded border-none font-black text-[10px]">
+                            <option value="DINHEIRO" ${o.payment==='DINHEIRO'?'selected':''}>DINHEIRO</option>
+                            <option value="CARTÃO" ${o.payment==='CARTÃO'?'selected':''}>CARTÃO</option>
+                            <option value="PIX" ${o.payment==='PIX'?'selected':''}>PIX</option>
+                            <option value="SÓ ENTREGAR" ${o.payment==='SÓ ENTREGAR'?'selected':''}>SÓ ENTREGAR</option>
+                        </select>
+                        <input type="text" value="${o.obs||''}" onchange="updF('${o.id}','obs',this.value)" placeholder="Obs" class="col-span-2 bg-slate-50 p-1 rounded border-none italic">
                     </div>
                 </div>`).join('') : '<p class="text-center py-4 italic text-xs text-slate-400">Sem pedidos</p>';
         };
@@ -319,11 +344,13 @@
         const prt = o => {
             const w = window.open('', '', 'width=900,height=600');
             const items = o.items.map(i => `<div style="margin-bottom:2mm"><div style="font-size:20px"><b>${i.qty}x ${i.name}</b></div></div>`).join('');
-            w.document.write(`<html><body style="width:72mm;font-family:monospace;padding:2mm">
+            w.document.write(`<html><body style="width:72mm;font-family:monospace;padding:2mm;line-height:1.2">
                 <div style="text-align:center"><b>PEDIDO #${o.code}</b><br>${o.date} ${o.time}</div>
                 <div style="border-top:1px dashed #000;margin:3mm 0"></div>
                 ${items}<div style="border-top:1px dashed #000;margin:3mm 0"></div>
-                <b>CLIENTE: ${o.clientCode||'---'}</b><br><b>OBS: ${o.obs||'---'}</b>
+                <b>PAGAMENTO: ${o.payment || '---'}</b><br>
+                <b>CLIENTE: ${o.clientCode||'---'}</b><br>
+                <b>OBS: ${o.obs||'---'}</b>
                 <script>setTimeout(()=>{window.print();window.close()},500)<\/script>
             </body></html>`);
             w.document.close();
