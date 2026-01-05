@@ -7,10 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
-        .view-content { display: none; }
-        .view-content.active { display: flex; }
+        
+        /* Sistema de Abas Estrito */
+        .view-content { display: none !important; }
+        .view-content.active { display: flex !important; }
+        
         .nav-link.active { background: #2563eb; color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
         .custom-scroll::-webkit-scrollbar { width: 5px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -25,32 +28,44 @@
 </head>
 <body class="h-screen flex overflow-hidden">
 
-    <aside class="w-64 bg-slate-900 flex flex-col p-4 gap-2 no-print">
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 flex flex-col p-4 gap-2 no-print flex-shrink-0">
         <div class="flex items-center gap-3 px-2 mb-8 text-white">
             <i class="fa-solid fa-rocket text-blue-500 text-2xl"></i>
             <h1 class="font-bold tracking-tight uppercase text-sm">Enterprise Core</h1>
         </div>
         <nav class="flex-1 space-y-1">
-            <button onclick="UI.switchView('cliente', this)" class="nav-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-users w-5"></i> <span>Clientes</span></button>
-            <button onclick="UI.switchView('produto', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-box w-5"></i> <span>Produtos</span></button>
-            <button onclick="UI.switchView('venda', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-cart-shopping w-5"></i> <span>Vendas</span></button>
-            <button onclick="UI.switchView('crm', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-chart-line w-5"></i> <span>CRM</span></button>
+            <button onclick="UI.switchView('cliente', this)" class="nav-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-users w-5"></i> <span>Clientes</span>
+            </button>
+            <button onclick="UI.switchView('produto', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-box w-5"></i> <span>Produtos</span>
+            </button>
+            <button onclick="UI.switchView('venda', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-cart-shopping w-5"></i> <span>Vendas</span>
+            </button>
+            <button onclick="UI.switchView('crm', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-chart-line w-5"></i> <span>CRM</span>
+            </button>
         </nav>
-        <button onclick="ExportEngine.export()" class="text-left px-4 py-2 text-slate-500 hover:text-emerald-400 text-xs transition"><i class="fa-solid fa-database mr-2"></i> Backup</button>
+        <button onclick="ExportEngine.export()" class="text-left px-4 py-2 text-slate-500 hover:text-emerald-400 text-xs transition">
+            <i class="fa-solid fa-database mr-2"></i> Backup Geral
+        </button>
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center no-print">
-            <h2 id="view-title" class="text-xl font-bold text-slate-800">Clientes</h2>
+        <!-- HEADER GLOBAL -->
+        <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center no-print flex-shrink-0">
+            <h2 id="view-title" class="text-xl font-bold text-slate-800 tracking-tight">Clientes</h2>
             <div class="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs uppercase">AD</div>
         </header>
 
         <!-- VIEW: CLIENTE -->
         <main id="view-cliente" class="view-content active flex-1 overflow-hidden p-6 gap-6">
-            <section class="w-80 lg:w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between">
+            <section class="w-80 lg:w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <span id="formLabel-cliente" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Novo Cliente</span>
-                    <button onclick="UI.resetForm('cliente')" class="text-[10px] text-slate-400 hover:text-red-500">LIMPAR</button>
+                    <button onclick="UI.resetForm('cliente')" class="text-[10px] text-slate-400 hover:text-red-500 font-bold">LIMPAR</button>
                 </div>
                 <form id="form-cliente" onsubmit="App.handleSave('cliente', event)" class="p-5 space-y-4 overflow-y-auto custom-scroll">
                     <input type="hidden" id="c-id">
@@ -69,8 +84,8 @@
             </section>
             <section class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <input type="text" oninput="UI.filter('cliente', this.value)" placeholder="Filtrar clientes..." class="pl-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none w-64">
-                    <span class="text-[10px] font-bold text-slate-400 tracking-tighter">TOTAL: <b id="count-cliente" class="text-slate-700">0</b></span>
+                    <input type="text" oninput="UI.filter('cliente', this.value)" placeholder="Filtrar clientes..." class="pl-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none w-64 focus:border-blue-500">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">TOTAL: <b id="count-cliente" class="text-slate-700">0</b></span>
                 </div>
                 <div class="flex-1 overflow-auto custom-scroll">
                     <table class="w-full text-left text-sm"><tbody id="table-cliente" class="divide-y divide-slate-100"></tbody></table>
@@ -80,16 +95,16 @@
 
         <!-- VIEW: PRODUTO -->
         <main id="view-produto" class="view-content flex-1 overflow-hidden p-6 gap-6">
-            <section class="w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between">
+            <section class="w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <span id="formLabel-produto" class="text-[10px] font-bold text-emerald-600 uppercase">Novo Produto</span>
-                    <button onclick="UI.resetForm('produto')" class="text-[10px] text-slate-400 hover:text-red-500">LIMPAR</button>
+                    <button onclick="UI.resetForm('produto')" class="text-[10px] text-slate-400 hover:text-red-500 font-bold">LIMPAR</button>
                 </div>
                 <form id="form-produto" onsubmit="App.handleSave('produto', event)" class="p-5 space-y-3 overflow-y-auto custom-scroll">
                     <input type="hidden" id="p-id">
                     <div class="grid grid-cols-2 gap-2">
                         <input type="text" id="p-codigo" readonly placeholder="V000" class="bg-slate-100 border rounded-lg px-3 py-2 text-xs font-bold text-slate-500">
-                        <input type="text" id="p-ean" placeholder="EAN" class="bg-slate-50 border rounded-lg px-3 py-2 text-xs">
+                        <input type="text" id="p-ean" placeholder="EAN" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none">
                     </div>
                     <input type="text" id="p-nome" required placeholder="Nome do Produto" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
                     <div class="grid grid-cols-2 gap-2">
@@ -118,7 +133,7 @@
             <section class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <input type="text" oninput="UI.filter('produto', this.value)" placeholder="Buscar..." class="pl-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none w-64 focus:border-blue-500">
-                    <span class="text-[10px] font-bold text-slate-400">TOTAL: <b id="count-produto" class="text-slate-700">0</b></span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">TOTAL: <b id="count-produto" class="text-slate-700">0</b></span>
                 </div>
                 <div class="flex-1 overflow-auto custom-scroll">
                     <table class="w-full text-left text-sm"><tbody id="table-produto" class="divide-y divide-slate-100"></tbody></table>
@@ -128,10 +143,10 @@
 
         <!-- VIEW: VENDAS -->
         <main id="view-venda" class="view-content flex-1 overflow-hidden p-6 gap-6">
-            <section class="w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between">
+            <section class="w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <span id="formLabel-venda" class="text-[10px] font-bold text-orange-600 uppercase">Novo Pedido</span>
-                    <button onclick="UI.resetForm('venda')" class="text-[10px] text-slate-400 hover:text-red-500">CANCELAR</button>
+                    <button onclick="UI.resetForm('venda')" class="text-[10px] text-slate-400 hover:text-red-500 font-bold">CANCELAR</button>
                 </div>
                 <form id="form-venda" onsubmit="App.handleSave('venda', event)" class="p-5 space-y-3 overflow-y-auto custom-scroll">
                     <input type="hidden" id="v-id">
@@ -164,13 +179,22 @@
                         <span class="text-xs uppercase font-bold text-slate-400">Total Líquido</span>
                         <span id="v-total" class="text-xl font-bold">R$ 0,00</span>
                     </div>
-                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition text-xs uppercase">Salvar Pedido</button>
+                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition text-xs uppercase tracking-widest">Finalizar Pedido</button>
                 </form>
             </section>
+            
             <section class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <h3 class="text-xs font-bold uppercase text-slate-500">Histórico de Vendas</h3>
-                    <span class="text-[10px] font-bold text-slate-400 tracking-tighter">TOTAL: <b id="count-venda" class="text-slate-700">0</b></span>
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs font-bold uppercase text-slate-500 tracking-tighter">Histórico de Vendas</h3>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-tighter uppercase">TOTAL: <b id="count-venda" class="text-slate-700">0</b></span>
+                    </div>
+                    <div class="flex gap-2 items-center no-print">
+                        <input type="date" id="v-filter-start" class="text-[10px] p-1.5 border rounded outline-none focus:border-blue-400">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold">a</span>
+                        <input type="date" id="v-filter-end" class="text-[10px] p-1.5 border rounded outline-none focus:border-blue-400">
+                        <button onclick="UI.render('venda')" class="bg-slate-200 hover:bg-slate-300 text-[10px] font-bold px-3 py-1.5 rounded transition uppercase">Filtrar</button>
+                    </div>
                 </div>
                 <div class="flex-1 overflow-auto custom-scroll">
                     <table class="w-full text-left text-sm"><tbody id="table-venda" class="divide-y divide-slate-100"></tbody></table>
@@ -180,41 +204,61 @@
         
         <!-- VIEW: CRM -->
         <main id="view-crm" class="view-content flex-1 overflow-auto p-6 flex flex-col gap-6">
-            <div class="grid grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Faturamento</span>
-                    <h3 id="crm-total-rev" class="text-2xl font-black text-emerald-600">R$ 0,00</h3>
+            <!-- HEADER CRM -->
+            <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between flex-shrink-0 no-print">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-700 uppercase tracking-widest leading-none">Dashboard Analytics</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase">Monitoramento de Performance</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex gap-2 items-center">
+                    <input type="date" id="crm-filter-start" class="text-[10px] p-2 border rounded-lg outline-none">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase">a</span>
+                    <input type="date" id="crm-filter-end" class="text-[10px] p-2 border rounded-lg outline-none">
+                    <button onclick="UI.renderCRM()" class="bg-blue-600 text-white text-[10px] font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-100 uppercase">Atualizar</button>
+                </div>
+            </section>
+
+            <!-- CARDS KPI -->
+            <section class="grid grid-cols-4 gap-4 flex-shrink-0">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Faturamento Líquido</span>
+                    <h3 id="crm-total-rev" class="text-2xl font-black text-emerald-600 leading-tight">R$ 0,00</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                     <span class="text-[10px] font-bold text-slate-400 uppercase">Ticket Médio</span>
-                    <h3 id="crm-avg-ticket" class="text-2xl font-black text-blue-600">R$ 0,00</h3>
+                    <h3 id="crm-avg-ticket" class="text-2xl font-black text-blue-600 leading-tight">R$ 0,00</h3>
                 </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Pedidos</span>
-                    <h3 id="crm-total-orders" class="text-2xl font-black text-slate-700">0</h3>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Volume Pedidos</span>
+                    <h3 id="crm-total-orders" class="text-2xl font-black text-slate-700 leading-tight">0</h3>
                 </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Clientes</span>
-                    <h3 id="crm-active-clients" class="text-2xl font-black text-orange-500">0</h3>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Clientes Impactados</span>
+                    <h3 id="crm-active-clients" class="text-2xl font-black text-orange-500 leading-tight">0</h3>
                 </div>
-            </div>
-            <div class="grid grid-cols-2 gap-6">
+            </section>
+
+            <!-- RANKINGS -->
+            <section class="grid grid-cols-2 gap-6 flex-shrink-0">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-3 bg-slate-50 border-b font-bold text-[10px] uppercase text-slate-500">Ranking Clientes</div>
+                    <div class="p-3 bg-slate-50 border-b font-bold text-[10px] uppercase text-slate-500 tracking-widest">Top 5 Compradores</div>
                     <table class="w-full text-xs text-left"><tbody id="crm-top-clients" class="divide-y"></tbody></table>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-3 bg-slate-50 border-b font-bold text-[10px] uppercase text-slate-500">Ranking Produtos</div>
+                    <div class="p-3 bg-slate-50 border-b font-bold text-[10px] uppercase text-slate-500 tracking-widest">Top 5 Produtos</div>
                     <table class="w-full text-xs text-left"><tbody id="crm-top-products" class="divide-y"></tbody></table>
                 </div>
-            </div>
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <div class="font-bold text-[10px] uppercase text-slate-500 mb-4">Volume por Rota</div>
-                <div id="crm-route-bars" class="space-y-4"></div>
-            </div>
+            </section>
+
+            <!-- ROTA BARS -->
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex-shrink-0">
+                <div class="font-bold text-[10px] uppercase text-slate-500 mb-6 tracking-widest">Performance por Rota</div>
+                <div id="crm-route-bars" class="space-y-5"></div>
+            </section>
         </main>
     </div>
 
+    <!-- AREA DE IMPRESSÃO (MODO TÉRMICO) -->
     <div id="print-area"></div>
 
     <script>
@@ -230,9 +274,8 @@
             save: (type, obj) => {
                 const db = DB.load();
                 const idx = db[type].findIndex(i => i.id === obj.id);
-                if (idx !== -1) {
-                    db[type][idx] = obj;
-                } else {
+                if (idx !== -1) { db[type][idx] = obj; } 
+                else {
                     if(!obj.id) obj.id = Date.now().toString();
                     if(type !== 'venda' && !obj.codigo) obj.codigo = DB.genId(type);
                     db[type].push(obj);
@@ -245,9 +288,16 @@
         const UI = {
             get: (id) => document.getElementById(id),
             switchView: (view, btn) => {
-                document.querySelectorAll('.view-content, .nav-link').forEach(el => el.classList.remove('active'));
-                UI.get(`view-${view}`).classList.add('active'); btn.classList.add('active');
+                // Auditoria visual: Esconde todos os containers 'main' de conteúdo
+                document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+                
+                const target = UI.get(`view-${view}`);
+                if(target) target.classList.add('active');
+                if(btn) btn.classList.add('active');
+                
                 UI.get('view-title').innerText = view.charAt(0).toUpperCase() + view.slice(1);
+                
                 if(view === 'venda') UI.renderVendaOptions();
                 if(view === 'produto') UI.renderKitOptions();
                 if(view === 'crm') UI.renderCRM();
@@ -256,7 +306,7 @@
             toggleKit: (val) => UI.get('p-kit-area').classList.toggle('hidden', val !== 'kit'),
             renderKitOptions: () => {
                 const prods = DB.load().produto.filter(p => p.tipo !== 'kit');
-                UI.get('p-kit-list').innerHTML = prods.map(p => `<div class="flex items-center gap-2 p-1 text-[10px]"><input type="checkbox" data-pid="${p.id}" class="kit-check"><span class="flex-1">${p.codigo}-${p.nome}</span><input type="number" data-pid="${p.id}" value="1" class="kit-qty w-8 border rounded"></div>`).join('');
+                UI.get('p-kit-list').innerHTML = prods.map(p => `<div class="flex items-center gap-2 p-1 text-[10px]"><input type="checkbox" data-pid="${p.id}" class="kit-check"><span class="flex-1">${p.codigo}-${p.nome}</span><input type="number" data-pid="${p.id}" value="1" class="kit-qty w-8 border rounded outline-none px-1"></div>`).join('');
             },
             renderVendaOptions: (filter = '') => {
                 const db = DB.load();
@@ -268,34 +318,47 @@
             },
             searchProduct: (val) => UI.renderVendaOptions(val),
             render: (type) => {
-                if(type === 'crm') return; 
-                const db = DB.load(); const data = db[type];
+                if(type === 'crm') return; // Renderização dedicada do CRM
+                const db = DB.load(); 
+                let data = db[type];
+                
+                if(type === 'venda') {
+                    const s = UI.get('v-filter-start').value; const e = UI.get('v-filter-end').value;
+                    if(s) data = data.filter(v => v.date >= new Date(s).getTime());
+                    if(e) data = data.filter(v => v.date <= new Date(e).getTime() + 86399999);
+                }
+
                 UI.get(`count-${type}`).innerText = data.length;
                 UI.get(`table-${type}`).innerHTML = data.map(i => {
-                    if(type === 'cliente') return `<tr class="hover:bg-slate-50 transition"><td class="p-4 font-bold">${i.codigo}-${i.nome}</td><td class="p-4 text-xs font-bold uppercase">${i.cidade}<br><span class="font-normal opacity-60">${i.bairro||'-'}</span></td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.edit('cliente','${i.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="App.delete('cliente','${i.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg"><i class="fa-solid fa-trash text-xs"></i></button></td></tr>`;
-                    if(type === 'produto') return `<tr class="hover:bg-slate-50 transition"><td class="p-4 font-bold">${i.codigo}-${i.nome}</td><td class="p-4 text-xs font-bold text-emerald-600">R$ ${Number(i.valor).toFixed(2)}</td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.duplicate('${i.id}')" class="text-emerald-500 hover:bg-emerald-50 p-2 rounded-lg"><i class="fa-solid fa-copy text-xs"></i></button><button onclick="App.edit('produto','${i.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="App.delete('produto','${i.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg"><i class="fa-solid fa-trash text-xs"></i></button></td></tr>`;
+                    if(type === 'cliente') return `<tr class="hover:bg-slate-50 transition"><td class="p-4 font-bold text-xs">${i.codigo}-${i.nome}</td><td class="p-4 text-[10px] font-bold uppercase">${i.cidade}<br><span class="opacity-50 font-normal tracking-tight">${i.bairro||'-'}</span></td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.edit('cliente','${i.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="App.delete('cliente','${i.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg transition"><i class="fa-solid fa-trash text-xs"></i></button></td></tr>`;
+                    if(type === 'produto') return `<tr class="hover:bg-slate-50 transition"><td class="p-4 font-bold text-xs">${i.codigo}-${i.nome}</td><td class="p-4 text-[10px] font-bold text-emerald-600">R$ ${Number(i.valor).toFixed(2)}</td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.duplicate('${i.id}')" class="text-emerald-500 hover:bg-emerald-50 p-2 rounded-lg transition" title="Clonar"><i class="fa-solid fa-copy text-xs"></i></button><button onclick="App.edit('produto','${i.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="App.delete('produto','${i.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg transition"><i class="fa-solid fa-trash text-xs"></i></button></td></tr>`;
                     if(type === 'venda') {
                         const c = db.cliente.find(x => x.id === i.cliId); const p = db.produto.find(x => x.id === i.prodId);
-                        return `<tr class="hover:bg-slate-50 text-[11px]"><td class="p-4"><b>#${i.id.slice(-5)} | ${c?.nome||'Excl'}</b><br>${p?.nome||'Excl'} (x${i.qty})</td><td class="p-4 font-bold text-slate-700">R$ ${i.total.toFixed(2)}<br><span class="opacity-50 text-[9px] uppercase">${i.pag} | ${i.rota}</span></td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.printVenda('${i.id}')" class="text-slate-500 hover:bg-slate-100 p-2 rounded-lg"><i class="fa-solid fa-print text-xs"></i></button><button onclick="App.edit('venda','${i.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="App.delete('venda','${i.id}')" class="text-red-300 hover:bg-red-100 p-2 rounded-lg"><i class="fa-solid fa-times text-xs"></i></button></td></tr>`;
+                        return `<tr class="hover:bg-slate-50 text-[11px]"><td class="p-4"><b>#${i.id.slice(-5)} | ${c?.nome||'Excluído'}</b><br>${p?.nome||'Excluído'} (x${i.qty})</td><td class="p-4 font-bold text-slate-700">R$ ${i.total.toFixed(2)}<br><span class="opacity-50 text-[9px] uppercase">${i.pag} | ${i.rota}</span></td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.printVenda('${i.id}')" class="text-slate-500 hover:bg-slate-100 p-2 rounded-lg transition" title="Imprimir Separador"><i class="fa-solid fa-print text-xs"></i></button><button onclick="App.edit('venda','${i.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="App.delete('venda','${i.id}')" class="text-red-300 hover:bg-red-100 p-2 rounded-lg transition"><i class="fa-solid fa-times text-xs"></i></button></td></tr>`;
                     }
                 }).join('');
             },
             renderCRM: () => {
                 const db = DB.load();
-                const totalRev = db.venda.reduce((acc, v) => acc + v.total, 0);
-                const avgTicket = db.venda.length ? totalRev / db.venda.length : 0;
+                const s = UI.get('crm-filter-start').value; const e = UI.get('crm-filter-end').value;
+                let subset = db.venda;
+                if(s) subset = subset.filter(v => v.date >= new Date(s).getTime());
+                if(e) subset = subset.filter(v => v.date <= new Date(e).getTime() + 86399999);
+
+                const totalRev = subset.reduce((acc, v) => acc + v.total, 0);
+                const avgTicket = subset.length ? totalRev / subset.length : 0;
                 UI.get('crm-total-rev').innerText = `R$ ${totalRev.toFixed(2)}`;
                 UI.get('crm-avg-ticket').innerText = `R$ ${avgTicket.toFixed(2)}`;
-                UI.get('crm-total-orders').innerText = db.venda.length;
-                UI.get('crm-active-clients').innerText = [...new Set(db.venda.map(v => v.cliId))].length;
+                UI.get('crm-total-orders').innerText = subset.length;
+                UI.get('crm-active-clients').innerText = [...new Set(subset.map(v => v.cliId))].length;
 
-                const clientMap = {}; db.venda.forEach(v => clientMap[v.cliId] = (clientMap[v.cliId]||0) + v.total);
-                UI.get('crm-top-clients').innerHTML = Object.entries(clientMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,v])=>`<tr><td class="p-2">${db.cliente.find(x=>x.id===id)?.nome||'Excl'}</td><td class="p-2 text-right font-bold text-emerald-600">R$ ${v.toFixed(2)}</td></tr>`).join('');
+                const clientMap = {}; subset.forEach(v => clientMap[v.cliId] = (clientMap[v.cliId]||0) + v.total);
+                UI.get('crm-top-clients').innerHTML = Object.entries(clientMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,v])=>`<tr><td class="p-2 uppercase font-semibold">${db.cliente.find(x=>x.id===id)?.nome||'Excluído'}</td><td class="p-2 text-right font-bold text-emerald-600">R$ ${v.toFixed(2)}</td></tr>`).join('');
 
-                const prodMap = {}; db.venda.forEach(v => prodMap[v.prodId] = (prodMap[v.prodId]||0) + v.qty);
-                UI.get('crm-top-products').innerHTML = Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,q])=>`<tr><td class="p-2">${db.produto.find(x=>x.id===id)?.nome||'Excl'}</td><td class="p-2 text-right font-bold text-blue-600">${q} un</td></tr>`).join('');
+                const prodMap = {}; subset.forEach(v => prodMap[v.prodId] = (prodMap[v.prodId]||0) + v.qty);
+                UI.get('crm-top-products').innerHTML = Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,q])=>`<tr><td class="p-2 uppercase font-semibold">${db.produto.find(x=>x.id===id)?.nome||'Excluído'}</td><td class="p-2 text-right font-bold text-blue-600">${q} un</td></tr>`).join('');
 
-                const routes = { CX: 0, VF: 0, CBA: 0, CPA: 0 }; db.venda.forEach(v => routes[v.rota] ? routes[v.rota]++ : routes[v.rota]=1);
+                const routes = { CX: 0, VF: 0, CBA: 0, CPA: 0 }; subset.forEach(v => routes[v.rota] ? routes[v.rota]++ : routes[v.rota]=1);
                 const max = Math.max(...Object.values(routes), 1);
                 UI.get('crm-route-bars').innerHTML = Object.entries(routes).map(([n,c])=>`<div><div class="flex justify-between text-[10px] font-bold uppercase mb-1"><span>${n}</span><span>${c} Pedidos</span></div><div class="w-full bg-slate-100 rounded-full h-1.5"><div class="bg-blue-600 h-1.5 rounded-full" style="width: ${(c/max)*100}%"></div></div></div>`).join('');
             },
@@ -320,7 +383,9 @@
                 const db = DB.load(); const now = Date.now();
                 db.produto = db.produto.filter(p => !p.deleteAt || p.deleteAt > now);
                 DB.saveAll(db); UI.render('cliente');
-                ['v-qty', 'v-desconto', 'v-produto'].forEach(id => UI.get(id).addEventListener('input', App.calcVenda));
+                ['v-qty', 'v-desconto', 'v-produto'].forEach(id => {
+                    const el = UI.get(id); if(el) el.addEventListener('input', App.calcVenda);
+                });
             },
             calcVenda: () => {
                 const p = UI.get('v-produto'); const price = p.options[p.selectedIndex]?.dataset.price || 0;
@@ -329,7 +394,7 @@
             },
             handleSave: (t, e) => {
                 e.preventDefault(); const p = t[0];
-                if(t === 'venda' && (!UI.get('v-cliente').value || !UI.get('v-produto').value)) return alert('Selecione Cliente e Produto!');
+                if(t === 'venda' && (!UI.get('v-cliente').value || !UI.get('v-produto').value)) return alert('Erro: Selecione Cliente e Produto!');
                 
                 let obj = { id: UI.get(`${p}-id`).value || Date.now().toString() };
                 if(t !== 'venda') obj.nome = UI.get(`${p}-nome`).value;
@@ -351,13 +416,35 @@
             },
             printVenda: (id) => {
                 const db = DB.load(); const v = db.venda.find(x => x.id === id); const c = db.cliente.find(x => x.id === v.cliId); const p = db.produto.find(x => x.id === v.prodId);
-                let kit = ""; if(p.tipo === 'kit' && p.items) kit = `<div style="border-top:1px dashed #000; padding-top:5px;"><b>KIT:</b><br>` + p.items.map(ki => `${ki.qty}x ${db.produto.find(x => x.id === ki.id)?.codigo||'?'}`).join('<br>') + `</div>`;
-                UI.get('print-area').innerHTML = `<div style="font-family:monospace; font-size:12px;"><center><b style="font-size:22px;">#${v.id.slice(-6)}</b><br>ROMANEIO</center><hr><b>ROTA:</b> ${v.rota}<br><b>CLIENTE:</b> ${c?.nome||'Excl'}<br><hr><div style="font-size:16px;"><b>${v.qty}x ${p?.codigo}</b><br>${p?.nome||'Excl'}</div>${kit}<hr>OBS: ${v.obs||'-'}</div>`;
+                let kitHtml = ""; 
+                if(p.tipo === 'kit' && p.items) {
+                    kitHtml = `<div style="border-top:1px dashed #000; padding-top:5px; margin-top:5px; font-size:10px;"><b>LISTA DE SEPARAÇÃO (COMPONENTES):</b><br>` + 
+                        p.items.map(ki => {
+                            const sub = db.produto.find(x => x.id === ki.id);
+                            return `${ki.qty}x [${sub?.codigo || '?'}] ${sub?.nome || 'ITEM EXCLUÍDO'}`;
+                        }).join('<br>') + `</div>`;
+                }
+                UI.get('print-area').innerHTML = `
+                    <div style="font-family:monospace; font-size:12px; border:1px solid #ddd; padding:10px;">
+                        <center><b style="font-size:22px;">#${v.id.slice(-6)}</b><br>GUIA DE LOGÍSTICA</center>
+                        <hr style="margin:5px 0">
+                        <b>ROTA:</b> ${v.rota} | <b>PAG:</b> ${v.pag}<br>
+                        <b>CLIENTE:</b> ${c?.nome||'Excl'}<br>
+                        <hr style="margin:5px 0">
+                        <div style="font-size:14px; margin: 10px 0; border:1px solid #000; padding:5px;">
+                            <b>${v.qty}x ${p?.codigo}</b><br>
+                            ${p?.nome||'Excl'}
+                        </div>
+                        ${kitHtml}
+                        <hr style="margin:5px 0">
+                        <b>OBSERVAÇÃO:</b><br>${v.obs||'-'}
+                        <div style="font-size:8px; text-align:right; margin-top:10px;">EMITIDO EM: ${new Date().toLocaleString()}</div>
+                    </div>`;
                 window.print();
             },
             duplicate: (id) => { const p = {...DB.load().produto.find(x => x.id === id)}; delete p.id; delete p.codigo; p.nome += " (CÓPIA)"; DB.save('produto', p); UI.render('produto'); },
             edit: (t, id) => { const i = DB.load()[t].find(x => x.id === id); if(i) UI.fillForm(t, i); },
-            delete: (t, id) => { if(confirm('Excluir?')) { DB.delete(t, id); UI.render(t); } }
+            delete: (t, id) => { if(confirm('Confirmar exclusão definitiva?')) { DB.delete(t, id); UI.render(t); } }
         };
 
         const ExportEngine = { export: () => { const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(DB.load())], {type: 'application/json'})), download: 'backup.json' }); a.click(); } };
