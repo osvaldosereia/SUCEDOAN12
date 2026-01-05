@@ -84,7 +84,7 @@
                 <form id="form-cliente" onsubmit="App.handleSave('cliente', event)" class="p-5 space-y-4 overflow-y-auto custom-scroll">
                     <input type="hidden" id="c-id">
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="c-codigo" readonly placeholder="C0000" class="w-full bg-slate-100 border rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-500">
+                        <input type="text" id="c-codigo" readonly placeholder="C0001" class="w-full bg-slate-100 border rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-500">
                         <select id="c-rota" required class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none font-bold text-blue-700">
                             <option value="">ROTA</option>
                             <option value="CX">CX</option>
@@ -141,7 +141,7 @@
                 <form id="form-produto" onsubmit="App.handleSave('produto', event)" class="p-5 space-y-3 overflow-y-auto custom-scroll">
                     <input type="hidden" id="p-id">
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="p-codigo" readonly placeholder="P000" class="bg-slate-100 border rounded-lg px-3 py-2 text-xs font-bold text-slate-500">
+                        <input type="text" id="p-codigo" readonly placeholder="P001" class="bg-slate-100 border rounded-lg px-3 py-2 text-xs font-bold text-slate-500">
                         <input type="text" id="p-ean" placeholder="EAN" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none">
                     </div>
                     <input type="text" id="p-nome" required placeholder="Nome do Produto" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
@@ -155,7 +155,7 @@
                         <input type="number" id="p-estoque" required placeholder="Estoque" class="bg-slate-50 border rounded-lg px-2 py-2 text-xs font-bold">
                     </div>
                     <div class="flex items-center gap-2 px-1">
-                        <input type="checkbox" id="p-isTemp" class="rounded border-slate-300">
+                        <input type="checkbox" id="p-isTemp" class="rounded border-slate-300" onchange="UI.updateNextProductCode(this.checked)">
                         <label for="p-isTemp" class="text-[11px] font-bold text-slate-500 uppercase tracking-tighter">Temporário (24h)</label>
                     </div>
                     <select id="p-tipo" onchange="UI.toggleKit(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
@@ -294,15 +294,33 @@
         const DB = {
             key: 'enterprise_v5_db',
             load: () => {
-                if (!storageAvailable('localStorage')) return {cliente:[], produto:[], venda:[], counters:{cliente:0, produto:0, prodTemp:0, venda:0, lastSaleDate: null}};
-                const data = JSON.parse(localStorage.getItem(DB.key) || '{"cliente":[], "produto":[], "venda":[], "counters":{"cliente":0, "produto":0, "prodTemp":0, "venda":0, "lastSaleDate": null}}');
-                if(!data.counters) data.counters = {cliente:0, produto:0, prodTemp:0, venda:0, lastSaleDate: null};
+                const defaults = {cliente:[], produto:[], venda:[], counters:{cliente:0, produto:0, prodTemp:0, venda:0, lastSaleDate: null}};
+                if (!storageAvailable('localStorage')) return defaults;
+                const data = JSON.parse(localStorage.getItem(DB.key) || JSON.stringify(defaults));
+                if(!data.counters) data.counters = defaults.counters;
                 return data;
             },
             saveAll: (data) => {
                 if (storageAvailable('localStorage')) localStorage.setItem(DB.key, JSON.stringify(data));
             },
-            genCode: (type, options = {}) => {
+            // Calcula o PRÓXIMO código (Sem incrementar ainda) para exibição na UI
+            peekNextCode: (type, options = {}) => {
+                const db = DB.load();
+                const today = new Date().toLocaleDateString('pt-BR');
+                if(type === 'cliente') return `C${String(db.counters.cliente + 1).padStart(4, '0')}`;
+                if(type === 'produto') {
+                    const count = options.isTemp ? db.counters.prodTemp + 1 : db.counters.produto + 1;
+                    const pref = options.isTemp ? 'PT' : 'P';
+                    return `${pref}${String(count).padStart(3, '0')}`;
+                }
+                if(type === 'venda') {
+                    const count = (db.counters.lastSaleDate !== today) ? 1 : db.counters.venda + 1;
+                    return `V${String(count).padStart(3, '0')}`;
+                }
+                return "";
+            },
+            // Gera e INCREMENTA o contador de fato
+            consumeCode: (type, options = {}) => {
                 const db = DB.load();
                 let code = "";
                 const today = new Date().toLocaleDateString('pt-BR');
@@ -321,7 +339,6 @@
                     }
                 }
                 else if(type === 'venda') {
-                    // Reset diário de vendas
                     if(db.counters.lastSaleDate !== today) {
                         db.counters.venda = 0;
                         db.counters.lastSaleDate = today;
@@ -329,17 +346,18 @@
                     db.counters.venda++; 
                     code = `V${String(db.counters.venda).padStart(3, '0')}`; 
                 }
-                
                 DB.saveAll(db);
                 return code;
             },
             save: (type, obj) => {
                 const db = DB.load();
                 const idx = db[type].findIndex(i => i.id === obj.id);
-                if (idx !== -1) { db[type][idx] = obj; } 
-                else {
+                if (idx !== -1) { 
+                    db[type][idx] = obj; 
+                } else {
                     if(!obj.id) obj.id = Date.now().toString();
-                    if(!obj.codigo) obj.codigo = DB.genCode(type, {isTemp: obj.isTemp});
+                    // Se não tiver código (novo cadastro), gera agora
+                    if(!obj.codigo) obj.codigo = DB.consumeCode(type, {isTemp: obj.isTemp});
                     db[type].push(obj);
                 }
                 DB.saveAll(db);
@@ -359,6 +377,7 @@
                 if(view === 'produto') UI.renderKitOptions();
                 if(view === 'crm') UI.renderCRM();
                 UI.render(view);
+                UI.resetForm(view);
             },
             toggleKit: (val) => UI.get('p-kit-area').classList.toggle('hidden', val !== 'kit'),
             renderKitOptions: () => {
@@ -417,14 +436,31 @@
                 UI.get('crm-active-clients').innerText = [...new Set(db.venda.map(v => v.cliId))].length;
             },
             resetForm: (t) => {
-                UI.get(`form-${t}`).reset(); UI.get(`${t[0]}-id`).value = '';
-                if(t !== 'venda') UI.get(`${t[0]}-codigo`).value = '';
+                const form = UI.get(`form-${t}`);
+                if(!form) return;
+                form.reset();
+                UI.get(`${t[0]}-id`).value = '';
                 UI.get(`formLabel-${t}`).innerText = `Novo ${t}`;
-                if(t === 'produto') { UI.toggleKit('normal'); UI.get('p-kit-bulk').value = ''; }
-                if(t === 'venda') { UI.get('v-total').innerText = 'R$ 0,00'; UI.renderVendaOptions(); }
+                
+                // Popula o código automaticamente ao abrir o formulário novo
+                if(t === 'cliente') {
+                    UI.get('c-codigo').value = DB.peekNextCode('cliente');
+                } else if(t === 'produto') {
+                    UI.get('p-isTemp').checked = false;
+                    UI.get('p-codigo').value = DB.peekNextCode('produto', {isTemp: false});
+                    UI.toggleKit('normal');
+                } else if(t === 'venda') {
+                    UI.get('v-total').innerText = 'R$ 0,00';
+                    UI.renderVendaOptions();
+                }
+            },
+            updateNextProductCode: (isTemp) => {
+                UI.get('p-codigo').value = DB.peekNextCode('produto', {isTemp});
             },
             fillForm: (t, i) => {
-                const p = t[0]; UI.get(`${p}-id`).value = i.id; UI.get(`${p}-codigo`).value = i.codigo;
+                const p = t[0]; 
+                UI.get(`${p}-id`).value = i.id; 
+                UI.get(`${p}-codigo`).value = i.codigo;
                 if(t === 'cliente') { 
                     UI.get('c-nome').value = i.nome; 
                     UI.get('c-tel').value = i.tel; 
@@ -439,7 +475,6 @@
                     ['ean','ncm','categoria','custo','valor','estoque','tipo'].forEach(k => UI.get(`p-${k}`).value = i[k]); 
                     UI.get('p-isTemp').checked = !!i.isTemp; 
                     UI.toggleKit(i.tipo); 
-                    UI.get('p-kit-bulk').value = '';
                 }
                 UI.get(`formLabel-${t}`).innerText = `Editando ${t}`;
             }
@@ -447,10 +482,10 @@
 
         const App = {
             init: () => {
-                if (!storageAvailable('localStorage')) alert("Aviso: LocalStorage não disponível.");
-                const db = DB.load(); const now = Date.now();
-                db.produto = db.produto.filter(p => !p.deleteAt || p.deleteAt > now);
-                DB.saveAll(db); UI.render('cliente');
+                const db = DB.load();
+                DB.saveAll(db); 
+                UI.render('cliente');
+                UI.resetForm('cliente');
                 ['v-qty', 'v-desconto', 'v-produto'].forEach(id => {
                     const el = UI.get(id);
                     if(el) el.addEventListener('input', App.calcVenda);
@@ -462,25 +497,30 @@
                 UI.get('v-total').innerText = `R$ ${Math.max(0, total).toFixed(2)}`;
             },
             handleSave: (t, e) => {
-                e.preventDefault(); const p = t[0];
+                e.preventDefault(); 
+                const p = t[0];
                 let objId = UI.get(`${p}-id`).value;
-                let obj = { id: objId || Date.now().toString() };
+                let obj = { id: objId || null }; // null se for novo
+
                 if(t !== 'venda') {
                     obj.nome = UI.get(`${p}-nome`).value;
-                    obj.codigo = UI.get(`${p}-codigo`).value;
+                    // Se for edição, mantém o código atual. Se for novo, gera no DB.save.
+                    if(objId) obj.codigo = UI.get(`${p}-codigo`).value;
                 }
+                
                 if(t === 'cliente') {
                     Object.assign(obj, { tel: UI.get('c-tel').value, cidade: UI.get('c-cidade').value, bairro: UI.get('c-bairro').value, endereco: UI.get('c-endereco').value, rota: UI.get('c-rota').value, maps: UI.get('c-maps').value });
                 }
                 else if(t === 'produto') {
-                    const db = DB.load();
-                    Object.assign(obj, { ean: UI.get('p-ean').value, ncm: UI.get('p-ncm').value, categoria: UI.get('p-categoria').value, custo: UI.get('p-custo').value, valor: UI.get('p-valor').value, estoque: Number(UI.get('p-estoque').value), tipo: UI.get('p-tipo').value, isTemp: UI.get('p-isTemp').checked });
+                    const isTemp = UI.get('p-isTemp').checked;
+                    Object.assign(obj, { ean: UI.get('p-ean').value, ncm: UI.get('p-ncm').value, categoria: UI.get('p-categoria').value, custo: UI.get('p-custo').value, valor: UI.get('p-valor').value, estoque: Number(UI.get('p-estoque').value), tipo: UI.get('p-tipo').value, isTemp: isTemp });
                     if(obj.tipo === 'kit') {
                         let kitItems = Array.from(document.querySelectorAll('.kit-check:checked')).map(ck => ({ id: ck.dataset.pid, qty: Number(document.querySelector(`.kit-qty[data-pid="${ck.dataset.pid}"]`).value) }));
                         const bulkText = UI.get('p-kit-bulk').value.trim();
                         if(bulkText) {
                             bulkText.split('\n').forEach(line => {
                                 const [code, qty] = line.split('|').map(s => s.trim());
+                                const db = DB.load();
                                 const found = db.produto.find(x => x.codigo === code);
                                 if(found) kitItems.push({ id: found.id, qty: Number(qty) || 1 });
                             });
@@ -503,7 +543,10 @@
                     else deduct(prod.id, obj.qty);
                     DB.saveAll(db);
                 }
-                DB.save(t, obj); UI.resetForm(t); UI.render(t);
+                
+                DB.save(t, obj); 
+                UI.render(t);
+                UI.resetForm(t);
             },
             printVenda: (id) => {
                 const db = DB.load(); 
