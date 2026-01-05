@@ -3,428 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elite Logística - Painel do Entregador</title>
+    <title>Elite Logística - Painel Tático</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .btn-transition { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-transition:active { transform: scale(0.95); }
-        input:focus, select:focus, textarea:focus { outline: none; ring: 2px; ring-color: #6366f1; border-color: #6366f1; }
-        @media print { 
-            .no-print { display: none !important; } 
-            .print-page { page-break-after: always; padding: 15mm; }
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 10px; }
+        .btn-active { background: white; color: #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        input:focus, select:focus, textarea:focus { outline: none; ring: 2px; ring-color: #6366f1; }
+        @media print { .no-print { display: none !important; } body { width: 72mm; margin: 0; } }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen pb-10">
+<body class="bg-slate-50 text-slate-900 min-h-screen">
 
-    <header class="bg-indigo-700 text-white shadow-lg no-print sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-2xl">🚚</span>
-                <h1 class="text-xl font-bold tracking-tight uppercase">Elite<span class="font-light">Logística</span></h1>
-            </div>
-            <div class="flex items-center gap-3">
-                <button onclick="dbExport()" class="bg-white/10 hover:bg-white/20 btn-transition px-4 py-2 rounded-lg text-xs font-bold border border-white/20">
-                    📥 Backup
-                </button>
-                <label class="bg-white text-indigo-700 hover:bg-slate-100 btn-transition px-4 py-2 rounded-lg text-xs font-black cursor-pointer shadow-sm">
-                    📤 Importar
-                    <input type="file" class="hidden" onchange="dbImport(event)">
+    <header class="bg-indigo-700 text-white p-3 no-print sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="font-black uppercase tracking-tighter">Elite <span class="font-light">Logística</span></h1>
+            <div class="flex gap-2">
+                <button onclick="dbExport()" class="text-[10px] border border-white/20 px-2 py-1 rounded">Backup</button>
+                <label class="text-[10px] bg-white text-indigo-700 px-2 py-1 rounded font-bold cursor-pointer">
+                    Importar <input type="file" class="hidden" onchange="dbImport(event)">
                 </label>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6 no-print">
-        
-        <nav class="flex bg-slate-200/50 p-1.5 rounded-xl w-fit mx-auto md:mx-0">
-            <button onclick="switchTab('c')" id="tab-c" class="py-2.5 px-6 rounded-lg font-bold text-sm btn-transition bg-white text-indigo-600 shadow-sm">
-                Base de Clientes
-            </button>
-            <button onclick="switchTab('l')" id="tab-l" class="py-2.5 px-6 rounded-lg font-bold text-sm btn-transition text-slate-600">
-                Logística (Roteirização)
-            </button>
+    <main class="max-w-6xl mx-auto p-4 space-y-4 no-print">
+        <nav class="flex bg-slate-200/50 p-1 rounded-xl w-fit">
+            <button onclick="switchTab('c')" id="tab-c" class="py-2 px-6 rounded-lg font-bold text-xs btn-active">Clientes</button>
+            <button onclick="switchTab('l')" id="tab-l" class="py-2 px-6 rounded-lg font-bold text-xs text-slate-600">Logística</button>
         </nav>
 
-        <!-- ABA CADASTRO DE CLIENTES -->
-        <section id="section-c" class="space-y-6 animate-in fade-in duration-500">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-lg font-bold flex items-center gap-2 text-slate-800">
-                        <span class="w-2 h-6 bg-indigo-600 rounded-full"></span>
-                        Cadastro Tático de Cliente
-                    </h2>
-                    <button onclick="resetForm()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-full transition">Limpar</button>
-                </div>
-                
-                <form id="client-form" class="grid grid-cols-1 md:grid-cols-12 gap-4" onsubmit="saveClient(event)">
+        <!-- ABA CLIENTES -->
+        <section id="section-c" class="space-y-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <form id="client-form" class="grid grid-cols-1 md:grid-cols-12 gap-3" onsubmit="saveClient(event)">
                     <input type="hidden" id="edit-idx" value="-1">
-                    
                     <div class="md:col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Cód. Interno</label>
-                        <input type="text" id="c-code" readonly class="w-full bg-slate-100 border-slate-200 border-2 p-3 rounded-xl font-mono text-indigo-600 font-bold">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cód</label>
+                        <input type="text" id="c-code" readonly class="w-full bg-slate-50 border p-2 rounded-lg font-mono font-bold">
                     </div>
-                    
                     <div class="md:col-span-6">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Nome / Razão Social</label>
-                        <input type="text" id="c-name" placeholder="Nome do cliente" required class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50 focus:bg-white transition-all">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome / Cliente</label>
+                        <input type="text" id="c-name" required class="w-full border p-2 rounded-lg font-bold">
                     </div>
-
                     <div class="md:col-span-4">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">WhatsApp (Apenas Números)</label>
-                        <input type="text" id="c-wa" placeholder="6599999999" class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50 focus:bg-white transition-all">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">WhatsApp</label>
+                        <input type="text" id="c-wa" placeholder="65..." class="w-full border p-2 rounded-lg">
                     </div>
-
                     <div class="md:col-span-3">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Cidade</label>
-                        <select id="c-city" class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50 h-[52px]">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cidade</label>
+                        <select id="c-city" class="w-full border p-2 rounded-lg">
                             <option value="Cuiabá">Cuiabá</option>
                             <option value="Várzea Grande">Várzea Grande</option>
                         </select>
                     </div>
-
                     <div class="md:col-span-3">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Bairro</label>
-                        <input type="text" id="c-neighborhood" placeholder="Bairro" required class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Bairro</label>
+                        <input type="text" id="c-neighborhood" required class="w-full border p-2 rounded-lg">
                     </div>
-
                     <div class="md:col-span-3">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Setor / Rota</label>
-                        <select id="c-route" class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50 h-[52px] font-black text-indigo-600">
-                            <option value="COXIPO">COXIPÓ</option>
-                            <option value="VG">VÁRZEA GRANDE</option>
-                            <option value="CBA">CENTRO / NORTE</option>
-                            <option value="CPA">CPA / ARREDORES</option>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Rota</label>
+                        <select id="c-route" class="w-full border p-2 rounded-lg font-bold text-indigo-600">
+                            <option value="COXIPO">COXIPÓ</option><option value="VG">VG</option>
+                            <option value="CBA">CENTRO</option><option value="CPA">CPA</option>
                         </select>
                     </div>
-
                     <div class="md:col-span-3">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Link Google Maps</label>
-                        <input type="url" id="c-map" placeholder="https://maps..." class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Google Maps</label>
+                        <input type="url" id="c-map" class="w-full border p-2 rounded-lg">
                     </div>
-
                     <div class="md:col-span-12">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Endereço Completo</label>
-                        <input type="text" id="c-address" placeholder="Rua, Número, Ponto de Referência..." required class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Endereço Completo</label>
+                        <input type="text" id="c-address" required class="w-full border p-2 rounded-lg font-medium">
                     </div>
-
                     <div class="md:col-span-12">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1 text-orange-600">Observações Fixas de Entrega (Ex: Portão azul, interfone 202...)</label>
-                        <textarea id="c-obs" rows="2" placeholder="Informações que o entregador precisa saber sempre que for a este local..." class="w-full border-slate-200 border-2 p-3 rounded-xl bg-slate-50 focus:bg-white"></textarea>
+                        <label class="block text-[10px] font-bold text-orange-500 uppercase mb-1">Instrução Fixa (Portão, Referência...)</label>
+                        <textarea id="c-obs" rows="1" class="w-full border p-2 rounded-lg font-bold text-orange-900"></textarea>
                     </div>
-
-                    <div class="md:col-span-12 flex justify-end">
-                        <button type="submit" id="btn-save" class="w-full md:w-64 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl shadow-lg btn-transition text-lg">
-                            Salvar Cadastro
-                        </button>
+                    <div class="md:col-span-12 flex justify-end gap-2">
+                        <button type="button" onclick="resetForm()" class="text-xs text-slate-400 px-4">Limpar</button>
+                        <button type="submit" id="btn-save" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold">Salvar</button>
                     </div>
                 </form>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-4 justify-between items-center">
-                    <h3 class="font-bold text-slate-700 uppercase text-xs tracking-widest">Base de Dados</h3>
-                    <input type="text" id="search-client" oninput="renderClients()" placeholder="Procurar cliente..." class="text-sm border-2 border-slate-200 p-2.5 rounded-xl w-full md:w-80">
+            <div class="bg-white rounded-2xl border overflow-hidden">
+                <div class="p-3 bg-slate-50 border-b flex justify-between items-center">
+                    <span class="text-[10px] font-black uppercase">Clientes</span>
+                    <input type="text" id="search" oninput="renderClients()" placeholder="Buscar..." class="text-xs border p-1.5 rounded-lg w-48">
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-400 text-[10px] uppercase font-black">
-                                <th class="p-4">Cód</th>
-                                <th class="p-4">Cliente</th>
-                                <th class="p-4">Local / Rota</th>
-                                <th class="p-4 text-center">Gestão</th>
-                            </tr>
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 uppercase font-black text-slate-400">
+                            <tr><th class="p-3">Cód</th><th class="p-3">Nome</th><th class="p-3">Rota</th><th class="p-3 text-center">Ações</th></tr>
                         </thead>
-                        <tbody id="client-table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+                        <tbody id="client-table" class="divide-y"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- ABA LOGÍSTICA / ROTEIRIZAÇÃO -->
-        <section id="section-l" class="hidden space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-            <div class="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 text-center space-y-4 border-dashed border-4 border-indigo-100">
-                <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-4xl">🧾</div>
-                <h2 class="text-2xl font-black text-slate-800">Processar Entregas do Dia</h2>
-                <p class="text-slate-500 max-w-sm mx-auto text-sm">Carregue o arquivo de pedidos para mapear os endereços e dividir as tarefas dos entregadores.</p>
-                
-                <div class="pt-4">
-                    <label class="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-xl cursor-pointer hover:bg-indigo-700 btn-transition shadow-xl inline-flex items-center gap-3">
-                        <span>📂 Carregar JSON</span>
-                        <input type="file" class="hidden" accept=".json" onchange="importOrders(event)">
+        <!-- ABA LOGÍSTICA -->
+        <section id="section-l" class="hidden space-y-4">
+            <div class="bg-white p-6 rounded-2xl border-2 border-dashed border-indigo-200 flex flex-col items-center gap-4">
+                <h2 class="text-sm font-black uppercase">Processar Entregas</h2>
+                <div class="flex gap-2">
+                    <label class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold text-xs cursor-pointer shadow-md">
+                        📂 Carregar Pedidos <input type="file" class="hidden" accept=".json" onchange="importOrders(event)">
                     </label>
+                    <button id="btn-export-app" onclick="exportDriverApp()" class="hidden bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-md">📱 App Entregador</button>
                 </div>
             </div>
-
-            <div id="route-container" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Cards de Entrega Injetados Aqui -->
-            </div>
+            <div id="route-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </section>
     </main>
 
     <script>
-        let clients = [];
-        let importedOrders = [];
+        let clients = [], importedOrders = [];
         const $ = i => document.getElementById(i);
 
         window.onload = () => {
-            const stored = localStorage.getItem('elite_clients');
-            if(stored) clients = JSON.parse(stored);
-            updateAutoCode();
-            renderClients();
+            const s = localStorage.getItem('elite_clients');
+            if(s) clients = JSON.parse(s);
+            updateAutoCode(); renderClients();
         };
 
         const updateAutoCode = () => {
             if($('edit-idx').value == -1) {
-                const next = clients.reduce((max, c) => Math.max(max, parseInt(c.code) || 0), 0) + 1;
-                $('c-code').value = String(next).padStart(3, '0');
+                const n = clients.reduce((m, c) => Math.max(m, parseInt(c.code) || 0), 0) + 1;
+                $('c-code').value = String(n).padStart(3, '0');
             }
         };
 
         const switchTab = t => {
             $('section-c').classList.toggle('hidden', t === 'l');
             $('section-l').classList.toggle('hidden', t === 'c');
-            const active = "py-2.5 px-6 rounded-lg font-bold text-sm btn-transition bg-white text-indigo-600 shadow-sm";
-            const inactive = "py-2.5 px-6 rounded-lg font-bold text-sm btn-transition text-slate-600";
-            $('tab-c').className = t === 'c' ? active : inactive;
-            $('tab-l').className = t === 'l' ? active : inactive;
+            $('tab-c').className = t === 'c' ? "py-2 px-6 rounded-lg font-bold text-xs btn-active" : "py-2 px-6 rounded-lg font-bold text-xs text-slate-600";
+            $('tab-l').className = t === 'l' ? "py-2 px-6 rounded-lg font-bold text-xs btn-active" : "py-2 px-6 rounded-lg font-bold text-xs text-slate-600";
         };
 
         const saveClient = e => {
             e.preventDefault();
             const idx = parseInt($('edit-idx').value);
-            const data = {
-                code: $('c-code').value,
-                name: $('c-name').value,
-                wa: $('c-wa').value.replace(/\D/g, ''),
-                city: $('c-city').value,
-                neighborhood: $('c-neighborhood').value,
-                route: $('c-route').value,
-                address: $('c-address').value,
-                map: $('c-map').value,
-                obs: $('c-obs').value
+            const d = {
+                code: $('c-code').value, name: $('c-name').value, wa: $('c-wa').value.replace(/\D/g, ''),
+                city: $('c-city').value, neighborhood: $('c-neighborhood').value, route: $('c-route').value,
+                address: $('c-address').value, map: $('c-map').value, obs: $('c-obs').value
             };
-
-            if(idx === -1) clients.push(data);
-            else clients[idx] = data;
-
+            if(idx === -1) clients.push(d); else clients[idx] = d;
             localStorage.setItem('elite_clients', JSON.stringify(clients));
-            resetForm();
-            renderClients();
+            resetForm(); renderClients();
         };
 
-        const resetForm = () => {
-            $('client-form').reset();
-            $('edit-idx').value = -1;
-            $('btn-save').innerText = "Salvar Cadastro";
-            updateAutoCode();
-        };
+        const resetForm = () => { $('client-form').reset(); $('edit-idx').value = -1; updateAutoCode(); };
 
         const renderClients = () => {
-            const query = $('search-client').value.toLowerCase();
-            const filtered = clients.filter(c => c.name.toLowerCase().includes(query) || c.code.includes(query));
-
-            $('client-table-body').innerHTML = filtered.map((c, i) => `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="p-4 font-mono font-bold text-indigo-600">#${c.code}</td>
-                    <td class="p-4">
-                        <div class="font-bold text-slate-800 uppercase">${c.name}</div>
-                        <div class="text-[10px] text-slate-400 font-bold">${c.wa || '---'}</div>
+            const q = $('search').value.toLowerCase();
+            const f = clients.filter(c => c.name.toLowerCase().includes(q) || c.code.includes(q));
+            $('client-table').innerHTML = f.map((c, i) => `
+                <tr class="hover:bg-slate-50 uppercase">
+                    <td class="p-3 font-mono font-bold text-indigo-600">#${c.code}</td>
+                    <td class="p-3 font-bold">${c.name}</td>
+                    <td class="p-3"><span class="bg-slate-200 px-1 rounded text-[10px] font-black">${c.route}</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="editClient(${clients.indexOf(c)})" class="p-1">✏️</button>
+                        <button onclick="deleteClient(${clients.indexOf(c)})" class="p-1 text-red-400">🗑️</button>
                     </td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[9px] bg-slate-900 text-white px-1.5 rounded font-black">${c.route}</span>
-                            <span class="text-[10px] text-slate-500 font-bold italic">${c.neighborhood}</span>
-                        </div>
-                    </td>
-                    <td class="p-4 text-center">
-                        <div class="flex justify-center gap-1">
-                            <button onclick="editClient(${clients.indexOf(c)})" class="p-2 hover:bg-indigo-50 rounded-lg transition">✏️</button>
-                            <button onclick="deleteClient(${clients.indexOf(c)})" class="p-2 hover:bg-red-50 text-red-400 rounded-lg transition">🗑️</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+                </tr>`).join('');
         };
 
         const editClient = i => {
-            const c = clients[i];
-            $('edit-idx').value = i;
-            $('c-code').value = c.code;
-            $('c-name').value = c.name;
-            $('c-wa').value = c.wa;
-            $('c-city').value = c.city;
-            $('c-neighborhood').value = c.neighborhood;
-            $('c-route').value = c.route;
-            $('c-address').value = c.address;
-            $('c-map').value = c.map;
-            $('c-obs').value = c.obs || '';
-            $('btn-save').innerText = "Atualizar Cadastro";
+            const c = clients[i]; $('edit-idx').value = i; $('c-code').value = c.code; $('c-name').value = c.name;
+            $('c-wa').value = c.wa; $('c-city').value = c.city; $('c-neighborhood').value = c.neighborhood;
+            $('c-route').value = c.route; $('c-address').value = c.address; $('c-map').value = c.map; $('c-obs').value = c.obs || '';
             window.scrollTo({top: 0, behavior: 'smooth'});
         };
 
         const deleteClient = i => { if(confirm('Excluir?')) { clients.splice(i, 1); localStorage.setItem('elite_clients', JSON.stringify(clients)); renderClients(); } };
 
         const importOrders = e => {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = x => {
-                try {
-                    const data = JSON.parse(x.target.result);
-                    importedOrders = Array.isArray(data) ? data : (data.ords || []);
-                    processLogistics();
-                } catch(err) { alert("Arquivo inválido"); }
-            };
-            reader.readAsText(file);
+            const f = e.target.files[0]; if(!f) return;
+            const r = new FileReader();
+            r.onload = x => { try { const d = JSON.parse(x.target.result); importedOrders = Array.isArray(d) ? d : (d.ords || []); $('btn-export-app').classList.remove('hidden'); processLogistics(); } catch(e){alert("Erro!");} };
+            r.readAsText(f);
         };
 
         const processLogistics = () => {
-            const container = $('route-container');
-            container.innerHTML = '';
+            const cont = $('route-container'); cont.innerHTML = '';
             const routes = { "COXIPO": [], "VG": [], "CBA": [], "CPA": [], "DESCONHECIDO": [] };
+            importedOrders.forEach(o => { const c = clients.find(cl => cl.code === o.clientCode); const k = c ? c.route : "DESCONHECIDO"; routes[k].push({ o, c }); });
 
-            importedOrders.forEach(order => {
-                const client = clients.find(c => c.code === order.clientCode);
-                const routeKey = client ? client.route : "DESCONHECIDO";
-                routes[routeKey].push({ order, client });
-            });
-
-            Object.keys(routes).forEach(key => {
-                if(routes[key].length === 0) return;
+            Object.keys(routes).forEach(k => {
+                if(routes[k].length === 0) return;
                 const card = document.createElement('div');
-                card.className = "bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden flex flex-col h-fit";
+                card.className = "bg-white rounded-2xl border shadow-lg overflow-hidden h-fit";
                 card.innerHTML = `
-                    <div class="p-6 bg-indigo-950 text-white flex justify-between items-center">
-                        <h4 class="font-black text-2xl tracking-tighter uppercase">Rota: ${key}</h4>
-                        <span class="bg-indigo-600 px-4 py-1.5 rounded-full text-sm font-black uppercase tracking-widest">${routes[key].length} Entregas</span>
+                    <div class="p-4 bg-slate-900 text-white flex justify-between items-center">
+                        <h4 class="font-black uppercase text-xs">Rota: ${k}</h4>
+                        <span class="text-[10px] bg-indigo-600 px-2 py-0.5 rounded font-black">${routes[k].length} PEDIDOS</span>
                     </div>
-                    <div class="p-5 space-y-8 bg-slate-100/80">
-                        ${routes[key].map(item => {
-                            const c = item.client;
-                            const o = item.order;
-                            return `
-                            <div class="bg-white p-6 rounded-[2rem] border-2 border-slate-200 shadow-lg space-y-6">
-                                <div class="flex justify-between items-center border-b-2 border-slate-100 pb-4">
-                                    <div class="leading-none">
-                                        <div class="text-4xl font-black text-indigo-600 mb-1">PEDIDO #${o.code}</div>
-                                        <div class="text-sm font-bold text-slate-400 uppercase tracking-widest">${o.time}</div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-3xl font-black text-slate-900 leading-none">R$ ${o.total.toFixed(2)}</div>
-                                    </div>
+                    <div class="p-4 space-y-4 bg-slate-50/50">
+                        ${routes[k].map(it => `
+                            <div class="bg-white p-4 rounded-xl border-2 space-y-3">
+                                <div class="flex justify-between items-start border-b pb-2">
+                                    <div class="text-2xl font-black text-indigo-600 leading-none uppercase">PEDIDO #${it.o.code}</div>
+                                    <div class="text-lg font-black leading-none">R$ ${it.o.total.toFixed(2)}</div>
                                 </div>
-
-                                <div>
-                                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Cliente</div>
-                                    <div class="text-2xl font-black text-slate-900 uppercase leading-none">${c ? c.name : 'NÃO CADASTRADO'}</div>
+                                <div class="text-sm font-black uppercase text-slate-800">${it.c ? it.c.name : 'NÃO CADASTRADO'}</div>
+                                <div class="bg-indigo-600 p-3 rounded-lg text-white">
+                                    <div class="text-lg font-black leading-tight uppercase">${it.c ? it.c.address : 'Sem endereço'}</div>
+                                    <div class="text-[10px] font-bold opacity-80 uppercase">${it.c ? it.c.neighborhood + ' • ' + it.c.city : ''}</div>
                                 </div>
-
-                                <div class="bg-indigo-600 p-6 rounded-3xl shadow-md">
-                                    <div class="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em] mb-2">Endereço de Entrega</div>
-                                    <div class="text-2xl font-black text-white leading-tight uppercase">${c ? c.address : '<span class="text-yellow-300">Endereço não encontrado!</span>'}</div>
-                                    <div class="text-lg font-black text-indigo-100 mt-2 uppercase tracking-wide">${c ? `${c.neighborhood} • ${c.city}` : '---'}</div>
+                                ${it.c && it.c.obs ? `<div class="bg-orange-100 p-3 rounded-lg border-l-4 border-orange-500"><div class="text-[10px] font-black text-orange-600 uppercase mb-1">Instrução Fixa</div><div class="text-lg font-black text-orange-950 uppercase">${it.c.obs}</div></div>` : ''}
+                                ${it.o.obs ? `<div class="bg-blue-100 p-3 rounded-lg border-l-4 border-blue-500"><div class="text-[10px] font-black text-blue-600 uppercase mb-1">Anotação Pedido</div><div class="text-lg font-black text-blue-950 uppercase">"${it.o.obs}"</div></div>` : ''}
+                                <div class="space-y-1">
+                                    <div class="text-[9px] font-black text-slate-400 uppercase">Conferir:</div>
+                                    ${it.o.items.map(p => `<div class="flex items-center gap-2 font-black text-lg uppercase"><div class="w-5 h-5 border-2 border-indigo-400 rounded"></div><span>${p.qty}x ${p.name}</span></div>`).join('')}
                                 </div>
-
-                                <div class="grid grid-cols-2 gap-4">
-                                    ${c && c.wa ? `<a href="https://wa.me/55${c.wa}" target="_blank" class="bg-green-600 text-white py-5 rounded-2xl flex items-center justify-center gap-2 font-black text-base btn-transition shadow-lg uppercase">WhatsApp</a>` : ''}
-                                    ${c && c.map ? `<a href="${c.map}" target="_blank" class="bg-slate-900 text-white py-5 rounded-2xl flex items-center justify-center gap-2 font-black text-base btn-transition shadow-lg uppercase">Abrir Mapa</a>` : ''}
-                                </div>
-
-                                ${c && c.obs ? `
-                                <div class="bg-orange-100 p-6 rounded-3xl border-2 border-orange-200">
-                                    <div class="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] mb-2">Instrução Fixa do Cliente (⚠️ IMPORTANTE)</div>
-                                    <div class="text-2xl font-black text-orange-950 leading-tight uppercase font-[900]">${c.obs}</div>
-                                </div>` : ''}
-
-                                ${o.obs ? `
-                                <div class="bg-blue-100 p-6 rounded-3xl border-2 border-blue-200">
-                                    <div class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2">Anotação deste Pedido (⚠️)</div>
-                                    <div class="text-2xl font-black text-blue-950 leading-tight uppercase font-[900]">"${o.obs}"</div>
-                                </div>` : ''}
-
-                                <div class="bg-slate-50 p-6 rounded-3xl border-2 border-slate-100">
-                                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Itens para Conferir</div>
-                                    <div class="space-y-3">
-                                        ${o.items.map(i => `
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 border-2 border-indigo-400 rounded-lg"></div>
-                                                <div class="text-2xl font-black text-slate-800 uppercase tracking-tighter leading-none">
-                                                    <span class="text-indigo-600 mr-2">${i.qty}x</span> ${i.name}
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            </div>`;
-                        }).join('')}
+                            </div>`).join('')}
                     </div>
-                    <button onclick="printRoute('${key}', ${JSON.stringify(routes[key]).replace(/"/g, '&quot;')})" class="w-full bg-slate-950 text-white p-7 font-black uppercase text-lg hover:bg-black btn-transition tracking-widest">Imprimir Romaneio ${key}</button>
+                    <button onclick="printRoute('${k}', ${JSON.stringify(routes[k]).replace(/"/g, '&quot;')})" class="w-full bg-slate-900 text-white p-4 font-black text-xs uppercase">Imprimir Romaneio</button>
                 `;
-                container.appendChild(card);
+                cont.appendChild(card);
             });
+        };
+
+        const exportDriverApp = () => {
+            const payload = { orders: importedOrders, clients: clients };
+            const appHtml = `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>App Entregador</title><script src="https://cdn.tailwindcss.com"><\/script><style>body{font-family:sans-serif;background:#0f172a;color:#fff;-webkit-tap-highlight-color:transparent;}</style></head><body class="p-4"><div class="max-w-md mx-auto space-y-4"><header class="text-center py-4 border-b border-white/10"><h1 class="text-2xl font-black text-indigo-400">APP ENTREGADOR</h1></header><div class="bg-white/10 p-4 rounded-2xl border border-white/10 space-y-4"><select id="sel" class="w-full bg-slate-800 p-4 rounded-xl text-lg font-black border-2 border-indigo-500/30 outline-none"><option value="">-- SELECIONE --</option></select><button onclick="load()" class="w-full bg-indigo-600 p-4 rounded-xl font-black text-lg">ABRIR ENTREGA</button></div><div id="disp" class="hidden"></div></div><div id="modal" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-3xl p-6 w-full max-w-xs space-y-4 border-4 border-indigo-600"><h3 class="text-2xl font-black text-slate-900 text-center">PAGAMENTO</h3><div class="grid gap-2"><button onclick="done('DINHEIRO')" class="bg-green-600 text-white p-4 rounded-xl font-black text-lg uppercase">💵 DINHEIRO</button><button onclick="done('CARTÃO')" class="bg-blue-600 text-white p-4 rounded-xl font-black text-lg uppercase">💳 CARTÃO</button><button onclick="done('PIX')" class="bg-purple-600 text-white p-4 rounded-xl font-black text-lg uppercase">⚡ PIX</button><button onclick="done('SÓ ENTREGAR')" class="bg-slate-800 text-white p-4 rounded-xl font-black text-lg uppercase">📦 SÓ ENTREGAR</button></div><button onclick="show(false)" class="w-full text-slate-400 font-bold py-2 uppercase">Voltar</button></div></div><script>const d=${JSON.stringify(payload)};let o=null,c=null;window.onload=()=>{const s=document.getElementById('sel');d.orders.forEach(x=>{const cl=d.clients.find(y=>y.code==x.clientCode);const op=document.createElement('option');op.value=x.id;op.innerText="#"+x.code+" - "+(cl?cl.name:"???");s.appendChild(op);});};function load(){const id=document.getElementById('sel').value;if(!id)return;o=d.orders.find(x=>x.id==id);c=d.clients.find(x=>x.code==o.clientCode);const dv=document.getElementById('disp');dv.classList.remove('hidden');dv.innerHTML=\`<div class="bg-white p-5 rounded-[2rem] space-y-4 text-slate-900 border-4 border-indigo-400 shadow-xl"><div class="flex justify-between items-center border-b pb-2"><div class="text-3xl font-black text-indigo-600">#\${o.code}</div><div class="text-2xl font-black text-slate-900">R$ \${o.total.toFixed(2)}</div></div><div class="text-xl font-black uppercase">\${c?c.name:'NÃO CADASTRADO'}</div><div class="bg-indigo-600 p-4 rounded-2xl text-white shadow-lg text-xl font-black uppercase leading-tight">\${c?c.address:'---'}<br><span class="text-sm opacity-80">\${c?c.neighborhood:''}</span></div><div class="grid grid-cols-2 gap-2">\${c&&c.wa?\`<a href="https://wa.me/55\${c.wa}" class="bg-green-600 text-white p-4 rounded-xl text-center font-black text-xs">WHATSAPP</a>\`:''}\${c&&c.map?\`<a href="\${c.map}" class="bg-slate-900 text-white p-4 rounded-xl text-center font-black text-xs">MAPA</a>\`:''}</div>\${c&&c.obs?\`<div class="bg-orange-100 p-4 rounded-xl border-2 border-orange-200 text-xl font-black uppercase text-orange-950">REF: \${c.obs}</div>\`:''}\${o.obs?\`<div class="bg-blue-100 p-4 rounded-xl border-2 border-blue-200 text-xl font-black uppercase text-blue-950">OBS: \${o.obs}</div>\`:''}<div class="bg-slate-50 p-4 rounded-xl space-y-2"><div class="text-[10px] font-black text-slate-400 uppercase">CONFERIR:</div>\${o.items.map(i=>\`<div class="flex items-center gap-2 font-black text-xl uppercase"><div class="w-6 h-6 border-2 border-indigo-400 rounded"></div>\${i.qty}x \${i.name}</div>\`).join('')}</div><button onclick="show(true)" class="w-full bg-emerald-600 text-white p-6 rounded-2xl font-black text-2xl uppercase mt-4">CONFIRMAR</button></div>\`;}function show(v){document.getElementById('modal').classList.toggle('hidden',!v);}function done(m){const msg=\`✅ *ENTREGA CONCLUÍDA*%0A%0A*Pedido:* #\${o.code}%0A*Cliente:* \${c?c.name:'---'}%0A*Valor:* R$ \${o.total.toFixed(2)}%0A*Pagamento:* \${m}\`;window.open("https://wa.me/55998150975?text="+msg,"_blank");show(false); alert("Baixa enviada!");}<\/script></body></html>`;
+            const blob = new Blob([appHtml], { type: 'text/html' });
+            const dl = document.createElement('a'); dl.href = URL.createObjectURL(blob);
+            dl.download = `elite_entregador.html`; dl.click();
         };
 
         const printRoute = (routeName, items) => {
             const w = window.open('', '', 'width=900,height=600');
-            const html = `
-                <html><head><style>
-                    body{font-family:sans-serif; padding:10mm; line-height:1.2; color:#000}
-                    .h{text-align:center; border-bottom:5px solid #000; padding-bottom:5mm; margin-bottom:8mm}
-                    .route{font-size:40px; font-weight:900; text-transform:uppercase}
-                    .box{border:3px solid #000; padding:8mm; margin-bottom:12mm; page-break-inside:avoid; border-radius:8mm}
-                    .pedido{font-size:45px; font-weight:900; border-bottom:2px solid #000; margin-bottom:4mm; padding-bottom:2mm}
-                    .addr{font-size:28px; font-weight:900; background:#000; color:#fff; padding:4mm; margin:5mm 0; text-transform:uppercase}
-                    .b{font-weight:900} .u{text-transform:uppercase}
-                    .obs-box{border:2px solid #000; padding:5mm; margin-top:5mm; background:#eee; font-size:26px; font-weight:900}
-                    .items{font-size:22px; margin-top:6mm; border-top:2px dashed #000; padding-top:4mm}
-                    .item-row{display:flex; align-items:center; margin-bottom:2mm}
-                    .chk{width:8mm; height:8mm; border:2px solid #000; margin-right:4mm}
-                </style></head><body>
-                    <div class="h">
-                        <div class="route">ROTA: ${routeName}</div>
-                        <div class="b">GUIA TÁTICO DE ENTREGA | ${new Date().toLocaleDateString('pt-BR')}</div>
-                    </div>
-                    ${items.map((it, idx) => `
-                        <div class="box">
-                            <div class="pedido">#${idx+1} PEDIDO ${it.order.code}</div>
-                            <div style="font-size:24px" class="b u">CLIENTE: ${it.client ? it.client.name : 'NÃO CADASTRADO'}</div>
-                            <div class="addr">RUA: ${it.client ? it.client.address : '---'}</div>
-                            <div style="font-size:24px" class="b u">BAIRRO: ${it.client ? it.client.neighborhood : '---'} | FONE: ${it.client ? it.client.wa : '---'}</div>
-                            <div style="font-size:24px" class="b u">VALOR A RECEBER: R$ ${it.order.total.toFixed(2)}</div>
-                            
-                            ${it.client?.obs ? `<div class="obs-box b">REF: ${it.client.obs}</div>` : ''}
-                            ${it.order.obs ? `<div class="obs-box">OBS PEDIDO: ${it.order.obs}</div>` : ''}
-                            
-                            <div class="items">
-                                <div class="b u" style="margin-bottom:3mm">CONFERIR ITENS:</div>
-                                ${it.order.items.map(i => `<div class="item-row"><div class="chk"></div><div class="b">${i.qty}x ${i.name}</div></div>`).join('')}
-                            </div>
+            w.document.write(`<html><head><style>
+                body{font-family:sans-serif;width:72mm;margin:0;padding:2mm;color:#000;line-height:1}
+                .h{text-align:center;border-bottom:2px solid #000;padding-bottom:2mm;margin-bottom:4mm}
+                .box{border:2px solid #000;padding:2mm;margin-bottom:6mm;border-radius:2mm;page-break-inside:avoid}
+                .ped{font-size:24px;font-weight:900;border-bottom:1px solid #000;margin-bottom:2mm}
+                .addr{font-size:16px;font-weight:900;background:#000;color:#fff;padding:2mm;margin:2mm 0;text-transform:uppercase}
+                .obs{border:1px solid #000;padding:2mm;margin-top:2mm;background:#eee;font-size:14px;font-weight:900}
+                .items{font-size:14px;margin-top:3mm;border-top:1px dashed #000;padding-top:2mm}
+                .chk{width:6mm;height:6mm;border:1px solid #000;display:inline-block;margin-right:2mm;vertical-align:middle}
+            </style></head><body>
+                <div class="h"><div style="font-size:18px;font-weight:900">ROTA: ${routeName}</div><div style="font-size:10px">ELITE LOGÍSTICA | ${new Date().toLocaleDateString('pt-BR')}</div></div>
+                ${items.map((it, idx) => `
+                    <div class="box">
+                        <div class="ped">#${idx+1} PEDIDO ${it.o.code}</div>
+                        <div style="font-size:14px;font-weight:900">${it.c ? it.c.name : 'NÃO CADASTRADO'}</div>
+                        <div class="addr">${it.c ? it.c.address : '---'}</div>
+                        <div style="font-size:14px;font-weight:900">R$ ${it.o.total.toFixed(2)} | ${it.c ? it.c.neighborhood : ''}</div>
+                        ${it.c && it.c.obs ? `<div class="obs">REF: ${it.c.obs}</div>` : ''}
+                        ${it.o.obs ? `<div class="obs">OBS: ${it.o.obs}</div>` : ''}
+                        <div class="items">
+                            ${it.o.items.map(i => `<div style="margin-bottom:2mm"><div class="chk"></div><b>${i.qty}x ${i.name}</b></div>`).join('')}
                         </div>
-                    `).join('')}
-                    <script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script>
-                </body></html>
-            `;
-            w.document.write(html);
+                    </div>`).join('')}
+                <script>setTimeout(()=>{window.print();window.close()},500)<\/script>
+            </body></html>`);
             w.document.close();
         };
 
         const dbExport = () => {
-            const dl = document.createElement('a');
-            dl.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clients));
-            dl.download = `backup_clientes_${new Date().toISOString().slice(0,10)}.json`;
-            dl.click();
+            const dl = document.createElement('a'); dl.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clients));
+            dl.download = `backup_clientes.json`; dl.click();
         };
 
         const dbImport = e => {
-            const r = new FileReader();
-            r.onload = x => { try { clients = JSON.parse(x.target.result); localStorage.setItem('elite_clients', JSON.stringify(clients)); renderClients(); alert("Importado!"); } catch(e){alert("Erro!");} };
+            const r = new FileReader(); r.onload = x => { try { clients = JSON.parse(x.target.result); localStorage.setItem('elite_clients', JSON.stringify(clients)); renderClients(); alert("Importado!"); } catch(e){alert("Erro!");} };
             r.readAsText(e.target.files[0]);
         };
     </script>
