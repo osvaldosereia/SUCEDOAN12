@@ -340,21 +340,27 @@
         const prtByObj = id => { const o = ords.find(x => x.id == id); if(o) prt(o); };
 
         const prt = o => {
-            const w = window.open('', '', 'width=300,height=600');
+            const w = window.open('', '', 'width=900,height=600');
             const itemsHtml = o.items.map(i => {
                 let kits = '';
-                if(i.isK && i.comps) kits = i.comps.map(c => { const p = ps.find(x=>x.code==c.code); return `<div style="padding-left:1mm;font-size:16px;opacity:0.9;line-height:1.2;margin-bottom:1mm">- [${c.code}] ${p?p.name:''} (${c.qty*i.qty})</div>`; }).join('');
+                if(i.isK && i.comps) kits = i.comps.map(c => { 
+                    const p = ps.find(x=>x.code==c.code); 
+                    return `<div class="kit-item-font">- [${c.code}] ${p?p.name:''} (${c.qty*i.qty})</div>`; 
+                }).join('');
                 return `<div style="margin-bottom:4mm"><div class="item-font b">${i.qty}x ${i.name}</div>${kits}</div>`;
             }).join('');
             w.document.write(`<html><head><style>
-                body{width:76mm;font-family:monospace;font-size:12px;margin:0;padding:0 3mm;line-height:1.1;color:#000}
+                body{width:76mm;font-family:monospace;font-size:14px;margin:0;padding:0 3mm;line-height:1.1;color:#000}
                 .c{text-align:center} .b{font-weight:bold} .r{text-align:right} .s{border-top:2px dashed #000;margin:3mm 0}
-                .huge{font-size:48px; display:block; margin:2mm 0; line-height:1} .item-font{font-size:26px; line-height:1.1; margin-bottom:1mm}
+                .huge{font-size:36px; display:block; margin:2mm 0; line-height:1} 
+                .item-font{font-size:26px; line-height:1.1; margin-bottom:1mm}
+                .kit-item-font{font-size:24px; line-height:1.2; margin-bottom:1.5mm; font-weight:bold; padding-left:1mm}
+                .obs-font{font-size:16px; line-height:1.2; border:2px solid #000; padding:2mm; margin-top:2mm; font-weight:bold}
             </style></head><body>
                 <div class="c b" style="font-size:16px">SEPARAÇÃO DE PEDIDO</div>
                 <div class="c">${o.date} ${o.time}</div>
                 <div class="c b huge">#${o.code}</div>
-                ${o.obs ? `<div class="c b" style="border:2px solid #000;padding:2mm;margin-top:2mm;font-size:18px;line-height:1.2">OBS: ${o.obs}</div>` : ''}
+                ${o.obs ? `<div class="c b obs-font">OBS: ${o.obs}</div>` : ''}
                 <div class="s"></div>
                 ${itemsHtml}
                 <div class="s"></div>
