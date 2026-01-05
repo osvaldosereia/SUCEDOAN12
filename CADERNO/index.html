@@ -29,7 +29,6 @@
             </h1>
             
             <div class="flex items-center gap-2">
-                <!-- Botões de Importar/Exportar -->
                 <button onclick="exportDatabase()" class="bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold py-2 px-3 rounded flex items-center gap-1 transition">
                     📥 Exportar Backup
                 </button>
@@ -42,101 +41,184 @@
         </div>
     </header>
 
-    <main class="container mx-auto p-4 md:p-8">
-        <!-- Seção de Cadastro -->
-        <section class="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-200">
-            <h2 class="text-lg font-semibold mb-4 flex items-center justify-between">
-                <span>📝 Cadastro de Produto</span>
-                <button onclick="resetForm()" class="text-sm text-blue-600 hover:underline">Limpar Formulário</button>
-            </h2>
-            <form id="productForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input type="hidden" id="editIndex" value="-1">
+    <main class="container mx-auto p-4 md:p-8 space-y-8">
+        
+        <!-- Navegação de Abas -->
+        <div class="flex border-b border-gray-200">
+            <button onclick="switchTab('produtos')" id="tab-produtos" class="py-2 px-4 font-semibold text-blue-600 border-b-2 border-blue-600">Produtos</button>
+            <button onclick="switchTab('pedidos')" id="tab-pedidos" class="py-2 px-4 font-semibold text-gray-500 hover:text-blue-600">Pedidos / Vendas</button>
+        </div>
+
+        <!-- SEÇÃO DE PRODUTOS -->
+        <div id="section-produtos" class="space-y-8">
+            <section class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <h2 class="text-lg font-semibold mb-4 flex items-center justify-between">
+                    <span>📝 Cadastro de Produto</span>
+                    <button onclick="resetForm()" class="text-sm text-blue-600 hover:underline">Limpar Formulário</button>
+                </h2>
+                <form id="productForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="hidden" id="editIndex" value="-1">
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Nome do Produto</label>
+                        <input type="text" id="name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Código</label>
+                        <input type="text" id="code" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2 border font-mono text-blue-600">
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 mt-6">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="isKit" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                            <label for="isKit" class="ml-2 block text-sm font-medium text-gray-700">É um Kit?</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="isTemp" class="h-4 w-4 text-orange-600 border-gray-300 rounded">
+                            <label for="isTemp" class="ml-2 block text-sm font-medium text-orange-700 font-semibold">Produto Temporário (24h)</label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Custo (R$)</label>
+                        <input type="number" step="0.01" id="cost" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Venda (R$)</label>
+                        <input type="number" step="0.01" id="sale" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Estoque Inicial</label>
+                        <input type="number" id="stock" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                    </div>
+
+                    <div class="md:col-span-1 flex items-end">
+                        <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
+                            Salvar Produto
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="font-semibold">📋 Lista de Produtos</h2>
+                    <div class="text-sm text-gray-500" id="stats">Total: 0 produtos</div>
+                </div>
+                <div class="overflow-x-auto custom-scroll">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+                            <tr>
+                                <th class="px-6 py-3 text-left">Cód.</th>
+                                <th class="px-6 py-3 text-left">Nome</th>
+                                <th class="px-6 py-3 text-left">Tipo / Status</th>
+                                <th class="px-6 py-3 text-left">Custo</th>
+                                <th class="px-6 py-3 text-left">Venda</th>
+                                <th class="px-6 py-3 text-left">Estoque</th>
+                                <th class="px-6 py-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody" class="divide-y divide-gray-200 bg-white"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- SEÇÃO DE PEDIDOS -->
+        <div id="section-pedidos" class="hidden space-y-8">
+            <section class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-semibold">🛒 Novo Pedido</h2>
+                    <div class="text-blue-600 font-mono font-bold bg-blue-50 px-3 py-1 rounded border border-blue-100">
+                        Nº Pedido: <span id="orderNextId">--</span>
+                    </div>
+                </div>
                 
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700">Nome do Produto</label>
-                    <input type="text" id="name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 border">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Selecionar Produto / Kit</label>
+                        <select id="orderProductSelect" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                            <option value="">Selecione um item...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Quantidade</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="orderProductQty" min="1" value="1" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
+                            <button onclick="addItemToOrder()" class="mt-1 bg-green-600 text-white px-4 rounded hover:bg-green-700 transition">Adicionar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border rounded-lg overflow-hidden mb-4">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Item</th>
+                                <th class="px-4 py-2 text-center">Qtd</th>
+                                <th class="px-4 py-2 text-right">Unitário</th>
+                                <th class="px-4 py-2 text-right">Subtotal</th>
+                                <th class="px-4 py-2 text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderItemsList">
+                            <!-- Itens do pedido atual -->
+                        </tbody>
+                        <tfoot class="bg-gray-50 font-bold">
+                            <tr>
+                                <td colspan="3" class="px-4 py-2 text-right">TOTAL:</td>
+                                <td class="px-4 py-2 text-right text-blue-600" id="orderTotalValue">R$ 0,00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Código</label>
-                    <input type="text" id="code" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2 border font-mono text-blue-600" placeholder="Automático">
-                </div>
-
-                <div class="flex items-center mt-6">
-                    <input type="checkbox" id="isKit" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                    <label for="isKit" class="ml-2 block text-sm font-medium text-gray-700">É um Kit?</label>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Preço de Custo (R$)</label>
-                    <input type="number" step="0.01" id="cost" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Preço de Venda (R$)</label>
-                    <input type="number" step="0.01" id="sale" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Estoque Inicial / Atual</label>
-                    <input type="number" id="stock" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 border">
-                </div>
-
-                <div class="md:col-span-1 flex items-end">
-                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">
-                        Salvar Produto
+                <div class="flex justify-end">
+                    <button onclick="finalizeOrder()" class="bg-blue-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-800 shadow-md transition">
+                        Finalizar e Dar Baixa
                     </button>
                 </div>
-            </form>
-        </section>
+            </section>
 
-        <!-- Seção de Lista de Produtos -->
-        <section class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                <h2 class="font-semibold">📋 Produtos Cadastrados (Planilha)</h2>
-                <div class="text-sm text-gray-500" id="stats">Total: 0 produtos</div>
-            </div>
-            
-            <div class="overflow-x-auto custom-scroll">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cód.</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Custo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Venda</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estoque</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productTableBody" class="bg-white divide-y divide-gray-200">
-                        <!-- Gerado via JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b border-gray-200">
+                    <h2 class="font-semibold">📜 Histórico de Pedidos (Hoje)</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left">Hora</th>
+                                <th class="px-6 py-3 text-left">Pedido</th>
+                                <th class="px-6 py-3 text-left">Itens</th>
+                                <th class="px-6 py-3 text-right">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersHistoryBody" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     </main>
 
-    <!-- Modal para Configuração de Kit -->
+    <!-- Modal para Configuração de Kit (Cadastro) -->
     <div id="kitModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
             <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-blue-50">
-                <h3 class="font-bold text-blue-800" id="kitModalTitle">🛠️ Configurar Itens do Kit</h3>
+                <h3 class="font-bold text-blue-800">🛠️ Configurar Itens do Kit</h3>
                 <button onclick="closeKitModal()" class="text-gray-500 hover:text-red-500">✕</button>
             </div>
             <div class="p-6">
-                <p class="text-sm text-gray-600 mb-4">Escolha os produtos e as quantidades para este kit. Só aparecem produtos que não são kits.</p>
-                
-                <div class="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scroll" id="kitSelectionList">
-                    <!-- Lista de produtos disponíveis -->
-                </div>
-
+                <div class="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scroll" id="kitSelectionList"></div>
                 <div class="mt-6 flex justify-between items-center border-t pt-4">
                     <div id="kitCountLabel" class="text-sm font-medium text-blue-600">0 itens selecionados</div>
                     <div class="flex gap-3">
-                        <button onclick="closeKitModal()" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100 transition">Fechar</button>
-                        <button onclick="saveKitConfig()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-bold">Confirmar Seleção</button>
+                        <button onclick="closeKitModal()" class="px-4 py-2 border rounded text-gray-700">Fechar</button>
+                        <button onclick="saveKitConfig()" class="px-4 py-2 bg-blue-600 text-white rounded font-bold">Confirmar Seleção</button>
                     </div>
                 </div>
             </div>
@@ -146,15 +228,25 @@
     <script>
         // --- Estado Global ---
         let products = [];
+        let orders = [];
         let currentKitComponents = []; 
+        let currentOrderItems = [];
 
         // --- Inicialização ---
         window.onload = () => {
             loadFromLocalStorage();
+            checkTemporaryExpirations();
             updateCode();
             renderProducts();
+            renderOrders();
+            updateOrderSelect();
+            updateOrderCodeDisplay();
             updateClock();
+            
+            // Ciclo de atualização e verificação
             setInterval(updateClock, 1000);
+            setInterval(checkTemporaryExpirations, 60000); // Verifica expiração a cada minuto
+            setInterval(renderProducts, 30000); // Re-renderiza para atualizar cronómetros visuais
         };
 
         function updateClock() {
@@ -162,84 +254,231 @@
             document.getElementById('clock').innerText = now.toLocaleString('pt-BR');
         }
 
-        // --- Persistência e DB ---
-        function saveToLocalStorage() {
-            localStorage.setItem('inventory_db_app', JSON.stringify(products));
-        }
+        // --- Lógica de Produtos Temporários ---
+        function checkTemporaryExpirations() {
+            const now = Date.now();
+            let changed = false;
+            const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 horas em milisegundos
 
-        function loadFromLocalStorage() {
-            const saved = localStorage.getItem('inventory_db_app');
-            if (saved) {
-                try {
-                    products = JSON.parse(saved);
-                } catch (e) {
-                    console.error("Erro ao carregar dados", e);
-                    products = [];
+            const filteredProducts = products.filter(p => {
+                if (p.isTemp && p.firstSaleAt) {
+                    const elapsed = now - p.firstSaleAt;
+                    if (elapsed >= EXPIRY_TIME) {
+                        changed = true;
+                        console.log(`Produto ${p.name} expirou e foi removido.`);
+                        return false;
+                    }
                 }
+                return true;
+            });
+
+            if (changed) {
+                products = filteredProducts;
+                saveToLocalStorage();
+                renderProducts();
+                updateOrderSelect();
             }
         }
 
-        function exportDatabase() {
-            const dataStr = JSON.stringify(products, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            
-            const exportFileDefaultName = 'estoque_backup_' + new Date().toISOString().slice(0,10) + '.json';
-            
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
-            linkElement.click();
+        // --- Persistência ---
+        function saveToLocalStorage() {
+            localStorage.setItem('inventory_db_app', JSON.stringify(products));
+            localStorage.setItem('orders_db_app', JSON.stringify(orders));
         }
 
-        function importDatabase(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (Array.isArray(importedData)) {
-                        if (confirm("Isto irá substituir o seu banco de dados atual. Deseja continuar?")) {
-                            products = importedData;
-                            saveToLocalStorage();
-                            renderProducts();
-                            updateCode();
-                        }
-                    } else {
-                        alert("Ficheiro inválido.");
-                    }
-                } catch (err) {
-                    alert("Erro ao ler o ficheiro.");
-                }
-            };
-            reader.readAsText(file);
+        function loadFromLocalStorage() {
+            const pSaved = localStorage.getItem('inventory_db_app');
+            const oSaved = localStorage.getItem('orders_db_app');
+            if (pSaved) products = JSON.parse(pSaved);
+            if (oSaved) orders = JSON.parse(oSaved);
         }
 
-        // --- Lógica de Geração de Código ---
-        function getNextCode() {
+        // --- Navegação ---
+        function switchTab(tab) {
+            document.getElementById('section-produtos').classList.toggle('hidden', tab !== 'produtos');
+            document.getElementById('section-pedidos').classList.toggle('hidden', tab !== 'pedidos');
+            
+            const btnProd = document.getElementById('tab-produtos');
+            const btnPed = document.getElementById('tab-pedidos');
+            
+            if(tab === 'produtos') {
+                btnProd.className = "py-2 px-4 font-semibold text-blue-600 border-b-2 border-blue-600";
+                btnPed.className = "py-2 px-4 font-semibold text-gray-500 hover:text-blue-600";
+            } else {
+                btnPed.className = "py-2 px-4 font-semibold text-blue-600 border-b-2 border-blue-600";
+                btnProd.className = "py-2 px-4 font-semibold text-gray-500 hover:text-blue-600";
+                updateOrderSelect();
+                updateOrderCodeDisplay();
+            }
+        }
+
+        // --- Geração de Códigos ---
+        function getNextProductCode() {
             if (products.length === 0) return "0001";
-            const lastCode = products.reduce((max, p) => {
-                const num = parseInt(p.code);
-                return num > max ? num : max;
-            }, 0);
+            const lastCode = products.reduce((max, p) => Math.max(max, parseInt(p.code)), 0);
             return String(lastCode + 1).padStart(4, '0');
         }
 
         function updateCode() {
-            const editIdx = document.getElementById('editIndex').value;
-            if (editIdx == "-1") {
-                document.getElementById('code').value = getNextCode();
+            if (document.getElementById('editIndex').value == "-1") {
+                document.getElementById('code').value = getNextProductCode();
             }
         }
 
-        // --- Formulário ---
+        function getNextOrderCode() {
+            const today = new Date().toISOString().slice(0, 10);
+            const todayOrders = orders.filter(o => o.date === today);
+            if (todayOrders.length === 0) return "01";
+            const lastCode = todayOrders.reduce((max, o) => Math.max(max, parseInt(o.code)), 0);
+            return String(lastCode + 1).padStart(2, '0');
+        }
+
+        function updateOrderCodeDisplay() {
+            document.getElementById('orderNextId').innerText = getNextOrderCode();
+        }
+
+        // --- Módulo de Pedidos ---
+        function updateOrderSelect() {
+            const select = document.getElementById('orderProductSelect');
+            select.innerHTML = '<option value="">Selecione um item...</option>';
+            products.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.code;
+                opt.innerText = `[${p.code}] ${p.name} (Estoque: ${p.stock})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function addItemToOrder() {
+            const code = document.getElementById('orderProductSelect').value;
+            const qty = parseInt(document.getElementById('orderProductQty').value);
+            if (!code || qty <= 0) return;
+            const product = products.find(p => p.code === code);
+            if (!product) return;
+            if (product.stock < qty) {
+                alert("Quantidade indisponível no estoque!");
+                return;
+            }
+            const existing = currentOrderItems.find(i => i.code === code);
+            if (existing) {
+                existing.quantity += qty;
+            } else {
+                currentOrderItems.push({
+                    code: product.code,
+                    name: product.name,
+                    price: product.sale,
+                    quantity: qty,
+                    isKit: product.isKit,
+                    components: product.isKit ? product.components : []
+                });
+            }
+            renderCurrentOrder();
+        }
+
+        function renderCurrentOrder() {
+            const tbody = document.getElementById('orderItemsList');
+            tbody.innerHTML = '';
+            let total = 0;
+            currentOrderItems.forEach((item, index) => {
+                const subtotal = item.price * item.quantity;
+                total += subtotal;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-4 py-2">
+                        <div class="font-bold text-gray-800">${item.name}</div>
+                        ${item.isKit ? '<div class="text-[10px] text-purple-600 font-bold uppercase">Inclui Itens do Kit ↓</div>' : ''}
+                    </td>
+                    <td class="px-4 py-2 text-center">${item.quantity}</td>
+                    <td class="px-4 py-2 text-right">R$ ${item.price.toFixed(2)}</td>
+                    <td class="px-4 py-2 text-right font-bold">R$ ${subtotal.toFixed(2)}</td>
+                    <td class="px-4 py-2 text-center">
+                        <button onclick="removeOrderItem(${index})" class="text-red-500 font-bold">✕</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                if (item.isKit && item.components) {
+                    item.components.forEach(comp => {
+                        const compData = products.find(p => p.code === comp.code);
+                        const trComp = document.createElement('tr');
+                        trComp.className = "bg-purple-50 text-[11px] text-purple-800 border-l-4 border-purple-400";
+                        trComp.innerHTML = `
+                            <td class="px-6 py-1 italic">└─ [${comp.code}] ${compData ? compData.name : 'Item não encontrado'}</td>
+                            <td class="px-4 py-1 text-center">${comp.quantity * item.quantity} total</td>
+                            <td colspan="3"></td>
+                        `;
+                        tbody.appendChild(trComp);
+                    });
+                }
+            });
+            document.getElementById('orderTotalValue').innerText = `R$ ${total.toFixed(2)}`;
+        }
+
+        function removeOrderItem(index) {
+            currentOrderItems.splice(index, 1);
+            renderCurrentOrder();
+        }
+
+        function finalizeOrder() {
+            if (currentOrderItems.length === 0) return;
+            const orderCode = getNextOrderCode();
+            const today = new Date().toISOString().slice(0, 10);
+            const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            // Reduzir estoque e marcar primeira venda de produtos temporários
+            for (const item of currentOrderItems) {
+                const prod = products.find(p => p.code === item.code);
+                if (prod) {
+                    prod.stock -= item.quantity;
+                    // Se for temporário e for a primeira venda, marca o timestamp
+                    if (prod.isTemp && !prod.firstSaleAt) {
+                        prod.firstSaleAt = Date.now();
+                    }
+                }
+            }
+
+            const newOrder = {
+                code: orderCode,
+                date: today,
+                time: time,
+                items: [...currentOrderItems],
+                total: currentOrderItems.reduce((acc, i) => acc + (i.price * i.quantity), 0)
+            };
+
+            orders.push(newOrder);
+            currentOrderItems = [];
+            saveToLocalStorage();
+            renderProducts();
+            renderOrders();
+            renderCurrentOrder();
+            updateOrderCodeDisplay();
+            updateOrderSelect();
+            alert(`Pedido ${orderCode} finalizado!`);
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('ordersHistoryBody');
+            tbody.innerHTML = '';
+            const today = new Date().toISOString().slice(0, 10);
+            const todayOrders = orders.filter(o => o.date === today).reverse();
+            todayOrders.forEach(o => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-xs text-gray-500">${o.time}</td>
+                    <td class="px-6 py-4 font-bold text-blue-700">${o.code}</td>
+                    <td class="px-6 py-4">${o.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</td>
+                    <td class="px-6 py-4 text-right font-bold">R$ ${o.total.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- CRUD Produtos ---
         const form = document.getElementById('productForm');
         form.onsubmit = (e) => {
             e.preventDefault();
-            
             const editIndex = parseInt(document.getElementById('editIndex').value);
             const isKit = document.getElementById('isKit').checked;
+            const isTemp = document.getElementById('isTemp').checked;
             
             const productData = {
                 name: document.getElementById('name').value,
@@ -248,25 +487,21 @@
                 sale: parseFloat(document.getElementById('sale').value),
                 stock: parseInt(document.getElementById('stock').value),
                 isKit: isKit,
+                isTemp: isTemp,
+                firstSaleAt: editIndex > -1 ? products[editIndex].firstSaleAt : null, // Preserva data se estiver editando
                 components: isKit ? [...currentKitComponents] : []
             };
 
             if (isKit && productData.components.length === 0) {
-                alert("Por favor, adicione componentes ao kit no modal.");
+                alert("Kits precisam de componentes!");
                 openKitModal();
                 return;
             }
 
             if (editIndex === -1) {
-                // Novo Produto
-                if (isKit) {
-                    if (!applyStockReduction(productData.components, productData.stock)) return;
-                }
+                if (isKit && !applyStockReduction(productData.components, productData.stock)) return;
                 products.push(productData);
             } else {
-                // Edição
-                // Se era kit e mudou estoque ou componentes, aqui precisaria de uma lógica complexa de estorno
-                // Para este sistema simples, apenas atualizamos os dados
                 products[editIndex] = productData;
             }
 
@@ -278,16 +513,15 @@
         function applyStockReduction(components, kitQuantity) {
             for (const comp of components) {
                 const prod = products.find(p => p.code === comp.code);
-                if (prod && prod.stock < (comp.quantity * kitQuantity)) {
-                    alert(`Estoque insuficiente para: ${prod.name}. Falta: ${(comp.quantity * kitQuantity) - prod.stock} unid.`);
+                if (!prod || prod.stock < (comp.quantity * kitQuantity)) {
+                    alert(`Estoque insuficiente de ${prod?.name || comp.code}`);
                     return false;
                 }
             }
-
-            for (const comp of components) {
+            components.forEach(comp => {
                 const prod = products.find(p => p.code === comp.code);
-                if (prod) prod.stock -= (comp.quantity * kitQuantity);
-            }
+                prod.stock -= (comp.quantity * kitQuantity);
+            });
             return true;
         }
 
@@ -299,36 +533,47 @@
             updateCode();
         }
 
-        // --- Tabela ---
         function renderProducts() {
             const tbody = document.getElementById('productTableBody');
             tbody.innerHTML = '';
-            
+            const now = Date.now();
+
             products.forEach((p, index) => {
+                let statusBadge = "";
+                if (p.isKit) {
+                    statusBadge += `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 mr-1">KIT</span>`;
+                } else {
+                    statusBadge += `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 mr-1">INDIV.</span>`;
+                }
+
+                if (p.isTemp) {
+                    if (!p.firstSaleAt) {
+                        statusBadge += `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">TEMP (Aguardando Venda)</span>`;
+                    } else {
+                        const timeLeft = (p.firstSaleAt + (24 * 60 * 60 * 1000)) - now;
+                        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                        const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                        statusBadge += `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">EXPIRA EM ${hours}h ${mins}m</span>`;
+                    }
+                }
+
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 transition";
+                tr.className = "hover:bg-gray-50";
                 tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">${p.code}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${p.isKit ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">
-                            ${p.isKit ? 'Kit' : 'Individual'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ ${p.cost.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ ${p.sale.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span class="${p.stock <= 5 ? 'text-red-600 font-bold' : 'text-gray-900'}">${p.stock}</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
-                        <button onclick="editProduct(${index})" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-2 py-1 rounded">Editar</button>
-                        <button onclick="duplicateProduct(${index})" class="text-green-600 hover:text-green-900 bg-green-50 px-2 py-1 rounded">Duplicar</button>
-                        <button onclick="deleteProduct(${index})" class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1 rounded">Excluir</button>
+                    <td class="px-6 py-4 font-mono">${p.code}</td>
+                    <td class="px-6 py-4 font-medium">${p.name}</td>
+                    <td class="px-6 py-4 flex flex-col gap-1">${statusBadge}</td>
+                    <td class="px-6 py-4 text-gray-500">R$ ${p.cost.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-gray-500">R$ ${p.sale.toFixed(2)}</td>
+                    <td class="px-6 py-4 font-bold ${p.stock <= 5 ? 'text-red-600' : ''}">${p.stock}</td>
+                    <td class="px-6 py-4 text-center space-x-2">
+                        <button onclick="editProduct(${index})" class="text-blue-600 hover:underline">Editar</button>
+                        <button onclick="duplicateProduct(${index})" class="text-green-600 hover:underline">Duplicar</button>
+                        <button onclick="deleteProduct(${index})" class="text-red-600 hover:underline">Excluir</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
-
             document.getElementById('stats').innerText = `Total: ${products.length} produtos`;
         }
 
@@ -341,22 +586,18 @@
             document.getElementById('sale').value = p.sale;
             document.getElementById('stock').value = p.stock;
             document.getElementById('isKit').checked = p.isKit;
-            
-            // Carrega componentes para edição se for kit
+            document.getElementById('isTemp').checked = p.isTemp || false;
             currentKitComponents = p.isKit ? [...p.components] : [];
-            
             document.getElementById('submitBtn').innerText = "Atualizar Produto";
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            if (p.isKit) {
-                openKitModal();
-            }
+            if (p.isKit) openKitModal();
         }
 
         function duplicateProduct(index) {
             const p = JSON.parse(JSON.stringify(products[index]));
-            p.code = getNextCode();
-            p.name = p.name + " (Cópia)";
+            p.code = getNextProductCode();
+            p.name += " (Cópia)";
+            p.firstSaleAt = null; // Reinicia expiração na cópia
             products.push(p);
             saveToLocalStorage();
             renderProducts();
@@ -364,106 +605,97 @@
         }
 
         function deleteProduct(index) {
-            if (confirm("Deseja realmente excluir este produto?")) {
+            if (confirm("Excluir produto?")) {
                 products.splice(index, 1);
                 saveToLocalStorage();
                 renderProducts();
                 updateCode();
+                updateOrderSelect();
             }
         }
 
-        // --- Kit Modal Avançado ---
+        // --- Kit Modal ---
         const kitCheckbox = document.getElementById('isKit');
-        kitCheckbox.onchange = () => {
-            if (kitCheckbox.checked) {
-                openKitModal();
-            }
-        };
+        kitCheckbox.onchange = () => { if (kitCheckbox.checked) openKitModal(); };
 
         function openKitModal() {
             const listDiv = document.getElementById('kitSelectionList');
             listDiv.innerHTML = '';
-            
-            // Filtra produtos individuais (não podem ser kits) e exclui o próprio produto se estiver em edição
-            const currentEditingCode = document.getElementById('code').value;
-            const availableItems = products.filter(p => !p.isKit && p.code !== currentEditingCode);
-
-            if (availableItems.length === 0) {
-                listDiv.innerHTML = '<p class="text-center text-gray-500 py-4">Cadastre produtos individuais primeiro para compor um kit.</p>';
+            const curCode = document.getElementById('code').value;
+            const available = products.filter(p => !p.isKit && p.code !== curCode);
+            if (available.length === 0) {
+                listDiv.innerHTML = '<p class="text-center text-gray-400">Cadastre produtos individuais primeiro.</p>';
             } else {
-                availableItems.forEach(item => {
-                    // Verifica se já está selecionado para o kit atual
-                    const savedComp = currentKitComponents.find(c => c.code === item.code);
-                    const qty = savedComp ? savedComp.quantity : 0;
-                    
-                    const itemRow = document.createElement('div');
-                    itemRow.className = `flex items-center justify-between p-3 border rounded-lg transition ${qty > 0 ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50 border-gray-200'}`;
-                    itemRow.innerHTML = `
-                        <div class="flex-1">
-                            <div class="font-bold text-sm text-gray-800">${item.name}</div>
-                            <div class="text-xs text-gray-500 font-mono">Cód: ${item.code} | Estoque: ${item.stock}</div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center border rounded overflow-hidden bg-white">
-                                <button type="button" onclick="changeQty('${item.code}', -1)" class="px-2 py-1 bg-gray-100 hover:bg-gray-200">-</button>
-                                <input type="number" min="0" value="${qty}" id="qty-${item.code}"
-                                    class="w-12 text-center text-sm border-none focus:ring-0" readonly>
-                                <button type="button" onclick="changeQty('${item.code}', 1)" class="px-2 py-1 bg-gray-100 hover:bg-gray-200">+</button>
-                            </div>
-                            <span class="text-xs text-gray-400 w-8">unid.</span>
+                available.forEach(item => {
+                    const saved = currentKitComponents.find(c => c.code === item.code);
+                    const qty = saved ? saved.quantity : 0;
+                    const row = document.createElement('div');
+                    row.className = `flex items-center justify-between p-3 border rounded-lg ${qty > 0 ? 'bg-blue-50 border-blue-400' : ''}`;
+                    row.innerHTML = `
+                        <div class="text-sm font-bold">${item.name} <span class="text-xs text-gray-400 font-normal">(Estoque: ${item.stock})</span></div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="changeKitQty('${item.code}', -1)" class="w-8 h-8 bg-gray-200 rounded">-</button>
+                            <input type="number" value="${qty}" id="kq-${item.code}" class="w-10 text-center border-none bg-transparent" readonly>
+                            <button type="button" onclick="changeKitQty('${item.code}', 1)" class="w-8 h-8 bg-gray-200 rounded">+</button>
                         </div>
                     `;
-                    listDiv.appendChild(itemRow);
+                    listDiv.appendChild(row);
                 });
             }
-
             updateKitCounter();
             document.getElementById('kitModal').classList.add('modal-active');
         }
 
-        function changeQty(code, delta) {
-            const input = document.getElementById(`qty-${code}`);
+        function changeKitQty(code, delta) {
+            const input = document.getElementById(`kq-${code}`);
             let val = parseInt(input.value) + delta;
             if (val < 0) val = 0;
             input.value = val;
-            
-            // Atualiza visual da linha
-            const row = input.closest('div.flex.items-center.justify-between');
+            const idx = currentKitComponents.findIndex(c => c.code === code);
             if (val > 0) {
-                row.classList.add('border-blue-500', 'bg-blue-50');
+                if (idx > -1) currentKitComponents[idx].quantity = val;
+                else currentKitComponents.push({ code, quantity: val });
+                input.closest('.border').classList.add('bg-blue-50', 'border-blue-400');
             } else {
-                row.classList.remove('border-blue-500', 'bg-blue-50');
-            }
-
-            // Atualiza array temporário
-            const index = currentKitComponents.findIndex(c => c.code === code);
-            if (val > 0) {
-                if (index > -1) {
-                    currentKitComponents[index].quantity = val;
-                } else {
-                    currentKitComponents.push({ code, quantity: val });
-                }
-            } else if (index > -1) {
-                currentKitComponents.splice(index, 1);
+                if (idx > -1) currentKitComponents.splice(idx, 1);
+                input.closest('.border').classList.remove('bg-blue-50', 'border-blue-400');
             }
             updateKitCounter();
         }
 
         function updateKitCounter() {
-            const count = currentKitComponents.length;
-            document.getElementById('kitCountLabel').innerText = `${count} ${count === 1 ? 'item selecionado' : 'itens selecionados'}`;
+            document.getElementById('kitCountLabel').innerText = `${currentKitComponents.length} itens no kit`;
         }
 
         function saveKitConfig() {
-            if (currentKitComponents.length === 0) {
-                if (!confirm("O kit está vazio. Deseja desmarcar a opção de Kit?")) return;
-                document.getElementById('isKit').checked = false;
-            }
+            if (currentKitComponents.length === 0) document.getElementById('isKit').checked = false;
             closeKitModal();
         }
 
-        function closeKitModal() {
-            document.getElementById('kitModal').classList.remove('modal-active');
+        function closeKitModal() { document.getElementById('kitModal').classList.remove('modal-active'); }
+
+        // --- Import/Export ---
+        function exportDatabase() {
+            const db = { products, orders };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `backup_estoque_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchorElem.click();
+        }
+
+        function importDatabase(event) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = JSON.parse(e.target.result);
+                if (data.products) products = data.products;
+                if (data.orders) orders = data.orders;
+                saveToLocalStorage();
+                renderProducts();
+                renderOrders();
+                updateCode();
+            };
+            reader.readAsText(event.target.files[0]);
         }
     </script>
 </body>
