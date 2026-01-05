@@ -1,387 +1,304 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expedição V3.7 Lite</title>
+    <title>Gestão de Cestas Básicas</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { background-color: #f3f4f6; font-family: 'Segoe UI', sans-serif; }
-        .compact-input { padding: 2px 4px; font-size: 0.75rem; height: 28px; border: 1px solid #d1d5db; border-radius: 4px; width: 100%; }
-        .compact-label { font-size: 0.65rem; font-weight: 700; color: #4b5563; text-transform: uppercase; display: block; margin-bottom: 2px; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .selected-card { border: 2px solid #f97316 !important; background-color: #fff7ed !important; }
-        .dragging { opacity: 0.5; border: 2px dashed #4f46e5 !important; }
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuração do Firebase (Injetada pelo ambiente)
+        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
+        const appId = window.__app_id || 'gestao-cestas-001';
         
-        @media print {
-            body * { visibility: hidden; }
-            #areaImpressao, #areaImpressao * { visibility: visible; }
-            #areaImpressao { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
-            .label-page { width: 76mm; height: 76mm; page-break-after: always; padding: 5mm; border-bottom: 2px dotted #000; display: flex; flex-direction: column; justify-content: space-between; }
-            .no-print { display: none !important; }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Estado Global
+        let user = null;
+        let produtos = [];
+        let view = 'dashboard';
+
+        // Inicialização com Auth (Regra 3)
+        async function initAuth() {
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Erro na autenticação:", error);
+            }
         }
-        #areaImpressao { display: none; }
-    </style>
+
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (user) {
+                renderApp();
+                listenToProducts();
+            }
+        });
+
+        // Listeners do Firestore (Caminhos Rígidos - Regra 1)
+        function listenToProducts() {
+            if (!user) return;
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'produtos');
+            onSnapshot(q, (snapshot) => {
+                produtos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderContent();
+            }, (error) => console.error("Erro ao ler produtos:", error));
+        }
+
+        // Funções de Negócio
+        window.saveProduct = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.estoque = parseInt(data.estoque) || 0;
+
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'produtos', data.codigo_interno);
+            
+            // Verifica se já existe para somar stock ou criar novo
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const oldData = docSnap.data();
+                await updateDoc(docRef, {
+                    nome: data.nome,
+                    barcode: data.barcode,
+                    ncm: data.ncm,
+                    estoque: oldData.estoque + data.estoque
+                });
+                showMessage("Stock atualizado com sucesso!");
+            } else {
+                await setDoc(docRef, data);
+                showMessage("Produto cadastrado com sucesso!");
+            }
+            e.target.reset();
+        };
+
+        window.deleteProduct = async (id) => {
+            if (!confirm("Tem certeza que deseja apagar este produto?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'produtos', id));
+        };
+
+        window.processAssembly = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const rawList = formData.get('lista_produtos');
+            const qtdCestas = parseInt(formData.get('quantidade_cestas'));
+            const nomeCesta = formData.get('nome_cesta');
+            const valorCesta = formData.get('valor_cesta');
+
+            const linhas = rawList.trim().split('\n');
+            const itensParaBaixar = [];
+
+            // Validação
+            try {
+                for (let linha of linhas) {
+                    const [cod, qtdPerCesta] = linha.split('|').map(s => s.trim());
+                    if (!cod || !qtdPerCesta) continue;
+                    
+                    const produto = produtos.find(p => p.codigo_interno === cod);
+                    if (!produto) throw new Error(`Produto não encontrado: ${cod}`);
+                    
+                    const totalNecessario = parseInt(qtdPerCesta) * qtdCestas;
+                    if (produto.estoque < totalNecessario) {
+                        throw new Error(`Stock insuficiente para ${produto.nome} (${cod}). Necessário: ${totalNecessario}, Disponível: ${produto.estoque}`);
+                    }
+                    
+                    itensParaBaixar.push({ cod, total: totalNecessario });
+                }
+
+                // Execução da baixa (Simplificado - Regra 2: Sem transações complexas, fazemos um a um)
+                for (let item of itensParaBaixar) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'produtos', item.cod);
+                    const prod = produtos.find(p => p.codigo_interno === item.cod);
+                    await updateDoc(docRef, { estoque: prod.estoque - item.total });
+                }
+
+                // Registro da Montagem
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'montagens'), {
+                    nome_cesta: nomeCesta,
+                    quantidade: qtdCestas,
+                    valor: valorCesta,
+                    data: serverTimestamp()
+                });
+
+                showMessage(`Sucesso! ${qtdCestas} cestas montadas e stock atualizado.`);
+                e.target.reset();
+                setView('dashboard');
+            } catch (err) {
+                alert(err.message);
+            }
+        };
+
+        // UI Helpers
+        window.setView = (v) => {
+            view = v;
+            renderContent();
+        };
+
+        function showMessage(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        function renderApp() {
+            document.getElementById('app').innerHTML = `
+                <div class="flex h-screen bg-gray-100">
+                    <!-- Sidebar -->
+                    <div class="w-64 bg-slate-800 text-white flex flex-col">
+                        <div class="p-6 text-xl font-bold border-b border-slate-700">Cestas Desktop</div>
+                        <nav class="flex-1 p-4 space-y-2">
+                            <button onclick="setView('dashboard')" class="w-full text-left p-3 rounded hover:bg-slate-700 flex items-center">📦 Stock Atual</button>
+                            <button onclick="setView('add_product')" class="w-full text-left p-3 rounded hover:bg-slate-700 flex items-center">➕ Entrada / Cadastro</button>
+                            <button onclick="setView('assemble')" class="w-full text-left p-3 rounded hover:bg-slate-700 flex items-center">🧺 Montar Cestas</button>
+                        </nav>
+                        <div class="p-4 text-xs text-slate-400">ID: ${user.uid}</div>
+                    </div>
+                    <!-- Main -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+                            <h2 id="page-title" class="text-xl font-semibold text-gray-700">Painel Principal</h2>
+                        </header>
+                        <main class="flex-1 overflow-y-auto p-6" id="main-content"></main>
+                    </div>
+                </div>
+                <div id="toast" class="fixed bottom-5 right-5 bg-green-600 text-white px-6 py-3 rounded shadow-lg hidden"></div>
+            `;
+            renderContent();
+        }
+
+        function renderContent() {
+            const main = document.getElementById('main-content');
+            const title = document.getElementById('page-title');
+            if (!main) return;
+
+            switch(view) {
+                case 'dashboard':
+                    title.innerText = "Stock de Produtos Individuais";
+                    main.innerHTML = `
+                        <div class="bg-white rounded-lg shadow overflow-hidden">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 border-b">
+                                    <tr>
+                                        <th class="p-4">Cód. Interno</th>
+                                        <th class="p-4">Produto</th>
+                                        <th class="p-4">EAN / NCM</th>
+                                        <th class="p-4">Stock</th>
+                                        <th class="p-4 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${produtos.map(p => `
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="p-4 font-mono text-sm">${p.id}</td>
+                                            <td class="p-4 font-medium">${p.nome}</td>
+                                            <td class="p-4 text-gray-500 text-sm">${p.barcode} | ${p.ncm}</td>
+                                            <td class="p-4"><span class="px-2 py-1 rounded ${p.estoque < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${p.estoque} un</span></td>
+                                            <td class="p-4 text-right">
+                                                <button onclick="deleteProduct('${p.id}')" class="text-red-500 hover:underline text-sm">Apagar</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                    ${produtos.length === 0 ? '<tr><td colspan="5" class="p-10 text-center text-gray-400">Nenhum produto cadastrado.</td></tr>' : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    break;
+
+                case 'add_product':
+                    title.innerText = "Cadastro e Entrada de Mercadoria";
+                    main.innerHTML = `
+                        <div class="max-w-2xl bg-white p-8 rounded-lg shadow">
+                            <form onsubmit="saveProduct(event)" class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="col-span-1">
+                                        <label class="block text-sm font-medium text-gray-700">Código Interno</label>
+                                        <input type="text" name="codigo_interno" required class="mt-1 block w-full border rounded-md p-2 border-gray-300">
+                                    </div>
+                                    <div class="col-span-1">
+                                        <label class="block text-sm font-medium text-gray-700">Cód. Barras (EAN)</label>
+                                        <input type="text" name="barcode" class="mt-1 block w-full border rounded-md p-2 border-gray-300">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Nome do Produto</label>
+                                    <input type="text" name="nome" required class="mt-1 block w-full border rounded-md p-2 border-gray-300">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">NCM</label>
+                                        <input type="text" name="ncm" class="mt-1 block w-full border rounded-md p-2 border-gray-300">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Qtd p/ Somar ao Stock</label>
+                                        <input type="number" name="estoque" required class="mt-1 block w-full border rounded-md p-2 border-gray-300 bg-yellow-50 font-bold">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-md font-bold hover:bg-blue-700 transition">SALVAR / DAR ENTRADA</button>
+                            </form>
+                            <p class="mt-4 text-xs text-gray-500">* Se o código já existir, a quantidade informada será somada ao stock atual.</p>
+                        </div>
+                    `;
+                    break;
+
+                case 'assemble':
+                    title.innerText = "Montagem de Lote de Cestas";
+                    main.innerHTML = `
+                        <div class="max-w-4xl bg-white p-8 rounded-lg shadow">
+                            <form onsubmit="processAssembly(event)" class="space-y-6">
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div class="col-span-1">
+                                        <label class="block text-sm font-medium text-gray-700">Nome da Cesta</label>
+                                        <input type="text" name="nome_cesta" placeholder="Ex: Cesta Natalina" required class="mt-1 block w-full border rounded-md p-2 border-gray-300">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Quantidade de Cestas</label>
+                                        <input type="number" name="quantidade_cestas" value="1" min="1" required class="mt-1 block w-full border rounded-md p-2 border-gray-300">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Valor Unitário (Venda)</label>
+                                        <input type="number" step="0.01" name="valor_cesta" placeholder="0,00" class="mt-1 block w-full border rounded-md p-2 border-gray-300">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Composição da Cesta (Cole a lista abaixo)</label>
+                                    <div class="bg-blue-50 p-3 rounded mb-2 text-xs text-blue-800">
+                                        Formato: <strong>CÓDIGO | QUANTIDADE POR CESTA</strong> (Uma por linha)
+                                    </div>
+                                    <textarea name="lista_produtos" rows="10" required placeholder="ARROZ01 | 2&#10;FEIJAO02 | 1&#10;OLEO01 | 1" class="w-full border rounded-md p-3 font-mono text-sm border-gray-300 bg-gray-50 focus:bg-white"></textarea>
+                                </div>
+
+                                <div class="p-4 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
+                                    <strong>Atenção:</strong> Ao clicar em finalizar, o sistema calculará automaticamente o total de cada item (Qtd Cestas x Qtd Item) e dará baixa imediata no stock.
+                                </div>
+
+                                <button type="submit" class="w-full bg-red-600 text-white p-4 rounded-md font-bold text-lg hover:bg-red-700 shadow-lg">FINALIZAR MONTAGEM E DAR BAIXA</button>
+                            </form>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+
+        initAuth();
+    </script>
 </head>
-<body class="text-sm overflow-hidden h-screen flex flex-col p-2">
-
-    <!-- Notificações -->
-    <div id="toast-container" class="fixed top-5 right-5 z-[100]"></div>
-
-    <!-- Modal Exportar -->
-    <div id="modalExp" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
-        <div class="bg-white p-5 rounded-lg shadow-xl w-80">
-            <h3 class="font-bold mb-4 uppercase text-xs">Exportar Pedidos</h3>
-            <select id="selRotaExp" class="compact-input mb-4 h-10">
-                <option value="todas">Todas as Rotas</option>
-                <option value="Coxipó">Coxipó</option>
-                <option value="VG">Várzea Grande</option>
-                <option value="Cuiabá">Cuiabá</option>
-                <option value="CPA">CPA</option>
-            </select>
-            <div class="flex justify-end gap-2">
-                <button onclick="toggleModal('modalExp', false)" class="text-xs font-bold px-3 py-2 bg-gray-100 rounded">Sair</button>
-                <button onclick="confirmarExportacao()" class="text-xs font-bold px-3 py-2 bg-blue-600 text-white rounded">Baixar</button>
+<body class="bg-gray-100">
+    <div id="app">
+        <div class="flex items-center justify-center h-screen">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p class="mt-4 text-gray-600 font-medium">A carregar sistema...</p>
             </div>
         </div>
     </div>
-
-    <!-- Header -->
-    <header class="bg-white shadow-sm rounded p-2 mb-2 flex justify-between items-center border border-gray-300 no-print">
-        <div class="flex items-center gap-2">
-            <div class="bg-indigo-600 text-white p-2 rounded"><i class="fa-solid fa-truck-fast"></i></div>
-            <h1 class="font-bold text-lg leading-tight">Módulo 2 <span class="block text-[10px] text-gray-400">V3.7 STABLE</span></h1>
-        </div>
-        <div class="flex gap-2 items-center bg-gray-50 p-1 rounded border">
-            <input type="date" id="filtroData" class="compact-input w-32" onchange="renderLista()">
-            <button onclick="backup90()" class="bg-amber-500 text-white px-3 py-1 rounded text-[10px] font-bold">BKP</button>
-            <button onclick="toggleModal('modalExp', true)" class="bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold">HOJE</button>
-        </div>
-    </header>
-
-    <main class="flex flex-1 gap-2 overflow-hidden no-print">
-        <!-- Col 1: Novo Pedido -->
-        <section class="w-1/4 bg-white rounded border border-gray-300 flex flex-col">
-            <div class="p-2 bg-indigo-50 border-b flex justify-between items-center">
-                <h2 id="titForm" class="font-bold text-indigo-800 text-[10px] uppercase">Novo Pedido</h2>
-                <button onclick="resetForm()" class="text-[9px] text-red-500 font-bold uppercase">Limpar</button>
-            </div>
-            <div class="p-2 flex-1 overflow-y-auto custom-scroll">
-                <div class="mb-2">
-                    <label class="compact-label">Cliente</label>
-                    <input type="text" id="buscaCli" onkeyup="filterCli()" placeholder="Filtrar..." class="compact-input mb-1">
-                    <select id="selCli" class="compact-input"></select>
-                </div>
-                <div class="bg-gray-50 p-2 rounded border mb-2">
-                    <div class="flex gap-2 mb-2">
-                        <button id="t1" onclick="tab('p')" class="flex-1 text-[10px] font-bold border-b-2 border-indigo-600">Padrão</button>
-                        <button id="t2" onclick="tab('i')" class="flex-1 text-[10px] font-bold text-gray-400">Importar</button>
-                    </div>
-                    <div id="areaPadrao">
-                        <select id="selCesta" onchange="updPreco()" class="compact-input mb-1">
-                            <option value="economica">Econômica</option><option value="mini">Mini</option><option value="pequena">Pequena</option><option value="media">Média</option><option value="grande">Grande</option>
-                        </select>
-                        <select id="selMarca" onchange="toggleAlt()" class="compact-input mb-1 hidden"></select>
-                        <div class="flex gap-2 text-[10px] mb-2 p-1 bg-white border rounded">
-                            <label><input type="radio" name="mod" value="n" checked onchange="toggleAlt()"> Normal</label>
-                            <label><input type="radio" name="mod" value="a" onchange="toggleAlt()"> Alterada</label>
-                            <input type="number" id="codAlt" placeholder="Cód" class="hidden w-12 border rounded px-1">
-                        </div>
-                    </div>
-                    <div id="areaImp" class="hidden"><textarea id="txtImp" rows="2" class="compact-input text-[10px] mb-1" placeholder="Cod - Qtd"></textarea></div>
-                    <div id="listaItens" class="hidden max-h-24 overflow-auto border p-1 bg-white text-[9px] mb-2"></div>
-                    <button onclick="addCarrinho()" class="w-full bg-indigo-600 text-white py-1 rounded font-bold text-xs uppercase">Adicionar</button>
-                </div>
-                <div class="border rounded bg-white overflow-hidden mb-2">
-                    <table class="w-full text-[10px]">
-                        <tbody id="tbCarrinho"></tbody>
-                    </table>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <select id="fPag" class="compact-input"><option value="pix">Pix</option><option value="dinheiro">Dinheiro</option><option value="cartao">Cartão</option></select>
-                    <select id="fStat" class="compact-input font-bold text-yellow-600"><option value="pendente">Pendente</option><option value="pago">Pago</option></select>
-                    <select id="fRota" class="compact-input"><option value="Coxipó">Coxipó</option><option value="VG">VG</option><option value="Cuiabá">Cuiabá</option><option value="CPA">CPA</option></select>
-                    <select id="fDesc" onchange="calcTotal()" class="compact-input"><option value="0">Sem Desc.</option><option value="5">R$ 5,00</option><option value="10">R$ 10,00</option></select>
-                </div>
-                <input type="text" id="fObs" placeholder="Observações" class="compact-input mb-2">
-                <div class="bg-gray-800 text-white p-2 rounded text-center mb-2">
-                    <span class="text-[9px] text-gray-400">TOTAL:</span>
-                    <div class="text-xl font-black text-green-400">R$ <span id="valTotal">0,00</span></div>
-                </div>
-                <button id="btnSalvar" onclick="savePedido()" class="w-full bg-green-600 text-white font-bold py-2 rounded text-sm uppercase">Salvar Pedido</button>
-            </div>
-        </section>
-
-        <!-- Col 2: Lista -->
-        <section class="w-1/3 bg-white rounded border border-gray-300 flex flex-col">
-            <div class="p-2 border-b bg-gray-50 flex justify-between items-center">
-                <h2 class="font-bold text-[10px] uppercase">Rotas</h2>
-                <button onclick="printRelatorio()" class="bg-purple-600 text-white w-6 h-6 rounded flex items-center justify-center"><i class="fa-solid fa-list text-[10px]"></i></button>
-            </div>
-            <div class="flex gap-1 p-1 bg-gray-200">
-                <button onclick="setRota('todos')" class="flex-1 bg-white rounded text-[9px] font-bold p-1 border">Todos</button>
-                <button onclick="setRota('Coxipó')" class="flex-1 text-[9px] p-1">Coxipó</button>
-                <button onclick="setRota('VG')" class="flex-1 text-[9px] p-1">VG</button>
-                <button onclick="setRota('Cuiabá')" class="flex-1 text-[9px] p-1">CBA</button>
-                <button onclick="setRota('CPA')" class="flex-1 text-[9px] p-1">CPA</button>
-            </div>
-            <div id="listP" class="flex-1 overflow-y-auto p-2 bg-gray-100 space-y-2 custom-scroll"></div>
-        </section>
-
-        <!-- Col 3: Detalhes -->
-        <section id="panelDet" class="flex-1 bg-white rounded border border-gray-300 flex flex-col items-center justify-center text-gray-400">
-            <i class="fa-solid fa-mouse-pointer text-3xl mb-2"></i>
-            <p class="text-[10px] uppercase">Selecione um pedido</p>
-        </section>
-    </main>
-
-    <div id="areaImpressao"></div>
-
-    <script>
-        const $ = id => document.getElementById(id);
-        const CATALOGO = {
-            '001': 'Arroz Tio Alvino 5kg', '001b': 'Arroz Koblenz 5kg', '002': 'Açúcar Cristal 2kg', '003': 'Óleo Soja 900ml', '004': 'Feijão 1kg', '005': 'Café 250g', '005b': 'Café 500g', '006': 'Espaguete 400g', '030': 'Sabão Barra', '033': 'Amaciante 2L', '035': 'Sabão Pó 800g'
-        };
-        const CESTAS = {
-            'economica': [ [1,'001'],[1,'002'],[1,'003'] ],
-            'mini': [ [1,'001'],[1,'002'],[2,'003'],[1,'030'],[1,'033'] ],
-            'pequena': [ [2,'001'],[1,'002'],[2,'003'],[1,'030'],[1,'033'],[1,'035'] ],
-            'media': [ [3,'001'],[2,'002'],[3,'003'],[1,'030'],[1,'033'],[1,'035'] ],
-            'grande': [ [4,'001'],[3,'002'],[4,'003'],[1,'030'],[1,'033'],[1,'035'] ]
-        };
-        const PRECOS = { 'economica': { p:85 }, 'mini': { a:165, k:170 }, 'pequena': { a:215, k:220 }, 'media': { a:320, k:325 }, 'grande': { a:380, k:390 } };
-
-        let carrinho = [], pedidos = [], clientes = [], rotaAtiva = 'todos', editId = null, selId = null;
-
-        window.onload = () => {
-            const c = localStorage.getItem('v3_cli'), p = localStorage.getItem('v3_ped');
-            clientes = c ? JSON.parse(c) : [];
-            pedidos = p ? JSON.parse(p) : [];
-            $('filtroData').valueAsDate = new Date();
-            renderCli(); renderLista(); updPreco();
-        };
-
-        const toast = (m, t='success') => {
-            const b = document.createElement('div');
-            b.className = `p-3 mb-2 rounded shadow-lg text-white text-xs font-bold ${t==='success'?'bg-green-500':'bg-red-500'}`;
-            b.innerText = m;
-            $('toast-container').appendChild(b);
-            setTimeout(() => b.remove(), 3000);
-        };
-
-        const renderCli = (l=clientes) => {
-            $('selCli').innerHTML = '<option value="">Selecionar...</option>' + 
-                l.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-        };
-
-        const filterCli = () => {
-            const t = $('buscaCli').value.toLowerCase();
-            renderCli(clientes.filter(c => c.nome.toLowerCase().includes(t)));
-        };
-
-        const tab = t => {
-            $('areaPadrao').classList.toggle('hidden', t==='i');
-            $('areaImp').classList.toggle('hidden', t==='p');
-            $('t1').className = t==='p' ? 'flex-1 text-[10px] font-bold border-b-2 border-indigo-600' : 'flex-1 text-[10px] font-bold text-gray-400';
-            $('t2').className = t==='i' ? 'flex-1 text-[10px] font-bold border-b-2 border-indigo-600' : 'flex-1 text-[10px] font-bold text-gray-400';
-        };
-
-        const updPreco = () => {
-            const t = $('selCesta').value, m = $('selMarca'), p = PRECOS[t];
-            m.innerHTML = p.p ? `<option value="${p.p}">Padrão R$${p.p}</option>` : 
-                `<option value="${p.a}" data-m="Alvino">Alvino R$${p.a}</option><option value="${p.k}" data-m="Koblenz">Koblenz R$${p.k}</option>`;
-            m.classList.toggle('hidden', !!p.p);
-            toggleAlt();
-        };
-
-        const toggleAlt = () => {
-            const isA = document.querySelector('input[name="mod"]:checked').value === 'a';
-            $('codAlt').classList.toggle('hidden', !isA);
-            $('listaItens').classList.toggle('hidden', !isA);
-            if(isA) {
-                const itens = CESTAS[$('selCesta').value];
-                $('listaItens').innerHTML = itens.map(i => `
-                    <div class="flex items-center gap-1 mb-1">
-                        <input type="number" value="${i[0]}" class="w-7 border rounded i-q text-center">
-                        <span class="i-c font-mono">${i[1]}</span> - ${CATALOGO[i[1]] || '...'}
-                    </div>`).join('');
-            }
-        };
-
-        const addCarrinho = () => {
-            const t = $('selCesta').value, p = parseFloat($('selMarca').value), isA = document.querySelector('input[name="mod"]:checked').value === 'a';
-            const marca = $('selMarca').options[$('selMarca').selectedIndex]?.getAttribute('data-m') || 'Padrão';
-            let finalItens = [];
-            
-            if(!isA) {
-                CESTAS[t].forEach(i => finalItens.push({c:i[1], q:i[0], n:CATALOGO[i[1]]}));
-            } else {
-                if(!$('codAlt').value) return toast('Cód Alteração necessário', 'err');
-                document.querySelectorAll('#listaItens div').forEach(d => {
-                    const q = parseInt(d.querySelector('.i-q').value);
-                    if(q > 0) finalItens.push({c: d.querySelector('.i-c').innerText, q: q, n: CATALOGO[d.querySelector('.i-c').innerText] || 'Extra'});
-                });
-            }
-
-            carrinho.push({ id:Date.now(), tipo:t, preco:p, marca, itens:finalItens, mod:isA?'alt':'norm', cod: $('codAlt').value });
-            renderCar();
-        };
-
-        const renderCar = () => {
-            $('tbCarrinho').innerHTML = carrinho.map(i => `
-                <tr class="border-b">
-                    <td class="p-1 font-bold">${i.tipo} <span class="text-[8px] text-gray-400">${i.marca}</span></td>
-                    <td class="text-right p-1">R$ ${i.preco}</td>
-                    <td class="text-center"><button onclick="rmCar(${i.id})" class="text-red-500">×</button></td>
-                </tr>`).join('');
-            calcTotal();
-        };
-
-        const rmCar = id => { carrinho = carrinho.filter(i=>i.id!==id); renderCar(); };
-
-        const calcTotal = () => {
-            const sub = carrinho.reduce((a,b)=>a+b.preco,0);
-            const desc = parseFloat($('fDesc').value);
-            $('valTotal').innerText = (sub-desc).toFixed(2).replace('.',',');
-        };
-
-        const savePedido = () => {
-            if(!$('selCli').value || !carrinho.length) return toast('Preencha Cliente e Carrinho', 'err');
-            const cli = clientes.find(c => c.id == $('selCli').value);
-            const data = new Date().toISOString();
-            
-            if(editId) {
-                const idx = pedidos.findIndex(p=>p.id === editId);
-                pedidos[idx] = { ...pedidos[idx], itens:carrinho, rota:$('fRota').value, pag:$('fPag').value, stat:$('fStat').value, desc:$('fDesc').value, obs:$('fObs').value };
-                toast('Pedido Atualizado');
-            } else {
-                const cod = `${new Date().getDate()}${new Date().getMonth()+1}${pedidos.filter(p=>p.data.startsWith(data.split('T')[0])).length+1}`;
-                pedidos.push({ id:Date.now(), cod, data, cli, itens:carrinho, rota:$('fRota').value, pag:$('fPag').value, stat:$('fStat').value, desc:$('fDesc').value, obs:$('fObs').value, ordem: Date.now() });
-                toast('Pedido Salvo');
-            }
-            localStorage.setItem('v3_ped', JSON.stringify(pedidos));
-            resetForm(); renderLista();
-        };
-
-        const resetForm = () => {
-            carrinho = []; editId = null; renderCar(); 
-            $('titForm').innerText = 'Novo Pedido'; $('btnSalvar').innerText = 'Salvar Pedido';
-            $('selCli').value = ""; $('fObs').value = "";
-        };
-
-        const renderLista = () => {
-            const dt = $('filtroData').value;
-            let l = pedidos.filter(p => p.data.startsWith(dt));
-            if(rotaAtiva !== 'todos') l = l.filter(p => p.rota === rotaAtiva);
-            l.sort((a,b)=>a.ordem - b.ordem);
-
-            $('listP').innerHTML = l.length ? l.map(p => `
-                <div onclick="showDet(${p.id})" class="bg-white p-2 rounded shadow-sm border flex gap-2 cursor-pointer ${selId===p.id?'selected-card':''}">
-                    <div class="font-mono text-[10px] bg-gray-100 p-1 rounded">#${p.cod}</div>
-                    <div class="flex-1">
-                        <div class="font-bold text-[11px]">${p.cli.nome.toUpperCase()}</div>
-                        <div class="text-[9px] text-gray-500">${p.rota} | ${p.cli.bairro || 'S/B'}</div>
-                    </div>
-                    <button onclick="event.stopPropagation(); delPed(${p.id})" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
-                </div>`).join('') : '<div class="text-center text-gray-400 py-10 text-xs">Vazio</div>';
-        };
-
-        const setRota = r => { rotaAtiva = r; renderLista(); };
-
-        const showDet = id => {
-            selId = id; renderLista();
-            const p = pedidos.find(x=>x.id===id);
-            $('panelDet').innerHTML = `
-                <div class="w-full h-full p-4 flex flex-col text-gray-800">
-                    <h3 class="font-black text-lg">${p.cli.nome}</h3>
-                    <p class="text-[10px] text-gray-500 mb-2">${p.rota} - ${p.cli.endereco}</p>
-                    <div class="flex-1 overflow-auto border-y py-2">
-                        ${p.itens.map(i => `<div class="mb-2"><b>${i.tipo} (${i.marca})</b><br>${i.itens.map(it=>`<span class="text-[10px] block">${it.q}x ${it.n}</span>`).join('')}</div>`).join('')}
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mt-2">
-                        <button onclick="printEtiqueta(${p.id})" class="bg-black text-white p-2 rounded text-[10px] font-bold">ETIQUETA</button>
-                        <button onclick="printMontagem(${p.id})" class="bg-blue-600 text-white p-2 rounded text-[10px] font-bold">MONTAGEM</button>
-                        <button onclick="editPed(${p.id})" class="col-span-2 bg-gray-200 p-1 rounded text-[10px] font-bold uppercase">Editar Pedido</button>
-                    </div>
-                </div>`;
-        };
-
-        const editPed = id => {
-            const p = pedidos.find(x=>x.id===id);
-            editId = id; carrinho = [...p.itens];
-            $('selCli').value = p.cli.id; $('fRota').value = p.rota; $('fPag').value = p.pag; $('fStat').value = p.stat; $('fObs').value = p.obs;
-            $('titForm').innerText = 'Editando #' + p.cod; $('btnSalvar').innerText = 'Atualizar';
-            renderCar();
-        };
-
-        const delPed = id => { if(confirm('Excluir?')){ pedidos=pedidos.filter(x=>x.id!==id); localStorage.setItem('v3_ped', JSON.stringify(pedidos)); renderLista(); $('panelDet').innerHTML = ''; } };
-
-        const toggleModal = (id, s) => $(id).classList.toggle('hidden', !s);
-
-        const backup90 = () => {
-            const blob = new Blob([JSON.stringify(pedidos)], {type: "application/json"});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `BKP_${new Date().toISOString().split('T')[0]}.json`; a.click();
-        };
-
-        const confirmarExportacao = () => {
-            const r = $('selRotaExp').value, dt = new Date().toISOString().split('T')[0];
-            let list = pedidos.filter(p=>p.data.startsWith(dt));
-            if(r!=='todas') list = list.filter(p=>p.rota === r);
-            const blob = new Blob([JSON.stringify(list)], {type: "application/json"});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `FECHAMENTO_${r}_${dt}.json`; a.click();
-            toggleModal('modalExp', false);
-        };
-
-        // --- IMPRESSÃO ---
-        const getHead = () => `<div class="flex justify-between border-b-2 border-black pb-1 mb-1 font-bold text-[10px]"><div>DONA ANTONIA</div><div>65 99815-0975</div></div>`;
-        
-        const printEtiqueta = id => {
-            const p = pedidos.find(x=>x.id===id), area = $('areaImpressao');
-            let h = '';
-            p.itens.forEach(it => {
-                const vols = it.tipo.match(/media|grande/i) ? 3 : 2;
-                for(let i=1; i<=vols; i++){
-                    h += `<div class="label-page">
-                        <div class="text-3xl font-black border-b-2 border-black text-center">#${p.cod}</div>
-                        ${getHead()}
-                        <div class="font-bold text-center text-sm uppercase">${p.cli.nome}</div>
-                        <div class="text-[10px] text-center">${p.cli.endereco}</div>
-                        <div class="bg-black text-white text-center font-bold text-xs p-1 rounded uppercase">${p.rota}</div>
-                        <div class="border-t-2 border-black pt-1 text-[9px] font-bold">CESTA: ${it.tipo.toUpperCase()} (${it.marca})</div>
-                        <div class="flex justify-between font-black"><span>VOL</span><span>${i}/${vols}</span></div>
-                    </div>`;
-                }
-            });
-            area.innerHTML = h; setTimeout(()=>window.print(), 200);
-        };
-
-        const printMontagem = id => {
-            const p = pedidos.find(x=>x.id===id), area = $('areaImpressao');
-            area.innerHTML = `<div class="p-5 font-sans" style="width:76mm">
-                ${getHead()}
-                <h2 class="text-center font-black">MONTAGEM #${p.cod}</h2>
-                <div class="text-lg font-bold border-b-2 border-black mb-2">${p.cli.nome.split(' ')[0]}</div>
-                ${p.itens.map(i => `<div class="mb-4">
-                    <div class="bg-gray-100 p-1 font-bold border">${i.tipo} (${i.marca}) ${i.mod==='alt'?'[ALT]':''}</div>
-                    ${i.mod==='alt' ? i.itens.map(it=>`<div class="flex justify-between text-xs border-b border-dashed"><span>${it.n}</span><b>${it.q}x</b></div>`).join('') : '<div class="text-center text-[10px] p-2 italic">ITENS PADRÃO</div>'}
-                </div>`).join('')}
-                ${p.obs ? `<div class="border-2 border-black p-1 text-xs"><b>OBS:</b> ${p.obs}</div>` : ''}
-            </div>`;
-            setTimeout(()=>window.print(), 200);
-        };
-
-        const printRelatorio = () => {
-            const dt = $('filtroData').value, area = $('areaImpressao');
-            let l = pedidos.filter(p=>p.data.startsWith(dt));
-            area.innerHTML = `<div class="p-4" style="width:100%">${getHead()} <h2 class="text-center font-bold">CONFERÊNCIA ${dt}</h2>
-                <table class="w-full text-xs mt-4">
-                    <thead class="border-b"><tr><th class="text-left">PED</th><th class="text-left">CLIENTE</th><th class="text-left">ROTA</th></tr></thead>
-                    <tbody>${l.map(p=>`<tr><td>#${p.cod}</td><td>${p.cli.nome}</td><td>${p.rota}</td></tr>`).join('')}</tbody>
-                </table></div>`;
-            setTimeout(()=>window.print(), 200);
-        };
-    </script>
 </body>
 </html>
