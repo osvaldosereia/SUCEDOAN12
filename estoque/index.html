@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Cestas Básicas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuração do Firebase
+        const firebaseConfig = typeof window.__firebase_config !== 'undefined' 
+            ? JSON.parse(window.__firebase_config) 
+            : { apiKey: "" }; // Fallback para evitar erro de parse
+            
+        const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'gestao-cestas-default';
+        
+        let app, auth, db;
+        let user = null;
+        let produtos = [];
+        let view = 'dashboard';
+
+        // Inicialização Segura
+        async function startApp() {
+            try {
+                if (!firebaseConfig.apiKey) {
+                    throw new Error("Configuração do Firebase não encontrada.");
+                }
+
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Regra 3: Auth Antes de Consultas
+                const initAuth = async () => {
+                    if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                        await signInWithCustomToken(auth, window.__initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+
+                await initAuth();
+
+                onAuthStateChanged(auth, (u) => {
+                    user = u;
+                    if (user) {
+                        renderApp();
+                        listenToProducts();
+                    } else {
+                        showError("Utilizador não autenticado.");
+                    }
+                });
+
+            } catch (error) {
+                console.error("Erro no arranque:", error);
+                showError("Falha ao ligar ao servidor. Por favor, verifique a sua ligação ou tente novamente.");
+            }
+        }
+
+        function showError(msg) {
+            const container = document.getElementById('app');
+            if (container) {
+                container.innerHTML = `
+                    <div class="flex items-center justify-center h-screen bg-gray-50 p-6">
+                        <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-md border-t-4 border-red-500 text-center">
+                            <div class="text-red-500 mb-4">
+                                <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-800 mb-2">Erro no Sistema</h2>
+                            <p class="text-gray-600 mb-6">${msg}</p>
+                            <button onclick="window.location.reload()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Tentar Novamente</button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        // Listeners do Firestore (Caminhos Rígidos - Regra 1)
+        function listenToProducts() {
+            if (!user) return;
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'produtos');
+            onSnapshot(q, (snapshot) => {
+                produtos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderContent();
+            }, (error) => {
+                console.error("Erro ao ler produtos:", error);
+                showMessage("Erro ao atualizar dados do stock.");
+            });
+        }
+
+        // Funções de Janela para o HTML
+        window.saveProduct = async (e) => {
+            e.preventDefault();
+            if (!user) return;
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.estoque = parseInt(data.estoque) || 0;
+
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'produtos', data.codigo_interno);
+            
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const oldData = docSnap.data();
+                    await updateDoc(docRef, {
+                        nome: data.nome,
+                        barcode: data.barcode,
+                        ncm: data.ncm,
+                        estoque: oldData.estoque + data.estoque
+                    });
+                    showMessage("Stock atualizado!");
+                } else {
+                    await setDoc(docRef, data);
+                    showMessage("Produto registado!");
+                }
+                e.target.reset();
+            } catch (err) {
+                alert("Erro ao salvar: " + err.message);
+            }
+        };
+
+        window.deleteProduct = async (id) => {
+            if (!user || !confirm("Deseja apagar este produto?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'produtos', id));
+        };
+
+        window.processAssembly = async (e) => {
+            e.preventDefault();
+            if (!user) return;
+            const formData = new FormData(e.target);
+            const rawList = formData.get('lista_produtos');
+            const qtdCestas = parseInt(formData.get('quantidade_cestas'));
+            const nomeCesta = formData.get('nome_cesta');
+            const valorCesta = formData.get('valor_cesta');
+
+            const linhas = rawList.trim().split('\n');
+            const itensParaBaixar = [];
+
+            try {
+                for (let linha of linhas) {
+                    const partes = linha.split('|');
+                    if (partes.length < 2) continue;
+                    const cod = partes[0].trim();
+                    const qtdPerCesta = partes[1].trim();
+                    
+                    const produto = produtos.find(p => p.codigo_interno === cod);
+                    if (!produto) throw new Error(`Produto não encontrado: ${cod}`);
+                    
+                    const totalNecessario = parseInt(qtdPerCesta) * qtdCestas;
+                    if (produto.estoque < totalNecessario) {
+                        throw new Error(`Stock insuficiente para ${produto.nome}. Necessário: ${totalNecessario}, Disponível: ${produto.estoque}`);
+                    }
+                    itensParaBaixar.push({ cod, total: totalNecessario, stockAtual: produto.estoque });
+                }
+
+                // Baixa Individual (Regra 2)
+                for (let item of itensParaBaixar) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'produtos', item.cod);
+                    await updateDoc(docRef, { estoque: item.stockAtual - item.total });
+                }
+
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'montagens'), {
+                    nome_cesta: nomeCesta,
+                    quantidade: qtdCestas,
+                    valor: valorCesta,
+                    data: serverTimestamp()
+                });
+
+                showMessage(`${qtdCestas} cestas montadas!`);
+                e.target.reset();
+                setView('dashboard');
+            } catch (err) {
+                alert(err.message);
+            }
+        };
+
+        window.setView = (v) => {
+            view = v;
+            renderContent();
+        };
+
+        function showMessage(msg) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        function renderApp() {
+            document.getElementById('app').innerHTML = `
+                <div class="flex h-screen bg-gray-100 font-sans">
+                    <!-- Sidebar -->
+                    <div class="w-64 bg-slate-900 text-white flex flex-col">
+                        <div class="p-6 text-xl font-bold border-b border-slate-800 tracking-tight text-blue-400">STOCK CESTAS</div>
+                        <nav class="flex-1 p-4 space-y-2">
+                            <button onclick="setView('dashboard')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                                Stock Atual
+                            </button>
+                            <button onclick="setView('add_product')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
+                                Entrada / Cadastro
+                            </button>
+                            <button onclick="setView('assemble')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                                Montar Cestas
+                            </button>
+                        </nav>
+                        <div class="p-4 text-[10px] text-slate-500 border-t border-slate-800 uppercase tracking-widest">
+                            ID: ${user.uid.substring(0, 12)}...
+                        </div>
+                    </div>
+                    <!-- Main -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <header class="bg-white shadow-sm p-4 px-8 flex justify-between items-center">
+                            <h2 id="page-title" class="text-xl font-bold text-gray-800">Painel</h2>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                <span class="text-xs text-gray-500 font-medium">Sistema Online</span>
+                            </div>
+                        </header>
+                        <main class="flex-1 overflow-y-auto p-8" id="main-content"></main>
+                    </div>
+                </div>
+                <div id="toast" class="fixed bottom-8 right-8 bg-slate-800 text-white px-6 py-3 rounded-xl shadow-2xl hidden z-50 border border-slate-700"></div>
+            `;
+            renderContent();
+        }
+
+        function renderContent() {
+            const main = document.getElementById('main-content');
+            const title = document.getElementById('page-title');
+            if (!main) return;
+
+            switch(view) {
+                case 'dashboard':
+                    title.innerText = "Stock de Produtos";
+                    main.innerHTML = `
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gray-50 text-gray-600 text-xs uppercase font-bold border-b border-gray-200">
+                                    <tr>
+                                        <th class="p-4 px-6">Cód. Interno</th>
+                                        <th class="p-4 px-6">Produto</th>
+                                        <th class="p-4 px-6">Identificação</th>
+                                        <th class="p-4 px-6">Quantidade</th>
+                                        <th class="p-4 px-6 text-right">Acções</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    ${produtos.map(p => `
+                                        <tr class="hover:bg-blue-50/30 transition">
+                                            <td class="p-4 px-6 font-mono text-sm text-blue-600 font-bold">${p.id}</td>
+                                            <td class="p-4 px-6 font-semibold text-gray-700">${p.nome}</td>
+                                            <td class="p-4 px-6 text-gray-400 text-xs">${p.barcode || '-'} | ${p.ncm || '-'}</td>
+                                            <td class="p-4 px-6">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${p.estoque < 10 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}">
+                                                    ${p.estoque} UN
+                                                </span>
+                                            </td>
+                                            <td class="p-4 px-6 text-right">
+                                                <button onclick="deleteProduct('${p.id}')" class="text-gray-300 hover:text-red-500 transition">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                    ${produtos.length === 0 ? '<tr><td colspan="5" class="p-20 text-center text-gray-400 italic">Nenhum produto em stock.</td></tr>' : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    break;
+
+                case 'add_product':
+                    title.innerText = "Entrada de Stock";
+                    main.innerHTML = `
+                        <div class="max-w-xl bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                            <form onsubmit="saveProduct(event)" class="space-y-6">
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Código Interno</label>
+                                        <input type="text" name="codigo_interno" required class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cód. Barras (EAN)</label>
+                                        <input type="text" name="barcode" class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome do Produto</label>
+                                    <input type="text" name="nome" required class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
+                                </div>
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">NCM</label>
+                                        <input type="text" name="ncm" class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quantidade a Adicionar</label>
+                                        <input type="number" name="estoque" required class="w-full border-blue-200 rounded-lg p-3 bg-blue-50 font-bold text-blue-700 border outline-none transition">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-lg font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition active:scale-[0.98]">REGISTAR ENTRADA</button>
+                            </form>
+                        </div>
+                    `;
+                    break;
+
+                case 'assemble':
+                    title.innerText = "Montagem de Lote";
+                    main.innerHTML = `
+                        <div class="max-w-3xl bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                            <form onsubmit="processAssembly(event)" class="space-y-6">
+                                <div class="grid grid-cols-3 gap-6">
+                                    <div class="col-span-1">
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome do Lote/Cesta</label>
+                                        <input type="text" name="nome_cesta" placeholder="Ex: Cesta Padrão" required class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Qtd de Cestas</label>
+                                        <input type="number" name="quantidade_cestas" value="1" min="1" required class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Preço Venda</label>
+                                        <input type="number" step="0.01" name="valor_cesta" class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Composição (CÓDIGO | QTD POR CESTA)</label>
+                                    <textarea name="lista_produtos" rows="8" required placeholder="ARROZ_01 | 2&#10;FEIJAO_A | 1" class="w-full border-gray-200 rounded-lg p-4 font-mono text-sm bg-gray-50 focus:bg-white border outline-none transition"></textarea>
+                                </div>
+
+                                <div class="flex items-start gap-3 p-4 bg-amber-50 rounded-lg border border-amber-100">
+                                    <svg class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"></path></svg>
+                                    <p class="text-xs text-amber-800 leading-relaxed"><strong>Nota:</strong> O sistema multiplicará a quantidade de itens pelo número de cestas e subtrairá automaticamente do stock de produtos individuais.</p>
+                                </div>
+
+                                <button type="submit" class="w-full bg-slate-900 text-white p-4 rounded-lg font-bold text-lg hover:bg-slate-800 shadow-xl transition active:scale-[0.98]">PROCESSAR BAIXA DE STOCK</button>
+                            </form>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+
+        // Iniciar aplicação ao carregar a página
+        window.addEventListener('load', startApp);
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-900 overflow-hidden">
+    <div id="app">
+        <div class="flex items-center justify-center h-screen bg-white">
+            <div class="flex flex-col items-center">
+                <div class="relative">
+                    <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-8 h-8 bg-white rounded-full"></div>
+                    </div>
+                </div>
+                <p class="mt-6 text-gray-500 font-bold tracking-widest text-xs uppercase animate-pulse">A carregar o sistema...</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
