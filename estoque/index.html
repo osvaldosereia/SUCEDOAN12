@@ -442,7 +442,6 @@
                 UI.get('crm-total-orders').innerText = db.venda.length;
                 UI.get('crm-active-clients').innerText = [...new Set(db.venda.map(v => v.cliId))].length;
 
-                // LÓGICA DE PERFORMANCE DE PRODUTOS
                 const stats = {};
                 db.venda.forEach(v => {
                     const p = db.produto.find(x => x.id === v.prodId);
@@ -457,11 +456,9 @@
                     }
                     stats[v.prodId].qty += v.qty;
                     stats[v.prodId].rev += v.total;
-                    // Cálculo de custo total baseado no custo unitário cadastrado no produto
                     stats[v.prodId].cost += (Number(p?.custo || 0) * v.qty);
                 });
 
-                // Ordenar por Resultado Final (Lucro Absoluto)
                 const sorted = Object.values(stats).sort((a, b) => (b.rev - b.cost) - (a.rev - a.cost));
 
                 UI.get('crm-table-products').innerHTML = sorted.map(s => {
@@ -520,7 +517,11 @@
 
         const App = {
             init: () => {
-                const db = DB.load(); DB.saveAll(db); UI.render('cliente'); UI.resetForm('cliente');
+                const db = DB.load(); 
+                // Ajuste solicitado: Remove produtos temporários cujo prazo de 24h após estoque zero expirou
+                db.produto = db.produto.filter(p => !p.deleteAt || p.deleteAt > Date.now());
+                DB.saveAll(db); 
+                UI.render('cliente'); UI.resetForm('cliente');
                 ['v-qty', 'v-desconto', 'v-produto'].forEach(id => {
                     const el = UI.get(id); if(el) el.addEventListener('input', App.calcVenda);
                 });
@@ -552,7 +553,8 @@
                         if(bulkText) {
                             bulkText.split('\n').forEach(line => {
                                 const [code, qty] = line.split('|').map(s => s.trim());
-                                const found = DB.load().produto.find(x => x.codigo === code);
+                                const db = DB.load();
+                                const found = db.produto.find(x => x.codigo === code);
                                 if(found) kitItems.push({ id: found.id, qty: Number(qty) || 1 });
                             });
                         }
@@ -568,7 +570,16 @@
                     
                     const deduct = (id, q) => {
                         const target = db.produto.find(x => x.id === id);
-                        if(target) target.estoque -= q;
+                        if(target) {
+                            target.estoque -= q;
+                            // Ajuste solicitado: Se produto temporário atingir estoque zero, agenda exclusão em 24h
+                            if(target.isTemp && target.estoque <= 0) {
+                                target.deleteAt = Date.now() + (24 * 60 * 60 * 1000);
+                            } else {
+                                // Se o estoque voltar a ser positivo (edição futura), remove marcador de exclusão
+                                if(target.deleteAt && target.estoque > 0) delete target.deleteAt;
+                            }
+                        }
                     };
                     if(prod.tipo === 'kit' && prod.items) prod.items.forEach(ki => deduct(ki.id, ki.qty * obj.qty));
                     else deduct(prod.id, obj.qty);
