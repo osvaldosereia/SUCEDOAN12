@@ -483,6 +483,13 @@
                     if(!obj.codigo) obj.codigo = DB.getNextCode(type, {isTemp: obj.isTemp});
                     db[type].push(obj);
                 }
+                
+                // ROTINA DE LIMPEZA AUTOMÁTICA (RETENTION POLICY)
+                if (type === 'venda' && db.venda.length > 2000) {
+                    db.venda.sort((a, b) => a.date - b.date); // Garante ordem cronológica
+                    db.venda = db.venda.slice(-2000); // Mantém apenas as últimas 2000
+                }
+
                 DB.saveAll(db);
             },
             delete: (type, id) => { const db = DB.load(); db[type] = db[type].filter(i => i.id !== id); DB.saveAll(db); }
