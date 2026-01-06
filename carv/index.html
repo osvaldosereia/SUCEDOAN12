@@ -40,6 +40,9 @@
         .row-cancelled { background-color: #f3f4f6; color: #9ca3af; }
         .row-cancelled td { text-decoration: line-through; }
         .row-cancelled .no-strike { text-decoration: none; }
+        /* Accordion Vizinho */
+        details.neighbor-details summary { list-style: none; }
+        details.neighbor-details summary::-webkit-details-marker { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans text-sm h-screen flex flex-col overflow-hidden">
@@ -132,6 +135,9 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-gray-800">📦 Entregas Ativas (Mês Atual)</h2>
                     <div class="flex gap-2">
+                        <button onclick="App.generateReportCarvalima()" class="bg-brand-accent hover:bg-green-700 text-white px-3 py-2 rounded shadow text-xs font-bold mr-2">
+                            <i class="fa-solid fa-file-excel"></i> Relatório Carvalima
+                        </button>
                         <button onclick="App.openModal('modalEntrega')" class="bg-brand-main hover:bg-brand-dark text-white px-3 py-2 rounded shadow text-xs font-bold">
                             + Lançar Avulso
                         </button>
@@ -174,9 +180,14 @@
             <div id="view-funcionarios" class="hidden h-full flex flex-col">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-gray-800">👥 Base de Funcionários (Master)</h2>
-                    <button onclick="App.openEmployeeModal()" class="bg-brand-main hover:bg-brand-dark text-white px-3 py-2 rounded shadow text-xs font-bold">
-                        + Novo Cadastro
-                    </button>
+                    <div class="flex gap-2">
+                         <button onclick="App.openModal('modalImportFunc')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded shadow text-xs font-bold">
+                            <i class="fa-solid fa-upload"></i> Importar JSON
+                        </button>
+                        <button onclick="App.openEmployeeModal()" class="bg-brand-main hover:bg-brand-dark text-white px-3 py-2 rounded shadow text-xs font-bold">
+                            + Novo Cadastro
+                        </button>
+                    </div>
                 </div>
                 <div class="bg-white p-3 rounded-t-lg border border-gray-200 flex items-center gap-2">
                     <i class="fa-solid fa-search text-gray-400"></i>
@@ -226,19 +237,19 @@
 
                 <!-- IMPORTAR/EXPORTAR -->
                 <div class="bg-white rounded shadow p-4">
-                    <h3 class="font-bold text-gray-700 mb-4 border-b pb-2">💾 Dados & Importação</h3>
+                    <h3 class="font-bold text-gray-700 mb-4 border-b pb-2">💾 Dados do Sistema</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <h4 class="font-bold text-brand-main text-xs mb-2">Opção A: Gerar Entregas via Base Master</h4>
+                            <h4 class="font-bold text-brand-main text-xs mb-2">Gerar Entregas via Base Master</h4>
                             <p class="text-[10px] text-gray-500 mb-2">Cole os CÓDIGOS para gerar as entregas deste mês. Ex: <code>["001", "005"]</code></p>
                             <textarea id="jsonInputCodes" class="w-full border p-2 text-xs h-20 rounded font-mono bg-gray-50" placeholder='["1001", "1002", "1003"]'></textarea>
                             <button onclick="App.importByCodes()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-xs hover:bg-blue-700">Gerar Entregas</button>
                         </div>
                         <div class="flex flex-col justify-center items-start border-l pl-6">
                             <button onclick="App.exportData()" class="bg-gray-700 text-white px-4 py-3 rounded text-sm hover:bg-gray-800 w-full mb-2">
-                                <i class="fa-solid fa-download mr-2"></i> Backup Completo (JSON)
+                                <i class="fa-solid fa-download mr-2"></i> Backup Completo do Sistema (JSON)
                             </button>
-                            <p class="text-[10px] text-gray-500">Baixe o backup regularmente para não perder dados.</p>
+                            <p class="text-[10px] text-gray-500">Guarda todos os dados (Rotas, Motoristas, Funcionários).</p>
                         </div>
                     </div>
                 </div>
@@ -268,11 +279,12 @@
 
     <!-- MODAIS -->
     
-    <!-- Modal Cadastro Funcionário (Master) - Agora com suporte a Edição -->
+    <!-- Modal Cadastro Funcionário (Master) - CORRIGIDO ID NO FORM -->
     <div id="modalFuncionario" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <form onsubmit="App.saveEmployee(event)" class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <!-- Adicionado ID formFuncionario para o reset funcionar -->
+        <form id="formFuncionario" onsubmit="App.saveEmployee(event)" class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Funcionário</h3>
-            <input type="hidden" name="id" id="empId"> <!-- ID oculto para edição -->
+            <input type="hidden" name="id" id="empId"> 
             
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div><label class="block text-xs font-bold mb-1">Cód. Func.</label><input type="text" name="codigo" id="empCodigo" required class="w-full border rounded p-2 text-sm"></div>
@@ -285,11 +297,21 @@
             </div>
             
             <div class="border-t border-b py-3 my-3 bg-gray-50 p-2 rounded">
-                <label class="block text-xs font-bold mb-2 text-brand-main">📞 Contatos</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <div><label class="block text-[10px] text-gray-500">Celular (Zap)</label><input type="tel" name="tel1" id="empTel1" class="w-full border rounded p-1 text-sm"></div>
-                    <div><label class="block text-[10px] text-gray-500">Vizinho 1</label><input type="tel" name="vizinho1" id="empViz1" class="w-full border rounded p-1 text-sm"></div>
-                    <div><label class="block text-[10px] text-gray-500">Vizinho 2</label><input type="tel" name="vizinho2" id="empViz2" class="w-full border rounded p-1 text-sm"></div>
+                <label class="block text-xs font-bold mb-2 text-brand-main">📞 Contatos & Vizinhos</label>
+                
+                <div class="mb-2">
+                    <label class="block text-[10px] text-gray-500 font-bold">Celular do Funcionário</label>
+                    <input type="tel" name="tel1" id="empTel1" class="w-full border rounded p-1 text-sm bg-white" placeholder="(65) 9...">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div class="col-span-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Vizinho 1</div>
+                    <div><input type="text" id="empNomeViz1" class="w-full border rounded p-1 text-sm bg-white" placeholder="Nome Vizinho 1"></div>
+                    <div><input type="tel" id="empTelViz1" class="w-full border rounded p-1 text-sm bg-white" placeholder="Zap Vizinho 1"></div>
+                    
+                    <div class="col-span-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Vizinho 2</div>
+                    <div><input type="text" id="empNomeViz2" class="w-full border rounded p-1 text-sm bg-white" placeholder="Nome Vizinho 2"></div>
+                    <div><input type="tel" id="empTelViz2" class="w-full border rounded p-1 text-sm bg-white" placeholder="Zap Vizinho 2"></div>
                 </div>
             </div>
 
@@ -303,6 +325,19 @@
                 <button type="submit" class="px-4 py-2 rounded bg-brand-main text-white font-bold hover:bg-brand-dark text-sm">Salvar</button>
             </div>
         </form>
+    </div>
+
+    <!-- Modal Importar Funcionários -->
+    <div id="modalImportFunc" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 class="font-bold mb-4 text-brand-main">Importar Funcionários (JSON)</h3>
+            <p class="text-xs text-gray-500 mb-2">Formato esperado: <code>[{"codigo":"001", "nome":"Fulano", "endereco":"Rua X", ...}]</code></p>
+            <textarea id="jsonImportFunc" class="w-full border p-2 text-xs h-32 rounded font-mono bg-gray-50 mb-4" placeholder='[{"codigo":"1010", "nome":"Ana", "endereco":"Rua A, 10"}]'></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="App.closeModal('modalImportFunc')" class="border px-4 py-2 rounded text-sm">Cancelar</button>
+                <button onclick="App.importEmployees()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Importar</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Nova Entrega (Lançamento) -->
@@ -332,13 +367,13 @@
 
 <script>
 const App = {
-    key: 'dona_antonia_db_v7',
+    key: 'dona_antonia_db_v9', // Versão Atualizada
     db: { employees: [], deliveries: [], routes: [], drivers: [], adminPhone: '' },
     currentUser: 'admin',
     currentTab: 'dashboard',
     tempId: null,
     tempName: null,
-    genericHouse: 'https://cdn-icons-png.flaticon.com/512/619/619032.png', // Foto única de teste
+    genericHouse: 'https://cdn-icons-png.flaticon.com/512/619/619032.png',
 
     init() {
         this.load();
@@ -375,27 +410,33 @@ const App = {
             { id: 'r1', nome: 'Rota 01 - Pedra 90/Tijucal', motoristaId: 'd1', dataPrevisao: '2026-01-15' },
             { id: 'r2', nome: 'Rota 02 - CPA/Centro', motoristaId: 'd2', dataPrevisao: '2026-01-16' }
         ];
-        // 5 Cadastros Completos com FOTO UNICA
+        // 5 Cadastros Completos com Vizinhos
         this.db.employees = [
-            { id: 101, codigo: '1001', nome: 'João da Silva', endereco: 'Rua 30, Qd 15, Casa 02', bairro: 'Pedra 90', cidade: 'Cuiabá', tel1: '65992001001', vizinho1: '65992002002', vizinho2: '', fotoCasa: this.genericHouse },
-            { id: 102, codigo: '1002', nome: 'Maria Aparecida', endereco: 'Rua Pernambuco, 550', bairro: 'CPA 2', cidade: 'Cuiabá', tel1: '65992003003', vizinho1: '65992004004', vizinho2: '', fotoCasa: this.genericHouse },
-            { id: 103, codigo: '1003', nome: 'Pedro Henrique', endereco: 'Av. Brasil, 1200', bairro: 'Santa Rosa', cidade: 'Cuiabá', tel1: '65992005005', vizinho1: '', vizinho2: '', fotoCasa: this.genericHouse },
-            { id: 104, codigo: '1004', nome: 'Ana Clara', endereco: 'Rua dos Lírios, 88', bairro: 'Tijucal', cidade: 'Cuiabá', tel1: '65992006006', vizinho1: '65992007007', vizinho2: '65992008008', fotoCasa: this.genericHouse },
-            { id: 105, codigo: '1005', nome: 'Lucas Mendes', endereco: 'Rua Cândido Mariano, 400', bairro: 'Centro', cidade: 'Cuiabá', tel1: '65992009009', vizinho1: '', vizinho2: '', fotoCasa: this.genericHouse }
+            { id: 101, codigo: '1001', nome: 'João da Silva', endereco: 'Rua 30, Qd 15, Casa 02', bairro: 'Pedra 90', cidade: 'Cuiabá', tel1: '65992001001', nomeViz1: 'Dona Maria', telViz1: '65992002002', nomeViz2: 'Seu Zé', telViz2: '65992002003', fotoCasa: this.genericHouse },
+            { id: 102, codigo: '1002', nome: 'Maria Aparecida', endereco: 'Rua Pernambuco, 550', bairro: 'CPA 2', cidade: 'Cuiabá', tel1: '65992003003', nomeViz1: 'Cláudia (Frente)', telViz1: '65992004004', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse },
+            { id: 103, codigo: '1003', nome: 'Pedro Henrique', endereco: 'Av. Brasil, 1200', bairro: 'Santa Rosa', cidade: 'Cuiabá', tel1: '65992005005', nomeViz1: 'Portaria', telViz1: '65992005006', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse },
+            { id: 104, codigo: '1004', nome: 'Ana Clara', endereco: 'Rua dos Lírios, 88', bairro: 'Tijucal', cidade: 'Cuiabá', tel1: '65992006006', nomeViz1: 'Sônia', telViz1: '65992007007', nomeViz2: 'Bia', telViz2: '65992008008', fotoCasa: this.genericHouse },
+            { id: 105, codigo: '1005', nome: 'Lucas Mendes', endereco: 'Rua Cândido Mariano, 400', bairro: 'Centro', cidade: 'Cuiabá', tel1: '65992009009', nomeViz1: '', telViz1: '', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse }
         ];
-        this.db.deliveries = this.db.employees.slice(0, 3).map(e => ({
-            id: Date.now() + Math.random(),
-            employeeId: e.id,
-            codigo: e.codigo, nome: e.nome, rotaId: e.bairro.includes('CPA') ? 'r2' : 'r1',
-            status: 'pendente', entregueEm: null, recebidoPor: ''
-        }));
+        
+        // Gerar 5 Entregas: 3 Pendentes, 2 Entregues
+        this.db.deliveries = [];
+        // 3 Pendentes
+        this.db.deliveries.push({ id: 1, employeeId: 101, codigo: '1001', nome: 'João da Silva', rotaId: 'r1', status: 'pendente', entregueEm: null, recebidoPor: '' });
+        this.db.deliveries.push({ id: 2, employeeId: 102, codigo: '1002', nome: 'Maria Aparecida', rotaId: 'r2', status: 'pendente', entregueEm: null, recebidoPor: '' });
+        this.db.deliveries.push({ id: 3, employeeId: 103, codigo: '1003', nome: 'Pedro Henrique', rotaId: 'r2', status: 'pendente', entregueEm: null, recebidoPor: '' });
+        // 2 Entregues
+        this.db.deliveries.push({ id: 4, employeeId: 104, codigo: '1004', nome: 'Ana Clara', rotaId: 'r1', status: 'entregue', entregueEm: '05/01/2026 14:30', recebidoPor: 'Própria' });
+        this.db.deliveries.push({ id: 5, employeeId: 105, codigo: '1005', nome: 'Lucas Mendes', rotaId: 'r2', status: 'entregue', entregueEm: '05/01/2026 15:00', recebidoPor: 'Portaria' });
+
         this.save();
     },
 
     // --- CADASTRO FUNCIONÁRIOS (MASTER) ---
     openEmployeeModal(id = null) {
         document.getElementById('empId').value = '';
-        document.getElementById('modalFuncionario').reset();
+        // CORREÇÃO: Resetar o FORM e não a DIV
+        document.getElementById('formFuncionario').reset();
         
         if (id) {
             const emp = this.db.employees.find(e => e.id === id);
@@ -407,8 +448,10 @@ const App = {
                 document.getElementById('empBairro').value = emp.bairro;
                 document.getElementById('empCidade').value = emp.cidade;
                 document.getElementById('empTel1').value = emp.tel1;
-                document.getElementById('empViz1').value = emp.vizinho1;
-                document.getElementById('empViz2').value = emp.vizinho2;
+                document.getElementById('empNomeViz1').value = emp.nomeViz1 || '';
+                document.getElementById('empTelViz1').value = emp.telViz1 || '';
+                document.getElementById('empNomeViz2').value = emp.nomeViz2 || '';
+                document.getElementById('empTelViz2').value = emp.telViz2 || '';
                 document.getElementById('empFoto').value = emp.fotoCasa;
             }
         }
@@ -427,24 +470,55 @@ const App = {
             bairro: document.getElementById('empBairro').value,
             cidade: document.getElementById('empCidade').value,
             tel1: document.getElementById('empTel1').value,
-            vizinho1: document.getElementById('empViz1').value,
-            vizinho2: document.getElementById('empViz2').value,
+            nomeViz1: document.getElementById('empNomeViz1').value,
+            telViz1: document.getElementById('empTelViz1').value,
+            nomeViz2: document.getElementById('empNomeViz2').value,
+            telViz2: document.getElementById('empTelViz2').value,
             fotoCasa: document.getElementById('empFoto').value
         };
 
         if (id) {
-            // Edit
             const index = this.db.employees.findIndex(e => e.id == id);
             if (index !== -1) {
                 this.db.employees[index] = { ...this.db.employees[index], ...empData };
             }
         } else {
-            // New
             this.db.employees.push({ id: Date.now(), ...empData });
         }
         this.save();
         this.closeModal('modalFuncionario');
-        f.reset();
+        // Reset correto do form
+        document.getElementById('formFuncionario').reset();
+    },
+
+    importEmployees() {
+        const raw = document.getElementById('jsonImportFunc').value;
+        if(!raw) return alert("Cole o JSON primeiro.");
+        try {
+            const list = JSON.parse(raw);
+            let count = 0;
+            list.forEach(emp => {
+                if(!this.db.employees.find(e => e.codigo == emp.codigo)) {
+                    this.db.employees.push({
+                        id: Date.now() + Math.random(),
+                        codigo: emp.codigo,
+                        nome: emp.nome,
+                        endereco: emp.endereco || '',
+                        bairro: emp.bairro || '',
+                        cidade: emp.cidade || 'Cuiabá',
+                        tel1: emp.tel1 || '',
+                        nomeViz1: emp.nomeViz1 || '',
+                        telViz1: emp.telViz1 || '',
+                        fotoCasa: emp.fotoCasa || this.genericHouse
+                    });
+                    count++;
+                }
+            });
+            alert(`${count} funcionários importados com sucesso!`);
+            this.save();
+            this.closeModal('modalImportFunc');
+            this.renderEmployeesTable();
+        } catch(e) { alert("Erro no formato JSON: " + e.message); }
     },
 
     renderEmployeesTable() {
@@ -454,6 +528,7 @@ const App = {
         
         this.db.employees.filter(e => e.nome.toLowerCase().includes(search) || e.codigo.includes(search)).forEach(e => {
             const img = e.fotoCasa ? `<img src="${e.fotoCasa}" class="w-8 h-8 rounded-full object-cover">` : '<div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">🏠</div>';
+            const viz1 = e.nomeViz1 ? `${e.nomeViz1}` : '';
             
             tbody.innerHTML += `
                 <tr class="bg-white border-b hover:bg-gray-50">
@@ -462,7 +537,7 @@ const App = {
                     <td class="px-4 py-3 font-bold">${e.nome}</td>
                     <td class="px-4 py-3 text-xs">${e.endereco}, ${e.bairro}</td>
                     <td class="px-4 py-3 text-xs">${e.tel1}</td>
-                    <td class="px-4 py-3 text-xs text-gray-500">${e.vizinho1 || '-'} <br> ${e.vizinho2 || ''}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${viz1}</td>
                     <td class="px-4 py-3 text-center flex justify-center gap-2">
                         <button onclick="App.openEmployeeModal(${e.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="if(confirm('Excluir cadastro?')) { App.db.employees = App.db.employees.filter(x=>x.id!=${e.id}); App.save(); }" class="text-red-400 hover:text-red-600 bg-red-50 p-1 rounded"><i class="fa-solid fa-trash"></i></button>
@@ -472,6 +547,28 @@ const App = {
         });
     },
 
+    // --- RELATORIO CARVALIMA ---
+    generateReportCarvalima() {
+        // Filtrar apenas entregues
+        const reportData = this.db.deliveries
+            .filter(d => d.status === 'entregue')
+            .map(d => ({
+                Codigo_Funcionario: d.codigo,
+                Nome_Funcionario: d.nome,
+                Data_Hora_Entrega: d.entregueEm,
+                Quem_Recebeu: d.recebidoPor
+            }));
+        
+        if(reportData.length === 0) return alert("Nenhuma entrega realizada para gerar relatório.");
+
+        const jsonStr = JSON.stringify(reportData, null, 2);
+        const blob = new Blob([jsonStr], {type : 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `RELATORIO_CARVALIMA_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    },
+
     // --- ENTREGAS (LOGISTICA) ---
     toggleDeliveryStatus(id) {
         const d = this.db.deliveries.find(x => x.id === id);
@@ -479,7 +576,7 @@ const App = {
             if (d.status === 'cancelada') {
                 d.status = 'pendente';
             } else {
-                if(confirm("Suspender entrega para este funcionário nesta rota? (Ele não aparecerá para o motorista)")) {
+                if(confirm("Suspender entrega para este funcionário nesta rota?")) {
                     d.status = 'cancelada';
                 }
             }
@@ -509,8 +606,8 @@ const App = {
             else statusBadge = '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Pendente</span>';
 
             const actionBtn = isCancelled 
-                ? `<button onclick="App.toggleDeliveryStatus(${d.id})" class="text-green-500 hover:bg-green-50 p-1 rounded no-strike" title="Reativar Entrega"><i class="fa-solid fa-rotate-left"></i> Reativar</button>`
-                : `<button onclick="App.toggleDeliveryStatus(${d.id})" class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded" title="Suspender Entrega (Falta)"><i class="fa-solid fa-ban"></i></button>`;
+                ? `<button onclick="App.toggleDeliveryStatus(${d.id})" class="text-green-500 hover:bg-green-50 p-1 rounded no-strike" title="Reativar Entrega"><i class="fa-solid fa-rotate-left"></i></button>`
+                : `<button onclick="App.toggleDeliveryStatus(${d.id})" class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded" title="Suspender Entrega"><i class="fa-solid fa-ban"></i></button>`;
 
             tbody.innerHTML += `
                 <tr class="bg-white border-b hover:bg-gray-50 ${isCancelled ? 'row-cancelled' : ''}">
@@ -562,7 +659,6 @@ const App = {
         
         const list = document.getElementById('dashRoutesList'); list.innerHTML = '';
         this.db.routes.forEach(r => {
-            // Somente entregas ativas (não canceladas) contam para o progresso visual
             const activeDeliveries = this.db.deliveries.filter(d=>d.rotaId===r.id && d.status!=='cancelada');
             const rt = activeDeliveries.length;
             const rd = activeDeliveries.filter(d=>d.status==='entregue').length;
@@ -579,7 +675,6 @@ const App = {
         const selectedRouteId = routeFilter.value || (myRoutes[0] ? myRoutes[0].id : null);
         if (!selectedRouteId) { container.innerHTML = '<div class="text-center text-gray-500 mt-10 p-4">Sem rotas atribuídas.</div>'; return; }
 
-        // Filtra entregas da rota E que não estejam canceladas
         const deliveries = this.db.deliveries.filter(d => d.rotaId === selectedRouteId && d.status !== 'cancelada');
         deliveries.sort((a,b) => a.status === 'entregue' ? 1 : -1);
 
@@ -588,9 +683,21 @@ const App = {
             const isDone = d.status === 'entregue';
             const tel = emp.tel1 || '';
             const photoHTML = emp.fotoCasa ? `<img src="${emp.fotoCasa}" class="mobile-house-photo">` : `<div class="mobile-house-photo bg-gray-200 flex items-center justify-center text-gray-400"><i class="fa-solid fa-house text-4xl"></i></div>`;
+            
             let neighborsHTML = '';
-            if(emp.vizinho1 || emp.vizinho2) {
-                neighborsHTML = `<div class="bg-gray-50 p-2 rounded text-xs text-gray-600 mb-3 border border-gray-200"><strong><i class="fa-solid fa-people-roof"></i> Vizinhos:</strong><div class="flex gap-2 mt-1">${emp.vizinho1 ? `<a href="tel:${emp.vizinho1}" class="text-blue-600 underline">Viz 1</a>` : ''}${emp.vizinho2 ? `<a href="tel:${emp.vizinho2}" class="text-blue-600 underline">Viz 2</a>` : ''}</div></div>`;
+            if((emp.nomeViz1 && emp.telViz1) || (emp.nomeViz2 && emp.telViz2)) {
+                let list = '';
+                if(emp.nomeViz1 && emp.telViz1) {
+                    const msg = `Olá ${emp.nomeViz1}, a cesta do ${emp.nome} está chegando e ele pediu pra entregar na sua casa. Pode receber?`;
+                    const link = `https://wa.me/55${emp.telViz1.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+                    list += `<a href="${link}" target="_blank" class="block bg-white border p-2 rounded mb-1 text-xs text-green-700 hover:bg-green-50 flex justify-between items-center"><span><i class="fa-regular fa-user"></i> ${emp.nomeViz1}</span><span><i class="fa-brands fa-whatsapp"></i> Chamar</span></a>`;
+                }
+                if(emp.nomeViz2 && emp.telViz2) {
+                    const msg = `Olá ${emp.nomeViz2}, a cesta do ${emp.nome} está chegando e ele pediu pra entregar na sua casa. Pode receber?`;
+                    const link = `https://wa.me/55${emp.telViz2.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+                    list += `<a href="${link}" target="_blank" class="block bg-white border p-2 rounded mb-1 text-xs text-green-700 hover:bg-green-50 flex justify-between items-center"><span><i class="fa-regular fa-user"></i> ${emp.nomeViz2}</span><span><i class="fa-brands fa-whatsapp"></i> Chamar</span></a>`;
+                }
+                neighborsHTML = `<details class="neighbor-details mb-3"><summary class="bg-red-50 text-red-600 text-xs font-bold p-2 rounded border border-red-100 cursor-pointer text-center hover:bg-red-100 select-none"><i class="fa-solid fa-bullhorn"></i> SOCORRO! Ninguém atende?</summary><div class="mt-2 bg-gray-50 p-2 rounded border border-gray-200"><p class="text-[10px] text-gray-500 mb-2 uppercase font-bold">Falar com Vizinhos:</p>${list}</div></details>`;
             }
 
             container.innerHTML += `
@@ -599,7 +706,11 @@ const App = {
                     <div class="p-4">
                         <div class="flex justify-between items-start mb-2"><div><span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-1 rounded">#${d.codigo}</span><h3 class="font-bold text-gray-800 text-lg leading-tight">${d.nome}</h3></div>${isDone ? '<i class="fa-solid fa-check-circle text-green-500 text-xl"></i>' : ''}</div>
                         <p class="text-sm text-gray-600 mb-2"><i class="fa-solid fa-location-dot text-red-400"></i> ${emp.endereco || 'Endereço não cadastrado'}</p><p class="text-xs text-gray-500 mb-3 ml-4">${emp.bairro || ''}</p>
-                        ${!isDone ? `${neighborsHTML}<div class="grid grid-cols-2 gap-2 mb-3"><a href="https://wa.me/55${tel.replace(/\D/g,'')}" target="_blank" class="bg-green-100 text-green-800 py-2 rounded text-center text-xs font-bold border border-green-200"><i class="fa-brands fa-whatsapp"></i> Zap</a><a href="tel:${tel}" class="bg-blue-100 text-blue-800 py-2 rounded text-center text-xs font-bold border border-blue-200"><i class="fa-solid fa-phone"></i> Ligar</a></div><button onclick="App.openConfirmMobile('${d.id}', '${d.nome}')" class="w-full bg-brand-main text-white py-3 rounded-lg text-sm font-bold shadow hover:bg-brand-dark">ENTREGAR</button>` : `<div class="bg-green-50 p-2 rounded border border-green-100 text-xs text-green-800 mt-2"><strong>Entregue:</strong> ${d.entregueEm}<br><strong>Recebido por:</strong> ${d.recebidoPor}</div>`}
+                        ${!isDone ? `
+                            <div class="grid grid-cols-2 gap-2 mb-3"><a href="https://wa.me/55${tel.replace(/\D/g,'')}" target="_blank" class="bg-green-100 text-green-800 py-2 rounded text-center text-xs font-bold border border-green-200"><i class="fa-brands fa-whatsapp"></i> Zap</a><a href="tel:${tel}" class="bg-blue-100 text-blue-800 py-2 rounded text-center text-xs font-bold border border-blue-200"><i class="fa-solid fa-phone"></i> Ligar</a></div>
+                            ${neighborsHTML}
+                            <button onclick="App.openConfirmMobile('${d.id}', '${d.nome}')" class="w-full bg-brand-main text-white py-3 rounded-lg text-sm font-bold shadow hover:bg-brand-dark">ENTREGAR</button>
+                        ` : `<div class="bg-green-50 p-2 rounded border border-green-100 text-xs text-green-800 mt-2"><strong>Entregue:</strong> ${d.entregueEm}<br><strong>Recebido por:</strong> ${d.recebidoPor}</div>`}
                     </div>
                 </div>`;
         });
@@ -613,7 +724,7 @@ const App = {
             codes.forEach(code => {
                 const emp = this.db.employees.find(e => e.codigo == code);
                 if(emp) {
-                    const exists = this.db.deliveries.find(d => d.codigo == code && d.status != 'cancelada'); // Permite re-importar se estiver cancelada? Ou não. Vamos simplificar: se não existe ativo.
+                    const exists = this.db.deliveries.find(d => d.codigo == code && d.status != 'cancelada');
                     if(!exists) {
                         this.db.deliveries.push({ id: Date.now() + Math.random(), employeeId: emp.id, codigo: emp.codigo, nome: emp.nome, rotaId: '', status: 'pendente', entregueEm: null, recebidoPor: '' });
                         count++;
