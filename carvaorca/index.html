@@ -3,343 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotação Carvalima - 06/01/2026</title>
+    <title>Cotação Carvalima - SFA Otimizado</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
     <style>
-        /* Otimizações Específicas */
-        body { --spacing: 0.5rem; font-size: 0.95rem; }
+        /* CSS Otimizado e Minimalista */
+        :root { --spacing: 0.5rem; --font-size: 0.9rem; }
+        body { font-size: var(--font-size); }
+        
+        /* Layout */
         header { padding-bottom: 0; border-bottom: 1px solid #e5e5e5; margin-bottom: 1rem; }
-        hgroup h2 { font-weight: 300; color: #555; }
+        hgroup h2 { font-weight: 300; color: #666; font-size: 1.1rem; }
+        .container { max-width: 1200px; }
+
+        /* Tabela */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+        td, th { padding: 0.4rem; vertical-align: middle; border-bottom: 1px solid #eee; }
+        thead th { font-weight: 600; background: #f0f0f0; color: #333; }
         
-        /* Tabela Compacta */
-        table { width: 100%; border-collapse: collapse; }
-        td, th { padding: 0.5rem; vertical-align: middle; }
-        input[type="text"], input[type="number"] { margin-bottom: 0; height: 2rem; font-size: 0.9rem; }
-        button { cursor: pointer; }
-        
+        /* Inputs Compactos */
+        input:not([type="checkbox"]):not([type="radio"]) { 
+            margin-bottom: 0; height: 2rem; font-size: 0.9rem; padding: 0 0.5rem; 
+            border: 1px solid #ddd; transition: border-color 0.2s;
+        }
+        input:focus { border-color: var(--primary); box-shadow: none; }
+        input[readonly] { background-color: transparent; border: none; font-weight: bold; color: #333; }
+
         /* Utilitários */
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .font-bold { font-weight: bold; }
-        .text-red { color: #c92a2a; }
         .text-green { color: #2b8a3e; }
-        .w-small { width: 70px; }
-        .w-med { width: 100px; }
-        
-        /* Totais */
-        .summary-card { background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-top: 1rem; text-align: right; }
-        
-        /* Estilos de Impressão */
+        .text-red { color: #c92a2a; }
+        .w-qty { width: 70px; }
+        .w-brand { width: 120px; }
+        .w-money { width: 110px; }
+        .w-pct { width: 80px; }
+        .hidden { display: none !important; }
+        .no-print { }
+
+        /* Rodapé Fixo (Totais) */
+        .summary-bar {
+            position: sticky; bottom: 0; background: #fff; 
+            border-top: 2px solid var(--primary); padding: 1rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* Impressão */
         @media print {
-            .no-print { display: none !important; }
-            body { background: white; color: black; }
-            table { border: 1px solid #000; }
-            th, td { border: 1px solid #ddd; }
+            .no-print, .summary-bar button { display: none !important; }
+            body { background: white; color: black; font-size: 10pt; }
+            input { border: none !important; padding: 0 !important; height: auto !important; }
+            .summary-bar { position: relative; border: 1px solid #000; box-shadow: none; margin-top: 1rem; }
+            table, th, td { border: 1px solid #ccc; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Cabeçalho -->
     <header class="container">
-        <hgroup>
-            <h1>Cotação Carvalima</h1>
-            <h2>Data base: 6 de janeiro de 2026</h2>
-        </hgroup>
-        <nav class="no-print">
+        <nav>
+            <hgroup>
+                <h1>Cotação Carvalima</h1>
+                <h2>Data Base: <span id="current-date"></span></h2>
+            </hgroup>
             <ul>
-                <li><strong id="mode-display">Modo: Cliente</strong></li>
-            </ul>
-            <ul>
-                <li><button class="outline secondary" onclick="app.toggleMode()" id="btn-mode">Acessar Admin</button></li>
-                <li><button onclick="window.print()">Imprimir / PDF</button></li>
+                <li class="no-print"><button class="outline secondary" id="btn-mode" onclick="App.toggleMode()">Admin</button></li>
+                <li class="no-print"><button onclick="window.print()">Imprimir</button></li>
             </ul>
         </nav>
     </header>
 
-    <!-- Área Principal -->
     <main class="container">
-        
         <!-- Formulário de Adição (Apenas Admin) -->
-        <section id="admin-controls" class="no-print" style="display: none;">
-            <article>
-                <header><strong>Adicionar Novo Item</strong></header>
-                <div class="grid">
-                    <input type="text" id="inp-product" placeholder="Nome do Produto" style="flex-grow: 2;">
-                    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
-                        <input type="number" id="inp-qty" placeholder="Qtd" value="1">
-                        <input type="number" id="inp-cost" placeholder="Custo (R$)" step="0.01" oninput="app.calcNewItem('cost')">
-                        <input type="number" id="inp-margin" placeholder="Margem %" step="0.1" oninput="app.calcNewItem('margin')">
-                        <input type="number" id="inp-price" placeholder="Venda (R$)" step="0.01" oninput="app.calcNewItem('price')">
-                    </div>
-                    <button onclick="app.addItem()" style="width: auto;">Adicionar</button>
-                </div>
-            </article>
+        <section id="admin-panel" class="hidden no-print" style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+            <header style="margin-bottom: 0.5rem; border:none; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; color: #888;">Adicionar Item</header>
+            <div class="grid" style="grid-template-columns: 2fr 1fr 0.5fr 0.5fr 0.5fr 0.5fr 0.2fr;">
+                <input type="text" id="new-name" placeholder="Produto">
+                <input type="text" id="new-brand" placeholder="Marca">
+                <input type="number" id="new-qty" placeholder="Qtd" value="1">
+                <input type="number" id="new-cost" placeholder="Custo" step="0.01" oninput="App.calcNew('cost')">
+                <input type="number" id="new-margin" placeholder="Mg %" step="0.1" oninput="App.calcNew('margin')">
+                <input type="number" id="new-price" placeholder="Venda" step="0.01" oninput="App.calcNew('price')">
+                <button onclick="App.add()" style="width: auto; padding: 0 0.5rem;">+</button>
+            </div>
         </section>
 
-        <!-- Tabela de Dados -->
+        <!-- Tabela Principal -->
         <figure>
             <table>
                 <thead>
-                    <tr id="table-header">
-                        <!-- Renderizado via JS -->
+                    <tr>
+                        <th>Produto</th>
+                        <th class="w-brand">Marca</th>
+                        <th class="text-center w-qty">Qtd</th>
+                        
+                        <!-- Colunas Visíveis APENAS no Admin -->
+                        <th class="text-right w-money admin-col hidden">Custo Un.</th>
+                        <th class="text-right w-pct admin-col hidden">Margem %</th>
+                        <th class="text-right w-money admin-col hidden">Venda Un.</th>
+                        <th class="text-right w-money admin-col hidden">Total Item</th>
+                        
+                        <th class="no-print w-qty admin-col hidden">Ação</th>
                     </tr>
                 </thead>
-                <tbody id="table-body">
-                    <!-- Renderizado via JS -->
-                </tbody>
+                <tbody id="table-body"></tbody>
             </table>
         </figure>
-
-        <!-- Totais -->
-        <div class="summary-card">
-            <h3 id="total-display">Total Geral: R$ 0,00</h3>
-            <small id="profit-display" style="display: none;" class="text-green no-print"></small>
-        </div>
-
-        <!-- Rodapé do Admin -->
-        <footer class="text-center no-print" style="margin-top: 2rem; font-size: 0.8rem; color: #888;">
-            <p>Sistema Carvalima SFA v1.2 • Persistência Local</p>
-            <button class="outline contrast" onclick="app.clearData()" style="width: auto; padding: 0.2rem 1rem; font-size: 0.7rem;">Limpar Tudo</button>
-        </footer>
     </main>
 
+    <footer class="summary-bar container">
+        <div class="admin-col hidden">
+            <small class="text-green" id="profit-info"></small>
+        </div>
+        <div>
+            <strong style="font-size: 1.2rem;" id="total-display">Total Cotação: R$ 0,00</strong>
+        </div>
+        <div class="no-print">
+            <button class="outline contrast" onclick="App.reset()" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">Resetar Dados</button>
+        </div>
+    </footer>
+
     <script>
-        window.app = {
-            data: [],
-            isAdmin: false,
-            STORAGE_KEY: 'carvalima_orcamento_2026',
-            PASSWORD_HASH: '090479',
+        /**
+         * SFA - Single File Application Logic
+         * Padrão Singleton para organização e namespace global limpo.
+         */
+        const App = {
+            KEY: 'carvalima_sfa_db_2026_v3', // Chave atualizada para carregar a nova lista de Alimentos/Limpeza
+            PASS: '090479', // Hash simples
+            state: {
+                data: [],
+                isAdmin: false
+            },
+
+            // Lista extraída da imagem para "seeding" inicial (Com Marcas Separadas)
+            INITIAL_DATA: [
+                // ALIMENTOS
+                { name: "AÇUCAR CRISTAL 2KG", brand: "BARRACOOL/DOCE DIA", qty: 2 },
+                { name: "ARROZ TIPO1 5KG AGUILHINHA", brand: "TIO MIRO/CREMOSO/MASSON", qty: 2 },
+                { name: "CAFÉ 500 GR", brand: "CABOCLO/EVOLUTO", qty: 1 },
+                { name: "CHARQUE TIPO 1 500GR", brand: "SIER", qty: 1 },
+                { name: "FARINHA DE MANDIOCA 1 KG", brand: "SABOROSA", qty: 1 },
+                { name: "FARINHA DE TRIGO 1KG", brand: "DALLLAS", qty: 2 },
+                { name: "FEIJÃO CARIOCA TP1 1KG", brand: "NOVO CALDO", qty: 4 },
+                { name: "MACARRÃO ESPAGUETE 500GR", brand: "DALLLAS GREEN/STA FELICIDADE", qty: 4 },
+                { name: "MOLHO DE TOMATE 340GR", brand: "TOMODORO", qty: 1 },
+                { name: "ÓLEO DE SOJA 900ML", brand: "LIZA", qty: 4 },
+                { name: "SAL REFINADO 1KG", brand: "BOM DE MESA", qty: 1 },
+                
+                // KIT LIMPEZA
+                { name: "CREME DENTAL 90GR", brand: "SORRISO/COLGATE", qty: 2 },
+                { name: "ESPONJA DE AÇO 60GR", brand: "Q LUSTROS /ASSOLAN", qty: 2 },
+                { name: "PAPEL HIG. PERFUMADO 4X30", brand: "MILLI BIANCO/ PALOMA", qty: 2 },
+                { name: "SABÃO BARRA GLICERINADO 5X200", brand: "OESTE/BARRA NOVA", qty: 1 },
+                { name: "SABÃO EM PÓ 800GR", brand: "ASSIM/AMACITEL /URCA", qty: 1 },
+                { name: "SABONETE 90GR", brand: "KITE/VIDA/GIPSY", qty: 2 }
+            ],
 
             init() {
+                // Configurar Data
+                const now = new Date();
+                document.getElementById('current-date').textContent = now.toLocaleDateString('pt-BR');
+                
+                // Carregar Dados
                 this.load();
-                this.render();
             },
 
             load() {
-                const stored = localStorage.getItem(this.STORAGE_KEY);
-                try {
-                    this.data = stored ? JSON.parse(stored) : [];
-                    // Migração de dados antigos (calcular margem se não existir)
-                    this.data.forEach(item => {
-                        if (item.margin === undefined) {
-                            if (item.cost > 0) {
-                                item.margin = ((item.price - item.cost) / item.cost) * 100;
-                            } else {
-                                item.margin = 0;
-                            }
-                        }
-                    });
-                } catch (e) {
-                    this.data = [];
+                const stored = localStorage.getItem(this.KEY);
+                if (stored) {
+                    try {
+                        this.state.data = JSON.parse(stored);
+                    } catch(e) { console.error("Erro ao ler DB", e); this.seed(); }
+                } else {
+                    this.seed();
                 }
-            },
-
-            save() {
-                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.data));
                 this.render();
             },
 
-            // Lógica de Cálculo Dinâmico no Formulário de Adição
-            calcNewItem(source) {
-                const cost = parseFloat(document.getElementById('inp-cost').value) || 0;
-                let margin = parseFloat(document.getElementById('inp-margin').value) || 0;
-                let price = parseFloat(document.getElementById('inp-price').value) || 0;
-
-                const costEl = document.getElementById('inp-cost');
-                const marginEl = document.getElementById('inp-margin');
-                const priceEl = document.getElementById('inp-price');
-
-                if (source === 'cost' || source === 'margin') {
-                    // Custo ou Margem mudou -> Calcula Preço
-                    price = cost * (1 + (margin / 100));
-                    priceEl.value = price.toFixed(2);
-                } else if (source === 'price') {
-                    // Preço mudou -> Calcula Margem (Engenharia Reversa)
-                    if (cost > 0) {
-                        margin = ((price - cost) / cost) * 100;
-                        marginEl.value = margin.toFixed(2);
-                    }
-                }
+            seed() {
+                // Popula com dados da imagem, custos zerados
+                this.state.data = this.INITIAL_DATA.map(item => ({
+                    id: Date.now() + Math.random(),
+                    name: item.name,
+                    brand: item.brand,
+                    qty: item.qty,
+                    cost: 0,
+                    margin: 0,
+                    price: 0
+                }));
+                this.save();
             },
 
-            addItem() {
-                const name = document.getElementById('inp-product').value;
-                const qty = parseFloat(document.getElementById('inp-qty').value) || 1;
-                const cost = parseFloat(document.getElementById('inp-cost').value) || 0;
-                const margin = parseFloat(document.getElementById('inp-margin').value) || 0;
-                const price = parseFloat(document.getElementById('inp-price').value) || 0;
+            save() {
+                localStorage.setItem(this.KEY, JSON.stringify(this.state.data));
+                this.render();
+            },
 
-                if (!name) return alert('Digite o nome do produto.');
+            // --- Lógica de Negócio (CRUD + Cálculos) ---
 
-                this.data.push({ id: Date.now(), name, qty, cost, margin, price });
+            add() {
+                const name = document.getElementById('new-name').value;
+                if (!name) return alert("Nome é obrigatório");
 
+                const brand = document.getElementById('new-brand').value || "";
+                const qty = parseFloat(document.getElementById('new-qty').value) || 1;
+                const cost = parseFloat(document.getElementById('new-cost').value) || 0;
+                const margin = parseFloat(document.getElementById('new-margin').value) || 0;
+                const price = parseFloat(document.getElementById('new-price').value) || 0;
+
+                this.state.data.push({ id: Date.now(), name, brand, qty, cost, margin, price });
+                
                 // Limpar campos
-                document.getElementById('inp-product').value = '';
-                document.getElementById('inp-product').focus();
-                // Opcional: manter os valores numéricos ou limpar? Limpando por segurança.
-                document.getElementById('inp-cost').value = '';
-                document.getElementById('inp-margin').value = '';
-                document.getElementById('inp-price').value = '';
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-brand').value = '';
+                document.getElementById('new-cost').value = '';
+                document.getElementById('new-margin').value = '';
+                document.getElementById('new-price').value = '';
+                document.getElementById('new-name').focus();
                 
                 this.save();
             },
 
-            deleteItem(id) {
-                if(confirm('Remover este item?')) {
-                    this.data = this.data.filter(item => item.id !== id);
-                    this.save();
-                }
-            },
-
-            // Lógica Reativa: Edição na Tabela
-            updateItem(id, field, value) {
-                const item = this.data.find(i => i.id === id);
+            update(id, field, value) {
+                const item = this.state.data.find(i => i.id === id);
                 if (!item) return;
 
-                const val = parseFloat(value) || 0;
+                if (field === 'name') item.name = value;
+                else if (field === 'brand') item.brand = value;
+                else {
+                    let val = parseFloat(value);
+                    if (isNaN(val)) val = 0;
 
-                if (field === 'qty') {
-                    item.qty = val;
-                } 
-                else if (field === 'name') {
-                    item.name = value; // Texto direto, não float
-                    this.save();
-                    return; 
-                }
-                else if (field === 'cost') {
-                    item.cost = val;
-                    // Mudou custo -> Mantém margem, atualiza preço
-                    item.price = item.cost * (1 + (item.margin / 100));
-                }
-                else if (field === 'margin') {
-                    item.margin = val;
-                    // Mudou margem -> Mantém custo, atualiza preço
-                    item.price = item.cost * (1 + (item.margin / 100));
-                }
-                else if (field === 'price') {
-                    item.price = val;
-                    // Mudou preço -> Mantém custo, atualiza margem
-                    if (item.cost > 0) {
-                        item.margin = ((item.price - item.cost) / item.cost) * 100;
+                    if (field === 'qty') item.qty = val;
+                    else if (field === 'cost') {
+                        item.cost = val;
+                        // Custo mudou: Recalcula Preço mantendo Margem
+                        item.price = item.cost * (1 + (item.margin / 100));
+                    }
+                    else if (field === 'margin') {
+                        item.margin = val;
+                        // Margem mudou: Recalcula Preço mantendo Custo
+                        item.price = item.cost * (1 + (item.margin / 100));
+                    }
+                    else if (field === 'price') {
+                        item.price = val;
+                        // Preço mudou: Recalcula Margem (Engenharia Reversa)
+                        if (item.cost > 0) item.margin = ((item.price - item.cost) / item.cost) * 100;
+                    }
+                    
+                    // Arredondamento seguro (2 casas)
+                    if(field !== 'qty') {
+                        item.price = Math.round(item.price * 100) / 100;
+                        item.margin = Math.round(item.margin * 10) / 10;
                     }
                 }
-
-                // Normalização para evitar dizimas infinitas
-                item.price = parseFloat(item.price.toFixed(2));
-                item.margin = parseFloat(item.margin.toFixed(2));
-                
                 this.save();
+            },
+
+            delete(id) {
+                if (confirm('Deletar item?')) {
+                    this.state.data = this.state.data.filter(i => i.id !== id);
+                    this.save();
+                }
+            },
+
+            reset() {
+                if (confirm('ATENÇÃO: Isso apagará todas as edições e restaurará a lista original. Continuar?')) {
+                    localStorage.removeItem(this.KEY);
+                    this.seed();
+                    this.render();
+                }
+            },
+
+            // --- Lógica Auxiliar de UI ---
+
+            calcNew(source) {
+                // Cálculo em tempo real para o formulário de adição
+                const els = {
+                    c: document.getElementById('new-cost'),
+                    m: document.getElementById('new-margin'),
+                    p: document.getElementById('new-price')
+                };
+                const val = {
+                    c: parseFloat(els.c.value) || 0,
+                    m: parseFloat(els.m.value) || 0,
+                    p: parseFloat(els.p.value) || 0
+                };
+
+                if (source === 'cost' || source === 'margin') {
+                    els.p.value = (val.c * (1 + (val.m / 100))).toFixed(2);
+                } else if (source === 'price') {
+                    if (val.c > 0) els.m.value = (((val.p - val.c) / val.c) * 100).toFixed(1);
+                }
             },
 
             toggleMode() {
-                if (this.isAdmin) {
-                    this.isAdmin = false;
-                    this.render();
+                if (this.state.isAdmin) {
+                    this.state.isAdmin = false;
                 } else {
-                    setTimeout(() => {
-                        let pass = prompt("Digite a senha de administrador:");
-                        if (pass && pass.trim() === this.PASSWORD_HASH) {
-                            this.isAdmin = true;
-                            this.render();
-                        } else if (pass !== null) {
-                            alert("Senha incorreta.");
-                        }
-                    }, 50);
+                    const pwd = prompt("Senha Admin:");
+                    if (pwd === this.PASS) this.state.isAdmin = true;
+                    else if (pwd !== null) alert("Senha inválida");
                 }
+                this.render();
             },
 
-            clearData() {
-                if (confirm('ATENÇÃO: Isso apagará toda a planilha. Continuar?')) {
-                    localStorage.removeItem(this.STORAGE_KEY);
-                    this.data = [];
-                    this.render();
-                }
+            formatMoney(val) {
+                return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             },
 
-            formatMoney(value) {
-                return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            },
+            // --- Renderização (Core) ---
 
             render() {
                 const tbody = document.getElementById('table-body');
-                const thead = document.getElementById('table-header');
-                const adminControls = document.getElementById('admin-controls');
+                const adminCols = document.querySelectorAll('.admin-col');
+                const adminPanel = document.getElementById('admin-panel');
                 const btnMode = document.getElementById('btn-mode');
-                const modeDisplay = document.getElementById('mode-display');
-                const profitDisplay = document.getElementById('profit-display');
+                
+                // Controle de Visibilidade Admin/Cliente
+                btnMode.textContent = this.state.isAdmin ? "Sair Admin" : "Acessar Admin";
+                btnMode.className = this.state.isAdmin ? "outline contrast" : "outline secondary";
+                
+                adminPanel.classList.toggle('hidden', !this.state.isAdmin);
+                adminCols.forEach(el => el.classList.toggle('hidden', !this.state.isAdmin));
 
-                if (this.isAdmin) {
-                    modeDisplay.innerText = "Modo: ADMIN";
-                    modeDisplay.className = "text-red";
-                    btnMode.innerText = "Sair do Admin";
-                    adminControls.style.display = 'block';
-                    profitDisplay.style.display = 'block';
-                    
-                    thead.innerHTML = `
-                        <th>Produto</th>
-                        <th class="w-small">Qtd</th>
-                        <th class="text-right w-med">Custo</th>
-                        <th class="text-right w-small">Mg(%)</th>
-                        <th class="text-right w-med">Venda</th>
-                        <th class="text-right w-med">Total</th>
-                        <th width="40" class="no-print">🗑️</th>
-                    `;
-                } else {
-                    modeDisplay.innerText = "Modo: Cliente";
-                    modeDisplay.className = "text-green";
-                    btnMode.innerText = "Acessar Admin";
-                    adminControls.style.display = 'none';
-                    profitDisplay.style.display = 'none';
-
-                    thead.innerHTML = `
-                        <th>Produto</th>
-                        <th width="80" class="text-center">Qtd</th>
-                        <th width="150" class="text-right">Valor Total</th>
-                    `;
-                }
-
+                // Construção da Tabela
                 tbody.innerHTML = '';
                 let grandTotal = 0;
                 let totalCost = 0;
 
-                this.data.forEach(item => {
+                this.state.data.forEach(item => {
                     const totalLine = item.qty * item.price;
                     grandTotal += totalLine;
                     totalCost += (item.qty * item.cost);
 
                     const tr = document.createElement('tr');
                     
-                    if (this.isAdmin) {
+                    // Helpers de exibição: Se for 0, mostra string vazia
+                    const showCost = item.cost === 0 ? '' : item.cost;
+                    const showMargin = item.margin === 0 ? '' : item.margin;
+                    const showPrice = item.price === 0 ? '' : item.price;
+
+                    if (this.state.isAdmin) {
                         tr.innerHTML = `
-                            <td><input type="text" value="${item.name}" onchange="app.updateItem(${item.id}, 'name', this.value)"></td>
-                            <td><input type="number" value="${item.qty}" class="text-center" onchange="app.updateItem(${item.id}, 'qty', this.value)"></td>
-                            <td><input type="number" value="${item.cost}" step="0.01" class="text-right" onchange="app.updateItem(${item.id}, 'cost', this.value)"></td>
-                            <td><input type="number" value="${item.margin}" step="0.1" class="text-right" onchange="app.updateItem(${item.id}, 'margin', this.value)"></td>
-                            <td><input type="number" value="${item.price}" step="0.01" class="text-right" onchange="app.updateItem(${item.id}, 'price', this.value)"></td>
-                            <td class="text-right font-bold">${this.formatMoney(totalLine)}</td>
-                            <td class="no-print"><button class="outline secondary" onclick="app.deleteItem(${item.id})" style="padding:0.2rem; border:none;">✕</button></td>
+                            <td><input type="text" value="${item.name}" onchange="App.update(${item.id}, 'name', this.value)"></td>
+                            <td><input type="text" value="${item.brand}" onchange="App.update(${item.id}, 'brand', this.value)"></td>
+                            <td><input type="number" value="${item.qty}" class="text-center" onchange="App.update(${item.id}, 'qty', this.value)"></td>
+                            
+                            <td class="admin-col"><input type="number" placeholder="0,00" value="${showCost}" step="0.01" class="text-right" onchange="App.update(${item.id}, 'cost', this.value)"></td>
+                            <td class="admin-col"><input type="number" placeholder="0" value="${showMargin}" step="0.1" class="text-right" onchange="App.update(${item.id}, 'margin', this.value)"></td>
+                            <td class="admin-col"><input type="number" placeholder="0,00" value="${showPrice}" step="0.01" class="text-right" onchange="App.update(${item.id}, 'price', this.value)"></td>
+                            <td class="text-right font-bold admin-col">${this.formatMoney(totalLine)}</td>
+                            
+                            <td class="no-print admin-col text-center"><button class="outline secondary" onclick="App.delete(${item.id})" style="border:none; color: #c92a2a;">&times;</button></td>
                         `;
                     } else {
+                        // Modo Cliente (Leitura) - SEM PREÇOS INDIVIDUAIS
                         tr.innerHTML = `
                             <td>${item.name}</td>
+                            <td>${item.brand}</td>
                             <td class="text-center">${item.qty}</td>
-                            <td class="text-right font-bold">${this.formatMoney(totalLine)}</td>
                         `;
                     }
                     tbody.appendChild(tr);
                 });
 
-                document.getElementById('total-display').innerText = `Total Geral: ${this.formatMoney(grandTotal)}`;
+                // Totais
+                document.getElementById('total-display').textContent = `Total Cotação: ${this.formatMoney(grandTotal)}`;
                 
-                if (this.isAdmin) {
+                if (this.state.isAdmin) {
                     const profit = grandTotal - totalCost;
-                    const marginTotal = grandTotal > 0 ? (profit / grandTotal * 100) : 0;
-                    profitDisplay.innerHTML = `Custo Total: ${this.formatMoney(totalCost)} | <strong>Lucro: ${this.formatMoney(profit)} (${marginTotal.toFixed(1)}%)</strong>`;
+                    const mgTotal = grandTotal > 0 ? (profit/grandTotal*100).toFixed(1) : 0;
+                    document.getElementById('profit-info').innerHTML = 
+                        `Custo: ${this.formatMoney(totalCost)} | Lucro: <b>${this.formatMoney(profit)}</b> (${mgTotal}%)`;
                 }
             }
         };
-        app.init();
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
 </body>
 </html>
