@@ -169,9 +169,9 @@
             </div>
         </aside>
 
-        <!-- PRODUCT CATALOG -->
-        <section id="products-list" class="lg:col-span-8 space-y-6 order-1 lg:order-2">
-            <div class="flex justify-center p-12">
+        <!-- PRODUCT CATALOG (GRID 3 COLUNAS NO DESKTOP) -->
+        <section id="products-list" class="lg:col-span-8 order-1 lg:order-2 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="flex justify-center p-12 col-span-1 lg:col-span-3">
                 <div class="w-8 h-8 border-4 border-brand-blue border-t-transparent rounded-full animate-spin"></div>
             </div>
         </section>
@@ -226,9 +226,10 @@
         </a>
     </div>
 
-    <!-- MODAL OVERLAY -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden opacity-0 transition-opacity duration-300" onclick="if(event.target===this) App.ui.closeModal()">
-        <div id="modal-content" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl lg:rounded-2xl lg:bottom-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 w-full lg:max-w-2xl max-h-[90vh] overflow-y-auto transform transition-transform duration-300 translate-y-full lg:translate-y-10 shadow-2xl">
+    <!-- MODAL OVERLAY (CORRIGIDO) -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-end lg:items-center justify-center opacity-0 transition-opacity duration-300" onclick="if(event.target===this) App.ui.closeModal()">
+        <!-- Modal Content Container - FIX POSICIONAMENTO -->
+        <div id="modal-content" class="w-full bg-white rounded-t-3xl lg:rounded-2xl lg:max-w-2xl max-h-[90vh] overflow-y-auto transform transition-transform duration-300 translate-y-full shadow-2xl">
             <!-- Content -->
         </div>
     </div>
@@ -339,18 +340,29 @@
                             <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center ${o.sel?'border-green-500 bg-green-500 text-white':'border-gray-300'}"><i class="ph-bold ph-check text-sm"></i></div>
                         </div>`).join('');
                     
+                    // LÓGICA DE IMAGEM DINÂMICA (ARROZ) PARA O MOBILE
+                    const selectedOpt = b.opts.find(o => o.sel);
+                    
                     const items = revealed ? `
                         <div class="mt-4 pt-4 border-t border-gray-100 bg-gray-50/50 -mx-4 px-4 pb-4 animate-fade-in">
                             <p class="text-center text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Itens Inclusos</p>
                             <div class="grid grid-cols-3 gap-2">
-                                ${b.items.map(i => `<div class="text-center"><div class="relative bg-white p-1 rounded border border-gray-100 mb-1"><img src="${App.helpers.getImage(i.n)}" class="w-full aspect-square object-contain mix-blend-multiply" loading="lazy"><div class="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white">${i.q}</div></div><span class="text-[10px] text-gray-600 block truncate">${i.n}</span></div>`).join('')}
+                                ${b.items.map(i => {
+                                    let n = i.n;
+                                    // Troca o nome do arroz se necessário para carregar a foto certa
+                                    if(n.toLowerCase().includes('arroz') && selectedOpt) {
+                                        if(selectedOpt.n.toLowerCase().includes('tio alvino')) n = 'Arroz Tio Alvino';
+                                        else if(selectedOpt.n.toLowerCase().includes('koblenz')) n = 'Arroz Koblenz';
+                                    }
+                                    return `<div class="text-center"><div class="relative bg-white p-1 rounded border border-gray-100 mb-1"><img src="${App.helpers.getImage(n)}" class="w-full aspect-square object-contain mix-blend-multiply" loading="lazy"><div class="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white">${i.q}</div></div><span class="text-[10px] text-gray-600 block truncate">${n}</span></div>`
+                                }).join('')}
                             </div>
                             <button onclick="App.actions.order('${b.id}')" class="mt-4 w-full bg-green-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><i class="ph-bold ph-whatsapp-logo text-lg"></i> PEDIR AGORA</button>
                         </div>` : '';
 
                     return `
-                        <article class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-                            <div class="p-5">
+                        <article class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden h-full flex flex-col">
+                            <div class="p-5 flex flex-col h-full">
                                 <div class="flex justify-between items-start mb-4">
                                     <div><h3 class="text-xl font-extrabold text-gray-900 leading-none">${b.name}</h3><span class="inline-block mt-1 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Entrega Grátis</span></div>
                                     <div class="lg:hidden w-16 h-16 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden cursor-zoom-in" onclick="App.actions.viewImage('${b.img}', '${b.name}')"><img src="${b.img}" alt="${b.name}" class="w-full h-full object-cover"></div>
@@ -358,7 +370,7 @@
                                 <div class="hidden lg:block hero-img-placeholder rounded-xl mb-5 group cursor-pointer" onclick="App.actions.toggleReveal('${b.id}')">
                                     <img src="${b.img}" alt="${b.name}" class="hero-img-content group-hover:scale-105 transition-transform duration-500">
                                 </div>
-                                <div class="space-y-2">${opts}</div>
+                                <div class="space-y-2 flex-1">${opts}</div>
                                 ${revealed ? '' : `<button onclick="App.actions.toggleReveal('${b.id}')" class="w-full mt-4 bg-brand-blue text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg"><i class="ph-bold ${window.innerWidth>=1024?'ph-list-magnifying-glass':'ph-caret-down'} text-xl"></i>${window.innerWidth>=1024?'VER DETALHES':'VER PRODUTOS'}</button>`}
                                 ${items}
                             </div>
@@ -389,8 +401,7 @@
                     overlay.classList.remove('hidden');
                     void overlay.offsetWidth;
                     overlay.classList.remove('opacity-0');
-                    if(window.innerWidth>=1024) { cont.classList.remove('translate-y-full'); cont.classList.add('lg:translate-y-0'); }
-                    else { cont.classList.remove('translate-y-full'); }
+                    cont.classList.remove('translate-y-full');
                 },
                 closeModal() {
                     const o = document.getElementById('modal-overlay');
@@ -403,11 +414,47 @@
             helpers: {
                 getImage(n) {
                     const low = n.toLowerCase();
-                    if(low.includes('arroz')) return 'https://donaantonia.com.br/descontos/img/alimento/Arroz%20Koblenz%205kg.webp';
-                    if(low.includes('açúcar')) return 'https://donaantonia.com.br/descontos/img/alimento/açucar%20doce%20dia%202%20kg.webp';
-                    if(low.includes('óleo')) return 'https://donaantonia.com.br/descontos/img/alimento/oleo%20de%20soja%20liza.webp';
-                    if(low.includes('feijão')) return 'https://donaantonia.com.br/descontos/img/alimento/feijão%20da%20casa.webp';
-                    if(low.includes('café')) return 'https://donaantonia.com.br/descontos/img/alimento/cafe%20caboclo%20500g.webp';
+                    const foodUrl = 'https://donaantonia.com.br/descontos/img/alimento/';
+                    const cleanUrl = 'https://donaantonia.com.br/descontos/img/limpeza/';
+
+                    // Limpeza
+                    if(low.includes('creme dental')) return cleanUrl + 'Creme%20Dental%20Sorriso%2070g.webp';
+                    if(low.includes('desinfetante')) return cleanUrl + 'Desinfetante%20Remmus%202L.webp';
+                    if(low.includes('detergente')) return cleanUrl + 'Detergente%20Ype%20500ml.webp';
+                    if(low.includes('qboa')) return cleanUrl + 'Qboa%201%20Litro.webp';
+                    if(low.includes('amaciante')) return cleanUrl + 'amaciante%20ype%202L.webp';
+                    if(low.includes('esponja') && low.includes('louça')) return cleanUrl + 'esponja%20de%20lavar%20louça.webp';
+                    if(low.includes('esponja') && low.includes('aço')) return foodUrl + 'esponja%20assolan.webp'; // Atualizado conforme sua lista
+                    if(low.includes('papel')) return cleanUrl + 'papel%20higienico.webp';
+                    if(low.includes('sabonete')) return cleanUrl + 'sabonete%20palmolive%2085g.webp';
+                    if(low.includes('sabão barra')) return cleanUrl + 'sabão%20barra%20ype%20900g.webp';
+                    if(low.includes('sabão pó') || low.includes('omo')) return cleanUrl + 'sabão%20em%20pó%20omo%20800g.webp';
+
+                    // Alimentos (Novos nomes mapeados)
+                    if(low.includes('koblenz')) return foodUrl + 'Arroz%20Koblenz%205kg.webp';
+                    if(low.includes('tio alvino')) return foodUrl + 'arroztioalvino.jpg';
+                    if(low.includes('açúcar')) return foodUrl + 'açucar%20doce%20dia%202%20kg.webp';
+                    if(low.includes('bolacha')) return foodUrl + 'bolacha%20mybit.webp';
+                    if(low.includes('bolo')) return foodUrl + 'bolo%20apti%20chocolate.webp';
+                    if(low.includes('premiado')) return foodUrl + 'cafepremiado.webp';
+                    if(low.includes('café') && low.includes('250')) return foodUrl + 'cafe%20caboclo%20250g.webp';
+                    if(low.includes('café') && low.includes('500')) return foodUrl + 'cafe%20caboclo%20500g.webp';
+                    if(low.includes('espaguete')) return foodUrl + 'espaguete%20qdelicia.webp';
+                    if(low.includes('farinha')) return foodUrl + 'farinha%20de%20mandioca.webp';
+                    if(low.includes('feijão')) return foodUrl + 'feijão%20da%20casa.webp';
+                    if(low.includes('milho')) return foodUrl + 'milho%20verde%20predileta.webp';
+                    if(low.includes('miojo')) return foodUrl + 'miojo%20apti.webp';
+                    if(low.includes('molho')) return foodUrl + 'molho%20fugini.webp';
+                    if(low.includes('óleo')) return foodUrl + 'oleo%20de%20soja%20liza.webp';
+                    if(low.includes('ovo')) return foodUrl + 'ovo%20duzia.jpg';
+                    if(low.includes('sal')) return foodUrl + 'sal.webp';
+                    if(low.includes('suco')) return foodUrl + 'suco%20frisco.webp';
+                    if(low.includes('tempero')) return foodUrl + 'tempero%20tio%20jonas.jpg';
+                    if(low.includes('trigo')) return foodUrl + 'trigo%20vitoriosa.webp';
+
+                    // Fallback para outros não mapeados
+                    if(low.includes('arroz')) return foodUrl + 'Arroz%20Koblenz%205kg.webp';
+                    
                     return `https://placehold.co/100x100/f3f4f6/94a3b8?text=${encodeURIComponent(n.substring(0,3))}`;
                 }
             }
