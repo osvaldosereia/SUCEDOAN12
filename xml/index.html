@@ -30,9 +30,9 @@
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
         
         /* Scrollbar customizada para a tabela */
-        .custom-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scroll::-webkit-scrollbar { height: 10px; width: 10px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; border: 2px solid #f1f5f9; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         /* Loader Animation */
@@ -45,6 +45,9 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Utilitário para células de tabela densas */
+        td.cell-dense { padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 0.8rem; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
@@ -53,20 +56,20 @@
     <div id="loading" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
         <div class="bg-white p-6 rounded-lg shadow-xl flex items-center gap-4">
             <div class="spinner border-brand-600 border-t-transparent !border-t-brand-600"></div>
-            <span class="font-medium text-slate-700">Processando arquivos...</span>
+            <span class="font-medium text-slate-700">Processando dados fiscais completos...</span>
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto space-y-6">
+    <div class="max-w-[95%] mx-auto space-y-6">
         
         <!-- Cabeçalho -->
         <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">NFe Parser Pro</h1>
-                <p class="text-slate-500 text-sm mt-1">Gerenciador de Notas Fiscais e Itens (Client-Side)</p>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">NFe Parser Pro <span class="text-brand-600">Fiscal</span></h1>
+                <p class="text-slate-500 text-sm mt-1">Extração Completa: EAN, NCM, CFOP, CST e Impostos Detalhados</p>
             </div>
             <div class="flex gap-2">
-                <span class="bg-brand-50 text-brand-700 text-xs font-medium px-3 py-1 rounded-full border border-brand-100">Versão 1.2 (Tailwind)</span>
+                <span class="bg-brand-50 text-brand-700 text-xs font-medium px-3 py-1 rounded-full border border-brand-100">Versão 2.0 (Full Fiscal)</span>
             </div>
         </header>
 
@@ -87,7 +90,7 @@
                         hover:file:bg-brand-100
                         cursor-pointer border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all p-1">
                 </div>
-                <p class="mt-2 text-xs text-slate-400">🔒 Seus dados são processados localmente e salvos no navegador. Nada é enviado para servidores externos.</p>
+                <p class="mt-2 text-xs text-slate-400">🔒 Processamento 100% local. Extração profunda de tags fiscais ativada.</p>
             </section>
 
             <!-- Controles e Filtros -->
@@ -98,8 +101,8 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
                     <div class="space-y-1">
-                        <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Buscar</label>
-                        <input type="text" id="searchInput" placeholder="Emitente, Produto ou Nº..." 
+                        <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Buscar Geral</label>
+                        <input type="text" id="searchInput" placeholder="Nome, EAN, Código, NCM..." 
                             class="w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-10 px-3 border transition-colors">
                     </div>
                     <div class="space-y-1">
@@ -123,7 +126,7 @@
                 <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
                     <button onclick="app.exportData('json')" 
                         class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors">
-                        📥 Baixar JSON (Filtrado)
+                        📥 Baixar JSON Completo
                     </button>
                     <button onclick="app.clearData()" 
                         class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-lg text-red-600 bg-white hover:bg-red-50 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors ml-auto">
@@ -136,7 +139,7 @@
             <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                 <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-800">3. Visualização Detalhada</h3>
+                        <h3 class="text-lg font-bold text-slate-800">3. Visualização Detalhada (Fiscal)</h3>
                         <p class="text-sm text-slate-500">Exibindo <span id="countDisplay" class="font-bold text-slate-900">0</span> registros filtrados.</p>
                     </div>
                     <div class="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
@@ -145,26 +148,46 @@
                     </div>
                 </div>
 
+                <!-- Container com Scroll Horizontal para tabela larga -->
                 <div class="table-container overflow-x-auto custom-scroll max-h-[600px]">
                     <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                        <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm text-xs font-bold text-slate-500 uppercase tracking-wider">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Data</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Nº Nota</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Emitente</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 w-1/3">Produto</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Qtd</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Unitário</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Total</th>
+                                <!-- Dados Básicos -->
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 min-w-[90px]">Data</th>
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 min-w-[80px]">Nota</th>
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 min-w-[150px]">Emitente</th>
+                                
+                                <!-- Identificação Produto -->
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 text-brand-600 min-w-[100px]">Cód. Prod</th>
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 text-brand-600 min-w-[110px]">EAN/GTIN</th>
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 w-64 min-w-[200px]">Descrição</th>
+                                
+                                <!-- Fiscal -->
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 text-slate-700 min-w-[80px]">NCM</th>
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 text-slate-700 min-w-[60px]">CFOP</th>
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 text-slate-700 min-w-[50px]">Unid</th>
+                                <th class="px-3 py-3 text-left border-b border-slate-200 bg-slate-50 text-slate-700 min-w-[60px]">CST</th>
+                                
+                                <!-- Valores -->
+                                <th class="px-3 py-3 text-right border-b border-slate-200 bg-slate-50 min-w-[80px]">Qtd</th>
+                                <th class="px-3 py-3 text-right border-b border-slate-200 bg-slate-50 min-w-[100px]">V. Unit</th>
+                                <th class="px-3 py-3 text-right border-b border-slate-200 bg-slate-50 min-w-[110px]">V. Total</th>
+                                
+                                <!-- Impostos -->
+                                <th class="px-3 py-3 text-right border-b border-slate-200 bg-slate-50 text-red-600 min-w-[90px]">V. ICMS</th>
+                                <th class="px-3 py-3 text-right border-b border-slate-200 bg-slate-50 text-red-600 min-w-[90px]">V. IPI</th>
+                                <th class="px-3 py-3 text-right border-b border-slate-200 bg-slate-50 text-red-600 min-w-[90px]">V. PIS</th>
+                                <th class="px-3 py-3 text-right border-b border-slate-200 bg-slate-50 text-red-600 min-w-[90px]">V. COF</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="bg-white divide-y divide-slate-200">
                             <!-- Estado Vazio Inicial -->
                             <tr>
-                                <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                                <td colspan="17" class="px-6 py-12 text-center text-slate-400">
                                     <div class="flex flex-col items-center justify-center">
                                         <svg class="w-12 h-12 mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                        <p>Nenhum dado carregado. Importe seus arquivos XML acima.</p>
+                                        <p>Nenhum dado carregado. Importe arquivos XML para ver a planilha completa.</p>
                                     </div>
                                 </td>
                             </tr>
@@ -177,12 +200,11 @@
 
     <script>
         /**
-         * SISTEMAS - Core Application Logic
-         * Padrão Singleton para organização e encapsulamento.
+         * SISTEMAS - Core Application Logic v2 (Fiscal Full)
          */
         const app = {
             data: [], 
-            storageKey: 'nfe_sys_data_v1',
+            storageKey: 'nfe_sys_data_full_v2', // Chave alterada para v2 devido à nova estrutura
 
             init() {
                 this.cacheDOM();
@@ -210,13 +232,13 @@
                 this.dom.dateEnd.addEventListener('change', () => this.render());
             },
 
-            // --- Gerenciamento de Dados (CRUD / Persistence) ---
+            // --- Gerenciamento de Dados ---
 
             saveToStorage() {
                 try {
                     localStorage.setItem(this.storageKey, JSON.stringify(this.data));
                 } catch (e) {
-                    alert('Aviso: Limite do LocalStorage atingido. Os dados estão disponíveis apenas nesta sessão.');
+                    alert('Aviso: Limite do LocalStorage atingido. Dados disponíveis apenas nesta sessão.');
                     console.error('Storage limit exceeded', e);
                 }
             },
@@ -228,14 +250,13 @@
                         this.data = JSON.parse(stored);
                         this.render();
                     } catch (e) {
-                        console.error('Dados corrompidos, limpando...', e);
                         localStorage.removeItem(this.storageKey);
                     }
                 }
             },
 
             clearData() {
-                if (confirm('Tem certeza que deseja apagar todos os dados importados? Esta ação não pode ser desfeita.')) {
+                if (confirm('Tem certeza? Isso apaga todo o histórico importado.')) {
                     this.data = [];
                     localStorage.removeItem(this.storageKey);
                     this.render();
@@ -243,7 +264,7 @@
                 }
             },
 
-            // --- Lógica de Processamento de XML (Parser) ---
+            // --- Parser XML Avançado ---
 
             async handleFileUpload(event) {
                 const files = Array.from(event.target.files);
@@ -267,15 +288,13 @@
                         }
                     });
 
+                    // Adiciona novos itens
                     this.data = [...this.data, ...newItems];
                     this.saveToStorage();
                     this.render();
                     
-                    // Feedback mais detalhado
-                    let msg = `${newItems.length} itens importados com sucesso.`;
-                    if (errorCount > 0) msg += `\n${errorCount} arquivos não eram NFes válidas e foram ignorados.`;
-                    
-                    // Pequeno delay para o usuário ver o loading saindo suavemente se foi muito rápido
+                    let msg = `${newItems.length} itens fiscais extraídos com sucesso.`;
+                    if (errorCount > 0) msg += `\n${errorCount} arquivos inválidos ignorados.`;
                     setTimeout(() => alert(msg), 100);
 
                 } catch (error) {
@@ -303,43 +322,103 @@
                     
                     if (xmlDoc.getElementsByTagName("parsererror").length > 0) return null;
 
+                    // Helpers
                     const getTag = (parent, tag) => {
+                        if (!parent) return '';
                         const els = parent.getElementsByTagName(tag);
                         return els.length ? els[0].textContent : '';
                     };
 
+                    const getFloat = (parent, tag) => {
+                        const val = getTag(parent, tag);
+                        return val ? parseFloat(val) : 0.0;
+                    };
+
+                    // Cabeçalho da NFe
                     const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
                     if (!infNFe) return null; 
 
                     const nNF = getTag(infNFe, 'nNF');
                     const dhEmiRaw = getTag(infNFe, 'dhEmi') || getTag(infNFe, 'dEmi');
                     const emitente = getTag(infNFe, 'xNome');
+                    const cnpjEmitente = getTag(infNFe, 'CNPJ');
                     const chave = infNFe.getAttribute('Id') || '';
 
                     const dateObj = new Date(dhEmiRaw);
                     const formattedDate = !isNaN(dateObj) ? dateObj.toISOString().split('T')[0] : '';
 
+                    // Itens (Produtos)
                     const detTags = xmlDoc.getElementsByTagName('det');
                     const items = [];
 
                     for (let i = 0; i < detTags.length; i++) {
-                        const prod = detTags[i].getElementsByTagName('prod')[0];
-                        const nItem = detTags[i].getAttribute('nItem');
+                        const det = detTags[i];
+                        const prod = det.getElementsByTagName('prod')[0];
+                        const imposto = det.getElementsByTagName('imposto')[0];
+                        const nItem = det.getAttribute('nItem');
                         
+                        // Busca dados fiscais complexos
+                        // ICMS pode estar dentro de ICMS00, ICMS20, ICMSSN101, etc.
+                        let icmsCst = '';
+                        let icmsCsosn = '';
+                        let vICMS = 0;
+                        let vIPI = 0;
+                        let vPIS = 0;
+                        let vCOFINS = 0;
+
+                        if (imposto) {
+                            // Varredura genérica para encontrar valores independente do grupo (ICMS00, ICMS60, etc)
+                            vICMS = getFloat(imposto, 'vICMS');
+                            vIPI = getFloat(imposto, 'vIPI');
+                            vPIS = getFloat(imposto, 'vPIS');
+                            vCOFINS = getFloat(imposto, 'vCOFINS');
+
+                            // Tenta encontrar CST ou CSOSN recursivamente
+                            icmsCst = getTag(imposto, 'CST');
+                            icmsCsosn = getTag(imposto, 'CSOSN');
+                        }
+
                         items.push({
+                            // IDs e Controle
                             id: `${chave}-${nItem}`,
                             nNF: nNF,
                             dataEmissao: formattedDate,
                             emitente: emitente,
-                            produto: getTag(prod, 'xProd'),
-                            qtd: parseFloat(getTag(prod, 'qCom')),
-                            vUnit: parseFloat(getTag(prod, 'vUnCom')),
-                            vTotal: parseFloat(getTag(prod, 'vProd'))
+                            cnpjEmitente: cnpjEmitente,
+                            chaveAcesso: chave,
+                            
+                            // Dados Produto
+                            cProd: getTag(prod, 'cProd'),
+                            cEAN: getTag(prod, 'cEAN'),
+                            cEANTrib: getTag(prod, 'cEANTrib'),
+                            xProd: getTag(prod, 'xProd'),
+                            NCM: getTag(prod, 'NCM'),
+                            CEST: getTag(prod, 'CEST'),
+                            CFOP: getTag(prod, 'CFOP'),
+                            uCom: getTag(prod, 'uCom'),
+                            
+                            // Valores Unitários/Qtde
+                            qCom: getFloat(prod, 'qCom'),
+                            vUnCom: getFloat(prod, 'vUnCom'),
+                            vProd: getFloat(prod, 'vProd'), // Valor total bruto do produto
+                            vFrete: getFloat(prod, 'vFrete'),
+                            vDesc: getFloat(prod, 'vDesc'),
+                            
+                            // Tributação (Achatada para facilitar tabela)
+                            CST_CSOSN: icmsCst || icmsCsosn || '',
+                            vICMS: vICMS,
+                            vIPI: vIPI,
+                            vPIS: vPIS,
+                            vCOFINS: vCOFINS,
+                            
+                            // Campo calculado para facilitar ordenação
+                            vTotalItem: getFloat(prod, 'vProd') + getFloat(prod, 'vIPI') // Algumas visões somam IPI, aqui mantemos vProd base
                         });
                     }
 
                     return items;
                 } catch (e) {
+                    console.warn("Erro no parse individual", e);
                     return [];
                 }
             },
@@ -352,8 +431,12 @@
                 const end = this.dom.dateEnd.value;
 
                 return this.data.filter(item => {
+                    // Busca expandida para incluir códigos e EAN
                     const matchText = (item.emitente || '').toLowerCase().includes(search) || 
-                                      (item.produto || '').toLowerCase().includes(search) ||
+                                      (item.xProd || '').toLowerCase().includes(search) ||
+                                      (item.cProd || '').toLowerCase().includes(search) ||
+                                      (item.cEAN || '').includes(search) ||
+                                      (item.NCM || '').includes(search) ||
                                       (item.nNF || '').includes(search);
                     
                     let matchDate = true;
@@ -369,38 +452,49 @@
                 const tbody = this.dom.tableBody;
                 tbody.innerHTML = '';
 
-                // Verifica se está vazio
                 if (this.data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-slate-400"><p>Nenhum dado carregado.</p></td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="17" class="px-6 py-12 text-center text-slate-400"><p>Nenhum dado carregado.</p></td></tr>`;
                     this.updateTotals(0, 0);
                     return;
                 }
                 
-                if (filtered.length === 0 && this.data.length > 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-slate-500"><p>Nenhum resultado encontrado para os filtros aplicados.</p></td></tr>`;
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="17" class="px-6 py-12 text-center text-slate-500"><p>Nenhum resultado encontrado.</p></td></tr>`;
                     this.updateTotals(0, 0);
                     return;
                 }
 
-                const limit = 500; 
+                const limit = 300; // Limite visual para não travar o DOM com tabelas gigantes
                 const renderSet = filtered.slice(0, limit);
                 const fragment = document.createDocumentFragment();
 
                 renderSet.forEach(item => {
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50 transition-colors";
+                    tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-100";
                     
-                    // Renderizando com classes Tailwind nas células
+                    // Renderização Densa para caber tanta informação
                     tr.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">${this.formatDate(item.dataEmissao)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${item.nNF}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${item.emitente}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate" title="${item.produto}">
-                            ${item.produto}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-right font-mono">${item.qtd}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-right font-mono">${this.formatMoney(item.vUnit)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right font-mono font-bold">${this.formatMoney(item.vTotal)}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-600">${this.formatDate(item.dataEmissao)}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-600">${item.nNF}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-600 truncate max-w-[150px]" title="${item.emitente}">${item.emitente}</td>
+                        
+                        <td class="px-3 py-2 whitespace-nowrap text-xs font-mono text-brand-600">${item.cProd}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs font-mono text-brand-600">${item.cEAN !== 'SEM GTIN' ? item.cEAN : ''}</td>
+                        <td class="px-3 py-2 text-xs text-slate-700 max-w-[200px] truncate" title="${item.xProd}">${item.xProd}</td>
+                        
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-500">${item.NCM}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-500">${item.CFOP}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-500">${item.uCom}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-500">${item.CST_CSOSN}</td>
+                        
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-600 text-right">${item.qCom}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-600 text-right">${this.formatMoney(item.vUnCom)}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs font-bold text-slate-800 text-right">${this.formatMoney(item.vProd)}</td>
+                        
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-red-600 text-right">${item.vICMS > 0 ? this.formatMoney(item.vICMS) : '-'}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-red-600 text-right">${item.vIPI > 0 ? this.formatMoney(item.vIPI) : '-'}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-red-600 text-right">${item.vPIS > 0 ? this.formatMoney(item.vPIS) : '-'}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-red-600 text-right">${item.vCOFINS > 0 ? this.formatMoney(item.vCOFINS) : '-'}</td>
                     `;
                     fragment.appendChild(tr);
                 });
@@ -409,14 +503,13 @@
 
                 if (filtered.length > limit) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td colspan="7" class="px-6 py-4 text-center text-xs text-slate-400 uppercase tracking-wide bg-slate-50 border-t border-slate-100">
-                        ... Exibindo ${limit} de ${filtered.length} itens (Exporte para ver todos) ...
+                    tr.innerHTML = `<td colspan="17" class="px-6 py-4 text-center text-xs text-slate-400 bg-slate-50 border-t border-slate-100">
+                        ... Exibindo ${limit} de ${filtered.length} linhas (Exporte o JSON para ver tudo) ...
                     </td>`;
                     tbody.appendChild(tr);
                 }
 
-                // Atualizar totais
-                const totalValue = filtered.reduce((acc, curr) => acc + curr.vTotal, 0);
+                const totalValue = filtered.reduce((acc, curr) => acc + curr.vProd, 0);
                 this.updateTotals(filtered.length, totalValue);
             },
 
@@ -432,35 +525,22 @@
                 this.render();
             },
 
-            // --- Exportação ---
-
             exportData(type) {
                 const dataToExport = this.getFilteredData();
-                
                 if (dataToExport.length === 0) {
-                    alert("Nenhum dado para exportar com os filtros atuais.");
+                    alert("Nada para exportar.");
                     return;
                 }
 
-                let content = '';
-                let filename = `relatorio_nfe_${new Date().toISOString().split('T')[0]}`;
-                let mimeType = '';
-
-                if (type === 'json') {
-                    content = JSON.stringify(dataToExport, null, 2);
-                    mimeType = 'application/json';
-                    filename += '.json';
-                }
-
-                const blob = new Blob([content], { type: mimeType });
+                let content = JSON.stringify(dataToExport, null, 2);
+                const blob = new Blob([content], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = filename;
+                a.download = `nfe_fiscal_full_${new Date().toISOString().slice(0,10)}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
             },
 
             // --- Helpers ---
@@ -486,7 +566,6 @@
             }
         };
 
-        // Inicialização
         document.addEventListener('DOMContentLoaded', () => app.init());
 
     </script>
