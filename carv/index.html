@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Cestas Dona Antônia | Logística</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS para Excel (Opcional, mas recomendado futuramente, aqui faremos JSON nativo) -->
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            main: '#c2185b', // Rosa Dona Antônia/Cestas
+                            dark: '#8c1141',
+                            light: '#fce4ec',
+                            accent: '#2e7d32' // Verde Carvalima
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Tabela estilo Planilha */
+        .spreadsheet-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; white-space: nowrap; }
+        .spreadsheet-table td { white-space: nowrap; }
+        .spreadsheet-container { max-height: 70vh; overflow: auto; border: 1px solid #e5e7eb; }
+        /* Scrollbar fina */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #ccc; borderRadius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans text-sm h-screen flex flex-col overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="bg-white border-b border-gray-200 shadow-sm z-20 flex-none">
+        <div class="px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-brand-main text-white p-2 rounded-lg shadow-md">
+                    <i class="fa-solid fa-basket-shopping text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-brand-main">Super Cestas Dona Antônia</h1>
+                    <p class="text-xs text-gray-500 font-semibold">Logística Carvalima <span class="text-brand-accent text-[10px] bg-green-100 px-1 rounded border border-green-200">PARCEIRO</span></p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Seletor de Perfil -->
+                <select id="userRole" onchange="App.switchRole(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-brand-main focus:border-brand-main block p-2">
+                    <option value="admin">👑 Admin (Dona Antônia)</option>
+                    <optgroup label="Motoristas" id="driverSelectOptions">
+                        <!-- Preenchido via JS -->
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- SIDEBAR (Apenas Admin) -->
+        <aside id="sidebar" class="w-16 md:w-56 bg-white border-r border-gray-200 flex-none flex flex-col hidden md:flex transition-all duration-300">
+            <nav class="p-2 space-y-1 mt-4 flex-1">
+                <button onclick="App.setTab('dashboard')" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span class="hidden md:inline">Dashboard</span>
+                </button>
+                <button onclick="App.setTab('entregas')" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600 font-bold bg-brand-light text-brand-main">
+                    <i class="fa-solid fa-table-list w-5 text-center"></i> <span class="hidden md:inline">Planilha Entregas</span>
+                </button>
+                <button onclick="App.setTab('rotas')" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600">
+                    <i class="fa-solid fa-map-location-dot w-5 text-center"></i> <span class="hidden md:inline">Rotas & Datas</span>
+                </button>
+                <button onclick="App.setTab('motoristas')" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600">
+                    <i class="fa-solid fa-id-card w-5 text-center"></i> <span class="hidden md:inline">Motoristas</span>
+                </button>
+                <hr class="my-2 border-gray-200">
+                <button onclick="App.setTab('importar')" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 transition-colors text-gray-600">
+                    <i class="fa-solid fa-file-import w-5 text-center"></i> <span class="hidden md:inline">Importar JSON</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-gray-200">
+                <button onclick="App.exportData()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs py-2 px-2 rounded flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Backup Dados</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- AREA DE CONTEUDO -->
+        <main class="flex-1 overflow-auto bg-gray-50 p-4 relative">
+            
+            <!-- VIEW: PLANILHA DE ENTREGAS (ADMIN) -->
+            <div id="view-entregas" class="h-full flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">📦 Gestão de Entregas (Carvalima)</h2>
+                    <div class="flex gap-2">
+                        <button onclick="App.openModal('modalEntrega')" class="bg-brand-main hover:bg-brand-dark text-white px-3 py-2 rounded shadow text-xs font-bold">
+                            + Nova Entrega Manual
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros Rápidos -->
+                <div class="bg-white p-3 rounded-t-lg border border-gray-200 flex flex-wrap gap-3 items-center text-xs">
+                    <label class="font-bold text-gray-600">Filtros:</label>
+                    <select id="filterRoute" onchange="App.renderDeliveriesTable()" class="border rounded p-1">
+                        <option value="">Todas as Rotas</option>
+                    </select>
+                    <select id="filterStatus" onchange="App.renderDeliveriesTable()" class="border rounded p-1">
+                        <option value="">Todos Status</option>
+                        <option value="pendente">Pendentes</option>
+                        <option value="entregue">Entregues</option>
+                    </select>
+                    <input type="text" id="searchTable" onkeyup="App.renderDeliveriesTable()" placeholder="Buscar nome, código..." class="border rounded p-1 w-48">
+                </div>
+
+                <!-- Tabela Planilha -->
+                <div class="spreadsheet-container bg-white shadow rounded-b-lg flex-1">
+                    <table class="w-full text-left border-collapse spreadsheet-table">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 border-b">Cód. Func.</th>
+                                <th class="px-4 py-3 border-b">Nome Funcionário</th>
+                                <th class="px-4 py-3 border-b">Rota / Região</th>
+                                <th class="px-4 py-3 border-b">Previsão</th>
+                                <th class="px-4 py-3 border-b">Endereço</th>
+                                <th class="px-4 py-3 border-b">Status</th>
+                                <th class="px-4 py-3 border-b text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyEntregas" class="text-xs">
+                            <!-- JS popula aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: ROTAS (ADMIN) -->
+            <div id="view-rotas" class="hidden max-w-4xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">🗺️ Rotas e Previsões</h2>
+                    <button onclick="App.openModal('modalRota')" class="bg-brand-main text-white px-4 py-2 rounded shadow text-sm font-bold">+ Criar Rota</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="gridRotas">
+                    <!-- Cards de Rota -->
+                </div>
+            </div>
+
+            <!-- VIEW: MOTORISTAS (ADMIN) -->
+            <div id="view-motoristas" class="hidden max-w-4xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">🚚 Motoristas</h2>
+                    <button onclick="App.openModal('modalMotorista')" class="bg-brand-main text-white px-4 py-2 rounded shadow text-sm font-bold">+ Novo Motorista</button>
+                </div>
+                <div class="bg-white rounded shadow overflow-hidden">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-100 text-xs uppercase text-gray-700">
+                            <tr>
+                                <th class="px-6 py-3">Nome</th>
+                                <th class="px-6 py-3">Telefone</th>
+                                <th class="px-6 py-3">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listMotoristas"></tbody>
+                    </table>
+                </div>
+            </div>
+
+             <!-- VIEW: IMPORTAR (ADMIN) -->
+             <div id="view-importar" class="hidden max-w-2xl mx-auto mt-10">
+                <div class="bg-white p-8 rounded-lg shadow border border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">📥 Importação e Atualização em Massa</h2>
+                    
+                    <div class="space-y-6">
+                        <div class="border-b pb-4">
+                            <h3 class="font-bold text-brand-main mb-2">Opção A: Novas Entregas (JSON)</h3>
+                            <p class="text-xs text-gray-500 mb-3">O arquivo deve conter uma lista de objetos com: <code>codigo, nome, endereco, tel1</code>.</p>
+                            <textarea id="jsonInputNew" class="w-full border p-2 text-xs h-24 rounded font-mono bg-gray-50" placeholder='[{"codigo":"101", "nome":"João", "endereco":"Rua A..."}]'></textarea>
+                            <button onclick="App.importJSON('new')" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Processar Novas Entregas</button>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-green-600 mb-2">Opção B: Atualizar Status (Relatório JSON)</h3>
+                            <p class="text-xs text-gray-500 mb-3">Use para dar baixa em massa. O arquivo precisa de: <code>codigo, status, entregueEm</code>.</p>
+                            <textarea id="jsonInputUpdate" class="w-full border p-2 text-xs h-24 rounded font-mono bg-gray-50" placeholder='[{"codigo":"101", "status":"entregue", "entregueEm":"01/01/2026 10:00"}]'></textarea>
+                            <button onclick="App.importJSON('update')" class="mt-2 bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">Atualizar Status</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: MOBILE (MOTORISTA) -->
+            <div id="view-driver-mobile" class="hidden pb-20">
+                <div class="bg-brand-main text-white p-4 rounded-b-xl shadow-lg mb-4 sticky top-0 z-30">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="font-bold text-lg" id="driverWelcome">Olá, Motorista</h2>
+                            <p class="text-xs opacity-90">Sua rota de hoje:</p>
+                        </div>
+                        <select id="driverRouteFilter" onchange="App.renderDriverView()" class="text-xs text-black p-1 rounded">
+                            <!-- Rotas do motorista -->
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="driverDeliveriesList" class="px-4 space-y-4">
+                    <!-- Cards Mobile -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAIS -->
+    <!-- Modal Nova Entrega -->
+    <div id="modalEntrega" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <form onsubmit="App.saveDelivery(event)" class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-4 border-b pb-2">Nova Entrega (Manual)</h3>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div><label class="block text-xs font-bold mb-1">Cód. Funcionario</label><input type="text" name="codigo" required class="w-full border rounded p-2 text-sm"></div>
+                <div><label class="block text-xs font-bold mb-1">Nome</label><input type="text" name="nome" required class="w-full border rounded p-2 text-sm"></div>
+            </div>
+            <div class="mb-4"><label class="block text-xs font-bold mb-1">Endereço</label><input type="text" name="endereco" required class="w-full border rounded p-2 text-sm"></div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div><label class="block text-xs font-bold mb-1">Bairro</label><input type="text" name="bairro" class="w-full border rounded p-2 text-sm"></div>
+                <div><label class="block text-xs font-bold mb-1">Cidade</label><input type="text" name="cidade" value="Cuiabá" class="w-full border rounded p-2 text-sm"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div><label class="block text-xs font-bold mb-1">Telefone (Whatsapp)</label><input type="tel" name="tel1" class="w-full border rounded p-2 text-sm"></div>
+                <div><label class="block text-xs font-bold mb-1">Rota</label><select name="rotaId" id="selectRouteModal" class="w-full border rounded p-2 text-sm"></select></div>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="App.closeModal('modalEntrega')" class="px-4 py-2 rounded border hover:bg-gray-50 text-sm">Cancelar</button>
+                <button type="submit" class="px-4 py-2 rounded bg-brand-main text-white font-bold hover:bg-brand-dark text-sm">Salvar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Nova Rota -->
+    <div id="modalRota" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <form onsubmit="App.saveRoute(event)" class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-lg font-bold mb-4">Configurar Rota</h3>
+            <div class="mb-4"><label class="block text-xs font-bold mb-1">Nome da Rota/Região</label><input type="text" name="nome" placeholder="Ex: Zona Norte - Cohab" required class="w-full border rounded p-2"></div>
+            <div class="mb-4"><label class="block text-xs font-bold mb-1">Motorista Responsável</label><select name="motoristaId" id="selectDriverModal" required class="w-full border rounded p-2"></select></div>
+            <div class="mb-4"><label class="block text-xs font-bold mb-1">Data Prevista de Entrega</label><input type="date" name="dataPrevisao" required class="w-full border rounded p-2"></div>
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="App.closeModal('modalRota')" class="px-4 py-2 rounded border hover:bg-gray-50 text-sm">Cancelar</button>
+                <button type="submit" class="px-4 py-2 rounded bg-brand-main text-white font-bold text-sm">Salvar Rota</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Novo Motorista -->
+    <div id="modalMotorista" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <form onsubmit="App.saveDriver(event)" class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
+            <h3 class="text-lg font-bold mb-4">Cadastrar Motorista</h3>
+            <div class="mb-4"><label class="block text-xs font-bold mb-1">Nome</label><input type="text" name="nome" required class="w-full border rounded p-2"></div>
+            <div class="mb-4"><label class="block text-xs font-bold mb-1">Celular</label><input type="tel" name="telefone" class="w-full border rounded p-2"></div>
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="App.closeModal('modalMotorista')" class="px-4 py-2 rounded border hover:bg-gray-50 text-sm">Cancelar</button>
+                <button type="submit" class="px-4 py-2 rounded bg-brand-main text-white font-bold text-sm">Salvar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Confirmação (Mobile) -->
+    <div id="modalConfirmMobile" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm p-6 rounded-lg">
+            <h3 class="text-lg font-bold">Entregar Cesta?</h3>
+            <p class="text-gray-600 my-2">Func: <span id="confMobName" class="font-bold"></span></p>
+            <div class="flex gap-2 mt-4">
+                <button onclick="document.getElementById('modalConfirmMobile').classList.add('hidden')" class="flex-1 py-3 border rounded">Cancelar</button>
+                <button onclick="App.confirmDeliveryMobile()" class="flex-1 py-3 bg-green-600 text-white rounded font-bold">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+const App = {
+    key: 'dona_antonia_db_v4',
+    // Estrutura de dados relacional
+    db: {
+        deliveries: [],
+        routes: [],
+        drivers: []
+    },
+    currentUser: 'admin', // ou ID do motorista
+    currentTab: 'entregas',
+    tempId: null,
+
+    init() {
+        this.load();
+        if (this.db.drivers.length === 0) this.seedData(); // Dados iniciais de teste
+        this.updateSelectors();
+        this.switchRole('admin');
+    },
+
+    load() {
+        const stored = localStorage.getItem(this.key);
+        if (stored) {
+            try { 
+                const parsed = JSON.parse(stored);
+                // Migração simples se faltar tabelas
+                if (!parsed.routes) parsed.routes = [];
+                if (!parsed.drivers) parsed.drivers = [];
+                this.db = parsed;
+            } catch (e) { console.error("Erro load", e); }
+        }
+    },
+
+    save() {
+        localStorage.setItem(this.key, JSON.stringify(this.db));
+        this.updateSelectors();
+        if(this.currentUser === 'admin') {
+            this.setTab(this.currentTab); // Re-render view atual
+        } else {
+            this.renderDriverView();
+        }
+    },
+
+    seedData() {
+        // Exemplo inicial
+        this.db.drivers = [
+            { id: 'd1', nome: 'Carlos (Zona Norte)', telefone: '65999991234' },
+            { id: 'd2', nome: 'Marcos (Centro)', telefone: '65988881234' }
+        ];
+        this.db.routes = [
+            { id: 'r1', nome: 'Rota CPA - Carvalima', motoristaId: 'd1', dataPrevisao: '2026-01-10' },
+            { id: 'r2', nome: 'Rota Centro - Adm', motoristaId: 'd2', dataPrevisao: '2026-01-11' }
+        ];
+        this.db.deliveries = [
+            { id: 1, codigo: '0054', nome: 'João da Silva', endereco: 'Rua das Flores, 123', bairro: 'CPA 1', cidade: 'Cuiabá', tel1: '65999998888', rotaId: 'r1', status: 'pendente', entregueEm: null },
+            { id: 2, codigo: '0055', nome: 'Maria Souza', endereco: 'Av Getulio Vargas, 500', bairro: 'Centro', cidade: 'Cuiabá', tel1: '65999997777', rotaId: 'r2', status: 'pendente', entregueEm: null }
+        ];
+        this.save();
+    },
+
+    // --- NAVEGAÇÃO E PAPEIS ---
+    
+    switchRole(role) {
+        this.currentUser = role;
+        const adminViews = ['sidebar', 'view-entregas', 'view-rotas', 'view-motoristas', 'view-importar'];
+        const mobileView = document.getElementById('view-driver-mobile');
+        const sidebar = document.getElementById('sidebar');
+
+        if (role === 'admin') {
+            document.body.classList.remove('bg-gray-800'); // Remove dark bg if driver
+            document.body.classList.add('bg-gray-100');
+            sidebar.classList.remove('hidden');
+            mobileView.classList.add('hidden');
+            this.setTab('entregas');
+        } else {
+            // Modo Motorista
+            sidebar.classList.add('hidden');
+            // Esconde todas as views de admin
+            document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+            mobileView.classList.remove('hidden');
+            
+            // Configurar motorista
+            const driver = this.db.drivers.find(d => d.id == role);
+            document.getElementById('driverWelcome').innerText = `Olá, ${driver ? driver.nome : 'Motorista'}`;
+            this.renderDriverView();
+        }
+    },
+
+    setTab(tab) {
+        if(this.currentUser !== 'admin') return;
+        this.currentTab = tab;
+        
+        // Esconder todos
+        document.getElementById('view-entregas').classList.add('hidden');
+        document.getElementById('view-rotas').classList.add('hidden');
+        document.getElementById('view-motoristas').classList.add('hidden');
+        document.getElementById('view-importar').classList.add('hidden');
+        
+        // Mostrar atual
+        if(tab === 'dashboard') {
+            // Simplificado: Dashboard redireciona pra entregas por enquanto
+            this.setTab('entregas');
+            return;
+        }
+        document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+        // Renderizar conteúdo específico
+        if(tab === 'entregas') this.renderDeliveriesTable();
+        if(tab === 'rotas') this.renderRoutesGrid();
+        if(tab === 'motoristas') this.renderDriversList();
+    },
+
+    updateSelectors() {
+        // Atualizar Select de Motoristas no Login
+        const driverOpts = document.getElementById('driverSelectOptions');
+        driverOpts.innerHTML = '';
+        this.db.drivers.forEach(d => {
+            driverOpts.innerHTML += `<option value="${d.id}">🚚 ${d.nome}</option>`;
+        });
+
+        // Atualizar Select de Rotas e Motoristas nos Modais
+        const routeSelect = document.getElementById('selectRouteModal');
+        const driverSelect = document.getElementById('selectDriverModal');
+        const filterRoute = document.getElementById('filterRoute');
+        
+        // Salvar seleções atuais para não perder
+        const currR = routeSelect.value;
+        const currD = driverSelect.value;
+        const currF = filterRoute.value;
+
+        routeSelect.innerHTML = '<option value="">Sem Rota</option>';
+        filterRoute.innerHTML = '<option value="">Todas as Rotas</option>';
+        
+        this.db.routes.forEach(r => {
+            const driverName = this.db.drivers.find(d=>d.id===r.motoristaId)?.nome || '?';
+            const opt = `<option value="${r.id}">${r.nome} (${driverName}) - ${this.formatDate(r.dataPrevisao)}</option>`;
+            routeSelect.innerHTML += opt;
+            filterRoute.innerHTML += opt;
+        });
+
+        driverSelect.innerHTML = '<option value="">Selecione...</option>';
+        this.db.drivers.forEach(d => {
+            driverSelect.innerHTML += `<option value="${d.id}">${d.nome}</option>`;
+        });
+    },
+
+    // --- LOGICA: ENTREGAS (ADMIN) ---
+
+    renderDeliveriesTable() {
+        const tbody = document.getElementById('tableBodyEntregas');
+        tbody.innerHTML = '';
+        
+        const filterR = document.getElementById('filterRoute').value;
+        const filterS = document.getElementById('filterStatus').value;
+        const search = document.getElementById('searchTable').value.toLowerCase();
+
+        let filtered = this.db.deliveries.filter(d => {
+            if (filterR && d.rotaId !== filterR) return false;
+            if (filterS && d.status !== filterS) return false;
+            if (search && !d.nome.toLowerCase().includes(search) && !d.codigo.includes(search)) return false;
+            return true;
+        });
+
+        filtered.forEach(d => {
+            const rota = this.db.routes.find(r => r.id === d.rotaId);
+            const routeName = rota ? rota.nome : '<span class="text-red-500">Sem Rota</span>';
+            const prevDate = rota ? this.formatDate(rota.dataPrevisao) : '-';
+            const isDone = d.status === 'entregue';
+            
+            // Gerar Mensagem Zap
+            let zapMsg = `Olá ${d.nome.split(' ')[0]}, aqui é da Super Cestas Dona Antônia! `;
+            if(isDone) {
+                zapMsg += `Confirmando que sua cesta foi entregue dia ${d.entregueEm}. Obrigado!`;
+            } else if (rota) {
+                zapMsg += `Sua Cesta Carvalima está prevista para chegar dia *${prevDate}*. O endereço é: ${d.endereco}?`;
+            } else {
+                zapMsg += `Estamos organizando sua entrega. Confirma seu endereço: ${d.endereco}?`;
+            }
+            const zapLink = d.tel1 ? `https://wa.me/55${d.tel1.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}` : '#';
+
+            const row = `
+                <tr class="bg-white border-b hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-900">${d.codigo}</td>
+                    <td class="px-4 py-3">${d.nome}</td>
+                    <td class="px-4 py-3 text-xs text-gray-600">${routeName}</td>
+                    <td class="px-4 py-3 text-xs">${prevDate}</td>
+                    <td class="px-4 py-3 text-xs truncate max-w-[200px]" title="${d.endereco}">${d.endereco}</td>
+                    <td class="px-4 py-3">
+                        <span class="${isDone ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs font-medium px-2 py-0.5 rounded">
+                            ${isDone ? 'Entregue' : 'Pendente'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center flex justify-center gap-2">
+                        <a href="${zapLink}" target="_blank" class="text-green-500 hover:text-green-700" title="Avisar no Zap"><i class="fa-brands fa-whatsapp"></i></a>
+                        <button onclick="App.deleteDelivery(${d.id})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    },
+
+    saveDelivery(e) {
+        e.preventDefault();
+        const f = e.target;
+        const newD = {
+            id: Date.now(),
+            codigo: f.codigo.value,
+            nome: f.nome.value,
+            endereco: f.endereco.value,
+            bairro: f.bairro.value,
+            cidade: f.cidade.value,
+            tel1: f.tel1.value,
+            rotaId: f.rotaId.value,
+            status: 'pendente',
+            entregueEm: null
+        };
+        this.db.deliveries.push(newD);
+        this.save();
+        this.closeModal('modalEntrega');
+        f.reset();
+    },
+
+    deleteDelivery(id) {
+        if(confirm('Excluir entrega?')) {
+            this.db.deliveries = this.db.deliveries.filter(d => d.id !== id);
+            this.save();
+        }
+    },
+
+    // --- LOGICA: ROTAS (ADMIN) ---
+    renderRoutesGrid() {
+        const grid = document.getElementById('gridRotas');
+        grid.innerHTML = '';
+        this.db.routes.forEach(r => {
+            const driver = this.db.drivers.find(d => d.id === r.motoristaId);
+            // Count
+            const total = this.db.deliveries.filter(d => d.rotaId === r.id).length;
+            const done = this.db.deliveries.filter(d => d.rotaId === r.id && d.status === 'entregue').length;
+            const percent = total === 0 ? 0 : Math.round((done/total)*100);
+
+            grid.innerHTML += `
+                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                    <div class="flex justify-between mb-2">
+                        <h3 class="font-bold text-lg text-brand-main">${r.nome}</h3>
+                        <button onclick="App.deleteRoute('${r.id}')" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-1"><i class="fa-solid fa-user-tag"></i> Motorista: <strong>${driver?.nome || '?'}</strong></p>
+                    <p class="text-sm text-gray-600 mb-3"><i class="fa-regular fa-calendar"></i> Previsão: <strong>${this.formatDate(r.dataPrevisao)}</strong></p>
+                    
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-1">
+                        <div class="bg-brand-accent h-2.5 rounded-full" style="width: ${percent}%"></div>
+                    </div>
+                    <p class="text-xs text-right text-gray-500">${done}/${total} entregues</p>
+                </div>
+            `;
+        });
+    },
+
+    saveRoute(e) {
+        e.preventDefault();
+        const f = e.target;
+        this.db.routes.push({
+            id: 'r' + Date.now(),
+            nome: f.nome.value,
+            motoristaId: f.motoristaId.value,
+            dataPrevisao: f.dataPrevisao.value
+        });
+        this.save();
+        this.closeModal('modalRota');
+        f.reset();
+    },
+    
+    deleteRoute(id) {
+        if(confirm('Ao apagar a rota, as entregas ficarão "Sem Rota". Continuar?')) {
+            this.db.routes = this.db.routes.filter(r => r.id !== id);
+            // Desvincular entregas
+            this.db.deliveries.forEach(d => {
+                if(d.rotaId === id) d.rotaId = "";
+            });
+            this.save();
+        }
+    },
+
+    // --- LOGICA: MOTORISTAS (ADMIN) ---
+    renderDriversList() {
+        const list = document.getElementById('listMotoristas');
+        list.innerHTML = '';
+        this.db.drivers.forEach(d => {
+            list.innerHTML += `
+                <tr class="bg-white border-b">
+                    <td class="px-6 py-4 font-medium text-gray-900">${d.nome}</td>
+                    <td class="px-6 py-4">${d.telefone}</td>
+                    <td class="px-6 py-4">
+                        <button onclick="App.deleteDriver('${d.id}')" class="text-red-600 hover:underline">Remover</button>
+                    </td>
+                </tr>
+            `;
+        });
+    },
+
+    saveDriver(e) {
+        e.preventDefault();
+        const f = e.target;
+        this.db.drivers.push({
+            id: 'd' + Date.now(),
+            nome: f.nome.value,
+            telefone: f.telefone.value
+        });
+        this.save();
+        this.closeModal('modalMotorista');
+        f.reset();
+    },
+
+    deleteDriver(id) {
+        if(confirm('Remover motorista?')) {
+            this.db.drivers = this.db.drivers.filter(d => d.id !== id);
+            this.save();
+        }
+    },
+
+    // --- LOGICA: IMPORTAR JSON ---
+    importJSON(type) {
+        try {
+            const inputId = type === 'new' ? 'jsonInputNew' : 'jsonInputUpdate';
+            const raw = document.getElementById(inputId).value;
+            if(!raw) return alert('Cole o JSON primeiro');
+            
+            const data = JSON.parse(raw);
+            let count = 0;
+
+            if (type === 'new') {
+                // Criar novas
+                data.forEach(item => {
+                    // Verifica se já existe pelo código
+                    if (!this.db.deliveries.find(d => d.codigo == item.codigo)) {
+                        this.db.deliveries.push({
+                            id: Date.now() + Math.random(),
+                            codigo: item.codigo,
+                            nome: item.nome,
+                            endereco: item.endereco || 'Endereço não informado',
+                            bairro: item.bairro || '',
+                            cidade: item.cidade || 'Cuiabá',
+                            tel1: item.tel1 || '',
+                            rotaId: '', // Vai sem rota
+                            status: 'pendente',
+                            entregueEm: null
+                        });
+                        count++;
+                    }
+                });
+                alert(`${count} novas entregas importadas! Agora vincule-as a uma rota.`);
+            } else {
+                // Atualizar
+                data.forEach(item => {
+                    const target = this.db.deliveries.find(d => d.codigo == item.codigo);
+                    if(target) {
+                        if(item.status) target.status = item.status;
+                        if(item.entregueEm) target.entregueEm = item.entregueEm;
+                        count++;
+                    }
+                });
+                alert(`${count} entregas atualizadas!`);
+            }
+            this.save();
+            document.getElementById(inputId).value = '';
+        } catch (e) {
+            alert('Erro no JSON. Verifique o formato. ' + e.message);
+        }
+    },
+
+    // --- LOGICA: MOBILE (MOTORISTA) ---
+    renderDriverView() {
+        const container = document.getElementById('driverDeliveriesList');
+        container.innerHTML = '';
+        
+        // Populate route filter for driver
+        const routeFilter = document.getElementById('driverRouteFilter');
+        // Só rotas desse motorista
+        const myRoutes = this.db.routes.filter(r => r.motoristaId == this.currentUser);
+        
+        if (routeFilter.options.length === 0 && myRoutes.length > 0) {
+            myRoutes.forEach(r => {
+                routeFilter.innerHTML += `<option value="${r.id}">${r.nome}</option>`;
+            });
+        }
+
+        const selectedRouteId = routeFilter.value || (myRoutes[0] ? myRoutes[0].id : null);
+        
+        if (!selectedRouteId) {
+            container.innerHTML = '<div class="text-center text-gray-500 mt-10">Você não tem rotas atribuídas.</div>';
+            return;
+        }
+
+        const deliveries = this.db.deliveries.filter(d => d.rotaId === selectedRouteId);
+        
+        // Sort: Pendente first
+        deliveries.sort((a,b) => a.status === 'entregue' ? 1 : -1);
+
+        deliveries.forEach(d => {
+            const isDone = d.status === 'entregue';
+            const cardHtml = `
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 ${isDone ? 'border-green-500 opacity-75' : 'border-yellow-400'}">
+                    <div class="flex justify-between">
+                        <span class="font-bold text-lg">#${d.codigo}</span>
+                        ${isDone ? '<span class="text-green-600 font-bold text-xs">ENTREGUE</span>' : ''}
+                    </div>
+                    <h3 class="font-bold text-gray-800">${d.nome}</h3>
+                    <p class="text-sm text-gray-600 mb-2">${d.endereco} - ${d.bairro}</p>
+                    
+                    <div class="flex gap-2 mt-3">
+                        ${d.tel1 ? `<a href="https://wa.me/55${d.tel1.replace(/\D/g,'')}" class="flex-1 bg-green-100 text-green-700 py-2 rounded text-center text-sm font-bold"><i class="fa-brands fa-whatsapp"></i> Zap</a>` : ''}
+                        ${!isDone ? `<button onclick="App.openConfirmMobile('${d.id}', '${d.nome}')" class="flex-1 bg-brand-main text-white py-2 rounded text-center text-sm font-bold">Confirmar</button>` : `<span class="flex-1 text-center text-xs py-2 text-gray-400">Entregue: ${d.entregueEm}</span>`}
+                    </div>
+                </div>
+            `;
+            container.innerHTML += cardHtml;
+        });
+    },
+
+    openConfirmMobile(id, nome) {
+        this.tempId = id;
+        document.getElementById('confMobName').innerText = nome;
+        document.getElementById('modalConfirmMobile').classList.remove('hidden');
+    },
+
+    confirmDeliveryMobile() {
+        if(!this.tempId) return;
+        const now = new Date();
+        const timeStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        
+        const target = this.db.deliveries.find(d => d.id == this.tempId); // Loose equality for string/num match
+        if(target) {
+            target.status = 'entregue';
+            target.entregueEm = timeStr;
+            this.save();
+        }
+        document.getElementById('modalConfirmMobile').classList.add('hidden');
+        this.renderDriverView();
+    },
+
+    // --- UTILITARIOS ---
+    openModal(id) { document.getElementById(id).classList.remove('hidden'); },
+    closeModal(id) { document.getElementById(id).classList.add('hidden'); },
+    
+    formatDate(dateStr) {
+        if(!dateStr) return '';
+        const [y,m,d] = dateStr.split('-');
+        return `${d}/${m}/${y}`;
+    },
+
+    exportData() {
+        const blob = new Blob([JSON.stringify(this.db, null, 2)], {type : 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `backup_dona_antonia_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
