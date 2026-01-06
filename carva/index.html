@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Super Cestas Dona Antônia | Logística</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            main: '#c2185b', // Rosa Dona Antônia
+                            dark: '#8c1141',
+                            light: '#fce4ec',
+                            accent: '#2e7d32', // Verde Carvalima
+                            whatsapp: '#25D366'
+                        }
+                    },
+                    screens: {
+                        'xs': '480px', // Breakpoint extra pequeno
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Ajustes Globais de Scroll e Toque */
+        body { -webkit-tap-highlight-color: transparent; }
+        
+        /* Tabela estilo Planilha Responsiva */
+        .spreadsheet-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; white-space: nowrap; font-size: 0.75rem; }
+        .spreadsheet-table td { white-space: nowrap; font-size: 0.8rem; }
+        .spreadsheet-container { max-height: 70vh; overflow: auto; border: 1px solid #e5e7eb; -webkit-overflow-scrolling: touch; }
+        
+        /* Scrollbar fina e moderna */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+
+        /* Foto grande no mobile */
+        .mobile-house-photo { width: 100%; height: 220px; object-fit: cover; border-radius: 8px 8px 0 0; }
+        
+        /* Estado cancelado/falha */
+        .row-cancelled { background-color: #f9fafb; color: #9ca3af; }
+        .row-cancelled td { text-decoration: line-through; }
+        .row-cancelled .no-strike { text-decoration: none; }
+        
+        .row-failed { background-color: #fef2f2; color: #991b1b; } /* Vermelho claro para falhas */
+        
+        /* Accordion Vizinho - Remove marcador padrão */
+        details.neighbor-details summary { list-style: none; outline: none; }
+        details.neighbor-details summary::-webkit-details-marker { display: none; }
+        
+        /* Animações Suaves */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans text-sm h-screen flex flex-col overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="bg-white border-b border-gray-200 shadow-sm z-30 flex-none sticky top-0">
+        <div class="px-4 py-3 flex justify-between items-center max-w-7xl mx-auto w-full">
+            <div class="flex items-center gap-3">
+                <div class="bg-brand-main text-white p-2 rounded-lg shadow-md shrink-0">
+                    <i class="fa-solid fa-basket-shopping text-xl"></i>
+                </div>
+                <div class="leading-tight">
+                    <h1 class="font-bold text-base md:text-lg text-brand-main truncate max-w-[150px] md:max-w-none">Super Cestas</h1>
+                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold">Logística Carvalima <span class="hidden xs:inline text-brand-accent bg-green-100 px-1 rounded border border-green-200 ml-1">PARCEIRO</span></p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Seletor de Perfil -->
+                <select id="userRole" onchange="App.switchRole(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-brand-main focus:border-brand-main block p-2 pr-8 shadow-sm">
+                    <option value="admin">👑 Admin</option>
+                    <optgroup label="Motoristas" id="driverSelectOptions">
+                        <!-- Preenchido via JS -->
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <!-- SIDEBAR (Desktop Admin) -->
+        <aside id="sidebar" class="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col transition-all duration-300 shadow-sm z-20">
+            <nav class="p-4 space-y-2 mt-2 flex-1">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">Gestão</p>
+                <button onclick="App.setTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600 font-medium">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span>Visão Geral</span>
+                </button>
+                
+                <button onclick="App.setTab('entregas')" id="btn-entregas" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600 font-medium">
+                    <i class="fa-solid fa-truck-ramp-box w-5 text-center"></i> <span>Entregas do Mês</span>
+                </button>
+
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2 mt-4">Cadastros</p>
+                <button onclick="App.setTab('funcionarios')" id="btn-funcionarios" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600 font-medium">
+                    <i class="fa-solid fa-users w-5 text-center"></i> <span>Base Funcionários</span>
+                </button>
+                
+                <button onclick="App.setTab('configuracoes')" id="btn-configuracoes" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 hover:text-gray-800 flex items-center gap-3 transition-colors text-gray-600 font-medium">
+                    <i class="fa-solid fa-gears w-5 text-center"></i> <span>Configurações</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
+                <label class="text-[10px] text-gray-500 font-bold uppercase mb-1 block">Zap Admin (Notificações)</label>
+                <div class="flex gap-2">
+                    <input type="tel" id="adminPhoneConfig" onchange="App.setAdminPhone(this.value)" class="w-full text-xs border border-gray-300 rounded p-2 focus:ring-brand-main focus:border-brand-main" placeholder="65 9...">
+                </div>
+            </div>
+        </aside>
+
+        <!-- AREA DE CONTEUDO -->
+        <main class="flex-1 overflow-auto bg-gray-50 p-4 pb-24 md:pb-4 relative scroll-smooth w-full">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="hidden max-w-6xl mx-auto fade-in">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2"><i class="fa-solid fa-chart-line text-brand-main"></i> Visão Geral</h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-8">
+                    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border-l-4 border-blue-500 relative overflow-hidden">
+                        <p class="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wider z-10 relative">Total na Rota</p>
+                        <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-1 z-10 relative" id="dashTotal">0</p>
+                        <i class="fa-solid fa-box absolute right-2 bottom-2 text-blue-100 text-5xl -z-0"></i>
+                    </div>
+                    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border-l-4 border-yellow-400 relative overflow-hidden">
+                        <p class="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wider z-10 relative">Pendentes</p>
+                        <p class="text-2xl md:text-3xl font-bold text-yellow-600 mt-1 z-10 relative" id="dashPending">0</p>
+                        <i class="fa-solid fa-clock absolute right-2 bottom-2 text-yellow-50 text-5xl -z-0"></i>
+                    </div>
+                    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border-l-4 border-green-500 relative overflow-hidden">
+                        <p class="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wider z-10 relative">Entregues</p>
+                        <p class="text-2xl md:text-3xl font-bold text-green-600 mt-1 z-10 relative" id="dashDone">0</p>
+                        <i class="fa-solid fa-check-circle absolute right-2 bottom-2 text-green-50 text-5xl -z-0"></i>
+                    </div>
+                    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border-l-4 border-red-400 relative overflow-hidden">
+                        <p class="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wider z-10 relative">Não Entregues</p>
+                        <p class="text-2xl md:text-3xl font-bold text-red-500 mt-1 z-10 relative" id="dashCancelled">0</p>
+                        <i class="fa-solid fa-circle-xmark absolute right-2 bottom-2 text-red-50 text-5xl -z-0"></i>
+                    </div>
+                </div>
+                
+                <h3 class="font-bold text-gray-700 mb-4 px-1">Progresso por Rota Ativa</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dashRoutesList"></div>
+            </div>
+
+            <!-- VIEW: ENTREGAS DO MÊS (LOGISTICA) -->
+            <div id="view-entregas" class="hidden h-full flex flex-col fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+                    <h2 class="text-xl font-bold text-gray-800">📦 Entregas Ativas (Mês)</h2>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="App.generateReportCarvalima()" class="flex-1 md:flex-none bg-brand-whatsapp hover:bg-green-600 text-white px-3 py-2 rounded-lg shadow text-xs font-bold transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-brands fa-whatsapp"></i> <span class="hidden xs:inline">Relatório</span> Carvalima
+                        </button>
+                        <button onclick="App.openModal('modalEntrega')" class="flex-1 md:flex-none bg-brand-main hover:bg-brand-dark text-white px-3 py-2 rounded-lg shadow text-xs font-bold transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Lançar Avulso
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-t-xl border border-gray-200 flex flex-col md:flex-row gap-3 items-center text-xs shadow-sm">
+                    <span class="font-bold text-gray-500 uppercase self-start md:self-center"><i class="fa-solid fa-filter"></i> Filtros:</span>
+                    <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                        <select id="filterRoute" onchange="App.renderDeliveriesTable()" class="border rounded-lg p-2 bg-gray-50 min-w-[120px]">
+                            <option value="">Todas Rotas</option>
+                        </select>
+                        <select id="filterStatus" onchange="App.renderDeliveriesTable()" class="border rounded-lg p-2 bg-gray-50 min-w-[120px]">
+                            <option value="">Status (Todos)</option>
+                            <option value="pendente">Pendentes</option>
+                            <option value="entregue">Entregues</option>
+                            <option value="nao-entregue">Não Entregues</option>
+                            <option value="cancelada">Suspensas</option>
+                        </select>
+                    </div>
+                    <div class="relative w-full md:w-48 ml-auto">
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                        <input type="text" id="searchTable" onkeyup="App.renderDeliveriesTable()" placeholder="Buscar..." class="border rounded-lg pl-8 p-2 w-full">
+                    </div>
+                </div>
+
+                <div class="spreadsheet-container bg-white shadow-md rounded-b-xl flex-1 w-full">
+                    <table class="w-full text-left border-collapse spreadsheet-table">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 font-bold">
+                            <tr>
+                                <th class="px-4 py-3 border-b text-center w-12">#</th>
+                                <th class="px-4 py-3 border-b">Cód.</th>
+                                <th class="px-4 py-3 border-b">Nome</th>
+                                <th class="px-4 py-3 border-b">Rota</th>
+                                <th class="px-4 py-3 border-b text-center">Status</th>
+                                <th class="px-4 py-3 border-b">Data / Hora</th>
+                                <th class="px-4 py-3 border-b">Quem Recebeu / Motivo</th>
+                                <th class="px-4 py-3 border-b text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyEntregas" class="text-xs divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: BASE FUNCIONÁRIOS (MASTER) -->
+            <div id="view-funcionarios" class="hidden h-full flex flex-col fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+                    <h2 class="text-xl font-bold text-gray-800">👥 Base Master</h2>
+                    <div class="flex gap-2 w-full md:w-auto">
+                         <button onclick="App.openModal('modalImportFunc')" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg shadow text-xs font-bold transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-import"></i> Importar
+                        </button>
+                        <button onclick="App.openEmployeeModal()" class="flex-1 md:flex-none bg-brand-main hover:bg-brand-dark text-white px-3 py-2 rounded-lg shadow text-xs font-bold transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> Novo
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-3 rounded-t-xl border border-gray-200 flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-search text-gray-400 ml-1"></i>
+                    <input type="text" id="searchFunc" onkeyup="App.renderEmployeesTable()" placeholder="Buscar por Nome, Código ou Endereço..." class="w-full text-sm outline-none bg-transparent p-1">
+                </div>
+                
+                <div class="spreadsheet-container bg-white shadow-md rounded-b-xl flex-1 w-full">
+                    <table class="w-full text-left border-collapse spreadsheet-table">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 font-bold">
+                            <tr>
+                                <th class="px-4 py-3 border-b w-12 text-center">Foto</th>
+                                <th class="px-4 py-3 border-b w-16">Cód.</th>
+                                <th class="px-4 py-3 border-b">Nome</th>
+                                <th class="px-4 py-3 border-b">Endereço</th>
+                                <th class="px-4 py-3 border-b">Contatos</th>
+                                <th class="px-4 py-3 border-b">Vizinhos</th>
+                                <th class="px-4 py-3 border-b text-center w-24">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyFuncionarios" class="text-xs divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: CONFIGURAÇÕES (AGRUPADA) -->
+            <div id="view-configuracoes" class="hidden max-w-5xl mx-auto space-y-6 fade-in">
+                
+                <!-- ROTAS -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                        <h3 class="font-bold text-gray-700 text-lg">🗺️ Rotas de Entrega</h3>
+                        <button onclick="App.openModal('modalRota')" class="bg-brand-main text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-dark transition-colors">+ Nova Rota</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="gridRotas"></div>
+                </div>
+
+                <!-- MOTORISTAS -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                        <h3 class="font-bold text-gray-700 text-lg">🚚 Equipe de Entregadores</h3>
+                        <button onclick="App.openModal('modalMotorista')" class="bg-brand-main text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-dark transition-colors">+ Novo Motorista</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-xs uppercase text-gray-500 rounded-lg">
+                                <tr>
+                                    <th class="px-4 py-3 rounded-l-lg">Nome</th>
+                                    <th class="px-4 py-3">Telefone</th>
+                                    <th class="px-4 py-3 rounded-r-lg text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listMotoristas" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- IMPORTAR/EXPORTAR -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                    <h3 class="font-bold text-gray-700 mb-4 border-b border-gray-100 pb-2 text-lg">💾 Sistema & Dados</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="font-bold text-brand-main text-sm mb-2"><i class="fa-solid fa-magic"></i> Gerar Entregas do Mês</h4>
+                            <p class="text-xs text-gray-500 mb-2 leading-relaxed">Cole os <strong>CÓDIGOS</strong> dos funcionários que receberão cesta este mês. O sistema buscará os dados na Base Master.</p>
+                            <textarea id="jsonInputCodes" class="w-full border border-gray-300 p-3 text-xs h-24 rounded-lg font-mono bg-gray-50 focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all" placeholder='["1001", "1002", "1003"]'></textarea>
+                            <button onclick="App.importByCodes()" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors w-full md:w-auto shadow-sm">
+                                Processar e Gerar Entregas
+                            </button>
+                        </div>
+                        <div class="flex flex-col justify-center items-start md:border-l md:pl-8 border-gray-100">
+                            <button onclick="App.exportData()" class="bg-gray-800 text-white px-5 py-3 rounded-lg text-sm font-bold hover:bg-gray-900 w-full mb-3 shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-download"></i> Backup Completo (JSON)
+                            </button>
+                            <p class="text-[10px] text-gray-500 text-center md:text-left w-full">⚠️ Baixe o backup regularmente para garantir a segurança dos dados.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: MOBILE (MOTORISTA) -->
+            <div id="view-driver-mobile" class="hidden pb-24 fade-in">
+                <div class="bg-brand-main text-white p-5 rounded-b-3xl shadow-lg mb-6 sticky top-0 z-40">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <h2 class="font-bold text-xl" id="driverWelcome">Olá, Motorista</h2>
+                            <p class="text-xs opacity-90 font-medium">Bom trabalho hoje!</p>
+                        </div>
+                        <div class="bg-white/20 p-2 rounded-full backdrop-blur-sm">
+                            <i class="fa-solid fa-truck text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 p-1 rounded-lg">
+                        <select id="driverRouteFilter" onchange="App.renderDriverView()" class="w-full bg-transparent text-white text-sm font-bold p-2 outline-none border-none cursor-pointer">
+                            <!-- Rotas do motorista -->
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="driverDeliveriesList" class="px-4 space-y-5 max-w-lg mx-auto">
+                    <!-- Cards Mobile -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION (ADMIN ONLY) -->
+    <nav id="admin-mobile-nav" class="hidden md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 justify-around items-center h-16 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe">
+        <button onclick="App.setTab('dashboard')" id="mob-btn-dashboard" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-brand-main transition-colors active:text-brand-main">
+            <i class="fa-solid fa-chart-pie text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Geral</span>
+        </button>
+        <button onclick="App.setTab('entregas')" id="mob-btn-entregas" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-brand-main transition-colors active:text-brand-main">
+            <i class="fa-solid fa-box text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Entregas</span>
+        </button>
+        <div class="w-px h-8 bg-gray-200"></div>
+        <button onclick="App.setTab('funcionarios')" id="mob-btn-funcionarios" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-brand-main transition-colors active:text-brand-main">
+            <i class="fa-solid fa-users text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Equipe</span>
+        </button>
+        <button onclick="App.setTab('configuracoes')" id="mob-btn-configuracoes" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-brand-main transition-colors active:text-brand-main">
+            <i class="fa-solid fa-gears text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Config</span>
+        </button>
+    </nav>
+
+    <!-- MODAIS -->
+    
+    <!-- Modal Cadastro Funcionário (Master) -->
+    <div id="modalFuncionario" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <form id="formFuncionario" onsubmit="App.saveEmployee(event)" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] animate-[fadeIn_0.2s_ease-out]">
+            <!-- Conteúdo mantido -->
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white rounded-t-2xl z-10">
+                <h3 class="text-lg font-bold text-gray-800">Cadastro de Funcionário</h3>
+                <button type="button" onclick="App.closeModal('modalFuncionario')" class="text-gray-400 hover:text-gray-600 p-2"><i class="fa-solid fa-times text-lg"></i></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <input type="hidden" name="id" id="empId"> 
+                
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Código</label>
+                        <input type="text" name="codigo" id="empCodigo" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-main focus:border-brand-main outline-none transition-all">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Completo</label>
+                        <input type="text" name="nome" id="empNome" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-main focus:border-brand-main outline-none transition-all">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Endereço Fixo</label>
+                    <input type="text" name="endereco" id="empEndereco" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-main focus:border-brand-main outline-none transition-all" placeholder="Rua, Número, Complemento">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bairro</label>
+                        <input type="text" name="bairro" id="empBairro" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-main focus:border-brand-main outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cidade</label>
+                        <input type="text" name="cidade" id="empCidade" value="Cuiabá" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-main focus:border-brand-main outline-none transition-all">
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+                    <h4 class="text-xs font-bold text-brand-main uppercase mb-3 flex items-center gap-2"><i class="fa-brands fa-whatsapp"></i> Contatos & Vizinhos</h4>
+                    
+                    <div class="mb-3">
+                        <label class="block text-[10px] text-gray-500 font-bold uppercase mb-1">Celular Funcionário</label>
+                        <input type="tel" name="tel1" id="empTel1" class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white" placeholder="(65) 9...">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="col-span-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1 border-t border-gray-200 pt-2">Vizinho 1 (Emergência)</div>
+                        <div><input type="text" id="empNomeViz1" class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white" placeholder="Nome"></div>
+                        <div><input type="tel" id="empTelViz1" class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white" placeholder="WhatsApp"></div>
+                        
+                        <div class="col-span-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1 border-t border-gray-200 pt-2">Vizinho 2 (Emergência)</div>
+                        <div><input type="text" id="empNomeViz2" class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white" placeholder="Nome"></div>
+                        <div><input type="tel" id="empTelViz2" class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white" placeholder="WhatsApp"></div>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Foto da Casa (URL)</label>
+                    <div class="flex gap-2">
+                        <input type="url" name="fotoCasa" id="empFoto" class="flex-1 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-main focus:border-brand-main outline-none transition-all" placeholder="https://...">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 border border-gray-200"><i class="fa-solid fa-image"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3 sticky bottom-0 z-10">
+                <button type="button" onclick="App.closeModal('modalFuncionario')" class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-600 font-bold text-sm hover:bg-gray-100 transition-colors">Cancelar</button>
+                <button type="submit" class="px-5 py-2.5 rounded-lg bg-brand-main text-white font-bold text-sm shadow hover:bg-brand-dark transition-transform active:scale-95">Salvar Cadastro</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Importar -->
+    <div id="modalImportFunc" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <h3 class="font-bold text-lg mb-4 text-brand-main flex items-center gap-2"><i class="fa-solid fa-file-import"></i> Importar JSON</h3>
+            <textarea id="jsonImportFunc" class="w-full border border-gray-300 p-3 text-xs h-40 rounded-lg font-mono bg-gray-50 mb-4 outline-none"></textarea>
+            <div class="flex justify-end gap-3"><button onclick="App.closeModal('modalImportFunc')" class="border px-4 py-2 rounded-lg text-sm font-bold">Cancelar</button><button onclick="App.importEmployees()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Importar</button></div>
+        </div>
+    </div>
+
+    <!-- Modal Lançamento -->
+    <div id="modalEntrega" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <form onsubmit="App.saveDelivery(event)" class="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-gray-100"><h3 class="text-lg font-bold text-gray-800">Lançar Entrega</h3></div>
+            <div class="p-6 overflow-y-auto">
+                <div class="mb-5"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar</label><select id="selectEmployeeDelivery" onchange="App.fillDeliveryForm(this.value)" class="w-full border p-3 rounded-lg text-sm"></select></div>
+                <div class="grid grid-cols-4 gap-3 mb-4"><div class="col-span-1"><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cód.</label><input type="text" name="codigo" id="delCodigo" required class="w-full border p-2 rounded-lg bg-gray-100" readonly></div><div class="col-span-3"><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nome</label><input type="text" name="nome" id="delNome" required class="w-full border p-2 rounded-lg bg-gray-100" readonly></div></div>
+                <div class="mb-2"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rota</label><select name="rotaId" id="selectRouteModal" class="w-full border p-3 rounded-lg text-sm"></select></div>
+            </div>
+            <div class="p-5 border-t border-gray-100 flex justify-end gap-3"><button type="button" onclick="App.closeModal('modalEntrega')" class="px-4 py-2 border rounded-lg text-sm font-bold">Cancelar</button><button type="submit" class="px-4 py-2 bg-brand-main text-white rounded-lg text-sm font-bold">Lançar</button></div>
+        </form>
+    </div>
+
+    <!-- Modais Genéricos -->
+    <div id="modalRota" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm"><form onsubmit="App.saveRoute(event)" class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6"><h3 class="font-bold text-lg mb-4">Nova Rota</h3><input type="text" name="nome" placeholder="Nome" class="w-full border p-3 rounded-lg mb-3"><select name="motoristaId" id="selectDriverModal" class="w-full border p-3 rounded-lg mb-3"></select><input type="date" name="dataPrevisao" class="w-full border p-3 rounded-lg mb-6"><div class="flex justify-end gap-3"><button type="button" onclick="App.closeModal('modalRota')" class="border px-4 py-2 rounded-lg text-sm font-bold">Cancelar</button><button class="bg-brand-main text-white px-4 py-2 rounded-lg text-sm font-bold">Salvar</button></div></form></div>
+    <div id="modalMotorista" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm"><form onsubmit="App.saveDriver(event)" class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6"><h3 class="font-bold text-lg mb-4">Novo Motorista</h3><input type="text" name="nome" placeholder="Nome" class="w-full border p-3 rounded-lg mb-3"><input type="tel" name="telefone" placeholder="Tel" class="w-full border p-3 rounded-lg mb-6"><div class="flex justify-end gap-3"><button type="button" onclick="App.closeModal('modalMotorista')" class="border px-4 py-2 rounded-lg text-sm font-bold">Cancelar</button><button class="bg-brand-main text-white px-4 py-2 rounded-lg text-sm font-bold">Salvar</button></div></form></div>
+
+    <!-- Modal Confirmação (Mobile - Entregador) -->
+    <div id="modalConfirmMobile" class="fixed inset-0 bg-black bg-opacity-80 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+            <div class="text-center mb-4">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold text-gray-400 border-4 border-gray-200" id="statusIcon">
+                    <i class="fa-solid fa-question"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">Finalizar Entrega?</h3>
+                <p class="text-sm text-gray-500 mt-1">Funcionário: <span id="confMobName" class="font-bold text-gray-800"></span></p>
+            </div>
+            
+            <!-- Abas de Status -->
+            <div class="flex p-1 bg-gray-100 rounded-xl mb-6">
+                <button type="button" onclick="App.setDeliveryStatus('success')" id="tabSuccess" class="flex-1 py-2 rounded-lg text-sm font-bold text-green-700 bg-white shadow-sm transition-all">
+                    <i class="fa-solid fa-check mr-1"></i> Entregue
+                </button>
+                <button type="button" onclick="App.setDeliveryStatus('fail')" id="tabFail" class="flex-1 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-red-600 transition-all">
+                    <i class="fa-solid fa-xmark mr-1"></i> Não Entregue
+                </button>
+            </div>
+
+            <!-- Conteúdo Sucesso -->
+            <div id="sectionSuccess" class="mb-6">
+                <label class="block text-xs font-bold mb-2 text-green-700 uppercase">Quem recebeu?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="receiverNameInput" placeholder="Nome (Ex: Esposa, Porteiro)" class="flex-1 border border-gray-300 rounded-lg p-3 text-sm outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500">
+                    <button type="button" onclick="App.fillReceiverSelf()" class="bg-white border border-gray-300 text-gray-600 text-xs px-3 py-2 rounded-lg font-bold hover:bg-gray-100 whitespace-nowrap">O Próprio</button>
+                </div>
+            </div>
+
+            <!-- Conteúdo Falha -->
+            <div id="sectionFail" class="mb-6 hidden">
+                <label class="block text-xs font-bold mb-2 text-red-600 uppercase">Qual o motivo?</label>
+                <select id="failReasonInput" class="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 bg-white">
+                    <option value="Ninguém em casa">Ninguém em casa</option>
+                    <option value="Mudou de endereço">Mudou de endereço</option>
+                    <option value="Recusou recebimento">Recusou recebimento</option>
+                    <option value="Endereço não localizado">Endereço não localizado</option>
+                    <option value="Outro">Outro</option>
+                </select>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('modalConfirmMobile').classList.add('hidden')" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-600 font-bold hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button onclick="App.confirmDeliveryMobile()" id="btnConfirmAction" class="flex-1 py-3 bg-brand-accent text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+/**
+ * SISTEMAS - Core Application Logic
+ * Versão 11.0 - Features: Motivo de Falha & Relatório WhatsApp
+ */
+const App = {
+    key: 'dona_antonia_db_v11', 
+    db: { employees: [], deliveries: [], routes: [], drivers: [], adminPhone: '' },
+    currentUser: 'admin',
+    currentTab: 'dashboard',
+    tempId: null,
+    tempName: null,
+    currentDeliveryStatus: 'success', // 'success' or 'fail'
+    genericHouse: 'https://cdn-icons-png.flaticon.com/512/619/619032.png',
+
+    init() {
+        this.load();
+        if (this.db.employees.length === 0) this.seedData();
+        this.updateSelectors();
+        if(this.db.adminPhone) document.getElementById('adminPhoneConfig').value = this.db.adminPhone;
+        this.switchRole('admin');
+    },
+
+    load() {
+        const stored = localStorage.getItem(this.key);
+        if (stored) {
+            try { 
+                const parsed = JSON.parse(stored);
+                if (!parsed.employees) parsed.employees = [];
+                this.db = parsed;
+            } catch (e) { console.error("Erro load", e); }
+        }
+    },
+
+    save() {
+        localStorage.setItem(this.key, JSON.stringify(this.db));
+        this.updateSelectors();
+        if(this.currentUser === 'admin') this.setTab(this.currentTab);
+        else this.renderDriverView();
+    },
+
+    seedData() {
+        this.db.drivers = [
+            { id: 'd1', nome: 'Carlos (Região Sul)', telefone: '65999991111' },
+            { id: 'd2', nome: 'Marcos (Região Norte)', telefone: '65999992222' }
+        ];
+        this.db.routes = [
+            { id: 'r1', nome: 'Rota 01 - Pedra 90/Tijucal', motoristaId: 'd1', dataPrevisao: '2026-01-15' },
+            { id: 'r2', nome: 'Rota 02 - CPA/Centro', motoristaId: 'd2', dataPrevisao: '2026-01-16' }
+        ];
+        this.db.employees = [
+            { id: 101, codigo: '1001', nome: 'João da Silva', endereco: 'Rua 30, Qd 15, Casa 02', bairro: 'Pedra 90', cidade: 'Cuiabá', tel1: '65992001001', nomeViz1: 'Dona Maria', telViz1: '65992002002', nomeViz2: 'Seu Zé', telViz2: '65992002003', fotoCasa: this.genericHouse },
+            { id: 102, codigo: '1002', nome: 'Maria Aparecida', endereco: 'Rua Pernambuco, 550', bairro: 'CPA 2', cidade: 'Cuiabá', tel1: '65992003003', nomeViz1: 'Cláudia (Frente)', telViz1: '65992004004', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse },
+            { id: 103, codigo: '1003', nome: 'Pedro Henrique', endereco: 'Av. Brasil, 1200', bairro: 'Santa Rosa', cidade: 'Cuiabá', tel1: '65992005005', nomeViz1: 'Portaria', telViz1: '65992005006', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse },
+            { id: 104, codigo: '1004', nome: 'Ana Clara', endereco: 'Rua dos Lírios, 88', bairro: 'Tijucal', cidade: 'Cuiabá', tel1: '65992006006', nomeViz1: 'Sônia', telViz1: '65992007007', nomeViz2: 'Bia', telViz2: '65992008008', fotoCasa: this.genericHouse },
+            { id: 105, codigo: '1005', nome: 'Lucas Mendes', endereco: 'Rua Cândido Mariano, 400', bairro: 'Centro', cidade: 'Cuiabá', tel1: '65992009009', nomeViz1: '', telViz1: '', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse }
+        ];
+        
+        this.db.deliveries = [];
+        
+        // 1. Pendente (Normal)
+        this.db.deliveries.push({ id: 1, employeeId: 101, codigo: '1001', nome: 'João da Silva', rotaId: 'r1', status: 'pendente', entregueEm: null, recebidoPor: '' });
+        
+        // 2. Entregue (Recebido pela Própria)
+        this.db.deliveries.push({ id: 2, employeeId: 102, codigo: '1002', nome: 'Maria Aparecida', rotaId: 'r2', status: 'entregue', entregueEm: '06/01/2026 09:30', recebidoPor: 'Própria' });
+        
+        // 3. Não Entregue (Ninguém em casa)
+        this.db.deliveries.push({ id: 3, employeeId: 103, codigo: '1003', nome: 'Pedro Henrique', rotaId: 'r2', status: 'nao-entregue', entregueEm: '06/01/2026 10:15', recebidoPor: 'Ninguém em casa' });
+        
+        // 4. Entregue (Recebido por Vizinho)
+        this.db.deliveries.push({ id: 4, employeeId: 104, codigo: '1004', nome: 'Ana Clara', rotaId: 'r1', status: 'entregue', entregueEm: '06/01/2026 11:00', recebidoPor: 'Vizinha Sônia' });
+        
+        // 5. Não Entregue (Mudou de Endereço)
+        this.db.deliveries.push({ id: 5, employeeId: 105, codigo: '1005', nome: 'Lucas Mendes', rotaId: 'r2', status: 'nao-entregue', entregueEm: '06/01/2026 13:45', recebidoPor: 'Mudou de endereço' });
+
+        this.save();
+    },
+
+    // --- LOGIC ---
+    openEmployeeModal(id = null) {
+        document.getElementById('empId').value = '';
+        document.getElementById('formFuncionario').reset();
+        
+        if (id) {
+            const emp = this.db.employees.find(e => e.id === id);
+            if (emp) {
+                document.getElementById('empId').value = emp.id;
+                document.getElementById('empCodigo').value = emp.codigo;
+                document.getElementById('empNome').value = emp.nome;
+                document.getElementById('empEndereco').value = emp.endereco;
+                document.getElementById('empBairro').value = emp.bairro;
+                document.getElementById('empCidade').value = emp.cidade;
+                document.getElementById('empTel1').value = emp.tel1;
+                document.getElementById('empNomeViz1').value = emp.nomeViz1 || '';
+                document.getElementById('empTelViz1').value = emp.telViz1 || '';
+                document.getElementById('empNomeViz2').value = emp.nomeViz2 || '';
+                document.getElementById('empTelViz2').value = emp.telViz2 || '';
+                document.getElementById('empFoto').value = emp.fotoCasa;
+            }
+        }
+        this.openModal('modalFuncionario');
+    },
+
+    saveEmployee(e) {
+        e.preventDefault();
+        const f = e.target;
+        const id = document.getElementById('empId').value;
+        const empData = {
+            codigo: document.getElementById('empCodigo').value,
+            nome: document.getElementById('empNome').value,
+            endereco: document.getElementById('empEndereco').value,
+            bairro: document.getElementById('empBairro').value,
+            cidade: document.getElementById('empCidade').value,
+            tel1: document.getElementById('empTel1').value,
+            nomeViz1: document.getElementById('empNomeViz1').value,
+            telViz1: document.getElementById('empTelViz1').value,
+            nomeViz2: document.getElementById('empNomeViz2').value,
+            telViz2: document.getElementById('empTelViz2').value,
+            fotoCasa: document.getElementById('empFoto').value
+        };
+        if (id) {
+            const index = this.db.employees.findIndex(e => e.id == id);
+            if (index !== -1) this.db.employees[index] = { ...this.db.employees[index], ...empData };
+        } else {
+            this.db.employees.push({ id: Date.now(), ...empData });
+        }
+        this.save();
+        this.closeModal('modalFuncionario');
+        document.getElementById('formFuncionario').reset();
+    },
+
+    importEmployees() {
+        const raw = document.getElementById('jsonImportFunc').value;
+        if(!raw) return alert("Cole o JSON primeiro.");
+        try {
+            const list = JSON.parse(raw);
+            let count = 0;
+            list.forEach(emp => {
+                if(!this.db.employees.find(e => e.codigo == emp.codigo)) {
+                    this.db.employees.push({
+                        id: Date.now() + Math.random(), codigo: emp.codigo, nome: emp.nome,
+                        endereco: emp.endereco || '', bairro: emp.bairro || '', cidade: emp.cidade || 'Cuiabá',
+                        tel1: emp.tel1 || '', nomeViz1: emp.nomeViz1 || '', telViz1: emp.telViz1 || '', fotoCasa: emp.fotoCasa || this.genericHouse
+                    });
+                    count++;
+                }
+            });
+            alert(`${count} importados!`);
+            this.save();
+            this.closeModal('modalImportFunc');
+            this.renderEmployeesTable();
+        } catch(e) { alert("Erro JSON: " + e.message); }
+    },
+
+    renderEmployeesTable() {
+        const tbody = document.getElementById('tableBodyFuncionarios'); tbody.innerHTML = '';
+        const search = document.getElementById('searchFunc').value.toLowerCase();
+        this.db.employees.filter(e => e.nome.toLowerCase().includes(search) || e.codigo.includes(search)).forEach(e => {
+            const img = e.fotoCasa ? `<img src="${e.fotoCasa}" class="w-8 h-8 rounded-full object-cover border border-gray-200">` : '<div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-home"></i></div>';
+            const viz1 = e.nomeViz1 ? `<i class="fa-solid fa-user-group text-gray-400"></i> ${e.nomeViz1}` : '-';
+            tbody.innerHTML += `
+                <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3">${img}</td>
+                    <td class="px-4 py-3 font-mono text-gray-600 font-bold">${e.codigo}</td>
+                    <td class="px-4 py-3 font-bold text-gray-800">${e.nome}</td>
+                    <td class="px-4 py-3 text-xs text-gray-600">${e.endereco}, ${e.bairro}</td>
+                    <td class="px-4 py-3 text-xs text-gray-600 whitespace-nowrap"><i class="fa-brands fa-whatsapp text-green-500"></i> ${e.tel1}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${viz1}</td>
+                    <td class="px-4 py-3 text-center flex justify-end gap-2">
+                        <button onclick="App.openEmployeeModal(${e.id})" class="text-blue-500 hover:text-white hover:bg-blue-500 bg-blue-50 p-2 rounded-lg transition-colors"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="if(confirm('Excluir?')) { App.db.employees = App.db.employees.filter(x=>x.id!=${e.id}); App.save(); }" class="text-red-400 hover:text-white hover:bg-red-500 bg-red-50 p-2 rounded-lg transition-colors"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    },
+
+    generateReportCarvalima() {
+        const successes = this.db.deliveries.filter(d => d.status === 'entregue').length;
+        const pending = this.db.deliveries.filter(d => d.status === 'pendente').length;
+        const failures = this.db.deliveries.filter(d => d.status === 'nao-entregue');
+        
+        let report = `*RELATÓRIO DE ENTREGAS CARVALIMA* 📦\n\n`;
+        report += `✅ *${successes}* Entregas concluídas com êxito.\n`;
+        report += `⚠️ *${failures.length}* Não entregues.\n`;
+        report += `⏳ *${pending}* Pendentes para os próximos dias.\n\n`;
+        
+        if (failures.length > 0) {
+            report += `*DETALHE DAS NÃO ENTREGUES:*\n`;
+            failures.forEach(d => {
+                report += `❌ (${d.codigo}) ${d.nome}\n   Motivo: ${d.recebidoPor || 'Não informado'}\n`;
+            });
+        }
+        
+        const encoded = encodeURIComponent(report);
+        // Tenta abrir no app (mobile) ou web (desktop)
+        window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    },
+
+    toggleDeliveryStatus(id) {
+        const d = this.db.deliveries.find(x => x.id === id);
+        if (d) {
+            if (d.status === 'cancelada') d.status = 'pendente';
+            else if(confirm("Suspender entrega?")) d.status = 'cancelada';
+            this.save();
+        }
+    },
+
+    renderDeliveriesTable() {
+        const tbody = document.getElementById('tableBodyEntregas'); tbody.innerHTML = '';
+        const filterR = document.getElementById('filterRoute').value, filterS = document.getElementById('filterStatus').value, search = document.getElementById('searchTable').value.toLowerCase();
+        this.db.deliveries.filter(d => {
+            if (filterR && d.rotaId !== filterR) return false;
+            if (filterS && d.status !== filterS) return false;
+            if (search && !d.nome.toLowerCase().includes(search)) return false;
+            return true;
+        }).forEach(d => {
+            const rName = this.db.routes.find(r=>r.id===d.rotaId)?.nome || '-';
+            const isDone = d.status === 'entregue', isFail = d.status === 'nao-entregue', isCanc = d.status === 'cancelada';
+            
+            let badge = '';
+            if (isDone) badge = '<span class="bg-green-100 text-green-700 font-bold text-[10px] px-2 py-1 rounded-full uppercase">Entregue</span>';
+            else if (isFail) badge = '<span class="bg-red-100 text-red-700 font-bold text-[10px] px-2 py-1 rounded-full uppercase">Falhou</span>';
+            else if (isCanc) badge = '<span class="bg-gray-100 text-gray-500 font-bold text-[10px] px-2 py-1 rounded-full uppercase">Suspensa</span>';
+            else badge = '<span class="bg-yellow-100 text-yellow-700 font-bold text-[10px] px-2 py-1 rounded-full uppercase">Pendente</span>';
+
+            const action = isCanc ? `<button onclick="App.toggleDeliveryStatus(${d.id})" class="text-green-500 bg-green-50 hover:bg-green-100 p-2 rounded-lg no-strike"><i class="fa-solid fa-rotate-left"></i></button>` : `<button onclick="App.toggleDeliveryStatus(${d.id})" class="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 p-2 rounded-lg"><i class="fa-solid fa-ban"></i></button>`;
+            
+            // Se falhou, mostra o motivo na coluna "Quem Recebeu"
+            const receivedInfo = isFail ? `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-exclamation"></i> ${d.recebidoPor}</span>` : (d.recebidoPor || '-');
+
+            tbody.innerHTML += `
+                <tr class="bg-white border-b hover:bg-gray-50 ${isCanc?'row-cancelled':''} ${isFail?'row-failed':''}">
+                    <td class="px-4 py-3 text-center text-gray-300 font-mono text-[10px]">${d.id.toString().slice(-4)}</td>
+                    <td class="px-4 py-3 font-mono font-bold text-gray-600">${d.codigo}</td>
+                    <td class="px-4 py-3 font-bold text-gray-800">${d.nome}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${rName}</td>
+                    <td class="px-4 py-3 text-center no-strike">${badge}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${d.entregueEm||'-'}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${receivedInfo}</td>
+                    <td class="px-4 py-3 text-center flex justify-center gap-2 no-strike">
+                        ${action}
+                        <button onclick="App.db.deliveries=App.db.deliveries.filter(x=>x.id!=${d.id});App.save();" class="text-red-300 hover:text-red-600 bg-red-50 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+        });
+    },
+
+    fillDeliveryForm(empId) {
+        if(!empId) return;
+        const emp = this.db.employees.find(e => e.id == empId);
+        if(emp) { document.getElementById('delCodigo').value = emp.codigo; document.getElementById('delNome').value = emp.nome; }
+    },
+    saveDelivery(e) {
+        e.preventDefault();
+        const f = e.target;
+        const emp = this.db.employees.find(e => e.codigo == f.codigo.value);
+        this.db.deliveries.push({ id: Date.now(), employeeId: emp ? emp.id : null, codigo: f.codigo.value, nome: f.nome.value, rotaId: f.rotaId.value, status: 'pendente', entregueEm: null, recebidoPor: '' });
+        this.save(); this.closeModal('modalEntrega'); f.reset();
+    },
+
+    // --- MOBILE VIEW & NAV ---
+    renderDriverView() {
+        const container = document.getElementById('driverDeliveriesList'); container.innerHTML = '';
+        const routeFilter = document.getElementById('driverRouteFilter');
+        const myRoutes = this.db.routes.filter(r => r.motoristaId == this.currentUser);
+        
+        if (routeFilter.innerHTML.trim() === '' || routeFilter.options.length !== myRoutes.length) {
+            routeFilter.innerHTML = '';
+            if (myRoutes.length > 0) myRoutes.forEach(r => routeFilter.innerHTML += `<option value="${r.id}" class="text-black">${r.nome}</option>`);
+            else routeFilter.innerHTML = '<option value="" class="text-black">Sem Rotas</option>';
+        }
+        
+        const selectedRouteId = routeFilter.value || (myRoutes[0] ? myRoutes[0].id : null);
+        if (!selectedRouteId) { container.innerHTML = '<div class="text-center text-gray-400 mt-10 p-8 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50"><i class="fa-solid fa-clipboard-check text-4xl mb-3 text-gray-300"></i><br>Tudo pronto! Nenhuma rota atribuída.</div>'; return; }
+
+        const deliveries = this.db.deliveries.filter(d => d.rotaId === selectedRouteId && d.status !== 'cancelada');
+        // Sort: Entregue (bottom), Failed (bottom), Pendente (top)
+        deliveries.sort((a,b) => {
+            if (a.status === 'pendente' && b.status !== 'pendente') return -1;
+            if (a.status !== 'pendente' && b.status === 'pendente') return 1;
+            return 0;
+        });
+
+        deliveries.forEach(d => {
+            const emp = this.db.employees.find(e => e.codigo == d.codigo) || {};
+            const isDone = d.status === 'entregue';
+            const isFail = d.status === 'nao-entregue';
+            const tel = emp.tel1 || '';
+            const photoHTML = emp.fotoCasa ? `<img src="${emp.fotoCasa}" class="mobile-house-photo">` : `<div class="mobile-house-photo bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-house-chimney text-5xl opacity-50"></i></div>`;
+            
+            let neighborsHTML = '';
+            if((emp.nomeViz1 && emp.telViz1) || (emp.nomeViz2 && emp.telViz2)) {
+                let list = '';
+                if(emp.nomeViz1 && emp.telViz1) list += `<a href="https://wa.me/55${emp.telViz1.replace(/\D/g,'')}?text=${encodeURIComponent(`Olá ${emp.nomeViz1}, cesta do ${emp.nome} chegando!`)}" target="_blank" class="block bg-white border border-gray-200 p-3 rounded-lg mb-2 text-xs text-gray-700 font-medium hover:bg-gray-50 flex justify-between items-center shadow-sm"><span><i class="fa-solid fa-user-shield text-blue-400 mr-2"></i> ${emp.nomeViz1}</span><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">ZAP</span></a>`;
+                if(emp.nomeViz2 && emp.telViz2) list += `<a href="https://wa.me/55${emp.telViz2.replace(/\D/g,'')}?text=${encodeURIComponent(`Olá ${emp.nomeViz2}, cesta do ${emp.nome} chegando!`)}" target="_blank" class="block bg-white border border-gray-200 p-3 rounded-lg mb-2 text-xs text-gray-700 font-medium hover:bg-gray-50 flex justify-between items-center shadow-sm"><span><i class="fa-solid fa-user-shield text-blue-400 mr-2"></i> ${emp.nomeViz2}</span><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">ZAP</span></a>`;
+                neighborsHTML = `<details class="neighbor-details mb-4"><summary class="bg-red-50 text-red-500 text-xs font-bold p-3 rounded-xl border border-red-100 cursor-pointer text-center hover:bg-red-100 select-none transition-colors"><i class="fa-solid fa-bullhorn mr-1"></i> SOCORRO! Ninguém atende?</summary><div class="mt-3 bg-gray-50 p-3 rounded-xl border border-gray-200 animate-[fadeIn_0.2s]"><p class="text-[10px] text-gray-400 mb-2 uppercase font-bold tracking-wider">Contatos de Emergência:</p>${list}</div></details>`;
+            }
+
+            // Card HTML Build
+            let footer = '';
+            let cardStyle = '';
+            
+            if (isDone) {
+                cardStyle = 'opacity-70 grayscale-[0.5] border-green-200';
+                footer = `<div class="bg-green-50 p-4 rounded-xl border border-green-100 text-xs text-green-800 mt-2 flex flex-col gap-1"><div class="flex justify-between"><strong><i class="fa-regular fa-clock"></i> Entregue:</strong> <span>${d.entregueEm}</span></div><div class="flex justify-between border-t border-green-200 pt-1 mt-1"><strong><i class="fa-regular fa-user"></i> Recebido por:</strong> <span>${d.recebidoPor}</span></div></div>`;
+            } else if (isFail) {
+                cardStyle = 'opacity-90 border-red-200 bg-red-50';
+                footer = `<div class="bg-red-100 p-4 rounded-xl border border-red-200 text-xs text-red-800 mt-2 flex flex-col gap-1"><div class="flex justify-between"><strong><i class="fa-regular fa-clock"></i> Tentativa:</strong> <span>${d.entregueEm}</span></div><div class="flex justify-between border-t border-red-200 pt-1 mt-1"><strong><i class="fa-solid fa-triangle-exclamation"></i> Motivo:</strong> <span class="font-bold">${d.recebidoPor}</span></div></div>`;
+            } else {
+                footer = `<div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/55${tel.replace(/\D/g,'')}" target="_blank" class="bg-green-50 text-green-700 py-3 rounded-xl text-center text-xs font-bold border border-green-100 hover:bg-green-100 transition-colors flex flex-col items-center justify-center gap-1"><i class="fa-brands fa-whatsapp text-lg"></i> Mensagem</a><a href="tel:${tel}" class="bg-blue-50 text-blue-700 py-3 rounded-xl text-center text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-colors flex flex-col items-center justify-center gap-1"><i class="fa-solid fa-phone text-lg"></i> Ligar</a></div>${neighborsHTML}<button onclick="App.openConfirmMobile('${d.id}', '${d.nome}')" class="w-full bg-brand-main text-white py-4 rounded-xl text-sm font-bold shadow-lg hover:bg-brand-dark transition-transform active:scale-95 flex items-center justify-center gap-2"><i class="fa-solid fa-box-open"></i> FINALIZAR ENTREGA</button>`;
+            }
+
+            container.innerHTML += `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${cardStyle} transition-all">
+                    ${!isDone && !isFail ? photoHTML : ''}
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <span class="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide">#${d.codigo}</span>
+                                <h3 class="font-bold text-gray-800 text-xl leading-tight mt-1">${d.nome}</h3>
+                            </div>
+                            ${isDone ? '<i class="fa-solid fa-circle-check text-green-500 text-2xl"></i>' : (isFail ? '<i class="fa-solid fa-circle-xmark text-red-500 text-2xl"></i>' : '')}
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2 flex items-start gap-2"><i class="fa-solid fa-location-dot text-red-400 mt-1"></i> <span>${emp.endereco || 'Endereço não cadastrado'}</span></p>
+                        <p class="text-xs text-gray-400 mb-4 ml-6 font-medium uppercase tracking-wide">${emp.bairro || ''}</p>
+                        ${footer}
+                    </div>
+                </div>`;
+        });
+    },
+
+    // Mobile Confirmation (Updated)
+    openConfirmMobile(id,nome) { 
+        this.tempId=id; 
+        this.tempName=nome; 
+        this.setDeliveryStatus('success'); // Reset to default
+        document.getElementById('confMobName').innerText=nome; 
+        document.getElementById('receiverNameInput').value=''; 
+        document.getElementById('failReasonInput').value='Ninguém em casa';
+        document.getElementById('modalConfirmMobile').classList.remove('hidden'); 
+    },
+    
+    setDeliveryStatus(status) {
+        this.currentDeliveryStatus = status;
+        const tabSuccess = document.getElementById('tabSuccess');
+        const tabFail = document.getElementById('tabFail');
+        const secSuccess = document.getElementById('sectionSuccess');
+        const secFail = document.getElementById('sectionFail');
+        const btnConfirm = document.getElementById('btnConfirmAction');
+        const icon = document.getElementById('statusIcon');
+
+        if(status === 'success') {
+            tabSuccess.classList.replace('text-gray-500', 'text-green-700');
+            tabSuccess.classList.add('bg-white', 'shadow-sm');
+            tabFail.classList.replace('text-red-600', 'text-gray-500');
+            tabFail.classList.remove('bg-white', 'shadow-sm');
+            secSuccess.classList.remove('hidden');
+            secFail.classList.add('hidden');
+            btnConfirm.innerText = 'Confirmar Entrega';
+            btnConfirm.className = 'flex-1 py-3 bg-brand-accent text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2';
+            icon.className = 'w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold text-green-600 border-4 border-green-200';
+            icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+        } else {
+            tabFail.classList.replace('text-gray-500', 'text-red-600');
+            tabFail.classList.add('bg-white', 'shadow-sm');
+            tabSuccess.classList.replace('text-green-700', 'text-gray-500');
+            tabSuccess.classList.remove('bg-white', 'shadow-sm');
+            secSuccess.classList.add('hidden');
+            secFail.classList.remove('hidden');
+            btnConfirm.innerText = 'Registrar Devolução';
+            btnConfirm.className = 'flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2';
+            icon.className = 'w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold text-red-600 border-4 border-red-200';
+            icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        }
+    },
+
+    fillReceiverSelf() { document.getElementById('receiverNameInput').value=this.tempName; },
+    
+    confirmDeliveryMobile() {
+        if(!this.tempId) return; 
+        
+        const t = this.db.deliveries.find(d => d.id == this.tempId);
+        if(!t) return;
+
+        const timeStr = new Date().toLocaleString('pt-BR');
+
+        if(this.currentDeliveryStatus === 'success') {
+            const rec = document.getElementById('receiverNameInput').value.trim();
+            if(!rec) return alert("Quem recebeu a cesta?");
+            
+            t.status = 'entregue';
+            t.recebidoPor = rec;
+            t.entregueEm = timeStr;
+            
+            if(this.db.adminPhone) window.open(`https://wa.me/55${this.db.adminPhone}?text=${encodeURIComponent(`✅ *ENTREGA REALIZADA*\n\n📦 Func: ${t.nome}\n👤 Recebido por: ${rec}\n⏰ ${t.entregueEm}`)}`, '_blank');
+        
+        } else {
+            const reason = document.getElementById('failReasonInput').value;
+            
+            t.status = 'nao-entregue';
+            t.recebidoPor = reason; // Armazenamos o motivo aqui para simplificar
+            t.entregueEm = timeStr;
+
+            if(this.db.adminPhone) window.open(`https://wa.me/55${this.db.adminPhone}?text=${encodeURIComponent(`⚠️ *ENTREGA FALHOU*\n\n📦 Func: ${t.nome}\n🚫 Motivo: ${reason}\n⏰ ${t.entregueEm}`)}`, '_blank');
+        }
+
+        this.save();
+        document.getElementById('modalConfirmMobile').classList.add('hidden'); 
+        this.renderDriverView();
+    },
+
+    // Import/Export
+    importByCodes() {
+        const raw = document.getElementById('jsonInputCodes').value; if(!raw) return alert("Cole os códigos JSON.");
+        try {
+            const codes = JSON.parse(raw); let count = 0;
+            codes.forEach(code => {
+                const emp = this.db.employees.find(e => e.codigo == code);
+                if(emp) {
+                    const exists = this.db.deliveries.find(d => d.codigo == code && d.status !== 'cancelada');
+                    if(!exists) { this.db.deliveries.push({ id: Date.now() + Math.random(), employeeId: emp.id, codigo: emp.codigo, nome: emp.nome, rotaId: '', status: 'pendente', entregueEm: null, recebidoPor: '' }); count++; }
+                }
+            });
+            alert(`${count} entregas geradas com sucesso!`); this.save();
+        } catch(e) { alert("Erro JSON: " + e.message); }
+    },
+    exportData() { const blob = new Blob([JSON.stringify(this.db,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); },
+
+    // Modals
+    saveRoute(e) { e.preventDefault(); this.db.routes.push({id:'r'+Date.now(),nome:e.target.nome.value,motoristaId:e.target.motoristaId.value,dataPrevisao:e.target.dataPrevisao.value}); this.save(); this.closeModal('modalRota'); e.target.reset(); },
+    saveDriver(e) { e.preventDefault(); this.db.drivers.push({id:'d'+Date.now(),nome:e.target.nome.value,telefone:e.target.telefone.value}); this.save(); this.closeModal('modalMotorista'); e.target.reset(); },
+    openModal(id) { document.getElementById(id).classList.remove('hidden'); }, closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
