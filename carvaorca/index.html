@@ -3,140 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotação Carvalima - SFA Otimizado</title>
+    <title>Orçamento - Super Cestas Básicas Dona Antônia</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
     <style>
-        /* CSS Otimizado e Minimalista */
-        :root { --spacing: 0.5rem; --font-size: 0.9rem; }
-        body { font-size: var(--font-size); }
+        /* CSS Otimizado para Orçamentos */
+        :root { --spacing: 0.5rem; --font-size: 0.9rem; --primary: #2b8a3e; }
+        body { font-size: var(--font-size); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* Layout */
-        header { padding-bottom: 0; border-bottom: 1px solid #e5e5e5; margin-bottom: 1rem; }
-        hgroup h2 { font-weight: 300; color: #666; font-size: 1.1rem; }
-        .container { max-width: 1200px; }
+        /* Layout Cabeçalho de Orçamento */
+        .budget-header {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 20px;
+            margin-bottom: 2rem;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 1rem;
+            align-items: center;
+        }
+        .company-logo img { width: 100%; max-height: 120px; object-fit: contain; }
+        .company-info h1 { margin: 0; font-size: 1.6rem; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+        .company-info p { margin: 0; font-size: 0.85rem; color: #555; line-height: 1.4; }
+        .budget-meta { margin-top: 10px; font-weight: bold; background: #f0f0f0; padding: 5px 10px; border-radius: 4px; display: inline-block; }
 
-        /* Tabela */
-        table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
-        td, th { padding: 0.4rem; vertical-align: middle; border-bottom: 1px solid #eee; }
-        thead th { font-weight: 600; background: #f0f0f0; color: #333; }
+        /* Tabela Limpa */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        td, th { padding: 0.5rem; vertical-align: middle; border-bottom: 1px solid #ddd; }
+        thead th { background: #f9f9f9; color: #333; text-transform: uppercase; font-size: 0.8rem; border-top: 2px solid #333; }
         
         /* Inputs Compactos */
-        input:not([type="checkbox"]):not([type="radio"]) { 
+        input:not([type="checkbox"]) { 
             margin-bottom: 0; height: 2rem; font-size: 0.9rem; padding: 0 0.5rem; 
-            border: 1px solid #ddd; transition: border-color 0.2s;
+            border: 1px solid #ddd;
         }
-        input:focus { border-color: var(--primary); box-shadow: none; }
-        input[readonly] { background-color: transparent; border: none; font-weight: bold; color: #333; }
-
+        
         /* Utilitários */
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .text-green { color: #2b8a3e; }
-        .text-red { color: #c92a2a; }
-        .w-qty { width: 70px; }
-        .w-brand { width: 120px; }
-        .w-money { width: 110px; }
-        .w-pct { width: 80px; }
+        .text-bold { font-weight: bold; }
         .hidden { display: none !important; }
-        .no-print { }
+        
+        /* Seção de Totais e Termos */
+        .budget-footer { margin-top: 2rem; display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; }
+        .terms-box { font-size: 0.75rem; color: #444; text-align: justify; border: 1px solid #eee; padding: 10px; background: #fffdf9; }
+        .terms-box h4 { margin-bottom: 5px; font-size: 0.8rem; text-transform: uppercase; border-bottom: 1px solid #ddd; }
+        .terms-box ul { padding-left: 1rem; margin: 0; }
+        
+        .totals-box { background: #f8f9fa; padding: 1rem; border-radius: 4px; }
+        .total-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center; }
+        .total-row.final { font-size: 1.3rem; color: var(--primary); border-top: 2px solid #ccc; padding-top: 0.5rem; margin-top: 0.5rem; font-weight: 800; }
 
-        /* Rodapé Fixo (Totais) */
-        .summary-bar {
-            position: sticky; bottom: 0; background: #fff; 
-            border-top: 2px solid var(--primary); padding: 1rem;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        /* Controles de Tela (Não imprime) */
+        .screen-controls { background: #333; color: white; padding: 0.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .screen-controls button { margin: 0; padding: 0.2rem 1rem; font-size: 0.8rem; width: auto; background: #555; border: none; }
 
-        /* Impressão */
+        /* Impressão Profissional */
         @media print {
-            .no-print, .summary-bar button { display: none !important; }
-            body { background: white; color: black; font-size: 10pt; }
-            input { border: none !important; padding: 0 !important; height: auto !important; }
-            .summary-bar { position: relative; border: 1px solid #000; box-shadow: none; margin-top: 1rem; }
-            table, th, td { border: 1px solid #ccc; }
+            .no-print, .screen-controls, #admin-panel, .admin-col { display: none !important; }
+            body { background: white; color: black; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .container { max-width: 100%; width: 100%; margin: 0; padding: 0; }
+            input { border: none !important; padding: 0 !important; background: transparent !important; }
+            .budget-header { border-bottom: 2px solid #000; }
+            .budget-footer { grid-template-columns: 1fr; gap: 1rem; page-break-inside: avoid; }
+            .totals-box { border: 1px solid #000; background: none; }
         }
     </style>
 </head>
 <body>
 
-    <header class="container">
-        <nav>
-            <hgroup>
-                <h1>Cotação Carvalima</h1>
-                <h2>Data Base: <span id="current-date"></span></h2>
-            </hgroup>
-            <ul>
-                <li class="no-print"><button class="outline secondary" id="btn-mode" onclick="App.toggleMode()">Admin</button></li>
-                <li class="no-print"><button onclick="window.print()">Imprimir</button></li>
-            </ul>
-        </nav>
-    </header>
+    <!-- Faixa de Controle (Apenas Tela) -->
+    <div class="screen-controls no-print">
+        <div><strong>Sistema SFA v4.0</strong> - <span id="mode-badge">Modo Cliente</span></div>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="App.toggleMode()" id="btn-mode">Acessar Admin</button>
+            <button onclick="window.print()" style="background: var(--primary);">🖨️ Imprimir Orçamento</button>
+        </div>
+    </div>
 
     <main class="container">
-        <!-- Formulário de Adição (Apenas Admin) -->
-        <section id="admin-panel" class="hidden no-print" style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
-            <header style="margin-bottom: 0.5rem; border:none; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; color: #888;">Adicionar Item</header>
-            <div class="grid" style="grid-template-columns: 2fr 1fr 0.5fr 0.5fr 0.5fr 0.5fr 0.2fr;">
+        
+        <!-- Cabeçalho do Orçamento -->
+        <header class="budget-header">
+            <div class="company-logo">
+                <!-- Caminho da logo conforme solicitado -->
+                <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo Dona Antônia" onerror="this.style.display='none'; document.querySelector('.company-logo').innerHTML = '<small>[Logo aqui]</small>'">
+            </div>
+            <div class="company-info">
+                <h1>Super Cestas Básicas Dona Antônia</h1>
+                <p>
+                    <strong>CNPJ:</strong> 51.385.335.0001.06<br>
+                    <strong>Endereço:</strong> R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT, 78090-660<br>
+                    <strong>Telefones:</strong> (65) 99681-3588 | 99815-0975
+                </p>
+                <div class="budget-meta">
+                    ORÇAMENTO #<span id="budget-id"></span> &bull; DATA: <span id="current-date"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Formulário Admin (Escondido na impressão) -->
+        <section id="admin-panel" class="hidden no-print" style="background: #f0f0f0; padding: 1rem; border: 1px dashed #999; margin-bottom: 1rem;">
+            <strong>ADICIONAR ITEM:</strong>
+            <div class="grid" style="grid-template-columns: 2fr 1fr 0.5fr 0.5fr 0.5fr 0.5fr auto;">
                 <input type="text" id="new-name" placeholder="Produto">
                 <input type="text" id="new-brand" placeholder="Marca">
                 <input type="number" id="new-qty" placeholder="Qtd" value="1">
                 <input type="number" id="new-cost" placeholder="Custo" step="0.01" oninput="App.calcNew('cost')">
                 <input type="number" id="new-margin" placeholder="Mg %" step="0.1" oninput="App.calcNew('margin')">
                 <input type="number" id="new-price" placeholder="Venda" step="0.01" oninput="App.calcNew('price')">
-                <button onclick="App.add()" style="width: auto; padding: 0 0.5rem;">+</button>
+                <button onclick="App.add()" style="padding: 0 1rem;">+</button>
             </div>
         </section>
 
-        <!-- Tabela Principal -->
-        <figure>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Produto</th>
-                        <th class="w-brand">Marca</th>
-                        <th class="text-center w-qty">Qtd</th>
-                        
-                        <!-- Colunas Visíveis APENAS no Admin -->
-                        <th class="text-right w-money admin-col hidden">Custo Un.</th>
-                        <th class="text-right w-pct admin-col hidden">Margem %</th>
-                        <th class="text-right w-money admin-col hidden">Venda Un.</th>
-                        <th class="text-right w-money admin-col hidden">Total Item</th>
-                        
-                        <th class="no-print w-qty admin-col hidden">Ação</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body"></tbody>
-            </table>
-        </figure>
-    </main>
+        <!-- Tabela de Itens -->
+        <table class="budget-table">
+            <thead>
+                <tr>
+                    <th>Descrição do Produto</th>
+                    <th class="w-brand">Marca</th>
+                    <th class="text-center w-qty">Qtd</th>
+                    <!-- Colunas Admin -->
+                    <th class="text-right admin-col hidden">Custo Un.</th>
+                    <th class="text-right admin-col hidden">Mg %</th>
+                    <th class="text-right admin-col hidden">Venda Un.</th>
+                    <th class="text-right admin-col hidden">Subtotal</th>
+                    <th class="no-print admin-col hidden">Excluir</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Renderizado via JS -->
+            </tbody>
+        </table>
 
-    <footer class="summary-bar container">
-        <div class="admin-col hidden">
-            <small class="text-green" id="profit-info"></small>
-        </div>
-        <div>
-            <strong style="font-size: 1.2rem;" id="total-display">Total Cotação: R$ 0,00</strong>
-        </div>
-        <div class="no-print">
-            <button class="outline contrast" onclick="App.reset()" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">Resetar Dados</button>
-        </div>
-    </footer>
+        <!-- Rodapé do Orçamento: Termos e Totais -->
+        <footer class="budget-footer">
+            
+            <!-- Termos e Condições -->
+            <div class="terms-box">
+                <h4>Observações e Condições Gerais</h4>
+                <p><strong>Validade da Proposta:</strong> 15 dias.</p>
+                <p><strong>Condição de Pagamento:</strong> A combinar.</p>
+                <p><strong>Prazo de Entrega:</strong> Entre 10 e 12 dias (Segunda a Domingo, das 7h às 21h).</p>
+                <hr style="margin: 5px 0;">
+                <p><strong>OBSERVAÇÃO IMPORTANTE:</strong> Todos os colaboradores serão avisados 3x (3 dias antes da entrega, 1 dia antes e até 3 horas antes).</p>
+                <p><em>Caso a entrega não possa ser efetuada na casa do colaborador ou em vizinho por culpa do colaborador, a cesta será entregue na central da Carvalima.</em></p>
+            </div>
+
+            <!-- Caixa de Totais -->
+            <div class="totals-box">
+                <div class="total-row">
+                    <span>Subtotal Produtos:</span>
+                    <strong id="subtotal-display">R$ 0,00</strong>
+                </div>
+                
+                <div class="total-row">
+                    <span>Taxa de Entrega:</span>
+                    <!-- Input de Frete Editável (Admin) ou Texto (Cliente) -->
+                    <div id="delivery-control">
+                        <!-- Injetado via JS -->
+                    </div>
+                </div>
+
+                <div class="total-row final">
+                    <span>TOTAL GERAL:</span>
+                    <span id="final-total-display">R$ 0,00</span>
+                </div>
+
+                <!-- Info de Lucro (Apenas Admin) -->
+                <div class="admin-col hidden text-right" style="margin-top: 10px; font-size: 0.8rem; color: #2b8a3e;">
+                    <span id="profit-info"></span>
+                </div>
+                
+                <div class="no-print text-right" style="margin-top: 1rem;">
+                    <button class="outline contrast" onclick="App.reset()" style="font-size: 0.7rem; padding: 2px 8px; width: auto;">Resetar Padrão</button>
+                </div>
+            </div>
+        </footer>
+    </main>
 
     <script>
         /**
-         * SFA - Single File Application Logic
-         * Padrão Singleton para organização e namespace global limpo.
+         * SFA - Orçamento Profissional v4
          */
         const App = {
-            KEY: 'carvalima_sfa_db_2026_v3', // Chave atualizada para carregar a nova lista de Alimentos/Limpeza
-            PASS: '090479', // Hash simples
+            KEY: 'carvalima_sfa_db_2026_v4', // Chave nova (v4) para incluir campo de frete
+            PASS: '090479',
             state: {
                 data: [],
+                deliveryFee: 0, // Novo campo de estado
                 isAdmin: false
             },
 
-            // Lista extraída da imagem para "seeding" inicial (Com Marcas Separadas)
             INITIAL_DATA: [
                 // ALIMENTOS
                 { name: "AÇUCAR CRISTAL 2KG", brand: "BARRACOOL/DOCE DIA", qty: 2 },
@@ -150,8 +206,7 @@
                 { name: "MOLHO DE TOMATE 340GR", brand: "TOMODORO", qty: 1 },
                 { name: "ÓLEO DE SOJA 900ML", brand: "LIZA", qty: 4 },
                 { name: "SAL REFINADO 1KG", brand: "BOM DE MESA", qty: 1 },
-                
-                // KIT LIMPEZA
+                // LIMPEZA
                 { name: "CREME DENTAL 90GR", brand: "SORRISO/COLGATE", qty: 2 },
                 { name: "ESPONJA DE AÇO 60GR", brand: "Q LUSTROS /ASSOLAN", qty: 2 },
                 { name: "PAPEL HIG. PERFUMADO 4X30", brand: "MILLI BIANCO/ PALOMA", qty: 2 },
@@ -161,11 +216,9 @@
             ],
 
             init() {
-                // Configurar Data
                 const now = new Date();
                 document.getElementById('current-date').textContent = now.toLocaleDateString('pt-BR');
-                
-                // Carregar Dados
+                document.getElementById('budget-id').textContent = Math.floor(now.getTime() / 100000).toString().slice(-4);
                 this.load();
             },
 
@@ -173,8 +226,16 @@
                 const stored = localStorage.getItem(this.KEY);
                 if (stored) {
                     try {
-                        this.state.data = JSON.parse(stored);
-                    } catch(e) { console.error("Erro ao ler DB", e); this.seed(); }
+                        const parsed = JSON.parse(stored);
+                        // Verifica se é o formato antigo (array) ou novo (objeto com deliveryFee)
+                        if (Array.isArray(parsed)) {
+                            this.state.data = parsed;
+                            this.state.deliveryFee = 0;
+                        } else {
+                            this.state.data = parsed.data || [];
+                            this.state.deliveryFee = parsed.deliveryFee || 0;
+                        }
+                    } catch(e) { this.seed(); }
                 } else {
                     this.seed();
                 }
@@ -182,44 +243,47 @@
             },
 
             seed() {
-                // Popula com dados da imagem, custos zerados
                 this.state.data = this.INITIAL_DATA.map(item => ({
                     id: Date.now() + Math.random(),
                     name: item.name,
                     brand: item.brand,
                     qty: item.qty,
-                    cost: 0,
-                    margin: 0,
-                    price: 0
+                    cost: 0, margin: 0, price: 0
                 }));
+                this.state.deliveryFee = 0;
                 this.save();
             },
 
             save() {
-                localStorage.setItem(this.KEY, JSON.stringify(this.state.data));
+                // Salva estado completo (dados + frete)
+                const payload = {
+                    data: this.state.data,
+                    deliveryFee: this.state.deliveryFee
+                };
+                localStorage.setItem(this.KEY, JSON.stringify(payload));
                 this.render();
             },
 
-            // --- Lógica de Negócio (CRUD + Cálculos) ---
+            // --- Lógica de Negócio ---
 
             add() {
                 const name = document.getElementById('new-name').value;
-                if (!name) return alert("Nome é obrigatório");
-
-                const brand = document.getElementById('new-brand').value || "";
-                const qty = parseFloat(document.getElementById('new-qty').value) || 1;
-                const cost = parseFloat(document.getElementById('new-cost').value) || 0;
-                const margin = parseFloat(document.getElementById('new-margin').value) || 0;
-                const price = parseFloat(document.getElementById('new-price').value) || 0;
-
-                this.state.data.push({ id: Date.now(), name, brand, qty, cost, margin, price });
+                if (!name) return alert("Preencha o nome");
                 
-                // Limpar campos
-                document.getElementById('new-name').value = '';
-                document.getElementById('new-brand').value = '';
-                document.getElementById('new-cost').value = '';
-                document.getElementById('new-margin').value = '';
-                document.getElementById('new-price').value = '';
+                const item = {
+                    id: Date.now(),
+                    name: name,
+                    brand: document.getElementById('new-brand').value,
+                    qty: parseFloat(document.getElementById('new-qty').value) || 1,
+                    cost: parseFloat(document.getElementById('new-cost').value) || 0,
+                    margin: parseFloat(document.getElementById('new-margin').value) || 0,
+                    price: parseFloat(document.getElementById('new-price').value) || 0
+                };
+                this.state.data.push(item);
+                
+                // Limpar form
+                ['new-name','new-brand','new-cost','new-margin','new-price'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('new-qty').value = '1';
                 document.getElementById('new-name').focus();
                 
                 this.save();
@@ -232,27 +296,12 @@
                 if (field === 'name') item.name = value;
                 else if (field === 'brand') item.brand = value;
                 else {
-                    let val = parseFloat(value);
-                    if (isNaN(val)) val = 0;
-
+                    let val = parseFloat(value) || 0;
                     if (field === 'qty') item.qty = val;
-                    else if (field === 'cost') {
-                        item.cost = val;
-                        // Custo mudou: Recalcula Preço mantendo Margem
-                        item.price = item.cost * (1 + (item.margin / 100));
-                    }
-                    else if (field === 'margin') {
-                        item.margin = val;
-                        // Margem mudou: Recalcula Preço mantendo Custo
-                        item.price = item.cost * (1 + (item.margin / 100));
-                    }
-                    else if (field === 'price') {
-                        item.price = val;
-                        // Preço mudou: Recalcula Margem (Engenharia Reversa)
-                        if (item.cost > 0) item.margin = ((item.price - item.cost) / item.cost) * 100;
-                    }
+                    else if (field === 'cost') { item.cost = val; item.price = item.cost * (1 + (item.margin/100)); }
+                    else if (field === 'margin') { item.margin = val; item.price = item.cost * (1 + (item.margin/100)); }
+                    else if (field === 'price') { item.price = val; if(item.cost>0) item.margin = ((item.price-item.cost)/item.cost)*100; }
                     
-                    // Arredondamento seguro (2 casas)
                     if(field !== 'qty') {
                         item.price = Math.round(item.price * 100) / 100;
                         item.margin = Math.round(item.margin * 10) / 10;
@@ -261,105 +310,83 @@
                 this.save();
             },
 
+            updateDelivery(val) {
+                this.state.deliveryFee = parseFloat(val) || 0;
+                this.save(); // Salva e rerenderiza
+            },
+
             delete(id) {
-                if (confirm('Deletar item?')) {
+                if(confirm('Excluir item?')) {
                     this.state.data = this.state.data.filter(i => i.id !== id);
                     this.save();
                 }
             },
 
             reset() {
-                if (confirm('ATENÇÃO: Isso apagará todas as edições e restaurará a lista original. Continuar?')) {
-                    localStorage.removeItem(this.KEY);
+                if(confirm('Restaurar lista original? Isso apaga custos e preços.')) {
                     this.seed();
                     this.render();
                 }
             },
 
-            // --- Lógica Auxiliar de UI ---
+            // --- UI Helpers ---
 
             calcNew(source) {
-                // Cálculo em tempo real para o formulário de adição
-                const els = {
-                    c: document.getElementById('new-cost'),
-                    m: document.getElementById('new-margin'),
-                    p: document.getElementById('new-price')
-                };
-                const val = {
-                    c: parseFloat(els.c.value) || 0,
-                    m: parseFloat(els.m.value) || 0,
-                    p: parseFloat(els.p.value) || 0
-                };
+                const c = parseFloat(document.getElementById('new-cost').value) || 0;
+                const m = parseFloat(document.getElementById('new-margin').value) || 0;
+                const p = parseFloat(document.getElementById('new-price').value) || 0;
+                const pEl = document.getElementById('new-price');
+                const mEl = document.getElementById('new-margin');
 
-                if (source === 'cost' || source === 'margin') {
-                    els.p.value = (val.c * (1 + (val.m / 100))).toFixed(2);
-                } else if (source === 'price') {
-                    if (val.c > 0) els.m.value = (((val.p - val.c) / val.c) * 100).toFixed(1);
-                }
+                if (source === 'cost' || source === 'margin') pEl.value = (c * (1 + (m/100))).toFixed(2);
+                else if (source === 'price' && c > 0) mEl.value = (((p-c)/c)*100).toFixed(1);
             },
 
             toggleMode() {
-                if (this.state.isAdmin) {
-                    this.state.isAdmin = false;
-                } else {
-                    const pwd = prompt("Senha Admin:");
-                    if (pwd === this.PASS) this.state.isAdmin = true;
-                    else if (pwd !== null) alert("Senha inválida");
-                }
+                if(this.state.isAdmin) this.state.isAdmin = false;
+                else if(prompt("Senha Admin:") === this.PASS) this.state.isAdmin = true;
                 this.render();
             },
 
-            formatMoney(val) {
-                return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            },
+            fmt(val) { return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
 
-            // --- Renderização (Core) ---
+            // --- Renderização ---
 
             render() {
-                const tbody = document.getElementById('table-body');
-                const adminCols = document.querySelectorAll('.admin-col');
-                const adminPanel = document.getElementById('admin-panel');
-                const btnMode = document.getElementById('btn-mode');
+                const { data, isAdmin, deliveryFee } = this.state;
                 
-                // Controle de Visibilidade Admin/Cliente
-                btnMode.textContent = this.state.isAdmin ? "Sair Admin" : "Acessar Admin";
-                btnMode.className = this.state.isAdmin ? "outline contrast" : "outline secondary";
-                
-                adminPanel.classList.toggle('hidden', !this.state.isAdmin);
-                adminCols.forEach(el => el.classList.toggle('hidden', !this.state.isAdmin));
+                // Visibilidade Admin
+                document.getElementById('mode-badge').textContent = isAdmin ? "Modo ADMIN" : "Modo Cliente";
+                document.getElementById('mode-badge').style.color = isAdmin ? "#ff6b6b" : "#51cf66";
+                document.getElementById('admin-panel').classList.toggle('hidden', !isAdmin);
+                document.querySelectorAll('.admin-col').forEach(e => e.classList.toggle('hidden', !isAdmin));
 
-                // Construção da Tabela
+                // Tabela
+                const tbody = document.getElementById('table-body');
                 tbody.innerHTML = '';
-                let grandTotal = 0;
+                let subtotal = 0;
                 let totalCost = 0;
 
-                this.state.data.forEach(item => {
+                data.forEach(item => {
                     const totalLine = item.qty * item.price;
-                    grandTotal += totalLine;
+                    subtotal += totalLine;
                     totalCost += (item.qty * item.cost);
 
                     const tr = document.createElement('tr');
                     
-                    // Helpers de exibição: Se for 0, mostra string vazia
-                    const showCost = item.cost === 0 ? '' : item.cost;
-                    const showMargin = item.margin === 0 ? '' : item.margin;
-                    const showPrice = item.price === 0 ? '' : item.price;
-
-                    if (this.state.isAdmin) {
+                    if (isAdmin) {
                         tr.innerHTML = `
                             <td><input type="text" value="${item.name}" onchange="App.update(${item.id}, 'name', this.value)"></td>
                             <td><input type="text" value="${item.brand}" onchange="App.update(${item.id}, 'brand', this.value)"></td>
                             <td><input type="number" value="${item.qty}" class="text-center" onchange="App.update(${item.id}, 'qty', this.value)"></td>
-                            
-                            <td class="admin-col"><input type="number" placeholder="0,00" value="${showCost}" step="0.01" class="text-right" onchange="App.update(${item.id}, 'cost', this.value)"></td>
-                            <td class="admin-col"><input type="number" placeholder="0" value="${showMargin}" step="0.1" class="text-right" onchange="App.update(${item.id}, 'margin', this.value)"></td>
-                            <td class="admin-col"><input type="number" placeholder="0,00" value="${showPrice}" step="0.01" class="text-right" onchange="App.update(${item.id}, 'price', this.value)"></td>
-                            <td class="text-right font-bold admin-col">${this.formatMoney(totalLine)}</td>
-                            
-                            <td class="no-print admin-col text-center"><button class="outline secondary" onclick="App.delete(${item.id})" style="border:none; color: #c92a2a;">&times;</button></td>
+                            <td class="admin-col"><input type="number" value="${item.cost||''}" placeholder="0.00" class="text-right" step="0.01" onchange="App.update(${item.id}, 'cost', this.value)"></td>
+                            <td class="admin-col"><input type="number" value="${item.margin||''}" placeholder="0" class="text-right" step="0.1" onchange="App.update(${item.id}, 'margin', this.value)"></td>
+                            <td class="admin-col"><input type="number" value="${item.price||''}" placeholder="0.00" class="text-right" step="0.01" onchange="App.update(${item.id}, 'price', this.value)"></td>
+                            <td class="text-right text-bold admin-col">${this.fmt(totalLine)}</td>
+                            <td class="admin-col text-center"><button class="outline secondary" onclick="App.delete(${item.id})">🗑️</button></td>
                         `;
                     } else {
-                        // Modo Cliente (Leitura) - SEM PREÇOS INDIVIDUAIS
+                        // Cliente Vê
                         tr.innerHTML = `
                             <td>${item.name}</td>
                             <td>${item.brand}</td>
@@ -370,18 +397,27 @@
                 });
 
                 // Totais
-                document.getElementById('total-display').textContent = `Total Cotação: ${this.formatMoney(grandTotal)}`;
-                
-                if (this.state.isAdmin) {
-                    const profit = grandTotal - totalCost;
-                    const mgTotal = grandTotal > 0 ? (profit/grandTotal*100).toFixed(1) : 0;
-                    document.getElementById('profit-info').innerHTML = 
-                        `Custo: ${this.formatMoney(totalCost)} | Lucro: <b>${this.formatMoney(profit)}</b> (${mgTotal}%)`;
+                const finalTotal = subtotal + deliveryFee;
+
+                document.getElementById('subtotal-display').textContent = this.fmt(subtotal);
+                document.getElementById('final-total-display').textContent = this.fmt(finalTotal);
+
+                // Controle de Frete (Input se admin, Texto se cliente)
+                const deliveryDiv = document.getElementById('delivery-control');
+                if (isAdmin) {
+                    deliveryDiv.innerHTML = `<input type="number" value="${deliveryFee}" step="0.01" onchange="App.updateDelivery(this.value)" style="text-align:right; width: 120px; float:right;">`;
+                } else {
+                    deliveryDiv.innerHTML = `<strong class="text-right" style="display:block;">${this.fmt(deliveryFee)}</strong>`;
+                }
+
+                if (isAdmin) {
+                    const profit = subtotal - totalCost; // Lucro sobre produtos (frete é neutro ou lucro separado)
+                    const mg = subtotal > 0 ? (profit/subtotal*100).toFixed(1) : 0;
+                    document.getElementById('profit-info').innerHTML = `Lucro sobre produtos: ${this.fmt(profit)} (${mg}%)`;
                 }
             }
         };
 
-        // Inicialização
         document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
 </body>
