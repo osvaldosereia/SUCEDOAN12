@@ -9,7 +9,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
-        /* Removed h-screen and overflow-hidden to allow full page scrolling */
         .view-content { display: none !important; }
         .view-content.active { display: flex !important; }
         .nav-link.active { background: #2563eb; color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
@@ -622,9 +621,15 @@
         const DB = {
             key: 'enterprise_v5_db',
             load: () => {
-                const defaults = {cliente:[], produto:[], venda:[], entrada:[], categorias: []}; // Added categories
+                const defaults = {cliente:[], produto:[], venda:[], entrada:[], categorias: []};
                 if (!storageAvailable('localStorage')) return defaults;
-                return JSON.parse(localStorage.getItem(DB.key) || JSON.stringify(defaults));
+                let data = JSON.parse(localStorage.getItem(DB.key) || 'null');
+                if(!data) return defaults;
+                // PATCH CRÍTICO: Mescla defaults para garantir que a chave 'categorias' exista em dados antigos
+                for(let key in defaults) {
+                    if(!data[key]) data[key] = defaults[key];
+                }
+                return data;
             },
             saveAll: (data) => { if (storageAvailable('localStorage')) localStorage.setItem(DB.key, JSON.stringify(data)); },
             getNextCode: (type, options = {}) => {
@@ -976,10 +981,10 @@
                         unidade: UI.get('p-unidade').value, 
                         categoria: UI.get('p-categoria').value, 
                         subcategoria: UI.get('p-subcategoria').value, // Added subcategory
-                        custo: UI.get('p-custo').value, 
-                        valor: UI.get('p-valor').value, 
-                        estoque: Number(UI.get('p-estoque').value), 
-                        estoqueFiscal: Number(UI.get('p-estoqueFiscal').value), 
+                        custo: Number(UI.get('p-custo').value) || 0, // Ensure Number
+                        valor: Number(UI.get('p-valor').value) || 0, 
+                        estoque: Number(UI.get('p-estoque').value) || 0, 
+                        estoqueFiscal: Number(UI.get('p-estoqueFiscal').value) || 0, 
                         tipo: UI.get('p-tipo').value, 
                         isTemp: isTemp 
                     });
