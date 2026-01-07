@@ -101,8 +101,8 @@
             --accent-hover: #166534;
             --brand-blue: #2563EB;
             --border: #e5e7eb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08); /* Sombra média */
+            --radius: 10px; /* Arredondamento equilibrado */
         }
 
         html, body {
@@ -118,6 +118,7 @@
             color: var(--text-main);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            font-size: 16px; /* Tamanho padrão web */
         }
         
         img {
@@ -130,7 +131,7 @@
         header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 8px 0;
+            padding: 10px 0; /* Padding levemente maior que a versão anterior */
             position: relative;
             width: 100%;
             z-index: 1000;
@@ -140,23 +141,23 @@
         }
         .header-content {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1100px; /* Aumentado para 1100px (Meio termo) */
             margin: 0 auto;
-            padding: 5px 15px;
+            padding: 5px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
-        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
         .logo-img { 
-            width: 55px; height: 55px;
+            width: 50px; height: 50px; /* Tamanho médio */
             border-radius: 50%; object-fit: cover; 
             border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
         }
         .brand-info { display: flex; flex-direction: column; justify-content: center; }
         .brand-name { font-size: 1.1rem; font-weight: 800; line-height: 1; color: var(--text-main); }
-        .brand-subtitle { font-size: 0.75rem; color: var(--brand-blue); font-weight: 600; }
+        .brand-subtitle { font-size: 0.8rem; color: var(--brand-blue); font-weight: 600; }
 
         .header-actions {
             display: flex;
@@ -167,13 +168,13 @@
             background-color: var(--surface);
             color: var(--text-main);
             text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 700;
-            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 8px 18px;
             border-radius: 20px;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             line-height: 1;
             border: 1px solid var(--border);
             cursor: pointer;
@@ -184,26 +185,23 @@
 
         /* --- LAYOUT GRID --- */
         .container { 
-            max-width: 1200px; 
+            max-width: 1100px; /* Aumentado para 1100px */
             margin: 0 auto; 
-            padding: 15px;
+            padding: 20px;
             width: 100%;
-        }
-
-        @media (min-width: 768px) {
-            .container { padding: 20px; }
         }
 
         .layout-grid {
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 28px; /* Espaçamento médio */
         }
 
         @media (min-width: 1024px) {
             .layout-grid {
                 display: grid;
-                grid-template-columns: 320px 1fr;
+                /* Sidebar: 290px (Meio termo entre 260 e 320) */
+                grid-template-columns: 290px 1fr; 
                 grid-template-areas: 
                     "sidebar main"
                     "sidebar faq";
@@ -225,17 +223,17 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 24px;
+            padding: 22px; /* Espaçamento interno equilibrado */
             box-shadow: var(--shadow);
-            margin-bottom: 24px;
+            margin-bottom: 22px;
             word-wrap: break-word; 
             overflow-wrap: break-word;
         }
 
         h1, h2, h3 { margin-top: 0; color: #111; line-height: 1.2; }
-        h1 { font-size: 1.8rem; }
-        h2 { font-size: 1.5rem; }
-        h3 { font-size: 1.25rem; }
+        h1 { font-size: 1.65rem; } /* Tamanho equilibrado */
+        h2 { font-size: 1.4rem; } 
+        h3 { font-size: 1.2rem; }
         
         .sidebar-title { font-size: 1.1rem; margin-bottom: 15px; font-weight: 700; }
         
@@ -261,7 +259,8 @@
 
         .product-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            /* Min 240px: Cards mais largos que a versão compacta, mas menores que a original */
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
             gap: 20px; 
             width: 100%;
         }
@@ -284,10 +283,11 @@
         .basket-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .option-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+            padding: 10px 12px;
+            border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
         }
         .option-item.selected { border-color: var(--accent); background-color: #ecfdf5; ring: 1px solid var(--accent); }
-        .option-price { font-weight: 800; color: var(--text-main); font-size: 1.1rem; }
+        .option-price { font-weight: 800; color: var(--text-main); font-size: 1rem; }
 
         .item-list-container {
             background-color: #f8fafc;
@@ -303,20 +303,18 @@
         }
         .clean-list { list-style: none; padding: 0; margin: 0; }
         
-        /* ATUALIZADO: Alinhamento para esquerda (flex-start) para formatar "4un - Produto" */
         .clean-list li {
             display: flex; 
-            justify-content: flex-start; /* Alinha à esquerda */
+            justify-content: flex-start;
             align-items: center;
-            gap: 12px; /* Espaço entre a quantidade e o nome */
-            padding: 8px 0; 
+            gap: 12px;
+            padding: 8px 0;
             border-bottom: 1px solid #e2e8f0;
             font-size: 0.95rem; 
             color: #334155;
         }
         .clean-list li:last-child { border-bottom: none; }
         
-        /* NOVO ESTILO PARA CABEÇALHO DE CATEGORIA */
         .list-category-header {
             background-color: #e5e7eb;
             color: #1f2937;
@@ -336,7 +334,7 @@
             background: #e0f2fe; color: #0369a1; 
             font-weight: 700; font-size: 0.85rem;
             padding: 2px 8px; border-radius: 4px; 
-            min-width: 35px; /* Ligeiramente maior para caber "4un" */
+            min-width: 35px;
             text-align: center;
             white-space: nowrap;
         }
@@ -345,7 +343,7 @@
             background: white; border: 1px solid var(--border);
             border-radius: 8px; margin-bottom: 10px; overflow: hidden;
         }
-        summary { padding: 15px; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
+        summary { padding: 15px; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; font-size: 1rem; }
         summary::after { content: "+"; font-size: 1.2rem; color: var(--brand-blue); }
         details[open] summary::after { content: "-"; }
         details > div { padding: 15px; border-top: 1px solid #f3f4f6; color: var(--text-muted); font-size: 0.95rem; }
@@ -387,7 +385,7 @@
     <header>
         <div class="header-content">
             <div class="logo-area">
-                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="logo-img" width="55" height="55">
+                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="logo-img" width="50" height="50">
                 <div class="brand-info">
                     <div class="brand-name">Dona Antônia</div>
                     <div class="brand-subtitle">Super Cestas Básicas</div>
@@ -408,7 +406,7 @@
         <aside id="sidebar-info">
             <div class="card" style="border-top: 4px solid var(--brand-blue);">
                 <h2 class="sidebar-title">6 coisas que você precisa saber:</h2>
-                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; font-size: 0.95rem;">
                     <li style="display: flex; align-items: center;"><span class="badge-number">1</span> Entregamos em Cuiabá e VG.</li>
                     <li style="display: flex; align-items: center;"><span class="badge-number">2</span> Pague só na entrega.</li>
                     <li style="display: flex; align-items: center;"><span class="badge-number">3</span> Entrega Grátis hoje.</li>
@@ -419,17 +417,17 @@
             </div>
 
             <div class="card">
-                <h2 class="sidebar-title" style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.5rem;">📍</span> Regiões Atendidas</h2>
+                <h2 class="sidebar-title" style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.4rem;">📍</span> Regiões Atendidas</h2>
                 
                 <div style="margin-top: 15px;">
-                    <strong style="color: #111; display: block; margin-bottom: 5px;">🏠 CUIABÁ</strong>
+                    <strong style="color: #111; display: block; margin-bottom: 5px; font-size: 1rem;">🏠 CUIABÁ</strong>
                     <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0 0 15px 0; line-height: 1.4;">
                         Grande Coxipó, CPA, Morada da Serra, Centro, Porto, Goiabeiras, Tijucal, Pedra 90, e mais.
                     </p>
 
                     <div style="height: 1px; background: #eee; margin: 10px 0;"></div>
 
-                    <strong style="color: #111; display: block; margin-bottom: 5px; margin-top: 10px;">🚚 VÁRZEA GRANDE</strong>
+                    <strong style="color: #111; display: block; margin-bottom: 5px; margin-top: 10px; font-size: 1rem;">🚚 VÁRZEA GRANDE</strong>
                     <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
                         Cristo Rei, Mapim, Centro, Ipase, Jardim Glória, São Mateus, Paiaguás e região.
                     </p>
@@ -443,7 +441,7 @@
         <!-- BLOCO 2: Conteúdo Principal -->
         <main id="main-content">
             <div class="card" style="background: #eff6ff; border-color: #dbeafe;">
-                <h1 style="font-size: 1.4rem; color: #1e40af; border: none; margin-bottom: 10px;">Cestas Básicas em Cuiabá e VG</h1>
+                <h1 style="font-size: 1.5rem; color: #1e40af; border: none; margin-bottom: 10px;">Cestas Básicas em Cuiabá e VG</h1>
                 <p style="font-size: 0.95rem; color: #1e3a8a; margin: 0;">
                     A Dona Antônia é a sua <strong>distribuidora de alimentos</strong> com menor preço. Montamos cestas ideais para famílias, doação e empresas. Peça online com <strong>entrega grátis</strong>.
                 </p>
@@ -457,7 +455,7 @@
 
         <!-- BLOCO 3: FAQ -->
         <section id="faq-section">
-            <h2 style="font-size: 1.5rem; margin-bottom: 20px;">Dúvidas Frequentes</h2>
+            <h2 style="font-size: 1.4rem; margin-bottom: 20px;">Dúvidas Frequentes</h2>
             
             <details>
                 <summary>Onde comprar cesta básica em Cuiabá?</summary>
@@ -502,8 +500,8 @@
 
     <dialog id="confirmDialog">
         <div style="padding: 25px;">
-            <h3 id="modalTitle" style="margin-top: 0;">Confirmar Pedido</h3>
-            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Escolha a variação do arroz para finalizar:</p>
+            <h3 id="modalTitle" style="margin-top: 0; font-size: 1.3rem;">Confirmar Pedido</h3>
+            <p style="color: #666; font-size: 0.95rem; margin-bottom: 20px;">Escolha a variação do arroz para finalizar:</p>
             <div id="modalOptions"></div>
             <div style="display: flex; gap: 10px; margin-top: 25px;">
                 <button class="btn-outline" onclick="document.getElementById('confirmDialog').close()" style="flex: 1;">Cancelar</button>
@@ -514,17 +512,17 @@
 
     <!-- Novo Modal de Lista de Produtos -->
     <dialog id="itemsDialog">
-        <div style="padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 id="itemsModalTitle" style="margin: 0; font-size: 1.4rem;">Itens da Cesta</h3>
-                <button onclick="document.getElementById('itemsDialog').close()" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; width: auto; color: #666;">&times;</button>
+        <div style="padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="itemsModalTitle" style="margin: 0; font-size: 1.3rem;">Itens da Cesta</h3>
+                <button onclick="document.getElementById('itemsDialog').close()" style="background: transparent; border: none; font-size: 1.6rem; cursor: pointer; padding: 0; width: auto; color: #666;">&times;</button>
             </div>
             
             <div id="itemsModalContent" class="item-list-container" style="max-height: 60vh; overflow-y: auto; margin-top: 0;">
                 <!-- Conteúdo injetado via JS -->
             </div>
 
-            <div style="margin-top: 20px;">
+            <div style="margin-top: 25px;">
                  <button onclick="document.getElementById('itemsDialog').close()" class="btn-outline" style="width: 100%;">Fechar</button>
             </div>
         </div>
@@ -739,7 +737,7 @@
                 
                 const optsHtml = basket.opts.map((opt, idx) => `
                     <div class="option-item ${opt.sel ? 'selected' : ''}" onclick="App.selectOption('${basket.id}', ${idx})">
-                        <span style="font-size: 0.9rem; font-weight: 500;">${opt.n.replace('Com ', '')}</span>
+                        <span style="font-size: 0.85rem; font-weight: 500;">${opt.n.replace('Com ', '')}</span>
                         <span class="option-price">${opt.norm}</span>
                     </div>
                 `).join('');
