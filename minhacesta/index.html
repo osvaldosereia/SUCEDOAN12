@@ -150,11 +150,31 @@
         .btn-finish.ready { background: var(--primary); cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
 
         /* MODAIS */
-        dialog { border: none; border-radius: 16px 16px 0 0; width: 100%; max-width: 600px; margin: auto auto 0 auto; padding: 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); }
+        dialog { 
+            border: none; border-radius: 16px 16px 0 0; width: 100%; max-width: 600px; 
+            margin: auto auto 0 auto; padding: 0; 
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.2); 
+            display: flex; flex-direction: column; /* Importante para o layout flexível */
+            max-height: 85vh; /* Limite de altura para garantir scroll */
+        }
         dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
-        .modal-head { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 10; }
-        .modal-body { padding: 16px; max-height: 70vh; overflow-y: auto; }
-        .modal-foot { padding: 16px; border-top: 1px solid var(--border); background: #F9FAFB; }
+        
+        .modal-head { 
+            padding: 16px; border-bottom: 1px solid var(--border); 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: white; z-index: 10; flex-shrink: 0;
+        }
+        
+        .modal-body { 
+            padding: 16px; 
+            overflow-y: auto; /* Scroll apenas aqui */
+            flex-grow: 1; /* Ocupa o espaço disponível */
+        }
+        
+        .modal-foot { 
+            padding: 16px; border-top: 1px solid var(--border); 
+            background: #F9FAFB; flex-shrink: 0; /* Fixo no fundo */
+        }
         
         /* UTIL */
         .hidden { display: none !important; }
@@ -217,31 +237,35 @@
         </div>
     </dialog>
 
-    <!-- MODAL RESUMO -->
+    <!-- MODAL RESUMO ATUALIZADO -->
     <dialog id="modal-summary">
         <div class="modal-head">
             <h3 style="margin:0">Resumo do Pedido</h3>
             <button onclick="closeModal('modal-summary')" aria-label="Fechar resumo" style="background:none;border:none;font-size:24px;">&times;</button>
         </div>
         <div class="modal-body">
-            <!-- Grid de resumo ajustado para 2 colunas no mobile -->
+            <!-- Lista com Scroll -->
             <div id="summary-list" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"></div>
-            
-            <hr style="margin:20px 0; border-top:1px dashed #ddd;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <span>Produtos:</span>
-                <b id="sum-prod">R$ 0,00</b>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <span>Entrega:</span>
-                <b id="sum-del">R$ 0,00</b>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:1.2em; color:var(--primary); margin-top:16px;">
-                <b>TOTAL:</b>
-                <b id="sum-total">R$ 0,00</b>
-            </div>
         </div>
         <div class="modal-foot">
+            <!-- Valores Fixos -->
+            <div style="margin-bottom: 12px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:14px; color:var(--text-light);">
+                    <span>Produtos:</span>
+                    <b id="sum-prod">R$ 0,00</b>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:14px; color:var(--text-light);">
+                    <span>Entrega:</span>
+                    <b id="sum-del">R$ 0,00</b>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:1.4em; color:var(--primary); margin-top:10px; align-items:flex-end;">
+                    <b>TOTAL:</b>
+                    <b id="sum-total">R$ 0,00</b>
+                </div>
+                <!-- Texto de Parcelamento -->
+                <div id="sum-installments" style="text-align:right; font-size:12px; color:var(--text-light); margin-top:2px;"></div>
+            </div>
+
             <button onclick="sendWhatsapp()" style="width:100%; padding:16px; border:none; background:#25D366; color:white; font-weight:bold; border-radius:12px; display:flex; justify-content:center; gap:8px;">
                 <svg viewBox="0 0 256 256"><path d="M187.58,144.84l-32-16a8,8,0,0,0-8,.5l-14.69,9.8a40.55,40.55,0,0,1-16-16l9.8-14.69a8,8,0,0,0,.5-8l-16-32A8,8,0,0,0,104,64a40,40,0,0,0-40,40,88.1,88.1,0,0,0,88,88,40,40,0,0,0,40-40A8,8,0,0,0,187.58,144.84ZM152,176a72.08,72.08,0,0,1-72-72A24,24,0,0,1,99.29,80.46l11.48,23L100.8,118.2a8,8,0,0,0-.23,8.48,56.63,56.63,0,0,0,30.75,30.75,8,8,0,0,0,8.48-.23l14.7-9.93,23,11.48A24,24,0,0,1,152,176ZM128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"></path></svg>
                 ENVIAR PEDIDO
@@ -522,10 +546,13 @@
             });
 
             const frete = subtotal >= 85 ? 0 : 10;
+            const total = subtotal + frete;
+            const parcela = (total / 4).toFixed(2).replace('.', ',');
             
             document.getElementById('sum-prod').innerText = `R$ ${subtotal.toFixed(2).replace('.',',')}`;
             document.getElementById('sum-del').innerText = frete === 0 ? 'GRÁTIS' : 'R$ 10,00';
-            document.getElementById('sum-total').innerText = `R$ ${(subtotal+frete).toFixed(2).replace('.',',')}`;
+            document.getElementById('sum-total').innerText = `R$ ${total.toFixed(2).replace('.',',')}`;
+            document.getElementById('sum-installments').innerText = `ou 4x de R$ ${parcela} sem juros no cartão`;
             
             document.getElementById('modal-summary').showModal();
         }
