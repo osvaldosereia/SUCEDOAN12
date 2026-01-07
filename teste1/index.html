@@ -1,371 +1,376 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Cestas Básicas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>Cestas Básicas em Cuiabá e VG | Dona Antônia | Entrega Grátis</title>
+    <meta name="description" content="Procurando Cesta Básica em Cuiabá ou Várzea Grande? A Dona Antônia entrega hoje! Atacado e Varejo. Pague na entrega.">
+    <meta name="theme-color" content="#ffffff">
 
-        // Configuração do Firebase
-        const firebaseConfig = typeof window.__firebase_config !== 'undefined' 
-            ? JSON.parse(window.__firebase_config) 
-            : { apiKey: "" }; // Fallback para evitar erro de parse
-            
-        const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'gestao-cestas-default';
+    <style>
+        /* Oculta o conteúdo até que o JS/Tailwind processe */
+        body { opacity: 0; transition: opacity 0.5s ease-in-out; visibility: hidden; }
+        body.loaded { opacity: 1; visibility: visible; }
         
-        let app, auth, db;
-        let user = null;
-        let produtos = [];
-        let view = 'dashboard';
+        /* Estilos essenciais que independem do Tailwind */
+        .loader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #2563EB; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Utilitários nativos para garantir performance na rolagem */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        details > summary { list-style: none; cursor: pointer; }
+        details > summary::-webkit-details-marker { display: none; }
+    </style>
 
-        // Inicialização Segura
-        async function startApp() {
-            try {
-                if (!firebaseConfig.apiKey) {
-                    throw new Error("Configuração do Firebase não encontrada.");
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { blue: '#2563EB', darkBlue: '#1D4ED8', green: '#10B981', bg: '#F3F4F6' }
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    boxShadow: { 'card': '0 4px 6px -1px rgba(0,0,0,0.1)', 'float': '0 20px 25px -5px rgba(0,0,0,0.1)' }
                 }
-
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                // Regra 3: Auth Antes de Consultas
-                const initAuth = async () => {
-                    if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
-                        await signInWithCustomToken(auth, window.__initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                };
-
-                await initAuth();
-
-                onAuthStateChanged(auth, (u) => {
-                    user = u;
-                    if (user) {
-                        renderApp();
-                        listenToProducts();
-                    } else {
-                        showError("Utilizador não autenticado.");
-                    }
-                });
-
-            } catch (error) {
-                console.error("Erro no arranque:", error);
-                showError("Falha ao ligar ao servidor. Por favor, verifique a sua ligação ou tente novamente.");
             }
         }
+    </script>
 
-        function showError(msg) {
-            const container = document.getElementById('app');
-            if (container) {
-                container.innerHTML = `
-                    <div class="flex items-center justify-center h-screen bg-gray-50 p-6">
-                        <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-md border-t-4 border-red-500 text-center">
-                            <div class="text-red-500 mb-4">
-                                <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            </div>
-                            <h2 class="text-xl font-bold text-gray-800 mb-2">Erro no Sistema</h2>
-                            <p class="text-gray-600 mb-6">${msg}</p>
-                            <button onclick="window.location.reload()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Tentar Novamente</button>
-                        </div>
-                    </div>`;
-            }
-        }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
 
-        // Listeners do Firestore (Caminhos Rígidos - Regra 1)
-        function listenToProducts() {
-            if (!user) return;
-            const q = collection(db, 'artifacts', appId, 'public', 'data', 'produtos');
-            onSnapshot(q, (snapshot) => {
-                produtos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderContent();
-            }, (error) => {
-                console.error("Erro ao ler produtos:", error);
-                showMessage("Erro ao atualizar dados do stock.");
-            });
-        }
-
-        // Funções de Janela para o HTML
-        window.saveProduct = async (e) => {
-            e.preventDefault();
-            if (!user) return;
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            data.estoque = parseInt(data.estoque) || 0;
-
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'produtos', data.codigo_interno);
-            
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const oldData = docSnap.data();
-                    await updateDoc(docRef, {
-                        nome: data.nome,
-                        barcode: data.barcode,
-                        ncm: data.ncm,
-                        estoque: oldData.estoque + data.estoque
-                    });
-                    showMessage("Stock atualizado!");
-                } else {
-                    await setDoc(docRef, data);
-                    showMessage("Produto registado!");
-                }
-                e.target.reset();
-            } catch (err) {
-                alert("Erro ao salvar: " + err.message);
-            }
-        };
-
-        window.deleteProduct = async (id) => {
-            if (!user || !confirm("Deseja apagar este produto?")) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'produtos', id));
-        };
-
-        window.processAssembly = async (e) => {
-            e.preventDefault();
-            if (!user) return;
-            const formData = new FormData(e.target);
-            const rawList = formData.get('lista_produtos');
-            const qtdCestas = parseInt(formData.get('quantidade_cestas'));
-            const nomeCesta = formData.get('nome_cesta');
-            const valorCesta = formData.get('valor_cesta');
-
-            const linhas = rawList.trim().split('\n');
-            const itensParaBaixar = [];
-
-            try {
-                for (let linha of linhas) {
-                    const partes = linha.split('|');
-                    if (partes.length < 2) continue;
-                    const cod = partes[0].trim();
-                    const qtdPerCesta = partes[1].trim();
-                    
-                    const produto = produtos.find(p => p.codigo_interno === cod);
-                    if (!produto) throw new Error(`Produto não encontrado: ${cod}`);
-                    
-                    const totalNecessario = parseInt(qtdPerCesta) * qtdCestas;
-                    if (produto.estoque < totalNecessario) {
-                        throw new Error(`Stock insuficiente para ${produto.nome}. Necessário: ${totalNecessario}, Disponível: ${produto.estoque}`);
-                    }
-                    itensParaBaixar.push({ cod, total: totalNecessario, stockAtual: produto.estoque });
-                }
-
-                // Baixa Individual (Regra 2)
-                for (let item of itensParaBaixar) {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'produtos', item.cod);
-                    await updateDoc(docRef, { estoque: item.stockAtual - item.total });
-                }
-
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'montagens'), {
-                    nome_cesta: nomeCesta,
-                    quantidade: qtdCestas,
-                    valor: valorCesta,
-                    data: serverTimestamp()
-                });
-
-                showMessage(`${qtdCestas} cestas montadas!`);
-                e.target.reset();
-                setView('dashboard');
-            } catch (err) {
-                alert(err.message);
-            }
-        };
-
-        window.setView = (v) => {
-            view = v;
-            renderContent();
-        };
-
-        function showMessage(msg) {
-            const toast = document.getElementById('toast');
-            if (!toast) return;
-            toast.innerText = msg;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 3000);
-        }
-
-        function renderApp() {
-            document.getElementById('app').innerHTML = `
-                <div class="flex h-screen bg-gray-100 font-sans">
-                    <!-- Sidebar -->
-                    <div class="w-64 bg-slate-900 text-white flex flex-col">
-                        <div class="p-6 text-xl font-bold border-b border-slate-800 tracking-tight text-blue-400">STOCK CESTAS</div>
-                        <nav class="flex-1 p-4 space-y-2">
-                            <button onclick="setView('dashboard')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                                Stock Atual
-                            </button>
-                            <button onclick="setView('add_product')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
-                                Entrada / Cadastro
-                            </button>
-                            <button onclick="setView('assemble')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                                Montar Cestas
-                            </button>
-                        </nav>
-                        <div class="p-4 text-[10px] text-slate-500 border-t border-slate-800 uppercase tracking-widest">
-                            ID: ${user.uid.substring(0, 12)}...
-                        </div>
-                    </div>
-                    <!-- Main -->
-                    <div class="flex-1 flex flex-col overflow-hidden">
-                        <header class="bg-white shadow-sm p-4 px-8 flex justify-between items-center">
-                            <h2 id="page-title" class="text-xl font-bold text-gray-800">Painel</h2>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                <span class="text-xs text-gray-500 font-medium">Sistema Online</span>
-                            </div>
-                        </header>
-                        <main class="flex-1 overflow-y-auto p-8" id="main-content"></main>
-                    </div>
-                </div>
-                <div id="toast" class="fixed bottom-8 right-8 bg-slate-800 text-white px-6 py-3 rounded-xl shadow-2xl hidden z-50 border border-slate-700"></div>
-            `;
-            renderContent();
-        }
-
-        function renderContent() {
-            const main = document.getElementById('main-content');
-            const title = document.getElementById('page-title');
-            if (!main) return;
-
-            switch(view) {
-                case 'dashboard':
-                    title.innerText = "Stock de Produtos";
-                    main.innerHTML = `
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-gray-50 text-gray-600 text-xs uppercase font-bold border-b border-gray-200">
-                                    <tr>
-                                        <th class="p-4 px-6">Cód. Interno</th>
-                                        <th class="p-4 px-6">Produto</th>
-                                        <th class="p-4 px-6">Identificação</th>
-                                        <th class="p-4 px-6">Quantidade</th>
-                                        <th class="p-4 px-6 text-right">Acções</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    ${produtos.map(p => `
-                                        <tr class="hover:bg-blue-50/30 transition">
-                                            <td class="p-4 px-6 font-mono text-sm text-blue-600 font-bold">${p.id}</td>
-                                            <td class="p-4 px-6 font-semibold text-gray-700">${p.nome}</td>
-                                            <td class="p-4 px-6 text-gray-400 text-xs">${p.barcode || '-'} | ${p.ncm || '-'}</td>
-                                            <td class="p-4 px-6">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${p.estoque < 10 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}">
-                                                    ${p.estoque} UN
-                                                </span>
-                                            </td>
-                                            <td class="p-4 px-6 text-right">
-                                                <button onclick="deleteProduct('${p.id}')" class="text-gray-300 hover:text-red-500 transition">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                    ${produtos.length === 0 ? '<tr><td colspan="5" class="p-20 text-center text-gray-400 italic">Nenhum produto em stock.</td></tr>' : ''}
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                    break;
-
-                case 'add_product':
-                    title.innerText = "Entrada de Stock";
-                    main.innerHTML = `
-                        <div class="max-w-xl bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                            <form onsubmit="saveProduct(event)" class="space-y-6">
-                                <div class="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Código Interno</label>
-                                        <input type="text" name="codigo_interno" required class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cód. Barras (EAN)</label>
-                                        <input type="text" name="barcode" class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome do Produto</label>
-                                    <input type="text" name="nome" required class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
-                                </div>
-                                <div class="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">NCM</label>
-                                        <input type="text" name="ncm" class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quantidade a Adicionar</label>
-                                        <input type="number" name="estoque" required class="w-full border-blue-200 rounded-lg p-3 bg-blue-50 font-bold text-blue-700 border outline-none transition">
-                                    </div>
-                                </div>
-                                <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-lg font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition active:scale-[0.98]">REGISTAR ENTRADA</button>
-                            </form>
-                        </div>
-                    `;
-                    break;
-
-                case 'assemble':
-                    title.innerText = "Montagem de Lote";
-                    main.innerHTML = `
-                        <div class="max-w-3xl bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                            <form onsubmit="processAssembly(event)" class="space-y-6">
-                                <div class="grid grid-cols-3 gap-6">
-                                    <div class="col-span-1">
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome do Lote/Cesta</label>
-                                        <input type="text" name="nome_cesta" placeholder="Ex: Cesta Padrão" required class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Qtd de Cestas</label>
-                                        <input type="number" name="quantidade_cestas" value="1" min="1" required class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Preço Venda</label>
-                                        <input type="number" step="0.01" name="valor_cesta" class="w-full border-gray-200 rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 border outline-none transition">
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Composição (CÓDIGO | QTD POR CESTA)</label>
-                                    <textarea name="lista_produtos" rows="8" required placeholder="ARROZ_01 | 2&#10;FEIJAO_A | 1" class="w-full border-gray-200 rounded-lg p-4 font-mono text-sm bg-gray-50 focus:bg-white border outline-none transition"></textarea>
-                                </div>
-
-                                <div class="flex items-start gap-3 p-4 bg-amber-50 rounded-lg border border-amber-100">
-                                    <svg class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"></path></svg>
-                                    <p class="text-xs text-amber-800 leading-relaxed"><strong>Nota:</strong> O sistema multiplicará a quantidade de itens pelo número de cestas e subtrairá automaticamente do stock de produtos individuais.</p>
-                                </div>
-
-                                <button type="submit" class="w-full bg-slate-900 text-white p-4 rounded-lg font-bold text-lg hover:bg-slate-800 shadow-xl transition active:scale-[0.98]">PROCESSAR BAIXA DE STOCK</button>
-                            </form>
-                        </div>
-                    `;
-                    break;
-            }
-        }
-
-        // Iniciar aplicação ao carregar a página
-        window.addEventListener('load', startApp);
+    <script>
+        // Google Tag Manager & Pixel inicializados de forma segura
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        setTimeout(() => {
+            // Insira aqui scripts pesados de terceiros se necessário
+            // Isso garante que o visual carregue primeiro
+        }, 3000);
     </script>
 </head>
-<body class="bg-gray-100 text-gray-900 overflow-hidden">
-    <div id="app">
-        <div class="flex items-center justify-center h-screen bg-white">
-            <div class="flex flex-col items-center">
-                <div class="relative">
-                    <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="w-8 h-8 bg-white rounded-full"></div>
-                    </div>
+
+<body class="bg-brand-bg text-gray-900 font-sans antialiased pb-24 lg:pb-0">
+
+    <div id="app-loader" class="loader-container">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 lg:px-8 h-[70px] flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-100">
+                    <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
+                         class="w-full h-full object-cover" 
+                         onerror="this.style.display='none'">
                 </div>
-                <p class="mt-6 text-gray-500 font-bold tracking-widest text-xs uppercase animate-pulse">A carregar o sistema...</p>
+                <h1 class="text-base lg:text-xl font-bold leading-tight">
+                    Dona Antônia <span class="text-brand-blue block lg:inline text-xs lg:text-base font-normal">Super Cestas</span>
+                </h1>
+            </div>
+            <nav class="hidden lg:flex gap-4">
+                <button onclick="App.ui.openModal('company')" class="px-5 py-2 rounded-full bg-gray-800 text-white font-bold text-sm hover:bg-gray-700 transition">Contatos</button>
+            </nav>
+            <button onclick="App.ui.openModal('company')" class="lg:hidden p-2 text-2xl text-gray-600"><i class="ph-bold ph-list"></i></button>
+        </div>
+    </header>
+
+    <div class="text-center pt-8 pb-4 px-4 bg-white border-b border-gray-100">
+        <h2 class="text-2xl lg:text-3xl font-extrabold tracking-tight">Cestas Básicas Cuiabá/VG</h2>
+        <p class="mt-2 text-gray-500 text-sm">Menor preço e <span class="text-green-600 font-bold">Entrega Grátis</span>.</p>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        
+        <aside class="lg:col-span-4 lg:sticky lg:top-24 order-2 lg:order-1 space-y-6">
+            <div class="bg-white rounded-2xl p-6 shadow-card border border-gray-100">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="text-2xl text-red-500">📍</span>
+                    <h3 class="text-lg font-bold">Regiões Atendidas</h3>
+                </div>
+                <div class="text-sm text-gray-600 space-y-2">
+                    <p><strong>Cuiabá:</strong> Coxipó, CPA, Centro, Leste e Oeste.</p>
+                    <p><strong>Várzea Grande:</strong> Cristo Rei, Glória, Centro, Mapim.</p>
+                    <p class="text-green-600 font-bold flex items-center gap-1 pt-2"><i class="ph-bold ph-check-circle"></i> Entrega Grátis!</p>
+                </div>
+            </div>
+            
+            <div class="hidden lg:block bg-white rounded-2xl p-6 shadow-card border border-gray-100">
+                <h3 class="text-lg font-bold mb-4">💳 Pagamento na Entrega</h3>
+                <ul class="text-sm text-gray-600 space-y-2">
+                    <li><i class="ph-fill ph-money text-green-600 mr-2"></i>Dinheiro ou Pix</li>
+                    <li><i class="ph-fill ph-credit-card text-blue-600 mr-2"></i>Cartão Crédito/Débito</li>
+                    <li><i class="ph-fill ph-fork-knife text-orange-500 mr-2"></i>Alelo / Sodexo / Pluxee</li>
+                </ul>
+            </div>
+        </aside>
+
+        <section class="lg:col-span-8 order-1 lg:order-2">
+            <div id="products-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                </div>
+            
+            <div class="mt-12 space-y-3">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="ph-bold ph-question text-brand-blue"></i> Dúvidas</h3>
+                <details class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm group">
+                    <summary class="font-bold text-gray-800 flex justify-between">Como comprar? <i class="ph-bold ph-caret-down group-open:rotate-180 transition"></i></summary>
+                    <p class="mt-3 text-sm text-gray-600">Escolha sua cesta acima e clique em "Pedir". Você será redirecionado para o WhatsApp para confirmar o endereço. O pagamento é feito somente na entrega.</p>
+                </details>
+                <details class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm group">
+                    <summary class="font-bold text-gray-800 flex justify-between">Aceita Vale Alimentação? <i class="ph-bold ph-caret-down group-open:rotate-180 transition"></i></summary>
+                    <p class="mt-3 text-sm text-gray-600">Aceitamos Alelo, Sodexo, Pluxee e outros. <strong>Não aceitamos Ticket Alimentação.</strong></p>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <div class="lg:hidden fixed bottom-4 left-4 right-4 z-30 flex gap-3">
+        <button onclick="App.ui.openModal('company')" class="flex-1 bg-gray-900 text-white py-3.5 rounded-full font-bold shadow-float flex items-center justify-center gap-2 text-sm">
+            <i class="ph-bold ph-buildings text-lg"></i> Contatos
+        </button>
+        <a href="https://api.whatsapp.com/send?phone=5565998150975" class="flex-1 bg-green-500 text-white py-3.5 rounded-full font-bold shadow-float flex items-center justify-center gap-2 text-sm">
+            <i class="ph-bold ph-whatsapp-logo text-lg"></i> WhatsApp
+        </a>
+    </div>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end lg:items-center justify-center opacity-0 transition-opacity duration-300" onclick="if(event.target===this) App.ui.closeModal()">
+        <div id="modal-content" class="w-full bg-white rounded-t-3xl lg:rounded-2xl lg:max-w-2xl max-h-[90vh] overflow-y-auto transform transition-transform duration-300 translate-y-full shadow-2xl"></div>
+    </div>
+
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform" id="confirm-content">
+            <h3 class="text-xl font-bold text-gray-900 mb-1" id="conf-title">Confirmar</h3>
+            <p class="text-sm text-gray-500 mb-4">Selecione a variação desejada:</p>
+            <div id="conf-options" class="space-y-3 mb-6"></div>
+            <div class="flex gap-3">
+                <button onclick="App.ui.closeConfirm()" class="flex-1 py-3 rounded-xl font-bold bg-gray-100 text-gray-600">Cancelar</button>
+                <button id="conf-btn" class="flex-1 py-3 rounded-xl font-bold bg-green-500 text-white shadow-lg flex justify-center items-center gap-2"><i class="ph-bold ph-whatsapp-logo"></i> Pedir</button>
             </div>
         </div>
     </div>
+
+    <script>
+        /**
+         * SISTEMAS - CORE APPLICATION
+         * Single File, LocalStorage Persistent, Performance Oriented
+         */
+        const DB = {
+            baskets: {
+                'GRANDE': { id: 'GRANDE', name: 'Cesta Grande', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif', opts: [{ n: 'Com Arroz Tio Alvino', price: 'R$ 355,00' }, { n: 'Com Arroz Koblenz', price: 'R$ 365,00' }], items: ['4 Arroz 5kg', '3 Açúcar 2kg', '4 Óleo 900ml', '4 Feijão 1kg', '1 Café 500g', '3 Espaguete', '12 Ovos', '2 Molho Tomate', 'Kit Limpeza Completo'] },
+                'MEDIA': { id: 'MEDIA', name: 'Cesta Média', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif', opts: [{ n: 'Com Arroz Tio Alvino', price: 'R$ 300,00' }, { n: 'Com Arroz Koblenz', price: 'R$ 305,00' }], items: ['3 Arroz 5kg', '2 Açúcar 2kg', '3 Óleo 900ml', '3 Feijão 1kg', '1 Café 500g', '12 Ovos', '2 Espaguete', '2 Molho Tomate', 'Kit Limpeza Básico'] },
+                'PEQUENA': { id: 'PEQUENA', name: 'Cesta Pequena', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif', opts: [{ n: 'Com Arroz Tio Alvino', price: 'R$ 200,00' }, { n: 'Com Arroz Koblenz', price: 'R$ 205,00' }], items: ['2 Arroz 5kg', '1 Açúcar 2kg', '2 Óleo 900ml', '2 Feijão 1kg', '1 Café 250g', '12 Ovos', '1 Espaguete', '1 Molho Tomate', 'Kit Limpeza Essencial'] },
+                'MINI': { id: 'MINI', name: 'Cesta Mini', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif', opts: [{ n: 'Com Arroz Tio Alvino', price: 'R$ 155,00' }, { n: 'Com Arroz Koblenz', price: 'R$ 160,00' }], items: ['1 Arroz 5kg', '1 Açúcar 2kg', '2 Óleo 900ml', '2 Feijão 1kg', '1 Café 250g', '1 Espaguete', 'Itens Básicos de Limpeza'] },
+                'ECONOMICA': { id: 'ECONOMICA', name: 'Cesta Econômica', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif', opts: [{ n: 'Valor Único', price: 'R$ 80,00' }], items: ['1 Arroz Tio Alvino 5kg', '1 Açúcar 2kg', '1 Óleo 900ml', '1 Feijão 1kg', '1 Café 250g', '1 Espaguete', 'Sem itens de limpeza'] }
+            },
+            keys: ['ECONOMICA', 'MINI', 'PEQUENA', 'MEDIA', 'GRANDE']
+        };
+
+        const App = {
+            data: {
+                phone: "5565998150975",
+                preferences: {} // Stores user choice per basket
+            },
+            
+            init() {
+                this.storage.load();
+                this.ui.render();
+                this.ui.removeLoader();
+            },
+
+            storage: {
+                load() {
+                    try {
+                        const saved = localStorage.getItem('da_prefs');
+                        if (saved) App.data.preferences = JSON.parse(saved);
+                    } catch (e) { console.warn('Storage error', e); }
+                },
+                save() {
+                    try {
+                        localStorage.setItem('da_prefs', JSON.stringify(App.data.preferences));
+                    } catch (e) { console.warn('Storage unavailable'); }
+                },
+                setPref(basketId, optIndex) {
+                    App.data.preferences[basketId] = optIndex;
+                    this.save();
+                }
+            },
+
+            actions: {
+                startOrder(basketId) {
+                    const b = DB.baskets[basketId];
+                    // Se só tem 1 opção, vai direto
+                    if (b.opts.length === 1) return this.sendWhatsApp(b, b.opts[0]);
+                    
+                    // Se tem mais opções, abre modal de confirmação
+                    App.ui.openConfirm(b);
+                },
+                sendWhatsApp(b, opt) {
+                    const msg = `Olá, gostaria de encomendar a *${b.name}* (${opt.n}) por *${opt.price}*.`;
+                    const url = `https://api.whatsapp.com/send?phone=${App.data.phone}&text=${encodeURIComponent(msg)}`;
+                    window.open(url, '_blank');
+                    App.ui.closeConfirm();
+                }
+            },
+
+            ui: {
+                removeLoader() {
+                    // Timeout de segurança caso o CSS falhe, libera a tela em 3s max
+                    const forceShow = setTimeout(() => document.body.classList.add('loaded'), 3000);
+                    
+                    window.addEventListener('load', () => {
+                        clearTimeout(forceShow);
+                        document.getElementById('app-loader').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('app-loader').style.display = 'none';
+                            document.body.classList.add('loaded');
+                        }, 500);
+                    });
+                },
+
+                render() {
+                    const container = document.getElementById('products-list');
+                    container.innerHTML = DB.keys.map(k => {
+                        const b = DB.baskets[k];
+                        const savedIdx = App.data.preferences[k] || 0;
+                        const currentOpt = b.opts[savedIdx] || b.opts[0];
+                        
+                        return `
+                        <article class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden flex flex-col h-full hover:shadow-float transition-shadow duration-300">
+                            <div class="relative bg-gray-50">
+                                <img src="${b.img}" alt="${b.name}" loading="lazy" class="w-full h-48 lg:h-56 object-contain mix-blend-multiply p-4">
+                                <div class="absolute top-3 left-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow">FRETE GRÁTIS</div>
+                            </div>
+                            <div class="p-5 flex flex-col flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="text-xl font-bold text-gray-900">${b.name}</h3>
+                                    <div class="text-right">
+                                        <p class="text-xs text-gray-400">A partir de</p>
+                                        <p class="text-xl font-extrabold text-green-600">${currentOpt.price}</p>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mb-4 h-10 overflow-hidden">${currentOpt.n}</p>
+                                
+                                <div class="flex-1">
+                                    <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                                        ${b.items.slice(0, 4).map(i => `<li class="flex items-center gap-2"><i class="ph-bold ph-check text-green-500 text-xs"></i> ${i}</li>`).join('')}
+                                        ${b.items.length > 4 ? `<li class="text-xs text-gray-400 font-bold">+ ${b.items.length - 4} outros itens...</li>` : ''}
+                                    </ul>
+                                </div>
+
+                                <button onclick="App.actions.startOrder('${b.id}')" class="w-full bg-brand-blue hover:bg-brand-darkBlue text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition active:scale-95">
+                                    <i class="ph-bold ph-whatsapp-logo text-lg"></i> PEDIR AGORA
+                                </button>
+                                <button onclick="App.ui.openDetails('${b.id}')" class="w-full mt-2 text-gray-400 text-xs font-bold hover:text-brand-blue py-2">VER ITENS COMPLETOS</button>
+                            </div>
+                        </article>
+                        `;
+                    }).join('');
+                },
+
+                openConfirm(b) {
+                    const modal = document.getElementById('confirm-modal');
+                    const content = document.getElementById('confirm-content');
+                    const optsContainer = document.getElementById('conf-options');
+                    const savedIdx = App.data.preferences[b.id] || 0;
+
+                    document.getElementById('conf-title').innerText = b.name;
+                    
+                    // Render Options
+                    optsContainer.innerHTML = b.opts.map((o, idx) => `
+                        <div onclick="App.ui.selectConfirmOption('${b.id}', ${idx})" 
+                             class="cursor-pointer border-2 rounded-xl p-3 flex justify-between items-center transition-all ${idx === savedIdx ? 'border-green-500 bg-green-50 ring-1 ring-green-500' : 'border-gray-200 hover:border-green-200'}">
+                            <div>
+                                <div class="font-bold text-sm text-gray-800">${o.n}</div>
+                                <div class="text-green-600 font-bold text-xs">${o.price}</div>
+                            </div>
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center ${idx === savedIdx ? 'border-green-500 bg-green-500' : 'border-gray-300'}">
+                                <div class="w-2 h-2 bg-white rounded-full ${idx === savedIdx ? '' : 'hidden'}"></div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Bind Button
+                    document.getElementById('conf-btn').onclick = () => {
+                        const currentIdx = App.data.preferences[b.id] || 0;
+                        App.actions.sendWhatsApp(b, b.opts[currentIdx]);
+                    };
+
+                    modal.classList.remove('hidden');
+                    // Small delay for animation
+                    setTimeout(() => {
+                        content.classList.remove('scale-95');
+                        content.classList.add('scale-100');
+                    }, 10);
+                },
+
+                selectConfirmOption(basketId, idx) {
+                    App.storage.setPref(basketId, idx);
+                    this.openConfirm(DB.baskets[basketId]); // Re-render local modal
+                    this.render(); // Update main list price
+                },
+
+                closeConfirm() {
+                    const modal = document.getElementById('confirm-modal');
+                    const content = document.getElementById('confirm-content');
+                    content.classList.remove('scale-100');
+                    content.classList.add('scale-95');
+                    setTimeout(() => modal.classList.add('hidden'), 200);
+                },
+
+                openDetails(id) {
+                    const b = DB.baskets[id];
+                    const html = `
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-900">${b.name} <span class="text-brand-blue text-base block font-normal">Lista de Itens</span></h3>
+                            <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 max-h-[60vh] overflow-y-auto">
+                                ${b.items.map(i => `<div class="bg-gray-50 p-2 rounded border border-gray-100 flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>${i}</div>`).join('')}
+                            </div>
+                            <button onclick="App.ui.closeModal()" class="mt-6 w-full bg-gray-100 text-gray-800 font-bold py-3 rounded-xl">Fechar</button>
+                        </div>
+                    `;
+                    this.openModal(null, html);
+                },
+
+                openModal(type, content) {
+                    const overlay = document.getElementById('modal-overlay');
+                    const cont = document.getElementById('modal-content');
+                    
+                    if(type === 'company') {
+                        cont.innerHTML = `
+                            <div class="p-8 text-center">
+                                <div class="w-20 h-20 bg-gray-100 rounded-full mx-auto mb-4 overflow-hidden"><img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="w-full h-full object-cover"></div>
+                                <h2 class="text-2xl font-bold">Dona Antônia</h2>
+                                <p class="text-gray-500 mb-6">Cestas Básicas</p>
+                                <a href="tel:65998150975" class="block w-full bg-gray-100 p-4 rounded-xl font-bold mb-3 text-gray-700">(65) 99815-0975</a>
+                                <button onclick="App.ui.closeModal()" class="text-red-500 font-bold mt-2">Fechar</button>
+                            </div>`;
+                    } else {
+                        cont.innerHTML = content;
+                    }
+
+                    overlay.classList.remove('hidden');
+                    setTimeout(() => {
+                        overlay.classList.remove('opacity-0');
+                        cont.classList.remove('translate-y-full');
+                    }, 10);
+                },
+
+                closeModal() {
+                    const overlay = document.getElementById('modal-overlay');
+                    const cont = document.getElementById('modal-content');
+                    overlay.classList.add('opacity-0');
+                    cont.classList.add('translate-y-full');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                }
+            }
+        };
+
+        // Initialize
+        App.init();
+    </script>
 </body>
 </html>
