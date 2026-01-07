@@ -87,7 +87,7 @@
             --bg: #f9fafb;
             --surface: #ffffff;
             --text-main: #1f2937;
-            --text-muted: #4b5563;
+            --text-muted: #374151; /* Escurecido para melhor contraste (Era #4b5563) */
             --accent: #059669; /* Verde Vendas */
             --accent-hover: #047857;
             --brand-blue: #2563EB;
@@ -103,7 +103,6 @@
             margin: 0;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
-            /* padding-top removido pois o header não é mais fixo */
         }
 
         /* --- HEADER OTIMIZADO MOBILE --- */
@@ -111,11 +110,10 @@
             background: var(--surface);
             border-bottom: 1px solid var(--border);
             padding: 8px 0;
-            position: relative; /* Mudado de fixed para relative */
+            position: relative;
             width: 100%;
             z-index: 1000;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            /* height: 70px; removido para fluidez */
             box-sizing: border-box;
             display: flex;
             align-items: center;
@@ -165,7 +163,6 @@
         }
         .btn-header:hover { background-color: #f3f4f6; }
 
-        /* Esconder subtítulo em telas muito pequenas para não quebrar layout */
         @media (max-width: 360px) { .brand-subtitle { display: none; } }
 
         /* --- LAYOUT GRID INTELIGENTE --- */
@@ -187,7 +184,6 @@
                     "sidebar faq";
                 align-items: start;
             }
-            /* Associa os elementos às áreas do Grid Desktop */
             #sidebar-info { grid-area: sidebar; position: sticky; top: 20px; }
             #main-content { grid-area: main; }
             #faq-section { grid-area: faq; }
@@ -195,9 +191,8 @@
 
         /* Mobile: Ordem com Flexbox */
         @media (max-width: 1023px) {
-            /* Ordem Mobile: 1. Conteúdo, 2. Sidebar (Cards), 3. FAQ */
             #main-content { order: 1; }
-            #sidebar-info { order: 2; margin-top: -10px; } /* Cards logo após produtos */
+            #sidebar-info { order: 2; margin-top: -10px; }
             #faq-section { order: 3; }
         }
 
@@ -211,8 +206,13 @@
             margin-bottom: 24px;
         }
 
-        h1, h2, h3 { margin-top: 0; color: #111; }
-        h2 { font-size: 1.5rem; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 20px; }
+        /* Correção Hierarquia de Títulos */
+        h1, h2, h3 { margin-top: 0; color: #111; line-height: 1.2; }
+        h1 { font-size: 1.8rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.25rem; }
+        
+        .sidebar-title { font-size: 1.1rem; margin-bottom: 15px; font-weight: 700; }
         
         button {
             background-color: var(--accent);
@@ -241,8 +241,21 @@
             gap: 20px; 
         }
         
-        .basket-img-container { position: relative; overflow: hidden; border-radius: 8px; margin-bottom: 15px; background: #f3f4f6; }
-        .basket-img { width: 100%; height: auto; display: block; }
+        .basket-img-container { 
+            position: relative; 
+            overflow: hidden; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            background: #f3f4f6;
+            /* Aspect Ratio para evitar CLS (Layout Shift) */
+            aspect-ratio: 1 / 1; 
+        }
+        .basket-img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            display: block; 
+        }
         
         .basket-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .option-item {
@@ -314,21 +327,19 @@
             color: #60a5fa;
         }
         
-        /* Utilitários */
         .badge-number { background: #eff6ff; color: #1d4ed8; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; margin-right: 8px; }
         
-        /* Modal */
         dialog { border: none; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 0; max-width: 500px; width: 90%; }
         dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
     </style>
 </head>
 <body>
 
-    <!-- Header Normal (Não Fixo) -->
+    <!-- Header Normal -->
     <header>
         <div class="header-content">
             <div class="logo-area">
-                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="logo-img">
+                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="logo-img" width="55" height="55">
                 <div class="brand-info">
                     <div class="brand-name">Dona Antônia</div>
                     <div class="brand-subtitle">Super Cestas Básicas</div>
@@ -343,15 +354,13 @@
         </div>
     </header>
 
-    <!-- Estrutura Principal Grid/Flex -->
     <div class="container layout-grid">
         
         <!-- BLOCO 1: Sidebar (Cards Informativos) -->
-        <!-- No Mobile: Order 2 (Meio) | No Desktop: Grid Area 'sidebar' -->
         <aside id="sidebar-info">
-            <!-- Card 6 Coisas -->
+            <!-- Ajuste de Hierarquia H3 -> H2 -->
             <div class="card" style="border-top: 4px solid var(--brand-blue);">
-                <h3 style="font-size: 1.1rem; margin-bottom: 15px;">6 coisas que você precisa saber:</h3>
+                <h2 class="sidebar-title">6 coisas que você precisa saber:</h2>
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
                     <li style="display: flex; align-items: center;"><span class="badge-number">1</span> Entregamos em Cuiabá e VG.</li>
                     <li style="display: flex; align-items: center;"><span class="badge-number">2</span> Pague só na entrega.</li>
@@ -362,9 +371,8 @@
                 </ul>
             </div>
 
-            <!-- Card Regiões -->
             <div class="card">
-                <h3 style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.5rem;">📍</span> Regiões Atendidas</h3>
+                <h2 class="sidebar-title" style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.5rem;">📍</span> Regiões Atendidas</h2>
                 
                 <div style="margin-top: 15px;">
                     <strong style="color: #111; display: block; margin-bottom: 5px;">🏠 CUIABÁ</strong>
@@ -385,10 +393,9 @@
             </div>
         </aside>
 
-        <!-- BLOCO 2: Conteúdo Principal (Intro + Produtos) -->
-        <!-- No Mobile: Order 1 (Topo) | No Desktop: Grid Area 'main' -->
+        <!-- BLOCO 2: Conteúdo Principal -->
         <main id="main-content">
-            <!-- SEO Intro Block -->
+            <!-- Intro (Alterado H1 -> H2 para manter H1 único na página se preferir, mas deixaremos H1 aqui como título principal de conteúdo) -->
             <div class="card" style="background: #eff6ff; border-color: #dbeafe;">
                 <h1 style="font-size: 1.4rem; color: #1e40af; border: none; margin-bottom: 10px;">Cestas Básicas em Cuiabá e VG</h1>
                 <p style="font-size: 0.95rem; color: #1e3a8a; margin: 0;">
@@ -396,7 +403,6 @@
                 </p>
             </div>
 
-            <!-- CATÁLOGO DE PRODUTOS -->
             <section id="catalog-area" class="product-grid">
                 <!-- Javascript vai preencher aqui -->
                 <p style="text-align: center; padding: 40px;">Carregando cestas...</p>
@@ -404,9 +410,8 @@
         </main>
 
         <!-- BLOCO 3: FAQ -->
-        <!-- No Mobile: Order 3 (Fim) | No Desktop: Grid Area 'faq' -->
         <section id="faq-section">
-            <h3 style="font-size: 1.5rem; margin-bottom: 20px;">Dúvidas Frequentes</h3>
+            <h2 style="font-size: 1.5rem; margin-bottom: 20px;">Dúvidas Frequentes</h2>
             
             <details>
                 <summary>Onde comprar cesta básica em Cuiabá?</summary>
@@ -436,7 +441,6 @@
 
     </div>
 
-    <!-- Footer -->
     <footer id="footer-contacts">
         <p style="color: white; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px;">Super Cestas Básicas Dona Antônia</p>
         <p>R. Trinta, 105 - Jardim Nossa Sra. Aparecida<br>Cuiabá - MT, 78090-660</p>
@@ -450,7 +454,6 @@
         <a href="https://maps.google.com/maps?q=9W4X%2BGX%20Jardim%20Nossa%20Sra.%20Aparecida%2C%20Cuiabá%20-%20MT" target="_blank" class="footer-btn outline">Abrir no Mapa</a>
     </footer>
 
-    <!-- Modal de Pedido -->
     <dialog id="confirmDialog">
         <div style="padding: 25px;">
             <h3 id="modalTitle" style="margin-top: 0;">Confirmar Pedido</h3>
@@ -464,7 +467,6 @@
     </dialog>
 
     <script>
-        // Dados originais
         const DB = {
             baskets: {
                 'GRANDE': { id: 'GRANDE', name: 'Cesta Grande', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif', opts: [{ n: 'Com Arroz Tio Alvino', norm: 'R$ 380,00', sel: true }, { n: 'Com Arroz Koblenz', norm: 'R$ 390,00' }], items: [{q:4, n:'Arroz 5kg'}, {q:3, n:'Açúcar 2kg'}, {q:4, n:'Óleo 900ml'}, {q:4, n:'Feijão 1kg'}, {q:1, n:'Café 500g'}, {q:3, n:'Espaguete 500g'}, {q:1, n:'12 Ovos'}, {q:1, n:'Mistura Bolo'}, {q:1, n:'Trigo 1kg'}, {q:1, n:'Sal 1kg'}, {q:2, n:'Molho Tomate'}, {q:1, n:'Milho Lata'}, {q:1, n:'Tempero'}, {q:2, n:'Bolacha Recheada'}, {q:2, n:'Miojo'}, {q:4, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:2, n:'Creme Dental'}, {q:2, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'}, {q:1, n:'Sabão Pó OMO'}, {q:2, n:'Detergente'}, {q:1, n:'Qboa 1L'}, {q:4, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}] },
@@ -481,14 +483,14 @@
             
             init() {
                 const container = document.getElementById('catalog-area');
-                container.innerHTML = DB.keys.map(key => this.renderCard(DB.baskets[key])).join('');
+                // Adiciona index para controlar LCP
+                container.innerHTML = DB.keys.map((key, index) => this.renderCard(DB.baskets[key], index)).join('');
             },
 
-            renderCard(basket) {
-                // Cálculo de totais
+            // Recebe index para otimizar LCP
+            renderCard(basket, index) {
                 const totalItems = basket.items.reduce((acc, item) => acc + item.q, 0);
                 
-                // HTML das opções de preço
                 const optsHtml = basket.opts.map((opt, idx) => `
                     <div class="option-item ${opt.sel ? 'selected' : ''}" onclick="App.selectOption('${basket.id}', ${idx})">
                         <span style="font-size: 0.9rem; font-weight: 500;">${opt.n.replace('Com ', '')}</span>
@@ -496,7 +498,6 @@
                     </div>
                 `).join('');
 
-                // GERAÇÃO DA LISTA DE ITENS LIMPA
                 const itemsListHtml = basket.items.map(i => `
                     <li>
                         <span>${i.n}</span>
@@ -504,10 +505,14 @@
                     </li>
                 `).join('');
 
+                // Otimização LCP: A primeira cesta carrega rápido, as outras lazy
+                const isLCP = index === 0;
+                const loadingAttr = isLCP ? 'fetchpriority="high"' : 'loading="lazy"';
+
                 return `
                 <article class="card">
                     <div class="basket-img-container">
-                        <img src="${basket.img}" alt="${basket.name}" class="basket-img" loading="lazy">
+                        <img src="${basket.img}" alt="${basket.name}" class="basket-img" ${loadingAttr} width="300" height="300">
                         <span style="position: absolute; top: 10px; right: 10px; background: #059669; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Entrega Grátis</span>
                     </div>
                     
@@ -520,7 +525,6 @@
 
                     <button onclick="App.openOrderModal('${basket.id}')">PEDIR AGORA</button>
                     
-                    <!-- ÁREA DA LISTA LIMPA -->
                     <div class="item-list-container">
                         <div class="item-list-header">
                             <span>Descrição do Produto</span>
@@ -547,7 +551,6 @@
 
                 title.innerText = basket.name;
                 
-                // Gera HTML das opções de preço
                 optsContainer.innerHTML = basket.opts.map((opt, idx) => `
                     <div class="option-item ${opt.sel ? 'selected' : ''}" onclick="App.selectOption('${basketId}', ${idx})">
                         <span>${opt.n}</span>
@@ -555,7 +558,6 @@
                     </div>
                 `).join('');
 
-                // Ação do botão confirmar
                 confirmBtn.onclick = () => {
                     const selectedOpt = basket.opts.find(o => o.sel);
                     const msg = `Olá, gostaria de encomendar a ${basket.name} (${selectedOpt.n}) por ${selectedOpt.norm}.`;
@@ -567,20 +569,17 @@
             },
 
             selectOption(basketId, idx) {
-                // Atualiza o estado
                 DB.baskets[basketId].opts.forEach((o, i) => o.sel = (i === idx));
-                // Re-renderiza tudo para atualizar a UI
                 const container = document.getElementById('catalog-area');
-                container.innerHTML = DB.keys.map(key => this.renderCard(DB.baskets[key])).join('');
+                // Mantém otimização de index ao re-renderizar
+                container.innerHTML = DB.keys.map((key, index) => this.renderCard(DB.baskets[key], index)).join('');
                 
-                // Se o modal estiver aberto, atualiza ele também
                 if(document.getElementById('confirmDialog').open) {
                     this.openOrderModal(basketId);
                 }
             }
         };
 
-        // Iniciar
         App.init();
     </script>
 </body>
