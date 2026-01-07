@@ -4,7 +4,7 @@
     <!-- 
         ================================================================
         PILLAR 1: EXTREME PERFORMANCE & LOCAL SEO STRATEGY
-        (Conteúdo SEO Mantido Originalmente do index (14).html)
+        (Conteúdo SEO Mantido Originalmente)
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -51,7 +51,7 @@
     src="https://www.facebook.com/tr?id=1847274250009044&ev=PageView&noscript=1"
     /></noscript>
 
-    <!-- Schema Markup Avançado (Mantido do Original) -->
+    <!-- Schema Markup Avançado -->
     <script type="application/ld+json">
     [
       {
@@ -81,7 +81,7 @@
 
     <style>
         /* =========================================
-           CSS CLASSLESS OTIMIZADO (SEM TAILWIND)
+           CSS CLASSLESS OTIMIZADO
            ========================================= */
         :root {
             --bg: #f9fafb;
@@ -103,51 +103,114 @@
             margin: 0;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            padding-top: 70px; /* Compensar Header Fixo */
         }
 
-        /* Layout Grid Principal */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .layout-grid {
-            display: grid;
-            gap: 30px;
-            grid-template-columns: 1fr;
-        }
-
-        @media (min-width: 1024px) {
-            .layout-grid {
-                grid-template-columns: 320px 1fr; /* Sidebar Fixa | Conteúdo */
-                align-items: start;
-            }
-            aside { position: sticky; top: 20px; }
-        }
-
-        /* Cabeçalho */
+        /* --- HEADER OTIMIZADO MOBILE --- */
         header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 15px 0;
-            position: sticky;
+            padding: 8px 0; /* Padding reduzido */
+            position: fixed;
             top: 0;
-            z-index: 100;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            height: 70px; /* Altura fixa controlada */
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
         }
         .header-content {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .logo-area { display: flex; align-items: center; gap: 12px; }
-        .logo-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .brand-name { font-size: 1.2rem; font-weight: 800; line-height: 1.1; color: var(--text-main); }
-        .brand-subtitle { color: var(--brand-blue); }
+        
+        /* Área da Logo */
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-img { 
+            width: 55px; height: 55px; /* Logo maior */
+            border-radius: 50%; object-fit: cover; 
+            border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        .brand-info { display: flex; flex-direction: column; justify-content: center; }
+        .brand-name { font-size: 1.1rem; font-weight: 800; line-height: 1; color: var(--text-main); }
+        .brand-subtitle { font-size: 0.75rem; color: var(--brand-blue); font-weight: 600; }
 
-        .nav-desktop { display: none; gap: 10px; }
-        @media (min-width: 768px) { .nav-desktop { display: flex; } }
+        /* Área de Ações (Direita) */
+        .header-actions {
+            display: flex;
+            flex-direction: column; /* Empilha botões no mobile */
+            gap: 4px;
+            align-items: flex-end;
+        }
+
+        /* Botões Compactos Header */
+        .btn-header {
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            line-height: 1;
+            height: 24px;
+            white-space: nowrap;
+        }
+        .btn-header.whatsapp { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .btn-header.instagram { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+
+        /* Esconder subtítulo em telas muito pequenas para não quebrar layout */
+        @media (max-width: 360px) { .brand-subtitle { display: none; } }
+
+        /* Layout Desktop do Header */
+        @media (min-width: 768px) {
+            .header-actions { flex-direction: row; gap: 10px; align-items: center; }
+            .btn-header { font-size: 0.9rem; padding: 6px 15px; height: auto; }
+            .brand-name { font-size: 1.3rem; }
+            .logo-img { width: 50px; height: 50px; }
+        }
+
+        /* --- LAYOUT GRID INTELIGENTE --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .layout-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* Desktop: Layout Grid com Áreas */
+        @media (min-width: 1024px) {
+            .layout-grid {
+                display: grid;
+                grid-template-columns: 320px 1fr;
+                grid-template-areas: 
+                    "sidebar main"
+                    "sidebar faq";
+                align-items: start;
+            }
+            /* Associa os elementos às áreas do Grid Desktop */
+            #sidebar-info { grid-area: sidebar; position: sticky; top: 90px; }
+            #main-content { grid-area: main; }
+            #faq-section { grid-area: faq; }
+        }
+
+        /* Mobile: Ordem com Flexbox */
+        @media (max-width: 1023px) {
+            /* Ordem Mobile: 1. Conteúdo, 2. Sidebar (Cards), 3. FAQ */
+            #main-content { order: 1; }
+            #sidebar-info { order: 2; margin-top: -10px; } /* Cards logo após produtos */
+            #faq-section { order: 3; }
+        }
 
         /* Componentes Gerais */
         .card {
@@ -180,15 +243,17 @@
         }
         button:hover { opacity: 0.9; }
         
-        .btn-blue { background-color: var(--brand-blue); }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
 
-        /* Lista de Produtos (Design Solicitado) */
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        /* Lista de Produtos */
+        .product-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 20px; 
+        }
         
         .basket-img-container { position: relative; overflow: hidden; border-radius: 8px; margin-bottom: 15px; background: #f3f4f6; }
-        .basket-img { width: 100%; height: auto; display: block; transition: transform 0.3s; }
-        .basket-img:hover { transform: scale(1.05); }
+        .basket-img { width: 100%; height: auto; display: block; }
         
         .basket-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .option-item {
@@ -198,7 +263,7 @@
         .option-item.selected { border-color: var(--accent); background-color: #ecfdf5; ring: 1px solid var(--accent); }
         .option-price { font-weight: 800; color: var(--text-main); font-size: 1.1rem; }
 
-        /* LISTA LIMPA DE ITENS (Ajuste Solicitado) */
+        /* Lista Limpa de Itens */
         .item-list-container {
             background-color: #f8fafc;
             border-radius: 8px;
@@ -224,7 +289,7 @@
             padding: 2px 8px; border-radius: 4px; min-width: 30px; text-align: center;
         }
 
-        /* Detalhes (FAQ) */
+        /* FAQ */
         details {
             background: white; border: 1px solid var(--border);
             border-radius: 8px; margin-bottom: 10px; overflow: hidden;
@@ -238,7 +303,6 @@
         footer { background: #111827; color: #9ca3af; padding: 40px 20px; text-align: center; font-size: 0.9rem; margin-top: 40px; }
         
         /* Utilitários */
-        .badge-free { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         .badge-number { background: #eff6ff; color: #1d4ed8; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; margin-right: 8px; }
         
         /* Modal */
@@ -248,38 +312,35 @@
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- Header Fixo Otimizado -->
     <header>
-        <div class="container header-content">
+        <div class="header-content">
             <div class="logo-area">
                 <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="logo-img">
-                <div>
+                <div class="brand-info">
                     <div class="brand-name">Dona Antônia</div>
-                    <div class="brand-subtitle" style="font-size: 0.8rem; font-weight: 600;">Super Cestas Básicas</div>
+                    <div class="brand-subtitle">Super Cestas Básicas</div>
                 </div>
             </div>
-            <nav class="nav-desktop">
-                <button class="btn-outline" onclick="document.getElementById('footer-contacts').scrollIntoView()">Contatos</button>
-                <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" style="text-decoration: none;">
-                    <button style="background: #E1306C;">Instagram</button>
+            
+            <nav class="header-actions">
+                <a href="https://api.whatsapp.com/send?phone=5565998150975" class="btn-header whatsapp">
+                    <span>📞 Contato</span>
+                </a>
+                <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="btn-header instagram">
+                    <span>📷 Instagram</span>
                 </a>
             </nav>
         </div>
     </header>
 
-    <!-- Hero SEO -->
-    <div style="background: white; border-bottom: 1px solid var(--border); padding: 30px 20px; text-align: center;">
-        <h1 style="font-size: 1.8rem; font-weight: 800; color: #111; margin-bottom: 8px;">Cestas Básicas em Cuiabá e VG</h1>
-        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
-            Menor preço garantido e <span style="color: var(--accent); font-weight: bold;">Entrega Grátis</span> em toda a região.
-        </p>
-    </div>
-
+    <!-- Estrutura Principal Grid/Flex -->
     <div class="container layout-grid">
         
-        <!-- SIDEBAR (Ordem Original) -->
-        <aside>
-            <!-- Didactic Section (6 Coisas) -->
+        <!-- BLOCO 1: Sidebar (Cards Informativos) -->
+        <!-- No Mobile: Order 2 (Meio) | No Desktop: Grid Area 'sidebar' -->
+        <aside id="sidebar-info">
+            <!-- Card 6 Coisas -->
             <div class="card" style="border-top: 4px solid var(--brand-blue);">
                 <h3 style="font-size: 1.1rem; margin-bottom: 15px;">6 coisas que você precisa saber:</h3>
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
@@ -292,14 +353,14 @@
                 </ul>
             </div>
 
-            <!-- Regiões Atendidas -->
+            <!-- Card Regiões -->
             <div class="card">
                 <h3 style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.5rem;">📍</span> Regiões Atendidas</h3>
                 
                 <div style="margin-top: 15px;">
                     <strong style="color: #111; display: block; margin-bottom: 5px;">🏠 CUIABÁ</strong>
                     <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0 0 15px 0; line-height: 1.4;">
-                        Grande Coxipó, CPA (I, II, III, IV), Morada da Serra, Centro, Porto, Goiabeiras, Tijucal, Pedra 90, e mais.
+                        Grande Coxipó, CPA, Morada da Serra, Centro, Porto, Goiabeiras, Tijucal, Pedra 90, e mais.
                     </p>
 
                     <div style="height: 1px; background: #eee; margin: 10px 0;"></div>
@@ -313,26 +374,16 @@
                     ✅ Entrega Grátis em todos os bairros!
                 </div>
             </div>
-
-            <!-- Pagamento Desktop -->
-            <div class="card" style="display: none;">
-                <!-- Oculto via CSS inline para mobile, visível via lógica se necessário, mas mantendo simples -->
-                <h3>💳 Formas de Pagamento</h3>
-                <ul style="padding-left: 20px; font-size: 0.9rem; color: var(--text-muted);">
-                    <li>Dinheiro ou Pix</li>
-                    <li>Cartão de Crédito/Débito</li>
-                    <li>Cartão Alimentação (Alelo, Sodexo, Pluxee)</li>
-                </ul>
-            </div>
         </aside>
 
-        <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
-        <main>
+        <!-- BLOCO 2: Conteúdo Principal (Intro + Produtos) -->
+        <!-- No Mobile: Order 1 (Topo) | No Desktop: Grid Area 'main' -->
+        <main id="main-content">
             <!-- SEO Intro Block -->
             <div class="card" style="background: #eff6ff; border-color: #dbeafe;">
-                <h2 style="font-size: 1.25rem; color: #1e40af; border: none; margin-bottom: 10px;">Sacolão e Cesta Básica em Cuiabá</h2>
+                <h1 style="font-size: 1.4rem; color: #1e40af; border: none; margin-bottom: 10px;">Cestas Básicas em Cuiabá e VG</h1>
                 <p style="font-size: 0.95rem; color: #1e3a8a; margin: 0;">
-                    A Dona Antônia é a sua <strong>distribuidora de alimentos</strong> completa. Montamos cestas ideais para famílias grandes, estudantes e doação. Se procura <strong>onde comprar cesta básica</strong> com entrega grátis, nós levamos até você.
+                    A Dona Antônia é a sua <strong>distribuidora de alimentos</strong> com menor preço. Montamos cestas ideais para famílias, doação e empresas. Peça online com <strong>entrega grátis</strong>.
                 </p>
             </div>
 
@@ -341,37 +392,38 @@
                 <!-- Javascript vai preencher aqui -->
                 <p style="text-align: center; padding: 40px;">Carregando cestas...</p>
             </section>
-
-            <!-- FAQ Section -->
-            <section style="margin-top: 40px;">
-                <h3 style="font-size: 1.5rem; margin-bottom: 20px;">Dúvidas Frequentes</h3>
-                
-                <details>
-                    <summary>Onde comprar cesta básica em Cuiabá e Várzea Grande?</summary>
-                    <div>Você pode comprar online aqui mesmo na Dona Antônia! Somos referência em entrega rápida e produtos de qualidade com frete grátis.</div>
-                </details>
-
-                <details>
-                    <summary>Vocês vendem cesta básica para doação ou empresas?</summary>
-                    <div>Sim! Atendemos pedidos de atacado para empresas e doações. Temos preços especiais para grandes volumes. *Não vendemos cestas de natal específicas.</div>
-                </details>
-
-                <details>
-                    <summary>Qual é a cesta básica mais barata?</summary>
-                    <div>Nossa opção mais acessível é a Cesta Econômica, ideal para quem busca o menor preço sem abrir mão de qualidade.</div>
-                </details>
-
-                <details>
-                    <summary>Vocês fazem entrega hoje?</summary>
-                    <div>Sim, temos delivery rápido. Pedidos feitos pela manhã geralmente são entregues no mesmo dia.</div>
-                </details>
-
-                <details>
-                    <summary>Quais são as formas de pagamento?</summary>
-                    <div>Aceitamos Alelo, Sodexo, Pluxee, Cartões de Crédito (3x sem juros), Pix e Dinheiro. Não aceitamos Ticket Alimentação.</div>
-                </details>
-            </section>
         </main>
+
+        <!-- BLOCO 3: FAQ -->
+        <!-- No Mobile: Order 3 (Fim) | No Desktop: Grid Area 'faq' -->
+        <section id="faq-section">
+            <h3 style="font-size: 1.5rem; margin-bottom: 20px;">Dúvidas Frequentes</h3>
+            
+            <details>
+                <summary>Onde comprar cesta básica em Cuiabá?</summary>
+                <div>Você pode comprar online aqui na Dona Antônia! Somos referência em entrega rápida e produtos de qualidade com frete grátis.</div>
+            </details>
+
+            <details>
+                <summary>Vocês vendem para doação ou empresas?</summary>
+                <div>Sim! Atendemos atacado para empresas e doações. Temos preços especiais para grandes volumes.</div>
+            </details>
+
+            <details>
+                <summary>Qual é a mais barata?</summary>
+                <div>Nossa opção mais acessível é a Cesta Econômica, ideal para quem busca o menor preço com qualidade.</div>
+            </details>
+
+            <details>
+                <summary>Fazem entrega hoje?</summary>
+                <div>Sim, temos delivery rápido. Pedidos da manhã geralmente são entregues no mesmo dia.</div>
+            </details>
+
+            <details>
+                <summary>Formas de pagamento?</summary>
+                <div>Aceitamos Alelo, Sodexo, Pluxee, Cartões (3x sem juros), Pix e Dinheiro. Não aceitamos Ticket.</div>
+            </details>
+        </section>
 
     </div>
 
@@ -382,7 +434,6 @@
         
         <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
             <a href="tel:65998150975" style="color: white; text-decoration: none; border: 1px solid #374151; padding: 8px 16px; border-radius: 20px;">(65) 99815-0975</a>
-            <a href="https://api.whatsapp.com/send?phone=5565998150975" style="color: #4ade80; text-decoration: none; border: 1px solid #059669; padding: 8px 16px; border-radius: 20px;">WhatsApp</a>
         </div>
         
         <br>
@@ -435,7 +486,7 @@
                     </div>
                 `).join('');
 
-                // GERAÇÃO DA LISTA DE ITENS LIMPA (SEM FOTOS)
+                // GERAÇÃO DA LISTA DE ITENS LIMPA
                 const itemsListHtml = basket.items.map(i => `
                     <li>
                         <span>${i.n}</span>
