@@ -164,8 +164,22 @@
             font-size: 10px; font-weight: 700;
             padding: 2px 6px; border-radius: 10px;
             pointer-events: none; backdrop-filter: blur(2px);
-            display: flex; align-items: center; gap: 4px;
+            display: flex; align-items: center; gap: 4px; z-index: 2;
         }
+
+        /* Setas de Navegação da Galeria */
+        .nav-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.05);
+            color: var(--primary); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 5; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+        }
+        .nav-arrow:active { transform: translateY(-50%) scale(0.9); }
+        .nav-arrow.prev { left: 8px; }
+        .nav-arrow.next { right: 8px; }
+        .nav-arrow svg { width: 16px; height: 16px; fill: currentColor; }
 
         /* TEXTOS */
         .info { flex-grow: 1; margin-bottom: 8px; }
@@ -514,11 +528,23 @@
                 }
             });
 
-            // 3. Badge (Indicador de várias fotos)
+            // 3. Badge e Setas
             let badgeHtml = '';
+            let arrowsHtml = '';
             if(mediaItems.length > 1) {
                 const hasVideo = p.video ? '🎥' : '📷';
                 badgeHtml = `<div class="media-badge">${hasVideo} ${mediaItems.length}</div>`;
+                
+                // Setas de navegação
+                const scrollId = `media-scroll-${p.id}`;
+                arrowsHtml = `
+                    <button class="nav-arrow prev" type="button" onclick="scrollMedia('${scrollId}', -1)" aria-label="Anterior">
+                        <svg viewBox="0 0 256 256"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"></path></svg>
+                    </button>
+                    <button class="nav-arrow next" type="button" onclick="scrollMedia('${scrollId}', 1)" aria-label="Próximo">
+                        <svg viewBox="0 0 256 256"><path d="M90.34,202.34a8,8,0,0,0,11.32,11.32l80-80a8,8,0,0,0,0-11.32l-80-80a8,8,0,0,0-11.32,11.32L164.69,128Z"></path></svg>
+                    </button>
+                `;
             }
 
             // --- FIM GALERIA ---
@@ -539,10 +565,11 @@
             return `
                 <article class="card data-item" id="card-${p.id}" data-name="${p.name.toLowerCase()}">
                     <div class="img-box">
-                        <div class="media-scroll">
+                        <div class="media-scroll" id="media-scroll-${p.id}">
                             ${mediaHtml}
                         </div>
                         ${badgeHtml}
+                        ${arrowsHtml}
                     </div>
                     <div class="info">
                         <div class="prod-name">${p.name}</div>
@@ -553,6 +580,14 @@
                     ${controls}
                 </article>
             `;
+        }
+
+        function scrollMedia(id, dir) {
+            const el = document.getElementById(id);
+            if(el) {
+                const w = el.offsetWidth;
+                el.scrollBy({ left: w * dir, behavior: 'smooth' });
+            }
         }
 
         function add(pid, variant, qtd) {
