@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Leitor XML de NFe com Edição Manual de Fator de Conversão.">
-    <title>NFe Parser Pro | Editor Smart</title>
+    <meta name="description" content="Leitor XML de NFe com Edição Manual de Fator e Cálculo de Descontos.">
+    <title>NFe Parser Pro | Exportação Fiscal</title>
 
     <style>
         /* * SISTEMAS - CSS CORE 
@@ -97,6 +97,11 @@
             color: var(--warning);
             border-color: #fef08a;
         }
+        .badge-success {
+            background: var(--success-bg);
+            color: var(--success);
+            border-color: #bbf7d0;
+        }
 
         /* FORMS */
         label {
@@ -129,20 +134,20 @@
         
         /* Estilo específico para o input de fator na tabela */
         input.factor-input {
-            width: 70px;
-            padding: 4px 8px;
+            width: 60px;
+            padding: 4px 6px;
             text-align: center;
             border: 1px solid #cbd5e1;
             border-radius: 4px;
             font-weight: bold;
             color: var(--primary-dark);
             background: #f1f5f9;
+            font-size: 0.75rem;
         }
         input.factor-input:focus {
             background: #fff;
             border-color: var(--primary);
         }
-        /* Remove setas do input number */
         input.factor-input::-webkit-outer-spin-button,
         input.factor-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -299,6 +304,7 @@
         .text-right { text-align: right; }
         .text-brand { color: var(--primary); font-family: monospace; }
         .text-danger { color: var(--danger); }
+        .text-success { color: var(--success); }
         .font-bold { font-weight: 700; }
         
         /* New Styles for Smart Fiscal */
@@ -366,12 +372,12 @@
         <!-- Header -->
         <header>
             <div>
-                <h1>NFe Parser Pro <span>Editor Ativo</span></h1>
-                <p>Detecta Fardos/Caixas automaticamente, mas <b>você tem o controle final</b>.</p>
+                <h1>NFe Parser Pro <span>Exportação Fiscal</span></h1>
+                <p>Detecta Fardos, permite Edição e <b>deduz Descontos</b> do custo unitário.</p>
             </div>
             <div class="flex flex-col items-end gap-1">
-                <span class="badge">v4.0 Editable Grid</span>
-                <span class="badge badge-warning">Simples Nacional</span>
+                <span class="badge">v6.0 Nota + NetCost</span>
+                <span class="badge badge-success">Descontos Ativos</span>
             </div>
         </header>
 
@@ -379,7 +385,7 @@
         <section>
             <label for="fileInput">1. Importar Arquivos XML (Compra)</label>
             <input type="file" id="fileInput" multiple accept=".xml, text/xml">
-            <p style="margin-top: 0.5rem;">🔒 O sistema sugere a quantidade por caixa, mas verifique e altere na coluna <b>"Fator/Cx"</b> se necessário.</p>
+            <p style="margin-top: 0.5rem;">🔒 O sistema agora lê a tag <code>&lt;vDesc&gt;</code> e calcula o custo real (Valor Produto - Desconto).</p>
         </section>
 
         <!-- Filtros e Ações -->
@@ -435,7 +441,7 @@
             <div style="background: var(--surface); padding: var(--spacing-md); border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; border-bottom: none;" class="results-header">
                 <div>
                     <h3>3. Produtos Encontrados</h3>
-                    <p>Edite a coluna <b>Fator/Cx</b> para corrigir a quantidade de unidades na caixa antes de exportar.</p>
+                    <p>Verifique a coluna <b>Desc.</b> e <b>V. Liq</b> para conferir o custo real.</p>
                 </div>
                 <div class="total-card">
                     <div class="total-label">Total Filtrado</div>
@@ -450,15 +456,15 @@
                             <th class="w-check">
                                 <input type="checkbox" id="selectAll" onchange="app.toggleSelectAll(this)">
                             </th>
-                            <th>Fator/Cx <br><small>(Editável)</small></th> <!-- Nova Coluna -->
-                            <th>Info Fiscal</th>
+                            <th>Fator/Cx</th>
                             <th>Data</th>
                             <th>Descrição</th>
-                            <th>EAN/GTIN</th>
+                            <th>EAN</th>
                             <th>NCM</th>
                             <th>CST</th>
-                            <th class="text-right">Qtd (Ent)</th>
-                            <th class="text-right">V. Unit (Cx)</th>
+                            <th class="text-right">Qtd</th>
+                            <th class="text-right text-success" title="Valor do Desconto Rateado">Desc.</th>
+                            <th class="text-right" title="Valor Líquido por Caixa (Entrada - Desconto)">V. Liq (Cx)</th>
                             <th class="text-right">V. Total</th>
                         </tr>
                     </thead>
@@ -467,7 +473,7 @@
                         <tr>
                             <td colspan="11" style="text-align: center; padding: 3rem;">
                                 <div style="color: var(--text-light);">
-                                    Importe arquivos XML para visualizar e editar os dados.
+                                    Importe arquivos XML para visualizar.
                                 </div>
                             </td>
                         </tr>
@@ -480,12 +486,12 @@
 
     <script>
         /**
-         * SISTEMAS - Core Logic v4.0 (Editable Factors)
+         * SISTEMAS - Core Logic v6.0 (Included Invoice Number & Net Cost Export)
          */
         const app = {
             data: [], 
             selectedIds: new Set(),
-            storageKey: 'nfe_sys_data_editable_v4',
+            storageKey: 'nfe_sys_data_discount_v6',
 
             init() {
                 this.cacheDOM();
@@ -531,23 +537,16 @@
                 }
             },
 
-            // --- Lógica de Edição do Usuário (NOVO) ---
             updateFactor(id, newValue) {
                 const item = this.data.find(i => i.id === id);
                 if (item) {
-                    // Garante que é um número e no mínimo 1
                     let val = parseInt(newValue);
                     if (isNaN(val) || val < 1) val = 1;
-                    
-                    item.userFactor = val; // Salva o override do usuário
-                    this.saveToStorage(); // Persiste no navegador
-                    
-                    // Opcional: Feedback visual ou recalcular se estivéssemos mostrando custo unitário na tela
-                    console.log(`Fator atualizado para ${item.xProd}: ${val}`);
+                    item.userFactor = val;
+                    this.saveToStorage();
                 }
             },
 
-            // --- Lógica de Seleção ---
             toggleSelect(id) {
                 this.selectedIds.has(id) ? this.selectedIds.delete(id) : this.selectedIds.add(id);
                 this.updateSelectionUI();
@@ -599,7 +598,6 @@
                 const cfopIn = parseInt(item.CFOP.replace('.', ''));
                 const cstIn = parseInt(item.CST_CSOSN || '0');
                 
-                // Regra simplificada para Simples Nacional
                 const isST = [1403, 2403, 5403, 5405].includes(cfopIn) || [10, 30, 60, 70, 201, 202, 500].includes(cstIn);
 
                 if (isST) {
@@ -609,7 +607,7 @@
                 }
             },
 
-            // --- EXPORTAÇÃO (Atualizado para usar userFactor) ---
+            // --- EXPORTAÇÃO (COM CÁLCULO DE DESCONTO E NUMERO DA NOTA) ---
             exportSmartJSON() {
                 const selectedItems = this.data.filter(item => this.selectedIds.has(item.id));
                 if (selectedItems.length === 0) return;
@@ -618,34 +616,38 @@
                 const exportList = [];
 
                 selectedItems.forEach(item => {
-                    // PREFERÊNCIA: Usa o fator digitado pelo usuário. Se não existir, usa o detectado.
                     const detected = this.detectConversionFactor(item.xProd);
                     const finalFactor = item.userFactor ? item.userFactor : detected;
-
                     const fiscal = this.predictFiscalAttributes(item);
                     
-                    // Lógica para Modo Atacado
+                    // --- CÁLCULO DO CUSTO LÍQUIDO ---
+                    // Custo Liq Caixa = (Valor Total Item - Desconto Total) / Quantidade Caixas
+                    const totalDesc = item.vDesc || 0;
+                    const netTotal = item.vProd - totalDesc;
+                    const netCostBox = netTotal / item.qCom;
+                    const unitCost = netCostBox / finalFactor;
+
                     if (mode === 'atacado' || mode === 'ambos') {
                         exportList.push({
                             ...item,
+                            Numero_Nota: item.nNF, // Adicionado nNF
                             _TIPO: 'ATACADO (ENTRADA)',
-                            _OBS: 'Dados originais da Nota de Entrada',
                             CFOP_SAIDA_SUGERIDO: fiscal.cfopOut,
                             CSOSN_SAIDA_SUGERIDO: fiscal.csosnOut,
-                            FATOR_UTILIZADO: finalFactor
+                            FATOR_UTILIZADO: finalFactor,
+                            CUSTO_LIQUIDO_CAIXA: parseFloat(netCostBox.toFixed(4)),
+                            Custo_Real_Caixa: parseFloat(netCostBox.toFixed(4)), // Campo explícito para custo
+                            DESCONTO_APLICADO: totalDesc
                         });
                     }
 
-                    // Lógica para Modo Varejo (Conversão)
                     if (mode === 'varejo' || mode === 'ambos') {
-                        const unitCost = item.vUnCom / finalFactor;
-                        
-                        // Limpeza de descrição
                         let cleanDesc = item.xProd.replace(/(\d+\s*[xX]\s*\d+)/gi, '').replace(/(FD|CX|FARDO)\s*\d*/gi, '').trim();
                         cleanDesc = cleanDesc.replace(/\s+/, ' ') + " (UN)";
 
                         exportList.push({
                             id_referencia: item.id,
+                            Numero_Nota: item.nNF, // Adicionado nNF
                             cProd_Sugestao: item.cProd + '-UN', 
                             cEAN: 'PREENCHER_COM_LEITOR', 
                             xProd: cleanDesc,
@@ -654,11 +656,12 @@
                             CFOP_SAIDA: fiscal.cfopOut,
                             CSOSN_SAIDA: fiscal.csosnOut,
                             Unidade_Venda: 'UN',
-                            Fator_Conversao_Entrada: finalFactor, // Usa o fator corrigido
-                            Custo_Unitario: parseFloat(unitCost.toFixed(4)), // Custo calculado corretamente
-                            Preco_Custo_Caixa: item.vUnCom,
+                            Fator_Conversao_Entrada: finalFactor,
+                            Custo_Unitario: parseFloat(unitCost.toFixed(4)), // Custo Un. com desconto
+                            Custo_Real_Caixa: parseFloat(netCostBox.toFixed(4)), // Custo da Caixa com desconto
+                            Valor_Desconto_Total: totalDesc,
                             _TIPO: 'VAREJO (SAIDA)',
-                            _OBS: `Desmembrado: 1 ${item.uCom} virou ${finalFactor} UN`
+                            _OBS: `Desconto de R$ ${totalDesc} abatido do custo`
                         });
                     }
                 });
@@ -667,7 +670,6 @@
                 this.downloadJSON(exportList, filename);
             },
 
-            // --- Helpers ---
             downloadJSON(data, filenamePrefix) {
                 const content = JSON.stringify(data, null, 2);
                 const blob = new Blob([content], { type: 'application/json' });
@@ -730,6 +732,9 @@
                             vICMS = getFloat(imposto, 'vICMS');
                         }
 
+                        // --- CORREÇÃO: LENDO O DESCONTO ---
+                        const vDesc = getFloat(prod, 'vDesc'); 
+
                         items.push({
                             id: `${chave}-${nItem}`,
                             nNF, 
@@ -745,16 +750,17 @@
                             qCom: getFloat(prod, 'qCom'),
                             vUnCom: getFloat(prod, 'vUnCom'), 
                             vProd: getFloat(prod, 'vProd'),
+                            vDesc: vDesc, // Armazena o desconto
                             CST_CSOSN: cst,
                             vICMS,
-                            userFactor: null // Inicializa sem override
+                            userFactor: null
                         });
                     }
                     return items;
                 } catch (e) { return []; }
             },
 
-            // --- Render (Atualizado com Input) ---
+            // --- Render ---
             getFilteredData() {
                 const s = this.dom.searchInput.value.toLowerCase();
                 const d1 = this.dom.dateStart.value;
@@ -799,12 +805,14 @@
                     const tagClass = fiscal.csosnOut === '500' ? 'smart-st' : 'smart-normal';
                     const tagLabel = fiscal.csosnOut === '500' ? 'ST' : 'NORM';
                     
-                    // Lógica de Visualização do Fator
                     const detected = this.detectConversionFactor(item.xProd);
-                    // Se o usuário digitou algo, usa. Senão, usa o detectado.
                     const currentFactor = item.userFactor ? item.userFactor : detected;
                     
-                    // Input HTML para edição
+                    // Cálculo Visual do Custo Líquido
+                    const discount = item.vDesc || 0;
+                    const netTotal = item.vProd - discount;
+                    const netUnitCostBox = netTotal / item.qCom; // Custo Liq da Caixa
+
                     const inputHtml = `
                         <input type="number" 
                                class="factor-input" 
@@ -815,20 +823,25 @@
                                title="Qtd detectada: ${detected}. Edite para corrigir.">
                     `;
 
+                    // Formatação do Desconto (Se houver)
+                    const descHtml = discount > 0 
+                        ? `<span class="text-success font-bold">-${discount.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>` 
+                        : '<span style="color:#cbd5e1">-</span>';
+
                     tr.innerHTML = `
                         <td class="w-check">
                             <input type="checkbox" class="row-checkbox" value="${item.id}" ${isSel ? 'checked' : ''} onchange="app.toggleSelect('${item.id}')">
                         </td>
                         <td style="text-align: center;">${inputHtml}</td>
-                        <td><span class="smart-tag ${tagClass}">${tagLabel}</span></td>
                         <td>${item.dataEmissao.split('-').reverse().join('/')}</td>
-                        <td title="${item.xProd}">${item.xProd.substring(0, 35)}...</td>
+                        <td title="${item.xProd}">${item.xProd.substring(0, 30)}...</td>
                         <td class="text-brand">${item.cEAN}</td>
                         <td>${item.NCM}</td>
-                        <td>${item.CST_CSOSN || '-'}</td>
+                        <td><span class="smart-tag ${tagClass}">${tagLabel}</span></td>
                         <td class="text-right">${item.qCom}</td>
-                        <td class="text-right">${item.vUnCom.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-                        <td class="text-right font-bold">${item.vProd.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+                        <td class="text-right">${descHtml}</td>
+                        <td class="text-right font-bold" style="color:var(--primary)">${netUnitCostBox.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+                        <td class="text-right">${item.vProd.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                     `;
                     fragment.appendChild(tr);
                 });
