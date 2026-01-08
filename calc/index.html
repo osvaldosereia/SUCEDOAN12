@@ -2,461 +2,378 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Calculadora Inteligente de Cesta Básica - Trocas Automáticas">
-    <title>Calculadora de Trocas Inteligentes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>Assistente | Dona Antônia</title>
+    <meta name="description" content="Assistente virtual para montar sua cesta básica.">
+    <meta name="theme-color" content="#2563EB">
+    
     <style>
+        /* --- DESIGN SYSTEM (SISTEMAS) --- */
         :root {
-            --bg-body: #f4f4f5;
-            --bg-card: #ffffff;
-            --text-main: #18181b;
-            --text-muted: #71717a;
-            --primary: #10b981; /* Mudado para verde (economia/positivo) */
-            --primary-dark: #059669;
-            --danger: #ef4444;
-            --border: #e4e4e7;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --primary: #2563EB;
+            --primary-dark: #1D4ED8;
+            --bg: #F0F2F5; /* Cor de fundo estilo WhatsApp */
+            --surface: #FFFFFF;
+            --text: #111827;
+            --text-light: #4B5563; 
+            --msg-bg: #FFFFFF;
+            --msg-user: #D9FDD3; /* Verde estilo Zap */
+            --border: #E5E7EB;
+            --radius: 16px;
+            --font-main: system-ui, -apple-system, sans-serif;
+            --max-w: 600px; /* Mais estreito para parecer chat */
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-            font-family: system-ui, -apple-system, sans-serif;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            padding-bottom: 80px; /* Espaço para toast/fab se necessário */
+            margin: 0; background-color: var(--bg); font-family: var(--font-main);
+            color: var(--text); padding-bottom: 100px;
         }
 
-        /* Header com Status do Orçamento */
+        /* HEADER */
         header {
-            background: var(--bg-card);
-            padding: 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
-            border-bottom: 1px solid var(--border);
+            background: #008069; /* Verde Zap */
+            color: white; padding: 16px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky; top: 0; z-index: 100;
         }
+        .avatar {
+            width: 44px; height: 44px; background: white; border-radius: 50%;
+            overflow: hidden; border: 2px solid rgba(255,255,255,0.5);
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .header-info h1 { margin: 0; font-size: 18px; font-weight: 600; }
+        .header-info p { margin: 0; font-size: 13px; opacity: 0.9; }
 
-        .budget-status {
-            max-width: 600px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* CONTAINER DO CHAT */
+        main { max-width: var(--max-w); margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 20px; }
 
-        .total-container h2 {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        /* BALÕES DE FALA */
+        .bubble {
+            background: var(--msg-bg); padding: 16px; border-radius: 0 16px 16px 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            position: relative; align-self: flex-start; max-width: 95%;
+            animation: popIn 0.3s ease-out;
         }
+        .bubble::before {
+            content: ''; position: absolute; top: 0; left: -8px;
+            width: 0; height: 0; 
+            border-top: 10px solid var(--msg-bg); border-left: 10px solid transparent;
+        }
+        .bubble p { margin: 0 0 10px 0; line-height: 1.5; font-size: 16px; }
+        .bubble p:last-child { margin-bottom: 0; }
+        .bubble strong { color: var(--primary-dark); }
 
-        .total-value {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--text-main);
-        }
+        @keyframes popIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
 
-        .budget-indicator {
-            text-align: right;
-            font-size: 0.85rem;
+        /* CARDS DE PRODUTO DENTRO DO CHAT */
+        .chat-list {
+            display: grid; gap: 10px; margin-top: 12px;
         }
-
-        .status-text {
-            display: block;
-            font-weight: 600;
+        .chat-item {
+            display: flex; align-items: center; gap: 12px;
+            background: #F8F9FA; border: 1px solid var(--border);
+            padding: 8px; border-radius: 12px;
         }
+        .chat-item img {
+            width: 50px; height: 50px; border-radius: 8px; 
+            object-fit: contain; background: white; mix-blend-mode: multiply;
+        }
+        .item-info { flex-grow: 1; }
+        .item-name { font-size: 14px; font-weight: 600; color: var(--text); }
+        .item-price { font-size: 13px; color: var(--text-light); }
         
-        .status-ok { color: var(--primary); }
-        .status-limit { color: #f59e0b; }
-        .status-over { color: var(--danger); }
-
-        /* Lista de Produtos */
-        main {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 1rem;
+        /* CONTROLES SIMPLIFICADOS */
+        .qty-controls {
+            display: flex; align-items: center; gap: 8px;
+            background: white; padding: 4px; border-radius: 8px; border: 1px solid #ddd;
         }
-
-        .category-header {
-            margin: 1.5rem 0 0.5rem 0;
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .btn-act {
+            width: 32px; height: 32px; border: none; border-radius: 6px;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
         }
+        .btn-minus { background: #fee2e2; color: #dc2626; }
+        .btn-plus { background: #dcfce7; color: #16a34a; }
+        .qty-num { font-weight: 700; width: 20px; text-align: center; }
 
-        .item-card {
-            background: var(--bg-card);
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            margin-bottom: 0.75rem;
-            display: grid;
-            grid-template-columns: 1fr auto; /* Nome | Controles */
-            align-items: center;
-            gap: 1rem;
-            box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
-            border: 1px solid transparent;
-            transition: border-color 0.2s;
+        /* BARRA DE AÇÃO INFERIOR */
+        .bottom-action {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; padding: 12px 16px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+            display: flex; justify-content: center; z-index: 99;
         }
-
-        .item-card.highlight {
-            border-color: var(--primary);
-            background-color: #ecfdf5;
+        .btn-main {
+            background: #008069; color: white; border: none;
+            width: 100%; max-width: var(--max-w); height: 50px;
+            border-radius: 25px; font-size: 16px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,128,105,0.3); transition: 0.2s;
         }
+        .btn-main:active { transform: scale(0.98); }
+        
+        /* UTIL */
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
-        .item-name {
-            font-weight: 600;
-            font-size: 0.95rem;
-            line-height: 1.2;
+        /* Loading */
+        #loading-screen {
+            position: fixed; inset: 0; background: var(--bg); z-index: 200;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-
-        /* Controles de Quantidade (+ -) */
-        .qty-control {
-            display: flex;
-            align-items: center;
-            background: #f1f5f9;
-            border-radius: 8px;
-            padding: 2px;
-        }
-
-        .qty-btn {
-            width: 36px;
-            height: 36px;
-            border: none;
-            background: #fff;
-            border-radius: 6px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--primary-dark);
-            cursor: pointer;
-            box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .qty-btn:active {
-            transform: scale(0.95);
-            background: #f8fafc;
-        }
-
-        .qty-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            filter: grayscale(1);
-        }
-
-        .qty-btn.minus { color: var(--danger); }
-
-        .qty-display {
-            width: 32px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        /* Modal de Sugestões */
-        dialog {
-            border: none;
-            border-radius: 16px;
-            padding: 0;
-            width: 90%;
-            max-width: 400px;
-            margin: auto;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
-        }
-
-        dialog::backdrop {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(2px);
-        }
-
-        .modal-content {
-            padding: 1.5rem;
-            background: #fff;
-            text-align: center;
-        }
-
-        .modal-header {
-            margin-bottom: 1rem;
-        }
-
-        .modal-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin-bottom: 4px;
-        }
-
-        .modal-subtitle {
-            font-size: 0.9rem;
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        .suggestion-list {
-            text-align: left;
-            margin: 1rem 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .suggestion-item {
-            background: #f8fafc;
-            padding: 10px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border);
-        }
-
-        .add-suggestion-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-
-        .close-modal {
-            width: 100%;
-            padding: 12px;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-top: 10px;
-        }
-
     </style>
 </head>
 <body>
 
-<header>
-    <div class="budget-status">
-        <div class="total-container">
-            <h2>Total da Cesta</h2>
-            <div class="total-value" id="total-display">R$ 0,00</div>
+    <!-- CABEÇALHO FIXO -->
+    <header>
+        <div class="avatar">
+            <img src="https://placehold.co/100x100/2563EB/white?text=DA" alt="Dona Antônia">
         </div>
-        <div class="budget-indicator">
-            <span class="status-text" id="status-text">Calculando...</span>
-            <small id="limit-info" style="color: var(--text-muted); font-size: 0.7rem;"></small>
+        <div class="header-info">
+            <h1>Dona Antônia</h1>
+            <p>Assistente Virtual • Online</p>
         </div>
+    </header>
+
+    <!-- ÁREA DE CONVERSA (Muda conforme o passo) -->
+    <main id="chat-container">
+        <!-- O conteúdo será injetado via JS -->
+    </main>
+
+    <!-- BOTÃO DE AÇÃO -->
+    <div class="bottom-action" id="action-bar">
+        <button class="btn-main" onclick="nextStep()" id="btn-next">
+            COMEÇAR
+        </button>
     </div>
-</header>
 
-<main id="app">
-    <!-- Lista injetada via JS -->
-</main>
-
-<!-- Modal de Sugestões Inteligentes -->
-<dialog id="suggestion-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">♻️ Troca Inteligente</h3>
-            <p class="modal-subtitle">Você economizou! Que tal adicionar:</p>
-        </div>
-        <div class="suggestion-list" id="suggestion-list">
-            <!-- Itens sugeridos -->
-        </div>
-        <button class="close-modal" onclick="document.getElementById('suggestion-modal').close()">Fechar</button>
+    <!-- JSON DATA LOADER -->
+    <div id="loading-screen">
+        <svg style="width:40px; height:40px; animation: spin 1s infinite linear; color: var(--primary);" viewBox="0 0 256 256"><path fill="currentColor" d="M232,128a104,104,0,0,1-208,0c0-41,23.81-76.33,58.57-92.74a8,8,0,0,1,7.23,14.28C62.66,62.88,44,93,44,128a88,88,0,0,0,176,0c0-35-18.66-65.12-45.8-78.46a8,8,0,1,1,7.23-14.28C208.19,51.67,232,87,232,128Z"></path></svg>
+        <p style="margin-top:10px; font-weight:600; color:var(--text-light)">Carregando produtos...</p>
     </div>
-</dialog>
+    <style> @keyframes spin { 100% { transform: rotate(360deg); } } </style>
 
-<script>
-    // Configuração de Dados Fixos
-    const PRODUCTS = [
-        // Alimentos
-        { id: 1, cat: 'Alimentos', name: 'Arroz Tio Alvino 5kg', price: 16, qty: 1 },
-        { id: 2, cat: 'Alimentos', name: 'Açúcar Doce Dia 2kg', price: 7, qty: 1 },
-        { id: 3, cat: 'Alimentos', name: 'Óleo de Soja Liza 900ml', price: 8, qty: 2 },
-        { id: 4, cat: 'Alimentos', name: 'Feijão Da Casa 1kg', price: 7, qty: 2 },
-        { id: 5, cat: 'Alimentos', name: 'Café Caboclo 250g', price: 15, qty: 1 },
-        { id: 6, cat: 'Alimentos', name: 'Espaguete Q\'Delícia 500g', price: 5, qty: 1 },
-        { id: 7, cat: 'Alimentos', name: 'Sal 1kg', price: 3, qty: 1 },
-        { id: 8, cat: 'Alimentos', name: 'Molho Tomate Fugini', price: 3, qty: 1 },
-        { id: 9, cat: 'Alimentos', name: 'Milho Lata Predilecta', price: 4, qty: 1 },
-        { id: 10, cat: 'Alimentos', name: 'Bolacha Recheada My Bit', price: 3, qty: 1 },
-        { id: 11, cat: 'Alimentos', name: 'Miojo Apti', price: 2, qty: 1 },
-        { id: 12, cat: 'Alimentos', name: 'Suco em Pó Frisco', price: 1, qty: 2 },
+    <script>
+        // --- DADOS ---
+        let PRODUTOS = [];
+        let CART = {}; // { "id": qtd }
+        let CURRENT_STEP = 0;
+        
+        // Cesta Padrão Inicial (IDs dos produtos)
+        const DEFAULT_BASKET_IDS = ["001", "005", "004", "003", "006", "007", "007"]; // 2x Macarrão
 
-        // Limpeza
-        { id: 13, cat: 'Limpeza e Higiene', name: 'Sabão Barra Ypê', price: 13, qty: 1 },
-        { id: 14, cat: 'Limpeza e Higiene', name: 'Creme Dental Sorriso 70g', price: 4, qty: 1 },
-        { id: 15, cat: 'Limpeza e Higiene', name: 'Papel Higiênico Soberano', price: 5, qty: 1 },
-        { id: 16, cat: 'Limpeza e Higiene', name: 'Amaciante Ypê 2L', price: 11, qty: 1 },
-        { id: 17, cat: 'Limpeza e Higiene', name: 'Desinfetante Remmus 2L', price: 6, qty: 1 },
-        { id: 18, cat: 'Limpeza e Higiene', name: 'Sabão Pó OMO 800g', price: 14, qty: 1 },
-        { id: 19, cat: 'Limpeza e Higiene', name: 'Detergente Ypê 500ml', price: 3, qty: 1 },
-        { id: 20, cat: 'Limpeza e Higiene', name: 'Qboa 1L', price: 5, qty: 1 },
-        { id: 21, cat: 'Limpeza e Higiene', name: 'Sabonete Palmolive', price: 4, qty: 2 },
-        { id: 22, cat: 'Limpeza e Higiene', name: 'Esponja Aço Assolan', price: 3, qty: 1 },
-        { id: 23, cat: 'Limpeza e Higiene', name: 'Esponja Louça', price: 3, qty: 1 },
-    ];
-
-    // Estado Reativo
-    let state = {
-        items: JSON.parse(JSON.stringify(PRODUCTS)),
-        initialTotal: 0,
-        maxTolerance: 5.00
-    };
-
-    // Calcular total inicial para definir a meta
-    state.initialTotal = state.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
-
-    // Renderização Principal
-    function render() {
-        const app = document.getElementById('app');
-        app.innerHTML = '';
-
-        // Agrupar por categoria
-        const groups = state.items.reduce((acc, item) => {
-            if (!acc[item.cat]) acc[item.cat] = [];
-            acc[item.cat].push(item);
-            return acc;
-        }, {});
-
-        // Current totals for logic
-        const currentTotal = state.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
-        const maxBudget = state.initialTotal + state.maxTolerance;
-        const remainingBudget = maxBudget - currentTotal;
-
-        // Gerar HTML
-        Object.keys(groups).forEach(cat => {
-            const catHeader = document.createElement('h3');
-            catHeader.className = 'category-header';
-            catHeader.textContent = cat;
-            app.appendChild(catHeader);
-
-            groups[cat].forEach(item => {
-                const el = document.createElement('div');
-                el.className = 'item-card';
-                // Highlight item if just modified (optional logic could go here)
+        // --- INICIALIZAÇÃO ---
+        async function init() {
+            try {
+                // Fetch dos produtos
+                const res = await fetch('./produtos.json');
+                if(!res.ok) throw new Error("Erro JSON");
+                PRODUTOS = await res.json();
                 
-                // Botão + desabilitado se ultrapassar limite
-                const canAdd = (currentTotal + item.price) <= maxBudget;
+                // Popula cesta inicial
+                DEFAULT_BASKET_IDS.forEach(id => {
+                    CART[id] = (CART[id] || 0) + 1;
+                });
 
-                el.innerHTML = `
-                    <div class="item-name">${item.name}</div>
-                    <div class="qty-control">
-                        <button class="qty-btn minus" onclick="updateQty(${item.id}, -1)">-</button>
-                        <span class="qty-display">${item.qty}</span>
-                        <button class="qty-btn plus" ${!canAdd ? 'disabled' : ''} onclick="updateQty(${item.id}, 1)">+</button>
+                document.getElementById('loading-screen').classList.add('hidden');
+                renderStep(0);
+            } catch(e) {
+                document.getElementById('loading-screen').innerHTML = "<p>Erro ao carregar. Atualize a página.</p>";
+            }
+        }
+
+        // --- MOTOR DO WIZARD ---
+        function renderStep(step) {
+            CURRENT_STEP = step;
+            const container = document.getElementById('chat-container');
+            const btn = document.getElementById('btn-next');
+            container.innerHTML = ''; // Limpa tela (estilo wizard)
+
+            window.scrollTo(0,0);
+
+            if (step === 0) {
+                // INTRODUÇÃO
+                container.innerHTML = `
+                    <div class="bubble">
+                        <p>Olá! Tudo bem? 👋</p>
+                        <p>Eu sou a assistente virtual da Dona Antônia.</p>
+                        <p>Já separei uma <strong>Cesta Básica Padrão</strong> para você não perder tempo.</p>
+                        <p>Vamos conferir e ajustar o que você precisa?</p>
                     </div>
                 `;
-                app.appendChild(el);
-            });
-        });
-
-        updateHeader(currentTotal, maxBudget);
-    }
-
-    function updateHeader(total, max) {
-        document.getElementById('total-display').textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        
-        const statusText = document.getElementById('status-text');
-        const limitInfo = document.getElementById('limit-info');
-        
-        limitInfo.textContent = `Máximo permitido: ${max.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
-
-        if (total <= state.initialTotal) {
-            statusText.textContent = "Dentro da Meta ✅";
-            statusText.className = "status-text status-ok";
-        } else if (total <= max) {
-            statusText.textContent = "Usando Margem Extra ⚠️";
-            statusText.className = "status-text status-limit";
-        } else {
-            statusText.textContent = "Limite Excedido ⛔";
-            statusText.className = "status-text status-over";
-        }
-    }
-
-    // Lógica de Atualização e Sugestão
-    window.updateQty = function(id, change) {
-        const item = state.items.find(i => i.id === id);
-        
-        if (change < 0 && item.qty > 0) {
-            // Se está diminuindo, vai liberar orçamento
-            item.qty--;
-            render(); // Renderiza primeiro para atualizar totais
-            checkSuggestions(); // Verifica o que dá pra comprar
-        } else if (change > 0) {
-            item.qty++;
-            render();
-        }
-    };
-
-    window.addSuggestion = function(id) {
-        const item = state.items.find(i => i.id === id);
-        item.qty++;
-        document.getElementById('suggestion-modal').close();
-        render();
-    };
-
-    function checkSuggestions() {
-        const currentTotal = state.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
-        const maxBudget = state.initialTotal + state.maxTolerance;
-        const availableToSpend = maxBudget - currentTotal;
-
-        // Se não tem dinheiro "livre" relevante (ex: menos de R$ 1), não sugere
-        if (availableToSpend < 1) return;
-
-        // Encontrar produtos que cabem no orçamento livre
-        // Prioridade: Produtos que custam MENOS ou IGUAL ao que sobrou
-        const suggestions = state.items.filter(item => {
-            return item.price <= availableToSpend && item.price > 0;
-        });
-
-        if (suggestions.length > 0) {
-            // Ordenar por preço (do mais caro possível para o mais barato)
-            suggestions.sort((a, b) => b.price - a.price);
+                btn.innerText = "VAMOS LÁ ➤";
+                btn.onclick = () => renderStep(1);
             
-            // Pegar top 5
-            showSuggestionModal(suggestions.slice(0, 5));
+            } else if (step === 1) {
+                // PASSO 1: REMOÇÃO / AJUSTE
+                let listHtml = '';
+                const sortedIds = Object.keys(CART).sort();
+                
+                sortedIds.forEach(id => {
+                    const p = PRODUTOS.find(x => x.id === id);
+                    if(p) listHtml += createItemRow(p, CART[id], 'remove');
+                });
+
+                container.innerHTML = `
+                    <div class="bubble">
+                        <p>Ótimo! 👇 Aqui está a cesta que eu montei.</p>
+                        <p><strong>Tem algo aqui que você NÃO quer?</strong></p>
+                        <p>Use o botão <strong>(-)</strong> para tirar ou diminuir.</p>
+                    </div>
+                    <div class="chat-list">
+                        ${listHtml}
+                    </div>
+                    <div class="bubble" style="margin-top:10px; background:#fff3cd;">
+                        <p>💡 <em>Dica: Se quiser tirar tudo de um item, vá clicando no menos (-) até sumir.</em></p>
+                    </div>
+                `;
+                btn.innerText = "PRONTO, PRÓXIMO ➤";
+                btn.onclick = () => renderStep(2);
+
+            } else if (step === 2) {
+                // PASSO 2: ADIÇÃO
+                let listHtml = '';
+                // Mostra produtos populares que NÃO estão na cesta (ou todos)
+                // Para simplificar, mostramos os top 10 produtos da lista geral
+                PRODUTOS.slice(0, 15).forEach(p => {
+                    const qtd = CART[p.id] || 0;
+                    listHtml += createItemRow(p, qtd, 'add');
+                });
+
+                container.innerHTML = `
+                    <div class="bubble">
+                        <p>Entendi. ✅</p>
+                        <p>Agora, <strong>o que está faltando?</strong></p>
+                        <p>Veja se quer adicionar mais alguma coisa dessa lista abaixo:</p>
+                    </div>
+                    <div class="chat-list">
+                        ${listHtml}
+                    </div>
+                `;
+                btn.innerText = "FECHAR PEDIDO ➤";
+                btn.onclick = () => renderStep(3);
+
+            } else if (step === 3) {
+                // PASSO 3: FECHAMENTO / SUGESTÃO
+                let total = 0;
+                let resumoHtml = '';
+                
+                Object.keys(CART).forEach(id => {
+                    const p = PRODUTOS.find(x => x.id === id);
+                    if(p && CART[id] > 0) {
+                        const sub = p.price * CART[id];
+                        total += sub;
+                        resumoHtml += `
+                            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee; font-size:14px;">
+                                <span>${CART[id]}x ${p.name}</span>
+                                <strong>R$ ${sub.toFixed(2).replace('.',',')}</strong>
+                            </div>
+                        `;
+                    }
+                });
+
+                const frete = total >= 120 ? 0 : 10;
+                const totalFinal = total + frete;
+
+                container.innerHTML = `
+                    <div class="bubble">
+                        <p>Perfeito! Fiz as contas aqui. 🧮</p>
+                        <p>Essa é a minha <strong>Sugestão Final</strong> para sua cesta:</p>
+                    </div>
+                    
+                    <div class="bubble" style="background:white; border:1px solid var(--primary);">
+                        ${resumoHtml}
+                        <div style="margin-top:12px; padding-top:12px; border-top:2px dashed #ddd;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Produtos:</span> <strong>R$ ${total.toFixed(2).replace('.',',')}</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; color:${frete===0?'var(--primary)':'#d32f2f'}">
+                                <span>Entrega:</span> <strong>${frete===0 ? 'GRÁTIS' : 'R$ 10,00'}</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:18px; margin-top:10px; color:var(--primary-dark);">
+                                <strong>TOTAL:</strong> <strong>R$ ${totalFinal.toFixed(2).replace('.',',')}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bubble">
+                        <p>Posso enviar esse pedido para a separação agora?</p>
+                    </div>
+                `;
+                
+                btn.style.background = "#25D366"; // Verde Zap
+                btn.innerHTML = `<svg viewBox="0 0 256 256" style="width:24px;height:24px;fill:white"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"></path></svg> ENVIAR PEDIDO NO ZAP`;
+                btn.onclick = () => sendWhatsapp(totalFinal);
+            }
         }
-    }
 
-    function showSuggestionModal(items) {
-        const list = document.getElementById('suggestion-list');
-        list.innerHTML = '';
+        // --- COMPONENTES ---
+        function createItemRow(p, qtd, mode) {
+            // Imagem principal ou placeholder
+            const img = p.img || 'https://placehold.co/50';
+            
+            // Se modo for "add" e qtd for 0, mostra botão "Adicionar"
+            // Se modo for "remove" e qtd for 0, nem mostra o item (já foi removido da view, mas aqui garantimos)
+            if (mode === 'remove' && qtd <= 0) return '';
 
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.innerHTML = `
-                <div style="font-size: 0.9rem;">
-                    <strong>${item.name}</strong>
-                    <div style="font-size:0.75rem; color:#666">Custa R$ ${item.price.toFixed(2)}</div>
+            return `
+                <div class="chat-item fade-in" id="item-${p.id}">
+                    <img src="${img}" alt="${p.name}">
+                    <div class="item-info">
+                        <div class="item-name">${p.name}</div>
+                        <div class="item-price">R$ ${p.price.toFixed(2).replace('.',',')}</div>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="btn-act btn-minus" onclick="changeQty('${p.id}', -1)">-</button>
+                        <span class="qty-num">${qtd}</span>
+                        <button class="btn-act btn-plus" onclick="changeQty('${p.id}', 1)">+</button>
+                    </div>
                 </div>
-                <button class="add-suggestion-btn" onclick="addSuggestion(${item.id})">Adicionar</button>
             `;
-            list.appendChild(div);
-        });
+        }
 
-        document.getElementById('suggestion-modal').showModal();
-    }
+        function changeQty(id, delta) {
+            if (!CART[id]) CART[id] = 0;
+            CART[id] += delta;
+            
+            if (CART[id] <= 0) {
+                // Se passo 1 (remover), zerar significa tirar da lista
+                if (CURRENT_STEP === 1) delete CART[id];
+                else CART[id] = 0; // No passo 2, mantém 0 pra poder adicionar de novo se quiser
+            }
 
-    // Inicializar
-    render();
+            // Re-renderiza APENAS a lista do passo atual para não perder scroll ou foco bruscamente
+            // Mas como é um MVP simples, re-renderizar o passo todo é mais seguro para consistência
+            renderStep(CURRENT_STEP);
+        }
 
-</script>
+        function sendWhatsapp(totalVal) {
+            let msg = "*PEDIDO VIA ASSISTENTE VIRTUAL*\n";
+            msg += "--------------------------------\n";
+            
+            Object.keys(CART).forEach(id => {
+                if (CART[id] > 0) {
+                    const p = PRODUTOS.find(x => x.id === id);
+                    msg += `[${CART[id]}] ${p.name}\n`;
+                }
+            });
+            
+            msg += "--------------------------------\n";
+            msg += `*TOTAL FINAL: R$ ${totalVal.toFixed(2).replace('.',',')}*\n`;
+            
+            const link = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
+            window.open(link, '_blank');
+        }
+
+        // Start
+        init();
+
+    </script>
 </body>
 </html>
