@@ -413,7 +413,7 @@
                 <p>Detecta Fardos, permite Edição e <b>deduz Descontos</b> do custo unitário.</p>
             </div>
             <div class="flex flex-col items-end gap-1">
-                <span class="badge">v6.1 Sincronização Automática</span>
+                <span class="badge">v6.3 CFOP/CSOSN Automático</span>
                 <span class="badge badge-success">Descontos Ativos</span>
             </div>
         </header>
@@ -523,12 +523,12 @@
 
     <script>
         /**
-         * SISTEMAS - Core Logic v6.1 (Auto-Sync by EAN)
+         * SISTEMAS - Core Logic v6.3 (CFOP/CSOSN Config)
          */
         const app = {
             data: [], 
             selectedIds: new Set(),
-            storageKey: 'nfe_sys_data_sync_v61', // Changed key to version 6.1
+            storageKey: 'nfe_sys_data_sync_v61',
 
             init() {
                 this.cacheDOM();
@@ -575,7 +575,7 @@
                 }
             },
 
-            // --- LÓGICA DE ATUALIZAÇÃO E SINCRONIZAÇÃO (NOVO) ---
+            // --- LÓGICA DE ATUALIZAÇÃO E SINCRONIZAÇÃO ---
             updateFactor(id, newValue) {
                 const sourceItem = this.data.find(i => i.id === id);
                 if (!sourceItem) return;
@@ -652,7 +652,7 @@
                 });
             },
 
-            // --- INTELIGÊNCIA FISCAL ---
+            // --- INTELIGÊNCIA FISCAL E CONFIGURAÇÃO DE SAÍDA ---
             detectConversionFactor(description) {
                 if (!description) return 1;
                 const desc = description.toUpperCase();
@@ -675,12 +675,15 @@
                 const cfopIn = parseInt(item.CFOP.replace('.', ''));
                 const cstIn = parseInt(item.CST_CSOSN || '0');
                 
+                // Lista de CFOPs e CSTs que indicam Substituição Tributária (Entrada)
                 const isST = [1403, 2403, 5403, 5405].includes(cfopIn) || [10, 30, 60, 70, 201, 202, 500].includes(cstIn);
 
                 if (isST) {
-                    return { cfopOut: '5.405', csosnOut: '500', desc: 'Revenda ST' };
+                    // CONFIGURAÇÃO: Se ST -> Venda com CFOP 5405 e CSOSN 500
+                    return { cfopOut: '5405', csosnOut: '500', desc: 'Revenda ST' };
                 } else {
-                    return { cfopOut: '5.102', csosnOut: '102', desc: 'Revenda Normal' };
+                    // CONFIGURAÇÃO: Se Normal -> Venda com CFOP 5102 e CSOSN 102
+                    return { cfopOut: '5102', csosnOut: '102', desc: 'Revenda Normal' };
                 }
             },
 
@@ -764,19 +767,54 @@
                 const files = Array.from(event.target.files);
                 if (files.length === 0) return;
                 this.toggleLoading(true);
+
+                // 1. Identificar chaves já carregadas (evita NFe duplicada)
+                // O ID do item é: NFeKEY-nItem. Split('-')[0] pega a NFeKEY.
+                const existingKeys = new Set(this.data.map(i => i.id.split('-')[0]));
+                
                 const promises = files.map(file => this.readFileAsText(file));
                 try {
                     const contents = await Promise.all(promises);
                     let newItems = [];
+                    let duplicates = 0;
+
                     contents.forEach(xml => {
                         const parsed = this.parseXML(xml);
-                        if (parsed) newItems.push(...parsed);
+                        if (parsed && parsed.length > 0) {
+                            // Extrai a chave da NFe do primeiro item deste XML
+                            const nfeKey = parsed[0].id.split('-')[0];
+                            
+                            if (existingKeys.has(nfeKey)) {
+                                duplicates++; // XML já existe na lista
+                            } else {
+                                newItems.push(...parsed);
+                                existingKeys.add(nfeKey); // Adiciona ao conjunto temp para evitar duplicados no mesmo lote
+                            }
+                        }
                     });
-                    this.data = [...this.data, ...newItems];
-                    this.saveToStorage();
-                    this.render();
-                } catch (e) { alert('Erro no processamento.'); } 
-                finally { this.toggleLoading(false); this.dom.fileInput.value = ''; }
+
+                    // Feedback ao usuário
+                    if (duplicates > 0) {
+                        this.showToast(`⚠️ ${duplicates} NFe(s) ignorada(s) por duplicidade.`);
+                    }
+
+                    if (newItems.length > 0) {
+                        this.data = [...this.data, ...newItems];
+                        this.saveToStorage();
+                        this.render();
+                        this.showToast(`✅ ${newItems.length} novos itens importados.`);
+                    } else if (duplicates === 0) {
+                        this.showToast(`ℹ️ Nenhum dado válido encontrado.`);
+                    }
+
+                } catch (e) { 
+                    console.error(e);
+                    this.showToast('❌ Erro ao processar arquivos.'); 
+                } 
+                finally { 
+                    this.toggleLoading(false); 
+                    this.dom.fileInput.value = ''; 
+                }
             },
             readFileAsText(file) {
                 return new Promise((r, j) => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.onerror = j; fr.readAsText(file); });
