@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Calculadora Inteligente de Cesta Básica - Trocas Automáticas">
+    <title>Calculadora de Trocas Inteligentes</title>
+    <style>
+        :root {
+            --bg-body: #f4f4f5;
+            --bg-card: #ffffff;
+            --text-main: #18181b;
+            --text-muted: #71717a;
+            --primary: #10b981; /* Mudado para verde (economia/positivo) */
+            --primary-dark: #059669;
+            --danger: #ef4444;
+            --border: #e4e4e7;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding-bottom: 80px; /* Espaço para toast/fab se necessário */
+        }
+
+        /* Header com Status do Orçamento */
+        header {
+            background: var(--bg-card);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .budget-status {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-container h2 {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .total-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .budget-indicator {
+            text-align: right;
+            font-size: 0.85rem;
+        }
+
+        .status-text {
+            display: block;
+            font-weight: 600;
+        }
+        
+        .status-ok { color: var(--primary); }
+        .status-limit { color: #f59e0b; }
+        .status-over { color: var(--danger); }
+
+        /* Lista de Produtos */
+        main {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .category-header {
+            margin: 1.5rem 0 0.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-card {
+            background: var(--bg-card);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            display: grid;
+            grid-template-columns: 1fr auto; /* Nome | Controles */
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .item-card.highlight {
+            border-color: var(--primary);
+            background-color: #ecfdf5;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.2;
+        }
+
+        /* Controles de Quantidade (+ -) */
+        .qty-control {
+            display: flex;
+            align-items: center;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .qty-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #fff;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-dark);
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qty-btn:active {
+            transform: scale(0.95);
+            background: #f8fafc;
+        }
+
+        .qty-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        .qty-btn.minus { color: var(--danger); }
+
+        .qty-display {
+            width: 32px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        /* Modal de Sugestões */
+        dialog {
+            border: none;
+            border-radius: 16px;
+            padding: 0;
+            width: 90%;
+            max-width: 400px;
+            margin: auto;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            padding: 1.5rem;
+            background: #fff;
+            text-align: center;
+        }
+
+        .modal-header {
+            margin-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .modal-subtitle {
+            font-size: 0.9rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .suggestion-list {
+            text-align: left;
+            margin: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .suggestion-item {
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+
+        .add-suggestion-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .close-modal {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="budget-status">
+        <div class="total-container">
+            <h2>Total da Cesta</h2>
+            <div class="total-value" id="total-display">R$ 0,00</div>
+        </div>
+        <div class="budget-indicator">
+            <span class="status-text" id="status-text">Calculando...</span>
+            <small id="limit-info" style="color: var(--text-muted); font-size: 0.7rem;"></small>
+        </div>
+    </div>
+</header>
+
+<main id="app">
+    <!-- Lista injetada via JS -->
+</main>
+
+<!-- Modal de Sugestões Inteligentes -->
+<dialog id="suggestion-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">♻️ Troca Inteligente</h3>
+            <p class="modal-subtitle">Você economizou! Que tal adicionar:</p>
+        </div>
+        <div class="suggestion-list" id="suggestion-list">
+            <!-- Itens sugeridos -->
+        </div>
+        <button class="close-modal" onclick="document.getElementById('suggestion-modal').close()">Fechar</button>
+    </div>
+</dialog>
+
+<script>
+    // Configuração de Dados Fixos
+    const PRODUCTS = [
+        // Alimentos
+        { id: 1, cat: 'Alimentos', name: 'Arroz Tio Alvino 5kg', price: 16, qty: 1 },
+        { id: 2, cat: 'Alimentos', name: 'Açúcar Doce Dia 2kg', price: 7, qty: 1 },
+        { id: 3, cat: 'Alimentos', name: 'Óleo de Soja Liza 900ml', price: 8, qty: 2 },
+        { id: 4, cat: 'Alimentos', name: 'Feijão Da Casa 1kg', price: 7, qty: 2 },
+        { id: 5, cat: 'Alimentos', name: 'Café Caboclo 250g', price: 15, qty: 1 },
+        { id: 6, cat: 'Alimentos', name: 'Espaguete Q\'Delícia 500g', price: 5, qty: 1 },
+        { id: 7, cat: 'Alimentos', name: 'Sal 1kg', price: 3, qty: 1 },
+        { id: 8, cat: 'Alimentos', name: 'Molho Tomate Fugini', price: 3, qty: 1 },
+        { id: 9, cat: 'Alimentos', name: 'Milho Lata Predilecta', price: 4, qty: 1 },
+        { id: 10, cat: 'Alimentos', name: 'Bolacha Recheada My Bit', price: 3, qty: 1 },
+        { id: 11, cat: 'Alimentos', name: 'Miojo Apti', price: 2, qty: 1 },
+        { id: 12, cat: 'Alimentos', name: 'Suco em Pó Frisco', price: 1, qty: 2 },
+
+        // Limpeza
+        { id: 13, cat: 'Limpeza e Higiene', name: 'Sabão Barra Ypê', price: 13, qty: 1 },
+        { id: 14, cat: 'Limpeza e Higiene', name: 'Creme Dental Sorriso 70g', price: 4, qty: 1 },
+        { id: 15, cat: 'Limpeza e Higiene', name: 'Papel Higiênico Soberano', price: 5, qty: 1 },
+        { id: 16, cat: 'Limpeza e Higiene', name: 'Amaciante Ypê 2L', price: 11, qty: 1 },
+        { id: 17, cat: 'Limpeza e Higiene', name: 'Desinfetante Remmus 2L', price: 6, qty: 1 },
+        { id: 18, cat: 'Limpeza e Higiene', name: 'Sabão Pó OMO 800g', price: 14, qty: 1 },
+        { id: 19, cat: 'Limpeza e Higiene', name: 'Detergente Ypê 500ml', price: 3, qty: 1 },
+        { id: 20, cat: 'Limpeza e Higiene', name: 'Qboa 1L', price: 5, qty: 1 },
+        { id: 21, cat: 'Limpeza e Higiene', name: 'Sabonete Palmolive', price: 4, qty: 2 },
+        { id: 22, cat: 'Limpeza e Higiene', name: 'Esponja Aço Assolan', price: 3, qty: 1 },
+        { id: 23, cat: 'Limpeza e Higiene', name: 'Esponja Louça', price: 3, qty: 1 },
+    ];
+
+    // Estado Reativo
+    let state = {
+        items: JSON.parse(JSON.stringify(PRODUCTS)),
+        initialTotal: 0,
+        maxTolerance: 5.00
+    };
+
+    // Calcular total inicial para definir a meta
+    state.initialTotal = state.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+
+    // Renderização Principal
+    function render() {
+        const app = document.getElementById('app');
+        app.innerHTML = '';
+
+        // Agrupar por categoria
+        const groups = state.items.reduce((acc, item) => {
+            if (!acc[item.cat]) acc[item.cat] = [];
+            acc[item.cat].push(item);
+            return acc;
+        }, {});
+
+        // Current totals for logic
+        const currentTotal = state.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const maxBudget = state.initialTotal + state.maxTolerance;
+        const remainingBudget = maxBudget - currentTotal;
+
+        // Gerar HTML
+        Object.keys(groups).forEach(cat => {
+            const catHeader = document.createElement('h3');
+            catHeader.className = 'category-header';
+            catHeader.textContent = cat;
+            app.appendChild(catHeader);
+
+            groups[cat].forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'item-card';
+                // Highlight item if just modified (optional logic could go here)
+                
+                // Botão + desabilitado se ultrapassar limite
+                const canAdd = (currentTotal + item.price) <= maxBudget;
+
+                el.innerHTML = `
+                    <div class="item-name">${item.name}</div>
+                    <div class="qty-control">
+                        <button class="qty-btn minus" onclick="updateQty(${item.id}, -1)">-</button>
+                        <span class="qty-display">${item.qty}</span>
+                        <button class="qty-btn plus" ${!canAdd ? 'disabled' : ''} onclick="updateQty(${item.id}, 1)">+</button>
+                    </div>
+                `;
+                app.appendChild(el);
+            });
+        });
+
+        updateHeader(currentTotal, maxBudget);
+    }
+
+    function updateHeader(total, max) {
+        document.getElementById('total-display').textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        const statusText = document.getElementById('status-text');
+        const limitInfo = document.getElementById('limit-info');
+        
+        limitInfo.textContent = `Máximo permitido: ${max.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+
+        if (total <= state.initialTotal) {
+            statusText.textContent = "Dentro da Meta ✅";
+            statusText.className = "status-text status-ok";
+        } else if (total <= max) {
+            statusText.textContent = "Usando Margem Extra ⚠️";
+            statusText.className = "status-text status-limit";
+        } else {
+            statusText.textContent = "Limite Excedido ⛔";
+            statusText.className = "status-text status-over";
+        }
+    }
+
+    // Lógica de Atualização e Sugestão
+    window.updateQty = function(id, change) {
+        const item = state.items.find(i => i.id === id);
+        
+        if (change < 0 && item.qty > 0) {
+            // Se está diminuindo, vai liberar orçamento
+            item.qty--;
+            render(); // Renderiza primeiro para atualizar totais
+            checkSuggestions(); // Verifica o que dá pra comprar
+        } else if (change > 0) {
+            item.qty++;
+            render();
+        }
+    };
+
+    window.addSuggestion = function(id) {
+        const item = state.items.find(i => i.id === id);
+        item.qty++;
+        document.getElementById('suggestion-modal').close();
+        render();
+    };
+
+    function checkSuggestions() {
+        const currentTotal = state.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const maxBudget = state.initialTotal + state.maxTolerance;
+        const availableToSpend = maxBudget - currentTotal;
+
+        // Se não tem dinheiro "livre" relevante (ex: menos de R$ 1), não sugere
+        if (availableToSpend < 1) return;
+
+        // Encontrar produtos que cabem no orçamento livre
+        // Prioridade: Produtos que custam MENOS ou IGUAL ao que sobrou
+        const suggestions = state.items.filter(item => {
+            return item.price <= availableToSpend && item.price > 0;
+        });
+
+        if (suggestions.length > 0) {
+            // Ordenar por preço (do mais caro possível para o mais barato)
+            suggestions.sort((a, b) => b.price - a.price);
+            
+            // Pegar top 5
+            showSuggestionModal(suggestions.slice(0, 5));
+        }
+    }
+
+    function showSuggestionModal(items) {
+        const list = document.getElementById('suggestion-list');
+        list.innerHTML = '';
+
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `
+                <div style="font-size: 0.9rem;">
+                    <strong>${item.name}</strong>
+                    <div style="font-size:0.75rem; color:#666">Custa R$ ${item.price.toFixed(2)}</div>
+                </div>
+                <button class="add-suggestion-btn" onclick="addSuggestion(${item.id})">Adicionar</button>
+            `;
+            list.appendChild(div);
+        });
+
+        document.getElementById('suggestion-modal').showModal();
+    }
+
+    // Inicializar
+    render();
+
+</script>
+</body>
+</html>
