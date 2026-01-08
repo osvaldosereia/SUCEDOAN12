@@ -376,8 +376,8 @@
                 <p>Detecta Fardos, permite Edição e <b>deduz Descontos</b> do custo unitário.</p>
             </div>
             <div class="flex flex-col items-end gap-1">
-                <span class="badge">v6.0 Nota + NetCost</span>
-                <span class="badge badge-success">Descontos Ativos</span>
+                <span class="badge">v6.2 Qtd NFe</span>
+                <span class="badge badge-success">Dados Brutos + Calc</span>
             </div>
         </header>
 
@@ -486,7 +486,7 @@
 
     <script>
         /**
-         * SISTEMAS - Core Logic v6.0 (Included Invoice Number & Net Cost Export)
+         * SISTEMAS - Core Logic v6.2 (Strict Quantity Export)
          */
         const app = {
             data: [], 
@@ -607,7 +607,7 @@
                 }
             },
 
-            // --- EXPORTAÇÃO (COM CÁLCULO DE DESCONTO E NUMERO DA NOTA) ---
+            // --- EXPORTAÇÃO (ATUALIZADO V6.2 - CAMPOS EXPLÍCITOS DE QTD) ---
             exportSmartJSON() {
                 const selectedItems = this.data.filter(item => this.selectedIds.has(item.id));
                 if (selectedItems.length === 0) return;
@@ -620,23 +620,31 @@
                     const finalFactor = item.userFactor ? item.userFactor : detected;
                     const fiscal = this.predictFiscalAttributes(item);
                     
-                    // --- CÁLCULO DO CUSTO LÍQUIDO ---
-                    // Custo Liq Caixa = (Valor Total Item - Desconto Total) / Quantidade Caixas
+                    // --- CÁLCULOS ---
                     const totalDesc = item.vDesc || 0;
                     const netTotal = item.vProd - totalDesc;
                     const netCostBox = netTotal / item.qCom;
                     const unitCost = netCostBox / finalFactor;
+                    
+                    // Quantidade TOTAL de unidades (ex: 2 caixas * 12un = 24un)
+                    const qtdTotalUnidades = item.qCom * finalFactor;
 
-                    if (mode === 'atacado' || mode === 'ambos') {
+                    if (mode === 'atacado') {
                         exportList.push({
                             ...item,
-                            Numero_Nota: item.nNF, // Adicionado nNF
+                            Numero_Nota: item.nNF,
+                            
+                            // CAMPOS PADRONIZADOS PARA MULTIPLICAÇÃO
+                            Quantidade_NFe: item.qCom,        // Qtd Original
+                            Unidade_NFe: item.uCom,           // Un Original
+                            Fator_Conversao: finalFactor,     // Fator
+                            Quantidade_Total_Unidades: qtdTotalUnidades, // Resultado
+                            
                             _TIPO: 'ATACADO (ENTRADA)',
                             CFOP_SAIDA_SUGERIDO: fiscal.cfopOut,
                             CSOSN_SAIDA_SUGERIDO: fiscal.csosnOut,
-                            FATOR_UTILIZADO: finalFactor,
                             CUSTO_LIQUIDO_CAIXA: parseFloat(netCostBox.toFixed(4)),
-                            Custo_Real_Caixa: parseFloat(netCostBox.toFixed(4)), // Campo explícito para custo
+                            Custo_Real_Caixa: parseFloat(netCostBox.toFixed(4)),
                             DESCONTO_APLICADO: totalDesc
                         });
                     }
@@ -647,7 +655,7 @@
 
                         exportList.push({
                             id_referencia: item.id,
-                            Numero_Nota: item.nNF, // Adicionado nNF
+                            Numero_Nota: item.nNF,
                             cProd_Sugestao: item.cProd + '-UN', 
                             cEAN: 'PREENCHER_COM_LEITOR', 
                             xProd: cleanDesc,
@@ -656,12 +664,18 @@
                             CFOP_SAIDA: fiscal.cfopOut,
                             CSOSN_SAIDA: fiscal.csosnOut,
                             Unidade_Venda: 'UN',
-                            Fator_Conversao_Entrada: finalFactor,
-                            Custo_Unitario: parseFloat(unitCost.toFixed(4)), // Custo Un. com desconto
-                            Custo_Real_Caixa: parseFloat(netCostBox.toFixed(4)), // Custo da Caixa com desconto
+                            
+                            // CAMPOS PADRONIZADOS PARA MULTIPLICAÇÃO
+                            Quantidade_NFe: item.qCom,        // Qtd Original
+                            Unidade_NFe: item.uCom,           // Un Original
+                            Fator_Conversao: finalFactor,     // Fator
+                            Quantidade_Total_Unidades: qtdTotalUnidades, // Resultado
+                            
+                            Custo_Unitario: parseFloat(unitCost.toFixed(4)), 
+                            Custo_Real_Caixa: parseFloat(netCostBox.toFixed(4)), 
                             Valor_Desconto_Total: totalDesc,
                             _TIPO: 'VAREJO (SAIDA)',
-                            _OBS: `Desconto de R$ ${totalDesc} abatido do custo`
+                            _OBS: `Entrada: ${item.qCom} ${item.uCom} x ${finalFactor} = ${qtdTotalUnidades} UN`
                         });
                     }
                 });
@@ -682,7 +696,13 @@
                 document.body.removeChild(a);
             },
             
-            // --- Parser ---
+            // --- Parser (Preserve Data) ---
+            exportData(type) {
+                // Backup Bruto
+                const filename = `backup_bruto_${this.data.length}itens`;
+                this.downloadJSON(this.data, filename);
+            },
+
             async handleFileUpload(event) {
                 const files = Array.from(event.target.files);
                 if (files.length === 0) return;
@@ -732,7 +752,6 @@
                             vICMS = getFloat(imposto, 'vICMS');
                         }
 
-                        // --- CORREÇÃO: LENDO O DESCONTO ---
                         const vDesc = getFloat(prod, 'vDesc'); 
 
                         items.push({
@@ -750,7 +769,7 @@
                             qCom: getFloat(prod, 'qCom'),
                             vUnCom: getFloat(prod, 'vUnCom'), 
                             vProd: getFloat(prod, 'vProd'),
-                            vDesc: vDesc, // Armazena o desconto
+                            vDesc: vDesc, 
                             CST_CSOSN: cst,
                             vICMS,
                             userFactor: null
@@ -808,10 +827,9 @@
                     const detected = this.detectConversionFactor(item.xProd);
                     const currentFactor = item.userFactor ? item.userFactor : detected;
                     
-                    // Cálculo Visual do Custo Líquido
                     const discount = item.vDesc || 0;
                     const netTotal = item.vProd - discount;
-                    const netUnitCostBox = netTotal / item.qCom; // Custo Liq da Caixa
+                    const netUnitCostBox = netTotal / item.qCom; 
 
                     const inputHtml = `
                         <input type="number" 
@@ -823,7 +841,6 @@
                                title="Qtd detectada: ${detected}. Edite para corrigir.">
                     `;
 
-                    // Formatação do Desconto (Se houver)
                     const descHtml = discount > 0 
                         ? `<span class="text-success font-bold">-${discount.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>` 
                         : '<span style="color:#cbd5e1">-</span>';
