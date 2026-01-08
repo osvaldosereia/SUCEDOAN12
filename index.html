@@ -3,11 +3,10 @@
 <head>
     <!-- 
         ================================================================
-        SEO CODE ARCHITECT: FINAL BUILD (GOLD + IMAGE MODAL + TRACKING)
+        SEO CODE ARCHITECT: FINAL BUILD (GOLD + FULL LISTS + TRACKING)
         - Core Web Vitals: 100/100
-        - Tracking: GTM + Facebook Pixel (Restored)
-        - Feature: Product Image Modal (Restored)
-        - Architecture: Semantic HTML + Light JS
+        - Content: Full Product Lists Restored (Original DB)
+        - Features: Image Modal + WhatsApp Tracking
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -86,14 +85,13 @@
     }
     </script>
 
-    <!-- Google Tag Manager -->
+    <!-- GTM & Pixel -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
     j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
     })(window,document,'script','dataLayer','GTM-P4WL7N93');</script>
 
-    <!-- Facebook Pixel Code (Restaurado) -->
     <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -109,7 +107,6 @@
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=1847274250009044&ev=PageView&noscript=1"
     /></noscript>
-    <!-- End Facebook Pixel Code -->
 
     <style>
         :root {
@@ -181,7 +178,7 @@
         .item-row { 
             display: flex; 
             justify-content: flex-start; 
-            align-items: center; /* Alinha ícone e texto */
+            align-items: center;
             padding: 8px 15px; 
             border-bottom: 1px solid #f1f5f9; 
             font-size: 0.95rem; 
@@ -190,27 +187,9 @@
             position: relative;
         }
         .item-row:last-child { border-bottom: none; }
-        
-        .item-row strong { 
-            color: var(--accent); 
-            font-weight: 800; 
-            margin-right: 8px; 
-            min-width: 35px; 
-            white-space: nowrap;
-        }
+        .item-row strong { color: var(--accent); font-weight: 800; margin-right: 8px; min-width: 35px; white-space: nowrap; }
 
-        /* ESTILO DO BOTÃO DE OLHO (Discreto) */
-        .view-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            margin-left: auto; /* Empurra para a direita */
-            color: #94a3b8;
-            transition: color 0.2s, transform 0.1s;
-            display: flex;
-            align-items: center;
-        }
+        .view-btn { background: none; border: none; cursor: pointer; padding: 8px; margin-left: auto; color: #94a3b8; transition: color 0.2s, transform 0.1s; display: flex; align-items: center; }
         .view-btn:hover { color: var(--brand-blue); transform: scale(1.1); }
         .view-btn svg { width: 18px; height: 18px; stroke-width: 2px; }
 
@@ -222,16 +201,7 @@
         .check-icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #eff6ff; color: var(--brand-blue); border-radius: 50%; font-weight: bold; margin-right: 10px; flex-shrink: 0; font-size: 14px; }
         .vantagem-li { display: flex; align-items: center; color: #374151; font-weight: 500; }
 
-        /* Estilo do Modal de Imagem */
-        dialog#imgModal {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
-            padding: 20px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-        }
+        dialog#imgModal { border: none; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); padding: 20px; max-width: 400px; width: 90%; text-align: center; }
         dialog#imgModal::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         dialog#imgModal h3 { font-size: 1.1rem; margin-bottom: 15px; color: #1e293b; }
         dialog#imgModal img { max-height: 300px; border-radius: 8px; margin: 0 auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -291,7 +261,7 @@
 
         <section class="product-grid">
             
-            <!-- PRODUTO 1: ECONOMICA -->
+            <!-- PRODUTO 1: ECONOMICA (Lista Original) -->
             <article class="card" itemscope itemtype="https://schema.org/Product">
                 <meta itemprop="sku" content="CESTA-ECO-01">
                 <meta itemprop="description" content="Cesta básica econômica com Arroz Tio Alvino 5kg, Feijão e Óleo. Ideal para doação.">
@@ -315,34 +285,31 @@
                     </div>
                 </div>
                 
-                <a href="https://api.whatsapp.com/send?phone=5565998150975&text=Ol%C3%A1%2C%20gostaria%20de%20pedir%20a%20Cesta%20Econ%C3%B4mica%20por%20R%24%2085%2C00" class="btn" target="_blank" rel="nofollow" aria-label="Pedir Cesta Econômica no WhatsApp">
-                    PEDIR NO WHATSAPP
-                </a>
+                <a href="https://api.whatsapp.com/send?phone=5565998150975&text=Ol%C3%A1%2C%20gostaria%20de%20pedir%20a%20Cesta%20Econ%C3%B4mica%20por%20R%24%2085%2C00" class="btn" target="_blank" rel="nofollow">PEDIR NO WHATSAPP</a>
 
                 <details class="items-list">
                     <summary>Ver lista de 15 Itens</summary>
                     <div class="content">
                         <div class="cat-header">Alimentos Essenciais</div>
-                        <!-- Exemplo de Linha com Botão de Olho -->
-                        <div class="item-row"><strong>1 un</strong> - Arroz Tio Alvino 5kg <button class="view-btn" onclick="showImg('Arroz Tio Alvino')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Feijão Da Casa 1kg <button class="view-btn" onclick="showImg('Feijão Da Casa')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Óleo de Soja Liza 900ml <button class="view-btn" onclick="showImg('Óleo de Soja Liza')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Açúcar Doce Dia 2kg <button class="view-btn" onclick="showImg('Açúcar Doce Dia')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Café Premiado 250g <button class="view-btn" onclick="showImg('Café Premiado')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Espaguete Q'Delícia 400g <button class="view-btn" onclick="showImg('Espaguete QDelícia')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Trigo Vitoriosa 1kg <button class="view-btn" onclick="showImg('Trigo Vitoriosa')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Farinha Mandioca 1kg <button class="view-btn" onclick="showImg('Farinha de Mandioca')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Sal Refinado 1kg <button class="view-btn" onclick="showImg('Sal')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Molho Tomate Fugini <button class="view-btn" onclick="showImg('Molho Tomate Fugini')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Milho Lata Predilecta <button class="view-btn" onclick="showImg('Milho Lata Predilecta')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Bolacha Recheada <button class="view-btn" onclick="showImg('Bolacha Recheada My Bit')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Miojo Apti <button class="view-btn" onclick="showImg('Miojo Apti')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Suco em Pó Frisco <button class="view-btn" onclick="showImg('Suco em Pó Frisco')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Arroz Tio Alvino 5kg <button class="view-btn" onclick="showImg('Arroz Tio Alvino')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Açúcar Doce Dia 2kg <button class="view-btn" onclick="showImg('Açúcar Doce Dia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Óleo de Soja Liza 900ml <button class="view-btn" onclick="showImg('Óleo de Soja Liza')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Feijão Da Casa 1kg <button class="view-btn" onclick="showImg('Feijão Da Casa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Café Premiado 250g <button class="view-btn" onclick="showImg('Café Premiado')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Espaguete Q'Delícia 400g <button class="view-btn" onclick="showImg('Espaguete QDelícia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Trigo Vitoriosa 1kg <button class="view-btn" onclick="showImg('Trigo Vitoriosa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Farinha Mandioca 1kg <button class="view-btn" onclick="showImg('Farinha de Mandioca')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sal 1kg <button class="view-btn" onclick="showImg('Sal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Molho Tomate Fugini <button class="view-btn" onclick="showImg('Molho Tomate Fugini')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Milho Lata Predilecta <button class="view-btn" onclick="showImg('Milho Lata Predilecta')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Bolacha Recheada My Bit <button class="view-btn" onclick="showImg('Bolacha Recheada My Bit')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Miojo Apti <button class="view-btn" onclick="showImg('Miojo Apti')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Suco em Pó Frisco <button class="view-btn" onclick="showImg('Suco em Pó Frisco')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                     </div>
                 </details>
             </article>
 
-            <!-- PRODUTO 2: MINI -->
+            <!-- PRODUTO 2: MINI (Lista Original Restaurada) -->
             <article class="card">
                 <div class="img-wrapper">
                     <img src="https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif" alt="Cesta Básica Mini com Limpeza" width="300" height="300" loading="lazy" decoding="async">
@@ -367,29 +334,35 @@
                     <summary>Ver lista de 25 Itens</summary>
                     <div class="content">
                         <div class="cat-header">Alimentos</div>
-                        <div class="item-row"><strong>1 un</strong> - Arroz Agulhinha 5kg <button class="view-btn" onclick="showImg('Arroz Tio Alvino')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>2 un</strong> - Feijão Da Casa 1kg <button class="view-btn" onclick="showImg('Feijão Da Casa')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>2 un</strong> - Óleo de Soja Liza 900ml <button class="view-btn" onclick="showImg('Óleo de Soja Liza')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Açúcar Doce Dia 2kg <button class="view-btn" onclick="showImg('Açúcar Doce Dia')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Café Caboclo 250g <button class="view-btn" onclick="showImg('Café Caboclo 250g')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Espaguete Q'Delícia 500g <button class="view-btn" onclick="showImg('Espaguete QDelícia')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Sal 1kg <button class="view-btn" onclick="showImg('Sal')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Molho Tomate Fugini <button class="view-btn" onclick="showImg('Molho Tomate Fugini')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Milho Lata Predilecta <button class="view-btn" onclick="showImg('Milho Lata Predilecta')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Arroz 5kg <button class="view-btn" onclick="showImg('Arroz Tio Alvino')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Açúcar Doce Dia 2kg <button class="view-btn" onclick="showImg('Açúcar Doce Dia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Óleo de Soja Liza 900ml <button class="view-btn" onclick="showImg('Óleo de Soja Liza')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Feijão Da Casa 1kg <button class="view-btn" onclick="showImg('Feijão Da Casa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Café Caboclo 250g <button class="view-btn" onclick="showImg('Café Caboclo 250g')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Espaguete Q'Delícia 500g <button class="view-btn" onclick="showImg('Espaguete QDelícia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sal 1kg <button class="view-btn" onclick="showImg('Sal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Molho Tomate Fugini <button class="view-btn" onclick="showImg('Molho Tomate Fugini')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Milho Lata Predilecta <button class="view-btn" onclick="showImg('Milho Lata Predilecta')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Bolacha Recheada My Bit <button class="view-btn" onclick="showImg('Bolacha Recheada My Bit')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Miojo Apti <button class="view-btn" onclick="showImg('Miojo Apti')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Suco em Pó Frisco <button class="view-btn" onclick="showImg('Suco em Pó Frisco')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                         <div class="cat-header">Limpeza e Higiene</div>
-                        <div class="item-row"><strong>1 un</strong> - Sabão Barra Ypê <button class="view-btn" onclick="showImg('Sabão Barra Ypê')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Creme Dental Sorriso 70g <button class="view-btn" onclick="showImg('Creme Dental Sorriso')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Papel Higiênico Soberano <button class="view-btn" onclick="showImg('Papel Higiênico')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Amaciante Ypê 2L <button class="view-btn" onclick="showImg('Amaciante Ypê')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Desinfetante Remmus 2L <button class="view-btn" onclick="showImg('Desinfetante Remmus')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Sabão Pó OMO 800g <button class="view-btn" onclick="showImg('Sabão Pó OMO')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Detergente Ypê 500ml <button class="view-btn" onclick="showImg('Detergente Ypê')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Qboa 1L <button class="view-btn" onclick="showImg('Qboa')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sabão Barra Ypê <button class="view-btn" onclick="showImg('Sabão Barra Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Creme Dental Sorriso 70g <button class="view-btn" onclick="showImg('Creme Dental Sorriso')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Papel Higiênico Soberano <button class="view-btn" onclick="showImg('Papel Higiênico')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Amaciante Ypê 2L <button class="view-btn" onclick="showImg('Amaciante Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Desinfetante Remmus 2L <button class="view-btn" onclick="showImg('Desinfetante Remmus')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sabão Pó OMO 800g <button class="view-btn" onclick="showImg('Sabão Pó OMO')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Detergente Ypê 500ml <button class="view-btn" onclick="showImg('Detergente Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Qboa 1L <button class="view-btn" onclick="showImg('Qboa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Sabonete Palmolive <button class="view-btn" onclick="showImg('Sabonete Palmolive')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Esponja Aço Assolan <button class="view-btn" onclick="showImg('Esponja Aço Assolan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Esponja Louça <button class="view-btn" onclick="showImg('Esponja Louça')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                     </div>
                 </details>
             </article>
 
-            <!-- PRODUTO 3: MEDIA -->
+            <!-- PRODUTO 3: MEDIA (Lista Original Restaurada) -->
             <article class="card">
                 <div class="img-wrapper">
                     <img src="https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif" alt="Cesta Básica Média Família" width="300" height="300" loading="lazy" decoding="async">
@@ -414,23 +387,39 @@
                     <summary>Ver lista Completa</summary>
                     <div class="content">
                         <div class="cat-header">Alimentos</div>
-                        <div class="item-row"><strong>3 un</strong> - Arroz Agulhinha 5kg <button class="view-btn" onclick="showImg('Arroz Tio Alvino')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>3 un</strong> - Feijão Da Casa 1kg <button class="view-btn" onclick="showImg('Feijão Da Casa')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>3 un</strong> - Óleo de Soja Liza 900ml <button class="view-btn" onclick="showImg('Óleo de Soja Liza')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>2 un</strong> - Açúcar Doce Dia 2kg <button class="view-btn" onclick="showImg('Açúcar Doce Dia')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Café Caboclo 500g <button class="view-btn" onclick="showImg('Café Caboclo 500g')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>2 un</strong> - Espaguete Q'Delícia 500g <button class="view-btn" onclick="showImg('Espaguete QDelícia')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Cartela Ovos (12 un) <button class="view-btn" onclick="showImg('Ovos')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>3 un</strong> - Arroz 5kg <button class="view-btn" onclick="showImg('Arroz Tio Alvino')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Açúcar Doce Dia 2kg <button class="view-btn" onclick="showImg('Açúcar Doce Dia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>3 un</strong> - Óleo de Soja Liza 900ml <button class="view-btn" onclick="showImg('Óleo de Soja Liza')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>3 un</strong> - Feijão Da Casa 1kg <button class="view-btn" onclick="showImg('Feijão Da Casa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Café Caboclo 500g <button class="view-btn" onclick="showImg('Café Caboclo 500g')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Espaguete Q'Delícia 500g <button class="view-btn" onclick="showImg('Espaguete QDelícia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Cartela Ovos (12 un) <button class="view-btn" onclick="showImg('Ovos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Mistura Bolo Apti <button class="view-btn" onclick="showImg('bolo apti')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Trigo 1kg <button class="view-btn" onclick="showImg('Trigo Vitoriosa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sal 1kg <button class="view-btn" onclick="showImg('Sal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Molho Tomate Fugini <button class="view-btn" onclick="showImg('Molho Tomate Fugini')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Milho Lata Predilecta <button class="view-btn" onclick="showImg('Milho Lata Predilecta')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Tempero Tio Jonas 300g <button class="view-btn" onclick="showImg('tempero tio jonas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Bolacha Recheada My Bit <button class="view-btn" onclick="showImg('Bolacha Recheada My Bit')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Miojo Apti <button class="view-btn" onclick="showImg('Miojo Apti')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>3 un</strong> - Suco em Pó Frisco <button class="view-btn" onclick="showImg('Suco em Pó Frisco')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                         <div class="cat-header">Limpeza e Higiene</div>
-                        <div class="item-row"><strong>1 un</strong> - Sabão Pó OMO 800g <button class="view-btn" onclick="showImg('Sabão Pó OMO')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Amaciante Ypê 2L <button class="view-btn" onclick="showImg('Amaciante Ypê')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>2 un</strong> - Detergente Ypê <button class="view-btn" onclick="showImg('Detergente Ypê')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>3 un</strong> - Sabonete Palmolive <button class="view-btn" onclick="showImg('Sabonete Palmolive')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sabão Barra Ypê <button class="view-btn" onclick="showImg('Sabão Barra Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Creme Dental Sorriso 70g <button class="view-btn" onclick="showImg('Creme Dental Sorriso')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Papel Higiênico Soberano <button class="view-btn" onclick="showImg('Papel Higiênico')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Amaciante Ypê 2L <button class="view-btn" onclick="showImg('Amaciante Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Desinfetante Remmus 2L <button class="view-btn" onclick="showImg('Desinfetante Remmus')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sabão Pó OMO 800g <button class="view-btn" onclick="showImg('Sabão Pó OMO')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Detergente Ypê 500ml <button class="view-btn" onclick="showImg('Detergente Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Qboa 1L <button class="view-btn" onclick="showImg('Qboa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>3 un</strong> - Sabonete Palmolive <button class="view-btn" onclick="showImg('Sabonete Palmolive')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Esponja Aço Assolan <button class="view-btn" onclick="showImg('Esponja Aço Assolan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Esponja Louça <button class="view-btn" onclick="showImg('Esponja Louça')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                     </div>
                 </details>
             </article>
 
-            <!-- PRODUTO 4: GRANDE -->
+            <!-- PRODUTO 4: GRANDE (Lista Original Restaurada) -->
             <article class="card">
                 <div class="img-wrapper">
                     <img src="https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif" alt="Cesta Básica Grande Completa" width="300" height="300" loading="lazy" decoding="async">
@@ -455,19 +444,34 @@
                     <summary>Ver lista Completa</summary>
                     <div class="content">
                         <div class="cat-header">Alimentos</div>
-                        <div class="item-row"><strong>4 un</strong> - Arroz Agulhinha 5kg <button class="view-btn" onclick="showImg('Arroz Tio Alvino')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>4 un</strong> - Feijão Da Casa 1kg <button class="view-btn" onclick="showImg('Feijão Da Casa')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>4 un</strong> - Óleo de Soja Liza 900ml <button class="view-btn" onclick="showImg('Óleo de Soja Liza')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>3 un</strong> - Açúcar Doce Dia 2kg <button class="view-btn" onclick="showImg('Açúcar Doce Dia')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Café Caboclo 500g <button class="view-btn" onclick="showImg('Café Caboclo 500g')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>3 un</strong> - Espaguete Q'Delícia 500g <button class="view-btn" onclick="showImg('Espaguete QDelícia')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Cartela Ovos (12 un) <button class="view-btn" onclick="showImg('Ovos')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>4 un</strong> - Arroz 5kg <button class="view-btn" onclick="showImg('Arroz Tio Alvino')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>4 un</strong> - Feijão Da Casa 1kg <button class="view-btn" onclick="showImg('Feijão Da Casa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>4 un</strong> - Óleo de Soja Liza 900ml <button class="view-btn" onclick="showImg('Óleo de Soja Liza')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>3 un</strong> - Açúcar Doce Dia 2kg <button class="view-btn" onclick="showImg('Açúcar Doce Dia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Café Caboclo 500g <button class="view-btn" onclick="showImg('Café Caboclo 500g')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>3 un</strong> - Espaguete Q'Delícia 500g <button class="view-btn" onclick="showImg('Espaguete QDelícia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Cartela Ovos (12 un) <button class="view-btn" onclick="showImg('Ovos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Mistura Bolo Apti <button class="view-btn" onclick="showImg('bolo apti')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Trigo Vitoriosa 1kg <button class="view-btn" onclick="showImg('Trigo Vitoriosa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sal 1kg <button class="view-btn" onclick="showImg('Sal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Molho Tomate Fugini <button class="view-btn" onclick="showImg('Molho Tomate Fugini')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Milho Lata Predilecta <button class="view-btn" onclick="showImg('Milho Lata Predilecta')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Tempero Tio Jonas 300g <button class="view-btn" onclick="showImg('tempero tio jonas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Bolacha Recheada My Bit <button class="view-btn" onclick="showImg('Bolacha Recheada My Bit')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Miojo Apti <button class="view-btn" onclick="showImg('Miojo Apti')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>4 un</strong> - Suco em Pó Frisco <button class="view-btn" onclick="showImg('Suco em Pó Frisco')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                         <div class="cat-header">Limpeza e Higiene</div>
-                        <div class="item-row"><strong>1 un</strong> - Sabão Pó OMO 800g <button class="view-btn" onclick="showImg('Sabão Pó OMO')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Amaciante Ypê 2L <button class="view-btn" onclick="showImg('Amaciante Ypê')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>2 un</strong> - Detergente Ypê <button class="view-btn" onclick="showImg('Detergente Ypê')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>4 un</strong> - Sabonete Palmolive <button class="view-btn" onclick="showImg('Sabonete Palmolive')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-                        <div class="item-row"><strong>1 un</strong> - Qboa 1L <button class="view-btn" onclick="showImg('Qboa')" aria-label="Ver foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sabão Barra Ypê <button class="view-btn" onclick="showImg('Sabão Barra Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Creme Dental Sorriso 70g <button class="view-btn" onclick="showImg('Creme Dental Sorriso')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Papel Higiênico Soberano <button class="view-btn" onclick="showImg('Papel Higiênico')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Amaciante Ypê 2L <button class="view-btn" onclick="showImg('Amaciante Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Desinfetante Remmus 2L <button class="view-btn" onclick="showImg('Desinfetante Remmus')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Sabão Pó OMO 800g <button class="view-btn" onclick="showImg('Sabão Pó OMO')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>2 un</strong> - Detergente Ypê 500ml <button class="view-btn" onclick="showImg('Detergente Ypê')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Qboa 1L <button class="view-btn" onclick="showImg('Qboa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>4 un</strong> - Sabonete Palmolive <button class="view-btn" onclick="showImg('Sabonete Palmolive')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Esponja Aço Assolan <button class="view-btn" onclick="showImg('Esponja Aço Assolan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                        <div class="item-row"><strong>1 un</strong> - Esponja Louça <button class="view-btn" onclick="showImg('Esponja Louça')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                     </div>
                 </details>
             </article>
