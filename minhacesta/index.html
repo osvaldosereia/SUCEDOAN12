@@ -158,28 +158,22 @@
         img.media-item { mix-blend-mode: multiply; }
         video.media-item { mix-blend-mode: normal; background: #000; object-fit: cover; }
 
-        .media-badge {
-            position: absolute; bottom: 6px; right: 6px;
-            background: rgba(0,0,0,0.6); color: white;
-            font-size: 10px; font-weight: 700;
-            padding: 2px 6px; border-radius: 10px;
-            pointer-events: none; backdrop-filter: blur(2px);
-            display: flex; align-items: center; gap: 4px; z-index: 2;
+        /* NAV DOTS (BOLINHAS) */
+        .dots-container {
+            position: absolute; bottom: 10px; left: 0; right: 0;
+            display: flex; justify-content: center; gap: 6px;
+            pointer-events: none; z-index: 10;
         }
-
-        /* Setas de Navegação da Galeria */
-        .nav-arrow {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            width: 32px; height: 32px; border-radius: 50%;
-            background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.05);
-            color: var(--primary); display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 5; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        .dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: rgba(0,0,0,0.2); 
+            box-shadow: 0 1px 2px rgba(255,255,255,0.5);
             transition: all 0.2s;
         }
-        .nav-arrow:active { transform: translateY(-50%) scale(0.9); }
-        .nav-arrow.prev { left: 8px; }
-        .nav-arrow.next { right: 8px; }
-        .nav-arrow svg { width: 16px; height: 16px; fill: currentColor; }
+        .dot.active {
+            background: var(--primary); transform: scale(1.2);
+            opacity: 1;
+        }
 
         /* TEXTOS */
         .info { flex-grow: 1; margin-bottom: 8px; }
@@ -528,23 +522,14 @@
                 }
             });
 
-            // 3. Badge e Setas
-            let badgeHtml = '';
-            let arrowsHtml = '';
+            // 3. Dots (Bolinhas)
+            let dotsHtml = '';
             if(mediaItems.length > 1) {
-                const hasVideo = p.video ? '🎥' : '📷';
-                badgeHtml = `<div class="media-badge">${hasVideo} ${mediaItems.length}</div>`;
-                
-                // Setas de navegação
-                const scrollId = `media-scroll-${p.id}`;
-                arrowsHtml = `
-                    <button class="nav-arrow prev" type="button" onclick="scrollMedia('${scrollId}', -1)" aria-label="Anterior">
-                        <svg viewBox="0 0 256 256"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"></path></svg>
-                    </button>
-                    <button class="nav-arrow next" type="button" onclick="scrollMedia('${scrollId}', 1)" aria-label="Próximo">
-                        <svg viewBox="0 0 256 256"><path d="M90.34,202.34a8,8,0,0,0,11.32,11.32l80-80a8,8,0,0,0,0-11.32l-80-80a8,8,0,0,0-11.32,11.32L164.69,128Z"></path></svg>
-                    </button>
-                `;
+                let dots = '';
+                for(let i=0; i<mediaItems.length; i++) {
+                    dots += `<div class="dot ${i===0?'active':''}" id="dot-${p.id}-${i}"></div>`;
+                }
+                dotsHtml = `<div class="dots-container" id="dots-${p.id}">${dots}</div>`;
             }
 
             // --- FIM GALERIA ---
@@ -565,11 +550,10 @@
             return `
                 <article class="card data-item" id="card-${p.id}" data-name="${p.name.toLowerCase()}">
                     <div class="img-box">
-                        <div class="media-scroll" id="media-scroll-${p.id}">
+                        <div class="media-scroll" id="media-scroll-${p.id}" onscroll="updateDots('${p.id}', this)">
                             ${mediaHtml}
                         </div>
-                        ${badgeHtml}
-                        ${arrowsHtml}
+                        ${dotsHtml}
                     </div>
                     <div class="info">
                         <div class="prod-name">${p.name}</div>
@@ -582,11 +566,15 @@
             `;
         }
 
-        function scrollMedia(id, dir) {
-            const el = document.getElementById(id);
-            if(el) {
-                const w = el.offsetWidth;
-                el.scrollBy({ left: w * dir, behavior: 'smooth' });
+        // Função para atualizar as bolinhas ao rolar a imagem
+        function updateDots(pid, el) {
+            const idx = Math.round(el.scrollLeft / el.offsetWidth);
+            const container = document.getElementById(`dots-${pid}`);
+            if(container) {
+                Array.from(container.children).forEach((d, i) => {
+                    if(i === idx) d.classList.add('active');
+                    else d.classList.remove('active');
+                });
             }
         }
 
