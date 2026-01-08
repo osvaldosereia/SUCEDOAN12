@@ -402,8 +402,8 @@
                                             </label>
                                         </div>
                                         <div id="combo-area" style="display: none; background: var(--slate-50); padding: 10px; border-radius: 6px;">
-                                            <label>Adicionar Itens (CÓDIGO | QTD)</label>
-                                            <textarea id="p-combo-bulk" class="bulk-area" placeholder="P001 | 2&#10;P005 | 1"></textarea>
+                                            <label>Adicionar Itens ([Qtd] Nome ou Código)</label>
+                                            <textarea id="p-combo-bulk" class="bulk-area" placeholder="[2] Sabão em Pó OMO&#10;[1] Esponja Assolan"></textarea>
                                             <button type="button" onclick="ComboApp.processBulk()" class="btn btn-ghost btn-block" style="border: 1px dashed var(--slate-300); margin-top: 5px;">Processar Lista</button>
                                             <div id="p-combo-list" class="item-list mt-2"></div>
                                         </div>
@@ -539,9 +539,9 @@
                                         </div>
                                         
                                         <div style="margin-top: 10px;">
-                                            <label style="cursor: pointer; font-size: 0.65rem;" onclick="document.getElementById('bulk-venda-area').style.display = document.getElementById('bulk-venda-area').style.display === 'none' ? 'block' : 'none'">+ Inserir em Lote (Cód | Qtd)</label>
+                                            <label style="cursor: pointer; font-size: 0.65rem;" onclick="document.getElementById('bulk-venda-area').style.display = document.getElementById('bulk-venda-area').style.display === 'none' ? 'block' : 'none'">+ Inserir em Lote ([Qtd] Nome ou Código)</label>
                                             <div id="bulk-venda-area" style="display: none; margin-top: 5px;">
-                                                <textarea id="v-bulk-list" class="bulk-area" placeholder="P001 | 5&#10;P002 | 10"></textarea>
+                                                <textarea id="v-bulk-list" class="bulk-area" placeholder="[2] Sabão em Pó OMO&#10;[1] Esponja Assolan"></textarea>
                                                 <button type="button" onclick="Cart.processBulk()" class="btn btn-ghost btn-block" style="border: 1px dashed var(--slate-300); margin-top: 5px;">Adicionar Lista</button>
                                             </div>
                                         </div>
@@ -866,11 +866,32 @@
                 const db = DB.load();
                 
                 lines.forEach(line => {
-                    const [code, q] = line.split('|').map(s => s.trim());
-                    if(!code) return;
-                    const prod = db.produto.find(p => p.codigo.toUpperCase() === code.toUpperCase() || p.ean === code);
-                    if(prod) {
-                        ComboApp.comboItems.push({ id: prod.id, codigo: prod.codigo, nome: prod.nome, qty: Number(q)||1 });
+                    // Match pattern: [quantity] Product Name or Code
+                    const match = line.match(/^\[(\d+)\]\s*(.*)$/);
+                    let qty = 1;
+                    let identifier = line.trim();
+
+                    if (match) {
+                        qty = parseInt(match[1], 10);
+                        identifier = match[2].trim();
+                    } else {
+                        // Fallback for simple "Code | Qty" format
+                        const parts = line.split('|').map(s => s.trim());
+                        identifier = parts[0];
+                        if (parts[1]) qty = parseInt(parts[1], 10) || 1;
+                    }
+
+                    if (!identifier) return;
+
+                    // Try to find product by code, EAN, or exact name match
+                    const prod = db.produto.find(p => 
+                        p.codigo.toUpperCase() === identifier.toUpperCase() || 
+                        p.ean === identifier ||
+                        p.nome.toUpperCase() === identifier.toUpperCase()
+                    );
+
+                    if (prod) {
+                        ComboApp.comboItems.push({ id: prod.id, codigo: prod.codigo, nome: prod.nome, qty: qty });
                     }
                 });
                 ComboApp.renderList();
@@ -910,11 +931,33 @@
                 const text = document.getElementById('v-bulk-list').value;
                 if(!text) return;
                 const db = DB.load();
-                text.split('\n').forEach(line => {
-                    const [code, q] = line.split('|').map(s => s.trim());
-                    if(!code) return;
-                    const prod = db.produto.find(p => p.codigo.toUpperCase() === code.toUpperCase() || p.ean === code);
-                    if(prod) Cart.items.push({ id: prod.id, codigo: prod.codigo, nome: prod.nome, qty: Number(q)||1, price: prod.valor });
+                const lines = text.split('\n');
+
+                lines.forEach(line => {
+                    // Match pattern: [quantity] Product Name or Code
+                    const match = line.match(/^\[(\d+)\]\s*(.*)$/);
+                    let qty = 1;
+                    let identifier = line.trim();
+
+                    if (match) {
+                        qty = parseInt(match[1], 10);
+                        identifier = match[2].trim();
+                    } else {
+                        // Fallback for simple "Code | Qty" format
+                        const parts = line.split('|').map(s => s.trim());
+                        identifier = parts[0];
+                        if (parts[1]) qty = parseInt(parts[1], 10) || 1;
+                    }
+
+                    if(!identifier) return;
+
+                    const prod = db.produto.find(p => 
+                        p.codigo.toUpperCase() === identifier.toUpperCase() || 
+                        p.ean === identifier ||
+                        p.nome.toUpperCase() === identifier.toUpperCase()
+                    );
+
+                    if(prod) Cart.items.push({ id: prod.id, codigo: prod.codigo, nome: prod.nome, qty: qty, price: prod.valor });
                 });
                 Cart.render();
                 Cart.calcTotal();
