@@ -30,13 +30,6 @@
 
         #expedicao-panel:fullscreen { background-color: #0f172a; padding: 20px; overflow-y: auto; }
         
-        .spinner {
-            border: 3px solid rgba(255,255,255,0.3); border-radius: 50%;
-            border-top: 3px solid #fff; width: 24px; height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
@@ -208,9 +201,9 @@
             </section>
         </main>
 
-        <!-- VIEW: CATÁLOGO (PRODUTO ATUALIZADO COM CATEGORIAS) -->
+        <!-- VIEW: CATÁLOGO (PRODUTO ATUALIZADO COM TODOS OS CAMPOS) -->
         <main id="view-catalogo" class="view-content flex-col lg:flex-row items-start p-6 gap-6 w-full">
-            <section class="w-full lg:w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0 sticky top-24">
+            <section class="w-full lg:w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0 sticky top-24 overflow-y-auto max-h-[85vh] custom-scroll">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <span id="formLabel-produto" class="text-[10px] font-bold text-emerald-600 uppercase">Cadastro de Produto</span>
                     <button onclick="UI.resetForm('produto')" class="text-[10px] text-slate-400 hover:text-red-500 font-bold">LIMPAR</button>
@@ -236,14 +229,28 @@
                     </div>
                     <input type="text" id="p-unidade" placeholder="Unid. (Ex: UN)" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-xs uppercase">
 
-                    <!-- Dados Fiscais Opcionais -->
-                    <div class="bg-slate-50 p-2 rounded border space-y-2">
-                        <label class="text-[9px] font-bold text-slate-400 uppercase block">Fiscal (Opcional)</label>
-                        <div class="grid grid-cols-3 gap-2">
+                    <!-- Dados Fiscais Expandidos -->
+                    <div class="bg-blue-50/50 p-2 rounded border border-blue-100 space-y-2">
+                        <label class="text-[9px] font-bold text-blue-400 uppercase block">Dados Fiscais & Importação</label>
+                        <div class="grid grid-cols-2 gap-2">
                             <input type="text" id="p-ncm" placeholder="NCM" class="bg-white border rounded-lg px-2 py-1 text-xs">
                             <input type="text" id="p-cest" placeholder="CEST" class="bg-white border rounded-lg px-2 py-1 text-xs">
-                            <input type="text" id="p-cfop" placeholder="CFOP" class="bg-white border rounded-lg px-2 py-1 text-xs">
                         </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="p-cfop" placeholder="CFOP" class="bg-white border rounded-lg px-2 py-1 text-xs">
+                            <input type="text" id="p-csosn" placeholder="CSOSN" class="bg-white border rounded-lg px-2 py-1 text-xs">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="p-nota" placeholder="Última Nota" class="bg-white border rounded-lg px-2 py-1 text-xs" title="Número da Nota Fiscal">
+                            <input type="text" id="p-refId" placeholder="ID Referência" class="bg-white border rounded-lg px-2 py-1 text-xs text-slate-400">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="flex flex-col">
+                                <label class="text-[8px] text-slate-400">Fator Conv.</label>
+                                <input type="number" id="p-fator" placeholder="1" class="bg-white border rounded-lg px-2 py-1 text-xs">
+                            </div>
+                        </div>
+                        <textarea id="p-obs-produto" rows="2" placeholder="Observações do XML/JSON" class="w-full bg-white border rounded-lg px-2 py-1 text-[10px] text-slate-500"></textarea>
                     </div>
 
                     <!-- Controle de Estoque -->
@@ -267,8 +274,14 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="number" id="p-custo" step="0.01" placeholder="Custo R$" class="bg-slate-50 border rounded-lg px-2 py-2 text-xs">
-                        <input type="number" id="p-valor" step="0.01" required placeholder="Venda R$" class="bg-slate-50 border rounded-lg px-2 py-2 text-xs font-bold text-emerald-600">
+                        <div>
+                            <label class="text-[9px] text-slate-400 block">Custo Líquido (Desc. Aplicado)</label>
+                            <input type="number" id="p-custo" step="0.0001" placeholder="Custo R$" class="w-full bg-slate-50 border rounded-lg px-2 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-emerald-600 font-bold block">Preço de Venda</label>
+                            <input type="number" id="p-valor" step="0.01" required placeholder="Venda R$" class="w-full bg-slate-50 border rounded-lg px-2 py-2 text-xs font-bold text-emerald-600">
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-2 px-1">
@@ -302,7 +315,7 @@
                                 <th class="p-4">Categoria</th>
                                 <th class="p-4 text-center">Est. Físico</th>
                                 <th class="p-4 text-center">Est. Fiscal</th>
-                                <th class="p-4">Preço</th>
+                                <th class="p-4">Custo / Venda</th>
                                 <th class="p-4 text-right">Ações</th>
                             </tr>
                         </thead>
@@ -731,7 +744,12 @@
                                 <td class="p-4">${catLabel}</td>
                                 <td class="p-4 font-black text-xs text-center ${estColor}">${i.estoque} <span class="text-[8px] opacity-40">un</span></td>
                                 <td class="p-4 font-black text-xs text-center text-purple-700 bg-purple-50 rounded">${estFiscal} <span class="text-[8px] opacity-40">un</span></td>
-                                <td class="p-4 text-[10px] font-bold text-emerald-600">R$ ${Number(i.valor).toFixed(2)}</td>
+                                <td class="p-4 text-[10px] font-bold text-emerald-600">
+                                    <div class="flex flex-col">
+                                        <span>Venda: R$ ${Number(i.valor).toFixed(2)}</span>
+                                        <span class="text-[9px] text-slate-400 font-normal">Custo: R$ ${Number(i.custo).toFixed(4)}</span>
+                                    </div>
+                                </td>
                                 <td class="p-4 text-right flex justify-end gap-1">
                                     <button onclick="App.openStockAdjustment('${i.id}')" class="text-slate-600 bg-slate-100 hover:bg-slate-200 p-2 rounded mr-1" title="Ajuste Rápido"><i class="fa-solid fa-sliders text-xs"></i></button>
                                     <button onclick="App.edit('produto','${i.id}')" class="text-blue-600 p-2"><i class="fa-solid fa-pen text-xs"></i></button>
@@ -780,11 +798,13 @@
                 if(t === 'cliente') { UI.get('c-nome').value = i.nome; UI.get('c-tel').value = i.tel; UI.get('c-cidade').value = i.cidade; UI.get('c-bairro').value = i.bairro || ''; UI.get('c-endereco').value = i.endereco; UI.get('c-rota').value = i.rota || ''; UI.get('c-maps').value = i.maps || ''; }
                 else if(t === 'produto') { 
                     UI.get('p-nome').value = i.nome; 
-                    ['ean','ncm','categoria','custo','valor','estoque','tipo','cest','cfop','unidade'].forEach(k => {
+                    ['ean','ncm','categoria','custo','valor','estoque','tipo','cest','cfop','csosn','unidade','nota','refId','fator'].forEach(k => {
                         const el = UI.get(`p-${k}`);
                         if(el) el.value = i[k] || '';
                     });
                     
+                    if(i.obs) UI.get('p-obs-produto').value = i.obs;
+
                     // Handle Category and Subcategory population
                     CategoryApp.populateSelects();
                     UI.get('p-categoria').value = i.categoria || '';
@@ -818,14 +838,50 @@
                             // Busca por NOME exato (ignora case)
                             let prod = db.produto.find(p => p.nome.toUpperCase() === item.xProd.toUpperCase());
                             
-                            const qtyToAdd = Number(item.Fator_Conversao_Entrada) || 0;
-                            const cost = Number(item.Custo_Unitario) || 0;
+                            const factor = Number(item.Fator_Conversao_Entrada) || 1; // Se for 0, usa 1 para evitar divisão por zero
+                            const qtyToAdd = factor; // Entrou 1 caixa = entra X unidades
+                            
+                            // Lógica de Custo com Desconto
+                            // Custo Unitário Real = (Custo Total da Caixa - Desconto Total) / Quantidade de Itens na Caixa
+                            const costBox = Number(item.Custo_Real_Caixa) || 0;
+                            const totalDiscount = Number(item.Valor_Desconto_Total) || 0;
+                            
+                            let finalUnitCost = 0;
+                            
+                            if (factor > 0) {
+                                finalUnitCost = (costBox - totalDiscount) / factor;
+                            } else {
+                                finalUnitCost = Number(item.Custo_Unitario) || 0;
+                            }
+
+                            // Evita custo negativo se o desconto for maior que o custo (improvável, mas seguro)
+                            if (finalUnitCost < 0) finalUnitCost = 0;
+
+                            const extraData = {
+                                refId: item.id_referencia || "",
+                                nota: item.Numero_Nota || "",
+                                csosn: item.CSOSN_SAIDA || "",
+                                obs: item._OBS || "",
+                                fator: factor
+                            };
+
+                            const eanValid = item.cEAN !== "PREENCHER_COM_LEITOR" ? item.cEAN : "";
 
                             if (prod) {
-                                // Produto Existe: Atualiza Estoque e Custo
+                                // Produto Existe: Atualiza Estoque, Custo e Dados Fiscais
                                 prod.estoque += qtyToAdd;
                                 prod.estoqueFiscal = (prod.estoqueFiscal || 0) + qtyToAdd;
-                                prod.custo = cost;
+                                prod.custo = finalUnitCost;
+                                
+                                // Atualiza dados fiscais se vierem no JSON
+                                if(item.NCM) prod.ncm = item.NCM;
+                                if(item.CEST) prod.cest = item.CEST;
+                                if(item.CFOP_SAIDA) prod.cfop = item.CFOP_SAIDA;
+                                if(eanValid) prod.ean = eanValid;
+                                
+                                // Atualiza campos extras
+                                Object.assign(prod, extraData);
+
                                 updatedCount++;
                                 
                                 // Registra Entrada no Histórico
@@ -834,8 +890,8 @@
                                     date: Date.now(),
                                     prodId: prod.id,
                                     qty: qtyToAdd,
-                                    custo: cost,
-                                    fornecedor: `Importação JSON (Atualização)`,
+                                    custo: finalUnitCost,
+                                    fornecedor: `Imp. Nota ${item.Numero_Nota}`,
                                     dest: 'ambos'
                                 });
 
@@ -848,16 +904,18 @@
                                     id: newId,
                                     codigo: newCode,
                                     nome: item.xProd.toUpperCase(),
-                                    ean: item.cEAN !== "PREENCHER_COM_LEITOR" ? item.cEAN : "",
+                                    ean: eanValid,
                                     ncm: item.NCM,
+                                    cest: item.CEST,
                                     cfop: item.CFOP_SAIDA,
                                     unidade: item.Unidade_Venda,
-                                    custo: cost,
+                                    custo: finalUnitCost,
                                     valor: 0, // Valor de venda zero para preencher depois
                                     estoque: qtyToAdd,
                                     estoqueFiscal: qtyToAdd,
                                     tipo: 'normal',
-                                    isTemp: false
+                                    isTemp: false,
+                                    ...extraData
                                 };
                                 
                                 db.produto.push(newProd);
@@ -869,8 +927,8 @@
                                     date: Date.now(),
                                     prodId: newId,
                                     qty: qtyToAdd,
-                                    custo: cost,
-                                    fornecedor: `Importação JSON (Novo Cadastro)`,
+                                    custo: finalUnitCost,
+                                    fornecedor: `Imp. Nota ${item.Numero_Nota} (Novo)`,
                                     dest: 'ambos'
                                 });
                             }
@@ -878,7 +936,7 @@
 
                         DB.saveAll(db);
                         alert(`Sucesso!\nNovos Produtos: ${importedCount}\nEstoques Atualizados: ${updatedCount}`);
-                        UI.switchView('logistica'); // Refresh view
+                        UI.switchView('catalogo'); // Vai para o catálogo para ver os produtos novos
                         fileInput.value = ''; // Limpa input
 
                     } catch (err) {
@@ -972,10 +1030,15 @@
                         ncm: UI.get('p-ncm').value, 
                         cest: UI.get('p-cest').value, 
                         cfop: UI.get('p-cfop').value, 
+                        csosn: UI.get('p-csosn').value, 
                         unidade: UI.get('p-unidade').value, 
+                        nota: UI.get('p-nota').value,
+                        refId: UI.get('p-refId').value,
+                        fator: Number(UI.get('p-fator').value) || 1,
+                        obs: UI.get('p-obs-produto').value,
                         categoria: UI.get('p-categoria').value, 
-                        subcategoria: UI.get('p-subcategoria').value, // Added subcategory
-                        custo: Number(UI.get('p-custo').value) || 0, // Ensure Number
+                        subcategoria: UI.get('p-subcategoria').value, 
+                        custo: Number(UI.get('p-custo').value) || 0, 
                         valor: Number(UI.get('p-valor').value) || 0, 
                         estoque: Number(UI.get('p-estoque').value) || 0, 
                         estoqueFiscal: Number(UI.get('p-estoqueFiscal').value) || 0, 
@@ -1077,16 +1140,6 @@
                     DB.delete(t, id); 
                     UI.render(t === 'produto' ? 'catalogo' : t); 
                 } 
-            }
-        };
-
-        const ExportEngine = {
-            exportAll: () => { const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(DB.load())], {type: 'application/json'})), download: `backup_${Date.now()}.json` }); a.click(); },
-            exportSelectedSales: () => {
-                const db = DB.load(); const selectedIds = Array.from(document.querySelectorAll('.venda-select:checked')).map(cb => cb.dataset.id);
-                if(!selectedIds.length) return alert('Selecione uma venda!');
-                const report = selectedIds.map(id => { const v = db.venda.find(x => x.id === id); return { ...v, cliente: db.cliente.find(c => c.id === v.cliId), produto: db.produto.find(p => p.id === v.prodId) }; });
-                const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'})), download: `vendas_selecionadas_${Date.now()}.json` }); a.click();
             }
         };
 
