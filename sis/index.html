@@ -24,8 +24,10 @@
             --border: #e2e8f0;
             --radius: 8px;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            
+            /* Dimensões Fixas para Cálculos de Sticky */
             --header-height: 60px;
-            --sidebar-width: 260px;
+            --panel-header-height: 52px; /* Altura aproximada da barra de busca */
         }
 
         /* --- RESET & BASE --- */
@@ -79,7 +81,12 @@
         header {
             height: var(--header-height); background: var(--bg-surface); border-bottom: 1px solid var(--border);
             display: flex; align-items: center; justify-content: space-between; padding: 0 2rem;
-            flex-shrink: 0; position: sticky; top: 0; z-index: 50;
+            flex-shrink: 0; 
+            
+            /* Sticky Nível 1: Topo Absoluto */
+            position: sticky; 
+            top: 0; 
+            z-index: 50;
         }
 
         /* --- VISIBILITY & VIEWS LOGIC --- */
@@ -130,10 +137,30 @@
 
         .table-wrapper { overflow-x: auto; flex: none; width: 100%; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { text-align: left; padding: 1rem; background: var(--bg-subtle); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; position: sticky; top: var(--header-height); z-index: 5; box-shadow: 0 1px 0 var(--border); }
+        
+        th { 
+            text-align: left; padding: 1rem; background: var(--bg-subtle); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; 
+            
+            /* Sticky Nível 3: Abaixo da Barra de Ferramentas */
+            position: sticky; 
+            top: calc(var(--header-height) + var(--panel-header-height)); 
+            z-index: 5; 
+            box-shadow: 0 1px 0 var(--border); 
+        }
+        
         td { padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-main); vertical-align: middle; }
         tr:hover { background: var(--bg-subtle); }
         
+        /* Utilitários Específicos para Sticky */
+        .sticky-toolbar {
+            /* Sticky Nível 2: Abaixo do Header Principal */
+            position: sticky !important;
+            top: var(--header-height) !important;
+            background: var(--bg-surface) !important;
+            z-index: 10 !important;
+            border-bottom: 1px solid var(--border);
+        }
+
         .text-sm { font-size: 0.75rem; }
         .text-bold { font-weight: 700; }
         .text-success { color: var(--success); }
@@ -235,7 +262,7 @@
         </form>
     </dialog>
 
-    <!-- NOVO MODAL DE IMPORTAÇÃO (ATUALIZADO) -->
+    <!-- NOVO MODAL DE IMPORTAÇÃO -->
     <dialog id="import-modal" style="max-width: 800px; width: 90%;">
         <div class="panel-header" style="background: var(--text-main); color: white;">
             <span>Conferência de Importação (JSON)</span>
@@ -254,11 +281,11 @@
                 <table style="width: 100%;">
                     <thead>
                         <tr>
-                            <th style="width: 30px; text-align: center;"><input type="checkbox" onchange="ImportEngine.toggleAll(this.checked)" checked></th>
-                            <th>Produto (JSON)</th>
-                            <th>EAN</th>
-                            <th>Corresp. Sistema</th>
-                            <th style="text-align: right;">Qtd (Frac)</th>
+                            <th style="width: 30px; text-align: center; top: 0 !important;"><input type="checkbox" onchange="ImportEngine.toggleAll(this.checked)" checked></th>
+                            <th style="top: 0 !important;">Produto (JSON)</th>
+                            <th style="top: 0 !important;">EAN</th>
+                            <th style="top: 0 !important;">Corresp. Sistema</th>
+                            <th style="text-align: right; top: 0 !important;">Qtd (Frac)</th>
                         </tr>
                     </thead>
                     <tbody id="import-preview-list"></tbody>
@@ -321,7 +348,7 @@
                     </form>
                 </div>
                 <div class="panel expanded">
-                    <div class="panel-header" style="position: sticky; top:0; background:var(--bg-surface); z-index:10;">
+                    <div class="panel-header sticky-toolbar">
                         <input type="text" oninput="Views.cliente.filter(this.value)" placeholder="Filtrar..." style="width:200px; padding:0.4rem;">
                         <small>TOTAL: <b id="count-cliente">0</b></small>
                     </div>
@@ -379,9 +406,9 @@
                     </form>
                 </div>
                 <div class="panel expanded">
-                    <div class="panel-header">
+                    <div class="panel-header sticky-toolbar">
                         <div style="display:flex; gap:10px; align-items:center;">
-                            <input type="text" oninput="Views.catalogo.filter(this.value)" placeholder="Buscar produto..." style="width:200px; padding:0.4rem;">
+                            <input type="text" id="catalogo-search" oninput="Views.catalogo.filter(this.value)" placeholder="Buscar produto..." style="width:200px; padding:0.4rem;">
                             <button onclick="CategoryApp.openModal()" class="btn-ghost" style="color:var(--primary);">CATEGORIAS</button>
                         </div>
                         <small>TOTAL: <b id="count-produto">0</b></small>
@@ -452,7 +479,7 @@
                     </form>
                 </div>
                 <div class="panel expanded">
-                    <div class="panel-header">
+                    <div class="panel-header sticky-toolbar">
                         <div style="display:flex; gap:10px; align-items:center;">
                             <span>Histórico</span>
                             <input type="date" id="v-filter-start"><input type="date" id="v-filter-end"><button onclick="Views.venda.render()" class="btn-ghost">FILTRAR</button>
@@ -736,6 +763,10 @@
                 alert(`Importação concluída: ${count} itens.`);
                 document.getElementById('import-modal').close();
                 document.getElementById('json-import-file').value = '';
+                
+                // FORCE REFRESH VIEW & CLEAR SEARCH
+                const searchInput = document.getElementById('catalogo-search');
+                if(searchInput) searchInput.value = '';
                 Views.catalogo.init(document.getElementById('btn-catalogo'));
             }
         };
