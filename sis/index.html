@@ -3,665 +3,511 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V3 | Dual Stock & Fiscal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>SISTEMA V3 | Modular Core</title>
+    <meta name="description" content="Sistema Modular de Gestão de Estoque">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
-        .view-content { display: none !important; }
-        .view-content.active { display: flex !important; }
-        .nav-link.active { background: #2563eb; color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
-        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
-
-        /* Modal Styles */
-        .modal-overlay { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
-        .modal-content { animation: modalSlide 0.3s ease-out; }
-        @keyframes modalSlide { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        #print-area:not(:empty) {
-            position: fixed; top: 0; right: 0; width: 380px; height: 100vh;
-            background: white; box-shadow: -10px 0 30px rgba(0,0,0,0.15);
-            z-index: 100; overflow-y: auto; padding: 20px; display: block;
-            border-left: 4px solid #2563eb;
+        /* --- CORE VARIABLES --- */
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-subtle: #f1f5f9;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #8b5cf6;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --header-height: 60px;
+            --sidebar-width: 260px;
         }
 
-        #expedicao-panel:fullscreen { background-color: #0f172a; padding: 20px; overflow-y: auto; }
+        /* --- RESET & BASE --- */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+
+        /* --- LAYOUT --- */
+        .app-container { display: flex; width: 100%; min-height: 100vh; }
+
+        /* Sidebar */
+        aside {
+            width: var(--sidebar-width);
+            background: #1e293b;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        aside h1 { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem; }
+        aside nav { display: flex; flex-direction: column; gap: 0.5rem; }
+        
+        .nav-link {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;
+            color: #94a3b8; text-decoration: none; border-radius: var(--radius);
+            font-size: 0.9rem; font-weight: 500; border: none; background: transparent;
+            cursor: pointer; width: 100%; text-align: left; transition: all 0.2s;
+        }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+
+        /* Main Content */
+        main-area { flex: 1; display: flex; flex-direction: column; position: relative; }
+
+        header {
+            height: var(--header-height); background: var(--bg-surface); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 2rem;
+            flex-shrink: 0; position: sticky; top: 0; z-index: 50;
+        }
+
+        /* --- VISIBILITY & VIEWS LOGIC --- */
+        .view-container { 
+            flex: 1; 
+            padding: 1.5rem; 
+            display: none !important; 
+            gap: 1.5rem; 
+            height: auto; 
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .view-container.active { 
+            display: flex !important; 
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .view-layout { gap: 1.5rem; height: auto; align-items: flex-start; }
+        
+        /* Panels & Tables */
+        .panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+        .panel.sticky-form { 
+            width: 350px; flex-shrink: 0; height: auto; max-height: none; overflow: visible;
+            position: sticky; top: calc(var(--header-height) + 1rem); 
+        }
+        .panel.expanded { flex: 1; min-width: 0; height: auto; }
+
+        .panel-header { padding: 1rem; background: var(--bg-subtle); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+
+        form { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+        label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+        input, select, textarea { padding: 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 0.85rem; outline: none; width: 100%; background: var(--bg-subtle); transition: border-color 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: white; }
+        button { cursor: pointer; border: none; font-family: inherit; }
+        
+        .btn { padding: 0.75rem; border-radius: var(--radius); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; transition: opacity 0.2s; }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-ghost { background: transparent; color: var(--text-muted); padding: 0.25rem; font-size: 0.7rem; }
+        .btn-ghost:hover { color: var(--danger); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+
+        .table-wrapper { overflow-x: auto; flex: none; width: 100%; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { text-align: left; padding: 1rem; background: var(--bg-subtle); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; position: sticky; top: var(--header-height); z-index: 5; box-shadow: 0 1px 0 var(--border); }
+        td { padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-main); vertical-align: middle; }
+        tr:hover { background: var(--bg-subtle); }
+        
+        .text-sm { font-size: 0.75rem; }
+        .text-bold { font-weight: 700; }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .text-primary { color: var(--primary); }
+        .text-info { color: var(--info); }
+        .bg-tag { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; background: #e2e8f0; color: #475569; }
+        
+        dialog { margin: auto; border: none; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 0; max-width: 500px; width: 90%; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); }
+        #cat-list-container { max-height: none !important; overflow: visible !important; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hidden { display: none !important; }
+        .icon { width: 16px; height: 16px; fill: currentColor; }
+        .icon-lg { width: 20px; height: 20px; }
+
+        @media (max-width: 1024px) {
+            .app-container { flex-direction: column; }
+            aside { width: 100%; height: auto; flex-direction: row; align-items: center; padding: 0.5rem 1rem; order: 2; overflow-x: auto; position: fixed; bottom: 0; top: auto; z-index: 100; box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.1); }
+            aside h1 { display: none; } 
+            aside nav { flex-direction: row; width: 100%; justify-content: space-around; }
+            .nav-link { justify-content: center; padding: 0.5rem; flex: 1; flex-direction: column; gap: 4px; font-size: 0.65rem; }
+            .nav-link svg { width: 20px; height: 20px; }
+            main-area { order: 1; margin-bottom: 70px; }
+            header { padding: 0 1rem; }
+            .view-layout { flex-direction: column; }
+            .panel.sticky-form { width: 100%; position: static; max-height: none; }
+            .grid-3 { grid-template-columns: 1fr; }
+        }
         @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; box-shadow: none; border: none; }
-            .no-print { display: none !important; }
-        }
-        
-        /* Estilo padrão para labels pequenos */
-        .input-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #94a3b8; /* slate-400 */
-            display: block;
-            margin-bottom: 2px;
+            aside, header, .no-print { display: none !important; }
+            body, main-area, .view-container, .panel { height: auto; overflow: visible; display: block; }
+            #print-area { display: block; position: absolute; top: 0; left: 0; width: 100%; background: white; z-index: 9999; }
         }
     </style>
 </head>
-<body class="min-h-screen flex bg-slate-50">
+<body>
 
-    <!-- Modal Gerenciador de Categorias -->
-    <div id="cat-modal" class="fixed inset-0 z-[80] hidden modal-overlay flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden modal-content max-h-[80vh] flex flex-col">
-            <div class="bg-slate-800 p-4 flex justify-between items-center text-white">
-                <h3 class="font-bold uppercase tracking-widest text-xs">Gestão de Categorias</h3>
-                <button onclick="document.getElementById('cat-modal').classList.add('hidden')" class="hover:text-red-400 transition"><i class="fa-solid fa-times"></i></button>
-            </div>
-            <div class="p-4 bg-slate-50 border-b space-y-2">
-                <form onsubmit="CategoryApp.addCategory(event)" class="flex flex-col gap-1">
-                    <label class="input-label">Nome da Nova Categoria</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="new-cat-name" placeholder="Ex: Bebidas, Limpeza..." class="flex-1 border rounded-lg px-3 py-2 text-xs outline-none" required>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-blue-700">Adicionar</button>
-                    </div>
-                </form>
-            </div>
-            <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4" id="cat-list-container">
-                <!-- Rendered via JS -->
-            </div>
+    <svg style="display: none;">
+        <symbol id="icon-box" viewBox="0 0 24 24"><path d="M21 16.5C21 16.88 20.79 17.21 20.47 17.38L12.57 21.82C12.41 21.9 12.24 21.95 12.07 21.95C11.9 21.95 11.73 21.9 11.57 21.82L3.67 17.38C3.35 17.21 3.14 16.88 3.14 16.5V7.5C3.14 7.12 3.35 6.79 3.67 6.62L11.57 2.18C11.73 2.1 11.9 2.05 12.07 2.05C12.24 2.05 12.41 2.1 12.57 2.18L20.47 6.62C20.79 6.79 21 7.12 21 7.5V16.5ZM12 4.15L6.04 7.5L12 10.85L17.96 7.5L12 4.15Z" fill="currentColor"/></symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24"><path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM6 10V7H4V10H1V12H4V15H6V12H9V10H6ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/></symbol>
+        <symbol id="icon-cart" viewBox="0 0 24 24"><path d="M7 18C5.9 18 5.01 18.9 5.01 20C5.01 21.1 5.9 22 7 22C8.1 22 9 21.1 9 20C9 18.9 8.1 18 7 18ZM1 2V4H3L6.6 11.59L5.25 14.04C5.09 14.32 5 14.65 5 15C5 16.1 5.9 17 7 17H19V15H7.42C7.28 15 7.17 14.89 7.17 14.75L7.2 14.63L8.1 13H15.55C16.3 13 16.96 12.59 17.3 11.97L21.16 4.96C21.25 4.8 21.3 4.62 21.3 4.43C21.3 4.19 21.1 4 20.87 4H5.21L4.27 2H1ZM17 18C15.9 18 15.01 18.9 15.01 20C15.01 21.1 15.9 22 17 22C18.1 22 19 21.1 19 20C19 18.9 18.1 18 17 18Z" fill="currentColor"/></symbol>
+        <symbol id="icon-truck" viewBox="0 0 24 24"><path d="M20 8H17V4H3C2.45 4 2 4.45 2 5V17H4C4 18.1 4.9 19 6 19C7.1 19 8 18.1 8 17H15C15 18.1 15.9 19 17 19C18.1 19 19 18.1 19 17H21V12L20 8ZM6 17.5C5.72 17.5 5.5 17.28 5.5 17C5.5 16.72 5.72 16.5 6 16.5C6.28 16.5 6.5 16.72 6.5 17C6.5 17.28 6.28 17.5 6 17.5ZM17 17.5C16.72 17.5 16.5 17.28 16.5 17C16.5 16.72 16.72 16.5 17 16.5C17.28 16.5 17.5 16.72 17.5 17C17.5 17.28 17.28 17.5 17 17.5ZM19 11H17V9H19.5L19.8 11H19Z" fill="currentColor"/></symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M16 9V19H8V9H16ZM14.5 3H9.5L8.5 4H5V6H19V4H15.5L14.5 3ZM18 7H6V19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7Z" fill="currentColor"/></symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/></symbol>
+        <symbol id="icon-monitor" viewBox="0 0 24 24"><path d="M21 3H3C1.89 3 1 3.89 1 5V17C1 18.1 1.89 19 3 19H8V21H16V19H21C22.1 19 23 18.1 23 17V5C23 3.89 22.1 3 21 3ZM21 17H3V5H21V17Z" fill="currentColor"/></symbol>
+        <symbol id="icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/></symbol>
+    </svg>
+
+    <!-- Dialogs -->
+    <dialog id="cat-modal">
+        <div class="panel-header" style="background: var(--text-main); color: white;">
+            <span>Categorias</span>
+            <button onclick="document.getElementById('cat-modal').close()" style="background:none; border:none; color:white;"><svg class="icon"><use href="#icon-close"></use></svg></button>
         </div>
-    </div>
-
-    <!-- Modal Ajuste de Estoque Rápido -->
-    <div id="stock-modal" class="fixed inset-0 z-[70] hidden modal-overlay flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden modal-content">
-            <div class="bg-slate-800 p-4 flex justify-between items-center text-white">
-                <h3 class="font-bold uppercase tracking-widest text-xs">Ajuste Rápido de Estoque</h3>
-                <button onclick="document.getElementById('stock-modal').classList.add('hidden')" class="hover:text-red-400 transition"><i class="fa-solid fa-times"></i></button>
-            </div>
-            <form id="form-stock-adj" onsubmit="App.handleStockAdj(event)" class="p-5 space-y-4">
-                <input type="hidden" id="adj-prod-id">
-                <div class="text-center mb-4">
-                    <h4 id="adj-prod-name" class="font-bold text-slate-700 text-sm">Produto XYZ</h4>
-                    <p class="text-[10px] text-slate-400">Saldo Atual: <span id="adj-current-stock">0</span></p>
-                </div>
-                
-                <div>
-                    <label class="input-label">Tipo de Movimento</label>
-                    <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-lg border">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="adj-type" value="add" checked class="text-emerald-500 focus:ring-emerald-500">
-                            <span class="text-xs font-bold text-emerald-600">Entrada (+)</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="adj-type" value="sub" class="text-red-500 focus:ring-red-500">
-                            <span class="text-xs font-bold text-red-600">Saída/Perda (-)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="input-label">Qual Estoque?</label>
-                    <select id="adj-dest" class="w-full bg-white border rounded-lg px-3 py-2 text-sm outline-none mt-1">
-                        <option value="fisico">Físico</option>
-                        <option value="fiscal">Fiscal</option>
-                        <option value="ambos">Ambos</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="input-label">Quantidade</label>
-                    <input type="number" id="adj-qty" required min="1" class="w-full border rounded-lg px-3 py-2 text-lg font-bold text-center outline-none focus:border-blue-500" placeholder="0">
-                </div>
-                
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-xs uppercase">Confirmar Ajuste</button>
+        <div style="padding: 1rem; border-bottom: 1px solid var(--border);">
+            <form onsubmit="CategoryApp.addCategory(event)" style="padding:0; flex-direction:row;">
+                <input type="text" id="new-cat-name" placeholder="Nova Categoria..." required style="flex:1;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1rem;">Add</button>
             </form>
         </div>
-    </div>
+        <div id="cat-list-container" style="padding: 1rem; display:flex; flex-direction:column; gap:0.5rem; overflow-y:auto;"></div>
+    </dialog>
 
-    <!-- SIDEBAR FIXA -->
-    <aside class="fixed top-0 left-0 h-screen w-64 bg-slate-900 flex flex-col p-4 gap-2 no-print z-50">
-        <div class="flex items-center gap-3 px-2 mb-8 text-white">
-            <i class="fa-solid fa-cubes-stacked text-blue-500 text-2xl"></i>
-            <div>
-                <h1 class="font-bold tracking-tight uppercase text-sm">SISTEMA V3</h1>
-                <p class="text-[10px] text-slate-400">Dual Stock Engine</p>
+    <dialog id="stock-modal">
+        <div class="panel-header" style="background: var(--text-main); color: white;">
+            <span>Ajuste Rápido</span>
+            <button onclick="document.getElementById('stock-modal').close()" style="background:none; border:none; color:white;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+        </div>
+        <form id="form-stock-adj" onsubmit="App.handleStockAdj(event)">
+            <input type="hidden" id="adj-prod-id">
+            <div style="text-align:center;">
+                <h4 id="adj-prod-name" style="margin-bottom:4px;">Produto XYZ</h4>
+                <small style="color:var(--text-muted);" id="adj-current-stock">Saldo: 0</small>
+            </div>
+            <div class="form-group">
+                <label>Movimento</label>
+                <div class="grid-2">
+                    <label style="display:flex; align-items:center; gap:5px; border:1px solid var(--border); padding:8px; border-radius:var(--radius); cursor:pointer;">
+                        <input type="radio" name="adj-type" value="add" checked> <span class="text-success">Entrada (+)</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:5px; border:1px solid var(--border); padding:8px; border-radius:var(--radius); cursor:pointer;">
+                        <input type="radio" name="adj-type" value="sub"> <span class="text-danger">Saída (-)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Destino</label>
+                <select id="adj-dest">
+                    <option value="fisico">Estoque Físico</option><option value="fiscal">Estoque Fiscal</option><option value="ambos">Ambos</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantidade</label>
+                <input type="number" id="adj-qty" required min="1" placeholder="0" style="font-size:1.2rem; text-align:center; font-weight:bold;">
+            </div>
+            <button type="submit" class="btn btn-primary">Confirmar</button>
+        </form>
+    </dialog>
+
+    <!-- NOVO MODAL DE IMPORTAÇÃO -->
+    <dialog id="import-modal" style="max-width: 800px; width: 90%;">
+        <div class="panel-header" style="background: var(--text-main); color: white;">
+            <span>Conferência de Importação (JSON)</span>
+            <button onclick="document.getElementById('import-modal').close()" style="background:none; border:none; color:white;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+        </div>
+        <div style="padding: 1rem;">
+            <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; background: var(--bg-subtle); padding: 0.5rem; border-radius: var(--radius); flex-wrap: wrap; gap: 10px;">
+                <span style="font-weight: bold; font-size: 0.8rem;">Destino do Estoque:</span>
+                <div style="display: flex; gap: 10px; font-size: 0.8rem;">
+                    <label style="cursor: pointer;"><input type="radio" name="import-dest" value="fisico"> Físico</label>
+                    <label style="cursor: pointer;"><input type="radio" name="import-dest" value="fiscal"> Fiscal</label>
+                    <label style="cursor: pointer;"><input type="radio" name="import-dest" value="ambos" checked> Ambos</label>
+                </div>
+            </div>
+            <div class="table-wrapper" style="max-height: 50vh; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius);">
+                <table style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px; text-align: center;"><input type="checkbox" onchange="ImportEngine.toggleAll(this.checked)" checked></th>
+                            <th>Produto (JSON)</th>
+                            <th>EAN</th>
+                            <th>Corresp. Sistema</th>
+                            <th style="text-align: right;">Qtd</th>
+                        </tr>
+                    </thead>
+                    <tbody id="import-preview-list"></tbody>
+                </table>
+            </div>
+            <div style="margin-top: 1rem; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+                <small style="color: var(--text-muted);">Verifique os itens antes de confirmar.</small>
+                <button onclick="ImportEngine.confirmImport()" class="btn btn-success">Confirmar Selecionados</button>
             </div>
         </div>
-        <nav class="flex-1 space-y-1 overflow-y-auto custom-scroll">
-            <button onclick="UI.switchView('cliente', this)" class="nav-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
-                <i class="fa-solid fa-users w-5"></i> <span>Clientes</span>
-            </button>
-            <button onclick="UI.switchView('catalogo', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
-                <i class="fa-solid fa-box w-5"></i> <span>Catálogo & Estoque</span>
-            </button>
-             <button onclick="UI.switchView('logistica', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
-                <i class="fa-solid fa-dolly w-5"></i> <span>Logística Manual</span>
-            </button>
-            <button onclick="UI.switchView('venda', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
-                <i class="fa-solid fa-cart-shopping w-5"></i> <span>Vendas</span>
-            </button>
-            <button onclick="UI.switchView('expedicao', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition-all">
-                <i class="fa-solid fa-truck-fast w-5"></i> <span>Expedição</span>
-            </button>
-        </nav>
-        <button onclick="ExportEngine.exportAll()" class="text-left px-4 py-2 text-slate-500 hover:text-emerald-400 text-xs transition mt-auto">
-            <i class="fa-solid fa-database mr-2"></i> Backup Geral (DB)
-        </button>
-    </aside>
+    </dialog>
 
-    <!-- CONTEÚDO PRINCIPAL COM MARGEM PARA A SIDEBAR -->
-    <div class="ml-64 flex-1 flex flex-col min-h-screen">
-        <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center no-print sticky top-0 z-40 shadow-sm">
-            <h2 id="view-title" class="text-xl font-bold text-slate-800 tracking-tight">Clientes</h2>
-            <div class="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs uppercase">AD</div>
-        </header>
+    <div class="app-container">
+        <!-- Sidebar agora chama funções específicas de cada aba -->
+        <aside>
+            <h1><svg class="icon-lg"><use href="#icon-box"></use></svg> <span>SISTEMA V3</span></h1>
+            <nav>
+                <button onclick="Views.cliente.init(this)" class="nav-link active" id="btn-cliente">
+                    <svg class="icon"><use href="#icon-users"></use></svg> <span>Clientes</span>
+                </button>
+                <button onclick="Views.catalogo.init(this)" class="nav-link" id="btn-catalogo">
+                    <svg class="icon"><use href="#icon-box"></use></svg> <span>Catálogo</span>
+                </button>
+                <button onclick="Views.logistica.init(this)" class="nav-link" id="btn-logistica">
+                    <svg class="icon"><use href="#icon-truck"></use></svg> <span>Logística</span>
+                </button>
+                <button onclick="Views.venda.init(this)" class="nav-link" id="btn-venda">
+                    <svg class="icon"><use href="#icon-cart"></use></svg> <span>Vendas</span>
+                </button>
+                <button onclick="Views.expedicao.init(this)" class="nav-link" id="btn-expedicao">
+                    <svg class="icon"><use href="#icon-monitor"></use></svg> <span>Expedição</span>
+                </button>
+                <div style="flex:1"></div>
+                <button onclick="ExportEngine.exportAll()" class="nav-link" style="color:var(--text-muted); font-size:0.75rem;">Backup Dados</button>
+            </nav>
+        </aside>
 
-        <!-- VIEW: CLIENTE -->
-        <main id="view-cliente" class="view-content active flex-col lg:flex-row items-start p-6 gap-6 w-full">
-            <!-- Formulário Sticky -->
-            <section class="w-full lg:w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0 sticky top-24">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <span id="formLabel-cliente" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Novo Cliente</span>
-                    <button onclick="UI.resetForm('cliente')" class="text-[10px] text-slate-400 hover:text-red-500 font-bold">LIMPAR</button>
-                </div>
-                <form id="form-cliente" onsubmit="App.handleSave('cliente', event)" class="p-5 space-y-4">
-                    <input type="hidden" id="c-id">
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="col-span-1">
-                            <label class="input-label">Código</label>
-                            <input type="text" id="c-codigo" readonly placeholder="C0001" class="w-full bg-slate-100 border rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-500">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="input-label">Rota de Entrega</label>
-                            <select id="c-rota" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none font-bold text-blue-700">
-                                <option value="">SELECIONAR ROTA</option>
-                                <option value="CX">CX</option>
-                                <option value="VG">VG</option>
-                                <option value="CBA">CBA</option>
-                                <option value="CPA">CPA</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="input-label">Nome Completo</label>
-                        <input type="text" id="c-nome" required placeholder="Nome do Cliente" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="input-label">WhatsApp / Contato</label>
-                            <input type="tel" id="c-tel" required placeholder="(65) 99999-9999" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                        </div>
-                        <div>
-                            <label class="input-label">Bairro</label>
-                            <input type="text" id="c-bairro" placeholder="Bairro" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="input-label">Cidade</label>
-                        <select id="c-cidade" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                            <option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="input-label">Endereço Completo</label>
-                        <textarea id="c-endereco" rows="2" placeholder="Rua, Número, Referência" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none"></textarea>
-                    </div>
-                    
-                    <div class="space-y-1">
-                        <label class="input-label">Link Google Maps (Opcional)</label>
-                        <input type="text" id="c-maps" placeholder="Cole coordenadas ou link aqui..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400">
-                    </div>
+        <main-area>
+            <header>
+                <h2 id="view-title" style="font-size:1.1rem; font-weight:700;">Clientes</h2>
+                <div style="width:32px; height:32px; background:var(--primary-light); color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:bold;">AD</div>
+            </header>
 
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition uppercase text-xs">Salvar Cliente</button>
-                </form>
-            </section>
-            
-            <!-- Tabela Expandida -->
-            <section class="flex-1 w-full bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center sticky top-0 bg-white z-10 rounded-t-2xl">
-                    <div class="flex flex-col">
-                        <label class="input-label">Filtrar Lista</label>
-                        <input type="text" oninput="UI.filter('cliente', this.value)" placeholder="Buscar clientes..." class="pl-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none w-64 focus:border-blue-500">
-                    </div>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">TOTAL: <b id="count-cliente" class="text-slate-700">0</b></span>
-                </div>
-                <div class="w-full overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 text-[10px] uppercase text-slate-400 font-bold">
-                            <tr>
-                                <th class="p-4">Cliente</th>
-                                <th class="p-4">Local/Rota</th>
-                                <th class="p-4 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-cliente" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-
-        <!-- VIEW: CATÁLOGO (PRODUTO ATUALIZADO COM TODOS OS CAMPOS) -->
-        <main id="view-catalogo" class="view-content flex-col lg:flex-row items-start p-6 gap-6 w-full">
-            <section class="w-full lg:w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0 sticky top-24 overflow-y-auto max-h-[85vh] custom-scroll">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <span id="formLabel-produto" class="text-[10px] font-bold text-emerald-600 uppercase">Cadastro de Produto</span>
-                    <button onclick="UI.resetForm('produto')" class="text-[10px] text-slate-400 hover:text-red-500 font-bold">LIMPAR</button>
-                </div>
-                <form id="form-produto" onsubmit="App.handleSave('produto', event)" class="p-5 space-y-3">
-                    <input type="hidden" id="p-id">
-                    
-                    <!-- Dados Básicos -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="input-label">Código Interno</label>
-                            <input type="text" id="p-codigo" readonly placeholder="P001" class="w-full bg-slate-100 border rounded-lg px-3 py-2 text-xs font-bold text-slate-500">
+            <!-- Cada Container HTML permanece, mas controlado por lógica isolada -->
+            <div id="view-cliente" class="view-container active view-layout">
+                <div class="panel sticky-form">
+                    <div class="panel-header"><span id="formLabel-cliente">Novo Cliente</span><button class="btn-ghost" onclick="UI.resetForm('cliente')">LIMPAR</button></div>
+                    <form id="form-cliente" onsubmit="App.handleSave('cliente', event)">
+                        <input type="hidden" id="c-id">
+                        <div class="grid-3">
+                            <div class="form-group"><label>Código</label><input type="text" id="c-codigo" readonly style="background:#f1f5f9; font-weight:bold;"></div>
+                            <div class="form-group" style="grid-column: span 2;"><label>Rota</label><select id="c-rota" required><option value="">Selecione...</option><option value="CX">CX</option><option value="VG">VG</option><option value="CBA">CBA</option><option value="CPA">CPA</option></select></div>
                         </div>
-                        <div>
-                            <label class="input-label">Código de Barras (EAN)</label>
-                            <input type="text" id="p-ean" placeholder="EAN (GTIN)" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="input-label">Descrição do Produto</label>
-                        <input type="text" id="p-nome" required placeholder="Nome do Produto" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                    </div>
-                    
-                    <!-- Categorização -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="input-label">Categoria</label>
-                            <select id="p-categoria" onchange="CategoryApp.populateSub(this.value)" class="w-full bg-slate-50 border rounded-lg px-2 py-2 text-xs outline-none">
-                                <option value="">Selecione</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="input-label">Subcategoria</label>
-                            <select id="p-subcategoria" class="w-full bg-slate-50 border rounded-lg px-2 py-2 text-xs outline-none">
-                                <option value="">Selecione</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="input-label">Unidade (UN, KG, CX)</label>
-                        <input type="text" id="p-unidade" placeholder="Unid. (Ex: UN)" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-xs uppercase">
-                    </div>
-
-                    <!-- Dados Fiscais Expandidos -->
-                    <div class="bg-blue-50/50 p-2 rounded border border-blue-100 space-y-2">
-                        <label class="text-[9px] font-bold text-blue-400 uppercase block">Dados Fiscais & Importação</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-[8px] text-slate-400 uppercase font-bold">NCM</label>
-                                <input type="text" id="p-ncm" placeholder="NCM" class="w-full bg-white border rounded-lg px-2 py-1 text-xs">
-                            </div>
-                            <div>
-                                <label class="text-[8px] text-slate-400 uppercase font-bold">CEST</label>
-                                <input type="text" id="p-cest" placeholder="CEST" class="w-full bg-white border rounded-lg px-2 py-1 text-xs">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-[8px] text-slate-400 uppercase font-bold">CFOP</label>
-                                <input type="text" id="p-cfop" placeholder="CFOP" class="w-full bg-white border rounded-lg px-2 py-1 text-xs">
-                            </div>
-                            <div>
-                                <label class="text-[8px] text-slate-400 uppercase font-bold">CSOSN</label>
-                                <input type="text" id="p-csosn" placeholder="CSOSN" class="w-full bg-white border rounded-lg px-2 py-1 text-xs">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-[8px] text-slate-400 uppercase font-bold">Última Nota</label>
-                                <input type="text" id="p-nota" placeholder="Número Nota" class="w-full bg-white border rounded-lg px-2 py-1 text-xs" title="Número da Nota Fiscal">
-                            </div>
-                            <div>
-                                <label class="text-[8px] text-slate-400 uppercase font-bold">ID Referência</label>
-                                <input type="text" id="p-refId" placeholder="Ref. XML" class="w-full bg-white border rounded-lg px-2 py-1 text-xs text-slate-400">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="flex flex-col">
-                                <label class="text-[8px] text-slate-400 uppercase font-bold">Fator Conversão</label>
-                                <input type="number" id="p-fator" placeholder="1" class="w-full bg-white border rounded-lg px-2 py-1 text-xs">
-                            </div>
-                        </div>
-                        <div>
-                             <label class="text-[8px] text-slate-400 uppercase font-bold">Observações Fiscais</label>
-                            <textarea id="p-obs-produto" rows="2" placeholder="Observações do XML/JSON" class="w-full bg-white border rounded-lg px-2 py-1 text-[10px] text-slate-500"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Controle de Estoque -->
-                    <div class="bg-slate-50 p-2 rounded border">
-                        <label class="text-[9px] font-bold text-slate-500 uppercase block mb-1">Controle de Estoque</label>
-                        <div class="flex gap-3 mb-2">
-                            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="p-stock-type" value="ambos" checked onchange="UI.toggleStockInputs()"> <span class="text-[10px] font-bold text-slate-600">Ambos</span></label>
-                            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="p-stock-type" value="fisico" onchange="UI.toggleStockInputs()"> <span class="text-[10px] font-bold text-slate-600">Só Físico</span></label>
-                            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="p-stock-type" value="fiscal" onchange="UI.toggleStockInputs()"> <span class="text-[10px] font-bold text-slate-600">Só Fiscal</span></label>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2" id="stock-inputs-container">
-                            <div id="grp-fisico">
-                                <label class="text-[9px] text-slate-400 block font-bold uppercase">Estoque Físico</label>
-                                <input type="number" id="p-estoque" placeholder="0" class="w-full bg-white border rounded-lg px-2 py-1 text-xs font-bold text-slate-700">
-                            </div>
-                            <div id="grp-fiscal">
-                                <label class="text-[9px] text-slate-400 block font-bold uppercase">Estoque Fiscal</label>
-                                <input type="number" id="p-estoqueFiscal" placeholder="0" class="w-full bg-white border rounded-lg px-2 py-1 text-xs font-bold text-purple-700">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="input-label">Custo Unitário (R$)</label>
-                            <input type="number" id="p-custo" step="0.0001" placeholder="R$ 0,00" class="w-full bg-slate-50 border rounded-lg px-2 py-2 text-xs">
-                        </div>
-                        <div>
-                            <label class="input-label text-emerald-600">Preço Venda (R$)</label>
-                            <input type="number" id="p-valor" step="0.01" required placeholder="R$ 0,00" class="w-full bg-slate-50 border rounded-lg px-2 py-2 text-xs font-bold text-emerald-600">
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-2 px-1">
-                        <input type="checkbox" id="p-isTemp" class="rounded border-slate-300" onchange="UI.updateNextProductCode(this.checked)">
-                        <label for="p-isTemp" class="text-[11px] font-bold text-slate-500 uppercase tracking-tighter">Produto Temporário (24h)</label>
-                    </div>
-                    
-                    <div>
-                        <label class="input-label">Tipo do Item</label>
-                        <select id="p-tipo" onchange="UI.toggleKit(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                            <option value="normal">Produto Normal</option><option value="kit">Kit / Combo</option>
-                        </select>
-                    </div>
-                    <div id="p-kit-area" class="hidden space-y-3">
-                        <label class="text-[9px] font-bold text-slate-400 uppercase">Configuração do Kit</label>
-                        <textarea id="p-kit-bulk" rows="2" class="w-full p-2 text-[10px] font-mono border rounded outline-none bg-slate-50" placeholder="P001 | 2 (Código | Qtd)"></textarea>
-                        <div id="p-kit-list" class="max-h-32 overflow-y-auto custom-scroll space-y-1 bg-slate-50 p-2 rounded-lg border"></div>
-                    </div>
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-xs uppercase">Salvar Produto</button>
-                </form>
-            </section>
-            <section class="flex-1 w-full bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center sticky top-0 bg-white z-10 rounded-t-2xl">
-                    <div class="flex gap-2 items-center">
-                        <div class="flex flex-col">
-                            <label class="input-label">Buscar no Catálogo</label>
-                            <input type="text" oninput="UI.filter('produto', this.value)" placeholder="Nome, EAN ou Código..." class="pl-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none w-64 focus:border-blue-500">
-                        </div>
-                        <div class="flex flex-col justify-end h-full pt-4">
-                             <button onclick="CategoryApp.openModal()" class="bg-blue-100 text-blue-600 px-3 py-2 rounded-xl text-xs font-bold hover:bg-blue-200 transition"><i class="fa-solid fa-tags mr-1"></i> Categorias</button>
-                        </div>
-                    </div>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">TOTAL: <b id="count-produto" class="text-slate-700">0</b></span>
-                </div>
-                <div class="w-full overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 text-[10px] uppercase text-slate-400 font-bold">
-                            <tr>
-                                <th class="p-4">Produto</th>
-                                <th class="p-4">Categoria</th>
-                                <th class="p-4 text-center">Est. Físico</th>
-                                <th class="p-4 text-center">Est. Fiscal</th>
-                                <th class="p-4">Custo / Venda</th>
-                                <th class="p-4 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-produto" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-
-        <!-- VIEW: LOGÍSTICA & ENTRADAS (ATUALIZADA) -->
-        <main id="view-logistica" class="view-content flex-col p-6 gap-6 w-full">
-            
-            <!-- Linha Superior -->
-            <div class="flex flex-col lg:flex-row gap-6 w-full">
-                
-                <!-- Entrada Manual Avulsa -->
-                <section class="w-full lg:w-1/2 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col h-auto">
-                    <h3 class="font-bold text-slate-700 uppercase text-xs mb-4 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-orange-500"></i> Movimento Manual</h3>
-                    <form id="form-entrada-manual" onsubmit="App.handleSave('entrada', event)" class="flex-1 flex flex-col gap-3">
-                         <div class="space-y-1">
-                            <label class="input-label">Selecionar Produto</label>
-                            <select id="e-produto" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-xs outline-none"></select>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="input-label">Estoque de Destino</label>
-                             <select id="e-tipo-estoque" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-xs outline-none font-bold text-slate-700">
-                                <option value="fisico">Físico</option>
-                                <option value="fiscal">Fiscal</option>
-                                <option value="ambos">Ambos</option>
-                            </select>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                             <div>
-                                <label class="input-label">Quantidade (+/-)</label>
-                                <input type="number" id="e-qty" required class="w-full border rounded-lg px-3 py-2 text-xs outline-none font-bold" placeholder="Use - para saída">
-                            </div>
-                            <div>
-                                <label class="input-label">Custo Atualizado (R$)</label>
-                                <input type="number" id="e-custo" required step="0.01" class="w-full border rounded-lg px-3 py-2 text-xs outline-none">
-                            </div>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="input-label">Histórico / Fornecedor</label>
-                            <input type="text" id="e-fornecedor" placeholder="Ex: Compra Avulsa / Quebra" class="w-full border rounded-lg px-3 py-2 text-xs outline-none">
-                        </div>
-                        <button type="submit" class="mt-auto w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-sm transition text-xs uppercase">
-                            Registrar Movimento
-                        </button>
+                        <div class="form-group"><label>Nome</label><input type="text" id="c-nome" required></div>
+                        <div class="grid-2"><div class="form-group"><label>Tel</label><input type="tel" id="c-tel" required></div><div class="form-group"><label>Bairro</label><input type="text" id="c-bairro"></div></div>
+                        <div class="form-group"><label>Cidade</label><select id="c-cidade"><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select></div>
+                        <div class="form-group"><label>Endereço</label><textarea id="c-endereco" rows="2"></textarea></div>
+                        <div class="form-group"><label>Maps (URL)</label><input type="text" id="c-maps"></div>
+                        <button type="submit" class="btn btn-primary">Salvar Cliente</button>
                     </form>
-                </section>
-
-                <!-- Nova Seção: Importação JSON -->
-                <section class="w-full lg:w-1/2 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col h-auto">
-                    <h3 class="font-bold text-slate-700 uppercase text-xs mb-4 flex items-center gap-2"><i class="fa-solid fa-file-import text-blue-500"></i> Importação em Lote (JSON)</h3>
-                    <div class="flex-1 flex flex-col gap-4 justify-center items-center p-6 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50/50">
-                        <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-300"></i>
-                        <p class="text-[10px] text-slate-400 text-center max-w-[200px]">Selecione o arquivo .json para cadastrar produtos e dar entrada no estoque automaticamente.</p>
-                        <input type="file" id="json-import-file" accept=".json" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                </div>
+                <div class="panel expanded">
+                    <div class="panel-header" style="position: sticky; top:0; background:var(--bg-surface); z-index:10;">
+                        <input type="text" oninput="Views.cliente.filter(this.value)" placeholder="Filtrar..." style="width:200px; padding:0.4rem;">
+                        <small>TOTAL: <b id="count-cliente">0</b></small>
                     </div>
-                    <button onclick="ImportEngine.processFile()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-sm transition text-xs uppercase">
-                        Processar Importação
-                    </button>
-                </section>
+                    <div class="table-wrapper"><table id="table-cliente"></table></div>
+                </div>
             </div>
 
-            <!-- Tabela Unificada de Histórico -->
-            <section class="flex-1 w-full bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                <div class="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center sticky top-0 z-10 rounded-t-xl">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase">Histórico Geral de Movimentação</span>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Itens: <b id="count-entrada" class="text-slate-700">0</b></span>
-                </div>
-                <div class="w-full overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-50 text-[10px] uppercase text-slate-400 font-bold">
-                            <tr>
-                                <th class="p-3">Data</th>
-                                <th class="p-3">Produto</th>
-                                <th class="p-3">Destino</th>
-                                <th class="p-3">Origem/Obs</th>
-                                <th class="p-3 text-right">Qtd</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-entrada" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-
-        <!-- VIEW: VENDAS -->
-        <main id="view-venda" class="view-content flex-col lg:flex-row items-start p-6 gap-6 w-full">
-            <section class="w-full lg:w-96 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0 sticky top-24">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <span id="formLabel-venda" class="text-[10px] font-bold text-orange-600 uppercase">Novo Pedido</span>
-                    <button onclick="UI.resetForm('venda')" class="text-[10px] text-slate-400 hover:text-red-500 font-bold">CANCELAR</button>
-                </div>
-                <form id="form-venda" onsubmit="App.handleSave('venda', event)" class="p-5 space-y-3">
-                    <input type="hidden" id="v-id">
-                    <div>
-                        <label class="input-label">Cliente</label>
-                        <select id="v-cliente" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none"></select>
-                    </div>
-                    
-                    <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <label class="input-label">Adicionar Item</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-[10px]"></i>
-                            <input type="text" id="v-prod-search" oninput="UI.searchProduct(this.value)" placeholder="Buscar produto..." class="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-lg outline-none focus:border-orange-400">
+            <div id="view-catalogo" class="view-container view-layout">
+                <div class="panel sticky-form">
+                    <div class="panel-header"><span id="formLabel-produto">Produto</span><button class="btn-ghost" onclick="UI.resetForm('produto')">LIMPAR</button></div>
+                    <form id="form-produto" onsubmit="App.handleSave('produto', event)">
+                        <input type="hidden" id="p-id">
+                        <div class="grid-2">
+                            <div class="form-group"><label>Código</label><input type="text" id="p-codigo" readonly style="font-weight:bold;"></div>
+                            <div class="form-group"><label>EAN</label><input type="text" id="p-ean"></div>
                         </div>
-                        <div class="grid grid-cols-4 gap-2">
-                            <div class="col-span-3">
-                                <label class="input-label">Produto</label>
-                                <select id="v-produto" required class="w-full bg-white border rounded-lg px-3 py-2 text-sm outline-none"></select>
+                        <div class="form-group"><label>Descrição</label><input type="text" id="p-nome" required></div>
+                        <div class="grid-2">
+                            <div class="form-group"><label>Categoria</label><select id="p-categoria" onchange="CategoryApp.populateSub(this.value)"><option value="">Sel...</option></select></div>
+                            <div class="form-group"><label>Sub</label><select id="p-subcategoria"><option value="">Sel...</option></select></div>
+                        </div>
+                        <div class="form-group"><label>Unidade</label><input type="text" id="p-unidade" placeholder="UN/CX"></div>
+                        <div style="background:var(--primary-light); padding:0.5rem; border-radius:var(--radius); display:flex; flex-direction:column; gap:0.5rem;">
+                            <label style="color:var(--primary);">Fiscal</label>
+                            <div class="grid-2"><input type="text" id="p-ncm" placeholder="NCM"><input type="text" id="p-cest" placeholder="CEST"></div>
+                            <div class="grid-2"><input type="text" id="p-cfop" placeholder="CFOP"><input type="text" id="p-csosn" placeholder="CSOSN"></div>
+                            <div class="grid-2"><input type="text" id="p-nota" placeholder="Nota Ref"><input type="number" id="p-fator" placeholder="Fator" value="1"></div>
+                            <input type="text" id="p-refId" placeholder="ID XML">
+                            <textarea id="p-obs-produto" rows="1" placeholder="Obs Fiscal"></textarea>
+                        </div>
+                        <div style="border:1px solid var(--border); padding:0.5rem; border-radius:var(--radius);">
+                            <label>Estoque</label>
+                            <div style="display:flex; gap:10px; margin-bottom:5px;">
+                                <label><input type="radio" name="p-stock-type" value="ambos" checked onchange="UI.toggleStockInputs()"> Ambos</label>
+                                <label><input type="radio" name="p-stock-type" value="fisico" onchange="UI.toggleStockInputs()"> Físico</label>
+                                <label><input type="radio" name="p-stock-type" value="fiscal" onchange="UI.toggleStockInputs()"> Fiscal</label>
                             </div>
-                            <div>
-                                <label class="input-label">Qtd.</label>
-                                <input type="number" id="v-qty" value="1" min="1" class="w-full bg-white border rounded-lg px-3 py-2 text-sm outline-none font-bold">
+                            <div class="grid-2" id="stock-inputs-container">
+                                <div id="grp-fisico"><label>Físico</label><input type="number" id="p-estoque" placeholder="0"></div>
+                                <div id="grp-fiscal"><label>Fiscal</label><input type="number" id="p-estoqueFiscal" placeholder="0"></div>
                             </div>
                         </div>
+                        <div class="grid-2">
+                            <div class="form-group"><label>Custo</label><input type="number" id="p-custo" step="0.0001"></div>
+                            <div class="form-group"><label style="color:var(--success);">Venda</label><input type="number" id="p-valor" step="0.01" required style="font-weight:bold; color:var(--success);"></div>
+                        </div>
+                        <label style="display:flex; align-items:center; gap:5px; font-size:0.75rem;"><input type="checkbox" id="p-isTemp" onchange="UI.updateNextProductCode(this.checked)"> Produto Temporário (24h)</label>
+                        <div class="form-group"><label>Tipo</label><select id="p-tipo" onchange="UI.toggleKit(this.value)"><option value="normal">Normal</option><option value="kit">Kit / Combo</option></select></div>
+                        <div id="p-kit-area" class="hidden">
+                            <label>Composição do Kit</label>
+                            <textarea id="p-kit-bulk" placeholder="P001 | 2" style="font-family:monospace; margin-bottom:0.5rem;"></textarea>
+                            <div id="p-kit-list" style="max-height:100px; overflow-y:auto; border:1px solid var(--border); padding:5px;"></div>
+                        </div>
+                        <button type="submit" class="btn btn-success">Salvar Produto</button>
+                    </form>
+                </div>
+                <div class="panel expanded">
+                    <div class="panel-header">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="text" oninput="Views.catalogo.filter(this.value)" placeholder="Buscar produto..." style="width:200px; padding:0.4rem;">
+                            <button onclick="CategoryApp.openModal()" class="btn-ghost" style="color:var(--primary);">CATEGORIAS</button>
+                        </div>
+                        <small>TOTAL: <b id="count-produto">0</b></small>
                     </div>
+                    <div class="table-wrapper"><table style="width:100%"><thead><tr><th>Produto</th><th>Cat</th><th>Físico</th><th>Fiscal</th><th>$ Venda</th><th style="text-align:right">Ações</th></tr></thead><tbody id="table-produto"></tbody></table></div>
+                </div>
+            </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="input-label">Forma de Pagamento</label>
-                            <select id="v-pagamento" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none">
-                                <option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option>
-                                <option value="Pix">Pix</option><option value="Só Entregar">Só Entregar</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="input-label">Rota de Saída</label>
-                            <select id="v-rota" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none">
-                                <option value="CX">CX</option><option value="VF">VF</option>
-                                <option value="CBA">CBA</option><option value="CPA">CPA</option>
-                            </select>
-                        </div>
+            <div id="view-logistica" class="view-container">
+                <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+                    <div class="panel" style="flex:1; min-width:300px;">
+                        <div class="panel-header" style="color:var(--warning);">Movimento Manual</div>
+                        <form id="form-entrada-manual" onsubmit="App.handleSave('entrada', event)">
+                            <div class="form-group"><label>Produto</label><select id="e-produto" required></select></div>
+                            <div class="form-group"><label>Destino</label><select id="e-tipo-estoque"><option value="fisico">Físico</option><option value="fiscal">Fiscal</option><option value="ambos">Ambos</option></select></div>
+                            <div class="grid-2">
+                                <div class="form-group"><label>Qtd (+/-)</label><input type="number" id="e-qty" required placeholder="- p/ Saída"></div>
+                                <div class="form-group"><label>Novo Custo</label><input type="number" id="e-custo" step="0.01"></div>
+                            </div>
+                            <div class="form-group"><label>Motivo / Fornecedor</label><input type="text" id="e-fornecedor"></div>
+                            <button type="submit" class="btn" style="background:var(--warning); color:white;">Registrar</button>
+                        </form>
                     </div>
-
-                    <div>
-                        <label class="input-label text-purple-600">Brinde (Opcional)</label>
-                        <select id="v-brinde" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none font-bold text-purple-600">
-                            <option value="">Nenhum Brinde</option>
-                            <option value="Ovo">Brinde: Ovo</option>
-                            <option value="Café 250g">Brinde: Café 250g</option>
-                            <option value="Amaciante">Brinde: Amaciante</option>
-                            <option value="Omo">Brinde: Omo</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="input-label">Desconto (R$)</label>
-                        <input type="number" id="v-desconto" step="0.01" placeholder="Desconto em R$" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none">
-                    </div>
-                    <div>
-                        <label class="input-label">Observações do Pedido</label>
-                        <textarea id="v-obs" rows="2" placeholder="Ex: Entregar após as 14h..." class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none"></textarea>
-                    </div>
-                    <div class="p-3 bg-slate-900 rounded-xl text-white flex justify-between items-center">
-                        <span class="text-xs uppercase font-bold text-slate-400">Total Líquido</span>
-                        <span id="v-total" class="text-xl font-bold">R$ 0,00</span>
-                    </div>
-                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition text-xs uppercase tracking-widest">Finalizar Pedido</button>
-                </form>
-            </section>
-            
-            <section class="flex-1 w-full bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3 sticky top-0 bg-white z-10 rounded-t-2xl">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xs font-bold uppercase text-slate-500 tracking-tighter">Histórico de Vendas</h3>
-                        <div class="flex gap-2">
-                            <button onclick="ExportEngine.exportSelectedSales()" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-emerald-200 transition">
-                                <i class="fa-solid fa-file-export mr-1"></i> Exportar Selecionados
-                            </button>
-                            <span class="text-[10px] font-bold text-slate-400 tracking-tighter uppercase self-center">TOTAL: <b id="count-venda" class="text-slate-700">0</b></span>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 items-center no-print">
-                        <div class="flex flex-col">
-                            <label class="input-label">De</label>
-                            <input type="date" id="v-filter-start" class="text-[10px] p-1.5 border rounded outline-none focus:border-blue-400">
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="input-label">Até</label>
-                            <input type="date" id="v-filter-end" class="text-[10px] p-1.5 border rounded outline-none focus:border-blue-400">
-                        </div>
-                        <div class="flex flex-col justify-end h-full pt-4">
-                            <button onclick="UI.render('venda')" class="bg-slate-200 hover:bg-slate-300 text-[10px] font-bold px-3 py-1.5 rounded transition uppercase">Filtrar</button>
+                    <div class="panel" style="flex:1; min-width:300px;">
+                        <div class="panel-header" style="color:var(--primary);">Importação Nota (JSON)</div>
+                        <div style="padding:2rem; display:flex; flex-direction:column; align-items:center; gap:1rem; text-align:center;">
+                            <svg class="icon-lg" style="width:48px; height:48px; color:var(--text-muted);"><use href="#icon-box"></use></svg>
+                            <p style="font-size:0.8rem; color:var(--text-muted);">Selecione o JSON da NF para entrada automática.</p>
+                            <input type="file" id="json-import-file" accept=".json">
+                            <button onclick="ImportEngine.processFile()" class="btn btn-primary" style="width:100%;">Conferir & Importar</button>
                         </div>
                     </div>
                 </div>
-                <div class="w-full overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 text-[10px] uppercase text-slate-400 font-bold sticky top-0">
-                            <tr>
-                                <th class="p-4 w-10"><input type="checkbox" onclick="UI.toggleSelectAllSales(this)"></th>
-                                <th class="p-4">Pedido</th>
-                                <th class="p-4">Financeiro</th>
-                                <th class="p-4 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-venda" class="divide-y divide-slate-100"></tbody>
-                    </table>
+                <div class="panel" style="flex:1;">
+                    <div class="panel-header">Histórico de Movimentação <small id="count-entrada">0</small></div>
+                    <div class="table-wrapper"><table><thead><tr><th>Data</th><th>Produto</th><th>Tipo</th><th>Origem</th><th style="text-align:right">Qtd</th></tr></thead><tbody id="table-entrada"></tbody></table></div>
                 </div>
-            </section>
-        </main>
-        
-        <!-- VIEW: EXPEDIÇÃO -->
-        <main id="view-expedicao" class="view-content flex-col w-full min-h-screen p-0 bg-slate-100">
-            <div id="expedicao-panel" class="w-full min-h-screen flex flex-col">
-                <div class="bg-slate-900 p-4 flex justify-between items-center flex-shrink-0 sticky top-0 z-20">
-                    <h3 class="text-lg font-bold text-white uppercase tracking-widest flex items-center gap-3">
-                        <i class="fa-solid fa-tv text-emerald-400"></i> Monitor de Expedição
-                    </h3>
-                    <div class="flex gap-3">
-                        <button onclick="UI.renderExpedicao()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold uppercase transition">Atualizar</button>
-                        <button onclick="UI.toggleFullscreen()" class="text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold uppercase transition shadow-lg shadow-blue-900/50">
-                            <i class="fa-solid fa-expand mr-1"></i> Tela Cheia
-                        </button>
-                    </div>
+            </div>
+
+            <div id="view-venda" class="view-container view-layout">
+                <div class="panel sticky-form">
+                    <div class="panel-header"><span style="color:var(--danger);">Novo Pedido</span><button class="btn-ghost" onclick="UI.resetForm('venda')">CANCELAR</button></div>
+                    <form id="form-venda" onsubmit="App.handleSave('venda', event)">
+                        <input type="hidden" id="v-id">
+                        <div class="form-group"><label>Cliente</label><select id="v-cliente" required></select></div>
+                        <div style="background:var(--bg-subtle); padding:0.5rem; border-radius:var(--radius); border:1px solid var(--border);">
+                            <label>Adicionar Item</label>
+                            <input type="text" id="v-prod-search" oninput="UI.searchProduct(this.value)" placeholder="Buscar..." style="margin-bottom:0.5rem;">
+                            <div class="grid-3" style="grid-template-columns: 3fr 1fr;">
+                                <select id="v-produto" required></select>
+                                <input type="number" id="v-qty" value="1" min="1">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group"><label>Pagamento</label><select id="v-pagamento"><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option><option value="Pix">Pix</option></select></div>
+                            <div class="form-group"><label>Rota</label><select id="v-rota"><option value="CX">CX</option><option value="VG">VG</option><option value="CBA">CBA</option><option value="CPA">CPA</option></select></div>
+                        </div>
+                        <div class="form-group"><label style="color:var(--info)">Brinde</label><select id="v-brinde"><option value="">Nenhum</option><option value="Ovo">Ovo</option><option value="Café">Café</option></select></div>
+                        <div class="grid-2">
+                            <div class="form-group"><label>Desconto R$</label><input type="number" id="v-desconto" step="0.01"></div>
+                            <div class="form-group"><label>Obs</label><textarea id="v-obs" rows="1"></textarea></div>
+                        </div>
+                        <div style="background:#0f172a; color:white; padding:1rem; border-radius:var(--radius); display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:0.8rem; text-transform:uppercase;">Total</span>
+                            <span id="v-total" style="font-size:1.2rem; font-weight:bold;">R$ 0,00</span>
+                        </div>
+                        <button type="submit" class="btn btn-danger" style="padding:1rem;">Finalizar Pedido</button>
+                    </form>
                 </div>
-                <!-- 4 Colunas FIXAS -->
-                <div class="flex-1 grid grid-cols-4 min-h-0 divide-x divide-slate-200">
-                    <div class="flex flex-col h-full bg-slate-100">
-                        <div class="bg-blue-600 text-white p-3 text-center font-black text-xl uppercase shadow-md sticky top-0 z-10">ROTA CX</div>
-                        <div id="col-CX" class="flex-1 p-2 grid grid-cols-2 gap-2 content-start"></div>
+                <div class="panel expanded">
+                    <div class="panel-header">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span>Histórico</span>
+                            <input type="date" id="v-filter-start"><input type="date" id="v-filter-end"><button onclick="Views.venda.render()" class="btn-ghost">FILTRAR</button>
+                        </div>
+                        <small>TOTAL: <b id="count-venda">0</b></small>
                     </div>
-                    <div class="flex flex-col h-full bg-slate-100">
-                        <div class="bg-emerald-600 text-white p-3 text-center font-black text-xl uppercase shadow-md sticky top-0 z-10">ROTA VG</div>
-                        <div id="col-VG" class="flex-1 p-2 grid grid-cols-2 gap-2 content-start"></div>
+                    <div class="table-wrapper"><table><thead><tr><th>#</th><th>Pedido</th><th>Detalhes</th><th style="text-align:right">Ações</th></tr></thead><tbody id="table-venda"></tbody></table></div>
+                </div>
+            </div>
+
+            <div id="view-expedicao" class="view-container" style="padding:0; gap:0;">
+                <div id="expedicao-panel" style="display:flex; flex-direction:column; height:100%; width:100%;">
+                    <div style="background:#0f172a; padding:1rem; color:white; display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="display:flex; gap:10px; align-items:center;"><svg class="icon"><use href="#icon-monitor"></use></svg> MONITOR EXPEDIÇÃO</h3>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="Views.expedicao.render()" class="btn btn-ghost" style="color:white; border:1px solid white;">Atualizar</button>
+                            <button onclick="UI.toggleFullscreen()" class="btn btn-primary">Tela Cheia</button>
+                        </div>
                     </div>
-                    <div class="flex flex-col h-full bg-slate-100">
-                        <div class="bg-orange-600 text-white p-3 text-center font-black text-xl uppercase shadow-md sticky top-0 z-10">ROTA CBA</div>
-                        <div id="col-CBA" class="flex-1 p-2 grid grid-cols-2 gap-2 content-start"></div>
-                    </div>
-                    <div class="flex flex-col h-full bg-slate-100">
-                        <div class="bg-purple-600 text-white p-3 text-center font-black text-xl uppercase shadow-md sticky top-0 z-10">ROTA CPA/VF</div>
-                        <div id="col-CPA" class="flex-1 p-2 grid grid-cols-2 gap-2 content-start"></div>
+                    <div style="flex:1; display:grid; grid-template-columns: repeat(4, 1fr); height:100%;">
+                        <div style="background:#f1f5f9; border-right:1px solid #cbd5e1; display:flex; flex-direction:column;">
+                            <div style="background:var(--primary); color:white; padding:0.5rem; text-align:center; font-weight:bold;">ROTA CX</div>
+                            <div id="col-CX" style="padding:0.5rem; display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; align-content:start;"></div>
+                        </div>
+                        <div style="background:#f1f5f9; border-right:1px solid #cbd5e1; display:flex; flex-direction:column;">
+                            <div style="background:var(--success); color:white; padding:0.5rem; text-align:center; font-weight:bold;">ROTA VG</div>
+                            <div id="col-VG" style="padding:0.5rem; display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; align-content:start;"></div>
+                        </div>
+                        <div style="background:#f1f5f9; border-right:1px solid #cbd5e1; display:flex; flex-direction:column;">
+                            <div style="background:var(--warning); color:white; padding:0.5rem; text-align:center; font-weight:bold;">ROTA CBA</div>
+                            <div id="col-CBA" style="padding:0.5rem; display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; align-content:start;"></div>
+                        </div>
+                        <div style="background:#f1f5f9; display:flex; flex-direction:column;">
+                            <div style="background:var(--info); color:white; padding:0.5rem; text-align:center; font-weight:bold;">ROTA CPA</div>
+                            <div id="col-CPA" style="padding:0.5rem; display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; align-content:start;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </main>
+
+        </main-area>
     </div>
 
     <div id="print-area"></div>
 
     <script>
         const storageAvailable = (type) => { try { var storage = window[type], x = '__storage_test__'; storage.setItem(x, x); storage.removeItem(x); return true; } catch (e) { return false; } };
-
         const DB = {
-            key: 'enterprise_v5_db',
+            key: 'modular_v1_db',
             load: () => {
                 const defaults = {cliente:[], produto:[], venda:[], entrada:[], categorias: []};
                 if (!storageAvailable('localStorage')) return defaults;
                 let data = JSON.parse(localStorage.getItem(DB.key) || 'null');
                 if(!data) return defaults;
-                // PATCH CRÍTICO: Mescla defaults para garantir que a chave 'categorias' exista em dados antigos
-                for(let key in defaults) {
-                    if(!data[key]) data[key] = defaults[key];
-                }
+                for(let key in defaults) if(!data[key]) data[key] = defaults[key];
                 return data;
             },
             saveAll: (data) => { if (storageAvailable('localStorage')) localStorage.setItem(DB.key, JSON.stringify(data)); },
@@ -689,390 +535,207 @@
             delete: (type, id) => { const db = DB.load(); db[type] = db[type].filter(i => i.id !== id); DB.saveAll(db); }
         };
 
-        // NEW: CATEGORY LOGIC
         const CategoryApp = {
-            openModal: () => {
-                document.getElementById('cat-modal').classList.remove('hidden');
-                CategoryApp.renderList();
-            },
-            addCategory: (e) => {
-                e.preventDefault();
-                const name = document.getElementById('new-cat-name').value.trim();
-                if(!name) return;
-                const db = DB.load();
-                db.categorias.push({ id: Date.now().toString(), nome: name, subs: [] });
-                DB.saveAll(db);
-                document.getElementById('new-cat-name').value = '';
-                CategoryApp.renderList();
-                App.init(); // Refresh dropdowns
-            },
-            addSub: (catId) => {
-                const subName = prompt("Nome da Subcategoria:");
-                if(!subName) return;
-                const db = DB.load();
-                const cat = db.categorias.find(c => c.id === catId);
-                if(cat) {
-                    if(!cat.subs) cat.subs = [];
-                    cat.subs.push(subName);
-                    DB.saveAll(db);
-                    CategoryApp.renderList();
-                }
-            },
-            deleteCat: (id) => {
-                if(confirm('Excluir categoria?')) {
-                    DB.delete('categorias', id);
-                    CategoryApp.renderList();
-                    App.init();
-                }
-            },
-            deleteSub: (catId, subIdx) => {
-                if(confirm('Excluir subcategoria?')) {
-                    const db = DB.load();
-                    const cat = db.categorias.find(c => c.id === catId);
-                    if(cat) {
-                        cat.subs.splice(subIdx, 1);
-                        DB.saveAll(db);
-                        CategoryApp.renderList();
-                    }
-                }
-            },
+            openModal: () => { document.getElementById('cat-modal').showModal(); CategoryApp.renderList(); },
+            addCategory: (e) => { e.preventDefault(); const name = document.getElementById('new-cat-name').value.trim(); if(!name)return; const db = DB.load(); db.categorias.push({id:Date.now().toString(), nome:name, subs:[]}); DB.saveAll(db); document.getElementById('new-cat-name').value=''; CategoryApp.renderList(); App.init(); },
+            addSub: (catId) => { const sub = prompt("Subcategoria:"); if(!sub)return; const db = DB.load(); const cat = db.categorias.find(c=>c.id===catId); if(cat){ if(!cat.subs) cat.subs=[]; cat.subs.push(sub); DB.saveAll(db); CategoryApp.renderList(); } },
+            deleteCat: (id) => { if(confirm('Excluir?')){ DB.delete('categorias', id); CategoryApp.renderList(); App.init(); } },
+            deleteSub: (catId, idx) => { if(confirm('Excluir sub?')){ const db = DB.load(); const cat = db.categorias.find(c=>c.id===catId); if(cat){ cat.subs.splice(idx,1); DB.saveAll(db); CategoryApp.renderList(); } } },
             renderList: () => {
                 const db = DB.load();
-                const container = document.getElementById('cat-list-container');
-                container.innerHTML = db.categorias.map(c => `
-                    <div class="bg-white border rounded-lg p-3">
-                        <div class="flex justify-between items-center mb-2 border-b pb-2">
-                            <h4 class="font-bold text-slate-700">${c.nome}</h4>
-                            <div class="flex gap-2">
-                                <button onclick="CategoryApp.addSub('${c.id}')" class="text-blue-500 text-[10px] font-bold uppercase hover:underline">+ Sub</button>
-                                <button onclick="CategoryApp.deleteCat('${c.id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash text-xs"></i></button>
-                            </div>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            ${(c.subs || []).map((s, idx) => `
-                                <span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-1 rounded-full flex items-center gap-2">
-                                    ${s} <button onclick="CategoryApp.deleteSub('${c.id}', ${idx})" class="hover:text-red-500">x</button>
-                                </span>
-                            `).join('')}
-                            ${(!c.subs || c.subs.length === 0) ? '<span class="text-[10px] text-slate-400 italic">Sem subcategorias</span>' : ''}
-                        </div>
-                    </div>
-                `).join('');
+                document.getElementById('cat-list-container').innerHTML = db.categorias.map(c => `
+                    <div style="border:1px solid var(--border); padding:0.5rem; border-radius:var(--radius);">
+                        <div style="display:flex; justify-content:space-between;"><b>${c.nome}</b><div><button onclick="CategoryApp.addSub('${c.id}')" class="text-primary" style="font-size:0.7rem; margin-right:5px;">+SUB</button><button onclick="CategoryApp.deleteCat('${c.id}')" class="text-danger">×</button></div></div>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:5px;">${(c.subs||[]).map((s,i) => `<span class="bg-tag">${s} <button onclick="CategoryApp.deleteSub('${c.id}',${i})" style="color:red; margin-left:2px;">×</button></span>`).join('')}</div>
+                    </div>`).join('');
             },
             populateSelects: () => {
-                const db = DB.load();
-                const catSelect = document.getElementById('p-categoria');
-                if(!catSelect) return;
-                const currentVal = catSelect.value;
-                catSelect.innerHTML = '<option value="">Categoria</option>' + db.categorias.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
-                if(currentVal) catSelect.value = currentVal;
+                const db = DB.load(); const catSelect = document.getElementById('p-categoria'); if(!catSelect)return;
+                const val = catSelect.value; catSelect.innerHTML = '<option value="">Categoria</option>' + db.categorias.map(c => `<option value="${c.nome}">${c.nome}</option>`).join(''); catSelect.value = val;
             },
             populateSub: (catName, selectedSub = '') => {
-                const db = DB.load();
-                const subSelect = document.getElementById('p-subcategoria');
-                subSelect.innerHTML = '<option value="">Subcategoria</option>';
-                const cat = db.categorias.find(c => c.nome === catName);
-                if(cat && cat.subs) {
-                    subSelect.innerHTML += cat.subs.map(s => `<option value="${s}">${s}</option>`).join('');
-                }
-                if(selectedSub) subSelect.value = selectedSub;
+                const db = DB.load(); const subSelect = document.getElementById('p-subcategoria'); subSelect.innerHTML = '<option value="">Subcategoria</option>';
+                const cat = db.categorias.find(c => c.nome === catName); if(cat && cat.subs) subSelect.innerHTML += cat.subs.map(s => `<option value="${s}">${s}</option>`).join(''); if(selectedSub) subSelect.value = selectedSub;
             }
         };
 
         const UI = {
             get: (id) => document.getElementById(id),
-            switchView: (view, btn) => {
-                document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active'));
+            showScreen: (screenId, btn) => {
+                document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
                 document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-                UI.get(`view-${view}`).classList.add('active');
+                document.getElementById(screenId).classList.add('active');
                 if(btn) btn.classList.add('active');
-                
-                let title = view.charAt(0).toUpperCase() + view.slice(1);
-                if(view === 'logistica') title = "Logística & Entradas";
-                if(view === 'catalogo') title = "Catálogo & Estoque";
-                UI.get('view-title').innerText = title;
-
-                if(view === 'venda') UI.renderVendaOptions();
-                if(view === 'catalogo') UI.renderKitOptions();
-                if(view === 'expedicao') UI.renderExpedicao();
-                if(view === 'logistica') { UI.renderEntradaOptions(); LogisticsApp.render(); }
-                
-                if(view !== 'logistica') { UI.render(view); UI.resetForm(view); }
             },
-            toggleKit: (val) => UI.get('p-kit-area').classList.toggle('hidden', val !== 'kit'),
-            toggleStockInputs: () => {
-                const type = document.querySelector('input[name="p-stock-type"]:checked')?.value || 'ambos';
-                const fis = document.getElementById('grp-fisico');
-                const fisc = document.getElementById('grp-fiscal');
-                
-                if(type === 'fisico') { fis.classList.remove('hidden'); fisc.classList.add('hidden'); }
-                else if(type === 'fiscal') { fis.classList.add('hidden'); fisc.classList.remove('hidden'); }
-                else { fis.classList.remove('hidden'); fisc.classList.remove('hidden'); }
-            },
-            renderKitOptions: () => {
-                const prods = DB.load().produto.filter(p => p.tipo !== 'kit');
-                UI.get('p-kit-list').innerHTML = prods.map(p => `<div class="flex items-center gap-2 p-1 text-[10px]"><input type="checkbox" data-pid="${p.id}" class="kit-check"><span class="flex-1 font-bold">${p.codigo} - ${p.nome}</span><input type="number" data-pid="${p.id}" value="1" class="kit-qty w-10 border rounded outline-none px-1 font-bold"></div>`).join('');
-            },
+            toggleKit: (val) => UI.get('p-kit-area').style.display = (val === 'kit' ? 'block' : 'none'),
+            toggleStockInputs: () => { const type = document.querySelector('input[name="p-stock-type"]:checked')?.value || 'ambos'; UI.get('grp-fisico').style.display = (type!=='fiscal'?'block':'none'); UI.get('grp-fiscal').style.display = (type!=='fisico'?'block':'none'); },
+            renderKitOptions: () => { const prods = DB.load().produto.filter(p => p.tipo !== 'kit'); UI.get('p-kit-list').innerHTML = prods.map(p => `<div><input type="checkbox" data-pid="${p.id}" class="kit-check"> <b>${p.codigo}</b> - ${p.nome} <input type="number" data-pid="${p.id}" value="1" class="kit-qty" style="width:50px;"></div>`).join(''); },
             renderVendaOptions: (filter = '') => {
                 const db = DB.load();
-                UI.get('v-cliente').innerHTML = '<option value="">Selecionar Cliente</option>' + db.cliente.map(c => `<option value="${c.id}">${c.codigo} - ${c.nome}</option>`).join('');
-                UI.get('v-produto').innerHTML = '<option value="">Selecionar Produto</option>' + db.produto.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()) || p.codigo.toLowerCase().includes(filter.toLowerCase())).map(p => `<option value="${p.id}" data-price="${p.valor}">${p.codigo} - ${p.nome} (Est: ${p.estoque})</option>`).join('');
+                UI.get('v-cliente').innerHTML = '<option value="">Cliente...</option>' + db.cliente.map(c => `<option value="${c.id}">${c.codigo} - ${c.nome}</option>`).join('');
+                UI.get('v-produto').innerHTML = '<option value="">Produto...</option>' + db.produto.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()) || p.codigo.toLowerCase().includes(filter.toLowerCase())).map(p => `<option value="${p.id}" data-price="${p.valor}">${p.codigo} - ${p.nome}</option>`).join('');
             },
-            renderEntradaOptions: () => {
-                const db = DB.load();
-                const sel = UI.get('e-produto');
-                if(sel) sel.innerHTML = '<option value="">Selecionar Produto</option>' + db.produto.map(p => `<option value="${p.id}">${p.codigo} - ${p.nome}</option>`).join('');
-            },
+            renderEntradaOptions: () => { const db = DB.load(); UI.get('e-produto').innerHTML = '<option value="">Produto...</option>' + db.produto.map(p => `<option value="${p.id}">${p.codigo} - ${p.nome}</option>`).join(''); },
             searchProduct: (val) => UI.renderVendaOptions(val),
-            toggleSelectAllSales: (master) => { document.querySelectorAll('.venda-select').forEach(cb => cb.checked = master.checked); },
-            toggleFullscreen: () => {
-                const el = document.getElementById('expedicao-panel');
-                if (!document.fullscreenElement) { el.requestFullscreen().catch(err => { alert(`Erro: ${err.message}`); }); } else { document.exitFullscreen(); }
-            },
-            render: (type, preLoadedData = null) => {
-                if(type === 'expedicao' || type === 'logistica') return;
-                
-                const entity = type === 'catalogo' ? 'produto' : type;
-                let data = preLoadedData;
-                
-                if (!data) {
-                    const db = DB.load(); 
-                    data = db[entity];
-                    if(type === 'venda') {
-                        const s = UI.get('v-filter-start').value; const e = UI.get('v-filter-end').value;
-                        if(s) data = data.filter(v => v.date >= new Date(s).getTime());
-                        if(e) data = data.filter(v => v.date <= new Date(e).getTime() + 86399999);
-                    }
-                }
-                
-                const countEl = UI.get(`count-${entity}`);
-                const tableEl = UI.get(`table-${entity}`);
-                
-                if(countEl) countEl.innerText = data.length;
-                if(tableEl) {
-                    tableEl.innerHTML = data.map(i => {
-                        if(type === 'cliente') {
-                            const mapsBtn = i.maps ? `<button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(i.maps)}', '_blank')" class="text-emerald-500 p-2" title="Abrir no Maps"><i class="fa-solid fa-map-location-dot text-xs"></i></button>` : '';
-                            return `<tr class="hover:bg-slate-50 transition"><td class="p-4 font-bold text-xs">${i.codigo}-${i.nome}</td><td class="p-4 text-[10px] font-bold uppercase">${i.cidade}<br><span class="text-blue-600">ROTA: ${i.rota || '-'}</span></td><td class="p-4 text-right flex justify-end gap-1">${mapsBtn}<button onclick="App.edit('cliente','${i.id}')" class="text-blue-600 p-2"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="App.delete('cliente','${i.id}')" class="text-red-400 p-2"><i class="fa-solid fa-trash text-xs"></i></button></td></tr>`;
-                        }
-                        if(type === 'catalogo') {
-                            const estColor = i.estoque <= 0 ? 'text-red-600' : 'text-slate-700';
-                            const estFiscal = i.estoqueFiscal || 0;
-                            const catLabel = i.categoria ? `<span class="text-[9px] bg-slate-100 px-2 py-1 rounded text-slate-500">${i.categoria}${i.subcategoria ? ' > ' + i.subcategoria : ''}</span>` : '-';
-                            return `<tr class="hover:bg-slate-50 transition">
-                                <td class="p-4 font-bold text-xs">${i.codigo}-${i.nome}</td>
-                                <td class="p-4">${catLabel}</td>
-                                <td class="p-4 font-black text-xs text-center ${estColor}">${i.estoque} <span class="text-[8px] opacity-40">un</span></td>
-                                <td class="p-4 font-black text-xs text-center text-purple-700 bg-purple-50 rounded">${estFiscal} <span class="text-[8px] opacity-40">un</span></td>
-                                <td class="p-4 text-[10px] font-bold text-emerald-600">
-                                    <div class="flex flex-col">
-                                        <span>Venda: R$ ${Number(i.valor).toFixed(2)}</span>
-                                        <span class="text-[9px] text-slate-400 font-normal">Custo: R$ ${Number(i.custo).toFixed(4)}</span>
-                                    </div>
-                                </td>
-                                <td class="p-4 text-right flex justify-end gap-1">
-                                    <button onclick="App.openStockAdjustment('${i.id}')" class="text-slate-600 bg-slate-100 hover:bg-slate-200 p-2 rounded mr-1" title="Ajuste Rápido"><i class="fa-solid fa-sliders text-xs"></i></button>
-                                    <button onclick="App.edit('produto','${i.id}')" class="text-blue-600 p-2"><i class="fa-solid fa-pen text-xs"></i></button>
-                                    <button onclick="App.delete('produto','${i.id}')" class="text-red-400 p-2"><i class="fa-solid fa-trash text-xs"></i></button>
-                                </td>
-                            </tr>`;
-                        }
-                        if(type === 'venda') {
-                            const db = DB.load();
-                            const c = db.cliente.find(x => x.id === i.cliId); const p = db.produto.find(x => x.id === i.prodId);
-                            return `<tr class="hover:bg-slate-50 text-[11px]"><td class="p-4"><input type="checkbox" class="venda-select" data-id="${i.id}"></td><td class="p-4 font-bold">#${i.codigo} | ${c?.nome||'Excl'}</td><td class="p-4 font-bold text-emerald-700">R$ ${i.total.toFixed(2)}<br><span class="opacity-50 text-[9px] uppercase">${i.pag} | ${i.rota}</span></td><td class="p-4 text-right flex justify-end gap-1"><button onclick="App.printVenda('${i.id}')" class="text-slate-500 p-2"><i class="fa-solid fa-print text-xs"></i></button><button onclick="App.delete('venda','${i.id}')" class="text-red-300 p-2"><i class="fa-solid fa-times text-xs"></i></button></td></tr>`;
-                        }
-                    }).join('');
-                }
-            },
-            filter: (type, term) => {
-                const entity = type === 'catalogo' ? 'produto' : type;
-                const db = DB.load();
-                const data = db[entity].filter(item => {
-                    const t = term.toLowerCase();
-                    if(entity === 'cliente') return item.nome.toLowerCase().includes(t) || item.codigo.toLowerCase().includes(t);
-                    if(entity === 'produto') return item.nome.toLowerCase().includes(t) || item.codigo.toLowerCase().includes(t) || (item.ean && item.ean.includes(t));
-                    return false;
-                });
-                UI.render(type, data);
-            },
+            toggleFullscreen: () => { const el = document.getElementById('expedicao-panel'); if (!document.fullscreenElement) el.requestFullscreen().catch(err=>alert(err.message)); else document.exitFullscreen(); },
             resetForm: (t) => {
                 const form = UI.get(`form-${t}`); if(!form) return; form.reset();
-                if (t === 'entrada') return; 
-                UI.get(`${t[0]}-id`).value = ''; UI.get(`formLabel-${t}`).innerText = `Novo ${t}`;
-                if(t === 'cliente') { UI.get('c-codigo').value = DB.getNextCode('cliente'); } 
-                else if(t === 'produto') { 
-                    UI.get('p-isTemp').checked = false; 
-                    UI.get('p-codigo').value = DB.getNextCode('produto', {isTemp: false}); 
-                    UI.toggleKit('normal'); 
-                    const radios = document.getElementsByName('p-stock-type');
-                    if(radios.length) radios[0].checked = true;
-                    UI.toggleStockInputs();
-                    CategoryApp.populateSelects(); // Reset Categories
-                } 
-                else if(t === 'venda') { UI.get('v-total').innerText = 'R$ 0,00'; UI.get('v-brinde').value = ''; }
+                if (t === 'entrada') return;
+                UI.get(`${t[0]}-id`).value = ''; 
+                if(t === 'cliente') UI.get('c-codigo').value = DB.getNextCode('cliente');
+                else if(t === 'produto') { UI.get('p-codigo').value = DB.getNextCode('produto', {isTemp:false}); UI.toggleKit('normal'); UI.toggleStockInputs(); CategoryApp.populateSelects(); } 
+                else if(t === 'venda') UI.get('v-total').innerText = 'R$ 0,00';
             },
             updateNextProductCode: (isTemp) => { UI.get('p-codigo').value = DB.getNextCode('produto', {isTemp}); },
             fillForm: (t, i) => {
                 const p = t[0]; UI.get(`${p}-id`).value = i.id; UI.get(`${p}-codigo`).value = i.codigo;
-                if(t === 'cliente') { UI.get('c-nome').value = i.nome; UI.get('c-tel').value = i.tel; UI.get('c-cidade').value = i.cidade; UI.get('c-bairro').value = i.bairro || ''; UI.get('c-endereco').value = i.endereco; UI.get('c-rota').value = i.rota || ''; UI.get('c-maps').value = i.maps || ''; }
+                if(t === 'cliente') { UI.get('c-nome').value = i.nome; UI.get('c-tel').value = i.tel; UI.get('c-cidade').value = i.cidade; UI.get('c-bairro').value = i.bairro||''; UI.get('c-endereco').value = i.endereco; UI.get('c-rota').value = i.rota||''; UI.get('c-maps').value = i.maps||''; }
                 else if(t === 'produto') { 
-                    UI.get('p-nome').value = i.nome; 
-                    ['ean','ncm','categoria','custo','valor','estoque','tipo','cest','cfop','csosn','unidade','nota','refId','fator'].forEach(k => {
-                        const el = UI.get(`p-${k}`);
-                        if(el) el.value = i[k] || '';
-                    });
-                    
-                    if(i.obs) UI.get('p-obs-produto').value = i.obs;
-
-                    // Handle Category and Subcategory population
-                    CategoryApp.populateSelects();
-                    UI.get('p-categoria').value = i.categoria || '';
-                    CategoryApp.populateSub(i.categoria, i.subcategoria);
-
-                    UI.get('p-estoqueFiscal').value = i.estoqueFiscal || 0;
-                    UI.get('p-isTemp').checked = !!i.isTemp; UI.toggleKit(i.tipo); 
-                    UI.toggleStockInputs();
+                    UI.get('p-nome').value = i.nome; ['ean','ncm','categoria','custo','valor','estoque','tipo','cest','cfop','csosn','unidade','nota','refId','fator'].forEach(k => { const el = UI.get(`p-${k}`); if(el) el.value = i[k]||''; });
+                    if(i.obs) UI.get('p-obs-produto').value = i.obs; CategoryApp.populateSelects(); UI.get('p-categoria').value = i.categoria||''; CategoryApp.populateSub(i.categoria, i.subcategoria);
+                    UI.get('p-estoqueFiscal').value = i.estoqueFiscal||0; UI.get('p-isTemp').checked = !!i.isTemp; UI.toggleKit(i.tipo); UI.toggleStockInputs();
                 }
-                UI.get(`formLabel-${t}`).innerText = `Editando ${t}`;
+            }
+        };
+
+        const Views = {
+            cliente: {
+                init: (btn) => { UI.showScreen('view-cliente', btn); document.getElementById('view-title').innerText = "Clientes"; UI.resetForm('cliente'); Views.cliente.render(); },
+                render: (data = null) => { if (!data) data = DB.load().cliente; document.getElementById('count-cliente').innerText = data.length; document.getElementById('table-cliente').innerHTML = data.map(i => `<tr><td><b>${i.codigo}</b><br>${i.nome}</td><td>${i.cidade}<br><span class="text-primary text-bold">${i.rota||'-'}</span></td><td style="text-align:right"><button onclick="App.edit('cliente','${i.id}')" class="btn-ghost"><svg class="icon"><use href="#icon-edit"></use></svg></button><button onclick="App.delete('cliente','${i.id}')" class="btn-ghost text-danger"><svg class="icon"><use href="#icon-trash"></use></svg></button></td></tr>`).join(''); },
+                filter: (term) => { const data = DB.load().cliente.filter(i => i.nome.toLowerCase().includes(term.toLowerCase()) || i.codigo.toLowerCase().includes(term.toLowerCase())); Views.cliente.render(data); }
+            },
+            catalogo: {
+                init: (btn) => { UI.showScreen('view-catalogo', btn); document.getElementById('view-title').innerText = "Catálogo & Estoque"; UI.resetForm('produto'); UI.renderKitOptions(); Views.catalogo.render(); },
+                render: (data = null) => { if (!data) data = DB.load().produto; document.getElementById('count-produto').innerText = data.length; document.getElementById('table-produto').innerHTML = data.map(i => `<tr><td><b>${i.codigo}</b><br>${i.nome}</td><td><span class="bg-tag">${i.categoria||'-'}</span></td><td style="text-align:center">${i.estoque}</td><td style="text-align:center; color:var(--info); font-weight:bold;">${i.estoqueFiscal||0}</td><td><span class="text-success text-bold">R$ ${Number(i.valor).toFixed(2)}</span></td><td style="text-align:right; display:flex; justify-content:flex-end; gap:2px;"><button onclick="App.openStockAdjustment('${i.id}')" class="btn-ghost" title="Ajuste">±</button><button onclick="App.edit('produto','${i.id}')" class="btn-ghost"><svg class="icon"><use href="#icon-edit"></use></svg></button><button onclick="App.delete('produto','${i.id}')" class="btn-ghost text-danger"><svg class="icon"><use href="#icon-trash"></use></svg></button></td></tr>`).join(''); },
+                filter: (term) => { const data = DB.load().produto.filter(i => i.nome.toLowerCase().includes(term.toLowerCase()) || i.codigo.toLowerCase().includes(term.toLowerCase())); Views.catalogo.render(data); }
+            },
+            logistica: {
+                init: (btn) => { UI.showScreen('view-logistica', btn); document.getElementById('view-title').innerText = "Logística & Entradas"; UI.renderEntradaOptions(); Views.logistica.render(); },
+                render: () => { const db = DB.load(); document.getElementById('count-entrada').innerText = db.entrada.length; document.getElementById('table-entrada').innerHTML = db.entrada.sort((a,b)=>b.date-a.date).slice(0,50).map(i => { const p = db.produto.find(x => x.id === i.prodId); const qtyStyle = i.qty < 0 ? 'text-danger' : 'text-success'; return `<tr><td>${new Date(i.date).toLocaleDateString()}</td><td>${p?.codigo}</td><td><span class="bg-tag">${i.dest}</span></td><td>${i.fornecedor||'-'}</td><td style="text-align:right" class="${qtyStyle} text-bold">${i.qty>0?'+':''}${i.qty}</td></tr>`; }).join(''); }
+            },
+            venda: {
+                init: (btn) => { UI.showScreen('view-venda', btn); document.getElementById('view-title').innerText = "Vendas"; UI.resetForm('venda'); UI.renderVendaOptions(); Views.venda.render(); },
+                render: () => { let data = DB.load().venda; const s = document.getElementById('v-filter-start').value; const e = document.getElementById('v-filter-end').value; if(s) data = data.filter(v => v.date >= new Date(s).getTime()); if(e) data = data.filter(v => v.date <= new Date(e).getTime() + 86399999); document.getElementById('count-venda').innerText = data.length; document.getElementById('table-venda').innerHTML = data.map(i => { const db = DB.load(); const c = db.cliente.find(x => x.id === i.cliId); return `<tr><td><input type="checkbox"></td><td><b>#${i.codigo}</b><br><small>${c?.nome||'?'}</small></td><td><span class="text-success text-bold">R$ ${i.total.toFixed(2)}</span><br><small>${i.pag} | ${i.rota}</small></td><td style="text-align:right"><button onclick="App.printVenda('${i.id}')" class="btn-ghost">🖨️</button><button onclick="App.delete('venda','${i.id}')" class="btn-ghost text-danger">×</button></td></tr>`; }).join(''); }
+            },
+            expedicao: {
+                init: (btn) => { UI.showScreen('view-expedicao', btn); document.getElementById('view-title').innerText = "Monitor de Expedição"; Views.expedicao.render(); },
+                render: () => { const db = DB.load(); ['CX','VG','CBA','CPA'].forEach(r => { const pedidos = db.venda.filter(v => v.rota === r).slice(-8); document.getElementById(`col-${r}`).innerHTML = pedidos.map(p => { const cli = db.cliente.find(c => c.id === p.cliId); return `<div style="background:white; padding:5px; border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.1); font-size:0.75rem;"><b>#${p.codigo}</b> ${cli?.nome.substring(0,10)}...<br><span style="font-weight:bold; color:var(--success);">R$ ${p.total.toFixed(0)}</span></div>`; }).join(''); }); }
             }
         };
 
         const ImportEngine = {
+            stagedData: [],
             processFile: () => {
-                const fileInput = document.getElementById('json-import-file');
-                const file = fileInput.files[0];
-                if (!file) return alert('Selecione um arquivo JSON primeiro!');
-
+                const file = document.getElementById('json-import-file').files[0];
+                if (!file) return alert('Selecione um arquivo JSON.');
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const items = JSON.parse(e.target.result);
-                        if (!Array.isArray(items)) return alert('Formato inválido: O JSON deve ser uma lista []');
-                        
-                        let importedCount = 0;
-                        let updatedCount = 0;
+                        let items = JSON.parse(e.target.result);
+                        if (items.nfeProc) items = items.nfeProc.NFe.infNFe.det; // Tenta extrair de NFe padrão
+                        else if (!Array.isArray(items)) items = [items];
+
                         const db = DB.load();
+                        ImportEngine.stagedData = [];
 
-                        items.forEach(item => {
-                            // Busca por NOME exato (ignora case)
-                            let prod = db.produto.find(p => p.nome.toUpperCase() === item.xProd.toUpperCase());
+                        items.forEach((wrapper, index) => {
+                            const item = wrapper.prod || wrapper;
+                            const ean = item.cEAN || item.cEANTrib || '';
+                            const name = item.xProd;
+                            const factor = Number(item.Fator_Conversao_Entrada) || 1;
+                            // Prioriza qCom (NFe) ou Fator (Legado)
+                            const qty = (Number(item.qCom) || Number(item.Fator_Conversao_Entrada) || 1) * (item.qCom ? 1 : 1); 
+                            const cost = (Number(item.vUnCom) || 0);
+
+                            // Match Logic: EAN
+                            let match = db.produto.find(p => p.ean === ean && ean.length > 0 && ean !== "SEM GTIN");
                             
-                            const factor = Number(item.Fator_Conversao_Entrada) || 1; // Se for 0, usa 1 para evitar divisão por zero
-                            const qtyToAdd = factor; // Entrou 1 caixa = entra X unidades
-                            
-                            // Lógica de Custo com Desconto
-                            // Custo Unitário Real = (Custo Total da Caixa - Desconto Total) / Quantidade de Itens na Caixa
-                            const costBox = Number(item.Custo_Real_Caixa) || 0;
-                            const totalDiscount = Number(item.Valor_Desconto_Total) || 0;
-                            
-                            let finalUnitCost = 0;
-                            
-                            if (factor > 0) {
-                                finalUnitCost = (costBox - totalDiscount) / factor;
-                            } else {
-                                finalUnitCost = Number(item.Custo_Unitario) || 0;
-                            }
-
-                            // Evita custo negativo se o desconto for maior que o custo (improvável, mas seguro)
-                            if (finalUnitCost < 0) finalUnitCost = 0;
-
-                            const extraData = {
-                                refId: item.id_referencia || "",
-                                nota: item.Numero_Nota || "",
-                                csosn: item.CSOSN_SAIDA || "",
-                                obs: item._OBS || "",
-                                fator: factor
-                            };
-
-                            const eanValid = item.cEAN !== "PREENCHER_COM_LEITOR" ? item.cEAN : "";
-
-                            if (prod) {
-                                // Produto Existe: Atualiza Estoque, Custo e Dados Fiscais
-                                prod.estoque += qtyToAdd;
-                                prod.estoqueFiscal = (prod.estoqueFiscal || 0) + qtyToAdd;
-                                prod.custo = finalUnitCost;
-                                
-                                // Atualiza dados fiscais se vierem no JSON
-                                if(item.NCM) prod.ncm = item.NCM;
-                                if(item.CEST) prod.cest = item.CEST;
-                                if(item.CFOP_SAIDA) prod.cfop = item.CFOP_SAIDA;
-                                if(eanValid) prod.ean = eanValid;
-                                
-                                // Atualiza campos extras
-                                Object.assign(prod, extraData);
-
-                                updatedCount++;
-                                
-                                // Registra Entrada no Histórico
-                                db.entrada.push({
-                                    id: Date.now().toString() + Math.random().toString().slice(2,5),
-                                    date: Date.now(),
-                                    prodId: prod.id,
-                                    qty: qtyToAdd,
-                                    custo: finalUnitCost,
-                                    fornecedor: `Imp. Nota ${item.Numero_Nota}`,
-                                    dest: 'ambos'
-                                });
-
-                            } else {
-                                // Produto Novo: Cria
-                                const newId = Date.now().toString() + Math.random().toString().slice(2,5);
-                                const newCode = DB.getNextCode('produto', {isTemp: false}); // Gera código P00X
-                                
-                                const newProd = {
-                                    id: newId,
-                                    codigo: newCode,
-                                    nome: item.xProd.toUpperCase(),
-                                    ean: eanValid,
-                                    ncm: item.NCM,
-                                    cest: item.CEST,
-                                    cfop: item.CFOP_SAIDA,
-                                    unidade: item.Unidade_Venda,
-                                    custo: finalUnitCost,
-                                    valor: 0, // Valor de venda zero para preencher depois
-                                    estoque: qtyToAdd,
-                                    estoqueFiscal: qtyToAdd,
-                                    tipo: 'normal',
-                                    isTemp: false,
-                                    ...extraData
-                                };
-                                
-                                db.produto.push(newProd);
-                                importedCount++;
-
-                                // Registra Entrada no Histórico
-                                db.entrada.push({
-                                    id: Date.now().toString() + Math.random().toString().slice(2,5),
-                                    date: Date.now(),
-                                    prodId: newId,
-                                    qty: qtyToAdd,
-                                    custo: finalUnitCost,
-                                    fornecedor: `Imp. Nota ${item.Numero_Nota} (Novo)`,
-                                    dest: 'ambos'
-                                });
-                            }
+                            ImportEngine.stagedData.push({
+                                _id: index,
+                                jsonName: name,
+                                ean: ean,
+                                qty: qty,
+                                cost: cost,
+                                ncm: item.NCM,
+                                cest: item.CEST,
+                                cfop: item.CFOP,
+                                uCom: item.uCom,
+                                matchId: match ? match.id : null,
+                                matchName: match ? match.nome : null,
+                                matchCode: match ? match.codigo : null
+                            });
                         });
-
-                        DB.saveAll(db);
-                        alert(`Sucesso!\nNovos Produtos: ${importedCount}\nEstoques Atualizados: ${updatedCount}`);
-                        UI.switchView('catalogo'); // Vai para o catálogo para ver os produtos novos
-                        fileInput.value = ''; // Limpa input
-
-                    } catch (err) {
-                        alert('Erro ao processar JSON: ' + err.message);
-                        console.error(err);
-                    }
+                        ImportEngine.renderModal();
+                        document.getElementById('import-modal').showModal();
+                    } catch(err) { alert('Erro ao ler JSON: ' + err.message); console.error(err); }
                 };
                 reader.readAsText(file);
+            },
+            renderModal: () => {
+                const tbody = document.getElementById('import-preview-list');
+                tbody.innerHTML = ImportEngine.stagedData.map(i => {
+                    const status = i.matchId ? `<span class="text-success" style="font-weight:bold;">${i.matchCode}</span>` : `<span class="bg-tag" style="background:var(--warning); color:white;">NOVO</span>`;
+                    return `<tr><td style="text-align:center;"><input type="checkbox" class="import-check" value="${i._id}" checked></td><td><small>${i.jsonName}</small></td><td><small>${i.ean || '-'}</small></td><td>${status} <small>${i.matchName || ''}</small></td><td style="text-align:right;"><b>${i.qty}</b></td></tr>`;
+                }).join('');
+            },
+            toggleAll: (val) => { document.querySelectorAll('.import-check').forEach(c => c.checked = val); },
+            confirmImport: () => {
+                const dest = document.querySelector('input[name="import-dest"]:checked').value;
+                const selectedIds = Array.from(document.querySelectorAll('.import-check:checked')).map(c => Number(c.value));
+                if(selectedIds.length === 0) return alert('Nenhum item selecionado.');
+
+                const db = DB.load();
+                let count = 0;
+                
+                // Pré-calcular próximo código para evitar duplicatas em loop
+                let nextCodeNum = 0;
+                db.produto.forEach(p => { 
+                    if (p.codigo?.startsWith('P') && !p.codigo?.startsWith('PT')) { 
+                        const n = parseInt(p.codigo.substring(1)) || 0; 
+                        if (n > nextCodeNum) nextCodeNum = n; 
+                    } 
+                });
+
+                selectedIds.forEach(idx => {
+                    const item = ImportEngine.stagedData.find(d => d._id === idx);
+                    if(!item) return;
+
+                    let prod;
+                    if (item.matchId) { prod = db.produto.find(p => p.id === item.matchId); }
+
+                    if (prod) {
+                        if(dest === 'fisico' || dest === 'ambos') prod.estoque += item.qty;
+                        if(dest === 'fiscal' || dest === 'ambos') prod.estoqueFiscal = (prod.estoqueFiscal||0) + item.qty;
+                        if (item.cost > 0) prod.custo = item.cost;
+                    } else {
+                        nextCodeNum++;
+                        const nextCode = `P${String(nextCodeNum).padStart(3, '0')}`;
+                        const newId = Date.now().toString() + Math.random();
+                        prod = {
+                            id: newId, codigo: nextCode, nome: item.jsonName.toUpperCase(), ean: item.ean, 
+                            ncm: item.ncm, cest: item.cest, cfop: item.cfop, unidade: item.uCom, custo: item.cost, valor: 0, 
+                            estoque: (dest === 'fisico' || dest === 'ambos') ? item.qty : 0, 
+                            estoqueFiscal: (dest === 'fiscal' || dest === 'ambos') ? item.qty : 0, 
+                            tipo: 'normal', isTemp: false
+                        };
+                        db.produto.push(prod);
+                    }
+                    db.entrada.push({ id: Date.now() + Math.random(), date: Date.now(), prodId: prod.id, qty: item.qty, custo: item.cost, dest: dest, fornecedor: 'Importação JSON' });
+                    count++;
+                });
+
+                DB.saveAll(db);
+                alert(`Importação concluída: ${count} itens.`);
+                document.getElementById('import-modal').close();
+                document.getElementById('json-import-file').value = '';
+                Views.catalogo.init(document.getElementById('btn-catalogo'));
             }
         };
 
         const App = {
             init: () => {
-                const db = DB.load(); db.produto = db.produto.filter(p => !p.deleteAt || p.deleteAt > Date.now()); DB.saveAll(db); 
-                UI.render('cliente'); UI.resetForm('cliente');
-                CategoryApp.populateSelects(); // Init categories
+                Views.cliente.init(document.getElementById('btn-cliente'));
+                CategoryApp.populateSelects();
                 ['v-qty', 'v-desconto', 'v-produto'].forEach(id => { const el = UI.get(id); if(el) el.addEventListener('input', App.calcVenda); });
             },
             calcVenda: () => {
@@ -1081,216 +744,74 @@
                 UI.get('v-total').innerText = `R$ ${Math.max(0, total).toFixed(2)}`;
             },
             openStockAdjustment: (id) => {
-                const db = DB.load();
-                const prod = db.produto.find(p => p.id === id);
-                if(!prod) return;
-                document.getElementById('adj-prod-id').value = id;
-                document.getElementById('adj-prod-name').innerText = `${prod.codigo} - ${prod.nome}`;
-                document.getElementById('adj-current-stock').innerText = `${prod.estoque} (Físico) / ${prod.estoqueFiscal||0} (Fiscal)`;
-                document.getElementById('stock-modal').classList.remove('hidden');
+                const db = DB.load(); const prod = db.produto.find(p => p.id === id); if(!prod) return;
+                UI.get('adj-prod-id').value = id; UI.get('adj-prod-name').innerText = prod.codigo + ' - ' + prod.nome;
+                UI.get('adj-current-stock').innerText = `Fís: ${prod.estoque} | Fisc: ${prod.estoqueFiscal||0}`;
+                document.getElementById('stock-modal').showModal();
             },
             handleStockAdj: (e) => {
                 e.preventDefault();
-                const id = document.getElementById('adj-prod-id').value;
-                const type = document.querySelector('input[name="adj-type"]:checked').value;
-                const dest = document.getElementById('adj-dest').value;
-                const qty = Number(document.getElementById('adj-qty').value);
-                if(qty <= 0) return alert('Quantidade inválida');
-
-                const db = DB.load();
-                const prod = db.produto.find(p => p.id === id);
+                const id = UI.get('adj-prod-id').value; const type = document.querySelector('input[name="adj-type"]:checked').value; const dest = UI.get('adj-dest').value; const qty = Number(UI.get('adj-qty').value); if(qty <= 0) return;
+                const db = DB.load(); const prod = db.produto.find(p => p.id === id);
                 if(prod) {
-                    const signal = type === 'add' ? 1 : -1;
-                    const change = qty * signal;
-                    
+                    const change = qty * (type === 'add' ? 1 : -1);
                     if(dest === 'fisico' || dest === 'ambos') prod.estoque += change;
-                    if(dest === 'fiscal' || dest === 'ambos') prod.estoqueFiscal = (prod.estoqueFiscal || 0) + change;
-
-                    db.entrada.push({ // Registra como movimento manual
-                         id: Date.now().toString(), date: Date.now(), prodId: id, qty: change, custo: prod.custo || 0, fornecedor: `Ajuste Manual (${type})`, dest: dest 
-                    });
-                    
-                    DB.saveAll(db);
-                    UI.render('catalogo');
-                    document.getElementById('stock-modal').classList.add('hidden');
-                    document.getElementById('form-stock-adj').reset();
+                    if(dest === 'fiscal' || dest === 'ambos') prod.estoqueFiscal = (prod.estoqueFiscal||0) + change;
+                    db.entrada.push({ id:Date.now().toString(), date:Date.now(), prodId:id, qty:change, custo:prod.custo, fornecedor:'Manual', dest:dest });
+                    DB.saveAll(db); Views.catalogo.render(); document.getElementById('stock-modal').close(); UI.get('form-stock-adj').reset();
                 }
             },
             handleSave: (t, e) => {
-                e.preventDefault(); 
+                e.preventDefault();
                 if(t === 'entrada') {
-                     const prodId = UI.get('e-produto').value; 
-                     const qtyInput = Number(UI.get('e-qty').value); 
-                     const custo = Number(UI.get('e-custo').value); 
-                     const fornecedor = UI.get('e-fornecedor').value; 
-                     const dest = UI.get('e-tipo-estoque').value;
+                    const prodId = UI.get('e-produto').value; const qty = Number(UI.get('e-qty').value); const custo = Number(UI.get('e-custo').value); const dest = UI.get('e-tipo-estoque').value;
                     const db = DB.load(); const prod = db.produto.find(p => p.id === prodId);
                     if(prod) {
-                        if(dest === 'fisico' || dest === 'ambos') prod.estoque += qtyInput;
-                        if(dest === 'fiscal' || dest === 'ambos') prod.estoqueFiscal = (prod.estoqueFiscal || 0) + qtyInput;
+                        if(dest === 'fisico' || dest === 'ambos') prod.estoque += qty;
+                        if(dest === 'fiscal' || dest === 'ambos') prod.estoqueFiscal = (prod.estoqueFiscal||0) + qty;
                         prod.custo = custo;
-                        db.entrada.push({ id: Date.now().toString(), date: Date.now(), prodId: prodId, qty: qtyInput, custo: custo, fornecedor: fornecedor, dest: dest });
+                        db.entrada.push({ id:Date.now().toString(), date:Date.now(), prodId:prodId, qty:qty, custo:custo, fornecedor:UI.get('e-fornecedor').value, dest:dest });
                         DB.saveAll(db);
                     }
-                    LogisticsApp.render(); 
-                    document.getElementById('form-entrada-manual').reset();
-                    return;
+                    Views.logistica.render(); UI.get('form-entrada-manual').reset(); return;
                 }
-
-                const p = t[0]; let objId = null; 
-                if(t !== 'entrada') { objId = UI.get(`${p}-id`).value; }
-                let obj = { id: objId || null }; 
+                const p = t[0]; let objId = UI.get(`${p}-id`).value;
+                let obj = { id: objId || null };
                 if(t !== 'venda') { obj.nome = UI.get(`${p}-nome`).value; if(objId) obj.codigo = UI.get(`${p}-codigo`).value; }
                 
-                if(t === 'cliente') { Object.assign(obj, { tel: UI.get('c-tel').value, cidade: UI.get('c-cidade').value, bairro: UI.get('c-bairro').value, endereco: UI.get('c-endereco').value, rota: UI.get('c-rota').value, maps: UI.get('c-maps').value }); }
+                if(t === 'cliente') Object.assign(obj, { tel: UI.get('c-tel').value, cidade: UI.get('c-cidade').value, bairro: UI.get('c-bairro').value, endereco: UI.get('c-endereco').value, rota: UI.get('c-rota').value, maps: UI.get('c-maps').value });
                 else if(t === 'produto') {
-                    const isTemp = UI.get('p-isTemp').checked;
                     Object.assign(obj, { 
-                        ean: UI.get('p-ean').value, 
-                        ncm: UI.get('p-ncm').value, 
-                        cest: UI.get('p-cest').value, 
-                        cfop: UI.get('p-cfop').value, 
-                        csosn: UI.get('p-csosn').value, 
-                        unidade: UI.get('p-unidade').value, 
-                        nota: UI.get('p-nota').value,
-                        refId: UI.get('p-refId').value,
-                        fator: Number(UI.get('p-fator').value) || 1,
-                        obs: UI.get('p-obs-produto').value,
-                        categoria: UI.get('p-categoria').value, 
-                        subcategoria: UI.get('p-subcategoria').value, 
-                        custo: Number(UI.get('p-custo').value) || 0, 
-                        valor: Number(UI.get('p-valor').value) || 0, 
-                        estoque: Number(UI.get('p-estoque').value) || 0, 
-                        estoqueFiscal: Number(UI.get('p-estoqueFiscal').value) || 0, 
-                        tipo: UI.get('p-tipo').value, 
-                        isTemp: isTemp 
+                        ean: UI.get('p-ean').value, ncm: UI.get('p-ncm').value, cest: UI.get('p-cest').value, cfop: UI.get('p-cfop').value, csosn: UI.get('p-csosn').value, 
+                        unidade: UI.get('p-unidade').value, nota: UI.get('p-nota').value, refId: UI.get('p-refId').value, fator: Number(UI.get('p-fator').value)||1, obs: UI.get('p-obs-produto').value,
+                        categoria: UI.get('p-categoria').value, subcategoria: UI.get('p-subcategoria').value, custo: Number(UI.get('p-custo').value)||0, valor: Number(UI.get('p-valor').value)||0,
+                        estoque: Number(UI.get('p-estoque').value)||0, estoqueFiscal: Number(UI.get('p-estoqueFiscal').value)||0, tipo: UI.get('p-tipo').value, isTemp: UI.get('p-isTemp').checked
                     });
-                    if(obj.tipo === 'kit') {
-                        let kitItems = Array.from(document.querySelectorAll('.kit-check:checked')).map(ck => ({ id: ck.dataset.pid, qty: Number(document.querySelector(`.kit-qty[data-pid="${ck.dataset.pid}"]`).value) }));
-                        const bulkText = UI.get('p-kit-bulk').value.trim();
-                        if(bulkText) { bulkText.split('\n').forEach(line => { const [code, qty] = line.split('|').map(s => s.trim()); const db = DB.load(); const found = db.produto.find(x => x.codigo === code); if(found) kitItems.push({ id: found.id, qty: Number(qty) || 1 }); }); }
-                        obj.items = kitItems;
-                    }
+                    if(obj.tipo === 'kit') { obj.items = Array.from(document.querySelectorAll('.kit-check:checked')).map(ck => ({ id: ck.dataset.pid, qty: Number(document.querySelector(`.kit-qty[data-pid="${ck.dataset.pid}"]`).value) })); }
                 } else if(t === 'venda') {
-                    const prodSelect = UI.get('v-produto'); const prodId = prodSelect.value; const db = DB.load(); const prod = db.produto.find(x => x.id === prodId); if(!prod) return;
-                    Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, brinde: UI.get('v-brinde').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now(), obs: UI.get('v-obs').value });
-                    
-                    // --- LOGIC CHANGE: ONLY DEDUCT FROM PHYSICAL STOCK ---
-                    const deduct = (id, q) => { 
-                        const target = db.produto.find(x => x.id === id); 
-                        if(target) { 
-                            target.estoque -= q; // ONLY PHYSICAL STOCK
-                            // Fiscal Stock (estoqueFiscal) is NOT touched here
-                            
-                            if(target.isTemp && target.estoque <= 0) { target.deleteAt = Date.now() + (24 * 60 * 60 * 1000); } 
-                            else { if(target.deleteAt && target.estoque > 0) delete target.deleteAt; } 
-                        } 
-                    };
-                    if(prod.tipo === 'kit' && prod.items) prod.items.forEach(ki => deduct(ki.id, ki.qty * obj.qty)); else deduct(prod.id, obj.qty);
-                    DB.saveAll(db);
+                     const prodId = UI.get('v-produto').value; const db = DB.load(); const prod = db.produto.find(x => x.id === prodId);
+                     Object.assign(obj, { cliId: UI.get('v-cliente').value, prodId: prod.id, qty: Number(UI.get('v-qty').value), pag: UI.get('v-pagamento').value, rota: UI.get('v-rota').value, brinde: UI.get('v-brinde').value, total: (prod.valor * Number(UI.get('v-qty').value)) - Number(UI.get('v-desconto').value||0), date: Date.now(), obs: UI.get('v-obs').value });
+                     const deduct = (id, q) => { const tgt = db.produto.find(x => x.id === id); if(tgt) tgt.estoque -= q; };
+                     if(prod.tipo === 'kit' && prod.items) prod.items.forEach(ki => deduct(ki.id, ki.qty * obj.qty)); else deduct(prod.id, obj.qty);
+                     DB.saveAll(db);
                 }
-                
-                DB.save(t, obj); UI.render(t === 'produto' ? 'catalogo' : t); UI.resetForm(t);
+                DB.save(t, obj); 
+                if(t === 'cliente') Views.cliente.render();
+                else if(t === 'produto') Views.catalogo.render();
+                else if(t === 'venda') Views.venda.render();
+                UI.resetForm(t);
             },
             printVenda: (id) => {
-                const db = DB.load(); 
-                const v = db.venda.find(x => x.id === id); 
-                if(!v) return alert('Venda não encontrada.');
-
-                const c = db.cliente.find(x => x.id === v.cliId); 
-                const p = db.produto.find(x => x.id === v.prodId);
-                
-                let kitHtml = ""; 
-                if(p && p.tipo === 'kit' && p.items) { 
-                    kitHtml = `<div style="border-top:1px dashed #000; padding-top:5px; margin-top:5px; font-size:11px;"><b>SEPARAÇÃO:</b><br>` + 
-                        p.items.map(ki => { 
-                            const sub = db.produto.find(x => x.id === ki.id); 
-                            return `• ${ki.qty * v.qty}x ${sub?.nome || 'Item Excl'}`; 
-                        }).join('<br>') + `</div>`; 
-                }
-                
-                const printArea = UI.get('print-area');
-                printArea.innerHTML = `
-                    <div class="no-print" style="margin-bottom: 20px; text-align: right;">
-                        <button onclick="UI.get('print-area').innerHTML=''" class="bg-red-600 text-white py-2 px-6 rounded-lg text-xs uppercase font-bold">Fechar</button>
-                    </div>
-                    <div id="coupon" style="font-family:monospace; width: 100%; max-width: 300px; padding: 10px; border: 1px solid #eee; background: white;">
-                        <center>
-                            <h1 style="font-size: 24px; margin-bottom: 2px; font-weight: bold;">PEDIDO #${v.codigo}</h1>
-                            <div style="background:#000; color:#fff; padding:5px 0; margin-top:5px; font-size: 32px; font-weight: 900;">ROTA: ${v.rota}</div>
-                        </center>
-                        <br>
-                        <div style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px;">
-                            <b>CLI:</b> [${c?.codigo || '?'}] - ${c?.nome || 'Consumidor'}
-                        </div>
-                        <div style="margin-top: 5px; font-size: 12px;">
-                            <b>CIDADE:</b> ${c?.cidade || '-'}/${c?.bairro || '-'}<br>
-                            <b>END:</b> ${c?.endereco || '-'}
-                        </div>
-                        <hr style="border:1px solid #000;margin:10px 0">
-                        <div style="font-size:16px; font-weight: bold;">
-                            ${v.qty}x ${p?.nome || 'Produto Excluído'}
-                        </div>
-                        ${kitHtml}
-                        <hr style="border:1px solid #000;margin:10px 0">
-                        <b>PGTO:</b> <span style="font-size: 16px;">${v.pag.toUpperCase()}</span><br>
-                        ${v.brinde ? `<b>BRINDE:</b> <span style="font-size: 14px; color:#5b21b6;">${v.brinde.toUpperCase()}</span><br>` : ''}
-                        <div style="font-size:22px; text-align:right; margin-top: 5px; font-weight: bold;">
-                            TOTAL: R$ ${v.total.toFixed(2)}
-                        </div>
-                        <br>
-                        <b>OBS:</b> ${v.obs || '-'}
-                        <br>
-                        <center style="font-size: 10px; margin-top: 20px;">
-                            SISTEMA V3 - LOGÍSTICA<br>${new Date().toLocaleString('pt-BR')}
-                        </center>
-                    </div>`;
-                
-                setTimeout(() => {
-                    window.print();
-                }, 500);
+                const db = DB.load(); const v = db.venda.find(x => x.id === id); if(!v) return;
+                const c = db.cliente.find(x => x.id === v.cliId); const p = db.produto.find(x => x.id === v.prodId);
+                const printArea = document.getElementById('print-area');
+                printArea.innerHTML = `<div style="padding:20px; font-family:monospace; font-size:12px;"><h1 style="font-size:18px;">PEDIDO #${v.codigo}</h1><p><b>CLI:</b> ${c?.nome||'?'}<br><b>ROTA:</b> ${v.rota}</p><hr>${v.qty}x ${p?.nome||'?'} - R$ ${v.total.toFixed(2)}<hr><p>PG: ${v.pag} ${v.brinde?'(+Brinde)':''}</p></div>`;
+                window.print();
             },
-            edit: (t, id) => { 
-                const dbType = t === 'catalogo' ? 'produto' : t;
-                const i = DB.load()[dbType].find(x => x.id === id); 
-                if(i) UI.fillForm(dbType, i); 
-            },
-            delete: (t, id) => { 
-                if(confirm('Excluir?')) { 
-                    DB.delete(t, id); 
-                    UI.render(t === 'produto' ? 'catalogo' : t); 
-                } 
-            }
+            edit: (t, id) => { const i = DB.load()[t === 'catalogo' ? 'produto' : t].find(x => x.id === id); if(i) UI.fillForm(t === 'catalogo'?'produto':t, i); },
+            delete: (t, id) => { if(confirm('Excluir?')) { DB.delete(t, id); if(t==='cliente') Views.cliente.render(); else if(t==='produto') Views.catalogo.render(); else if(t==='venda') Views.venda.render(); } }
         };
 
-        // --- UNIFIED LOGISTICS & FISCAL LOGIC ---
-        const LogisticsApp = {
-            render: () => {
-                const db = DB.load();
-                const historyData = db.entrada.sort((a,b) => b.date - a.date).slice(0, 200);
-                const tbodyHist = document.getElementById('table-entrada');
-                document.getElementById('count-entrada').innerText = historyData.length;
-                
-                tbodyHist.innerHTML = historyData.map(i => {
-                     const p = db.produto.find(x => x.id === i.prodId);
-                     const date = new Date(i.date).toLocaleDateString('pt-BR') + ' ' + new Date(i.date).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                     let typeLabel = '<span class="text-[9px] bg-slate-100 px-1 rounded border">Físico</span>';
-                     if(i.dest === 'fiscal') typeLabel = '<span class="text-[9px] bg-purple-100 text-purple-700 px-1 rounded border border-purple-200">Fiscal</span>';
-                     if(i.dest === 'ambos') typeLabel = '<span class="text-[9px] bg-blue-100 text-blue-700 px-1 rounded border border-blue-200">Ambos</span>';
-                     
-                     const isNegative = i.qty < 0;
-                     const qtyDisplay = isNegative ? `<span class="text-red-500 font-bold">${i.qty}</span>` : `<span class="text-emerald-600 font-bold">+${i.qty}</span>`;
-
-                     return `<tr class="hover:bg-slate-50 text-xs border-b border-slate-50">
-                         <td class="p-3 text-slate-500 whitespace-nowrap">${date}</td>
-                         <td class="p-3 font-bold text-slate-700">${p ? p.codigo + ' - ' + p.nome : 'Excluído'}</td>
-                         <td class="p-3">${typeLabel}</td>
-                         <td class="p-3 text-slate-600 truncate max-w-[150px]">${i.fornecedor || '-'}</td>
-                         <td class="p-3 font-bold text-right">${qtyDisplay}</td>
-                     </tr>`;
-                }).join('');
-            }
-        };
         window.onload = App.init;
     </script>
 </body>
