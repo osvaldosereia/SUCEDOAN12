@@ -319,7 +319,7 @@
             <div class="flex flex-col lg:flex-row gap-6 w-full">
                 
                 <!-- Entrada Manual Avulsa -->
-                <section class="w-full bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col h-auto">
+                <section class="w-full lg:w-1/2 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col h-auto">
                     <h3 class="font-bold text-slate-700 uppercase text-xs mb-4 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-orange-500"></i> Movimento Manual</h3>
                     <form id="form-entrada-manual" onsubmit="App.handleSave('entrada', event)" class="flex-1 flex flex-col gap-3">
                          <div class="space-y-1">
@@ -352,6 +352,19 @@
                             Registrar Movimento
                         </button>
                     </form>
+                </section>
+
+                <!-- Nova Seção: Importação JSON -->
+                <section class="w-full lg:w-1/2 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col h-auto">
+                    <h3 class="font-bold text-slate-700 uppercase text-xs mb-4 flex items-center gap-2"><i class="fa-solid fa-file-import text-blue-500"></i> Importação em Lote (JSON)</h3>
+                    <div class="flex-1 flex flex-col gap-4 justify-center items-center p-6 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+                        <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-300"></i>
+                        <p class="text-[10px] text-slate-400 text-center max-w-[200px]">Selecione o arquivo .json para cadastrar produtos e dar entrada no estoque automaticamente.</p>
+                        <input type="file" id="json-import-file" accept=".json" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    </div>
+                    <button onclick="ImportEngine.processFile()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-sm transition text-xs uppercase">
+                        Processar Importação
+                    </button>
                 </section>
             </div>
 
@@ -782,6 +795,98 @@
                     UI.toggleStockInputs();
                 }
                 UI.get(`formLabel-${t}`).innerText = `Editando ${t}`;
+            }
+        };
+
+        const ImportEngine = {
+            processFile: () => {
+                const fileInput = document.getElementById('json-import-file');
+                const file = fileInput.files[0];
+                if (!file) return alert('Selecione um arquivo JSON primeiro!');
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const items = JSON.parse(e.target.result);
+                        if (!Array.isArray(items)) return alert('Formato inválido: O JSON deve ser uma lista []');
+                        
+                        let importedCount = 0;
+                        let updatedCount = 0;
+                        const db = DB.load();
+
+                        items.forEach(item => {
+                            // Busca por NOME exato (ignora case)
+                            let prod = db.produto.find(p => p.nome.toUpperCase() === item.xProd.toUpperCase());
+                            
+                            const qtyToAdd = Number(item.Fator_Conversao_Entrada) || 0;
+                            const cost = Number(item.Custo_Unitario) || 0;
+
+                            if (prod) {
+                                // Produto Existe: Atualiza Estoque e Custo
+                                prod.estoque += qtyToAdd;
+                                prod.estoqueFiscal = (prod.estoqueFiscal || 0) + qtyToAdd;
+                                prod.custo = cost;
+                                updatedCount++;
+                                
+                                // Registra Entrada no Histórico
+                                db.entrada.push({
+                                    id: Date.now().toString() + Math.random().toString().slice(2,5),
+                                    date: Date.now(),
+                                    prodId: prod.id,
+                                    qty: qtyToAdd,
+                                    custo: cost,
+                                    fornecedor: `Importação JSON (Atualização)`,
+                                    dest: 'ambos'
+                                });
+
+                            } else {
+                                // Produto Novo: Cria
+                                const newId = Date.now().toString() + Math.random().toString().slice(2,5);
+                                const newCode = DB.getNextCode('produto', {isTemp: false}); // Gera código P00X
+                                
+                                const newProd = {
+                                    id: newId,
+                                    codigo: newCode,
+                                    nome: item.xProd.toUpperCase(),
+                                    ean: item.cEAN !== "PREENCHER_COM_LEITOR" ? item.cEAN : "",
+                                    ncm: item.NCM,
+                                    cfop: item.CFOP_SAIDA,
+                                    unidade: item.Unidade_Venda,
+                                    custo: cost,
+                                    valor: 0, // Valor de venda zero para preencher depois
+                                    estoque: qtyToAdd,
+                                    estoqueFiscal: qtyToAdd,
+                                    tipo: 'normal',
+                                    isTemp: false
+                                };
+                                
+                                db.produto.push(newProd);
+                                importedCount++;
+
+                                // Registra Entrada no Histórico
+                                db.entrada.push({
+                                    id: Date.now().toString() + Math.random().toString().slice(2,5),
+                                    date: Date.now(),
+                                    prodId: newId,
+                                    qty: qtyToAdd,
+                                    custo: cost,
+                                    fornecedor: `Importação JSON (Novo Cadastro)`,
+                                    dest: 'ambos'
+                                });
+                            }
+                        });
+
+                        DB.saveAll(db);
+                        alert(`Sucesso!\nNovos Produtos: ${importedCount}\nEstoques Atualizados: ${updatedCount}`);
+                        UI.switchView('logistica'); // Refresh view
+                        fileInput.value = ''; // Limpa input
+
+                    } catch (err) {
+                        alert('Erro ao processar JSON: ' + err.message);
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(file);
             }
         };
 
