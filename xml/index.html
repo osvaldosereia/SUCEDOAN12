@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Leitor XML de NFe com Memória de Fatores por EAN.">
-    <title>NFe Parser Pro | v6.6 Auto-Learning</title>
+    <meta name="description" content="Leitor XML de NFe com Conferência Alfabética e Memória de Fatores.">
+    <title>NFe Parser Pro | v6.8 Conferência</title>
 
     <style>
         /* * SISTEMAS - CSS CORE 
@@ -148,7 +148,6 @@
             border-color: var(--primary);
         }
         
-        /* Indicador visual de que o fator foi carregado da memória */
         input.factor-learned {
             background: #f3e8ff; /* Roxo claro */
             color: #7e22ce;
@@ -246,8 +245,27 @@
             border-bottom: 1px solid var(--border);
             padding-bottom: 1rem;
         }
-        @media (min-width: 640px) {
+        @media (min-width: 1024px) {
             .results-header { flex-direction: row; justify-content: space-between; align-items: center; }
+        }
+
+        /* Header Controls for Table */
+        .table-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        @media (min-width: 640px) {
+            .table-controls { flex-direction: row; align-items: center; width: auto; }
+        }
+        .mini-search {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.8rem;
+            width: 100%;
+            min-width: 200px;
         }
 
         .total-card {
@@ -256,6 +274,7 @@
             padding: 0.5rem 1rem;
             border-radius: var(--radius);
             text-align: right;
+            white-space: nowrap;
         }
         .total-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-light); }
         .total-value { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
@@ -413,7 +432,7 @@
                 <p>Detecta Fardos, permite Edição e <b>deduz Descontos</b> do custo unitário.</p>
             </div>
             <div class="flex flex-col items-end gap-1">
-                <span class="badge">v6.6 Auto-Learning EAN</span>
+                <span class="badge">v6.8 Conferência A-Z</span>
                 <span class="badge badge-purple">Memória Ativa</span>
             </div>
         </header>
@@ -475,14 +494,26 @@
 
         <!-- Resultados -->
         <section style="padding: 0; overflow: hidden; border: none; background: transparent; box-shadow: none;">
+            <!-- Header da Tabela com Busca Local e Controles -->
             <div style="background: var(--surface); padding: var(--spacing-md); border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; border-bottom: none;" class="results-header">
                 <div>
-                    <h3>3. Produtos Encontrados</h3>
+                    <h3>3. Conferência de Produtos</h3>
                     <p>Verifique a coluna <b>Desc.</b> e <b>V. Liq</b> para conferir o custo real.</p>
                 </div>
-                <div class="total-card">
-                    <div class="total-label">Total Filtrado</div>
-                    <div id="totalValueDisplay" class="total-value">R$ 0,00</div>
+
+                <div class="table-controls">
+                    <!-- Busca Local e Ordenação -->
+                    <input type="text" id="tableSearch" class="mini-search" placeholder="🔍 Localizar na tabela..." onkeyup="app.syncSearch(this.value)">
+                    
+                    <select id="sortSelect" class="mini-search" style="width: auto;" onchange="app.render()">
+                        <option value="name" selected>🔤 Ordem Alfabética</option>
+                        <option value="date">📅 Data de Emissão</option>
+                    </select>
+
+                    <div class="total-card">
+                        <div class="total-label">Total Filtrado</div>
+                        <div id="totalValueDisplay" class="total-value">R$ 0,00</div>
+                    </div>
                 </div>
             </div>
 
@@ -523,19 +554,19 @@
 
     <script>
         /**
-         * SISTEMAS - Core Logic v6.6 Auto-Learning
+         * SISTEMAS - Core Logic v6.8
          */
         var app = {
             data: [], 
-            factorsDB: {}, // Memória de fatores (EAN -> Fator)
+            factorsDB: {}, 
             selectedIds: new Set(),
-            storageKey: 'nfe_sys_data_sync_v65', // Mantém compatibilidade de dados
-            factorsStorageKey: 'nfe_sys_factors_db_v1', // Nova chave para o banco de conhecimento
+            storageKey: 'nfe_sys_data_sync_v65', 
+            factorsStorageKey: 'nfe_sys_factors_db_v1', 
 
             init() {
                 this.cacheDOM();
                 this.bindEvents();
-                this.loadFactorsDB(); // Carrega a "inteligência"
+                this.loadFactorsDB(); 
                 this.loadFromStorage();
             },
 
@@ -544,6 +575,8 @@
                     fileInput: document.getElementById('fileInput'),
                     tableBody: document.getElementById('tableBody'),
                     searchInput: document.getElementById('searchInput'),
+                    tableSearch: document.getElementById('tableSearch'), // Busca Local
+                    sortSelect: document.getElementById('sortSelect'),   // Ordenação
                     dateStart: document.getElementById('dateStart'),
                     dateEnd: document.getElementById('dateEnd'),
                     totalDisplay: document.getElementById('totalValueDisplay'),
@@ -557,9 +590,18 @@
 
             bindEvents() {
                 this.dom.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-                this.dom.searchInput.addEventListener('input', () => this.render());
+                this.dom.searchInput.addEventListener('input', () => {
+                    this.dom.tableSearch.value = this.dom.searchInput.value; // Sync visual
+                    this.render();
+                });
                 this.dom.dateStart.addEventListener('change', () => this.render());
                 this.dom.dateEnd.addEventListener('change', () => this.render());
+            },
+
+            // Sincroniza a busca da tabela com a busca principal
+            syncSearch(val) {
+                this.dom.searchInput.value = val;
+                this.render();
             },
 
             // --- Gerenciamento da Memória de Fatores ---
@@ -567,7 +609,6 @@
                 try {
                     const db = localStorage.getItem(this.factorsStorageKey);
                     this.factorsDB = db ? JSON.parse(db) : {};
-                    console.log('Fatores carregados:', Object.keys(this.factorsDB).length);
                 } catch (e) {
                     this.factorsDB = {};
                 }
@@ -613,7 +654,6 @@
 
                 sourceItem.userFactor = val;
 
-                // Sincronização visual em tempo real (mesmo EAN na lista atual)
                 let syncCount = 0;
                 const hasValidEan = sourceItem.cEAN && sourceItem.cEAN !== 'SEM GTIN' && sourceItem.cEAN.trim() !== '';
 
@@ -704,7 +744,7 @@
                 }
             },
 
-            // --- EXPORTAÇÃO E APRENDIZADO ---
+            // --- EXPORTAÇÃO ---
             exportSmartJSON() {
                 const selectedItems = this.data.filter(item => this.selectedIds.has(item.id));
                 if (selectedItems.length === 0) return;
@@ -717,10 +757,7 @@
                     const detected = this.detectConversionFactor(item.xProd);
                     const finalFactor = item.userFactor ? item.userFactor : detected;
                     
-                    // --- APRENDIZADO DE MÁQUINA (MANUAL) ---
-                    // Se o usuário alterou o fator e o item tem EAN válido, salva na memória
                     if (item.userFactor && item.cEAN && item.cEAN !== 'SEM GTIN' && item.cEAN.length > 5) {
-                        // Só conta como aprendizado se for diferente do que já sabia ou se for novo
                         if (this.factorsDB[item.cEAN] !== item.userFactor) {
                             this.factorsDB[item.cEAN] = item.userFactor;
                             learnedCount++;
@@ -729,13 +766,11 @@
 
                     const fiscal = this.predictFiscalAttributes(item);
                     
-                    // Cálculo Custo
                     const totalDesc = item.vDesc || 0;
                     const netTotal = item.vProd - totalDesc;
                     const netCostBox = netTotal / item.qCom;
                     const unitCost = netCostBox / finalFactor;
 
-                    // 1. MODO ATACADO
                     if (mode === 'atacado' || mode === 'ambos') {
                         exportList.push({
                             ...item, 
@@ -750,7 +785,6 @@
                         });
                     }
 
-                    // 2. MODO VAREJO
                     if (mode === 'varejo' || mode === 'ambos') {
                         let cleanDesc = item.xProd.replace(/(\d+\s*[xX]\s*\d+)/gi, '').replace(/(FD|CX|FARDO)\s*\d*/gi, '').trim();
                         cleanDesc = cleanDesc.replace(/\s+/, ' ') + " (UN)";
@@ -759,9 +793,8 @@
                             id_referencia: item.id,
                             Numero_Nota: item.nNF,
                             Quantidade_Nota: item.qCom,
-                            
                             cProd_Sugestao: item.cProd + '-UN', 
-                            cEAN: 'PREENCHER_COM_LEITOR', 
+                            cEAN: item.cEAN,
                             xProd: cleanDesc,
                             NCM: item.NCM, 
                             CEST: item.CEST,
@@ -779,7 +812,6 @@
                     }
                 });
 
-                // Persiste o aprendizado
                 if (learnedCount > 0) {
                     this.saveFactorsDB();
                     this.showToast(`🧠 Fatores de ${learnedCount} produtos salvos na memória!`);
@@ -823,11 +855,10 @@
                             if (existingKeys.has(nfeKey)) {
                                 duplicates++;
                             } else {
-                                // Aplica Inteligência de Fatores aqui
                                 parsed.forEach(item => {
                                     if (item.cEAN && this.factorsDB[item.cEAN]) {
                                         item.userFactor = this.factorsDB[item.cEAN];
-                                        item.isLearned = true; // Flag para UI
+                                        item.isLearned = true; 
                                         autoLearned++;
                                     }
                                 });
@@ -843,7 +874,6 @@
                         this.data = [...this.data, ...newItems];
                         this.saveToStorage();
                         this.render();
-                        
                         let msg = `✅ ${newItems.length} novos itens.`;
                         if (autoLearned > 0) msg += ` 🧠 ${autoLearned} fatores recuperados!`;
                         this.showToast(msg);
@@ -911,7 +941,7 @@
                             CST_CSOSN: cst,
                             vICMS,
                             userFactor: null,
-                            isLearned: false // Flag interna
+                            isLearned: false
                         });
                     }
                     return items;
@@ -923,16 +953,29 @@
                 const s = this.dom.searchInput.value.toLowerCase();
                 const d1 = this.dom.dateStart.value;
                 const d2 = this.dom.dateEnd.value;
-                return this.data.filter(i => {
+                
+                let filtered = this.data.filter(i => {
                     const txt = (i.emitente+i.xProd+i.cProd+i.nNF).toLowerCase().includes(s);
                     let date = true;
                     if (d1) date = date && i.dataEmissao >= d1;
                     if (d2) date = date && i.dataEmissao <= d2;
                     return txt && date;
-                }).sort((a,b) => b.dataEmissao.localeCompare(a.dataEmissao));
+                });
+
+                // ORDENAÇÃO
+                const sortMode = this.dom.sortSelect ? this.dom.sortSelect.value : 'name';
+                if (sortMode === 'date') {
+                    filtered.sort((a,b) => b.dataEmissao.localeCompare(a.dataEmissao));
+                } else {
+                    // Ordenação Alfabética (Padrão)
+                    filtered.sort((a,b) => a.xProd.localeCompare(b.xProd));
+                }
+
+                return filtered;
             },
             resetFilters() {
                 this.dom.searchInput.value = '';
+                this.dom.tableSearch.value = '';
                 this.dom.dateStart.value = '';
                 this.dom.dateEnd.value = '';
                 this.render();
@@ -970,7 +1013,6 @@
                     const netTotal = item.vProd - discount;
                     const netUnitCostBox = netTotal / item.qCom;
 
-                    // Classe visual para indicar que veio da memória (roxo)
                     const factorClass = item.isLearned ? 'factor-input factor-learned' : 'factor-input';
                     const titleFactor = item.isLearned ? 'Carregado da memória por EAN' : `Qtd detectada: ${detected}`;
 
@@ -1016,7 +1058,6 @@
             }
         };
 
-        // Explicitly attach to window
         window.app = app;
 
         document.addEventListener('DOMContentLoaded', () => app.init());
