@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SISTEMA V3 | Professional Dashboard</title>
     
+    <!-- Fonte Inter (Embutida para garantir visual) -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     </style>
 
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -44,6 +46,7 @@
         /* --- LAYOUT --- */
         .app-wrapper { display: flex; width: 100%; height: 100%; }
         
+        /* Sidebar */
         aside {
             width: var(--sidebar-width);
             background-color: var(--slate-900);
@@ -79,6 +82,7 @@
         .nav-item.active { background-color: var(--primary); color: var(--white); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         .nav-item i { width: 20px; text-align: center; }
 
+        /* Main Content */
         main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
         
         header.top-bar {
@@ -97,13 +101,23 @@
             background-color: #f8fafc;
         }
 
-        .view-section { display: none; height: 100%; padding: 1.5rem; flex-direction: column; }
+        /* --- VIEWS & GRID SYSTEM --- */
+        .view-section { 
+            display: none; 
+            height: 100%; 
+            padding: 1.5rem; 
+            flex-direction: column; 
+        }
         .view-section.active { display: flex; }
 
-        .split-view { display: flex; gap: 1.5rem; height: 100%; align-items: flex-start; }
+        .split-view {
+            display: flex; gap: 1.5rem; height: 100%;
+            align-items: flex-start;
+        }
         .panel-left { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; max-height: 100%; gap: 1rem; }
         .panel-right { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; gap: 1rem; }
 
+        /* --- CARDS & PANELS --- */
         .card {
             background: var(--white);
             border: 1px solid var(--slate-200);
@@ -125,13 +139,19 @@
 
         .card-body { padding: 1rem; overflow-y: auto; flex: 1; }
         
+        /* --- FORMS --- */
         form { display: flex; flex-direction: column; gap: 1rem; }
+        
         .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
         label { font-size: 0.7rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.02em; }
         
         input, select, textarea {
-            width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--slate-300); border-radius: 6px;
-            font-family: inherit; font-size: 0.85rem; color: var(--slate-700); background-color: var(--white);
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--slate-300);
+            border-radius: 6px;
+            font-family: inherit; font-size: 0.85rem; color: var(--slate-700);
+            background-color: var(--white);
             outline: none; transition: border-color 0.2s, box-shadow 0.2s;
         }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
@@ -141,15 +161,17 @@
         .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
         .row-sidebar { display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; }
 
+        /* --- BUTTONS --- */
         .btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-            padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem;
-            text-transform: uppercase; letter-spacing: 0.025em; cursor: pointer; border: none; transition: all 0.2s;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.025em;
+            cursor: pointer; border: none; transition: all 0.2s;
             text-decoration: none;
         }
         .btn-primary { background-color: var(--primary); color: white; }
         .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-primary:disabled { background-color: var(--slate-300); cursor: not-allowed; opacity: 0.7; }
         
         .btn-success { background-color: var(--success); color: white; }
         .btn-success:hover { background-color: var(--success-hover); }
@@ -159,27 +181,40 @@
         
         .btn-warning { background-color: var(--warning); color: white; }
         .btn-warning:hover { background-color: var(--warning-hover); }
-        .btn-warning:disabled { background-color: var(--slate-200); color: var(--slate-400); cursor: not-allowed; }
 
         .btn-ghost { background-color: transparent; color: var(--slate-400); padding: 0.25rem 0.5rem; }
         .btn-ghost:hover { background-color: var(--slate-100); color: var(--slate-600); }
+
         .btn-block { width: 100%; }
 
+        /* --- TABLES --- */
         .table-wrapper { flex: 1; overflow: auto; position: relative; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
+        
         thead th {
-            position: sticky; top: 0; z-index: 10; background-color: var(--slate-50); color: var(--slate-500);
-            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--slate-200); box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            position: sticky; top: 0; z-index: 10;
+            background-color: var(--slate-50);
+            color: var(--slate-500);
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--slate-200);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
-        tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--slate-100); color: var(--slate-700); vertical-align: middle; font-size: 0.85rem; }
+        
+        tbody td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--slate-100);
+            color: var(--slate-700);
+            vertical-align: middle;
+            font-size: 0.85rem;
+        }
         tbody tr:hover { background-color: var(--slate-50); }
 
+        /* --- BADGES & UTILS --- */
         .badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; }
         .badge-blue { background-color: #eff6ff; color: var(--primary); border-color: #dbeafe; }
         .badge-purple { background-color: #f5f3ff; color: #7c3aed; border-color: #ede9fe; }
         .badge-gray { background-color: var(--slate-100); color: var(--slate-500); border-color: var(--slate-200); }
-        .badge-orange { background-color: #fff7ed; color: var(--warning); border-color: #ffedd5; }
         
         .font-mono { font-family: 'Courier New', Courier, monospace; letter-spacing: -0.02em; }
         .text-right { text-align: right; }
@@ -190,6 +225,7 @@
         .text-slate-400 { color: var(--slate-400); }
         .text-xs { font-size: 0.75rem; }
 
+        /* --- MODALS --- */
         dialog {
             margin: auto; padding: 0; border: none; border-radius: 12px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -200,11 +236,13 @@
         dialog::backdrop { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Custom Scrollbar for Webkit */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--slate-300); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--slate-400); }
 
+        /* --- SPECIFIC COMPONENTS --- */
         .search-bar { position: relative; }
         .search-bar i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 0.8rem; }
         .search-bar input { padding-left: 2rem; }
@@ -335,8 +373,8 @@
                                         <!-- EAN EDITÁVEL -->
                                         <div class="form-group"><label>EANs (Separar por vírgula)</label><input type="text" id="p-ean" class="font-mono" placeholder="EAN1, EAN2..."></div>
                                     </div>
+                                    <!-- Campos de Descrição com ID corrigido e Mapeamento -->
                                     <div class="form-group"><label>Descrição Principal</label><input type="text" id="p-nome" required></div>
-                                    <!-- NOVO CAMPO NOME SECUNDÁRIO -->
                                     <div class="form-group"><label>Descrição Secundária (Fatura/Fiscal)</label><input type="text" id="p-nome-sec"></div>
                                     
                                     <!-- CONTROLE DE ESTOQUE -->
@@ -736,44 +774,23 @@
                         if(!Array.isArray(items)) throw new Error('JSON deve ser uma lista []');
                         
                         const db = DB.load();
-                        
-                        // Grouping logic to consolidate items with same EAN
-                        const groupedItems = {};
-                        
-                        items.forEach((item, idx) => {
-                             const eanUnit = (item.EAN_Unidade && item.EAN_Unidade !== "PREENCHER_COM_LEITOR") ? item.EAN_Unidade : "";
-                             const eanBox = (item.EAN_Caixa && item.EAN_Caixa !== "PREENCHER_COM_LEITOR") ? item.EAN_Caixa : "";
-                             const validEan = eanUnit || eanBox || (item.cEAN !== "PREENCHER_COM_LEITOR" ? item.cEAN : "");
-                             
-                             const key = validEan || item.xProd.toUpperCase(); // Use name if EAN is invalid
-                             
-                             if (!groupedItems[key]) {
-                                 groupedItems[key] = { items: [], totalQty: 0, firstItem: item, validEan: validEan, eanUnit: eanUnit, eanBox: eanBox };
-                             }
-                             
-                             let qty = Number(item.Quantidade_Total_Unidades);
-                             const factor = Number(item.Fator_Conversao_Entrada) || Number(item.Fator_Conversao) || 1;
-                             if(!qty) qty = (Number(item.Quantidade_NFe)||0) * factor;
-                             
-                             groupedItems[key].totalQty += qty;
-                             groupedItems[key].items.push(item);
-                        });
-                        
-                        // Create staged data and sort alphabetically by product name
-                        ImportEngine.stagedData = Object.keys(groupedItems).map((key, idx) => {
-                            const group = groupedItems[key];
-                            const item = group.firstItem;
-                            
-                            // Try finding existing product
+                        ImportEngine.stagedData = items.map((item, idx) => {
+                            const eanUnit = (item.EAN_Unidade && item.EAN_Unidade !== "PREENCHER_COM_LEITOR") ? item.EAN_Unidade : "";
+                            const eanBox = (item.EAN_Caixa && item.EAN_Caixa !== "PREENCHER_COM_LEITOR") ? item.EAN_Caixa : "";
+                            const validEan = eanUnit || eanBox || (item.cEAN !== "PREENCHER_COM_LEITOR" ? item.cEAN : "");
+
                             let match = null;
-                            if (group.validEan) {
+                            const eansToCheck = [eanUnit, eanBox, validEan].filter(e => e);
+                            
+                            // Check against multiple EANs in DB
+                            if (eansToCheck.length > 0) {
                                 match = db.produto.find(p => {
                                     const pEans = p.eans || (p.ean ? [p.ean] : []);
-                                    return pEans.includes(group.validEan);
+                                    return eansToCheck.some(e => pEans.includes(e));
                                 });
                             }
-                            // Fallback to name search if no EAN match or no valid EAN
-                            if (!match) {
+                            // Fallback to name
+                            if(!match) {
                                 match = db.produto.find(p => p.nome.toUpperCase() === item.xProd.toUpperCase());
                             }
                             
@@ -791,20 +808,24 @@
                             if (item.cEAN && item.cEAN !== "PREENCHER_COM_LEITOR") {
                                 eanList = item.cEAN.split('|').map(s => s.trim()).filter(s => s);
                             } else {
-                                if (group.eanUnit) eanList.push(group.eanUnit);
-                                if (group.eanBox) eanList.push(group.eanBox);
+                                if (eanUnit) eanList.push(eanUnit);
+                                if (eanBox) eanList.push(eanBox);
                             }
+
+                            let qty = Number(item.Quantidade_Total_Unidades);
+                            const factor = Number(item.Fator_Conversao_Entrada) || Number(item.Fator_Conversao) || 1;
+                            if(!qty) qty = (Number(item.Quantidade_NFe)||0) * factor;
 
                             let cost = Number(item.Custo_Unitario) || 0;
                             if(cost < 0) cost = 0;
 
                             return {
                                 _id: idx,
-                                json: item, // representative item
+                                json: item,
                                 mainName: mainName,
                                 secName: secName,
                                 eanList: eanList,
-                                qty: group.totalQty,
+                                qty: qty,
                                 cost: cost,
                                 match: match
                             };
@@ -874,7 +895,7 @@
                 const selectedIndices = checked.map(c => parseInt(c.value));
                 const itemsToMerge = ImportEngine.stagedData.filter(d => selectedIndices.includes(d._id));
                 
-                // Identify PRIMARY item: Prefer one with EAN not starting with 1 (Unit), or just first
+                // Identify PRIMARY item (Unit EAN, doesn't start with 1, or just first one)
                 let primaryItem = itemsToMerge.find(d => d.eanList.some(e => !e.startsWith('1')));
                 if (!primaryItem) primaryItem = itemsToMerge[0];
 
@@ -912,7 +933,6 @@
                 ImportEngine.stagedData.forEach(d => {
                     if(!selectedIds.has(d._id)) return;
 
-                    // Re-check for match in current DB state
                     let prod = d.match ? db.produto.find(p => p.id === d.match.id) : null;
                     
                     // Double check if created in loop
@@ -997,6 +1017,7 @@
                 const db = DB.load();
                 
                 lines.forEach(line => {
+                    // Match pattern: [quantity] Product Name or Code
                     const match = line.match(/^\[(\d+)\]\s*(.*)$/);
                     let qty = 1;
                     let identifier = line.trim();
@@ -1005,6 +1026,7 @@
                         qty = parseInt(match[1], 10);
                         identifier = match[2].trim();
                     } else {
+                        // Fallback for simple "Code | Qty" format
                         const parts = line.split('|').map(s => s.trim());
                         identifier = parts[0];
                         if (parts[1]) qty = parseInt(parts[1], 10) || 1;
@@ -1012,6 +1034,7 @@
 
                     if (!identifier) return;
 
+                    // Try to find product by code, EAN, or exact name match
                     const prod = db.produto.find(p => 
                         p.codigo.toUpperCase() === identifier.toUpperCase() || 
                         (p.eans && p.eans.includes(identifier)) ||
@@ -1062,6 +1085,7 @@
                 const lines = text.split('\n');
 
                 lines.forEach(line => {
+                    // Match pattern: [quantity] Product Name or Code
                     const match = line.match(/^\[(\d+)\]\s*(.*)$/);
                     let qty = 1;
                     let identifier = line.trim();
@@ -1070,6 +1094,7 @@
                         qty = parseInt(match[1], 10);
                         identifier = match[2].trim();
                     } else {
+                        // Fallback for simple "Code | Qty" format
                         const parts = line.split('|').map(s => s.trim());
                         identifier = parts[0];
                         if (parts[1]) qty = parseInt(parts[1], 10) || 1;
