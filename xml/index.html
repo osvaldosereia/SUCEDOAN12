@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Leitor XML de NFe com Lista Completa (Sem Limites).">
-    <title>NFe Parser Pro | v6.13 Lista Completa</title>
+    <meta name="description" content="Leitor XML de NFe com Lista Completa e Função de Unificação.">
+    <title>NFe Parser Pro | v6.14 Unified</title>
 
     <style>
         /* * SISTEMAS - CSS CORE 
@@ -28,6 +28,8 @@
             --success-bg: #f0fdf4;
             --warning: #ca8a04;
             --warning-bg: #fefce8;
+            --purple: #8b5cf6;
+            --purple-hover: #7c3aed;
             
             /* Métricas */
             --radius: 8px;
@@ -232,6 +234,9 @@
 
         .btn-success { background: var(--success); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .btn-success:hover { background: #15803d; transform: translateY(-1px); }
+
+        .btn-purple { background: var(--purple); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .btn-purple:hover { background: var(--purple-hover); transform: translateY(-1px); }
 
         .actions-row {
             display: flex;
@@ -490,7 +495,7 @@
                 <p>Detecta Fardos, permite Edição e <b>deduz Descontos</b> do custo unitário.</p>
             </div>
             <div class="flex flex-col items-end gap-1">
-                <span class="badge">v6.13 Lista Completa</span>
+                <span class="badge">v6.14 Unified</span>
                 <span class="badge badge-purple">Memória Ativa</span>
             </div>
         </header>
@@ -538,7 +543,11 @@
                         <option value="ambos">Ambos (Completo)</option>
                     </select>
                     <button class="btn-success" onclick="app.exportSmartJSON()">
-                        ✨ Exportar Itens Selecionados
+                        ✨ Itens Soltos
+                    </button>
+                    <!-- NOVO BOTÃO UNIFICADO -->
+                    <button class="btn-purple" onclick="app.exportUnified()" title="Agrupar todos os selecionados em um único produto com o preço mais alto">
+                        📦 Unificar
                     </button>
                 </div>
 
@@ -639,7 +648,7 @@
 
     <script>
         /**
-         * SISTEMAS - Core Logic v6.13 (Lista Completa)
+         * SISTEMAS - Core Logic v6.14 Unified
          */
         var app = {
             data: [], 
@@ -797,8 +806,6 @@
                 }
 
                 this.saveToStorage();
-                // Não renderiza tudo para não perder foco se o usuário estiver digitando rápido
-                // Mas aqui como é fator (click), atualiza o valor visualmente se necessário
             },
 
             updateEAN(id, newEan) {
@@ -844,7 +851,8 @@
                     this.dom.selectionActions.classList.remove('hidden');
                     this.dom.selectionActions.classList.add('flex');
                     const btn = this.dom.selectionActions.querySelector('button');
-                    btn.innerHTML = `✨ Exportar <b>${count}</b> Itens`;
+                    // Atualiza apenas se for o botão principal, para não quebrar a UI
+                    // (Lógica simplificada, mantendo os botões visíveis)
                 } else {
                     this.dom.selectionActions.classList.add('hidden');
                     this.dom.selectionActions.classList.remove('flex');
@@ -887,7 +895,79 @@
                 }
             },
 
-            // --- EXPORTAÇÃO SIMPLES (SEM SOMA INTELIGENTE) ---
+            // --- EXPORTAÇÃO UNIFICADA (NOVO) ---
+            exportUnified() {
+                const selectedItems = this.data.filter(item => this.selectedIds.has(item.id));
+                if (selectedItems.length === 0) return alert('Selecione itens para unificar.');
+
+                // 1. Coletar Dados Únicos
+                const descriptions = new Set();
+                const eans = new Set();
+                let totalQty = 0;
+                let maxUnitCost = 0;
+                let referenceItem = selectedItems[0]; // Item base inicial
+                let highestValFound = -1;
+
+                selectedItems.forEach(item => {
+                    // Fator e Custos
+                    const detected = this.detectConversionFactor(item.xProd);
+                    const factor = item.userFactor ? item.userFactor : detected;
+                    const discount = item.vDesc || 0;
+                    const netTotal = item.vProd - discount;
+                    const netCostBox = netTotal / item.qCom;
+                    const unitCost = netCostBox / factor;
+
+                    // Logica do Maior Valor
+                    if (unitCost > highestValFound) {
+                        highestValFound = unitCost;
+                        maxUnitCost = unitCost;
+                        referenceItem = item; // O item mais caro define NCM/Impostos
+                    }
+
+                    // Acumuladores
+                    if (item.xProd) descriptions.add(item.xProd.trim());
+                    
+                    if (item.cEAN && item.cEAN !== 'SEM GTIN' && item.cEAN.trim() !== '') {
+                        eans.add(item.cEAN.trim());
+                    }
+
+                    // Quantidade Total em Unidades
+                    totalQty += (item.qCom * factor);
+                });
+
+                // 2. Montar Strings Concatenadas
+                const finalDesc = Array.from(descriptions).join(' | ');
+                const finalEan = eans.size > 0 ? Array.from(eans).join(' | ') : 'SEM GTIN';
+
+                // 3. Fiscal do Item de Referência (o mais caro)
+                const fiscal = this.predictFiscalAttributes(referenceItem);
+
+                // 4. Objeto Unificado
+                const unifiedObj = {
+                    id_referencia: 'UNIFICADO-' + new Date().getTime(),
+                    Numero_Nota: 'VARIAS',
+                    Quantidade_Nota: '1', 
+                    cProd_Sugestao: referenceItem.cProd + '-KIT',
+                    cEAN: finalEan,
+                    xProd: finalDesc + ' (AGRUPADO)',
+                    NCM: referenceItem.NCM,
+                    CEST: referenceItem.CEST,
+                    CFOP_SAIDA: fiscal.cfopOut,
+                    CSOSN_SAIDA: fiscal.csosnOut,
+                    Unidade_Venda: 'UN',
+                    Fator_Conversao_Entrada: 1, 
+                    Quantidade_Total_Unidades: parseFloat(totalQty.toFixed(3)),
+                    Custo_Unitario: parseFloat(maxUnitCost.toFixed(4)),
+                    Custo_Real_Caixa: parseFloat(maxUnitCost.toFixed(4)), 
+                    Valor_Desconto_Total: 0,
+                    _TIPO: 'PRODUTO UNIFICADO (MIX)',
+                    _OBS: `Agrupamento de ${selectedItems.length} itens. Preço baseado no maior valor encontrado.`
+                };
+
+                this.downloadJSON([unifiedObj], 'exportacao_unificada_kit');
+            },
+
+            // --- EXPORTAÇÃO PADRÃO ---
             exportSmartJSON() {
                 const selectedItems = this.data.filter(item => this.selectedIds.has(item.id));
                 if (selectedItems.length === 0) return;
@@ -915,11 +995,7 @@
                     const unitCost = netCostBox / finalFactor;
 
                     if (mode === 'varejo' || mode === 'ambos') {
-                        // Limpeza básica apenas para sugerir um padrão, mas respeita a edição se o usuário tiver mudado o xProd
-                        // OBS: A edição manual do xProd já sobrescreve item.xProd, então usamos ele.
-                        // A limpeza regex abaixo roda sobre o valor atual (editado ou não) para remover qtds de fardo
                         let cleanDesc = item.xProd.replace(/(\d+\s*[xX]\s*\d+)/gi, '').replace(/(FD|CX|FARDO)\s*\d*/gi, '').trim();
-                        // Se não tiver (UN) no final, adiciona
                         if(!cleanDesc.toUpperCase().endsWith('(UN)')) {
                             cleanDesc = cleanDesc + " (UN)";
                         }
