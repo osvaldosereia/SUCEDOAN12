@@ -736,14 +736,45 @@
                         if(!Array.isArray(items)) throw new Error('JSON deve ser uma lista []');
                         
                         const db = DB.load();
-                        ImportEngine.stagedData = items.map((item, idx) => {
-                            // Extract multi-part EANs
-                            let eanList = [];
-                            if (item.cEAN && item.cEAN !== "PREENCHER_COM_LEITOR") {
-                                eanList = item.cEAN.split('|').map(s => s.trim()).filter(s => s);
-                            } else {
-                                if (item.EAN_Unidade && item.EAN_Unidade !== "PREENCHER_COM_LEITOR") eanList.push(item.EAN_Unidade);
-                                if (item.EAN_Caixa && item.EAN_Caixa !== "PREENCHER_COM_LEITOR") eanList.push(item.EAN_Caixa);
+                        
+                        // Grouping logic to consolidate items with same EAN
+                        const groupedItems = {};
+                        
+                        items.forEach((item, idx) => {
+                             const eanUnit = (item.EAN_Unidade && item.EAN_Unidade !== "PREENCHER_COM_LEITOR") ? item.EAN_Unidade : "";
+                             const eanBox = (item.EAN_Caixa && item.EAN_Caixa !== "PREENCHER_COM_LEITOR") ? item.EAN_Caixa : "";
+                             const validEan = eanUnit || eanBox || (item.cEAN !== "PREENCHER_COM_LEITOR" ? item.cEAN : "");
+                             
+                             const key = validEan || item.xProd.toUpperCase(); // Use name if EAN is invalid
+                             
+                             if (!groupedItems[key]) {
+                                 groupedItems[key] = { items: [], totalQty: 0, firstItem: item, validEan: validEan, eanUnit: eanUnit, eanBox: eanBox };
+                             }
+                             
+                             let qty = Number(item.Quantidade_Total_Unidades);
+                             const factor = Number(item.Fator_Conversao_Entrada) || Number(item.Fator_Conversao) || 1;
+                             if(!qty) qty = (Number(item.Quantidade_NFe)||0) * factor;
+                             
+                             groupedItems[key].totalQty += qty;
+                             groupedItems[key].items.push(item);
+                        });
+                        
+                        // Create staged data and sort alphabetically by product name
+                        ImportEngine.stagedData = Object.keys(groupedItems).map((key, idx) => {
+                            const group = groupedItems[key];
+                            const item = group.firstItem;
+                            
+                            // Try finding existing product
+                            let match = null;
+                            if (group.validEan) {
+                                match = db.produto.find(p => {
+                                    const pEans = p.eans || (p.ean ? [p.ean] : []);
+                                    return pEans.includes(group.validEan);
+                                });
+                            }
+                            // Fallback to name search if no EAN match or no valid EAN
+                            if (!match) {
+                                match = db.produto.find(p => p.nome.toUpperCase() === item.xProd.toUpperCase());
                             }
                             
                             // Extract multi-part names
@@ -755,32 +786,25 @@
                                 secName = parts.slice(1).join(' | ').trim();
                             }
 
-                            // Match Logic
-                            let match = null;
-                            if (eanList.length > 0) {
-                                match = db.produto.find(p => {
-                                    const pEans = p.eans || (p.ean ? [p.ean] : []);
-                                    return eanList.some(e => pEans.includes(e));
-                                });
+                            // Extract multi-part EANs
+                            let eanList = [];
+                            if (item.cEAN && item.cEAN !== "PREENCHER_COM_LEITOR") {
+                                eanList = item.cEAN.split('|').map(s => s.trim()).filter(s => s);
+                            } else {
+                                if (group.eanUnit) eanList.push(group.eanUnit);
+                                if (group.eanBox) eanList.push(group.eanBox);
                             }
-                            if(!match) {
-                                match = db.produto.find(p => p.nome.toUpperCase() === mainName.toUpperCase());
-                            }
-
-                            let qty = Number(item.Quantidade_Total_Unidades);
-                            const factor = Number(item.Fator_Conversao_Entrada) || Number(item.Fator_Conversao) || 1;
-                            if(!qty) qty = (Number(item.Quantidade_NFe)||0) * factor;
 
                             let cost = Number(item.Custo_Unitario) || 0;
                             if(cost < 0) cost = 0;
 
                             return {
                                 _id: idx,
-                                json: item,
+                                json: item, // representative item
                                 mainName: mainName,
                                 secName: secName,
                                 eanList: eanList,
-                                qty: qty,
+                                qty: group.totalQty,
                                 cost: cost,
                                 match: match
                             };
@@ -888,6 +912,7 @@
                 ImportEngine.stagedData.forEach(d => {
                     if(!selectedIds.has(d._id)) return;
 
+                    // Re-check for match in current DB state
                     let prod = d.match ? db.produto.find(p => p.id === d.match.id) : null;
                     
                     // Double check if created in loop
@@ -1194,11 +1219,7 @@
                     }).join('');
                 },
                 filter: (val) => {
-                    const list = DB.load().produto.filter(p => 
-                        p.nome.toLowerCase().includes(val.toLowerCase()) || 
-                        p.codigo.toLowerCase().includes(val.toLowerCase()) || 
-                        (p.eans && p.eans.some(e => e.includes(val)))
-                    );
+                    const list = DB.load().produto.filter(p => p.nome.toLowerCase().includes(val.toLowerCase()) || p.codigo.toLowerCase().includes(val.toLowerCase()) || (p.eans && p.eans.some(e => e.includes(val))));
                     Views.catalogo.render(list);
                 }
             },
@@ -1296,6 +1317,11 @@
                     }
                 }
                 
+                // Add secondary name handling (important for the fix)
+                if (type === 'produto' && document.getElementById('p-nome-sec')) {
+                     data.nomeSec = document.getElementById('p-nome-sec').value;
+                }
+                
                 DB.save(type, data);
                 form.reset();
                 if(type === 'produto') {
@@ -1319,6 +1345,12 @@
                         else el.value = item[k];
                     }
                 }
+                // Specifically populate secondary name
+                if (type === 'produto' && item.nomeSec) {
+                     const el = document.getElementById('p-nome-sec');
+                     if (el) el.value = item.nomeSec;
+                }
+
                 document.getElementById(`${type.charAt(0)}-id`).value = item.id;
                 
                 if(type === 'produto') {
