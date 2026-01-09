@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SISTEMA V3 | Professional Dashboard</title>
     
-    <!-- Fonte Inter (Embutida para garantir visual) -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     </style>
 
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -337,7 +335,9 @@
                                         <!-- EAN EDITÁVEL -->
                                         <div class="form-group"><label>EANs (Separar por vírgula)</label><input type="text" id="p-ean" class="font-mono" placeholder="EAN1, EAN2..."></div>
                                     </div>
-                                    <div class="form-group"><label>Descrição</label><input type="text" id="p-nome" required></div>
+                                    <div class="form-group"><label>Descrição Principal</label><input type="text" id="p-nome" required></div>
+                                    <!-- NOVO CAMPO NOME SECUNDÁRIO -->
+                                    <div class="form-group"><label>Descrição Secundária (Fatura/Fiscal)</label><input type="text" id="p-nome-sec"></div>
                                     
                                     <!-- CONTROLE DE ESTOQUE -->
                                     <div style="background: var(--slate-50); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--slate-200);">
@@ -622,10 +622,10 @@
                 </div>
             </div>
             
-            <!-- Botão Global de Unificação/Vínculo -->
+            <!-- Botão Global de Unificação -->
             <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
-                <button onclick="ImportEngine.openBatchLinkModal()" class="btn btn-warning" id="btn-batch-link" disabled style="opacity: 0.5; font-size: 0.75rem;">
-                    <i class="fa-solid fa-link"></i> Vincular Selecionados
+                <button onclick="ImportEngine.mergeSelectedItems()" class="btn btn-warning" id="btn-batch-link" disabled style="opacity: 0.5; font-size: 0.75rem;">
+                    <i class="fa-solid fa-code-merge"></i> Unificar Selecionados
                 </button>
             </div>
             
@@ -635,7 +635,7 @@
                         <tr style="background: var(--slate-50); border-bottom: 1px solid var(--slate-200);">
                             <th style="padding: 0.75rem; text-align: center; width: 40px;"><input type="checkbox" checked onchange="ImportEngine.toggleAll(this.checked)"></th>
                             <th style="padding: 0.75rem; font-size: 0.7rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; text-align: left;">Produto (JSON)</th>
-                            <th style="padding: 0.75rem; font-size: 0.7rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; text-align: left; width: 200px;">EANs (Unid / CX)</th>
+                            <th style="padding: 0.75rem; font-size: 0.7rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; text-align: left; width: 200px;">EANs</th>
                             <th style="padding: 0.75rem; font-size: 0.7rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; text-align: left; width: 150px;">Status Sistema</th>
                             <th style="padding: 0.75rem; font-size: 0.7rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; text-align: right; width: 80px;">Qtd</th>
                         </tr>
@@ -725,6 +725,7 @@
         // --- IMPORT ENGINE ---
         const ImportEngine = {
             stagedData: [],
+            selectedIndex: null,
             processFile: () => {
                 const file = document.getElementById('json-import-file').files[0];
                 if(!file) return alert('Selecione um arquivo .json');
@@ -736,23 +737,34 @@
                         
                         const db = DB.load();
                         ImportEngine.stagedData = items.map((item, idx) => {
-                            const eanUnit = (item.EAN_Unidade && item.EAN_Unidade !== "PREENCHER_COM_LEITOR") ? item.EAN_Unidade : "";
-                            const eanBox = (item.EAN_Caixa && item.EAN_Caixa !== "PREENCHER_COM_LEITOR") ? item.EAN_Caixa : "";
-                            const validEan = eanUnit || eanBox || (item.cEAN !== "PREENCHER_COM_LEITOR" ? item.cEAN : "");
-
-                            let match = null;
-                            const eansToCheck = [eanUnit, eanBox, validEan].filter(e => e);
+                            // Extract multi-part EANs
+                            let eanList = [];
+                            if (item.cEAN && item.cEAN !== "PREENCHER_COM_LEITOR") {
+                                eanList = item.cEAN.split('|').map(s => s.trim()).filter(s => s);
+                            } else {
+                                if (item.EAN_Unidade && item.EAN_Unidade !== "PREENCHER_COM_LEITOR") eanList.push(item.EAN_Unidade);
+                                if (item.EAN_Caixa && item.EAN_Caixa !== "PREENCHER_COM_LEITOR") eanList.push(item.EAN_Caixa);
+                            }
                             
-                            // Check against multiple EANs in DB
-                            if (eansToCheck.length > 0) {
+                            // Extract multi-part names
+                            let mainName = item.xProd;
+                            let secName = "";
+                            if(item.xProd.includes('|')) {
+                                const parts = item.xProd.split('|');
+                                mainName = parts[0].trim();
+                                secName = parts.slice(1).join(' | ').trim();
+                            }
+
+                            // Match Logic
+                            let match = null;
+                            if (eanList.length > 0) {
                                 match = db.produto.find(p => {
                                     const pEans = p.eans || (p.ean ? [p.ean] : []);
-                                    return eansToCheck.some(e => pEans.includes(e));
+                                    return eanList.some(e => pEans.includes(e));
                                 });
                             }
-                            // Fallback to name
                             if(!match) {
-                                match = db.produto.find(p => p.nome.toUpperCase() === item.xProd.toUpperCase());
+                                match = db.produto.find(p => p.nome.toUpperCase() === mainName.toUpperCase());
                             }
 
                             let qty = Number(item.Quantidade_Total_Unidades);
@@ -765,21 +777,28 @@
                             return {
                                 _id: idx,
                                 json: item,
-                                eanFinal: validEan,
-                                eanUnit: eanUnit,
-                                eanBox: eanBox,
+                                mainName: mainName,
+                                secName: secName,
+                                eanList: eanList,
                                 qty: qty,
                                 cost: cost,
-                                match: match,
-                                eansFound: eansToCheck
+                                match: match
                             };
-                        });
+                        }).sort((a, b) => a.mainName.localeCompare(b.mainName));
                         
                         ImportEngine.renderPreview();
                         document.getElementById('import-modal').showModal();
                     } catch(err) { alert('Erro: ' + err.message); }
                 };
                 reader.readAsText(file);
+            },
+            filterPreview: (val) => {
+                const term = val.toLowerCase();
+                const filteredData = ImportEngine.stagedData.filter(d => 
+                    d.mainName.toLowerCase().includes(term) || 
+                    d.eanList.some(e => e.includes(term))
+                );
+                ImportEngine.renderPreview(filteredData);
             },
             renderPreview: (data = null) => {
                 const listToRender = data || ImportEngine.stagedData;
@@ -789,21 +808,16 @@
                         `<span class="badge badge-purple">Atualizar: ${d.match.codigo}</span>` : 
                         `<span class="badge badge-blue">Novo</span>`;
                     
-                    const eanDisplay = `
-                        <div style="display: flex; flex-direction: column; gap: 2px;">
-                            ${d.eanUnit ? `<span style="font-size: 0.65rem; color: var(--slate-500); font-family: monospace;">UN: <b style="color: var(--slate-700);">${d.eanUnit}</b></span>` : ''}
-                            ${d.eanBox ? `<span style="font-size: 0.65rem; color: var(--slate-500); font-family: monospace;">CX: <b style="color: var(--slate-700);">${d.eanBox}</b></span>` : ''}
-                            ${(!d.eanUnit && !d.eanBox) ? '<span style="font-size: 0.65rem; color: var(--slate-400); font-style: italic;">--</span>' : ''}
-                        </div>
-                    `;
+                    const eanDisplay = d.eanList.length > 0 ? d.eanList.join(', ') : '<span style="font-style: italic; color: var(--slate-300);">Sem EAN</span>';
 
                     return `
                         <tr style="border-bottom: 1px solid var(--slate-100);">
                             <td style="padding: 0.75rem; text-align: center;"><input type="checkbox" class="import-chk" value="${d._id}" checked onchange="ImportEngine.updateBatchBtn()"></td>
                             <td style="padding: 0.75rem;">
-                                <div style="font-weight: 700; color: var(--slate-700); font-size: 0.8rem;">${d.json.xProd}</div>
+                                <div style="font-weight: 700; color: var(--slate-700); font-size: 0.8rem;">${d.mainName}</div>
+                                ${d.secName ? `<div style="font-size: 0.7rem; color: var(--slate-400);">${d.secName}</div>` : ''}
                             </td>
-                            <td style="padding: 0.75rem;">${eanDisplay}</td>
+                            <td style="padding: 0.75rem; font-family: monospace; font-size: 0.7rem;">${eanDisplay}</td>
                             <td style="padding: 0.75rem;">
                                 <div style="margin-bottom: 2px;">${status}</div>
                                 <div style="font-size: 0.65rem; color: var(--slate-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">${d.match ? d.match.nome : ''}</div>
@@ -821,7 +835,7 @@
             updateBatchBtn: () => {
                 const checked = Array.from(document.querySelectorAll('.import-chk:checked'));
                 const btn = document.getElementById('btn-batch-link');
-                if(checked.length > 0) {
+                if(checked.length >= 2) {
                     btn.disabled = false;
                     btn.style.opacity = 1;
                 } else {
@@ -829,50 +843,37 @@
                     btn.style.opacity = 0.5;
                 }
             },
-            openBatchLinkModal: () => {
-                 const checked = Array.from(document.querySelectorAll('.import-chk:checked'));
-                 if(checked.length === 0) return;
-                 
-                 document.getElementById('product-link-search').value = '';
-                 ImportEngine.searchLinkProduct('');
-                 document.getElementById('product-select-modal').showModal();
-            },
-            searchLinkProduct: (val) => {
-                const db = DB.load();
-                const term = val.toLowerCase();
-                const filtered = db.produto.filter(p => p.nome.toLowerCase().includes(term) || p.codigo.toLowerCase().includes(term));
+            mergeSelectedItems: () => {
+                const checked = Array.from(document.querySelectorAll('.import-chk:checked'));
+                if (checked.length < 2) return;
+
+                const selectedIndices = checked.map(c => parseInt(c.value));
+                const itemsToMerge = ImportEngine.stagedData.filter(d => selectedIndices.includes(d._id));
                 
-                const container = document.getElementById('product-link-list');
-                container.innerHTML = filtered.map(p => `
-                    <div style="padding: 0.75rem; border-bottom: 1px solid var(--slate-100); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="ImportEngine.applyBatchLink('${p.id}')" onmouseover="this.style.background='var(--slate-50)'" onmouseout="this.style.background='transparent'">
-                        <div>
-                            <div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-700);">${p.nome}</div>
-                            <div style="font-size: 0.7rem; color: var(--slate-400);">${p.codigo} | EAN: ${p.ean || '-'}</div>
-                        </div>
-                        <button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.65rem;">Selecionar</button>
-                    </div>
-                `).join('');
-                if (filtered.length === 0) container.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--slate-400);">Nenhum produto encontrado</div>';
-            },
-            applyBatchLink: (prodId) => {
-                const db = DB.load();
-                const prod = db.produto.find(p => p.id === prodId);
-                const checked = Array.from(document.querySelectorAll('.import-chk:checked')).map(c => Number(c.value));
+                // Identify PRIMARY item: Prefer one with EAN not starting with 1 (Unit), or just first
+                let primaryItem = itemsToMerge.find(d => d.eanList.some(e => !e.startsWith('1')));
+                if (!primaryItem) primaryItem = itemsToMerge[0];
+
+                // Consolidate data
+                let totalQty = 0;
+                let allEans = new Set();
                 
-                if (prod && checked.length > 0) {
-                    checked.forEach(idx => {
-                        const item = ImportEngine.stagedData.find(d => d._id === idx);
-                        if(item) {
-                            item.match = prod; 
-                            // Add extra EANs to the match if needed
-                            if(!prod.eans) prod.eans = [prod.ean].filter(Boolean);
-                            
-                            // Here we just prepare the staged data, actual merge happens on confirmImport
-                        }
-                    });
-                    ImportEngine.renderPreview();
-                    document.getElementById('product-select-modal').close();
-                }
+                itemsToMerge.forEach(d => {
+                    totalQty += d.qty;
+                    d.eanList.forEach(e => allEans.add(e));
+                });
+
+                // Update primary item
+                primaryItem.qty = totalQty;
+                primaryItem.eanList = Array.from(allEans);
+                
+                // Remove others from stagedData
+                ImportEngine.stagedData = ImportEngine.stagedData.filter(d => d._id === primaryItem._id || !selectedIndices.includes(d._id));
+
+                ImportEngine.renderPreview();
+                // Clear selection
+                document.querySelectorAll('.import-chk').forEach(c => c.checked = false);
+                ImportEngine.updateBatchBtn();
             },
             confirmImport: () => {
                 const dest = document.querySelector('input[name="import-dest"]:checked').value;
@@ -889,9 +890,9 @@
 
                     let prod = d.match ? db.produto.find(p => p.id === d.match.id) : null;
                     
-                    if (!prod && d.eansFound.length > 0) {
-                        // Double check in case another item created it in this loop
-                        prod = db.produto.find(p => p.eans && d.eansFound.some(e => p.eans.includes(e)));
+                    // Double check if created in loop
+                    if (!prod && d.eanList.length > 0) {
+                        prod = db.produto.find(p => p.eans && d.eanList.some(e => p.eans.includes(e)));
                     }
 
                     const jsonItem = d.json; 
@@ -904,22 +905,23 @@
                         
                         // Merge EANs
                         const existingEans = prod.eans || (prod.ean ? [prod.ean] : []);
-                        const newEanList = [...new Set([...existingEans, ...d.eansFound])].slice(0, 5);
+                        const newEanList = [...new Set([...existingEans, ...d.eanList])].slice(0, 5);
                         prod.eans = newEanList;
                         prod.ean = newEanList[0] || ""; 
                         
-                        // Update other fields only if missing or specific logic requires
-                        if(!prod.ncm) prod.ncm = jsonItem.NCM;
+                        // Add secondary name if empty
+                        if(!prod.nomeSec && d.secName) prod.nomeSec = d.secName;
                         
                         prod.nota = jsonItem.Numero_Nota;
                     } else {
                         // NOVO CADASTRO
-                        const initialEans = d.eansFound.length > 0 ? d.eansFound : (d.eanFinal ? [d.eanFinal] : []);
+                        const initialEans = d.eanList.slice(0, 5);
                         
                         prod = {
                             id: Date.now().toString() + Math.random().toString().slice(2,5),
                             codigo: DB.nextCode('P'),
-                            nome: jsonItem.xProd.toUpperCase(),
+                            nome: d.mainName.toUpperCase(),
+                            nomeSec: d.secName,
                             ean: initialEans[0] || "",
                             eans: initialEans,
                             custo: d.cost,
@@ -955,7 +957,7 @@
                 DB.saveAll(db);
                 alert(`${count} itens processados.`);
                 document.getElementById('import-modal').close();
-                document.getElementById('import-filter').value = '';
+                document.getElementById('import-filter').value = ''; 
                 Views.catalogo.render();
             }
         };
@@ -970,7 +972,6 @@
                 const db = DB.load();
                 
                 lines.forEach(line => {
-                    // Match pattern: [quantity] Product Name or Code
                     const match = line.match(/^\[(\d+)\]\s*(.*)$/);
                     let qty = 1;
                     let identifier = line.trim();
@@ -979,7 +980,6 @@
                         qty = parseInt(match[1], 10);
                         identifier = match[2].trim();
                     } else {
-                        // Fallback for simple "Code | Qty" format
                         const parts = line.split('|').map(s => s.trim());
                         identifier = parts[0];
                         if (parts[1]) qty = parseInt(parts[1], 10) || 1;
@@ -987,10 +987,9 @@
 
                     if (!identifier) return;
 
-                    // Try to find product by code, EAN, or exact name match
                     const prod = db.produto.find(p => 
                         p.codigo.toUpperCase() === identifier.toUpperCase() || 
-                        p.ean === identifier ||
+                        (p.eans && p.eans.includes(identifier)) ||
                         p.nome.toUpperCase() === identifier.toUpperCase()
                     );
 
@@ -1038,7 +1037,6 @@
                 const lines = text.split('\n');
 
                 lines.forEach(line => {
-                    // Match pattern: [quantity] Product Name or Code
                     const match = line.match(/^\[(\d+)\]\s*(.*)$/);
                     let qty = 1;
                     let identifier = line.trim();
@@ -1047,7 +1045,6 @@
                         qty = parseInt(match[1], 10);
                         identifier = match[2].trim();
                     } else {
-                        // Fallback for simple "Code | Qty" format
                         const parts = line.split('|').map(s => s.trim());
                         identifier = parts[0];
                         if (parts[1]) qty = parseInt(parts[1], 10) || 1;
@@ -1057,7 +1054,7 @@
 
                     const prod = db.produto.find(p => 
                         p.codigo.toUpperCase() === identifier.toUpperCase() || 
-                        p.ean === identifier ||
+                        (p.eans && p.eans.includes(identifier)) ||
                         p.nome.toUpperCase() === identifier.toUpperCase()
                     );
 
@@ -1111,25 +1108,20 @@
                     items: Cart.items
                 };
 
-                // Deduct Stock Logic
                 Cart.items.forEach(cartItem => {
                     const prod = db.produto.find(p => p.id === cartItem.id);
                     if(prod) {
-                        // Função auxiliar para baixar estoque
                         const deduct = (p, q) => {
                             if(stockType === 'fisico') p.estoque -= q;
                             else if(stockType === 'fiscal') p.estoqueFiscal = (p.estoqueFiscal||0) - q;
                         };
 
-                        // Baixa do produto principal (ou combo pai)
                         deduct(prod, cartItem.qty);
 
-                        // Se for combo, baixar recursivamente os filhos
                         if(prod.items && prod.items.length > 0) {
                             prod.items.forEach(childItem => {
                                 const childProd = db.produto.find(cp => cp.id === childItem.id);
                                 if(childProd) {
-                                    // A quantidade a baixar do filho é: qtd do filho no combo * qtd de combos vendidos
                                     const totalChildQty = childItem.qty * cartItem.qty;
                                     deduct(childProd, totalChildQty);
                                 }
@@ -1180,11 +1172,13 @@
                     document.getElementById('table-produto').innerHTML = list.map(p => {
                         const estStyle = p.estoque <= 0 ? 'color: var(--danger);' : 'color: var(--slate-700);';
                         const isCombo = p.items && p.items.length > 0 ? '<span class="badge badge-blue">COMBO</span>' : '';
+                        const eanDisplay = p.eans && p.eans.length > 0 ? p.eans.join(', ') : (p.ean || '<span style="font-style: italic; color: var(--slate-300);">Sem EAN</span>');
                         return `
                         <tr>
                             <td>
                                 <div style="font-weight: 700; color: var(--slate-800);">${p.codigo} - ${p.nome} ${isCombo}</div>
-                                <div style="font-size: 0.7rem; color: var(--slate-400); font-family: monospace; margin-top: 2px;">${p.ean || '<span style="font-style: italic; color: var(--slate-300);">Sem EAN</span>'}</div>
+                                ${p.nomeSec ? `<div style="font-size: 0.65rem; color: var(--slate-500);">${p.nomeSec}</div>` : ''}
+                                <div style="font-size: 0.7rem; color: var(--slate-400); font-family: monospace; margin-top: 2px;">${eanDisplay}</div>
                             </td>
                             <td style="text-align: center; font-weight: 700; ${estStyle}">${p.estoque}</td>
                             <td style="text-align: center;"><span class="badge badge-purple">${p.estoqueFiscal||0}</span></td>
@@ -1200,7 +1194,11 @@
                     }).join('');
                 },
                 filter: (val) => {
-                    const list = DB.load().produto.filter(p => p.nome.toLowerCase().includes(val.toLowerCase()) || p.codigo.toLowerCase().includes(val.toLowerCase()) || (p.ean && p.ean.includes(val)));
+                    const list = DB.load().produto.filter(p => 
+                        p.nome.toLowerCase().includes(val.toLowerCase()) || 
+                        p.codigo.toLowerCase().includes(val.toLowerCase()) || 
+                        (p.eans && p.eans.some(e => e.includes(val)))
+                    );
                     Views.catalogo.render(list);
                 }
             },
@@ -1284,6 +1282,12 @@
                     data.valor = Number(data.valor);
                     data.estoque = Number(data.estoque);
                     data.estoqueFiscal = Number(data.estoqueFiscal);
+                    
+                    // Handle EANs array
+                    if(data.ean) {
+                        data.eans = data.ean.split(',').map(s => s.trim()).filter(Boolean);
+                    }
+                    
                     // Add combo items
                     if(document.getElementById('p-is-combo').checked) {
                         data.items = ComboApp.comboItems;
@@ -1311,6 +1315,7 @@
                     const el = document.getElementById(`${type.charAt(0)}-${k}`);
                     if(el) {
                         if(el.type === 'checkbox') el.checked = item[k];
+                        else if(k === 'ean' && item.eans) el.value = item.eans.join(', ');
                         else el.value = item[k];
                     }
                 }
