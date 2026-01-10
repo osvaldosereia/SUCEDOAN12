@@ -331,6 +331,9 @@
                                         <div class="form-group"><label>Telefone</label><input type="text" id="c-tel"></div>
                                         <div class="form-group"><label>Cidade</label><select id="c-cidade"><option>Cuiabá</option><option>Várzea Grande</option></select></div>
                                     </div>
+                                    <!-- NOVO CAMPO BAIRRO -->
+                                    <div class="form-group"><label>Bairro</label><input type="text" id="c-bairro"></div>
+                                    
                                     <div class="form-group"><label>Endereço</label><textarea id="c-endereco" rows="3"></textarea></div>
                                     <button class="btn btn-primary btn-block">Salvar Cliente</button>
                                 </form>
@@ -598,7 +601,14 @@
                             </div>
                             <div class="table-wrapper">
                                 <table>
-                                    <thead><tr><th style="width: 50px;">#</th><th>Cliente</th><th>Detalhes</th><th class="text-right">Ações</th></tr></thead>
+                                    <thead><tr>
+                                        <th>Pedido</th>
+                                        <th>Cliente</th>
+                                        <th>Cidade</th>
+                                        <th>Bairro</th>
+                                        <th>Rota</th>
+                                        <th class="text-right">Ações</th>
+                                    </tr></thead>
                                     <tbody id="table-venda"></tbody>
                                 </table>
                             </div>
@@ -775,6 +785,53 @@
             }
         };
 
+        // --- PRINTER ENGINE (75mm) ---
+        const Printer = {
+            printOrder: (id) => {
+                const db = DB.load();
+                const v = db.venda.find(x => x.id === id);
+                if(!v) return;
+                const cli = db.cliente.find(c => c.id === v.cliId) || {};
+                
+                const win = window.open('', '', 'width=300,height=600');
+                win.document.write(`<html><head><style>
+                    @page { margin: 0; }
+                    body { font-family: 'Courier New', monospace; width: 75mm; margin: 0; padding: 10px; font-size: 12px; }
+                    .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+                    .text-center { text-align: center; }
+                    .text-right { text-align: right; }
+                    .bold { font-weight: bold; }
+                    .row { display: flex; justify-content: space-between; }
+                </style></head><body>`);
+                
+                // Content
+                win.document.write(`
+                    <div class="text-center bold">SISTEMA V3</div>
+                    <div class="text-center">Pedido: ${v.codigo}</div>
+                    <div class="line"></div>
+                    <div>Cliente: ${cli.nome || 'Consumidor'}</div>
+                    <div>Cidade: ${cli.cidade || ''} - ${cli.bairro || ''}</div>
+                    <div>Rota: ${v.rota}</div>
+                    <div class="line"></div>
+                `);
+                
+                // Items
+                v.items.forEach(i => {
+                     win.document.write(`<div>${i.qty}x ${i.nome}</div><div class="text-right">R$ ${(i.price * i.qty).toFixed(2)}</div>`);
+                });
+                
+                win.document.write(`
+                    <div class="line"></div>
+                    <div class="row bold"><span>TOTAL</span><span>R$ ${v.total.toFixed(2)}</span></div>
+                    <div class="text-center" style="margin-top:20px;">${new Date(v.date).toLocaleString()}</div>
+                `);
+
+                win.document.write('</body></html>');
+                win.document.close();
+                win.print();
+            }
+        };
+
         // --- IMPORT ENGINE (MODIFIED FOR MULTIPLE EAN/NAMES) ---
         const ImportEngine = {
             stagedData: [],
@@ -788,12 +845,9 @@
                         if(!Array.isArray(items)) throw new Error('JSON deve ser uma lista []');
                         
                         const db = DB.load();
-                        
-                        // New Grouping logic: Consolidate lines based on EANs or Names
                         const groupedItems = {};
                         
                         items.forEach((item, idx) => {
-                             // Extract multiple EANs separated by ' | '
                              let eans = [];
                              if (item.cEAN && item.cEAN !== "PREENCHER_COM_LEITOR") {
                                 eans = item.cEAN.split('|').map(s => s.trim()).filter(Boolean);
@@ -801,22 +855,18 @@
                              if (item.EAN_Unidade && item.EAN_Unidade !== "PREENCHER_COM_LEITOR") eans.push(item.EAN_Unidade);
                              if (item.EAN_Caixa && item.EAN_Caixa !== "PREENCHER_COM_LEITOR") eans.push(item.EAN_Caixa);
                              
-                             // Deduplicate EANs
                              eans = [...new Set(eans)];
                              
-                             // Extract multiple names
                              let names = [];
                              if (item.xProd) {
                                 names = item.xProd.split('|').map(s => s.trim()).filter(Boolean);
                              }
                              
-                             // Identifier key: use first valid EAN or first Name
                              const key = eans.length > 0 ? eans[0] : (names.length > 0 ? names[0].toUpperCase() : 'UNKNOWN');
                              
                              if (!groupedItems[key]) {
                                  groupedItems[key] = { items: [], totalQty: 0, firstItem: item, allEans: eans, allNames: names };
                              } else {
-                                 // Merge EANs and Names from multiple lines if grouping happens (unlikely with this key strategy but safe)
                                  groupedItems[key].allEans = [...new Set([...groupedItems[key].allEans, ...eans])];
                                  groupedItems[key].allNames = [...new Set([...groupedItems[key].allNames, ...names])];
                              }
@@ -829,16 +879,11 @@
                              groupedItems[key].items.push(item);
                         });
                         
-                        // Create staged data and match against DB using all variations
                         ImportEngine.stagedData = Object.keys(groupedItems).map((key, idx) => {
                             const group = groupedItems[key];
                             const item = group.firstItem;
-                            
-                            // Advanced Matching: Check if ANY new EAN matches ANY stored EAN (or variations)
-                            // OR if ANY new Name matches ANY stored Name (or variations)
                             let match = null;
 
-                            // 1. EAN Search
                             if (group.allEans.length > 0) {
                                 match = db.produto.find(p => {
                                     const pEans = [p.ean, ...(p.variacoesEan || [])].filter(Boolean);
@@ -846,7 +891,6 @@
                                 });
                             }
 
-                            // 2. Name Search (if no EAN match)
                             if (!match && group.allNames.length > 0) {
                                 match = db.produto.find(p => {
                                     const pNames = [p.nome, ...(p.variacoesNome || [])].map(n => n.toUpperCase());
@@ -890,7 +934,6 @@
                         `<span class="badge badge-purple">Atualizar: ${d.match.codigo}</span>` : 
                         `<span class="badge badge-blue">Novo</span>`;
                     
-                    // Display all EANs found in JSON
                     const eanDisplay = d.allEans.length > 0 
                         ? `<div style="display:flex; flex-direction:column; gap:2px;">${d.allEans.map(e => `<span style="font-size:0.65rem; font-family:monospace; color:var(--slate-600);">${e}</span>`).join('')}</div>`
                         : '<span style="font-size: 0.65rem; color: var(--slate-400); font-style: italic;">--</span>';
@@ -977,10 +1020,8 @@
                 ImportEngine.stagedData.forEach(d => {
                     if(!selectedIds.has(d._id)) return;
 
-                    // Re-resolve match from DB to ensure we have latest state
                     let prod = d.match ? db.produto.find(p => p.id === d.match.id) : null;
                     
-                    // Fallback matching if not explicitly linked (similar logic to processFile)
                     if (!prod && d.allEans.length > 0) {
                         prod = db.produto.find(p => {
                             const pEans = [p.ean, ...(p.variacoesEan || [])].filter(Boolean);
@@ -997,19 +1038,17 @@
                     const jsonItem = d.json; 
 
                     if(prod) {
-                        // ATUALIZAÇÃO
                         if(dest !== 'fiscal') prod.estoque += d.qty;
                         if(dest !== 'fisico') prod.estoqueFiscal = (prod.estoqueFiscal||0) + d.qty;
                         if(d.cost > 0) prod.custo = d.cost;
                         
-                        // MERGE VARIATIONS (EAN & NAMES) with robust trimming and set logic
                         const cleanNewEans = d.allEans.map(e => e.trim()).filter(Boolean);
                         const existingEans = [prod.ean, ...(prod.variacoesEan || [])].filter(Boolean);
                         const newEansList = [...new Set([...existingEans, ...cleanNewEans])];
                         
                         if(newEansList.length > 0) {
-                            if(!prod.ean) prod.ean = newEansList[0]; // Set primary if missing
-                            prod.variacoesEan = newEansList; // Store ALL unique variations
+                            if(!prod.ean) prod.ean = newEansList[0];
+                            prod.variacoesEan = newEansList;
                         }
 
                         const cleanNewNames = d.allNames.map(n => n.trim()).filter(Boolean);
@@ -1017,7 +1056,7 @@
                         const newNamesList = [...new Set([...existingNames, ...cleanNewNames])];
                         
                         if(newNamesList.length > 0) {
-                            prod.variacoesNome = newNamesList; // Store ALL unique name variations
+                            prod.variacoesNome = newNamesList;
                         }
 
                         if(jsonItem.NCM) prod.ncm = jsonItem.NCM;
@@ -1030,7 +1069,6 @@
                         prod.nota = jsonItem.Numero_Nota;
 
                     } else {
-                        // NOVO CADASTRO
                         const cleanEans = d.allEans.map(e => e.trim()).filter(Boolean);
                         const cleanNames = d.allNames.map(n => n.trim()).filter(Boolean);
 
@@ -1038,9 +1076,9 @@
                             id: Date.now().toString() + Math.random().toString().slice(2,5),
                             codigo: DB.nextCode('P'),
                             nome: cleanNames[0] || jsonItem.xProd.toUpperCase(),
-                            variacoesNome: cleanNames, // Save all names
+                            variacoesNome: cleanNames, 
                             ean: cleanEans[0] || '',
-                            variacoesEan: cleanEans, // Save all EANs
+                            variacoesEan: cleanEans, 
                             custo: d.cost,
                             valor: 0,
                             estoque: dest !== 'fiscal' ? d.qty : 0,
@@ -1171,7 +1209,6 @@
                     if(!identifier) return;
                     const idUpper = identifier.toUpperCase();
 
-                    // Enhanced Search for Bulk Add
                     const prod = db.produto.find(p => {
                         const pEans = [p.ean, ...(p.variacoesEan||[])].filter(Boolean);
                         const pNames = [p.nome, ...(p.variacoesNome||[])].map(n => n.toUpperCase());
@@ -1289,7 +1326,6 @@
                         const estStyle = p.estoque <= 0 ? 'color: var(--danger);' : 'color: var(--slate-700);';
                         const isCombo = p.items && p.items.length > 0 ? '<span class="badge badge-blue">COMBO</span>' : '';
                         
-                        // Check if it has variations to show indicator
                         const hasVar = (p.variacoesEan && p.variacoesEan.length > 1) || (p.variacoesNome && p.variacoesNome.length > 1);
                         const varBadge = hasVar ? '<i class="fa-solid fa-layer-group" title="Possui variações cadastradas" style="color:var(--slate-400); font-size:0.7rem; margin-left:4px;"></i>' : '';
 
@@ -1343,19 +1379,23 @@
             },
             venda: {
                 render: () => {
-                    const list = DB.load().venda;
                     const db = DB.load();
+                    // Ordena por data decrescente (mais recente primeiro)
+                    const list = db.venda.sort((a, b) => b.date - a.date);
+                    
                     document.getElementById('table-venda').innerHTML = list.map(v => {
-                        const cli = db.cliente.find(c => c.id === v.cliId);
+                        const cli = db.cliente.find(c => c.id === v.cliId) || {};
                         return `
                         <tr>
                             <td style="font-weight: 700;">#${v.codigo}</td>
-                            <td>${cli ? cli.nome : 'Cliente Removido'}</td>
-                            <td>
-                                <div style="font-weight: 700; color: var(--success);">R$ ${Number(v.total).toFixed(2)}</div>
-                                <div style="font-size: 0.7rem; color: var(--slate-400);">${v.items.length} Itens - ${v.rota}</div>
+                            <td>${cli.nome || '-'}</td>
+                            <td>${cli.cidade || '-'}</td>
+                            <td>${cli.bairro || '-'}</td>
+                            <td><span class="badge badge-blue">${v.rota || '-'}</span></td>
+                            <td class="text-right">
+                                <button onclick="Printer.printOrder('${v.id}')" class="btn btn-ghost" style="color: var(--slate-600);" title="Imprimir"><i class="fa-solid fa-print"></i></button>
+                                <button onclick="App.delete('venda','${v.id}')" class="btn btn-ghost" style="color: var(--danger);"><i class="fa-solid fa-times"></i></button>
                             </td>
-                            <td class="text-right"><button onclick="App.delete('venda','${v.id}')" class="btn btn-ghost" style="color: var(--danger);"><i class="fa-solid fa-times"></i></button></td>
                         </tr>
                     `}).join('');
                 }
@@ -1402,14 +1442,12 @@
                     data.valor = Number(data.valor);
                     data.estoque = Number(data.estoque);
                     data.estoqueFiscal = Number(data.estoqueFiscal);
-                    // Add combo items
                     if(document.getElementById('p-is-combo').checked) {
                         data.items = ComboApp.comboItems;
                     } else {
                         data.items = [];
                     }
                     
-                    // SAVE VARIATIONS (NEW)
                     const vNomes = document.getElementById('p-variacoesNome').value;
                     data.variacoesNome = vNomes ? vNomes.split('|').map(s => s.trim()).filter(Boolean) : [];
 
@@ -1451,7 +1489,6 @@
                         document.getElementById('p-is-combo').checked = false;
                         UI.toggleComboArea(false);
                     }
-                    // LOAD VARIATIONS (NEW)
                     document.getElementById('p-variacoesNome').value = (item.variacoesNome || []).join(' | ');
                     document.getElementById('p-variacoesEan').value = (item.variacoesEan || []).join(' | ');
                 }
@@ -1513,7 +1550,6 @@
                 const db = DB.load();
                 const prodSel = document.getElementById('v-produto');
                 const term = val.toLowerCase();
-                // Improved Search for Sales Dropdown
                 const filtered = db.produto.filter(p => {
                     const pNames = [p.nome, ...(p.variacoesNome||[])].join(' ').toLowerCase();
                     const pEans = [p.ean, ...(p.variacoesEan||[])].join(' ');
