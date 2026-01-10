@@ -287,6 +287,10 @@
             <button onclick="ExportEngine.exportAll()" class="btn btn-ghost btn-block" style="color: var(--slate-400); border: 1px solid var(--slate-700);">
                 <i class="fa-solid fa-database"></i> Backup Dados
             </button>
+            <button onclick="document.getElementById('restore-file').click()" class="btn btn-ghost btn-block" style="color: var(--slate-400); border: 1px solid var(--slate-700); margin-top: 0.5rem;">
+                <i class="fa-solid fa-upload"></i> Restaurar Dados
+            </button>
+            <input type="file" id="restore-file" style="display: none;" accept=".json" onchange="ExportEngine.restoreAll(this)">
         </div>
     </aside>
 
@@ -872,6 +876,33 @@
                 a.href = url;
                 a.download = `backup_sistema_v3_${Date.now()}.json`;
                 a.click();
+            },
+            restoreAll: (input) => {
+                const file = input.files[0];
+                if(!file) return;
+                
+                if(!confirm("ATENÇÃO: Isso irá substituir todos os dados atuais pelos do backup. Deseja continuar?")) {
+                    input.value = ''; // clear selection
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        // Basic validation
+                        if(data.cliente && data.produto && Array.isArray(data.cliente)) {
+                            localStorage.setItem(DB.key, JSON.stringify(data));
+                            alert("Dados restaurados com sucesso! A página será recarregada.");
+                            location.reload();
+                        } else {
+                            alert("Arquivo de backup inválido.");
+                        }
+                    } catch(err) {
+                        alert("Erro ao ler arquivo: " + err.message);
+                    }
+                };
+                reader.readAsText(file);
             },
             exportRoute: (route) => {
                 const db = DB.load();
