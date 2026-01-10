@@ -4,9 +4,8 @@
     <!-- 
         ================================================================
         SEO ARCHITECT REPORT: 100/100 PERFECT SCORE
-        - Update: Botões de navegação divididos (Lado a Lado)
-        - Update: Menu Mobile Sticky com Categorias Dinâmicas
-        - Update: Persistência de Estado (LocalStorage)
+        - Update: Categorias na Sidebar (Desktop Only)
+        - Update: Busca por Nome/Código em "Monte sua Cesta"
         - Core: Conteúdo original preservado integralmente
         ================================================================
     -->
@@ -129,6 +128,9 @@
             
             /* Esconde botões desktop no mobile */
             .nav-group-desktop { display: none !important; }
+            
+            /* Esconde lista lateral desktop no mobile */
+            #sidebar-categories { display: none !important; }
         }
 
         /* DESKTOP */
@@ -222,7 +224,7 @@
         }
         .btn-toggle-mobile.active { background: #eff6ff; border-color: var(--brand-blue); color: var(--brand-blue); }
 
-        /* Seletor de Categorias (Stories Style) */
+        /* Seletor de Categorias (Stories Style - Mobile) */
         .category-scroll {
             display: none; /* Oculto por padrão, visível via JS na aba certa */
             overflow-x: auto; gap: 8px; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; margin-top: 5px;
@@ -232,6 +234,17 @@
             white-space: nowrap; padding: 6px 14px; background: #f3f4f6; border-radius: 20px; font-size: 0.8rem; color: #4b5563; border: 1px solid transparent; cursor: pointer; font-weight: 600; flex-shrink: 0; transition: all 0.2s;
         }
         .cat-pill.active { background: var(--brand-blue); color: white; }
+
+        /* Categorias Desktop (Sidebar) */
+        #desktop-category-list { display: flex; flex-direction: column; gap: 8px; }
+        .desktop-cat-item { padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; color: #374151; transition: all 0.2s; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+        .desktop-cat-item:hover { background-color: #f3f4f6; color: var(--brand-blue); }
+        .desktop-cat-item.active { background-color: #eff6ff; color: var(--brand-blue); font-weight: 700; border-left: 3px solid var(--brand-blue); }
+
+        /* Busca em Monte sua Cesta */
+        .search-container { margin-bottom: 20px; }
+        .search-input { width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s; }
+        .search-input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
         /* Grid da Nova Seção */
         .custom-section-title { font-size: 1.4rem; color: var(--brand-blue); margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #bfdbfe; padding-bottom: 10px; }
@@ -307,7 +320,7 @@
 
     <div class="container layout-grid">
         
-        <!-- SIDEBAR (Original) -->
+        <!-- SIDEBAR (Original + Categorias Desktop) -->
         <aside id="sidebar-info">
             <div class="card" style="border-top: 4px solid var(--brand-blue); gap: 16px;">
                 <div>
@@ -317,6 +330,14 @@
                         <li style="display: flex; align-items: center;"><span style="color: #16a34a; margin-right: 8px;">✓</span> Pagamento só na entrega</li>
                         <li style="display: flex; align-items: center;"><span style="color: #16a34a; margin-right: 8px;">✓</span> Aceitamos Cartão Alimentação</li>
                     </ul>
+                </div>
+            </div>
+
+            <!-- NOVO: Categorias Desktop (Invisível no Mobile) -->
+            <div id="sidebar-categories" class="card" style="margin-top: 20px; display: none;">
+                <h2 style="font-size: 1rem; margin-bottom: 10px; color: #4b5563;">Categorias</h2>
+                <div id="desktop-category-list">
+                    <!-- Injetado via JS -->
                 </div>
             </div>
         </aside>
@@ -417,6 +438,12 @@
                         Escolha itens avulsos e monte do seu jeito.
                     </div>
                 </div>
+                
+                <!-- NOVO: Campo de Pesquisa -->
+                <div class="search-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="Buscar por nome ou código..." oninput="MonteCestaApp.filterCatalog(this.value)">
+                </div>
+
                 <!-- Container de Produtos (JSON) -->
                 <div id="custom-products-container">
                     <p style="text-align: center; padding: 20px; color: #666;">Carregando produtos...</p>
@@ -671,7 +698,7 @@
                     const response = await fetch('produtos/produtos.json');
                     if (!response.ok) throw new Error("Erro JSON");
                     this.products = await response.json();
-                    this.renderCatalog();
+                    this.renderCatalog(this.products);
                     this.setupMobileScroll();
                     // Restaurar Estado
                     const saved = localStorage.getItem('donaantonia_mode');
@@ -701,6 +728,7 @@
                 const main = document.getElementById('cestas-prontas-view');
                 const custom = document.getElementById('monte-sua-cesta');
                 const catSelector = document.getElementById('category-selector');
+                const sidebarCats = document.getElementById('sidebar-categories');
 
                 // Buttons Desktop
                 const btnDeskProntas = document.getElementById('btn-desk-prontas');
@@ -715,6 +743,7 @@
                     main.style.display = 'none';
                     custom.style.display = 'block';
                     catSelector.style.display = 'flex';
+                    sidebarCats.style.display = 'block'; // Mostrar categorias na sidebar desktop
                     
                     // Update classes
                     btnDeskProntas.classList.remove('active');
@@ -727,6 +756,7 @@
                     main.style.display = 'block';
                     custom.style.display = 'none';
                     catSelector.style.display = 'none';
+                    sidebarCats.style.display = 'none'; // Esconder categorias na sidebar desktop
                     
                     // Update classes
                     btnDeskProntas.classList.add('active');
@@ -738,12 +768,30 @@
                 if (shouldScroll) window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
-            renderCatalog() {
+            filterCatalog(query) {
+                const lowerQuery = query.toLowerCase();
+                const filtered = this.products.filter(p => 
+                    p.nome.toLowerCase().includes(lowerQuery) || 
+                    p.codigo.toLowerCase().includes(lowerQuery)
+                );
+                this.renderCatalog(filtered);
+            },
+
+            renderCatalog(productsToRender) {
                 const container = document.getElementById('custom-products-container');
                 const catSelector = document.getElementById('category-selector');
-                container.innerHTML = ""; catSelector.innerHTML = "";
+                const desktopCatList = document.getElementById('desktop-category-list');
+                
+                container.innerHTML = ""; 
+                catSelector.innerHTML = "";
+                desktopCatList.innerHTML = "";
 
-                const grouped = this.products.reduce((acc, prod) => {
+                if (productsToRender.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">Nenhum produto encontrado.</p>';
+                    return;
+                }
+
+                const grouped = productsToRender.reduce((acc, prod) => {
                     if (!acc[prod.categoria]) acc[prod.categoria] = [];
                     acc[prod.categoria].push(prod);
                     return acc;
@@ -751,7 +799,8 @@
 
                 for (const [cat, items] of Object.entries(grouped)) {
                     const safeId = 'cat-' + cat.replace(/\s+/g, '-').toLowerCase();
-                    // Cat Pill
+                    
+                    // Mobile Pill
                     const pill = document.createElement('div');
                     pill.className = 'cat-pill';
                     pill.innerText = cat;
@@ -762,7 +811,18 @@
                     };
                     catSelector.appendChild(pill);
 
-                    // Grupo
+                    // Desktop Sidebar Item
+                    const deskItem = document.createElement('div');
+                    deskItem.className = 'desktop-cat-item';
+                    deskItem.innerHTML = `<span>${cat}</span><span style="font-size:0.8em; background:#e5e7eb; padding:2px 6px; border-radius:10px;">${items.length}</span>`;
+                    deskItem.onclick = () => {
+                        document.getElementById(safeId).scrollIntoView({behavior: 'smooth', block: 'center'});
+                        document.querySelectorAll('.desktop-cat-item').forEach(p => p.classList.remove('active'));
+                        deskItem.classList.add('active');
+                    };
+                    desktopCatList.appendChild(deskItem);
+
+                    // Grupo Principal
                     const group = document.createElement('div');
                     group.className = 'category-group';
                     group.id = safeId;
@@ -777,6 +837,8 @@
                                 <div class="custom-info"><h3>${prod.nome}</h3><div class="custom-desc">${prod.descricao}</div><div class="custom-price">R$ ${prod.preco.toFixed(2).replace('.', ',')}</div></div>
                                 <div id="controls-${prod.codigo}"><button class="btn-add-cart" onclick="MonteCestaApp.updateCart('${prod.codigo}', 1)">Adicionar</button></div>
                             </div>`;
+                        // Restore state if needed
+                        setTimeout(() => this.refreshUI(prod.codigo), 0);
                     });
                     container.appendChild(group);
                 }
@@ -792,6 +854,7 @@
 
             refreshUI(code) {
                 const el = document.getElementById(`controls-${code}`);
+                if (!el) return;
                 const qty = this.cart[code] || 0;
                 if (qty === 0) el.innerHTML = `<button class="btn-add-cart" onclick="MonteCestaApp.updateCart('${code}', 1)">Adicionar</button>`;
                 else el.innerHTML = `<div class="qty-control"><button class="qty-btn" onclick="MonteCestaApp.updateCart('${code}', -1)">-</button><span class="qty-val">${qty}</span><button class="qty-btn" onclick="MonteCestaApp.updateCart('${code}', 1)">+</button></div>`;
