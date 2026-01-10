@@ -415,14 +415,11 @@
                                             <input type="number" id="p-peso" step="0.001" placeholder="0.000">
                                         </div>
                                         <div class="form-group">
-                                            <label>Foto</label>
-                                            <div style="width: 100%; aspect-ratio: 1/1; border: 1px dashed var(--slate-300); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--slate-50); position: relative;" onclick="document.getElementById('p-img-file').click()">
-                                                <img id="p-img-preview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-                                                <i id="p-img-icon" class="fa-solid fa-camera" style="color: var(--slate-400); font-size: 2rem;"></i>
-                                                <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; color: var(--slate-600);">Alterar</div>
+                                            <label>Foto (img/produtos/CODIGO.webp)</label>
+                                            <div style="width: 100%; aspect-ratio: 1/1; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--slate-50); position: relative;">
+                                                <img id="p-img-preview" src="" onerror="this.style.display='none'; document.getElementById('p-img-icon').style.display='block';" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                                <i id="p-img-icon" class="fa-solid fa-box-open" style="color: var(--slate-300); font-size: 3rem;"></i>
                                             </div>
-                                            <input type="file" id="p-img-file" accept="image/*" style="display: none;" onchange="UI.previewImage(this)">
-                                            <input type="hidden" id="p-imagem">
                                         </div>
                                     </div>
 
@@ -1641,7 +1638,7 @@
                     document.getElementById('p-img-preview').src = '';
                     document.getElementById('p-img-preview').style.display = 'none';
                     document.getElementById('p-img-icon').style.display = 'block';
-                    document.getElementById('p-imagem').value = '';
+                    Views.catalogo.render();
                 } else if(type === 'cliente') {
                     document.getElementById('c-id').value = '';
                     Views.cliente.render();
@@ -1672,16 +1669,24 @@
                     document.getElementById('p-variacoesNome').value = (item.variacoesNome || []).join(' | ');
                     document.getElementById('p-variacoesEan').value = (item.variacoesEan || []).join(' | ');
                     
-                    // Load Image Preview if exists
-                    if(item.imagem) {
-                        document.getElementById('p-img-preview').src = item.imagem;
-                        document.getElementById('p-img-preview').style.display = 'block';
-                        document.getElementById('p-img-icon').style.display = 'none';
-                    } else {
-                        document.getElementById('p-img-preview').src = '';
-                        document.getElementById('p-img-preview').style.display = 'none';
-                        document.getElementById('p-img-icon').style.display = 'block';
-                    }
+                    // Load Image Preview based on Code
+                    const imgCode = item.codigo.toLowerCase();
+                    const imgUrl = `img/produtos/${imgCode}.webp`;
+                    const imgEl = document.getElementById('p-img-preview');
+                    const iconEl = document.getElementById('p-img-icon');
+
+                    imgEl.style.display = 'none';
+                    iconEl.style.display = 'block';
+
+                    imgEl.src = imgUrl;
+                    imgEl.onload = () => {
+                        imgEl.style.display = 'block';
+                        iconEl.style.display = 'none';
+                    };
+                    imgEl.onerror = () => {
+                        imgEl.style.display = 'none';
+                        iconEl.style.display = 'block';
+                    };
                 }
             },
             delete: (type, id) => {
@@ -1738,7 +1743,6 @@
                     document.getElementById('p-img-preview').src = '';
                     document.getElementById('p-img-preview').style.display = 'none';
                     document.getElementById('p-img-icon').style.display = 'block';
-                    document.getElementById('p-imagem').value = '';
                 }
             },
             toggleStockInputs: () => {
@@ -1759,18 +1763,6 @@
             },
             toggleComboArea: (checked) => {
                 document.getElementById('combo-area').style.display = checked ? 'block' : 'none';
-            },
-            previewImage: (input) => {
-                if (input.files && input.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        document.getElementById('p-img-preview').src = e.target.result;
-                        document.getElementById('p-img-preview').style.display = 'block';
-                        document.getElementById('p-img-icon').style.display = 'none';
-                        document.getElementById('p-imagem').value = e.target.result;
-                    };
-                    reader.readAsDataURL(input.files[0]);
-                }
             },
             populateCategories: () => {
                 const db = DB.load();
