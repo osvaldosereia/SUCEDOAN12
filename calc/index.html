@@ -146,8 +146,8 @@
         @media(min-width: 768px) {
             dialog#product-modal { 
                 width: 900px; 
-                height: 80vh; 
-                max-height: 800px;
+                height: auto; /* Altura automática baseada no conteúdo e ratio */
+                max-height: 85vh;
                 border-radius: 20px; 
                 position: fixed; inset: 0; margin: auto; 
                 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -161,14 +161,36 @@
             overflow: hidden; 
         }
         @media(min-width: 768px) { 
-            .pm-grid { flex-direction: row; border-radius: 20px; } 
+            .pm-grid { 
+                flex-direction: row; 
+                border-radius: 20px; 
+                height: 100%; 
+                align-items: stretch;
+            } 
         }
 
         /* Galeria Slide */
         .pm-gallery { 
-            background: #000; flex: 1; position: relative; display: flex; align-items: center; justify-content: center; 
-            min-height: 300px; touch-action: pan-y; 
+            background: #fff; /* Fundo branco para não ter margens pretas */
+            flex: 1; 
+            position: relative; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            /* Garante formato quadrado */
+            aspect-ratio: 1/1;
+            width: 100%;
+            touch-action: pan-y; 
         }
+        
+        @media(min-width: 768px) {
+            .pm-gallery {
+                width: 50%; /* Ocupa metade da largura no desktop */
+                flex: none; /* Não esticar nem encolher */
+                height: auto; /* Altura segue a proporção 1:1 da largura */
+            }
+        }
+
         .pm-stage { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         .pm-stage img, .pm-stage video { max-width: 100%; max-height: 100%; object-fit: contain; }
         
