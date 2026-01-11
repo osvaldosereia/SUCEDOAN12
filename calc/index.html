@@ -34,7 +34,7 @@
         /* Layout Utilities */
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         .hidden { display: none !important; }
-        img { display: block; max-width: 100%; height: auto; }
+        img, video { display: block; max-width: 100%; height: auto; }
         button, a { cursor: pointer; text-decoration: none; font-family: inherit; }
         
         /* ⚡ RENDER OPTIMIZATION: Placeholder para imagens quebradas */
@@ -49,7 +49,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: var(--header-h);
             background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border); z-index: 100;
-            contain: layout size; /* Performance hint */
+            contain: layout size;
         }
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
         
@@ -131,14 +131,29 @@
         .card {
             background: white; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
             display: flex; flex-direction: column;
-            /* Browser só renderiza quando perto da tela */
             content-visibility: auto; 
-            contain-intrinsic-size: 0 380px; /* Altura estimada para evitar pulos */
+            contain-intrinsic-size: 0 380px; 
+            position: relative;
         }
         
-        .card-img-box { aspect-ratio: 1; padding: 15px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f3f4f6; }
+        .card-img-box { 
+            aspect-ratio: 1; padding: 15px; display: flex; align-items: center; justify-content: center; 
+            border-bottom: 1px solid #f3f4f6; position: relative;
+        }
         .card-img { width: 100%; height: 100%; object-fit: contain; }
         
+        /* CHIP DE ZOOM */
+        .btn-zoom {
+            position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+            background: rgba(30,30,30,0.85); color: white;
+            padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);
+            display: flex; align-items: center; gap: 6px;
+            opacity: 0.9; transition: all 0.2s; cursor: pointer; z-index: 5;
+        }
+        .btn-zoom:hover { opacity: 1; transform: translateX(-50%) scale(1.05); background: var(--primary); }
+        .btn-zoom svg { width: 14px; height: 14px; }
+
         .card-body { padding: 16px; display: flex; flex-direction: column; flex: 1; }
         .card-code { font-size: 0.7rem; color: #9ca3af; font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; align-self: flex-start; margin-bottom: 8px; }
         .card-title { font-size: 1rem; font-weight: 600; color: var(--secondary); margin-bottom: 4px; line-height: 1.3; }
@@ -155,14 +170,14 @@
         svg { width: 24px; height: 24px; fill: currentColor; }
         .icon-sm { width: 16px; height: 16px; }
 
-        /* MODAL */
-        dialog {
+        /* MODAL CARRINHO */
+        dialog#cart-modal {
             margin: auto; width: 100%; max-width: 450px; height: 100%; max-height: 100%;
             border: none; background: white; z-index: 200; box-shadow: 0 0 50px rgba(0,0,0,0.2);
             flex-direction: column;
         }
         @media(min-width: 768px) {
-            dialog { height: auto; max-height: 85vh; border-radius: 20px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; }
+            dialog#cart-modal { height: auto; max-height: 85vh; border-radius: 20px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; }
         }
         dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
         dialog[open] { display: flex; animation: slideUp 0.3s ease-out; }
@@ -175,6 +190,37 @@
         .cart-item { display: flex; gap: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); margin-bottom: 15px; }
         .cart-total-row { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; color: var(--secondary); margin-bottom: 15px; }
         .btn-checkout { width: 100%; padding: 16px; background: #25D366; color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        /* MODAL GALERIA (FULL SCREEN) */
+        dialog#media-modal {
+            margin: 0; width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh;
+            background: black; border: none; z-index: 300;
+            display: none; /* Controlled by flex */
+        }
+        dialog#media-modal[open] { display: flex; flex-direction: column; }
+        
+        .media-stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .media-stage img, .media-stage video { max-width: 100%; max-height: 100%; object-fit: contain; animation: fadeIn 0.3s; }
+        
+        .btn-close-media {
+            position: absolute; top: 20px; right: 20px; z-index: 10;
+            background: rgba(255,255,255,0.2); color: white; border: none;
+            width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        
+        .media-thumbs {
+            height: 90px; background: rgba(20,20,20,0.9); border-top: 1px solid #333;
+            display: flex; gap: 10px; padding: 10px; overflow-x: auto; justify-content: center;
+        }
+        .thumb-item {
+            width: 70px; height: 70px; border-radius: 6px; overflow: hidden; cursor: pointer;
+            border: 2px solid transparent; opacity: 0.6; transition: all 0.2s; background: #000;
+        }
+        .thumb-item.active { border-color: var(--primary); opacity: 1; transform: scale(1.05); }
+        .thumb-item img, .thumb-item video { width: 100%; height: 100%; object-fit: cover; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
         /* FAB & SEARCH */
         .fab { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; box-shadow: 0 10px 25px rgba(220, 38, 38, 0.5); display: flex; align-items: center; justify-content: center; z-index: 90; border: none; }
@@ -257,13 +303,12 @@
         <div id="fab-badge" class="cart-badge">0</div>
     </button>
 
-    <!-- Modal -->
+    <!-- Modal Carrinho -->
     <dialog id="cart-modal">
         <div class="modal-header">
             <h3 style="font-weight: 800; font-size: 1.2rem;">Seu Pedido</h3>
             <button onclick="App.toggleCart()" style="background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">✕</button>
         </div>
-        <!-- Delegation Container for Modal -->
         <div class="modal-body" id="cart-body"></div>
         <div class="modal-footer">
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--text-muted);">
@@ -281,6 +326,19 @@
         </div>
     </dialog>
 
+    <!-- MODAL GALERIA -->
+    <dialog id="media-modal">
+        <button class="btn-close-media" onclick="MediaGallery.close()">✕</button>
+        
+        <div class="media-stage" id="media-stage">
+            <!-- Imagem Grande ou Video Aqui -->
+        </div>
+
+        <div class="media-thumbs" id="media-thumbs">
+            <!-- Thumbnails geradas via JS -->
+        </div>
+    </dialog>
+
     <script>
         const App = {
             data: [],
@@ -289,7 +347,6 @@
 
             async init() {
                 try {
-                    // Cache Control pode ser configurado no servidor
                     const res = await fetch('produtos/produtos.json');
                     if (!res.ok) throw new Error('Erro JSON');
                     const raw = await res.json();
@@ -320,8 +377,6 @@
                 }
             },
 
-            // 🚀 ULTRA-PERFORMANCE: Event Delegation
-            // Um único listener para gerenciar todos os cliques em produtos
             setupDelegation(containerId) {
                 const el = document.getElementById(containerId);
                 if(!el) return;
@@ -335,6 +390,7 @@
                     
                     if (action === 'add') this.add(id);
                     if (action === 'remove') this.remove(id);
+                    if (action === 'zoom') MediaGallery.open(id);
                 });
             },
 
@@ -345,7 +401,6 @@
                 
                 if (cestas.length > 0) {
                     section.classList.remove('hidden');
-                    // 'eager' load para imagens de destaque na primeira dobra
                     grid.innerHTML = cestas.map(p => this.cardHTML(p, 'eager')).join('');
                 }
             },
@@ -389,12 +444,16 @@
             cardHTML(p, loadingStrategy) {
                 const stock = p.estoque > 0 ? `Estoque: ${p.estoque}` : `<span style="color:var(--primary)">Indisponível</span>`;
                 
-                // 🚀 DOM OTIMIZADO: Sem listeners inline, sem base64 inline
                 return `
                 <div class="card" id="card-${p.id}">
                     <div class="card-img-box">
                         <img src="${p.imagem}" loading="${loadingStrategy}" alt="${p.nome}" class="card-img" width="200" height="200" 
                              onerror="this.onerror=null;this.classList.add('fallback-img')">
+                        
+                        <button class="btn-zoom" data-action="zoom" data-id="${p.id}">
+                            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            Aumentar Imagem
+                        </button>
                     </div>
                     <div class="card-body">
                         ${p.codigo ? `<div class="card-code">${p.codigo}</div>` : ''}
@@ -412,7 +471,7 @@
             add(id) {
                 if (!this.cart[id]) this.cart[id] = 0;
                 this.cart[id]++;
-                this.updateUI(id); // Atualiza apenas o necessário
+                this.updateUI(id); 
             },
 
             remove(id) {
@@ -424,11 +483,9 @@
             },
 
             updateUI(specificId = null) {
-                // Se um ID específico foi passado, atualiza só ele
                 const itemsToUpdate = specificId ? [this.data.find(p => p.id === specificId)] : this.data;
                 let totalQty = 0;
 
-                // Calcula total global
                 for (const key in this.cart) totalQty += this.cart[key];
 
                 itemsToUpdate.forEach(p => {
@@ -438,7 +495,6 @@
                     
                     if (ctrl) {
                         if (qty === 0) {
-                            // Verifica se já não é o botão 'adicionar' para evitar reflow desnecessário
                             if(!ctrl.querySelector('.btn-add')) {
                                 ctrl.innerHTML = `<button class="btn-add" data-action="add" data-id="${p.id}">ADICIONAR</button>`;
                             }
@@ -459,7 +515,6 @@
                     totalQty > 0 ? b.classList.add('show') : b.classList.remove('show');
                 });
                 
-                // Se o modal estiver aberto, atualiza ele também
                 if(document.getElementById('cart-modal').open) {
                     this.renderCartModal();
                 }
@@ -550,7 +605,109 @@
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => App.init());
+        // 🚀 GALERIA INTELIGENTE
+        const MediaGallery = {
+            modal: null,
+            stage: null,
+            thumbs: null,
+            
+            init() {
+                this.modal = document.getElementById('media-modal');
+                this.stage = document.getElementById('media-stage');
+                this.thumbs = document.getElementById('media-thumbs');
+            },
+
+            async open(productId) {
+                if(!this.modal) this.init();
+                
+                const product = App.data.find(p => p.id === productId);
+                if(!product) return;
+
+                // Limpa e abre
+                this.stage.innerHTML = '<div style="color:white">Carregando...</div>';
+                this.thumbs.innerHTML = '';
+                this.modal.showModal();
+
+                // 1. Pega imagem principal
+                const mediaItems = [];
+                if(product.imagem) {
+                    mediaItems.push({ type: 'img', src: product.imagem });
+                }
+
+                // 2. Busca Variações (A, B, C...)
+                const basePath = product.imagem.substring(0, product.imagem.lastIndexOf('.')); // ex: img/produtos/p008
+                const suffixes = ['A', 'B', 'C', 'D', 'E'];
+                
+                // Função helper para verificar existência
+                const checkUrl = (url, type) => {
+                    return new Promise(resolve => {
+                        const el = type === 'video' ? document.createElement('video') : new Image();
+                        el.onload = el.onloadedmetadata = () => resolve({ type, src: url });
+                        el.onerror = () => resolve(null);
+                        el.src = url;
+                    });
+                };
+
+                // Verifica imagens e videos em paralelo
+                const checks = [];
+                suffixes.forEach(suffix => {
+                    // Check WEBP
+                    checks.push(checkUrl(`${basePath}${suffix}.webp`, 'img'));
+                    // Check MP4 (Videos)
+                    checks.push(checkUrl(`${basePath}${suffix}.mp4`, 'video'));
+                });
+
+                const results = await Promise.all(checks);
+                results.forEach(res => {
+                    if(res) mediaItems.push(res);
+                });
+
+                this.render(mediaItems);
+            },
+
+            render(items) {
+                if(items.length === 0) {
+                    this.stage.innerHTML = '<div style="color:white">Sem imagem</div>';
+                    return;
+                }
+
+                // Render Thumbs
+                this.thumbs.innerHTML = items.map((item, idx) => `
+                    <div class="thumb-item ${idx === 0 ? 'active' : ''}" onclick="MediaGallery.show(${idx})">
+                        ${item.type === 'video' 
+                            ? `<video src="${item.src}#t=0.1" muted></video>` 
+                            : `<img src="${item.src}">`
+                        }
+                    </div>
+                `).join('');
+
+                // Armazena itens para troca rápida
+                this.items = items;
+                this.show(0);
+            },
+
+            show(index) {
+                const item = this.items[index];
+                
+                // Atualiza Stage
+                this.stage.innerHTML = item.type === 'video' 
+                    ? `<video src="${item.src}" controls autoplay style="max-height:100%; max-width:100%"></video>` 
+                    : `<img src="${item.src}">`;
+
+                // Atualiza Thumbs Active
+                const thumbEls = this.thumbs.children;
+                for(let i=0; i<thumbEls.length; i++) {
+                    thumbEls[i].classList.toggle('active', i === index);
+                }
+            },
+
+            close() {
+                this.modal.close();
+                this.stage.innerHTML = ''; // Para vídeo se estiver tocando
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => { App.init(); });
     </script>
 </body>
 </html>
