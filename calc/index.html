@@ -132,29 +132,41 @@
             background: white; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
             display: flex; flex-direction: column;
             content-visibility: auto; 
-            contain-intrinsic-size: 0 380px; 
+            contain-intrinsic-size: 0 420px; /* Ajuste altura estimada */
             position: relative;
         }
         
         .card-img-box { 
-            aspect-ratio: 1; padding: 15px; display: flex; align-items: center; justify-content: center; 
-            border-bottom: 1px solid #f3f4f6; position: relative;
+            aspect-ratio: 1; padding: 10px; display: flex; align-items: center; justify-content: center; 
+            /* Removida borda inferior pois agora tem o botao */
+            position: relative;
         }
         .card-img { width: 100%; height: 100%; object-fit: contain; }
         
-        /* CHIP DE ZOOM */
+        /* BOTÃO DE ZOOM (Novo Estilo) */
         .btn-zoom {
-            position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-            background: rgba(30,30,30,0.85); color: white;
-            padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);
-            display: flex; align-items: center; gap: 6px;
-            opacity: 0.9; transition: all 0.2s; cursor: pointer; z-index: 5;
+            width: 100%;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            border-top: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f3f4f6;
+            padding: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .btn-zoom:hover { opacity: 1; transform: translateX(-50%) scale(1.05); background: var(--primary); }
-        .btn-zoom svg { width: 14px; height: 14px; }
+        .btn-zoom:hover { background: #f9fafb; color: var(--primary); }
+        .btn-zoom svg { width: 14px; height: 14px; opacity: 0.7; }
 
-        .card-body { padding: 16px; display: flex; flex-direction: column; flex: 1; }
+        .card-body { padding: 12px 16px 16px; display: flex; flex-direction: column; flex: 1; }
         .card-code { font-size: 0.7rem; color: #9ca3af; font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; align-self: flex-start; margin-bottom: 8px; }
         .card-title { font-size: 1rem; font-weight: 600; color: var(--secondary); margin-bottom: 4px; line-height: 1.3; }
         .card-price { font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-top: auto; padding-top: 8px; }
@@ -449,12 +461,13 @@
                     <div class="card-img-box">
                         <img src="${p.imagem}" loading="${loadingStrategy}" alt="${p.nome}" class="card-img" width="200" height="200" 
                              onerror="this.onerror=null;this.classList.add('fallback-img')">
-                        
-                        <button class="btn-zoom" data-action="zoom" data-id="${p.id}">
-                            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                            Aumentar Imagem
-                        </button>
                     </div>
+                    
+                    <button class="btn-zoom" data-action="zoom" data-id="${p.id}">
+                        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        Ampliar
+                    </button>
+
                     <div class="card-body">
                         ${p.codigo ? `<div class="card-code">${p.codigo}</div>` : ''}
                         <div class="card-title">${p.nome}</div>
