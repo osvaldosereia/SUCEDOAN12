@@ -139,7 +139,7 @@
         dialog#product-modal {
             margin: auto; width: 100%; height: 100%; max-width: 100%; max-height: 100%;
             background: white; border: none; z-index: 300; padding: 0;
-            overflow: hidden; /* Scroll interno */
+            overflow: hidden;
         }
         @media(min-width: 768px) {
             dialog#product-modal { 
@@ -147,10 +147,7 @@
                 height: 80vh; 
                 max-height: 800px;
                 border-radius: 20px; 
-                /* Centralização nativa robusta */
-                position: fixed; 
-                inset: 0;
-                margin: auto; 
+                position: fixed; inset: 0; margin: auto; 
                 transform: none;
                 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
             }
@@ -167,7 +164,7 @@
         .pm-stage { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         .pm-stage img, .pm-stage video { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        /* SETAS DA GALERIA */
+        /* SETAS DA GALERIA (SLIDER) */
         .pm-arrow {
             position: absolute; top: 50%; transform: translateY(-50%);
             background: rgba(220, 220, 220, 0.6);
@@ -177,11 +174,33 @@
             display: flex; align-items: center; justify-content: center;
             backdrop-filter: blur(4px);
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 10;
         }
         .pm-arrow:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-50%) scale(1.1); }
-        .pm-arrow:active { transform: translateY(-50%) scale(0.95); }
         .pm-arrow.prev { left: 15px; }
         .pm-arrow.next { right: 15px; }
+
+        /* NAVEGAÇÃO ENTRE PRODUTOS (Botões Flutuantes) */
+        .prod-nav-btn {
+            position: fixed; top: 50%; transform: translateY(-50%);
+            width: 50px; height: 50px; border-radius: 50%;
+            background: white; border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 310; color: var(--text-main);
+            transition: all 0.2s;
+        }
+        .prod-nav-btn:active { transform: translateY(-50%) scale(0.95); background: #f3f4f6; }
+        .prod-nav-btn.prev { left: 10px; }
+        .prod-nav-btn.next { right: 10px; }
+        
+        @media(min-width: 768px) {
+            /* No desktop, afastar um pouco mais para fora do modal se possível, ou manter na borda */
+            .prod-nav-btn { background: white; width: 60px; height: 60px; font-size: 1.2rem; }
+            .prod-nav-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+            .prod-nav-btn.prev { left: 20px; }
+            .prod-nav-btn.next { right: 20px; }
+        }
 
         /* Informações do Produto */
         .pm-info { 
@@ -192,7 +211,6 @@
         .pm-title { font-size: 1.5rem; font-weight: 800; color: var(--secondary); margin-bottom: 8px; line-height: 1.2; }
         .pm-code { display: inline-block; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: #4b5563; }
         
-        /* Texto Descritivo HTML */
         .pm-desc { font-size: 1rem; color: #374151; line-height: 1.6; margin-bottom: 24px; flex-grow: 1; }
         .pm-desc ul { margin-left: 20px; margin-bottom: 10px; list-style-type: disc; }
         .pm-desc li { margin-bottom: 4px; }
@@ -329,6 +347,7 @@
     <script>
         const App = {
             data: [],
+            filteredData: [], // Stores current list for navigation
             cart: {},
             phone: "5565999999999",
 
@@ -345,9 +364,11 @@
                         estoque: parseInt(p.estoque) || 0,
                         categoria: (p.categoria || 'OUTROS').toUpperCase().trim(),
                         imagem: (p.imagem && !p.imagem.includes('/')) ? 'img/produtos/' + p.imagem : (p.imagem || ''),
-                        // Mapeia o novo campo caracteristicas (permite HTML)
                         caracteristicas: p.caracteristicas || ''
                     }));
+
+                    // Inicializa filteredData com todos os produtos
+                    this.filteredData = this.data;
 
                     this.renderFeatured();
                     this.renderCatalog();
@@ -355,7 +376,6 @@
                     this.setupDelegation('featured-grid');
                     this.setupDelegation('main-catalog');
                     this.setupDelegation('cart-body');
-                    // Delegation para controles dentro do modal de produto
                     this.setupDelegation('product-modal');
                     
                     document.getElementById('search').addEventListener('input', (e) => {
@@ -373,7 +393,7 @@
                 
                 el.addEventListener('click', (e) => {
                     const btn = e.target.closest('button[data-action]');
-                    // Se clicar na imagem ou na caixa da imagem, abre detalhes
+                    
                     if (!btn && e.target.closest('.card-img-box')) {
                         const card = e.target.closest('.card');
                         if (card) ProductModal.open(card.id.replace('card-', ''));
@@ -388,6 +408,9 @@
                     if (action === 'add') this.add(id);
                     if (action === 'remove') this.remove(id);
                     if (action === 'details') ProductModal.open(id);
+                    // Navigation actions
+                    if (action === 'prev-prod') ProductModal.navigate(-1);
+                    if (action === 'next-prod') ProductModal.navigate(1);
                 });
             },
 
@@ -404,10 +427,14 @@
 
             renderCatalog(term = '') {
                 const container = document.getElementById('main-catalog');
+                
+                // Filtra e armazena a lista atual para navegação
                 const filtered = this.data.filter(p => 
                     p.categoria !== 'CESTA BASICA' &&
                     (p.nome.toLowerCase().includes(term) || (p.codigo && p.codigo.toLowerCase().includes(term)))
                 );
+                
+                this.filteredData = filtered; // Update Navigation Context
 
                 if (filtered.length === 0) {
                     container.innerHTML = `<p class="text-center" style="color:var(--text-muted); padding:40px;">Nenhum produto encontrado.</p>`;
@@ -440,7 +467,6 @@
 
             cardHTML(p, loadingStrategy) {
                 const stock = p.estoque > 0 ? `Estoque: ${p.estoque}` : `<span style="color:var(--primary)">Indisponível</span>`;
-                // Remove tags HTML para o preview do card
                 const descPreview = p.caracteristicas.replace(/<[^>]*>?/gm, ''); 
                 
                 return `
@@ -493,10 +519,7 @@
                     if(!p) return;
                     const qty = this.cart[p.id] || 0;
                     
-                    // Atualiza controles no Card Principal
                     this.updateControlUI(`ctrl-${p.id}`, p.id, qty);
-                    
-                    // Atualiza controles no Modal de Produto (se aberto)
                     this.updateControlUI(`pm-ctrl-${p.id}`, p.id, qty);
                 });
 
@@ -515,7 +538,6 @@
                 const ctrl = document.getElementById(elementId);
                 if (ctrl) {
                     if (qty === 0) {
-                        // Verifica para evitar reflow
                         if(!ctrl.querySelector('.btn-add')) {
                             ctrl.innerHTML = `<button class="btn-add" data-action="add" data-id="${prodId}">ADICIONAR</button>`;
                         }
@@ -615,12 +637,13 @@
             }
         };
 
-        // 🚀 NOVO: MODAL DE DETALHES DO PRODUTO COM SLIDESHOW
+        // 🚀 NOVO: MODAL DE DETALHES DO PRODUTO COM SLIDESHOW E NAVEGAÇÃO
         const ProductModal = {
             modal: null,
             content: null,
             currentItemIndex: 0,
             mediaItems: [],
+            currentProductId: null,
 
             init() {
                 this.modal = document.getElementById('product-modal');
@@ -633,8 +656,13 @@
                 const product = App.data.find(p => p.id === productId);
                 if(!product) return;
 
-                this.modal.showModal();
-                this.content.innerHTML = '<div style="padding:40px; text-align:center;">Carregando detalhes...</div>';
+                this.currentProductId = productId;
+                
+                // Se já estiver aberto, não mostra carregando, apenas troca o conteúdo
+                if(!this.modal.open) {
+                    this.modal.showModal();
+                    this.content.innerHTML = '<div style="padding:40px; text-align:center;">Carregando detalhes...</div>';
+                }
 
                 // Prepara Mídia (Busca variações A, B, C...)
                 const mediaItems = [];
@@ -653,7 +681,6 @@
                 suffixes.forEach(s => {
                     checks.push(checkUrl(`${basePath}${s}.webp`, 'img'));
                     checks.push(checkUrl(`${basePath}${s}.mp4`, 'video'));
-                    // Check lowercase as well
                     checks.push(checkUrl(`${basePath}${s.toLowerCase()}.webp`, 'img'));
                     checks.push(checkUrl(`${basePath}${s.toLowerCase()}.mp4`, 'video'));
                 });
@@ -664,22 +691,48 @@
                 this.mediaItems = mediaItems;
                 this.currentItemIndex = 0;
                 this.render(product);
-                // Atualiza o estado do botão "Adicionar" dentro do modal com a quantidade atual
+                
                 App.updateUI(product.id);
+            },
+
+            // 🚀 Navegação entre produtos no modal
+            navigate(direction) {
+                // Tenta encontrar na lista filtrada atual
+                let list = App.filteredData;
+                let idx = list.findIndex(p => p.id === this.currentProductId);
+                
+                // Se não achou na filtrada (ex: veio de Destaques), procura na lista completa
+                if (idx === -1) {
+                    list = App.data;
+                    idx = list.findIndex(p => p.id === this.currentProductId);
+                }
+
+                if (idx === -1) return; // Erro de segurança
+
+                let newIdx = idx + direction;
+                
+                // Loop ou trava nas pontas? Vamos travar para não pular de categoria bruscamente
+                if (newIdx >= 0 && newIdx < list.length) {
+                    this.open(list[newIdx].id);
+                }
             },
 
             render(product) {
                 const qty = App.cart[product.id] || 0;
-                const hasArrows = this.mediaItems.length > 1;
+                const hasMediaArrows = this.mediaItems.length > 1;
 
                 this.content.innerHTML = `
                     <button class="btn-close-pm" onclick="ProductModal.close()">✕</button>
                     
+                    <!-- Botões de Navegação Entre Produtos -->
+                    <button class="prod-nav-btn prev" data-action="prev-prod" aria-label="Produto Anterior">❮</button>
+                    <button class="prod-nav-btn next" data-action="next-prod" aria-label="Próximo Produto">❯</button>
+
                     <div class="pm-gallery">
                         <div class="pm-stage" id="pm-stage">
                             ${this.getMediaHTML(0)}
                         </div>
-                        ${hasArrows ? `
+                        ${hasMediaArrows ? `
                             <button class="pm-arrow prev" onclick="ProductModal.slide(-1)">❮</button>
                             <button class="pm-arrow next" onclick="ProductModal.slide(1)">❯</button>
                         ` : ''}
