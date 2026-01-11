@@ -8,259 +8,298 @@
     <title>Dona Antônia | Cestas Básicas</title>
 
     <style>
-        /* --- CSS MODERN & MINIMALIST (No Frameworks) --- */
+        /* --- CORE CSS (Ultra Performance) --- */
         :root {
             --primary: #dc2626; /* Vermelho vibrante */
             --primary-dark: #b91c1c;
+            --secondary: #111827; /* Preto suave */
             --bg: #f9fafb;
             --surface: #ffffff;
             --text-main: #1f2937;
             --text-muted: #6b7280;
             --border: #e5e7eb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --radius: 12px;
-            --header-h: 60px;
+            --header-h: 70px;
         }
 
-        /* Reset Básico */
+        /* Reset & Base */
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            line-height: 1.5;
-            padding-bottom: 80px; /* Espaço para FAB mobile */
+            background-color: var(--bg); color: var(--text-main); line-height: 1.5; padding-bottom: 80px;
         }
 
-        /* Utilitários */
-        .container { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+        /* Layout */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         .hidden { display: none !important; }
-        .text-center { text-align: center; }
-        button { cursor: pointer; border: none; font-family: inherit; }
         img { display: block; max-width: 100%; height: auto; }
+        button, a { cursor: pointer; text-decoration: none; font-family: inherit; }
 
-        /* Header */
+        /* HEADER */
         header {
             position: fixed; top: 0; left: 0; width: 100%; height: var(--header-h);
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border); z-index: 100;
-            display: flex; align-items: center;
         }
-        .header-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .logo { font-weight: 800; font-size: 1.25rem; color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 8px; }
-        .logo span { color: var(--primary); }
-        .cart-icon-btn { position: relative; background: none; padding: 8px; }
+        .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
+        
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        .logo-box { width: 40px; height: 40px; background: var(--primary); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .btn-header-cta {
+            background: var(--primary); color: white; padding: 8px 20px; border-radius: 50px;
+            font-weight: 600; font-size: 0.9rem; transition: background 0.2s;
+            display: none; /* Mobile hidden */
+        }
+        @media(min-width: 768px) { .btn-header-cta { display: block; } }
+        .btn-header-cta:hover { background: var(--primary-dark); }
+
+        .cart-trigger { position: relative; background: none; border: none; padding: 5px; color: var(--text-main); }
         .cart-badge {
-            position: absolute; top: 0; right: 0;
-            background: var(--primary); color: white;
-            font-size: 0.7rem; font-weight: bold;
-            min-width: 18px; height: 18px; border-radius: 9px;
-            display: flex; align-items: center; justify-content: center;
-            border: 2px solid white;
-            transform: scale(0); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: absolute; top: -2px; right: -2px; background: var(--primary); color: white;
+            font-size: 0.7rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; border: 2px solid white;
+            transform: scale(0); transition: transform 0.2s;
         }
         .cart-badge.show { transform: scale(1); }
 
-        /* Hero Section */
-        .hero { padding: calc(var(--header-h) + 30px) 0 30px; text-align: center; }
-        .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 10px; line-height: 1.1; }
-        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 20px; }
-        .hero-tag { display: inline-block; background: #fef2f2; color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 16px; border: 1px solid #fee2e2; }
-
-        /* Seção Cestas Prontas (Destaque) */
-        .featured-section { background: white; padding: 40px 0; margin-bottom: 30px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main); }
+        /* HERO SECTION */
+        .hero { padding: calc(var(--header-h) + 40px) 0 60px; background: white; border-bottom: 1px solid var(--border); }
+        .hero-grid { display: grid; gap: 40px; align-items: center; }
         
-        /* Grid de Produtos */
-        .grid-products {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Mobile: 2 colunas */
-            gap: 12px;
+        /* Tag de Entrega */
+        .hero-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #fef2f2; color: var(--primary); padding: 6px 16px; border-radius: 50px;
+            font-size: 0.85rem; font-weight: 700; border: 1px solid #fee2e2; margin-bottom: 20px;
         }
-        @media (min-width: 768px) {
-            .grid-products { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px; }
-            .hero h1 { font-size: 3rem; }
+        
+        .hero-content h1 { font-size: 2.5rem; line-height: 1.1; color: var(--secondary); margin-bottom: 16px; letter-spacing: -0.02em; }
+        .hero-content h1 span { color: var(--primary); }
+        .hero-content p { font-size: 1.125rem; color: var(--text-muted); margin-bottom: 30px; max-width: 500px; line-height: 1.6; }
+        
+        .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn-hero { padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 1rem; transition: transform 0.1s; }
+        .btn-hero:active { transform: scale(0.98); }
+        .btn-primary { background: var(--secondary); color: white; border: none; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+        .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
+
+        .hero-img-container {
+            border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15);
+            aspect-ratio: 16/10; position: relative;
+        }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; }
+        .hero-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0; padding: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            color: white;
         }
 
-        /* Categoria Separator */
-        .category-header {
+        @media (min-width: 768px) {
+            .hero-grid { grid-template-columns: 1fr 1fr; }
+            .hero-content h1 { font-size: 3.5rem; }
+            .hero { padding-top: 140px; padding-bottom: 100px; }
+            /* Imagem à direita no desktop */
+            .hero-img-container { order: 2; } 
+            .hero-content { order: 1; }
+        }
+        @media (max-width: 767px) {
+             /* Imagem primeiro no mobile */
+            .hero-img-container { order: 1; margin-bottom: 20px; }
+            .hero-content { order: 2; }
+            .hero-btns { flex-direction: column; }
+            .btn-hero { width: 100%; text-align: center; }
+        }
+
+        /* LISTAGEM CESTAS */
+        .featured-section { padding: 60px 0; background: #f9fafb; }
+        .section-header { text-align: center; margin-bottom: 40px; }
+        .section-header h2 { font-size: 2rem; color: var(--secondary); margin-bottom: 8px; }
+        
+        .grid-products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media(min-width: 768px) { .grid-products { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; } }
+
+        /* CATEGORIAS */
+        .category-separator {
             position: sticky; top: var(--header-h); z-index: 10;
-            background: var(--bg);
-            padding: 16px 0 8px;
-            margin-top: 24px;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 16px;
+            background: var(--bg); padding: 20px 0 10px;
+            margin-top: 20px; border-bottom: 2px solid var(--border);
         }
-        .category-header h2 { font-size: 1.2rem; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.05em; }
+        .category-title { font-size: 1.25rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.05em; }
 
-        /* Card de Produto */
+        /* CARDS */
         .card {
-            background: var(--surface); border-radius: var(--radius);
-            border: 1px solid var(--border);
-            overflow: hidden; display: flex; flex-direction: column;
-            transition: transform 0.1s;
+            background: white; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+            display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .card:active { transform: scale(0.98); }
-        .card-img-container {
-            aspect-ratio: 1/1; padding: 10px; display: flex; align-items: center; justify-content: center;
-            background: white; border-bottom: 1px solid var(--border);
-        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1); }
+        
+        .card-img-box { aspect-ratio: 1; padding: 15px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f3f4f6; }
         .card-img { width: 100%; height: 100%; object-fit: contain; }
-        .card-body { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
-        .card-code { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; background: var(--bg); padding: 2px 4px; border-radius: 4px; align-self: flex-start; margin-bottom: 4px; }
-        .card-title { font-size: 0.9rem; font-weight: 500; margin-bottom: 4px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex-grow: 1; }
-        .card-price { font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 4px 0 0; }
-        .card-stock { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; }
         
-        /* Controles de Quantidade */
-        .qty-ctrl { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
-        .btn-add {
-            width: 100%; padding: 10px; background: var(--bg); color: var(--text-main);
-            font-weight: 600; border-radius: 8px; font-size: 0.9rem;
-            transition: background 0.2s;
-        }
-        .btn-add:hover { background: var(--border); }
+        .card-body { padding: 16px; display: flex; flex-direction: column; flex: 1; }
+        .card-code { font-size: 0.7rem; color: #9ca3af; font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; align-self: flex-start; margin-bottom: 8px; }
+        .card-title { font-size: 1rem; font-weight: 600; color: var(--secondary); margin-bottom: 4px; line-height: 1.3; }
+        .card-price { font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-top: auto; padding-top: 8px; }
         
-        .qty-selector {
-            display: flex; align-items: center; width: 100%; justify-content: space-between;
-            background: var(--primary); color: white; border-radius: 8px; padding: 4px;
-        }
-        .qty-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); border-radius: 4px; color: white; font-weight: bold; font-size: 1.2rem; }
-        .qty-val { font-weight: bold; }
-
-        /* FAB (Mobile Cart) */
-        .fab {
-            position: fixed; bottom: 20px; right: 20px;
-            width: 56px; height: 56px; border-radius: 50%;
-            background: var(--primary); color: white;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 90; transition: transform 0.2s;
-        }
-        .fab:active { transform: scale(0.95); }
-
-        /* Modal (Native Dialog) */
-        dialog {
-            margin: auto; width: 100%; max-width: 500px; height: 100%; max-height: 100%;
-            border: none; background: white; z-index: 200;
-            flex-direction: column; 
-            box-shadow: 0 0 50px rgba(0,0,0,0.2);
-        }
-        @media (min-width: 768px) {
-            dialog { height: auto; max-height: 90vh; border-radius: 16px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; }
-        }
-        dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
-        dialog[open] { display: flex; animation: slideUp 0.3s ease-out; }
+        .card-actions { margin-top: 12px; }
+        .btn-add { width: 100%; padding: 10px; background: #f3f4f6; border-radius: 8px; font-weight: 600; font-size: 0.9rem; color: var(--text-main); border: none; transition: 0.2s; }
+        .btn-add:hover { background: #e5e7eb; }
         
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @media (min-width: 768px) { @keyframes slideUp { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } } }
-
-        .modal-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
-        .modal-title { font-weight: 700; font-size: 1.1rem; }
-        .btn-close { width: 32px; height: 32px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; }
+        .qty-control { display: flex; justify-content: space-between; align-items: center; background: var(--secondary); color: white; border-radius: 8px; padding: 4px; }
+        .qty-btn { width: 32px; height: 32px; background: rgba(255,255,255,0.1); border: none; color: white; font-size: 1.2rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         
-        .modal-body { flex: 1; overflow-y: auto; padding: 16px; }
-        .cart-item { display: flex; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--border); }
-        .cart-item-info { flex: 1; }
-        .cart-item-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
-        .cart-item-price { color: var(--text-muted); font-size: 0.85rem; }
-
-        .modal-footer { padding: 16px; border-top: 1px solid var(--border); background: var(--bg); }
-        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
-        .summary-total { font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
-        
-        .btn-checkout {
-            width: 100%; padding: 16px; background: #25D366; color: white;
-            font-weight: 700; font-size: 1.1rem; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            margin-top: 16px;
-        }
-
-        /* Loading */
-        .skeleton { background: #eee; height: 20px; width: 100%; border-radius: 4px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
-
-        /* Icons SVG */
+        /* ICONS */
         svg { width: 24px; height: 24px; fill: currentColor; }
+        .icon-sm { width: 16px; height: 16px; }
+
+        /* MODAL CARRINHO */
+        dialog {
+            margin: auto; width: 100%; max-width: 450px; height: 100%; max-height: 100%;
+            border: none; background: white; z-index: 200; box-shadow: 0 0 50px rgba(0,0,0,0.2);
+            flex-direction: column;
+        }
+        @media(min-width: 768px) {
+            dialog { height: auto; max-height: 85vh; border-radius: 20px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; }
+        }
+        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        dialog[open] { display: flex; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f9fafb; }
+        .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
+        .modal-footer { padding: 20px; border-top: 1px solid var(--border); background: #f9fafb; }
+        
+        .cart-item { display: flex; gap: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); margin-bottom: 15px; }
+        .cart-total-row { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; color: var(--secondary); margin-bottom: 15px; }
+        .btn-checkout { width: 100%; padding: 16px; background: #25D366; color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        /* FAB */
+        .fab {
+            position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%;
+            background: var(--primary); color: white; box-shadow: 0 10px 25px rgba(220, 38, 38, 0.5);
+            display: flex; align-items: center; justify-content: center; z-index: 90; border: none;
+        }
+        
+        /* BUSCA */
+        .search-bar { width: 100%; padding: 16px; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; outline: none; transition: border-color 0.2s; background: white; }
+        .search-bar:focus { border-color: var(--primary); }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- Header Fixo -->
     <header>
-        <div class="container header-content">
+        <div class="container header-inner">
             <a href="#" class="logo">
-                <div style="background: var(--primary); color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">DA</div>
+                <div class="logo-box">DA</div>
                 <span>Dona Antônia</span>
             </a>
-            <button class="cart-icon-btn" onclick="App.toggleCart()">
-                <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-                <div id="cart-badge" class="cart-badge">0</div>
-            </button>
+            
+            <div class="header-actions">
+                <a href="#montar-cesta" class="btn-header-cta" onclick="document.getElementById('catalog-section').scrollIntoView({behavior: 'smooth'})">
+                    Montar Cesta
+                </a>
+                <button class="cart-trigger" onclick="App.toggleCart()" aria-label="Carrinho">
+                    <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    <div id="cart-badge" class="cart-badge">0</div>
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- Main Content -->
     <main>
-        <!-- Hero -->
-        <section class="container hero">
-            <span class="hero-tag">Entrega Grátis acima de R$ 85</span>
-            <h1>Qualidade para sua família</h1>
-            <p>Os melhores produtos, direto do atacado.</p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="document.getElementById('cestas-container').scrollIntoView({behavior: 'smooth'})" style="background: var(--text-main); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600;">Cestas Prontas</button>
-                <button onclick="document.getElementById('catalog-container').scrollIntoView({behavior: 'smooth'})" style="border: 2px solid var(--primary); color: var(--primary); background: transparent; padding: 12px 24px; border-radius: 8px; font-weight: 600;">Montar Cesta</button>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container hero-grid">
+                
+                <!-- Conteúdo (Texto) -->
+                <div class="hero-content">
+                    <div class="hero-tag">
+                        <svg class="icon-sm" viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                        Entrega Grátis acima de R$ 85
+                    </div>
+                    
+                    <h1>Qualidade que alimenta sua <span style="color: var(--primary);">família</span></h1>
+                    
+                    <p>Cestas básicas completas com as melhores marcas. Arroz Tio Alvino, Feijão Novo e muito mais. Pague somente na entrega.</p>
+                    
+                    <div class="hero-btns">
+                        <button class="btn-hero btn-primary" onclick="document.getElementById('featured-section').scrollIntoView({behavior:'smooth'})">Cestas Prontas</button>
+                        <button class="btn-hero btn-outline" onclick="document.getElementById('catalog-section').scrollIntoView({behavior:'smooth'})">Montar Minha Cesta</button>
+                    </div>
+                </div>
+
+                <!-- Imagem (Direita no Desktop, Topo no Mobile) -->
+                <div class="hero-img-container">
+                    <img src="img/capa.webp" 
+                         alt="Cesta Básica Dona Antônia" 
+                         class="hero-img"
+                         fetchpriority="high"
+                         onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80'">
+                    
+                    <div class="hero-overlay">
+                        <h3 style="font-weight: 800; font-size: 1.2rem;">Produtos Selecionados</h3>
+                        <p style="font-size: 0.9rem; opacity: 0.9;">Direto do atacado para sua casa</p>
+                    </div>
+                </div>
+
             </div>
         </section>
 
-        <!-- Cestas Prontas -->
-        <section id="cestas-container" class="featured-section hidden">
+        <!-- Cestas Prontas (Destaque) -->
+        <section id="featured-section" class="featured-section hidden">
             <div class="container">
-                <h3 class="section-title">⭐ Cestas Prontas</h3>
+                <div class="section-header">
+                    <h2>Cestas Prontas</h2>
+                    <p style="color: var(--text-muted);">As campeãs de vendas com o melhor custo-benefício</p>
+                </div>
                 <div id="featured-grid" class="grid-products">
-                    <!-- JS Injected -->
+                    <!-- JS -->
                 </div>
             </div>
         </section>
 
-        <!-- Catálogo Geral -->
-        <section id="catalog-container" class="container">
-            <div style="margin-bottom: 20px;">
-                <input type="text" id="search" placeholder="🔍 Buscar produto ou código..." 
-                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 16px; outline: none;">
+        <!-- Monte Sua Cesta (Catálogo) -->
+        <section id="catalog-section" class="container" style="padding-top: 40px;">
+            <div style="margin-bottom: 30px;">
+                <input type="text" id="search" class="search-bar" placeholder="🔍 Buscar por nome ou código...">
             </div>
             
             <div id="main-catalog">
-                <div class="skeleton"></div>
-                <div class="skeleton" style="width: 80%; margin-top: 10px;"></div>
+                <p style="text-align: center; color: var(--text-muted);">Carregando produtos...</p>
             </div>
         </section>
     </main>
 
-    <!-- Floating Action Button (Mobile) -->
-    <button class="fab" onclick="App.toggleCart()" aria-label="Abrir Carrinho">
+    <!-- FAB Mobile -->
+    <button class="fab" onclick="App.toggleCart()" aria-label="Carrinho">
         <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-        <div id="fab-badge" class="cart-badge" style="border-color: var(--primary);">0</div>
+        <div id="fab-badge" class="cart-badge">0</div>
     </button>
 
-    <!-- Carrinho Dialog -->
+    <!-- Modal Carrinho -->
     <dialog id="cart-modal">
         <div class="modal-header">
-            <h3 class="modal-title">Sua Cesta</h3>
-            <button class="btn-close" onclick="App.toggleCart()">
-                <svg viewBox="0 0 24 24" style="width: 20px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            </button>
+            <h3 style="font-weight: 800; font-size: 1.2rem;">Seu Pedido</h3>
+            <button onclick="App.toggleCart()" style="background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">✕</button>
         </div>
         <div class="modal-body" id="cart-body">
-            <!-- Items -->
+            <!-- Itens -->
         </div>
         <div class="modal-footer">
-            <div class="summary-row"><span>Subtotal</span><span id="subtotal">R$ 0,00</span></div>
-            <div class="summary-row"><span style="color: green;">Entrega</span><span id="delivery">Calculando...</span></div>
-            <div class="summary-row summary-total"><span>Total</span><span id="total">R$ 0,00</span></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--text-muted);">
+                <span>Taxa de Entrega</span>
+                <span id="delivery-fee">Calculando...</span>
+            </div>
+            <div class="cart-total-row">
+                <span>Total</span>
+                <span id="cart-total">R$ 0,00</span>
+            </div>
             <button class="btn-checkout" onclick="App.checkout()">
                 <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                Pedir no WhatsApp
+                Finalizar no WhatsApp
             </button>
         </div>
     </dialog>
@@ -269,121 +308,107 @@
         const App = {
             data: [],
             cart: {},
-            
+            phone: "5565999999999",
+
             async init() {
                 try {
-                    // Carregamento rápido do JSON
                     const res = await fetch('produtos/produtos.json');
-                    if(!res.ok) throw new Error("Erro fetch");
+                    if (!res.ok) throw new Error('Erro JSON');
                     const raw = await res.json();
                     
-                    // Tratamento leve de dados
                     this.data = raw.map(p => ({
                         ...p,
                         id: String(p.id),
                         valor: parseFloat(p.valor),
                         estoque: parseInt(p.estoque) || 0,
                         categoria: (p.categoria || 'OUTROS').toUpperCase().trim(),
-                        // Garante o path da imagem
+                        // Ajusta caminho da imagem
                         imagem: (p.imagem && !p.imagem.includes('/')) ? 'img/produtos/' + p.imagem : (p.imagem || '')
                     }));
 
                     this.renderFeatured();
                     this.renderCatalog();
                     
-                    // Busca rápida
                     document.getElementById('search').addEventListener('input', (e) => {
                         this.renderCatalog(e.target.value.toLowerCase());
                     });
-
                 } catch (e) {
-                    document.getElementById('main-catalog').innerHTML = `<div class="text-center" style="padding:40px; color:red">Erro ao carregar produtos. Atualize a página.</div>`;
                     console.error(e);
+                    document.getElementById('main-catalog').innerHTML = `<p class="text-center" style="color:red">Erro ao carregar produtos.</p>`;
                 }
             },
 
-            // Renderiza Cestas Prontas (Destaque)
             renderFeatured() {
                 const cestas = this.data.filter(p => p.categoria === 'CESTA BASICA');
-                const container = document.getElementById('featured-grid');
-                const section = document.getElementById('cestas-container');
+                const section = document.getElementById('featured-section');
+                const grid = document.getElementById('featured-grid');
                 
-                if (cestas.length === 0) return;
-
-                section.classList.remove('hidden');
-                container.innerHTML = cestas.map(p => this.createCardHTML(p, true)).join('');
+                if (cestas.length > 0) {
+                    section.classList.remove('hidden');
+                    grid.innerHTML = cestas.map(p => this.cardHTML(p, true)).join('');
+                }
             },
 
-            // Renderiza Catálogo Completo com Divisões de Categoria
             renderCatalog(term = '') {
                 const container = document.getElementById('main-catalog');
-                
-                // Filtra e Agrupa
                 const filtered = this.data.filter(p => 
-                    p.categoria !== 'CESTA BASICA' && // Já mostrados no topo
+                    p.categoria !== 'CESTA BASICA' &&
                     (p.nome.toLowerCase().includes(term) || (p.codigo && p.codigo.toLowerCase().includes(term)))
                 );
 
                 if (filtered.length === 0) {
-                    container.innerHTML = `<div class="text-center" style="padding:40px; color:var(--text-muted)">Nenhum produto encontrado.</div>`;
+                    container.innerHTML = `<p class="text-center" style="color:var(--text-muted); padding:40px;">Nenhum produto encontrado.</p>`;
                     return;
                 }
 
-                // Agrupamento manual para evitar Object.groupBy (compatibilidade)
+                // Agrupamento manual
                 const groups = {};
                 filtered.forEach(p => {
                     if (!groups[p.categoria]) groups[p.categoria] = [];
                     groups[p.categoria].push(p);
                 });
 
-                // Ordena categorias alfabeticamente
-                const sortedCats = Object.keys(groups).sort();
-                
+                const cats = Object.keys(groups).sort();
                 let html = '';
-                sortedCats.forEach(cat => {
+
+                cats.forEach(cat => {
                     html += `
-                        <div class="category-header">
-                            <h2>${cat}</h2>
+                        <div class="category-separator">
+                            <h3 class="category-title">${cat}</h3>
                         </div>
                         <div class="grid-products">
-                            ${groups[cat].map(p => this.createCardHTML(p)).join('')}
+                            ${groups[cat].map(p => this.cardHTML(p)).join('')}
                         </div>
                     `;
                 });
 
                 container.innerHTML = html;
-                this.updateUI(); // Atualiza contadores nos cards
+                this.updateUI();
             },
 
-            // Gera HTML do Card (String Template pura para performance)
-            createCardHTML(p, isFeatured = false) {
-                const stockDisplay = p.estoque > 0 ? `Estoque: ${p.estoque}` : `<span style="color:var(--primary)">Indisponível</span>`;
-                // Se for destaque, força fetchpriority
-                const imgAttr = isFeatured ? 'fetchpriority="high"' : 'loading="lazy"';
+            cardHTML(p, isFeatured = false) {
+                const stock = p.estoque > 0 ? `Estoque: ${p.estoque}` : `<span style="color:var(--primary)">Indisponível</span>`;
+                const loading = isFeatured ? 'eager' : 'lazy'; // Otimização LCP
                 
                 return `
                 <div class="card" data-id="${p.id}">
-                    <div class="card-img-container">
-                        <img src="${p.imagem}" 
-                             alt="${p.nome}" 
-                             class="card-img" 
-                             ${imgAttr}
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWUiLz48dGV4dCB4PSI1MCIgeT0iNTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+U2VtIEZvdG88L3RleHQ+PC9zdmc+'">
+                    <div class="card-img-box">
+                        <img src="${p.imagem}" loading="${loading}" alt="${p.nome}" class="card-img" 
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+SW1hZ2VtPC90ZXh0Pjwvc3ZnPg=='">
                     </div>
                     <div class="card-body">
                         ${p.codigo ? `<div class="card-code">${p.codigo}</div>` : ''}
-                        <h4 class="card-title">${p.nome}</h4>
-                        <div class="card-stock">${stockDisplay}</div>
+                        <div class="card-title">${p.nome}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">${stock}</div>
                         <div class="card-price">R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
                         
-                        <div class="qty-ctrl" id="ctrl-${p.id}">
+                        <div class="card-actions" id="ctrl-${p.id}">
                             <button class="btn-add" onclick="App.add('${p.id}')">ADICIONAR</button>
                         </div>
                     </div>
                 </div>`;
             },
 
-            // Lógica do Carrinho
             add(id) {
                 if (!this.cart[id]) this.cart[id] = 0;
                 this.cart[id]++;
@@ -398,41 +423,38 @@
                 }
             },
 
-            // Atualiza UI globalmente (Badges e Botões dos Cards)
             updateUI() {
-                let totalCount = 0;
+                let totalQty = 0;
                 let subtotal = 0;
 
-                // Atualiza cada card na tela
+                // Atualiza cards
                 for (const p of this.data) {
                     const qty = this.cart[p.id] || 0;
                     if (qty > 0) {
-                        totalCount += qty;
+                        totalQty += qty;
                         subtotal += p.valor * qty;
                     }
-
-                    // Encontra o container de controle no DOM
+                    
                     const ctrl = document.getElementById(`ctrl-${p.id}`);
                     if (ctrl) {
                         if (qty === 0) {
                             ctrl.innerHTML = `<button class="btn-add" onclick="App.add('${p.id}')">ADICIONAR</button>`;
                         } else {
                             ctrl.innerHTML = `
-                                <div class="qty-selector">
-                                    <button class="qty-btn" onclick="App.remove('${p.id}')">−</button>
-                                    <span class="qty-val">${qty}</span>
+                                <div class="qty-control">
+                                    <button class="qty-btn" onclick="App.remove('${p.id}')">-</button>
+                                    <span style="font-weight: 700; padding: 0 10px;">${qty}</span>
                                     <button class="qty-btn" onclick="App.add('${p.id}')">+</button>
                                 </div>`;
                         }
                     }
                 }
 
-                // Atualiza Badges
+                // Badges
                 const badges = [document.getElementById('cart-badge'), document.getElementById('fab-badge')];
                 badges.forEach(b => {
-                    b.innerText = totalCount;
-                    if(totalCount > 0) b.classList.add('show');
-                    else b.classList.remove('show');
+                    b.innerText = totalQty;
+                    totalQty > 0 ? b.classList.add('show') : b.classList.remove('show');
                 });
             },
 
@@ -441,19 +463,18 @@
                 if (modal.open) {
                     modal.close();
                 } else {
-                    this.renderCartItems();
+                    this.renderCartModal();
                     modal.showModal();
                 }
             },
 
-            renderCartItems() {
+            renderCartModal() {
                 const body = document.getElementById('cart-body');
-                const subEl = document.getElementById('subtotal');
-                const delEl = document.getElementById('delivery');
-                const totEl = document.getElementById('total');
-
-                let html = '';
+                const totalEl = document.getElementById('cart-total');
+                const deliveryEl = document.getElementById('delivery-fee');
+                
                 let sub = 0;
+                let html = '';
                 let isEmpty = true;
 
                 for (const [id, qty] of Object.entries(this.cart)) {
@@ -463,69 +484,65 @@
                         sub += p.valor * qty;
                         html += `
                             <div class="cart-item">
-                                <div class="cart-item-info">
-                                    <div class="cart-item-title">${p.nome}</div>
-                                    <div class="cart-item-price">${qty} x R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
+                                <div style="flex:1">
+                                    <div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">${p.nome}</div>
+                                    <div style="font-size:0.8rem; color:#6b7280;">${qty} x R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
                                 </div>
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <button onclick="App.remove('${id}'); App.renderCartItems()" style="width:28px; height:28px; background:#eee; border-radius:4px;">-</button>
-                                    <strong>${qty}</strong>
-                                    <button onclick="App.add('${id}'); App.renderCartItems()" style="width:28px; height:28px; background:var(--primary); color:white; border-radius:4px;">+</button>
+                                <div class="qty-control" style="height:32px; align-self:center;">
+                                    <button class="qty-btn" onclick="App.remove('${id}'); App.renderCartModal();">-</button>
+                                    <span style="padding:0 10px; font-weight:700;">${qty}</span>
+                                    <button class="qty-btn" onclick="App.add('${id}'); App.renderCartModal();">+</button>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     }
                 }
 
                 if (isEmpty) {
-                    body.innerHTML = '<div class="text-center" style="padding:30px; color:var(--text-muted)">Sua cesta está vazia.</div>';
-                    subEl.innerText = 'R$ 0,00';
-                    delEl.innerText = '-';
-                    totEl.innerText = 'R$ 0,00';
+                    body.innerHTML = `<div class="text-center" style="padding:40px; color:var(--text-muted)">Seu carrinho está vazio.</div>`;
+                    totalEl.innerText = 'R$ 0,00';
+                    deliveryEl.innerText = '-';
                     return;
                 }
 
                 body.innerHTML = html;
-                
-                const shipping = sub >= 85 ? 0 : 15;
-                const total = sub + shipping;
 
-                subEl.innerText = `R$ ${sub.toFixed(2).replace('.', ',')}`;
-                delEl.innerHTML = shipping === 0 ? '<span style="color:green; font-weight:bold">GRÁTIS</span>' : `R$ ${shipping.toFixed(2).replace('.', ',')}`;
-                totEl.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+                const delivery = sub >= 85 ? 0 : 15;
+                const total = sub + delivery;
+
+                deliveryEl.innerHTML = delivery === 0 ? '<span style="color:green; font-weight:bold">GRÁTIS</span>' : `R$ ${delivery.toFixed(2).replace('.', ',')}`;
+                totalEl.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
             },
 
             checkout() {
-                if (Object.keys(this.cart).length === 0) return alert('Adicione itens à cesta primeiro.');
+                if (Object.keys(this.cart).length === 0) return alert('Carrinho vazio.');
 
                 let items = [];
                 let sub = 0;
+
                 for (const [id, qty] of Object.entries(this.cart)) {
                     const p = this.data.find(x => x.id === id);
-                    if(p) {
-                        items.push({ ...p, qty });
+                    if (p) {
                         sub += p.valor * qty;
+                        items.push({...p, qty});
                     }
                 }
 
-                const shipping = sub >= 85 ? 0 : 15;
-                const total = sub + shipping;
+                const delivery = sub >= 85 ? 0 : 15;
+                const total = sub + delivery;
 
-                let msg = "*PEDIDO VIA SITE - DONA ANTÔNIA*\n--------------------------------\n";
+                let msg = `*NOVO PEDIDO - DONA ANTÔNIA*\n--------------------------------\n`;
                 items.forEach(i => {
-                    msg += `• [${i.codigo || 'S/COD'}] ${i.nome}\n   Qtd: ${i.qty} x R$ ${i.valor.toFixed(2)}\n`;
+                    msg += `• [${i.codigo || 'S/COD'}] ${i.nome}\n   ${i.qty}un x R$ ${i.valor.toFixed(2)}\n`;
                 });
                 msg += `--------------------------------\n`;
                 msg += `Subtotal: R$ ${sub.toFixed(2).replace('.', ',')}\n`;
-                msg += `Entrega: ${shipping === 0 ? 'GRÁTIS' : 'R$ ' + shipping.toFixed(2).replace('.', ',')}\n`;
-                msg += `*TOTAL: R$ ${total.toFixed(2).replace('.', ',')}*`;
+                msg += `Taxa de Entrega: ${delivery === 0 ? 'GRÁTIS' : 'R$ ' + delivery.toFixed(2).replace('.', ',')}\n`;
+                msg += `*TOTAL FINAL: R$ ${total.toFixed(2).replace('.', ',')}*`;
 
-                const phone = "5565999999999"; // Configure o número aqui
-                window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`, '_blank');
+                window.open(`https://api.whatsapp.com/send?phone=${this.phone}&text=${encodeURIComponent(msg)}`, '_blank');
             }
         };
 
-        // Init
         document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
 </body>
