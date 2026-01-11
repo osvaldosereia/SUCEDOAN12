@@ -906,7 +906,8 @@
             exportProducts: () => {
                 const data = DB.load().produto.map(p => ({
                     ...p,
-                    imagem: p.imagem || `img/produtos/${p.codigo.toLowerCase()}.webp`
+                    caracteristicas: p.caracteristicas || '', // Ensure field is present
+                    imagem: `img/produtos/${p.codigo.toLowerCase()}.webp`
                 }));
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
                 const url = URL.createObjectURL(blob);
