@@ -612,13 +612,17 @@
             
             async init() {
                 try {
-                    const paths = ['produtos/produtos.json', 'produtos.json'];
+                    // Try multiple possible paths to be robust against environment differences
+                    const paths = ['produtos/produtos.json', 'produtos.json', 'produtos (2).json'];
                     let response;
                     
                     for (const path of paths) {
                         try {
                             const res = await fetch(path);
-                            if (res.ok) { response = res; break; }
+                            if (res.ok) { 
+                                response = res; 
+                                break; 
+                            }
                         } catch(e) {}
                     }
                     
