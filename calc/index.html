@@ -248,55 +248,59 @@
                 box-shadow: none;
             }
 
-            /* Imagem com Respiro */
+            /* Imagem Full Width (largura do box) */
             .card-img-box { 
                 width: 100%; 
                 min-width: 0; 
                 aspect-ratio: 1/1; 
-                padding: 10px; /* Reduz visualmente a imagem */
+                padding: 0; /* Removido padding para a foto ficar na largura total */
                 border: none;
             }
             
             .card-body { 
-                padding: 10px 0; /* Alinhado lateralmente com a imagem */
+                padding: 8px 4px 12px 4px; /* Ajuste leve nas laterais e fundo */
                 justify-content: space-between;
             }
             
-            /* Tipografia Reduzida */
+            /* Tipografia Reduzida Bem Menor */
             .card-title { 
-                font-size: 0.75rem; /* Reduzido */
-                margin-bottom: 4px; 
-                line-height: 1.3;
-                min-height: 2.6em; 
+                font-size: 0.65rem; /* Diminuído bem o tamanho da fonte */
+                margin-bottom: 2px; 
+                line-height: 1.25;
+                min-height: 3.75em; /* Ajuste para 3 linhas aprox */
                 display: -webkit-box;
-                -webkit-line-clamp: 2;
+                -webkit-line-clamp: 3; /* Deixe em 3 linhas */
                 -webkit-box-orient: vertical;
                 overflow: hidden;
             }
+            
             .card-desc-preview { 
                 font-size: 0.7rem; 
-                margin-bottom: 6px; 
+                margin-bottom: 4px; 
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
+                display: none; /* Opcional: esconder descrição no mobile se quiser mais compacto ainda, mas mantive o padrão */
             }
+
+            /* Preço Reduzido e Menos Espaço */
             .card-price { 
-                font-size: 0.95rem; /* Reduzido */
-                margin-top: 4px;
-                margin-bottom: 8px;
+                font-size: 0.9rem; /* Diminuído um pouco */
+                margin-top: 2px;
+                margin-bottom: 2px; /* Diminuído espaço de respiro entre valor e botão */
             }
             
             /* Botões Compactos */
             .card-footer-row { 
                 flex-direction: column; 
-                gap: 6px; 
-                margin-top: auto; 
+                gap: 4px; 
+                margin-top: 2px;
                 padding-top: 0;
             }
             .btn-details-inline, .card-actions-wrapper, .btn-add, .qty-control {
                 width: 100%;
-                height: 34px;
+                height: 32px; /* Ligeiramente mais compacto */
                 font-size: 0.75rem;
             }
             .btn-details-inline {
@@ -888,7 +892,7 @@
                 const btnClassAdd = isCombo ? 'btn-combo-action' : '';
                 const icon = isCombo 
                     ? '<svg viewBox="0 0 24 24"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg>'
-                    : '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
+                    : '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-1.34-3-3-3z"/></svg>';
 
                 // Lógica de Disponibilidade
                 const isOutOfStock = (p.estoque !== undefined && p.estoque <= 0);
