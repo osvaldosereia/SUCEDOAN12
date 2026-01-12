@@ -226,39 +226,39 @@
         
         /* AJUSTE MOBILE - CARD VERTICAL EM 2 COLUNAS */
         @media (max-width: 599px) {
-            /* 2 Colunas com Gap Zero para linhas */
+            /* 2 Colunas com Gap para dar Espaçamento */
             .grid-products { 
                 grid-template-columns: repeat(2, 1fr);
-                gap: 0; 
+                gap: 15px; /* Espaço físico entre os cards */
                 border: none;
-                padding: 0;
+                padding: 0 15px; /* Margem lateral da tela */
             }
             
             /* Card Vertical Sem Box */
             .card { 
                 flex-direction: column; 
                 border: none;
-                border-bottom: 1px solid #f3f4f6; /* Apenas linha separadora */
-                border-right: 1px solid #f3f4f6;
+                border-bottom: 1px solid #f3f4f6; /* Apenas linha separadora na base do conteúdo */
+                border-right: none;
+                border-left: none;
                 border-radius: 0; 
                 padding: 0;
                 margin: 0;
                 height: 100%;
                 box-shadow: none;
             }
-            /* Remove a borda inferior do último filho se necessário, mas em grid corrido é melhor manter padrão */
 
-            /* Imagem Ampla */
+            /* Imagem com Respiro */
             .card-img-box { 
                 width: 100%; 
                 min-width: 0; 
                 aspect-ratio: 1/1; 
-                padding: 0; /* Imagem maximizada */
+                padding: 10px; /* Reduz visualmente a imagem */
                 border: none;
             }
             
             .card-body { 
-                padding: 10px; 
+                padding: 10px 0; /* Alinhado lateralmente com a imagem */
                 justify-content: space-between;
             }
             
@@ -673,9 +673,10 @@
                      `).join('') + `</div>`;
                 }
 
+                // O BOTÃO DE FECHAR AGORA CHAMA App.closeWithDelay PARA EVITAR GHOST CLICKS
                 container.innerHTML = `
                     <div class="pm-gallery">
-                        <button class="btn-close-pm" onclick="event.stopPropagation(); App.closeModal(document.getElementById('product-modal'))" aria-label="Fechar">✕ Fechar</button>
+                        <button class="btn-close-pm" onclick="App.closeWithDelay(event)" aria-label="Fechar">✕ Fechar</button>
                         <div class="pm-stage">
                             <img src="${this.images[this.imgIdx]}" alt="${p.nome}" width="400" height="400">
                         </div>
@@ -1003,6 +1004,18 @@
                     if(content.innerHTML.trim() === '') content.innerHTML = source.innerHTML;
                     this.openModal(modal);
                 }
+            },
+            
+            // FUNÇÃO PARA FECHAR COM DELAY E EVITAR GHOST CLICKS
+            closeWithDelay(e) {
+                if(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                // Pequeno delay de 300ms para permitir que o evento de toque seja "limpo" antes de remover o modal
+                setTimeout(() => {
+                    this.closeModal(document.getElementById('product-modal'));
+                }, 300);
             },
             
             openModal(m) { m.showModal(); document.body.classList.add('modal-open'); },
