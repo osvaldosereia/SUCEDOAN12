@@ -169,31 +169,80 @@
         .nav-arrow { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #e5e7eb; background: white; color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; flex-shrink: 0; }
         .nav-arrow:active { background: #f3f4f6; }
         .featured-section { padding: 40px 0; background: #f9fafb; }
-        .grid-products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 30px; }
-        @media(min-width: 768px) { .grid-products { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; } }
+        
+        /* GRID DE PRODUTOS - AJUSTE MOBILE */
+        .grid-products { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px; }
+        @media(min-width: 600px) { .grid-products { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; } }
+        
         .category-separator { padding: 20px 0 10px; margin-top: 10px; border-bottom: 2px solid var(--border); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; scroll-margin-top: 140px; }
         .category-title { font-size: 1.2rem; font-weight: 800; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.05em; }
         .card { background: white; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; content-visibility: auto; contain-intrinsic-size: 0 450px; position: relative; }
         .card-img-box { aspect-ratio: 1; padding: 10px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
         .card-img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s; }
-        .btn-details { width: 100%; background: transparent; color: #4b5563; border: none; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; padding: 8px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-        /* Estilo especial para botão de combo */
-        .btn-details.btn-combo-action { background-color: #fef2f2; color: var(--primary); font-weight: 800; border-color: #fee2e2; }
-        .btn-details svg { width: 14px; height: 14px; opacity: 0.8; }
+        
+        /* Botões alinhados no rodapé do card */
+        .card-footer-row { display: flex; gap: 10px; margin-top: auto; padding-top: 12px; align-items: center; }
+        
+        .btn-details-inline { 
+            flex: 1; 
+            background: white; 
+            color: #4b5563; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 8px; 
+            height: 42px; 
+            font-weight: 600; 
+            font-size: 0.75rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            transition: all 0.2s;
+        }
+        .btn-details-inline svg { width: 16px; height: 16px; opacity: 0.8; }
+        .btn-details-inline.btn-combo-action { background-color: #fef2f2; color: var(--primary); font-weight: 700; border-color: #fee2e2; }
+        .btn-details-inline:active { background: #f3f4f6; transform: scale(0.98); }
+
         .card-body { padding: 12px 16px 16px; display: flex; flex-direction: column; flex: 1; }
         .card-code { font-size: 0.7rem; color: #374151; font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; align-self: flex-start; margin-bottom: 8px; }
         .card-title { font-size: 0.95rem; font-weight: 600; color: var(--secondary); margin-bottom: 4px; line-height: 1.3; }
-        /* Ajuste para exibir características no card */
         .card-desc-preview { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; min-height: 2.4em; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
         .card-price { font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-top: auto; padding-top: 8px; }
-        .card-actions { margin-top: 12px; }
-        .btn-add { width: 100%; padding: 10px; background: #f3f4f6; border-radius: 8px; font-weight: 600; font-size: 0.9rem; color: var(--text-main); border: none; }
-        .btn-add:active { background: #e5e7eb; }
-        .qty-control { display: flex; justify-content: space-between; align-items: center; background: var(--secondary); color: white; border-radius: 8px; padding: 4px; }
+        .card-actions-wrapper { flex: 1.5; }
+        
+        .btn-add { width: 100%; height: 42px; padding: 0 10px; background: #f3f4f6; border-radius: 8px; font-weight: 600; font-size: 0.9rem; color: var(--text-main); border: none; display: flex; align-items: center; justify-content: center; }
+        .btn-add:active { background: #e5e7eb; transform: scale(0.98); }
+        .qty-control { display: flex; justify-content: space-between; align-items: center; background: var(--secondary); color: white; border-radius: 8px; padding: 4px; height: 42px; }
         .qty-btn { width: 32px; height: 32px; min-width: 32px; background: rgba(255,255,255,0.1); border: none; color: white; font-size: 1.2rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         svg { width: 24px; height: 24px; fill: currentColor; }
         .icon-sm { width: 16px; height: 16px; }
+        
+        /* CARD CAROUSEL ARROWS */
+        .card-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid #eee;
+            border-radius: 50%;
+            display: none; /* Oculto por padrão, ativado via JS */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5;
+            color: #333;
+            font-size: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-arrow.visible { display: flex; }
+        .card-arrow.prev { left: 5px; }
+        .card-arrow.next { right: 5px; }
+        
         /* Modal e outros estilos mantidos igual ao original */
         dialog { margin: auto; width: 100%; max-width: 450px; height: 100%; max-height: 100%; border: none; background: white; z-index: 200; box-shadow: 0 0 50px rgba(0,0,0,0.2); flex-direction: column; }
         @media(min-width: 768px) { dialog { height: auto; max-height: 85vh; border-radius: 20px; position: fixed; inset: 0; margin: auto; } }
@@ -220,9 +269,9 @@
         .pm-desc { font-size: 1rem; color: #374151; line-height: 1.6; margin-bottom: 24px; flex-grow: 1; }
         .pm-combo-list { background: #f9fafb; border-radius: 12px; padding: 16px; margin-top: 10px; border: 1px dashed var(--border); }
         .pm-combo-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; color: var(--secondary); text-transform: uppercase; }
-        .pm-combo-item { display: flex; justify-content: space-between; font-size: 0.9rem; border-bottom: 1px solid #eee; padding: 6px 0; }
+        .pm-combo-item { display: flex; align-items: flex-start; font-size: 0.9rem; border-bottom: 1px solid #eee; padding: 6px 0; }
         .pm-combo-item:last-child { border-bottom: none; }
-        .pm-combo-qty { font-weight: 700; color: var(--primary); width: 30px; }
+        .pm-combo-qty { font-weight: 700; color: var(--primary); margin-right: 8px; white-space: nowrap; }
         .pm-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
         .pm-price { font-size: 2rem; font-weight: 800; color: var(--primary); margin-bottom: 16px; }
         .pm-nav-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
@@ -482,8 +531,8 @@
                 const prev = document.querySelector('.pm-arrow.prev');
                 const next = document.querySelector('.pm-arrow.next');
                 if(this.images.length > 1) {
-                    prev.classList.add('visible');
-                    next.classList.add('visible');
+                    if(prev) prev.classList.add('visible');
+                    if(next) next.classList.add('visible');
                 }
             },
 
@@ -522,8 +571,8 @@
                      comboHTML = `<div class="pm-combo-list"><div class="pm-combo-title">Itens da Cesta:</div>` + 
                      p.items.map(item => `
                         <div class="pm-combo-item">
+                            <span class="pm-combo-qty">${item.qty || item.qtd}un |</span>
                             <span>${item.nome}</span>
-                            <span class="pm-combo-qty">${item.qty || item.qtd}x</span>
                         </div>
                      `).join('') + `</div>`;
                 }
@@ -552,31 +601,47 @@
                         </div>
                     </div>
                 `;
-                App.updateControlUI(`pm-ctrl-${p.id}`, p.id, qty);
+                App.updateControl(`pm-ctrl-${p.id}`, p.id, qty);
                 this.updateGalleryUI();
             }
         };
 
         const App = {
             data: [], filteredData: [], visualOrderData: [], cart: {}, phone: "5565998150975",
+            cardImages: {}, // Store detected images for cards
             
             async init() {
                 try {
+                    // Try to fetch data
+                    let raw = null;
                     const paths = ['produtos/produtos.json', 'produtos.json'];
-                    let response;
                     
                     for (const path of paths) {
                         try {
                             const res = await fetch(path);
-                            if (res.ok) { response = res; break; }
-                        } catch(e) {}
+                            if (res.ok) { 
+                                raw = await res.json(); 
+                                break; 
+                            }
+                        } catch(e) {
+                            console.warn(`Erro ao tentar carregar ${path}:`, e);
+                        }
+                    }
+
+                    if (!raw) {
+                        console.error("Nenhum arquivo de produtos encontrado. Usando dados de backup.");
+                        // Fallback data if JSON fails
+                        raw = [
+                            {id: "1", nome: "Cesta Básica Econômica", valor: 150.00, imagem: "img/produtos/p001.webp", categoria: "CESTA BÁSICA", caracteristicas: "Arroz, Feijão, Óleo...", items: [{nome: "Arroz 5kg", qty: 1}, {nome: "Feijão 1kg", qty: 2}]},
+                            {id: "2", nome: "Arroz Tio Alvino 5kg", valor: 28.90, imagem: "img/produtos/p002.webp", categoria: "ALIMENTOS", caracteristicas: "Arroz agulhinha tipo 1"},
+                            {id: "3", nome: "Feijão Carioca Novo", valor: 8.50, imagem: "img/produtos/p003.webp", categoria: "ALIMENTOS", caracteristicas: "Feijão novo, caldo grosso"}
+                        ];
                     }
                     
-                    if (!response) throw new Error("Arquivo não encontrado");
-                    const raw = await response.json();
-                    
                     this.data = raw.map(p => ({
-                        ...p, id: String(p.id), valor: parseFloat(p.valor),
+                        ...p, 
+                        id: String(p.id), 
+                        valor: parseFloat(p.valor || 0),
                         categoria: (p.categoria || 'OUTROS').toUpperCase().trim(),
                         imagem: (p.imagem && !p.imagem.includes('/')) ? 'img/produtos/' + p.imagem : (p.imagem || ''),
                         items: p.items || [] 
@@ -584,35 +649,89 @@
 
                     this.renderCatalog();
                     this.setupDelegation();
+                    this.detectCardGalleries(); 
                     ProductModal.init();
-
+                    
+                    // Search listener
                     let timeout;
-                    document.getElementById('nav-search-input').addEventListener('input', (e) => {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(() => this.renderCatalog(e.target.value.toLowerCase()), 300);
-                    });
+                    const searchInput = document.getElementById('nav-search-input');
+                    if(searchInput) {
+                        searchInput.addEventListener('input', (e) => {
+                            clearTimeout(timeout);
+                            timeout = setTimeout(() => this.renderCatalog(e.target.value.toLowerCase()), 300);
+                        });
+                    }
 
                 } catch (e) {
-                    console.error("Erro dados:", e);
+                    console.error("Erro fatal na inicialização:", e);
                     document.getElementById('main-catalog').innerHTML = `
-                        <div style="text-align:center;padding:40px;color:red">
-                            <h3>Não foi possível carregar os produtos.</h3>
-                            <p>Tente recarregar a página.</p>
+                        <div style="text-align:center;padding:40px;color:#ef4444">
+                            <h3>Erro ao carregar loja.</h3>
+                            <p>Verifique o console para mais detalhes.</p>
                         </div>`;
                 }
+            },
+
+            // New: Detect images for cards background
+            detectCardGalleries() {
+                this.data.forEach(p => {
+                    if (!p.imagem) return;
+                    // Initialize with main image
+                    this.cardImages[p.id] = { imgs: [p.imagem], idx: 0 };
+                    
+                    // Check for just the first extra image 'A' to enable arrows
+                    const extraUrl = p.imagem.replace(/(\.[\w\d_-]+)$/i, 'A$1');
+                    const img = new Image();
+                    img.onload = () => {
+                        this.cardImages[p.id].imgs.push(extraUrl);
+                        // If found A, try B
+                        this.detectNextCardImage(p.id, p.imagem, 'B');
+                        this.updateCardArrows(p.id);
+                    };
+                    img.src = extraUrl;
+                });
+            },
+
+            detectNextCardImage(id, mainUrl, suffix) {
+                const extraUrl = mainUrl.replace(/(\.[\w\d_-]+)$/i, suffix + '$1');
+                const img = new Image();
+                img.onload = () => {
+                    this.cardImages[id].imgs.push(extraUrl);
+                    const nextSuffix = String.fromCharCode(suffix.charCodeAt(0) + 1);
+                    if(nextSuffix <= 'D') this.detectNextCardImage(id, mainUrl, nextSuffix); // Limit depth
+                };
+                img.src = extraUrl;
+            },
+
+            updateCardArrows(id) {
+                const card = document.getElementById(`card-${id}`);
+                if (!card) return;
+                const arrows = card.querySelectorAll('.card-arrow');
+                arrows.forEach(a => a.classList.add('visible'));
             },
 
             setupDelegation() {
                 document.body.addEventListener('click', (e) => {
                     const btn = e.target.closest('button[data-action]');
                     if(btn) {
-                        e.preventDefault(); // Previne comportamentos padrão
+                        e.preventDefault(); 
                         const { action, id } = btn.dataset;
                         if(action === 'add') this.add(id);
                         if(action === 'remove') this.remove(id);
                         if(action === 'details') ProductModal.open(id);
                         if(action === 'prev-prod') ProductModal.navigate(-1);
                         if(action === 'next-prod') ProductModal.navigate(1);
+                        return;
+                    }
+                    
+                    // Tratamento para setas do slide no CARD
+                    if (e.target.classList.contains('card-arrow')) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const card = e.target.closest('.card');
+                        const id = card.id.replace('card-', '');
+                        const dir = e.target.classList.contains('prev') ? -1 : 1;
+                        this.navigateCardImage(id, dir);
                         return;
                     }
                     
@@ -626,6 +745,21 @@
                         }
                     }
                 });
+            },
+
+            navigateCardImage(id, dir) {
+                if (!this.cardImages[id]) return;
+                const data = this.cardImages[id];
+                if (data.imgs.length <= 1) return;
+
+                let next = data.idx + dir;
+                if (next < 0) next = data.imgs.length - 1;
+                if (next >= data.imgs.length) next = 0;
+                
+                data.idx = next;
+                const card = document.getElementById(`card-${id}`);
+                const img = card.querySelector('.card-img');
+                img.src = data.imgs[next];
             },
 
             renderCatalog(term = '') {
@@ -668,6 +802,14 @@
                         </div>`;
                 });
                 container.innerHTML = html;
+                
+                // Re-apply arrows to rendered cards if images were already detected
+                setTimeout(() => {
+                    Object.keys(this.cardImages).forEach(id => {
+                        if(this.cardImages[id].imgs.length > 1) this.updateCardArrows(id);
+                    });
+                }, 100);
+
                 this.updateUI();
             },
 
@@ -684,12 +826,15 @@
             },
 
             cardHTML(p) {
-                // Tratamento de características
-                const desc = p.caracteristicas ? p.caracteristicas.replace(/<[^>]*>?/gm, '') : ''; 
+                // Tratamento de características COM LIMITE
+                let desc = p.caracteristicas ? String(p.caracteristicas).replace(/<[^>]*>?/gm, '') : '';
+                if (desc.length > 90) {
+                    desc = desc.substring(0, 90) + '...';
+                }
                 const descHTML = desc ? `<div class="card-desc-preview">${desc}</div>` : '';
 
                 const isCombo = p.categoria === 'CESTA BÁSICA' || (p.items && p.items.length > 0);
-                const btnLabel = isCombo ? 'VER ITENS DA CESTA' : 'VER DETALHES';
+                const btnLabel = isCombo ? 'VER ITENS' : 'DETALHES';
                 const btnClassAdd = isCombo ? 'btn-combo-action' : '';
                 const icon = isCombo 
                     ? '<svg viewBox="0 0 24 24"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg>'
@@ -698,19 +843,25 @@
                 return `
                 <div class="card" id="card-${p.id}">
                     <div class="card-img-box">
+                        <button class="card-arrow prev">❮</button>
                         <img src="${p.imagem}" loading="lazy" alt="${p.nome}" class="card-img" width="200" height="200" onerror="this.onerror=null;this.classList.add('fallback-img')">
+                        <button class="card-arrow next">❯</button>
                     </div>
-                    <button class="btn-details ${btnClassAdd}" data-action="details" data-id="${p.id}" aria-label="Ver detalhes de ${p.nome}">
-                        ${icon}
-                        ${btnLabel}
-                    </button>
+                    
                     <div class="card-body">
                         ${p.codigo ? `<div class="card-code">${p.codigo}</div>` : ''}
                         <h4 class="card-title">${p.nome}</h4>
                         ${descHTML}
                         <div class="card-price">R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
-                        <div class="card-actions" id="ctrl-${p.id}">
-                            <button class="btn-add" data-action="add" data-id="${p.id}" aria-label="Adicionar ${p.nome} ao carrinho">ADICIONAR</button>
+                        
+                        <div class="card-footer-row">
+                            <button class="btn-details-inline ${btnClassAdd}" data-action="details" data-id="${p.id}" aria-label="Ver detalhes">
+                                ${icon}
+                                ${btnLabel}
+                            </button>
+                            <div class="card-actions-wrapper" id="ctrl-${p.id}">
+                                <button class="btn-add" data-action="add" data-id="${p.id}" aria-label="Adicionar ${p.nome} ao carrinho">ADICIONAR</button>
+                            </div>
                         </div>
                     </div>
                 </div>`;
