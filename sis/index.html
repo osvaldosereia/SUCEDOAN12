@@ -438,7 +438,7 @@
                                         </div>
 
                                         <div class="form-group">
-                                            <label>Foto (calc/img/produtos/CODIGO.webp)</label>
+                                            <label>Foto (.../calc/img/produtos/CODIGO.webp)</label>
                                             <div style="width: 100%; aspect-ratio: 1/1; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--slate-50); position: relative;">
                                                 <img id="p-img-preview" src="" onerror="this.style.display='none'; document.getElementById('p-img-icon').style.display='block';" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                                                 <i id="p-img-icon" class="fa-solid fa-box-open" style="color: var(--slate-300); font-size: 3rem;"></i>
@@ -937,7 +937,7 @@
                     .map(p => ({
                         ...p,
                         caracteristicas: p.caracteristicas || '', 
-                        imagem: `calc/img/produtos/${p.codigo.toLowerCase()}.webp`,
+                        imagem: `.../calc/img/produtos/${p.codigo.toLowerCase()}.webp`,
                         Limit: p.limit || 0 // Campo Limite adicionado conforme solicitado
                     }));
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
