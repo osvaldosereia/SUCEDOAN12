@@ -219,6 +219,30 @@
         .qty-btn { width: 32px; height: 32px; min-width: 32px; background: rgba(255,255,255,0.1); border: none; color: white; font-size: 1.2rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         svg { width: 24px; height: 24px; fill: currentColor; }
         .icon-sm { width: 16px; height: 16px; }
+        
+        /* CARD CAROUSEL ARROWS */
+        .card-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid #eee;
+            border-radius: 50%;
+            display: none; /* Oculto por padrão, ativado via JS */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5;
+            color: #333;
+            font-size: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-arrow.visible { display: flex; }
+        .card-arrow.prev { left: 5px; }
+        .card-arrow.next { right: 5px; }
+        
         /* Modal e outros estilos mantidos igual ao original */
         dialog { margin: auto; width: 100%; max-width: 450px; height: 100%; max-height: 100%; border: none; background: white; z-index: 200; box-shadow: 0 0 50px rgba(0,0,0,0.2); flex-direction: column; }
         @media(min-width: 768px) { dialog { height: auto; max-height: 85vh; border-radius: 20px; position: fixed; inset: 0; margin: auto; } }
@@ -245,9 +269,9 @@
         .pm-desc { font-size: 1rem; color: #374151; line-height: 1.6; margin-bottom: 24px; flex-grow: 1; }
         .pm-combo-list { background: #f9fafb; border-radius: 12px; padding: 16px; margin-top: 10px; border: 1px dashed var(--border); }
         .pm-combo-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; color: var(--secondary); text-transform: uppercase; }
-        .pm-combo-item { display: flex; justify-content: space-between; font-size: 0.9rem; border-bottom: 1px solid #eee; padding: 6px 0; }
+        .pm-combo-item { display: flex; align-items: flex-start; font-size: 0.9rem; border-bottom: 1px solid #eee; padding: 6px 0; }
         .pm-combo-item:last-child { border-bottom: none; }
-        .pm-combo-qty { font-weight: 700; color: var(--primary); width: 30px; }
+        .pm-combo-qty { font-weight: 700; color: var(--primary); margin-right: 8px; white-space: nowrap; }
         .pm-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
         .pm-price { font-size: 2rem; font-weight: 800; color: var(--primary); margin-bottom: 16px; }
         .pm-nav-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
@@ -507,8 +531,8 @@
                 const prev = document.querySelector('.pm-arrow.prev');
                 const next = document.querySelector('.pm-arrow.next');
                 if(this.images.length > 1) {
-                    prev.classList.add('visible');
-                    next.classList.add('visible');
+                    if(prev) prev.classList.add('visible');
+                    if(next) next.classList.add('visible');
                 }
             },
 
@@ -547,8 +571,8 @@
                      comboHTML = `<div class="pm-combo-list"><div class="pm-combo-title">Itens da Cesta:</div>` + 
                      p.items.map(item => `
                         <div class="pm-combo-item">
+                            <span class="pm-combo-qty">${item.qty || item.qtd}un |</span>
                             <span>${item.nome}</span>
-                            <span class="pm-combo-qty">${item.qty || item.qtd}x</span>
                         </div>
                      `).join('') + `</div>`;
                 }
@@ -584,6 +608,7 @@
 
         const App = {
             data: [], filteredData: [], visualOrderData: [], cart: {}, phone: "5565998150975",
+            cardImages: {}, // Store detected images for cards
             
             async init() {
                 try {
@@ -609,6 +634,7 @@
 
                     this.renderCatalog();
                     this.setupDelegation();
+                    this.detectCardGalleries(); // Start detection
                     ProductModal.init();
 
                     let timeout;
@@ -627,17 +653,66 @@
                 }
             },
 
+            // New: Detect images for cards background
+            detectCardGalleries() {
+                this.data.forEach(p => {
+                    if (!p.imagem) return;
+                    // Initialize with main image
+                    this.cardImages[p.id] = { imgs: [p.imagem], idx: 0 };
+                    
+                    // Check for just the first extra image 'A' to enable arrows
+                    const extraUrl = p.imagem.replace(/(\.[\w\d_-]+)$/i, 'A$1');
+                    const img = new Image();
+                    img.onload = () => {
+                        this.cardImages[p.id].imgs.push(extraUrl);
+                        // If found A, try B
+                        this.detectNextCardImage(p.id, p.imagem, 'B');
+                        this.updateCardArrows(p.id);
+                    };
+                    img.src = extraUrl;
+                });
+            },
+
+            detectNextCardImage(id, mainUrl, suffix) {
+                const extraUrl = mainUrl.replace(/(\.[\w\d_-]+)$/i, suffix + '$1');
+                const img = new Image();
+                img.onload = () => {
+                    this.cardImages[id].imgs.push(extraUrl);
+                    const nextSuffix = String.fromCharCode(suffix.charCodeAt(0) + 1);
+                    if(nextSuffix <= 'D') this.detectNextCardImage(id, mainUrl, nextSuffix); // Limit depth
+                };
+                img.src = extraUrl;
+            },
+
+            updateCardArrows(id) {
+                const card = document.getElementById(`card-${id}`);
+                if (!card) return;
+                const arrows = card.querySelectorAll('.card-arrow');
+                arrows.forEach(a => a.classList.add('visible'));
+            },
+
             setupDelegation() {
                 document.body.addEventListener('click', (e) => {
                     const btn = e.target.closest('button[data-action]');
                     if(btn) {
-                        e.preventDefault(); // Previne comportamentos padrão
+                        e.preventDefault(); 
                         const { action, id } = btn.dataset;
                         if(action === 'add') this.add(id);
                         if(action === 'remove') this.remove(id);
                         if(action === 'details') ProductModal.open(id);
                         if(action === 'prev-prod') ProductModal.navigate(-1);
                         if(action === 'next-prod') ProductModal.navigate(1);
+                        return;
+                    }
+                    
+                    // Tratamento para setas do slide no CARD
+                    if (e.target.classList.contains('card-arrow')) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const card = e.target.closest('.card');
+                        const id = card.id.replace('card-', '');
+                        const dir = e.target.classList.contains('prev') ? -1 : 1;
+                        this.navigateCardImage(id, dir);
                         return;
                     }
                     
@@ -651,6 +726,21 @@
                         }
                     }
                 });
+            },
+
+            navigateCardImage(id, dir) {
+                if (!this.cardImages[id]) return;
+                const data = this.cardImages[id];
+                if (data.imgs.length <= 1) return;
+
+                let next = data.idx + dir;
+                if (next < 0) next = data.imgs.length - 1;
+                if (next >= data.imgs.length) next = 0;
+                
+                data.idx = next;
+                const card = document.getElementById(`card-${id}`);
+                const img = card.querySelector('.card-img');
+                img.src = data.imgs[next];
             },
 
             renderCatalog(term = '') {
@@ -693,6 +783,14 @@
                         </div>`;
                 });
                 container.innerHTML = html;
+                
+                // Re-apply arrows to rendered cards if images were already detected
+                setTimeout(() => {
+                    Object.keys(this.cardImages).forEach(id => {
+                        if(this.cardImages[id].imgs.length > 1) this.updateCardArrows(id);
+                    });
+                }, 100);
+
                 this.updateUI();
             },
 
@@ -709,8 +807,11 @@
             },
 
             cardHTML(p) {
-                // Tratamento de características
-                const desc = p.caracteristicas ? p.caracteristicas.replace(/<[^>]*>?/gm, '') : ''; 
+                // Tratamento de características COM LIMITE
+                let desc = p.caracteristicas ? p.caracteristicas.replace(/<[^>]*>?/gm, '') : '';
+                if (desc.length > 90) {
+                    desc = desc.substring(0, 90) + '...';
+                }
                 const descHTML = desc ? `<div class="card-desc-preview">${desc}</div>` : '';
 
                 const isCombo = p.categoria === 'CESTA BÁSICA' || (p.items && p.items.length > 0);
@@ -723,7 +824,9 @@
                 return `
                 <div class="card" id="card-${p.id}">
                     <div class="card-img-box">
+                        <button class="card-arrow prev">❮</button>
                         <img src="${p.imagem}" loading="lazy" alt="${p.nome}" class="card-img" width="200" height="200" onerror="this.onerror=null;this.classList.add('fallback-img')">
+                        <button class="card-arrow next">❯</button>
                     </div>
                     
                     <div class="card-body">
