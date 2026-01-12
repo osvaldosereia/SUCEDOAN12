@@ -70,7 +70,7 @@
             border-color: var(--primary);
             background-color: #eef2ff;
         }
-        .drop-zone input[type="file"] {
+        .drop-zone input {
             position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer;
         }
         .btn-upload {
@@ -82,31 +82,6 @@
             display: inline-block;
             margin-bottom: 0.5rem;
             pointer-events: none; /* Let the input handle clicks */
-        }
-
-        /* Options Checkbox */
-        .options-bar {
-            margin-top: 1.5rem;
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-        }
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-main);
-            cursor: pointer;
-            user-select: none;
-            z-index: 10; /* Ensure it's clickable above the file input overlay if needed */
-            position: relative;
-        }
-        .checkbox-wrapper input {
-            accent-color: var(--primary);
-            width: 1.1rem;
-            height: 1.1rem;
-            cursor: pointer;
         }
 
         /* Result List */
@@ -219,7 +194,6 @@
             .meta-row { justify-content: center; }
             .actions { flex-direction: column; }
             .btn { width: 100%; }
-            .options-bar { flex-direction: column; align-items: center; gap: 0.5rem; }
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -246,14 +220,6 @@
                 <input type="file" id="file-input" accept="image/*" multiple>
             </div>
             <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.875rem;">Ou arraste e solte seus arquivos</p>
-
-            <!-- Logo Option -->
-            <div class="options-bar">
-                <label class="checkbox-wrapper" title="Adiciona a logo no canto inferior direito">
-                    <input type="checkbox" id="chk-use-logo">
-                    <span>Incluir Logo (Dona Antônia)</span>
-                </label>
-            </div>
         </div>
 
         <!-- Results -->
@@ -286,13 +252,7 @@
                     <span id="zoom-value">100%</span>
                 </div>
                 <input type="range" id="zoom-slider" min="1" max="4" step="0.05" value="1">
-                
-                <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
-                    <label class="checkbox-wrapper" style="justify-content: center;">
-                        <input type="checkbox" id="chk-use-logo-modal">
-                        <small>Incluir Logo nesta imagem</small>
-                    </label>
-                </div>
+                <p style="text-align: center; font-size: 0.75rem; color: var(--text-muted);">Arraste a imagem para mover</p>
             </div>
         </div>
         <div class="modal-footer">
@@ -310,22 +270,26 @@
             targetHeight: 400,
             maxSizeBytes: 30 * 1024, // 30KB
             formats: ['image/avif', 'image/webp', 'image/jpeg'],
-            logoPath: 'img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif'
+            
+            // --- CONFIGURAÇÃO DO LOGO ---
+            logoPath: 'img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif',
+            logoWidth: 100, // Tamanho ajustado (100px) para não exagerar
+            logoMargin: 10  // Bem próximo da borda (10px)
         };
 
         // --- ESTADO GLOBAL DO EDITOR ---
         const editorState = {
-            activeFile: null,      // File original
-            activeCardId: null,    // ID do card sendo editado
-            imgBitmap: null,       // ImageBitmap para performance
+            activeFile: null,      
+            activeCardId: null,    
+            imgBitmap: null,       
             scale: 1,
             offsetX: 0,
             offsetY: 0,
             minScale: 1
         };
 
-        // Cache para a logo
-        let logoImage = null;
+        // Variável para armazenar o logo carregado
+        let logoBitmap = null;
 
         // --- DOM ELEMENTS ---
         const fileInput = document.getElementById('file-input');
@@ -333,7 +297,6 @@
         const resultsArea = document.getElementById('results-area');
         const imageList = document.getElementById('image-list');
         const statusCounter = document.getElementById('status-counter');
-        const chkUseLogo = document.getElementById('chk-use-logo');
         
         const modal = document.getElementById('edit-modal');
         const editorCanvas = document.getElementById('editor-canvas');
@@ -342,7 +305,21 @@
         const zoomValue = document.getElementById('zoom-value');
         const btnConfirmCrop = document.getElementById('confirm-crop');
         const btnCloseModal = document.getElementById('close-modal');
-        const chkUseLogoModal = document.getElementById('chk-use-logo-modal');
+
+        // --- INICIALIZAÇÃO: Carregar Logo ---
+        async function loadLogo() {
+            try {
+                const response = await fetch(CONFIG.logoPath);
+                if (!response.ok) throw new Error("Logo não encontrado no caminho especificado.");
+                const blob = await response.blob();
+                logoBitmap = await createImageBitmap(blob);
+                console.log("Logo carregado com sucesso!");
+            } catch (err) {
+                console.warn("Aviso: Logo não carregado. O sistema continuará sem a marca d'água.", err);
+            }
+        }
+        // Inicia o carregamento imediatamente
+        loadLogo();
 
         // --- EVENT LISTENERS GERAIS ---
         fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
@@ -354,67 +331,11 @@
             dropZone.classList.remove('dragover');
             handleFiles(e.dataTransfer.files);
         });
-        
-        // Sincronizar checkbox do modal com o principal
-        chkUseLogo.addEventListener('change', () => {
-            chkUseLogoModal.checked = chkUseLogo.checked;
-        });
-
-        // --- LOGO LOADING ---
-        async function loadLogo() {
-            if (logoImage) return logoImage;
-            
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.src = CONFIG.logoPath;
-                img.crossOrigin = "Anonymous";
-                img.onload = () => {
-                    logoImage = img;
-                    resolve(img);
-                };
-                img.onerror = () => {
-                    console.warn("Logo não encontrada em: " + CONFIG.logoPath);
-                    resolve(null);
-                }
-            });
-        }
-
-        async function drawLogoOnCanvas(ctx, canvasW, canvasH) {
-            const logo = await loadLogo();
-            if (!logo) return;
-
-            // Configurações de tamanho e posição da logo
-            // Vamos definir a logo com largura de aprox 25% do canvas (100px em 400px)
-            const targetLogoWidth = 100; 
-            const scaleFactor = targetLogoWidth / logo.width;
-            const logoW = logo.width * scaleFactor;
-            const logoH = logo.height * scaleFactor;
-
-            // Margem da borda (quase encostando)
-            const padding = 12;
-
-            const x = canvasW - logoW - padding;
-            const y = canvasH - logoH - padding;
-
-            // Sombra leve para garantir contraste se a imagem for branca
-            ctx.shadowColor = "rgba(0,0,0,0.3)";
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetX = 1;
-            ctx.shadowOffsetY = 1;
-
-            ctx.drawImage(logo, x, y, logoW, logoH);
-            
-            // Reset shadow
-            ctx.shadowColor = "transparent";
-        }
 
         // --- CORE: FILE PROCESSING ---
         async function handleFiles(files) {
             if (files.length > 0) resultsArea.style.display = 'block';
             
-            // Se o user marcou logo, garante que está carregada
-            if (chkUseLogo.checked) await loadLogo();
-
             const filesArray = Array.from(files);
             let processed = 0;
             statusCounter.textContent = `Processando 0/${filesArray.length}...`;
@@ -423,46 +344,90 @@
                 if (!file.type.startsWith('image/')) continue;
                 
                 const cardId = 'card-' + Math.random().toString(36).substr(2, 9);
-                // Placeholder inicial na UI
                 createResultCard(cardId, file.name, null, true); 
 
                 try {
-                    // Processamento Automático Inicial (Smart Center Crop)
                     const bitmap = await createImageBitmap(file);
                     const canvas = document.createElement('canvas');
                     canvas.width = CONFIG.targetWidth;
                     canvas.height = CONFIG.targetHeight;
                     
+                    // 1. Recorte Automático
                     performSmartCrop(canvas, bitmap);
-
-                    // Aplica Logo se selecionado
-                    if (chkUseLogo.checked) {
-                        const ctx = canvas.getContext('2d');
-                        await drawLogoOnCanvas(ctx, canvas.width, canvas.height);
-                    }
                     
-                    // Compressão
+                    // 2. Aplicar Logo
+                    applyWatermark(canvas);
+                    
+                    // 3. Compressão
                     const result = await compressImage(canvas, file.name);
                     
-                    // Atualiza UI com resultado
                     updateResultCard(cardId, result, file);
                     bitmap.close();
                 } catch (err) {
                     console.error("Falha:", err);
+                    const card = document.getElementById(cardId);
+                    if(card) card.innerHTML = `<p style="color:var(--warn-red); padding:1rem;">Erro: ${err.message}</p>`;
                 }
                 processed++;
                 statusCounter.textContent = `Pronto: ${processed}/${filesArray.length}`;
             }
         }
 
+        // --- FUNÇÃO DE MARCA D'ÁGUA CIRCULAR ---
+        function applyWatermark(canvas) {
+            if (!logoBitmap) return; // Se não carregou, não faz nada
+
+            const ctx = canvas.getContext('2d');
+            
+            // Definições de geometria
+            const size = CONFIG.logoWidth; 
+            const radius = size / 2;
+
+            // Posição: Canto inferior direito com a margem configurada
+            const x = canvas.width - size - CONFIG.logoMargin;
+            const y = canvas.height - size - CONFIG.logoMargin;
+            
+            // Ponto central do círculo
+            const cx = x + radius;
+            const cy = y + radius;
+
+            ctx.save(); // Salva o estado atual do canvas
+
+            // 1. Desenhar Fundo Branco + Sombra
+            // Isso garante que o logo se destaque e tenha o formato redondo visível
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffffff"; 
+            
+            ctx.shadowColor = "rgba(0,0,0,0.4)"; // Sombra escura suave
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetY = 2; // Leve deslocamento para baixo
+            
+            ctx.fill(); // Preenche o círculo branco (a sombra aparece aqui)
+
+            // 2. Limpar sombra para não afetar o desenho da imagem interna
+            ctx.shadowColor = "transparent";
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // 3. Recorte Circular (Clip)
+            // Define que nada pode ser desenhado fora deste círculo a partir de agora
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.clip();
+
+            // 4. Desenhar a Logo dentro do recorte
+            ctx.drawImage(logoBitmap, x, y, size, size);
+            
+            ctx.restore(); // Restaura o estado (remove o recorte para o futuro)
+        }
+
         // --- LÓGICA DE CORTE AUTOMÁTICO (SMART CROP) ---
         function performSmartCrop(canvas, bitmap) {
             const ctx = canvas.getContext('2d');
-            // Calcula a proporção "Cover"
             const ratio = Math.max(canvas.width / bitmap.width, canvas.height / bitmap.height);
             const w = bitmap.width * ratio;
             const h = bitmap.height * ratio;
-            // Centraliza
             const x = (canvas.width - w) / 2;
             const y = (canvas.height - h) / 2;
             
@@ -471,13 +436,10 @@
 
         // --- LÓGICA DE COMPRESSÃO (BINARY SEARCH) ---
         async function compressImage(canvas, originalName) {
-            // Tenta formatos preferidos
             for (const format of CONFIG.formats) {
-                // Checa suporte rápido
                 const testBlob = await new Promise(r => canvas.toBlob(r, format, 1));
-                if (!testBlob || (format !== 'image/png' && testBlob.type === 'image/png')) continue; // Fallback do browser
+                if (!testBlob || (format !== 'image/png' && testBlob.type === 'image/png')) continue; 
                 
-                // Busca Binária pela qualidade ideal (< 30KB)
                 let minQ = 0.0, maxQ = 1.0, bestBlob = null, bestQ = 0;
                 
                 for(let i=0; i<6; i++) {
@@ -487,13 +449,12 @@
                     if (blob.size <= CONFIG.maxSizeBytes) {
                         bestBlob = blob;
                         bestQ = midQ;
-                        minQ = midQ; // Tenta melhorar
+                        minQ = midQ; 
                     } else {
-                        maxQ = midQ; // Diminui qualidade
+                        maxQ = midQ; 
                     }
                 }
                 
-                // Se falhou em atingir o tamanho, força qualidade mínima
                 if (!bestBlob) bestBlob = await new Promise(r => canvas.toBlob(r, format, 0.05));
 
                 return {
@@ -532,7 +493,6 @@
             const ext = result.format.split('/')[1] === 'jpeg' ? 'jpg' : result.format.split('/')[1];
             const defaultName = originalFile.name.split('.').slice(0, -1).join('.') + '.' + ext;
             
-            // Determina cores baseadas no tamanho
             const isSafe = result.blob.size <= CONFIG.maxSizeBytes;
             const sizeClass = isSafe ? 'text-green' : 'text-red';
             const badgeClass = ext === 'avif' ? 'bg-green' : 'bg-yellow';
@@ -563,7 +523,6 @@
                 </div>
             `;
 
-            // Bind Events
             const input = card.querySelector('.filename-input');
             const link = card.querySelector('.download-link');
             const editBtn = card.querySelector('.btn-edit');
@@ -572,7 +531,6 @@
                 if(e.target.value.trim()) link.download = e.target.value;
             });
 
-            // Lógica de Edição "Lazy"
             editBtn.onclick = () => openEditor(originalFile, id);
         }
 
@@ -581,29 +539,20 @@
         async function openEditor(file, cardId) {
             editorState.activeFile = file;
             editorState.activeCardId = cardId;
-            
-            // Sincroniza checkbox do modal com a escolha global
-            chkUseLogoModal.checked = chkUseLogo.checked;
-
-            // Carrega imagem para edição
             editorState.imgBitmap = await createImageBitmap(file);
             
-            // Setup inicial: Fit Cover na área de 300x300
             const canvasSize = 300;
             const imgW = editorState.imgBitmap.width;
             const imgH = editorState.imgBitmap.height;
             
-            // Calcula escala mínima para cobrir o canvas
             const scale = Math.max(canvasSize / imgW, canvasSize / imgH);
             
             editorState.minScale = scale;
             editorState.scale = scale;
             
-            // Centraliza
             editorState.offsetX = (canvasSize - imgW * scale) / 2;
             editorState.offsetY = (canvasSize - imgH * scale) / 2;
             
-            // Reset Controles
             zoomSlider.min = scale;
             zoomSlider.max = scale * 4;
             zoomSlider.value = scale;
@@ -614,10 +563,7 @@
         }
 
         function renderEditor() {
-            // Limpa
             ctxEditor.clearRect(0, 0, 300, 300);
-            
-            // Preenchimento de fundo para guiar os olhos (cinza escuro fora da img)
             ctxEditor.fillStyle = "#333";
             ctxEditor.fillRect(0,0,300,300);
 
@@ -628,16 +574,13 @@
             }
         }
 
-        // Interações do Editor (Pan & Zoom)
         let isDragging = false;
         let lastX = 0, lastY = 0;
 
-        // Mouse Events
         editorCanvas.addEventListener('mousedown', startDrag);
         window.addEventListener('mouseup', stopDrag);
         window.addEventListener('mousemove', drag);
         
-        // Touch Events
         editorCanvas.addEventListener('touchstart', (e) => { startDrag(e.touches[0]); e.preventDefault(); }, {passive: false});
         window.addEventListener('touchend', stopDrag);
         window.addEventListener('touchmove', (e) => { drag(e.touches[0]); e.preventDefault(); }, {passive: false});
@@ -663,13 +606,10 @@
             editorState.offsetX += deltaX;
             editorState.offsetY += deltaY;
             
-            // Restrições (Não deixar sair borda branca) - Lógica de "Contain"
             const canvasSize = 300;
             const currentW = editorState.imgBitmap.width * editorState.scale;
             const currentH = editorState.imgBitmap.height * editorState.scale;
             
-            // Limites: O offset nunca pode ser > 0 (borda esquerda branca) 
-            // e nunca menor que canvasSize - currentW (borda direita branca)
             if (editorState.offsetX > 0) editorState.offsetX = 0;
             if (editorState.offsetY > 0) editorState.offsetY = 0;
             if (editorState.offsetX < canvasSize - currentW) editorState.offsetX = canvasSize - currentW;
@@ -684,23 +624,16 @@
         zoomSlider.addEventListener('input', (e) => {
             const newScale = parseFloat(e.target.value);
             const oldScale = editorState.scale;
-            
-            // Zoom centralizado:
-            // O centro atual da viewport (150, 150) deve permanecer sobre o mesmo pixel da imagem
             const canvasCenter = 150;
             
-            // Posição do centro relativo à imagem antes do zoom
             const imgX = (canvasCenter - editorState.offsetX) / oldScale;
             const imgY = (canvasCenter - editorState.offsetY) / oldScale;
             
-            // Aplica novo zoom
             editorState.scale = newScale;
             
-            // Recalcula offset para manter o ponto central
             editorState.offsetX = canvasCenter - (imgX * newScale);
             editorState.offsetY = canvasCenter - (imgY * newScale);
             
-            // Reaplica restrições de borda (copiado da função drag para garantir segurança)
             const currentW = editorState.imgBitmap.width * editorState.scale;
             const currentH = editorState.imgBitmap.height * editorState.scale;
             if (editorState.offsetX > 0) editorState.offsetX = 0;
@@ -712,44 +645,35 @@
             renderEditor();
         });
 
-        // Botões do Modal
         btnCloseModal.onclick = () => modal.close();
         
         btnConfirmCrop.onclick = async () => {
-            // Loading state no botão
             const originalText = btnConfirmCrop.innerHTML;
             btnConfirmCrop.textContent = "Processando...";
             
             try {
-                // 1. Criar Canvas final 400x400
                 const finalCanvas = document.createElement('canvas');
                 finalCanvas.width = CONFIG.targetWidth;
                 finalCanvas.height = CONFIG.targetHeight;
                 const ctxFinal = finalCanvas.getContext('2d');
                 
-                // 2. Mapear coordenadas do Editor (300px) para Final (400px)
-                // A lógica é: O que está visível no canvas 300x300 deve ir para o 400x400
-                // Proporção de escala entre Editor e Final
                 const renderRatio = CONFIG.targetWidth / 300; 
                 
                 const finalScale = editorState.scale * renderRatio;
                 const finalX = editorState.offsetX * renderRatio;
                 const finalY = editorState.offsetY * renderRatio;
                 
-                // 3. Desenhar com alta qualidade
+                // 1. Desenhar Imagem Editada
                 ctxFinal.drawImage(editorState.imgBitmap, finalX, finalY, 
                                    editorState.imgBitmap.width * finalScale, 
                                    editorState.imgBitmap.height * finalScale);
-
-                // 4. Aplica Logo se selecionado no modal
-                if (chkUseLogoModal.checked) {
-                    await drawLogoOnCanvas(ctxFinal, finalCanvas.width, finalCanvas.height);
-                }
                 
-                // 5. Comprimir novamente
+                // 2. Aplicar Logo
+                applyWatermark(finalCanvas);
+
+                // 3. Comprimir novamente
                 const result = await compressImage(finalCanvas, editorState.activeFile.name);
                 
-                // 6. Atualizar UI
                 updateResultCard(editorState.activeCardId, result, editorState.activeFile);
                 
                 modal.close();
@@ -759,7 +683,6 @@
                 btnConfirmCrop.innerHTML = originalText;
             }
         };
-
     </script>
 </body>
 </html>
