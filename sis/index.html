@@ -388,8 +388,11 @@
                                 <form onsubmit="App.handleSave('produto', event)" id="form-produto">
                                     <input type="hidden" id="p-id">
                                     
-                                    <!-- CATEGORIA -->
-                                    <div class="form-group"><label>Categoria</label><select id="p-categoria"></select></div>
+                                    <!-- CATEGORIA & FORNECEDOR (ALTERADO) -->
+                                    <div class="row-2">
+                                        <div class="form-group"><label>Categoria</label><select id="p-categoria"></select></div>
+                                        <div class="form-group"><label>Fornecedor</label><input type="text" id="p-fornecedor"></div>
+                                    </div>
 
                                     <div class="row-2">
                                         <div class="form-group"><label>Código</label><input type="text" id="p-codigo" readonly></div>
@@ -1671,6 +1674,7 @@
                     data.nome = document.getElementById('p-nome').value;
                     data.ean = document.getElementById('p-ean').value;
                     data.categoria = document.getElementById('p-categoria').value;
+                    data.fornecedor = document.getElementById('p-fornecedor').value; // CAMPO FORNECEDOR ADICIONADO
                     data.caracteristicas = document.getElementById('p-caracteristicas').value;
                     
                     // Numeric Data
