@@ -1688,7 +1688,7 @@
 
                     // Images (auto-generated path)
                     // Caminho atualizado conforme solicitado: calc/img/produtos/...
-                    data.imagem = `calc/img/produtos/${data.codigo.toLowerCase()}.webp`;
+                    data.imagem = `../calc/img/produtos/${data.codigo.toLowerCase()}.webp`;
 
                     // Combos
                     if(document.getElementById('p-is-combo').checked) {
@@ -1792,7 +1792,7 @@
                     // Load Image Preview based on Code
                     const imgCode = item.codigo.toLowerCase();
                     // Caminho atualizado conforme solicitado
-                    const imgUrl = `calc/img/produtos/${imgCode}.webp`;
+                    const imgUrl = `../calc/img/produtos/${imgCode}.webp`;
                     const imgEl = document.getElementById('p-img-preview');
                     const iconEl = document.getElementById('p-img-icon');
 
