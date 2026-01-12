@@ -224,6 +224,33 @@
         .card-img-box { aspect-ratio: 1; padding: 10px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
         .card-img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s; }
         
+        /* LOGO WATERMARK STYLES */
+        .card-watermark {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 35px;
+            height: 35px;
+            opacity: 0.9;
+            z-index: 5;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+            border-radius: 50%;
+        }
+
+        .modal-watermark {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            opacity: 0.8;
+            z-index: 5;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+            border-radius: 50%;
+        }
+        
         /* Ajuste Mobile: Lista Horizontal Limpa (Preserva o layout anterior) */
         @media (max-width: 599px) {
             /* Remove a grade de desktop e bordas externas */
@@ -249,8 +276,8 @@
 
             /* Imagem quadrada e ajustada - AUMENTADA */
             .card-img-box { 
-                width: 150px; /* Aumentado de 130px para 150px */
-                min-width: 150px; /* Aumentado de 130px para 150px */
+                width: 150px; 
+                min-width: 150px; 
                 aspect-ratio: 1/1; 
                 padding: 0 0 0 5px; 
                 border-right: none; 
@@ -644,6 +671,7 @@
                         <button class="btn-close-pm" onclick="App.closeModal(document.getElementById('product-modal'))" aria-label="Fechar">✕ Fechar</button>
                         <div class="pm-stage">
                             <img src="${this.images[this.imgIdx]}" alt="${p.nome}" width="400" height="400">
+                            <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="modal-watermark" alt="Logo Dona Antônia" width="50" height="50">
                         </div>
                         <button class="pm-arrow prev" onclick="ProductModal.navigateImage(-1)">❮</button>
                         <button class="pm-arrow next" onclick="ProductModal.navigateImage(1)">❯</button>
@@ -859,6 +887,7 @@
                 <div class="${cardClass}" id="card-${p.id}">
                     <div class="card-img-box">
                         <img src="${p.imagem}" loading="lazy" alt="${p.nome}" class="card-img" width="200" height="200" onerror="this.onerror=null;this.classList.add('fallback-img')">
+                        <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="card-watermark" alt="Logo Dona Antônia" width="30" height="30">
                     </div>
                     
                     <div class="card-body">
