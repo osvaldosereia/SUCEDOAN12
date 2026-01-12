@@ -612,26 +612,18 @@
             
             async init() {
                 try {
-                    let response;
+                    // Tentativa principal na raiz (conforme seu outro site e padrão web)
+                    let response = await fetch('./produtos.json');
                     
-                    try {
-                        // Tenta carregar usando o caminho relativo explícito para a subpasta
-                        response = await fetch('./produtos/produtos.json');
-                    } catch (e) {
-                        console.warn("Tentando caminho alternativo...");
+                    // Fallback simples e linear para a pasta produtos caso não esteja na raiz
+                    // Isso evita o erro fatal se o arquivo estiver organizado em subpasta
+                    if (!response.ok) {
+                        console.warn('Tentando buscar em produtos/produtos.json...');
+                        response = await fetch('produtos/produtos.json');
                     }
 
-                    // Se a primeira tentativa falhar, tenta na raiz com caminho relativo explícito
-                    if (!response || !response.ok) {
-                        try {
-                            response = await fetch('./produtos.json');
-                        } catch (e) {
-                            throw new Error("Falha na conexão.");
-                        }
-                    }
-
-                    if (!response || !response.ok) {
-                        throw new Error("Arquivo não encontrado.");
+                    if (!response.ok) {
+                        throw new Error(`Não foi possível carregar o arquivo de produtos (Status: ${response.status}). Verifique se o arquivo "produtos.json" existe na pasta correta.`);
                     }
                     
                     const raw = await response.json();
@@ -665,6 +657,7 @@
                         <div style="text-align:center;padding:60px 20px;color:#b91c1c;background:#fef2f2;border:1px solid #fee2e2;border-radius:12px;margin:20px;">
                             <h3 style="margin-bottom:10px;font-weight:800;">Não foi possível carregar os produtos.</h3>
                             <p style="margin-bottom:15px">Verifique sua conexão ou se o arquivo de dados está correto.</p>
+                            <div style="font-family:monospace;font-size:0.8rem;background:#fff;padding:10px;border-radius:6px;overflow-x:auto;">${e.message}</div>
                         </div>`;
                 }
             },
