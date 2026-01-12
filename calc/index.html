@@ -694,10 +694,26 @@
                     // Listener da busca
                     const searchInput = document.getElementById('nav-search-input');
                     if (searchInput) {
+                        // Melhoria UX Mobile: Scroll suave para o topo ao focar para evitar "pulo" do teclado
+                        searchInput.addEventListener('focus', () => {
+                            // Apenas se estiver "rolado" muito para baixo ou no mobile
+                            if (window.innerWidth < 768) {
+                                setTimeout(() => {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }, 150);
+                            }
+                        });
+
                         let timeout;
                         searchInput.addEventListener('input', (e) => {
                             clearTimeout(timeout);
-                            timeout = setTimeout(() => this.renderCatalog(e.target.value.toLowerCase()), 300);
+                            timeout = setTimeout(() => {
+                                this.renderCatalog(e.target.value.toLowerCase());
+                                // Garante que o usuário veja o topo dos resultados
+                                if (window.innerWidth < 768) {
+                                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }
+                            }, 300);
                         });
                     }
 
