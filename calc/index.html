@@ -615,8 +615,7 @@
                     let response;
                     
                     try {
-                        // Tenta carregar usando a estrutura de pastas do projeto com caminho relativo explícito
-                        // ./produtos/produtos.json é o padrão quando o arquivo está na subpasta "produtos"
+                        // Tenta carregar usando o caminho relativo explícito para a subpasta
                         response = await fetch('./produtos/produtos.json');
                     } catch (e) {
                         console.warn("Tentando caminho alternativo...");
