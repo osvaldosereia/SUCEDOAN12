@@ -7,10 +7,9 @@
         STATUS: OTIMIZADO PARA RANKING #1
         SCORE: 100/100 LIGHTHOUSE PREVISION
         CHANGELOG:
-        1. Sincronização FAQ: O Modal agora "espelha" exatamente o conteúdo do rodapé via JS.
-        2. UX Mobile: Barra de categorias com setas e scroll suave.
-        3. UX Header: Botão "Dúvidas?" funcional.
-        4. SEO Local: Lista completa de bairros incluída no FAQ fonte.
+        1. Scroll Spy: Adicionada lógica para detectar seção visível e ativar o chip.
+        2. Auto-Scroll Nav: A barra de categorias rola automaticamente para manter o chip ativo visível.
+        3. UX Visual: Estado .active estilizado com vermelho intenso.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -694,6 +693,7 @@
         
         const App = {
             data: [], filteredData: [], visualOrderData: [], cart: {}, phone: "5565998150975",
+            activeCategory: null,
 
             async init() {
                 try {
@@ -718,6 +718,10 @@
                     this.setupDelegation('main-catalog');
                     this.setupDelegation('cart-body');
                     this.setupDelegation('product-modal');
+                    
+                    // Inicia o Scroll Spy
+                    this.setupScrollSpy();
+                    
                     ProductModal.init();
 
                     document.getElementById('search').addEventListener('input', (e) => {
@@ -750,6 +754,44 @@
                     if (action === 'details') ProductModal.open(id);
                     if (action === 'prev-prod') ProductModal.navigate(-1);
                     if (action === 'next-prod') ProductModal.navigate(1);
+                });
+            },
+
+            setupScrollSpy() {
+                const nav = document.getElementById('category-nav');
+                window.addEventListener('scroll', () => {
+                    // Offset: header + nav height + buffer visual (aprox 180px)
+                    const fromTop = window.scrollY + 180; 
+                    const links = nav.querySelectorAll('.cat-pill');
+                    let currentCat = null;
+
+                    // Busca a seção atual baseada na posição
+                    const separators = document.querySelectorAll('.category-separator');
+                    separators.forEach(div => {
+                        if (div.offsetTop <= fromTop) {
+                            currentCat = div.id.replace('cat-', '');
+                        }
+                    });
+
+                    // Se chegou no fim da página, força a última categoria
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
+                       if(separators.length > 0) {
+                           currentCat = separators[separators.length - 1].id.replace('cat-', '');
+                       }
+                    }
+
+                    // Se a categoria ativa mudou, atualiza a UI
+                    if (currentCat && currentCat !== this.activeCategory) {
+                        this.activeCategory = currentCat;
+                        links.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.dataset.cat === currentCat) {
+                                link.classList.add('active');
+                                // Rola a barra de navegação para deixar o botão visível
+                                link.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                            }
+                        });
+                    }
                 });
             },
 
@@ -806,8 +848,9 @@
             renderCategoryNav(categories) {
                 const nav = document.getElementById('category-nav');
                 if(!nav) return;
+                // Adicionado data-cat para identificação no ScrollSpy
                 nav.innerHTML = categories.map(cat => 
-                    `<button class="cat-pill" onclick="document.getElementById('cat-${cat}').scrollIntoView({behavior:'smooth'})">${cat}</button>`
+                    `<button class="cat-pill" data-cat="${cat}" onclick="document.getElementById('cat-${cat}').scrollIntoView({behavior:'smooth'})">${cat}</button>`
                 ).join('');
             },
 
