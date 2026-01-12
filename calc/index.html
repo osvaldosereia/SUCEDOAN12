@@ -150,6 +150,7 @@
         .btn-hero { padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 1rem; transition: transform 0.1s; }
         .btn-hero:active { transform: scale(0.98); }
         .btn-primary { background: var(--secondary); color: white; border: none; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+        .btn-secondary { background: white; color: var(--secondary); border: 2px solid var(--secondary); box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
         .hero-img-container { border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15); aspect-ratio: 16/10; position: relative; background: #eee; }
         .hero-img { width: 100%; height: 100%; object-fit: cover; }
         .hero-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); color: white; }
@@ -407,6 +408,7 @@
                     <p>Cestas básicas completas com as melhores marcas do mercado. Arroz Tio Alvino, Feijão Novo e muito mais. Pague somente na entrega.</p>
                     <div class="hero-btns">
                         <button class="btn-hero btn-primary" onclick="document.getElementById('cat-CESTA BÁSICA').scrollIntoView({behavior:'smooth'})">Ver Cestas</button>
+                        <button class="btn-hero btn-secondary" onclick="document.getElementById('cat-ALIMENTOS').scrollIntoView({behavior:'smooth'})">Monte sua Cesta</button>
                     </div>
                 </div>
                 <div class="hero-img-container">
