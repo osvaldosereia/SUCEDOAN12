@@ -247,10 +247,10 @@
             }
             .card:last-child { border-bottom: none; }
 
-            /* Imagem quadrada e ajustada - AUMENTADA */
+            /* Imagem quadrada e ajustada - AUMENTADA 40% (aprox 130px -> 180px) */
             .card-img-box { 
-                width: 130px; 
-                min-width: 130px; 
+                width: 180px; 
+                min-width: 180px; 
                 aspect-ratio: 1/1; 
                 padding: 0 0 0 5px; 
                 border-right: none; 
@@ -261,13 +261,32 @@
             .card-body { padding: 0 10px 0 12px; justify-content: flex-start; }
             
             /* Tipografia reduzida para compensar imagem maior */
-            .card-title { font-size: 0.9rem; margin-bottom: 3px; }
+            .card-title { font-size: 0.8rem; margin-bottom: 3px; } /* Reduzido de 0.9 para 0.8 */
             .card-desc-preview { font-size: 0.75rem; -webkit-line-clamp: 2; margin-bottom: 4px; }
-            .card-price { font-size: 1.1rem; margin-top: auto; padding-top: 2px; }
+            .card-price { font-size: 1.0rem; margin-top: auto; padding-top: 2px; } /* Reduzido de 1.1 para 1.0 */
             
-            /* Botões reduzidos */
-            .card-footer-row { padding-top: 6px; gap: 6px; margin-top: 6px; }
-            .btn-details-inline, .btn-add, .qty-control, .stock-badge { height: 32px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+            /* Botões reduzidos e EM COLUNA */
+            .card-footer-row { 
+                padding-top: 6px; 
+                gap: 6px; 
+                margin-top: 6px; 
+                flex-direction: column; /* Coluna em vez de linha */
+                align-items: stretch; /* Ocupar largura total */
+            }
+            
+            .btn-details-inline, .btn-add, .qty-control, .stock-badge { 
+                height: 34px; 
+                font-size: 0.75rem; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                width: 100%; /* Largura total */
+            }
+            
+            .card-actions-wrapper {
+                width: 100%;
+                flex: auto; /* Remove restrição anterior */
+            }
         }
 
         /* Botões alinhados no rodapé do card */
