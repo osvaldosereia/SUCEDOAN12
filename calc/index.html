@@ -612,26 +612,28 @@
             
             async init() {
                 try {
-                    // Simplificação: tenta carregar do caminho padrão
-                    // Se falhar, tenta da raiz como fallback
                     let response;
                     
                     try {
-                        // Tentativa 1: Pasta produtos
-                        const res = await fetch('produtos/produtos.json');
-                        if(res.ok) response = res;
-                        else throw new Error('404');
-                    } catch(e) {
-                        console.warn("Tentando raiz...");
-                        // Tentativa 2: Raiz
+                        // Tenta carregar usando a estrutura de pastas do projeto
+                        // No GitHub Pages ou local, o caminho relativo ./produtos/produtos.json é o mais seguro
+                        // se o arquivo estiver em uma subpasta "produtos"
+                        response = await fetch('./produtos/produtos.json');
+                    } catch (e) {
+                        console.warn("Tentando caminho alternativo...");
+                    }
+
+                    // Se a primeira tentativa falhar (ex: arquivo movido para raiz), tenta na raiz
+                    if (!response || !response.ok) {
                         try {
-                            const resRoot = await fetch('produtos.json');
-                            if(resRoot.ok) response = resRoot;
-                        } catch(e2) {}
+                            response = await fetch('./produtos.json');
+                        } catch (e) {
+                            throw new Error("Falha na conexão.");
+                        }
                     }
 
                     if (!response || !response.ok) {
-                        throw new Error("Arquivo 'produtos.json' não encontrado. Verifique se o nome do arquivo está correto (sem o número 3).");
+                        throw new Error("Arquivo não encontrado.");
                     }
                     
                     const raw = await response.json();
@@ -650,7 +652,6 @@
                     this.detectCardGalleries(); 
                     ProductModal.init();
                     
-                    // Search listener
                     let timeout;
                     const searchInput = document.getElementById('nav-search-input');
                     if(searchInput) {
@@ -664,9 +665,8 @@
                     console.error("Erro Fatal:", e);
                     document.getElementById('main-catalog').innerHTML = `
                         <div style="text-align:center;padding:60px 20px;color:#b91c1c;background:#fef2f2;border:1px solid #fee2e2;border-radius:12px;margin:20px;">
-                            <h3 style="margin-bottom:10px;font-weight:800;">Falha ao carregar produtos</h3>
-                            <p style="margin-bottom:15px">Não foi possível ler o arquivo de dados.</p>
-                            <div style="font-family:monospace;font-size:0.8rem;background:#fff;padding:10px;border-radius:6px;overflow-x:auto;">${e.message}</div>
+                            <h3 style="margin-bottom:10px;font-weight:800;">Não foi possível carregar os produtos.</h3>
+                            <p style="margin-bottom:15px">Verifique sua conexão ou se o arquivo de dados está correto.</p>
                         </div>`;
                 }
             },
