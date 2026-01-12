@@ -759,40 +759,57 @@
 
             setupScrollSpy() {
                 const nav = document.getElementById('category-nav');
+                let ticking = false;
+
                 window.addEventListener('scroll', () => {
-                    // Offset: header + nav height + buffer visual (aprox 180px)
-                    const fromTop = window.scrollY + 180; 
-                    const links = nav.querySelectorAll('.cat-pill');
-                    let currentCat = null;
-
-                    // Busca a seção atual baseada na posição
-                    const separators = document.querySelectorAll('.category-separator');
-                    separators.forEach(div => {
-                        if (div.offsetTop <= fromTop) {
-                            currentCat = div.id.replace('cat-', '');
-                        }
-                    });
-
-                    // Se chegou no fim da página, força a última categoria
-                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
-                       if(separators.length > 0) {
-                           currentCat = separators[separators.length - 1].id.replace('cat-', '');
-                       }
-                    }
-
-                    // Se a categoria ativa mudou, atualiza a UI
-                    if (currentCat && currentCat !== this.activeCategory) {
-                        this.activeCategory = currentCat;
-                        links.forEach(link => {
-                            link.classList.remove('active');
-                            if (link.dataset.cat === currentCat) {
-                                link.classList.add('active');
-                                // Rola a barra de navegação para deixar o botão visível
-                                link.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                            }
+                    if (!ticking) {
+                        window.requestAnimationFrame(() => {
+                            this.updateActiveCategory(nav);
+                            ticking = false;
                         });
+                        ticking = true;
+                    }
+                }, { passive: true });
+            },
+
+            updateActiveCategory(nav) {
+                // Offset ajustado: Header (~70px) + Nav (~50px) + Margem de segurança (30px) = 150px
+                const fromTop = window.scrollY + 150; 
+                const separators = document.querySelectorAll('.category-separator');
+                let currentCat = null;
+
+                // Percorre as seções para encontrar a atual
+                separators.forEach(div => {
+                    if (div.offsetTop <= fromTop) {
+                        currentCat = div.id.replace('cat-', '');
                     }
                 });
+
+                // Garante que o último item seja ativado se chegar no fim da página
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
+                   if(separators.length > 0) {
+                       currentCat = separators[separators.length - 1].id.replace('cat-', '');
+                   }
+                }
+
+                // Atualiza a UI apenas se a categoria mudou
+                if (currentCat && currentCat !== this.activeCategory) {
+                    this.activeCategory = currentCat;
+                    const links = nav.querySelectorAll('.cat-pill');
+                    
+                    links.forEach(link => {
+                        // Remove/Adiciona classe de forma otimizada
+                        if (link.dataset.cat === currentCat) {
+                            if (!link.classList.contains('active')) {
+                                link.classList.add('active');
+                                // Centraliza o botão na barra horizontal suavemente
+                                link.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                            }
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+                }
             },
 
             renderCatalog(term = '') {
