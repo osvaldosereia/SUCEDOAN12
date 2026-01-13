@@ -57,6 +57,31 @@
             padding: 1.5rem;
         }
 
+        /* Options Bar (Novo) */
+        .options-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        .toggle-input {
+            width: 1.2rem;
+            height: 1.2rem;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
         /* Drop Zone */
         .drop-zone {
             border: 2px dashed var(--border);
@@ -210,6 +235,14 @@
             <p class="subtitle">Smart Crop • 400x400px • <span class="highlight">Garantia de 30KB</span></p>
         </header>
 
+        <!-- Opções Globais -->
+        <div class="options-bar">
+            <label class="toggle-label">
+                <input type="checkbox" id="watermark-toggle" class="toggle-input" checked>
+                <span>Aplicar Logo da Empresa</span>
+            </label>
+        </div>
+
         <!-- Drop Zone -->
         <div class="card drop-zone" id="drop-zone">
             <!-- Icon Cloud -->
@@ -273,8 +306,8 @@
             
             // --- CONFIGURAÇÃO DO LOGO ---
             logoPath: 'img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif',
-            logoWidth: 100, // Tamanho ajustado (100px) para não exagerar
-            logoMargin: 10  // Bem próximo da borda (10px)
+            logoWidth: 70, // Reduzido em 30% (antes era 100)
+            logoMargin: 10  
         };
 
         // --- ESTADO GLOBAL DO EDITOR ---
@@ -297,6 +330,7 @@
         const resultsArea = document.getElementById('results-area');
         const imageList = document.getElementById('image-list');
         const statusCounter = document.getElementById('status-counter');
+        const watermarkToggle = document.getElementById('watermark-toggle');
         
         const modal = document.getElementById('edit-modal');
         const editorCanvas = document.getElementById('editor-canvas');
@@ -355,7 +389,7 @@
                     // 1. Recorte Automático
                     performSmartCrop(canvas, bitmap);
                     
-                    // 2. Aplicar Logo
+                    // 2. Aplicar Logo (Se o toggle estiver ativo)
                     applyWatermark(canvas);
                     
                     // 3. Compressão
@@ -375,11 +409,14 @@
 
         // --- FUNÇÃO DE MARCA D'ÁGUA CIRCULAR ---
         function applyWatermark(canvas) {
+            // VERIFICAÇÃO NOVA: Se o checkbox não estiver marcado, sai da função
+            if (!watermarkToggle.checked) return;
+            
             if (!logoBitmap) return; // Se não carregou, não faz nada
 
             const ctx = canvas.getContext('2d');
             
-            // Definições de geometria
+            // Definições de geometria (Agora usa 70px conforme CONFIG)
             const size = CONFIG.logoWidth; 
             const radius = size / 2;
 
@@ -394,32 +431,30 @@
             ctx.save(); // Salva o estado atual do canvas
 
             // 1. Desenhar Fundo Branco + Sombra
-            // Isso garante que o logo se destaque e tenha o formato redondo visível
             ctx.beginPath();
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
             ctx.fillStyle = "#ffffff"; 
             
-            ctx.shadowColor = "rgba(0,0,0,0.4)"; // Sombra escura suave
+            ctx.shadowColor = "rgba(0,0,0,0.4)"; 
             ctx.shadowBlur = 6;
-            ctx.shadowOffsetY = 2; // Leve deslocamento para baixo
+            ctx.shadowOffsetY = 2; 
             
-            ctx.fill(); // Preenche o círculo branco (a sombra aparece aqui)
+            ctx.fill(); 
 
-            // 2. Limpar sombra para não afetar o desenho da imagem interna
+            // 2. Limpar sombra
             ctx.shadowColor = "transparent";
             ctx.shadowBlur = 0;
             ctx.shadowOffsetY = 0;
 
-            // 3. Recorte Circular (Clip)
-            // Define que nada pode ser desenhado fora deste círculo a partir de agora
+            // 3. Recorte Circular
             ctx.beginPath();
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
             ctx.clip();
 
-            // 4. Desenhar a Logo dentro do recorte
+            // 4. Desenhar a Logo
             ctx.drawImage(logoBitmap, x, y, size, size);
             
-            ctx.restore(); // Restaura o estado (remove o recorte para o futuro)
+            ctx.restore();
         }
 
         // --- LÓGICA DE CORTE AUTOMÁTICO (SMART CROP) ---
@@ -668,7 +703,7 @@
                                    editorState.imgBitmap.width * finalScale, 
                                    editorState.imgBitmap.height * finalScale);
                 
-                // 2. Aplicar Logo
+                // 2. Aplicar Logo (Se o toggle estiver ativo)
                 applyWatermark(finalCanvas);
 
                 // 3. Comprimir novamente
