@@ -19,11 +19,11 @@
             --secondary: #1f2937; 
             --bg: #ffffff; 
             --surface: #ffffff; 
-            --text-main: #333333; /* Cinza escuro elegante */
+            --text-main: #333333; 
             --text-muted: #666666; 
-            --border: #f0f0f0; /* Borda quase invisível */
+            --border: #f0f0f0; 
             --header-h: 70px; 
-            --radius: 4px; /* Cantos mais retos = mais profissional */
+            --radius: 4px; 
             --footer-h: 80px;
             --offer-color: #b45309;
             --focus-ring: #dc2626;
@@ -39,10 +39,9 @@
             padding-bottom: 0; 
             font-weight: 400;
             font-size: 16px; 
-            -webkit-font-smoothing: antialiased; /* Fontes mais nítidas */
+            -webkit-font-smoothing: antialiased; 
         }
         
-        /* Margens laterais seguras no mobile e desktop */
         .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; width: 100%; }
         
         .hidden { display: none !important; }
@@ -57,7 +56,11 @@
             position: fixed; top: 0; left: 0; width: 100%; height: var(--header-h); 
             background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border); z-index: 100; 
             display: flex; align-items: center; backdrop-filter: blur(12px);
+            transition: transform 0.3s ease; /* Animação para esconder */
         }
+        /* Classe para esconder o header no scroll (Mobile) */
+        body.header-hidden header { transform: translateY(-100%); }
+
         .header-inner { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
         .logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.2rem; color: var(--secondary); text-decoration: none; letter-spacing: -0.01em; }
@@ -88,7 +91,6 @@
 
         .bc-image-box { 
             width: 100%; aspect-ratio: 4/5; 
-            /* Remover box visual, deixar clean */
             background: #fafafa; border-radius: 8px; overflow: hidden; 
             position: relative;
         }
@@ -113,21 +115,59 @@
         /* --- 4. CUSTOMIZER VIEW --- */
         #customizer-view { padding-top: var(--header-h); background: var(--bg); min-height: 100vh; }
         
+        /* HEADER CUSTOMIZER ADAPTÁVEL */
         .customizer-header { 
-            background: rgba(255,255,255,0.98); padding: 16px 0; border-bottom: 1px solid var(--border); 
-            position: sticky; top: var(--header-h); z-index: 90; backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.98); 
+            padding: 12px 0; 
+            border-bottom: 1px solid var(--border); 
+            position: sticky; 
+            top: var(--header-h); /* Padrão: abaixo do header fixo */
+            z-index: 90; 
+            backdrop-filter: blur(10px);
+            transition: top 0.3s ease; /* Suavidade ao mudar posição */
         }
-        .ch-inner { display: flex; align-items: center; gap: 20px; }
+        
+        /* Quando o header principal some, o customizer header sobe */
+        body.header-hidden .customizer-header { top: 0; }
+
+        .ch-inner { 
+            display: flex; flex-wrap: wrap; align-items: center; gap: 15px; 
+        }
         
         .btn-back { 
             width: 44px; height: 44px; border-radius: 50%; background: white; border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-main); transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-main); transition: all 0.2s; flex-shrink: 0;
         }
         .btn-back:hover { border-color: var(--text-main); }
         
+        .cust-basket-info { flex: 1; min-width: 150px; }
         .cust-basket-info h2 { font-size: 1.1rem; font-weight: 700; line-height: 1.2; margin: 0; color: var(--secondary); }
         .cust-basket-info span { font-size: 0.85rem; color: var(--text-muted); }
         
+        /* SEARCH BOX (Mobile First) */
+        .search-container {
+            width: 100%; /* Mobile: Linha nova */
+            margin-top: 8px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            height: 44px;
+            padding: 0 40px 0 16px;
+            border-radius: 50px;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .search-input:focus { outline: none; border-color: var(--secondary); background: white; }
+        .search-icon {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            width: 20px; height: 20px; color: var(--text-muted); pointer-events: none;
+        }
+
         .changes-counter { 
             font-size: 0.8rem; font-weight: 600; color: #b45309; 
             background: #fffbeb; padding: 6px 14px; border-radius: 50px; 
@@ -135,8 +175,8 @@
         }
         .changes-counter.limit-reached { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
 
-        .customizer-grid { display: block; margin-top: 40px; }
-        .products-col { padding-bottom: 160px; } /* Espaço extra para footer mobile */
+        .customizer-grid { display: block; margin-top: 20px; }
+        .products-col { padding-bottom: 160px; } 
         
         .section-header { 
             padding: 0 0 15px; font-size: 0.9rem; font-weight: 700; color: var(--text-main); 
@@ -149,7 +189,6 @@
             display: flex; align-items: center; padding: 20px 0; 
             border-bottom: 1px solid var(--border); gap: 20px; background: white; 
         }
-        /* Imagem da lista maior */
         .c-img-list { 
             width: 80px; height: 80px; border-radius: 0; object-fit: contain; 
             background: white; flex-shrink: 0; mix-blend-mode: multiply;
@@ -180,7 +219,6 @@
         
         @media(min-width: 600px) { .extras-grid { grid-template-columns: repeat(2, 1fr); gap: 30px 20px; } }
         
-        /* 3 Colunas no Desktop + Respiro */
         @media(min-width: 1024px) { 
             .extras-grid { grid-template-columns: repeat(3, 1fr); gap: 50px 30px; } 
         }
@@ -189,14 +227,12 @@
             background: transparent; 
             display: flex; flex-direction: column;
             position: relative;
-            /* Sem borda embaixo para visual clean */
         }
         
-        /* Box da imagem LIMPO - sem borda, sem fundo visível */
         .extra-img-box { 
             width: 100%; aspect-ratio: 1/1; position: relative; 
             background: transparent; 
-            overflow: visible; /* Deixa imagem respirar */
+            overflow: visible; 
             margin-bottom: 12px;
             display: flex; align-items: center; justify-content: center;
         }
@@ -204,11 +240,10 @@
         .extra-img { 
             width: 100%; height: 100%; object-fit: contain; 
             mix-blend-mode: multiply; transition: transform 0.5s ease;
-            filter: contrast(1.02); /* Leve realce */
+            filter: contrast(1.02); 
         }
         .extra-img-box:hover .extra-img { transform: scale(1.08); }
 
-        /* Botão Lupa */
         .btn-gallery-overlay {
             position: absolute; bottom: 0; right: 0;
             background: white; border-radius: 50%;
@@ -223,7 +258,6 @@
 
         .extra-info-box { display: flex; flex-direction: column; flex: 1; }
         
-        /* Fonte menor e mais elegante para o nome */
         .extra-name { 
             font-size: 0.95rem; font-weight: 500; line-height: 1.4; 
             margin-bottom: 6px; color: var(--text-main); 
@@ -237,7 +271,6 @@
         }
         .price-offer { color: var(--offer-color); }
         
-        /* Badge Oferta */
         .badge-offer {
             position: absolute; top: 0; left: 0;
             background: var(--offer-color); color: white;
@@ -246,7 +279,6 @@
             z-index: 5;
         }
 
-        /* Botão Adicionar Clean */
         .btn-add-lg {
             width: 100%; min-height: 44px;
             background: white; color: var(--secondary);
@@ -260,7 +292,6 @@
         .btn-add-lg:hover { border-color: var(--text-main); background: #f9fafb; }
         .btn-add-lg:active { transform: scale(0.98); }
 
-        /* Controles de Quantidade */
         .qty-control-compact { 
             display: flex; align-items: center; justify-content: space-between;
             background: white; border: 1px solid #d1d5db; border-radius: 50px; 
@@ -274,7 +305,6 @@
         .qty-btn-c:active { background: #f3f4f6; }
         .qty-val-c { font-weight: 600; font-size: 1rem; flex: 1; text-align: center; color: var(--secondary); }
 
-        /* FOOTER & CRÉDITO */
         .credit-banner-container {
             position: fixed; bottom: var(--footer-h); left: 0; width: 100%;
             z-index: 99; pointer-events: none;
@@ -311,7 +341,6 @@
         }
         .btn-finish:active { transform: scale(0.97); }
 
-        /* GALLERY MODAL */
         dialog#gallery-modal {
             width: 100%; height: 100%; max-width: 100%; max-height: 100%;
             border: none; margin: 0; background: rgba(255,255,255,0.98);
@@ -342,33 +371,31 @@
             .container { padding: 0 40px; }
             .hero h1 { font-size: 3rem; }
             
-            /* Grid Principal */
+            /* Ajuste Header para Desktop: Busca na linha de cima */
+            .ch-inner { flex-wrap: nowrap; }
+            .search-container { width: 300px; margin-top: 0; margin-left: auto; margin-right: 20px; }
+            
+            /* Resto Desktop */
             .customizer-grid { 
                 display: grid; 
-                grid-template-columns: 1fr 380px; /* Coluna direita fixa */
+                grid-template-columns: 1fr 380px; 
                 gap: 60px; 
-                align-items: start; /* Importante para o sticky funcionar */
+                align-items: start; 
             }
-            
             .products-col { padding-bottom: 60px; }
-            
-            /* Banner de Crédito no Topo da Sidebar */
             .credit-banner-container { 
                 position: absolute; top: -70px; bottom: auto; left: 0; 
                 width: 100%; justify-content: center; 
             }
-            
-            /* Sidebar Sticky */
             .order-summary-card {
                 position: sticky; 
-                top: calc(var(--header-h) + 40px); /* Distância do topo */
+                top: calc(var(--header-h) + 40px); 
                 bottom: auto; left: auto; width: auto; height: auto;
                 border: 1px solid var(--border); border-radius: 12px;
                 flex-direction: column; padding: 30px; background: white;
                 box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05); gap: 24px; z-index: 80;
-                align-self: start; /* Garante que fique no topo da célula do grid */
+                align-self: start; 
             }
-            
             .ff-info { align-items: center; text-align: center; padding-bottom: 24px; border-bottom: 1px solid var(--border); width: 100%; }
             .ff-value { font-size: 2.5rem; margin-top: 8px; color: var(--secondary); font-weight: 700; }
             .btn-finish { width: 100%; justify-content: center; height: 56px; font-size: 1.1rem; }
@@ -416,10 +443,18 @@
         <div class="customizer-header">
             <div class="container ch-inner">
                 <button class="btn-back" onclick="App.showHome()" aria-label="Voltar para a página inicial">❮</button>
+                
                 <div class="cust-basket-info">
                     <h2 id="cust-basket-name">Nome da Cesta</h2>
                     <span>Personalize sua escolha</span>
                 </div>
+
+                <!-- BUSCA INTELIGENTE (Linha 2 no Mobile, Linha 1 no Desktop) -->
+                <div class="search-container">
+                    <input type="text" id="product-search" class="search-input" placeholder="Buscar produto extra..." aria-label="Buscar produto extra">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+
                 <div id="changes-badge" class="changes-counter">
                     Trocas: 0/0
                 </div>
@@ -550,6 +585,7 @@
             currentLimit: null,
             lockedRiceId: null,
             phone: "5565998150975",
+            searchTerm: "",
 
             async init() {
                 try {
@@ -569,10 +605,35 @@
                         }));
 
                     this.renderHome();
+                    this.setupSearch();
+                    this.setupScroll();
                 } catch (e) {
                     console.error("Erro:", e);
                     document.getElementById('baskets-list').innerHTML = `<p style="text-align:center;">Erro ao carregar loja.</p>`;
                 }
+            },
+
+            setupSearch() {
+                const input = document.getElementById('product-search');
+                if (input) {
+                    input.addEventListener('input', (e) => {
+                        this.searchTerm = e.target.value.toLowerCase();
+                        this.renderCustomizerLists();
+                    });
+                }
+            },
+
+            setupScroll() {
+                let lastScrollY = window.scrollY;
+                window.addEventListener('scroll', () => {
+                    const currentScrollY = window.scrollY;
+                    if (currentScrollY > 70 && currentScrollY > lastScrollY) {
+                        document.body.classList.add('header-hidden');
+                    } else if (currentScrollY < lastScrollY) {
+                        document.body.classList.remove('header-hidden');
+                    }
+                    lastScrollY = currentScrollY;
+                });
             },
 
             sortProducts(products) {
@@ -626,6 +687,8 @@
                 this.currentBasket = basket;
                 this.cart = {};
                 this.lockedRiceId = null;
+                this.searchTerm = "";
+                document.getElementById('product-search').value = ""; // Reset search input
 
                 if (basket.items && basket.items.length > 0) {
                     basket.items.forEach(item => {
@@ -675,6 +738,7 @@
                 const basketContainer = document.getElementById('basket-items-container');
                 const othersContainer = document.getElementById('other-items-container');
                 
+                // 1. LISTA COMPLETA
                 let allCartIds = Object.keys(this.cart);
                 let basketItems = allCartIds.map(id => this.data.find(x => x.id === id)).filter(p => p);
                 basketItems = this.sortProducts(basketItems);
@@ -685,9 +749,14 @@
                     basketContainer.innerHTML = basketItems.map(p => this.itemRowHTML(p)).join('');
                 }
 
+                // 2. LISTA DE EXTRAS COM BUSCA
                 let otherProducts = this.data.filter(p => {
                     if (p.categoria === 'CESTA BÁSICA') return false;
                     if (p.nome.toLowerCase().includes('arroz') && this.lockedRiceId && p.id !== this.lockedRiceId) return false; 
+                    
+                    // Lógica de Busca
+                    if (this.searchTerm && !p.nome.toLowerCase().includes(this.searchTerm)) return false;
+
                     return true;
                 });
 
@@ -707,16 +776,20 @@
 
                 let othersHTML = '';
                 
-                cats.forEach(cat => {
-                    const isSpecial = /^(Oferta|Dica|Só Hoje)/i.test(cat);
-                    const badge = isSpecial ? '<span class="cat-badge">Destaque</span>' : '';
-                    
-                    othersHTML += `<div class="cat-separator">${cat} ${badge}</div>`;
-                    let sortedGroup = this.sortProducts(groups[cat]);
-                    othersHTML += `<div class="extras-grid">`;
-                    othersHTML += sortedGroup.map(p => this.itemCardHTML(p)).join('');
-                    othersHTML += `</div>`;
-                });
+                if (otherProducts.length === 0) {
+                    othersHTML = `<div style="padding:40px; text-align:center; color:var(--text-muted);">Nenhum produto encontrado.</div>`;
+                } else {
+                    cats.forEach(cat => {
+                        const isSpecial = /^(Oferta|Dica|Só Hoje)/i.test(cat);
+                        const badge = isSpecial ? '<span class="cat-badge">Destaque</span>' : '';
+                        
+                        othersHTML += `<div class="cat-separator">${cat} ${badge}</div>`;
+                        let sortedGroup = this.sortProducts(groups[cat]);
+                        othersHTML += `<div class="extras-grid">`;
+                        othersHTML += sortedGroup.map(p => this.itemCardHTML(p)).join('');
+                        othersHTML += `</div>`;
+                    });
+                }
                 
                 othersContainer.innerHTML = othersHTML;
                 this.updateTotalAndLimits();
