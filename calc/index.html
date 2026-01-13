@@ -4,8 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 2.0 - High Performance & Semantic Structure
+        VERSION: 3.0 - Sales Hero + Core Web Vitals Fix (LCP/CLS)
         LIGHTHOUSE TARGET: 100/100
+        CHANGELOG:
+        - Added: Preload for JSON data (Fixes LCP Chain)
+        - Removed: content-visibility on FAQ (Fixes CLS 0.321)
+        - Added: New High-Conversion Hero Section
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -46,9 +50,12 @@
     <meta name="twitter:description" content="Monte sua cesta básica online. Qualidade e preço baixo na Dona Antônia.">
     
     <link rel="icon" href="img/favicon.ico" sizes="any">
-    <!-- Preload Critical Assets -->
+    
+    <!-- PERFORMANCE FIX: Preload Critical Assets -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- FIX LCP CHAIN: Baixar o JSON junto com o HTML -->
+    <link rel="preload" href="produtos/produtos.json" as="fetch" crossorigin="anonymous">
 
     <!-- ADVANCED SCHEMA.ORG JSON-LD -->
     <script type="application/ld+json">
@@ -179,12 +186,69 @@
             display: flex; align-items: center; gap: 6px;
         }
 
-        /* --- 3. HOME VIEW --- */
+        /* --- 3. HOME VIEW & NEW HERO --- */
         #home-view { padding-top: var(--header-h); min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
         
-        .hero { padding: 40px 0 30px; text-align: center; }
-        .hero h1 { font-size: 2rem; font-weight: 800; color: var(--secondary); margin-bottom: 12px; letter-spacing: -0.03em; line-height: 1.1; }
-        .hero p { color: var(--text-muted); font-size: 1.125rem; max-width: 600px; margin: 0 auto; }
+        /* HERO DE ALTA CONVERSÃO (SALES CLOSER) */
+        .hero {
+            background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+            padding: 40px 0;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(220, 38, 38, 0.03) 0%, transparent 70%);
+            z-index: 0; pointer-events: none;
+        }
+        .hero .container { position: relative; z-index: 1; }
+
+        .badge-trust {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #dcfce7; color: #166534; font-size: 0.8rem; font-weight: 700;
+            padding: 6px 16px; border-radius: 50px; margin-bottom: 16px;
+            border: 1px solid #bbf7d0; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .hero h1 { 
+            font-size: 2rem; font-weight: 800; color: var(--secondary); 
+            margin-bottom: 16px; letter-spacing: -0.03em; line-height: 1.1; 
+        }
+        .hero h1 span { color: var(--primary); }
+
+        .hero p { 
+            color: var(--text-muted); font-size: 1.05rem; max-width: 600px; 
+            margin: 0 auto 24px; line-height: 1.5;
+        }
+
+        /* Features Bar */
+        .features-bar {
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 24px;
+        }
+        .feature-item {
+            display: flex; align-items: center; gap: 6px; background: white;
+            padding: 8px 14px; border-radius: 8px; border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); font-size: 0.85rem; font-weight: 600; color: var(--text-main);
+        }
+        .feature-icon { color: var(--primary); display: flex; align-items: center; }
+
+        /* CTA Button */
+        .btn-hero-cta {
+            display: inline-flex; align-items: center; background: var(--primary); color: white;
+            font-weight: 700; padding: 14px 32px; border-radius: 50px; font-size: 1.1rem;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3); transition: transform 0.2s;
+        }
+        .btn-hero-cta:hover { transform: scale(1.05); background: var(--primary-dark); }
+
+        @media (min-width: 768px) {
+            .hero { padding: 80px 0 60px; }
+            .hero h1 { font-size: 3.5rem; }
+            .hero p { font-size: 1.25rem; }
+            .badge-trust { font-size: 0.9rem; }
+            .feature-item { padding: 10px 16px; font-size: 0.9rem; }
+        }
 
         /* SEO: Use CSS Grid for performance */
         .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 24px; padding-bottom: 60px; list-style: none; }
@@ -444,8 +508,8 @@
         .g-thumb { width: 60px; height: 60px; border-radius: 6px; border: 2px solid transparent; opacity: 0.5; object-fit: cover; cursor: pointer; }
         .g-thumb.active { border-color: white; opacity: 1; }
 
-        /* FAQ */
-        .faq-section { content-visibility: auto; contain-intrinsic-size: 600px; }
+        /* FAQ - FIX CLS: Removed content-visibility */
+        .faq-section { /* content-visibility removed to fix layout shifts */ }
         details.faq-item { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
         details.faq-item summary { padding: 18px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; list-style: none; align-items: center; color: var(--secondary); font-size: 1.05rem; }
         details.faq-item summary::after { content: "+"; font-size: 1.5rem; color: var(--primary); line-height: 0.5; font-weight: 700; }
@@ -525,10 +589,48 @@
 
     <!-- HOME VIEW -->
     <main id="home-view">
+        <!-- HERO SECTION: ALTA CONVERSÃO -->
         <section class="hero">
             <div class="container">
-                <h1>Cestas Básicas Premium</h1>
-                <p>Economia real e produtos selecionados para sua família em Cuiabá e região.</p>
+                <!-- Badge de Confiança -->
+                <div class="badge-trust">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    Pagamento 100% Seguro na Entrega
+                </div>
+
+                <!-- Headline de Vendas -->
+                <h1>
+                    A Melhor Cesta Básica <br class="hidden-mobile">
+                    na Porta da <span>Sua Casa</span>
+                </h1>
+                
+                <!-- Subtítulo focado em dor/solução -->
+                <p>
+                    Sem filas e sem carregar peso. Personalize com marcas líderes como 
+                    <strong>Arroz Tio Alvino</strong> e receba amanhã em Cuiabá e VG.
+                </p>
+
+                <!-- Botão CTA (Call to Action) -->
+                <button class="btn-hero-cta" onclick="document.getElementById('baskets-list').scrollIntoView({behavior: 'smooth'})">
+                    Escolher Minha Cesta
+                    <svg style="margin-left:8px;" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                </button>
+
+                <!-- Barra de Benefícios (Quebra de Objeções) -->
+                <div class="features-bar">
+                    <div class="feature-item">
+                        <span class="feature-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></span>
+                        Entrega Grátis*
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></span>
+                        Entrega em 24h
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></span>
+                        Aceitamos Cartão/Vale
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -541,7 +643,7 @@
             </div>
         </section>
 
-        <!-- FAQ SECTION - Content Visibility for Performance -->
+        <!-- FAQ SECTION - FIX: Removed content-visibility for CLS compliance -->
         <section class="container faq-section" style="padding-top: 60px; padding-bottom: 20px;">
             <h2 style="font-size: 1.5rem; margin-bottom: 24px; color: var(--secondary); font-weight: 800; text-align: center;">Dúvidas Frequentes</h2>
             
