@@ -22,7 +22,7 @@
             --text-main: #333333; 
             --text-muted: #666666; 
             --border: #e5e7eb; 
-            --header-h: 60px; /* Header um pouco menor no mobile */
+            --header-h: 70px; 
             --radius: 8px; 
             --footer-h: 80px;
             --offer-color: #b45309;
@@ -42,8 +42,7 @@
             -webkit-font-smoothing: antialiased; 
         }
         
-        /* Margens laterais OTIMIZADAS no mobile */
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 12px; width: 100%; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; width: 100%; }
         
         .hidden { display: none !important; }
         
@@ -64,21 +63,21 @@
 
         .header-inner { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
-        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; letter-spacing: -0.01em; }
-        .logo-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+        .logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.2rem; color: var(--secondary); text-decoration: none; letter-spacing: -0.01em; }
+        .logo-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
         
         .location-badge { 
-            font-size: 0.75rem; font-weight: 600; color: var(--text-main); 
-            background: #f5f5f5; padding: 4px 10px; border-radius: 50px; 
+            font-size: 0.8rem; font-weight: 600; color: var(--text-main); 
+            background: #f5f5f5; padding: 6px 12px; border-radius: 50px; 
         }
 
         /* --- 3. HOME VIEW --- */
         #home-view { padding-top: var(--header-h); min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
-        .hero { padding: 40px 0 30px; text-align: center; }
-        .hero h1 { font-size: 2rem; font-weight: 700; color: var(--secondary); margin-bottom: 12px; letter-spacing: -0.03em; }
-        .hero p { color: var(--text-muted); font-size: 1rem; max-width: 600px; margin: 0 auto; font-weight: 400; }
+        .hero { padding: 60px 0 40px; text-align: center; }
+        .hero h1 { font-size: 2.5rem; font-weight: 700; color: var(--secondary); margin-bottom: 16px; letter-spacing: -0.03em; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; font-weight: 400; }
 
-        .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 24px; padding-bottom: 60px; }
+        .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 40px; padding-bottom: 60px; }
         @media (min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); } }
         
@@ -95,20 +94,21 @@
         .big-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
 
         .bc-image-box { 
-            width: 100%; aspect-ratio: 4/5; 
+            width: 100%; 
+            aspect-ratio: 1/1; /* FOTOS QUADRADAS */
             background: #fafafa; overflow: hidden; 
             position: relative; border-bottom: 1px solid var(--border);
         }
         .bc-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease; }
         .big-card:hover .bc-image { transform: scale(1.05); }
         
-        .bc-content { padding: 20px; display: flex; flex-direction: column; flex: 1; text-align: center; }
-        .bc-title { font-size: 1.3rem; font-weight: 700; color: var(--secondary); margin-bottom: 4px; letter-spacing: -0.01em; }
-        .bc-price { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-bottom: 20px; font-feature-settings: "tnum"; }
+        .bc-content { padding: 24px; display: flex; flex-direction: column; flex: 1; text-align: center; }
+        .bc-title { font-size: 1.4rem; font-weight: 600; color: var(--secondary); margin-bottom: 6px; letter-spacing: -0.01em; }
+        .bc-price { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 24px; font-feature-settings: "tnum"; }
         
         .bc-actions { display: grid; gap: 12px; }
         .btn-full { 
-            width: 100%; min-height: 48px; padding: 0 20px; border-radius: 50px; 
+            width: 100%; min-height: 50px; padding: 0 20px; border-radius: 50px; 
             font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px;
             display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;
         }
@@ -122,7 +122,7 @@
         
         .customizer-header { 
             background: rgba(255,255,255,0.98); 
-            padding: 10px 0; 
+            padding: 12px 0; 
             border-bottom: 1px solid var(--border); 
             position: sticky; 
             top: var(--header-h); 
@@ -133,22 +133,22 @@
         }
         body.header-hidden .customizer-header { top: 0; }
 
-        .ch-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        .ch-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; }
         
         .btn-back { 
-            width: 40px; height: 40px; border-radius: 50%; background: white; border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--text-main); transition: all 0.2s; flex-shrink: 0;
+            width: 44px; height: 44px; border-radius: 50%; background: white; border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-main); transition: all 0.2s; flex-shrink: 0;
         }
         .btn-back:hover { border-color: var(--text-main); }
         
-        .cust-basket-info { flex: 1; min-width: 140px; }
-        .cust-basket-info h2 { font-size: 1rem; font-weight: 700; line-height: 1.2; margin: 0; color: var(--secondary); }
-        .cust-basket-info span { font-size: 0.8rem; color: var(--text-muted); }
+        .cust-basket-info { flex: 1; min-width: 150px; }
+        .cust-basket-info h2 { font-size: 1.1rem; font-weight: 700; line-height: 1.2; margin: 0; color: var(--secondary); }
+        .cust-basket-info span { font-size: 0.85rem; color: var(--text-muted); }
         
         /* Search Box */
         .search-container { width: 100%; margin-top: 8px; position: relative; }
         .search-input {
-            width: 100%; height: 42px; padding: 0 40px 0 16px;
+            width: 100%; height: 44px; padding: 0 40px 0 16px;
             border-radius: 50px; border: 1px solid #d1d5db; background: #f9fafb;
             font-size: 0.9rem; color: var(--text-main);
             transition: border-color 0.2s, background 0.2s;
@@ -169,209 +169,144 @@
         .products-col { padding-bottom: 160px; } 
         
         .section-header { 
-            padding: 0 0 12px; font-size: 0.9rem; font-weight: 700; color: var(--text-main); 
+            padding: 0 0 15px; font-size: 0.9rem; font-weight: 700; color: var(--text-main); 
             text-transform: uppercase; letter-spacing: 1px;
-            display: flex; align-items: center; gap: 10px; border-bottom: 2px solid var(--border); margin-bottom: 20px;
+            display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border); margin-bottom: 30px;
         }
         
-        /* ========================================= */
-        /* === UNIFIED CARD STYLE (MOBILE FIRST) === */
-        /* ========================================= */
+        /* LIST LAYOUT (Itens Inclusos) */
+        .basket-group { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 0 20px; margin-bottom: 40px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
-        /* Container da Lista (Inclusos e Extras) */
-        .c-item-list, .extra-card { 
-            display: flex; 
-            flex-direction: row; /* Sempre horizontal */
-            align-items: stretch; /* Esticar altura */
-            padding: 12px 0; 
-            border: none;
-            border-bottom: 1px solid var(--border); 
-            gap: 12px; 
-            background: transparent; 
-            box-shadow: none;
-            min-height: 130px; /* Garante altura mínima para imagem grande */
+        .c-item-list { 
+            display: flex; align-items: center; padding: 20px 0; 
+            border-bottom: 1px solid var(--border); gap: 20px; background: white; 
         }
-        .c-item-list:last-child, .extra-card:last-child { border-bottom: none; }
+        .c-item-list:last-child { border-bottom: none; }
         
-        /* Container da Imagem */
-        .c-img-box-list, .extra-img-box {
-            width: 130px; /* Fixo e Grande */
-            height: auto; /* Adapta a altura */
-            min-height: 130px;
-            border-radius: 8px; 
-            background: transparent; /* Sem fundo/box */
-            flex-shrink: 0; 
-            position: relative; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            overflow: visible; /* Permite imagem sair se precisar */
-            margin: 0;
-            border: none; /* Sem borda */
-            box-shadow: none; /* Sem sombra */
+        /* Box da Imagem na Lista (Com suporte a botão) */
+        .c-img-box-list {
+            width: 80px; height: 80px; border-radius: 8px; 
+            background: white; flex-shrink: 0; border: 1px solid #f3f4f6; 
+            position: relative; display: flex; align-items: center; justify-content: center;
+        }
+        .c-img-list { 
+            width: 100%; height: 100%; object-fit: contain; 
+            mix-blend-mode: multiply; padding: 5px;
         }
         
-        .c-img-list, .extra-img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: contain; 
-            mix-blend-mode: multiply; 
-            padding: 0; /* Zero padding interno */
-            transform: scale(1.05); /* Leve zoom para destacar */
+        .c-content-col { 
+            flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0;
         }
         
-        /* Coluna de Conteúdo */
-        .c-content-col, .extra-info-box { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; /* Espalha verticalmente */
-            min-width: 0;
-            padding: 4px 0 4px 0;
+        .c-name { 
+            font-weight: 600; font-size: 0.95rem; line-height: 1.4; 
+            margin-bottom: 8px; color: var(--secondary); 
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+            padding-right: 5px; 
         }
         
-        /* Título */
-        .c-name, .extra-name { 
-            font-weight: 600; 
-            font-size: 0.85rem; /* Fonte menor */
-            line-height: 1.3; 
-            margin-bottom: 4px; 
-            color: var(--secondary); 
-            display: -webkit-box; 
-            -webkit-line-clamp: 3; /* 3 Linhas */
-            -webkit-box-orient: vertical; 
-            overflow: hidden;
-            padding-right: 0; 
-            min-height: 0; /* Reset */
-        }
-        
-        /* Preço/Meta */
-        .extra-price { font-size: 1rem; font-weight: 700; color: var(--primary); margin: 0; }
-        .c-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
-        
-        /* Linha Inferior (Preço/Label + Controle) */
-        .c-bottom-row { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            width: 100%; 
-            margin-top: auto; 
-        }
+        .c-bottom-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .c-meta { font-size: 0.8rem; color: var(--text-muted); font-weight: 400; }
+        .c-control-box { width: 100px; flex-shrink: 0; }
 
-        /* Botão Adicionar */
-        .btn-add-lg {
-            width: auto; 
-            min-width: 80px;
-            min-height: 36px; 
-            background: white; 
-            color: var(--secondary);
-            border: 1px solid #d1d5db; 
-            font-weight: 600; 
-            font-size: 0.75rem;
-            padding: 0 12px; 
-            border-radius: 50px;
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 4px;
-            margin-left: auto; /* Joga pra direita */
-        }
-        .btn-add-lg:active { background: #f3f4f6; border-color: var(--secondary); }
-
-        /* Controles de Quantidade */
-        .c-control-box { width: 100px; flex-shrink: 0; margin-left: auto; }
-        .qty-control-compact { 
-            display: flex; align-items: center; justify-content: space-between;
-            background: white; border: 1px solid #d1d5db; border-radius: 50px; 
-            height: 36px; padding: 2px; width: 100%; 
-        }
-        .qty-btn-c { 
-            width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; 
-            font-size: 1.2rem; color: var(--text-main); border-radius: 50%; background: transparent; 
-        }
-        .qty-val-c { font-weight: 600; font-size: 0.9rem; flex: 1; text-align: center; color: var(--secondary); }
-
-        /* Badge Oferta */
-        .badge-offer {
-            position: absolute; top: 0; left: 0;
-            background: var(--offer-color); color: white;
-            font-size: 0.65rem; font-weight: 700;
-            padding: 2px 8px; border-radius: 4px;
-            z-index: 5;
-        }
-
-        /* Botão Lupa (Opcional no mobile, mas mantido discreto) */
-        .btn-gallery-overlay {
-            position: absolute; bottom: 0; right: 0;
-            background: rgba(255,255,255,0.9); border-radius: 50%; width: 32px; height: 32px;
-            display: none; align-items: center; justify-content: center;
-            color: var(--secondary); z-index: 10;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05);
-        }
-
-        /* --- DESKTOP OVERRIDES --- */
-        @media (min-width: 1024px) {
-            .container { padding: 0 40px; }
-            .hero h1 { font-size: 3rem; }
-            
-            .ch-inner { flex-wrap: nowrap; }
-            .search-container { width: 300px; margin-top: 0; margin-left: auto; margin-right: 20px; }
-            
-            .changes-counter { display: block; }
-
-            .customizer-grid { 
-                display: grid; grid-template-columns: 1fr 380px; gap: 60px; 
-            }
-            .products-col { padding-bottom: 60px; }
-            
-            /* Volta Grid para Desktop */
-            .extras-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 30px; }
-            
-            .extra-card {
-                flex-direction: column; padding: 0; border: none; min-height: auto;
-            }
-            .extra-img-box {
-                width: 100%; aspect-ratio: 1/1; height: auto;
-                background: white; border: 1px solid var(--border); border-radius: 12px;
-                padding: 10px; margin-bottom: 12px;
-            }
-            .extra-img { transform: none; padding: 0; }
-            .extra-name { font-size: 0.95rem; -webkit-line-clamp: 2; min-height: 2.8em; }
-            .btn-add-lg { width: 100%; min-height: 44px; margin: 0; }
-            .qty-control-compact { height: 44px; }
-            .c-control-box { width: 100%; margin: 0; }
-            
-            .sidebar-wrapper {
-                position: sticky; top: calc(var(--header-h) + 40px);
-                bottom: auto; left: auto; width: auto; height: auto;
-                align-self: start; z-index: 80;
-            }
-            .sidebar-nav { display: block; margin-bottom: 20px; background: white; border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
-            
-            .order-summary-card {
-                position: static; width: auto; height: auto;
-                border: 1px solid var(--border); border-radius: 12px;
-                flex-direction: column; padding: 30px; background: white;
-                box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05); gap: 24px;
-            }
-            .credit-banner-container { position: absolute; top: -70px; bottom: auto; left: 0; width: 100%; justify-content: center; }
-            .ff-value { font-size: 2.5rem; margin-top: 8px; }
-            .btn-finish { width: 100%; justify-content: center; height: 56px; font-size: 1.1rem; }
-            .floating-actions { display: none; }
+        /* Ajustes Mobile Específicos para Lista */
+        @media (max-width: 768px) {
+            .c-item-list { gap: 16px; align-items: flex-start; }
+            .c-img-box-list { width: 135px; height: 135px; } /* Mobile */
+            .c-content-col { height: 135px; justify-content: space-between; padding: 5px 0; }
+            .c-name { font-size: 1rem; margin-bottom: 0; }
+            .c-bottom-row { margin-top: auto; }
         }
 
         /* Categorias */
         .cat-separator {
-            padding: 40px 0 20px; background: transparent; 
+            padding: 50px 0 30px; background: transparent; 
             font-size: 1.1rem; font-weight: 700; color: var(--secondary); 
             text-transform: uppercase; letter-spacing: 1px; text-align: center;
             display: flex; align-items: center; justify-content: center; gap: 20px;
+            scroll-margin-top: 140px; /* Para o scroll parar no lugar certo */
         }
         .cat-separator::before, .cat-separator::after { content: ""; height: 1px; background: #e5e5e5; flex: 1; margin: 0 10px; }
+        .cat-badge { font-size: 0.7rem; background: var(--offer-color); color: white; padding: 4px 10px; border-radius: 50px; font-weight: 700; }
 
-        /* FOOTER + CREDIT BANNER */
+        /* --- GRID DE PRODUTOS EXTRAS --- */
+        .extras-grid { display: grid; grid-template-columns: 1fr; gap: 40px; padding: 0; }
+        
+        @media(min-width: 600px) { .extras-grid { grid-template-columns: repeat(2, 1fr); gap: 30px 20px; } }
+        @media(min-width: 1024px) { .extras-grid { grid-template-columns: repeat(3, 1fr); gap: 50px 30px; } }
+
+        .extra-card {
+            background: white; border-radius: 12px; padding: 16px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+        }
+        @media(min-width: 1024px) { 
+            .extra-card { background: transparent; padding: 0; border: none; box-shadow: none; } 
+        }
+        
+        .extra-img-box { 
+            width: 100%; aspect-ratio: 1/1; position: relative; 
+            background: white; border-radius: 8px; overflow: visible; 
+            margin-bottom: 12px; display: flex; align-items: center; justify-content: center;
+        }
+        @media(min-width: 1024px) { 
+             .extra-img-box { background: white; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        }
+        
+        .extra-img { 
+            width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; 
+            transition: transform 0.5s ease; filter: contrast(1.02); padding: 8px;
+        }
+        .extra-img-box:hover .extra-img { transform: scale(1.08); }
+
+        .btn-gallery-overlay {
+            position: absolute; bottom: 0; right: 0;
+            background: white; border-radius: 50%; width: 44px; height: 44px;
+            display: none; align-items: center; justify-content: center;
+            color: var(--secondary); z-index: 10; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s;
+        }
+        .btn-gallery-overlay:hover { transform: scale(1.1); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+
+        .extra-info-box { display: flex; flex-direction: column; flex: 1; }
+        
+        .extra-name { 
+            font-size: 0.95rem; font-weight: 500; line-height: 1.4; 
+            margin-bottom: 6px; color: var(--text-main); 
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; 
+            min-height: 2.8em;
+        }
+        
+        .extra-price { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; font-feature-settings: "tnum"; }
+        .price-offer { color: var(--offer-color); }
+        .badge-offer {
+            position: absolute; top: 0; left: 0;
+            background: var(--offer-color); color: white;
+            font-size: 0.7rem; font-weight: 700;
+            padding: 4px 10px; border-radius: 4px; z-index: 5;
+        }
+
+        .btn-add-lg {
+            width: 100%; min-height: 44px; background: white; color: var(--secondary);
+            border: 1px solid #d1d5db; font-weight: 600; font-size: 0.85rem;
+            padding: 0 16px; border-radius: 50px; text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
+        }
+        .btn-add-lg:hover { border-color: var(--text-main); background: #f9fafb; }
+        .btn-add-lg:active { transform: scale(0.98); }
+
+        .qty-control-compact { 
+            display: flex; align-items: center; justify-content: space-between;
+            background: white; border: 1px solid #d1d5db; border-radius: 50px; 
+            height: 44px; padding: 2px; width: 100%; margin-top: auto;
+        }
+        .qty-btn-c { 
+            width: 40px; height: 100%; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.3rem; color: var(--text-main); border-radius: 50%; background: transparent; 
+            transition: background 0.2s;
+        }
+        .qty-btn-c:active { background: #f3f4f6; }
+        .qty-val-c { font-weight: 600; font-size: 1rem; flex: 1; text-align: center; color: var(--secondary); }
+
         .credit-banner-container {
             position: fixed; bottom: var(--footer-h); left: 0; width: 100%;
             z-index: 99; pointer-events: none;
@@ -417,6 +352,44 @@
         }
         .toast.visible { opacity: 1; top: 120px; }
         .toast.error { background: #ef4444; }
+
+        /* --- CHECKOUT MODAL --- */
+        dialog#checkout-modal {
+            width: 100%; max-width: 500px;
+            border: none; border-radius: 16px;
+            padding: 0; margin: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background: white;
+        }
+        dialog#checkout-modal::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+
+        .ck-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .ck-title { font-size: 1.2rem; font-weight: 700; color: var(--secondary); margin: 0; }
+        .ck-close { cursor: pointer; background: #f3f4f6; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+        
+        .ck-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+        .ck-footer { padding: 20px; border-top: 1px solid var(--border); background: #f9fafb; }
+
+        .ck-summary-item { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; }
+        .ck-total-row { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); color: var(--primary); }
+
+        .payment-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .payment-label-title { font-weight: 600; margin-bottom: 10px; display: block; }
+        .payment-option {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .payment-option:hover { background: #f9fafb; }
+        .payment-option:has(input:checked) { border-color: var(--primary); background: #fef2f2; }
+        .payment-option input { accent-color: var(--primary); width: 20px; height: 20px; }
+        .payment-label { font-weight: 500; color: var(--text-main); }
+
+        .btn-confirm-checkout {
+            width: 100%; padding: 14px; background: #16a34a; color: white;
+            border-radius: 8px; font-weight: 700; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
 
         /* --- BOTÕES FLUTUANTES (MOBILE) --- */
         .floating-actions {
@@ -627,7 +600,7 @@
                             <span class="ff-label">Total Estimado</span>
                             <span class="ff-value" id="ff-total-val">R$ 0,00</span>
                         </div>
-                        <button class="btn-finish" onclick="App.finishOrder()" aria-label="Finalizar pedido no WhatsApp">
+                        <button class="btn-finish" onclick="App.openCheckoutModal()" aria-label="Finalizar pedido">
                             <span>Finalizar Pedido</span>
                             <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                         </button>
@@ -646,6 +619,39 @@
             <img src="" class="gm-img" id="gm-main-img" alt="Imagem do produto ampliada">
         </div>
         <div class="gm-nav" id="gm-thumbs" role="listbox" aria-label="Miniaturas"></div>
+    </dialog>
+
+    <!-- CHECKOUT MODAL -->
+    <dialog id="checkout-modal" aria-modal="true" aria-label="Finalizar Pedido">
+        <div class="ck-header">
+            <h3 class="ck-title">Resumo do Pedido</h3>
+            <button class="ck-close" onclick="document.getElementById('checkout-modal').close()">✕</button>
+        </div>
+        <div class="ck-body">
+            <div id="checkout-summary"></div>
+            
+            <div class="payment-group">
+                <span class="payment-label-title">Forma de Pagamento:</span>
+                <label class="payment-option">
+                    <input type="radio" name="payment" value="Dinheiro">
+                    <span class="payment-label">Dinheiro</span>
+                </label>
+                <label class="payment-option">
+                    <input type="radio" name="payment" value="PIX">
+                    <span class="payment-label">PIX</span>
+                </label>
+                <label class="payment-option">
+                    <input type="radio" name="payment" value="Cartão de Crédito/Débito">
+                    <span class="payment-label">Cartão (Crédito/Débito)</span>
+                </label>
+            </div>
+        </div>
+        <div class="ck-footer">
+            <button class="btn-confirm-checkout" onclick="App.confirmCheckout()">
+                Confirmar e Enviar
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
     </dialog>
 
     <script>
@@ -1121,6 +1127,56 @@
                     this.showToast("Cesta vazia.", 'error');
                     return;
                 }
+                // Agora apenas abre o modal, não manda direto
+                this.openCheckoutModal();
+            },
+
+            openCheckoutModal() {
+                const modal = document.getElementById('checkout-modal');
+                const summaryEl = document.getElementById('checkout-summary');
+                
+                // Popula o resumo
+                let productsTotal = 0;
+                let html = '';
+                
+                for (const [id, qty] of Object.entries(this.cart)) {
+                    const p = this.data.find(x => x.id === id);
+                    if (p) {
+                        const sub = p.valor * qty;
+                        productsTotal += sub;
+                        html += `
+                            <div class="ck-summary-item">
+                                <span>${qty}x ${p.nome}</span>
+                                <span>R$ ${sub.toFixed(2).replace('.', ',')}</span>
+                            </div>`;
+                    }
+                }
+                
+                const calculatedTotal = productsTotal + this.baseFee;
+                const originalPrice = this.currentBasket.valor;
+                const finalTotal = Math.max(calculatedTotal, originalPrice);
+                
+                html += `
+                    <div class="ck-total-row">
+                        <span>TOTAL FINAL</span>
+                        <span>R$ ${finalTotal.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                `;
+                
+                summaryEl.innerHTML = html;
+                modal.showModal();
+            },
+
+            confirmCheckout() {
+                // Pega o pagamento selecionado
+                const paymentEl = document.querySelector('input[name="payment"]:checked');
+                if (!paymentEl) {
+                    this.showToast("Selecione uma forma de pagamento.", 'error');
+                    return;
+                }
+                const paymentMethod = paymentEl.value;
+
+                // Constrói a mensagem final
                 let productsTotal = 0;
                 let msg = `*PEDIDO: ${this.currentBasket.nome}*\n--------------------------------\n`;
                 for (const [id, qty] of Object.entries(this.cart)) {
@@ -1131,11 +1187,16 @@
                         msg += `${qty}x ${p.nome}\n`;
                     }
                 }
+                
                 const calculatedTotal = productsTotal + this.baseFee;
                 const originalPrice = this.currentBasket.valor;
                 const finalTotal = Math.max(calculatedTotal, originalPrice);
-                msg += `--------------------------------\n*TOTAL: R$ ${finalTotal.toFixed(2).replace('.', ',')}*`;
+                
+                msg += `--------------------------------\n*TOTAL: R$ ${finalTotal.toFixed(2).replace('.', ',')}*\n`;
+                msg += `Forma de Pagamento: *${paymentMethod}*\n`;
+                
                 window.open(`https://api.whatsapp.com/send?phone=${this.phone}&text=${encodeURIComponent(msg)}`, '_blank');
+                document.getElementById('checkout-modal').close();
             },
 
             showToast(msg, type = 'normal') {
