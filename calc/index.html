@@ -4,8 +4,9 @@
     <!-- 
         ================================================================
         SEO CONFIGURATION: OPTIMIZED
-        - Visual Limpo e Otimizado (Mobile & Desktop)
-        - Ajustes de Grid e Tipografia
+        - Fix: Sidebar Categorias Desktop
+        - Fix: Linhas divisórias mais visíveis
+        - Performance: fetchpriority="high" e dimensões explícitas (LCP/CLS)
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -274,11 +275,11 @@
             padding: 16px 0;
             box-shadow: none; 
             border: none;
-            border-bottom: 1px solid #f1f5f9; /* Linha separadora horizontal */
+            /* LINHA MAIS VISÍVEL: cinza mais escuro #cbd5e1 */
+            border-bottom: 1px solid #cbd5e1; 
             display: flex; flex-direction: row; gap: 16px; align-items: center;
             transition: all 0.2s; position: relative;
         }
-        /* Remove a borda do último item para não duplicar se necessário, mas opcional */
         
         .pc-img-box { 
             /* AJUSTE MOBILE: Imagem +10% (de 90px para 100px) */
@@ -470,11 +471,13 @@
 
             .floating-actions { display: none; }
             
-            .desktop-cat-nav { display: block; background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--border); }
+            /* FIX SIDEBAR DISPLAY */
+            .desktop-cat-nav { display: block !important; background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--border); }
             .desktop-cat-link { display: block; padding: 10px 0; color: var(--text-muted); transition: 0.2s; cursor: pointer; border-bottom: 1px solid #f8fafc; font-weight: 500; }
             .desktop-cat-link:last-child { border-bottom: none; }
             .desktop-cat-link:hover { color: var(--primary); padding-left: 5px; }
         }
+        /* Mobile default hidden */
         .desktop-cat-nav { display: none; }
 
     </style>
@@ -842,7 +845,7 @@
                 container.innerHTML = cestas.map(p => `
                     <div class="big-card">
                         <div class="bc-image-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
-                            <img src="${p.imagem}" alt="${p.nome}" class="bc-image">
+                            <img src="${p.imagem}" alt="${p.nome}" class="bc-image" width="500" height="500" fetchpriority="high">
                         </div>
                         <div class="bc-content">
                             <h2 class="bc-title">${p.nome}</h2>
@@ -930,7 +933,7 @@
                     basketContainer.innerHTML = basketItems.map(p => `
                         <div class="product-card">
                             <div class="pc-img-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
-                                <img src="${p.imagem}" alt="${p.nome}" class="pc-img" loading="lazy">
+                                <img src="${p.imagem}" alt="${p.nome}" class="pc-img" loading="lazy" width="200" height="200">
                             </div>
                             <div class="pc-info">
                                 <div class="pc-name">${p.nome}</div>
@@ -958,8 +961,8 @@
                 this.categories = cats;
 
                 const navHTML = cats.map(c => `<a class="desktop-cat-link cat-link" onclick="App.scrollToCat('${c}')">${c}</a>`).join('');
-                catListDesktop.innerHTML = navHTML;
-                catListMobile.innerHTML = navHTML;
+                if (catListDesktop) catListDesktop.innerHTML = navHTML;
+                if (catListMobile) catListMobile.innerHTML = navHTML;
 
                 let html = '';
                 if(extras.length === 0) html = '<div style="text-align:center; padding:40px;">Nenhum produto encontrado.</div>';
@@ -978,7 +981,7 @@
                             return `
                                 <div class="product-card">
                                     <div class="pc-img-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
-                                        <img src="${p.imagem}" alt="${p.nome}" class="pc-img" loading="lazy">
+                                        <img src="${p.imagem}" alt="${p.nome}" class="pc-img" loading="lazy" width="200" height="200">
                                     </div>
                                     <div class="pc-info">
                                         <div class="pc-name">${p.nome}</div>
