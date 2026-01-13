@@ -247,6 +247,21 @@
         .ff-label { font-size: 0.8rem; color: var(--text-muted); }
         .ff-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); line-height: 1; }
         
+        /* Badge de Crédito */
+        .credit-badge {
+            font-size: 0.8rem;
+            color: #15803d; 
+            background: #dcfce7;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 4px;
+            font-weight: 700;
+            text-align: center;
+            border: 1px solid #bbf7d0;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        
         .btn-finish { 
             background: #16a34a; 
             color: white; 
@@ -350,7 +365,7 @@
                     <span>Monte do seu jeito</span>
                 </div>
                 <div id="changes-badge" class="changes-counter">
-                    Alterações: 0/0
+                    Trocas: 0/0
                 </div>
             </div>
         </div>
@@ -382,6 +397,7 @@
                 <div class="ff-info">
                     <span class="ff-label">Total do Pedido</span>
                     <span class="ff-value" id="ff-total-val">R$ 0,00</span>
+                    <div id="credit-display" class="credit-badge hidden"></div>
                 </div>
                 <button class="btn-finish" onclick="App.finishOrder()">
                     <span>Finalizar no Zap</span>
@@ -500,7 +516,6 @@
                 this.currentLimit = BASKET_LIMITS[ruleKey] || 99; // 99 se não tiver regra definida
                 
                 // 4. Calcula a "Taxa Oculta" (Base Fee) Dinamicamente
-                // Base Fee = Preço da Cesta (JSON) - Soma dos Produtos Iniciais
                 let initialProductsSum = 0;
                 for (const [id, qty] of Object.entries(this.cart)) {
                     const p = this.data.find(x => x.id === id);
@@ -577,8 +592,7 @@
 
             itemRowHTML(p, isBasketItem) {
                 const qty = this.cart[p.id] || 0;
-                // Preço visível apenas se não for item original da cesta (opcional, pode ser alterado conforme regra de negócio)
-                // Mantendo logica original do pedido: esconder preço unitário na lista da cesta
+                // Preço visível apenas se não for item original da cesta
                 const priceDisplay = isBasketItem 
                     ? `<span style="font-size:0.8rem; color:var(--text-muted)">Incluso</span>` 
                     : `<span class="c-price">R$ ${p.valor.toFixed(2).replace('.', ',')}</span>`;
@@ -609,11 +623,12 @@
                 if (newQty <= 0) delete simulatedCart[id];
                 else simulatedCart[id] = newQty;
 
-                // Verifica alterações
-                if (this.currentLimit) {
-                    const changes = this.calculateChanges(simulatedCart);
-                    if (changes > this.currentLimit) {
-                        alert(`Você atingiu o limite de ${this.currentLimit} alterações para a ${this.currentBasket.nome}.`);
+                // Verifica se está tentando remover um item ORIGINAL que causaria estouro do limite
+                // A verificação só é necessária se estivermos diminuindo a quantidade (delta < 0) e o item for original
+                if (this.currentLimit && delta < 0 && this.originalCart[id]) {
+                    const removals = this.calculateRemovals(simulatedCart);
+                    if (removals > this.currentLimit) {
+                        alert(`Você atingiu o limite de ${this.currentLimit} trocas (itens originais retirados) para a ${this.currentBasket.nome}.`);
                         return;
                     }
                 }
@@ -626,44 +641,59 @@
                 this.renderCustomizerLists();
             },
 
-            // Calcula quantos itens diferentes foram alterados em relação ao original
-            calculateChanges(testCart) {
-                let changes = 0;
-                const allIds = new Set([...Object.keys(testCart), ...Object.keys(this.originalCart)]);
-                
-                allIds.forEach(id => {
-                    const originalQty = this.originalCart[id] || 0;
+            // Nova lógica: Conta apenas quantos itens originais foram zerados
+            calculateRemovals(testCart) {
+                let removals = 0;
+                for (const id in this.originalCart) {
+                    const originalQty = this.originalCart[id];
                     const newQty = testCart[id] || 0;
                     
-                    if (originalQty !== newQty) {
-                        changes++;
+                    // Se o item existia na cesta original (>0) e agora é 0, conta como remoção/troca
+                    if (originalQty > 0 && newQty === 0) {
+                        removals++;
                     }
-                });
-                return changes;
+                }
+                return removals;
             },
 
             updateTotalAndLimits() {
-                // 1. Calcular Total (Produtos + Taxa Base)
+                // 1. Calcular Total Real (Produtos + Taxa Base)
                 let productsTotal = 0;
                 for (const [id, qty] of Object.entries(this.cart)) {
                     const p = this.data.find(x => x.id === id);
                     if (p) productsTotal += p.valor * qty;
                 }
                 
-                const finalTotal = productsTotal + this.baseFee;
+                const calculatedTotal = productsTotal + this.baseFee;
+                const originalPrice = this.currentBasket.valor;
+
+                // LOGICA DE PISO DE PREÇO E CRÉDITO
+                let displayTotal = calculatedTotal;
+                let credit = 0;
+                const creditEl = document.getElementById('credit-display');
+
+                if (calculatedTotal < originalPrice) {
+                    displayTotal = originalPrice; // Trava no preço original
+                    credit = originalPrice - calculatedTotal;
+                    
+                    creditEl.innerHTML = `Crédito a usar: R$ ${credit.toFixed(2).replace('.', ',')}`;
+                    creditEl.classList.remove('hidden');
+                } else {
+                    creditEl.classList.add('hidden');
+                }
                 
                 const el = document.getElementById('ff-total-val');
                 el.style.transform = "scale(1.1)";
                 setTimeout(() => el.style.transform = "scale(1)", 150);
-                el.innerText = `R$ ${finalTotal.toFixed(2).replace('.', ',')}`;
+                el.innerText = `R$ ${displayTotal.toFixed(2).replace('.', ',')}`;
 
-                // 2. Atualizar Badge de Alterações
+                // 2. Atualizar Badge de Alterações (Trocas)
                 if (this.currentLimit) {
-                    const changes = this.calculateChanges(this.cart);
+                    const removals = this.calculateRemovals(this.cart);
                     const badge = document.getElementById('changes-badge');
-                    badge.innerText = `Alterações: ${changes}/${this.currentLimit}`;
+                    badge.innerText = `Trocas: ${removals}/${this.currentLimit}`;
                     
-                    if (changes >= this.currentLimit) badge.classList.add('limit-reached');
+                    if (removals >= this.currentLimit) badge.classList.add('limit-reached');
                     else badge.classList.remove('limit-reached');
                 } else {
                     document.getElementById('changes-badge').innerText = '';
@@ -691,9 +721,12 @@
                     }
                 }
                 
-                const finalTotal = productsTotal + this.baseFee;
+                // Lógica de Preço Final com Piso
+                const calculatedTotal = productsTotal + this.baseFee;
+                const originalPrice = this.currentBasket.valor;
+                const finalTotal = Math.max(calculatedTotal, originalPrice);
                 
-                msg += `--------------------------------\n*TOTAL FINAL: R$ ${finalTotal.toFixed(2).replace('.', ',')}*\n(Incluso taxa base da cesta)\n\nGostaria de confirmar a disponibilidade e entrega.`;
+                msg += `--------------------------------\n*TOTAL FINAL: R$ ${finalTotal.toFixed(2).replace('.', ',')}*\n(Valor mínimo da cesta garantido)\n\nGostaria de confirmar a disponibilidade e entrega.`;
                 
                 window.open(`https://api.whatsapp.com/send?phone=${this.phone}&text=${encodeURIComponent(msg)}`, '_blank');
             }
