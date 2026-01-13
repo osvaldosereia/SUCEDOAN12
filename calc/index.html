@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="theme-color" content="#dc2626">
+    <meta name="theme-color" content="#ffffff">
     <meta name="format-detection" content="telephone=no">
 
     <title>Cestas Básicas Personalizáveis | Dona Antônia</title>
@@ -12,313 +12,337 @@
     <link rel="icon" href="img/favicon.ico" sizes="any">
     
     <style>
-        /* --- 1. CORE & RESET --- */
+        /* --- 1. CORE & RESET (MINIMALIST) --- */
         :root { 
             --primary: #dc2626; 
-            --primary-dark: #b91c1c; 
-            --secondary: #111827; 
-            --bg: #f9fafb; 
+            --secondary: #1f2937; 
+            --bg: #ffffff; /* Fundo branco puro para visual clean */
             --surface: #ffffff; 
-            --text-main: #1f2937; 
-            --text-muted: #6b7280; 
-            --border: #e5e7eb; 
-            --header-h: 64px; 
-            --radius-lg: 16px;
-            --radius-md: 12px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --text-main: #374151; 
+            --text-muted: #9ca3af; 
+            --border: #f3f4f6; /* Bordas super sutis */
+            --header-h: 70px; 
+            --radius: 8px; /* Raios menores para elegância */
             --footer-h: 80px;
-            --offer-color: #eab308; /* Amarelo/Dourado para oferta */
+            --offer-color: #ca8a04; 
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            font-family: system-ui, -apple-system, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
             background-color: var(--bg); 
             color: var(--text-main); 
-            line-height: 1.5; 
+            line-height: 1.6; 
             padding-bottom: 0; 
+            font-weight: 300; /* Fonte base mais leve */
         }
         
-        .container { max-width: 1100px; margin: 0 auto; padding: 0 16px; width: 100%; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 20px; width: 100%; }
         .hidden { display: none !important; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         img { display: block; max-width: 100%; height: auto; }
 
-        /* --- 2. HEADER --- */
+        /* --- 2. HEADER CLEAN --- */
         header { 
             position: fixed; top: 0; left: 0; width: 100%; height: var(--header-h); 
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); 
-            border-bottom: 1px solid var(--border); z-index: 100; 
-            display: flex; align-items: center;
+            background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border); z-index: 100; 
+            display: flex; align-items: center; backdrop-filter: blur(10px);
         }
         .header-inner { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem; color: var(--secondary); text-decoration: none; }
-        .logo-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #f3f4f6; }
-        .location-badge { font-size: 0.75rem; font-weight: 700; color: var(--primary); background: #fef2f2; padding: 4px 10px; border-radius: 20px; border: 1px solid #fee2e2; }
+        .logo { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.1rem; color: var(--secondary); text-decoration: none; letter-spacing: -0.02em; }
+        .logo-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #f9fafb; }
+        .location-badge { font-size: 0.75rem; font-weight: 500; color: var(--text-muted); background: #f9fafb; padding: 6px 12px; border-radius: 20px; letter-spacing: 0.5px; }
 
         /* --- 3. HOME VIEW --- */
         #home-view { padding-top: var(--header-h); min-height: 100vh; display: flex; flex-direction: column; }
-        .hero { padding: 40px 0 30px; text-align: center; }
-        .hero h1 { font-size: 2rem; line-height: 1.1; color: var(--secondary); margin-bottom: 12px; }
-        .hero p { color: var(--text-muted); font-size: 1rem; max-width: 500px; margin: 0 auto; }
+        .hero { padding: 60px 0 40px; text-align: center; }
+        .hero h1 { font-size: 2.2rem; font-weight: 300; color: var(--secondary); margin-bottom: 16px; letter-spacing: -0.03em; }
+        .hero p { color: var(--text-muted); font-size: 1rem; max-width: 500px; margin: 0 auto; font-weight: 300; }
 
-        .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 24px; padding-bottom: 40px; }
+        .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 40px; padding-bottom: 60px; }
         @media (min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); } }
         
+        /* CARD MINIMALISTA DA HOME */
         .big-card { 
-            background: var(--surface); border-radius: var(--radius-lg); overflow: hidden; 
-            border: 1px solid var(--border); display: flex; flex-direction: column; 
-            transition: transform 0.2s; height: 100%;
+            background: transparent; overflow: hidden; 
+            display: flex; flex-direction: column; 
+            transition: transform 0.4s ease; height: 100%;
         }
-        .bc-image-box { width: 100%; aspect-ratio: 4/3; background: #f3f4f6; overflow: hidden; }
-        .bc-image { width: 100%; height: 100%; object-fit: cover; }
-        .bc-content { padding: 20px; display: flex; flex-direction: column; flex: 1; }
-        .bc-title { font-size: 1.25rem; font-weight: 800; color: var(--secondary); margin-bottom: 6px; }
-        /* Ajuste de peso da fonte */
-        .bc-price { font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 20px; margin-top: auto; }
-        .bc-actions { display: grid; gap: 10px; }
-        .btn-full { width: 100%; padding: 12px; border-radius: var(--radius-md); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-customize { background: var(--secondary); color: white; }
-        .btn-whatsapp-outline { background: white; color: #16a34a; border: 1px solid #16a34a; }
+        .big-card:hover { transform: translateY(-5px); }
+
+        .bc-image-box { 
+            width: 100%; aspect-ratio: 4/5; /* Formato mais vertical/retrato */
+            background: #f9fafb; overflow: hidden; border-radius: 4px;
+            position: relative;
+        }
+        .bc-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease; }
+        .big-card:hover .bc-image { transform: scale(1.03); }
+        
+        .bc-content { padding: 20px 0 0; display: flex; flex-direction: column; flex: 1; text-align: center; }
+        .bc-title { font-size: 1.4rem; font-weight: 400; color: var(--secondary); margin-bottom: 4px; letter-spacing: -0.02em; }
+        .bc-price { font-size: 1.2rem; font-weight: 600; color: var(--primary); margin-bottom: 20px; }
+        
+        .bc-actions { display: grid; gap: 12px; }
+        .btn-full { 
+            width: 100%; padding: 14px; border-radius: 50px; font-weight: 500; letter-spacing: 0.5px;
+            display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; transition: all 0.3s;
+        }
+        .btn-customize { background: var(--secondary); color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .btn-customize:hover { background: black; transform: translateY(-2px); }
+        .btn-whatsapp-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
+        .btn-whatsapp-outline:hover { border-color: var(--secondary); }
 
         /* --- 4. CUSTOMIZER VIEW --- */
         #customizer-view { padding-top: var(--header-h); background: var(--bg); min-height: 100vh; }
         
         .customizer-header { 
-            background: var(--surface); padding: 12px 0; border-bottom: 1px solid var(--border); 
-            position: sticky; top: var(--header-h); z-index: 90; box-shadow: var(--shadow-sm);
+            background: rgba(255,255,255,0.95); padding: 10px 0; border-bottom: 1px solid var(--border); 
+            position: sticky; top: var(--header-h); z-index: 90; backdrop-filter: blur(10px);
         }
-        .ch-inner { display: flex; align-items: center; gap: 16px; }
-        .btn-back { width: 40px; height: 40px; border-radius: 50%; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--text-main); }
-        .cust-basket-info { flex: 1; }
-        .cust-basket-info h2 { font-size: 1.1rem; font-weight: 800; line-height: 1.1; margin: 0; }
-        .cust-basket-info span { font-size: 0.85rem; color: var(--text-muted); }
+        .ch-inner { display: flex; align-items: center; gap: 20px; }
+        .btn-back { 
+            width: 40px; height: 40px; border-radius: 50%; background: transparent; border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--text-main); transition: all 0.2s;
+        }
+        .btn-back:hover { background: var(--secondary); color: white; border-color: var(--secondary); }
+        
+        .cust-basket-info h2 { font-size: 1.1rem; font-weight: 600; line-height: 1.1; margin: 0; color: var(--secondary); }
+        .cust-basket-info span { font-size: 0.8rem; color: var(--text-muted); font-weight: 300; }
         
         .changes-counter { 
-            font-size: 0.8rem; font-weight: 700; color: #b45309; 
-            background: #fffbeb; padding: 4px 10px; border-radius: 20px; 
-            border: 1px solid #fcd34d; white-space: nowrap;
+            font-size: 0.75rem; font-weight: 500; color: #b45309; 
+            background: #fffbeb; padding: 6px 14px; border-radius: 50px; 
+            letter-spacing: 0.5px;
         }
-        .changes-counter.limit-reached { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
+        .changes-counter.limit-reached { color: #b91c1c; background: #fee2e2; }
 
-        .customizer-grid { display: block; margin-top: 20px; }
+        .customizer-grid { display: block; margin-top: 40px; }
         .products-col { padding-bottom: 140px; }
         
-        .section-card { 
-            background: var(--surface); border-radius: var(--radius-lg); 
-            border: 1px solid var(--border); overflow: hidden; margin-bottom: 24px; 
+        /* Seções Limpas */
+        .section-header { 
+            padding: 0 0 15px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); 
+            text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
         }
         
-        .section-header { 
-            padding: 16px 20px; font-size: 0.95rem; font-weight: 800; color: var(--secondary); 
-            text-transform: uppercase; background: #f8fafc; border-bottom: 1px solid var(--border); 
-            display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px;
+        /* LIST LAYOUT (Topo - Imagens Maiores) */
+        .c-item-list { 
+            display: flex; align-items: center; padding: 20px 0; 
+            border-bottom: 1px solid var(--border); gap: 20px; background: white; 
         }
-        .section-header.primary { background: #eef2ff; color: #4338ca; border-bottom-color: #e0e7ff; }
-
-        .cat-separator {
-            padding: 20px 10px 10px; background: transparent; 
-            font-size: 0.9rem; font-weight: 800; color: var(--secondary); 
-            text-transform: uppercase; letter-spacing: 0.5px;
-            display: flex; align-items: center; justify-content: space-between;
+        .c-img-list { 
+            width: 90px; height: 90px; border-radius: 4px; object-fit: contain; 
+            background: #fff; border: 1px solid #f9fafb; flex-shrink: 0; 
+            padding: 5px;
         }
-        .cat-badge { font-size: 0.7rem; background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 4px; }
-
-        /* LIST LAYOUT (Topo) */
-        .c-item-list { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f3f4f6; gap: 16px; background: white; }
-        .c-item-list:last-child { border-bottom: none; }
-        .c-img-list { width: 72px; height: 72px; border-radius: 8px; object-fit: contain; background: #f9fafb; border: 1px solid #f3f4f6; flex-shrink: 0; }
         .c-info { flex: 1; min-width: 0; }
-        .c-name { font-weight: 600; font-size: 0.85rem; line-height: 1.3; margin-bottom: 2px; color: var(--text-main); }
-        .c-meta { font-size: 0.75rem; color: var(--text-muted); }
+        .c-name { font-weight: 500; font-size: 0.95rem; line-height: 1.4; margin-bottom: 4px; color: var(--secondary); }
+        .c-meta { font-size: 0.8rem; color: var(--text-muted); font-weight: 300; }
 
-        /* --- VISUAL DE EXTRAS --- */
+        /* --- VISUAL DE EXTRAS REQUINTADO --- */
+        /* Categorias */
+        .cat-separator {
+            padding: 40px 0 20px; background: transparent; 
+            font-size: 1.1rem; font-weight: 300; color: var(--secondary); 
+            text-transform: uppercase; letter-spacing: 2px; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .cat-separator::before, .cat-separator::after {
+            content: ""; height: 1px; background: var(--border); flex: 1; margin: 0 20px;
+        }
+        .cat-badge { font-size: 0.65rem; background: var(--offer-color); color: white; padding: 4px 10px; border-radius: 50px; font-weight: 600; letter-spacing: 0.5px; }
+
+        /* Grid 1 Coluna Mobile / 3 Desktop */
         .extras-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; 
-            gap: 24px 12px; 
-            padding: 0 10px;
+            grid-template-columns: 1fr; /* 1 Coluna Mobile */
+            gap: 40px; /* Muito respiro */
+            padding: 0;
         }
-        @media(min-width: 640px) { .extras-grid { grid-template-columns: repeat(3, 1fr); } }
-        @media(min-width: 1024px) { .extras-grid { grid-template-columns: repeat(4, 1fr); } }
+        @media(min-width: 1024px) { 
+            .extras-grid { grid-template-columns: repeat(3, 1fr); gap: 30px; } 
+        }
 
         .extra-card {
             background: transparent; 
             display: flex; flex-direction: column;
             position: relative;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border); /* Linha separadora sutil */
         }
+        @media(min-width: 1024px) { .extra-card { border-bottom: none; } } /* Sem linha no grid desktop */
         
         .extra-img-box { 
             width: 100%; aspect-ratio: 1/1; position: relative; 
-            background: #fff; border-radius: 16px; overflow: hidden;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
+            background: #fff; /* Fundo branco puro */
+            overflow: hidden;
+            margin-bottom: 16px;
+            display: flex; align-items: center; justify-content: center;
         }
         
         .extra-img { 
-            width: 100%; height: 100%; object-fit: contain; padding: 8px;
-            mix-blend-mode: multiply; transition: transform 0.3s;
+            width: 100%; height: 100%; object-fit: contain; padding: 10px;
+            mix-blend-mode: multiply; transition: transform 0.5s ease;
         }
-        .extra-img-box:hover .extra-img { transform: scale(1.05); }
-
-        /* Badge de Oferta */
-        .badge-offer {
-            position: absolute; top: 0; left: 0;
-            background: var(--offer-color); color: white;
-            font-size: 0.7rem; font-weight: 800;
-            padding: 4px 8px;
-            border-bottom-right-radius: 12px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            z-index: 5;
-        }
-
+        
+        /* Botão de Galeria (Discreto) */
         .btn-gallery-overlay {
-            position: absolute; bottom: 8px; right: 8px;
-            background: rgba(255,255,255,0.95); border-radius: 50%;
-            width: 36px; height: 36px;
-            display: none; 
+            position: absolute; bottom: 10px; right: 10px;
+            background: rgba(255,255,255,0.8); border-radius: 50%;
+            width: 40px; height: 40px;
+            display: none; /* JS controla visibilidade */
             align-items: center; justify-content: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            color: var(--secondary); z-index: 10;
-            transition: transform 0.2s;
+            color: var(--secondary); z-index: 10; cursor: pointer;
+            backdrop-filter: blur(4px); border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.2s;
         }
-        .btn-gallery-overlay:active { transform: scale(0.9); }
+        .btn-gallery-overlay:hover { background: white; transform: scale(1.1); }
 
         .extra-info-box { 
             display: flex; flex-direction: column; flex: 1; 
-            padding: 0 2px;
         }
         
         .extra-name { 
-            font-size: 0.85rem; font-weight: 500; line-height: 1.3; 
-            margin-bottom: 4px; color: var(--text-main); 
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; 
-            min-height: 2.6em;
+            font-size: 1rem; font-weight: 400; line-height: 1.4; 
+            margin-bottom: 6px; color: var(--secondary); 
         }
         
-        /* Ajuste de peso da fonte */
         .extra-price { 
-            font-size: 1rem; font-weight: 700; color: var(--primary); 
-            margin-bottom: 10px; 
+            font-size: 1.1rem; font-weight: 600; color: var(--primary); 
+            margin-bottom: 16px; font-feature-settings: "tnum";
         }
-        .price-offer {
-            color: #b45309; /* Cor de destaque para oferta */
-        }
+        .price-offer { color: var(--offer-color); }
         
-        .btn-add-lg {
-            width: 100%; background: white; color: #15803d;
-            border: 1px solid #dcfce7; font-weight: 700; font-size: 0.8rem;
-            padding: 8px; border-radius: 50px;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            display: flex; align-items: center; justify-content: center; gap: 4px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            transition: all 0.2s;
+        /* Badge de Oferta Delicado */
+        .badge-offer {
+            position: absolute; top: 10px; left: 0;
+            background: var(--offer-color); color: white;
+            font-size: 0.65rem; font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 0 50px 50px 0;
+            letter-spacing: 1px;
+            z-index: 5;
         }
-        .btn-add-lg:active { background: #f0fdf4; transform: scale(0.95); }
 
+        /* Botão Adicionar Delicado */
+        .btn-add-lg {
+            width: 100%; background: transparent; color: var(--secondary);
+            border: 1px solid var(--border); 
+            font-weight: 500; font-size: 0.85rem;
+            padding: 12px; border-radius: 50px;
+            text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: all 0.3s;
+        }
+        .btn-add-lg:hover { border-color: var(--secondary); }
+        .btn-add-lg:active { transform: scale(0.98); }
+
+        /* Controles de Quantidade Clean */
         .qty-control-compact { 
             display: flex; align-items: center; justify-content: space-between;
-            background: #f3f4f6; border-radius: 50px; 
-            height: 36px; padding: 2px; width: 100%; margin-top: auto;
+            background: white; border: 1px solid var(--border); border-radius: 50px; 
+            height: 44px; padding: 2px; width: 100%; margin-top: auto;
         }
         .qty-btn-c { 
-            width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; 
-            font-size: 1.2rem; color: var(--text-main); border-radius: 50%; background: white; 
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            width: 40px; height: 100%; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.2rem; color: var(--text-main); border-radius: 50%; background: transparent; 
+            transition: background 0.2s;
         }
-        .qty-val-c { font-weight: 700; font-size: 0.9rem; flex: 1; text-align: center; }
+        .qty-btn-c:active { background: #f3f4f6; }
+        .qty-val-c { font-weight: 500; font-size: 1rem; flex: 1; text-align: center; color: var(--secondary); }
 
         /* GALLERY MODAL */
         dialog#gallery-modal {
             width: 100%; height: 100%; max-width: 100%; max-height: 100%;
-            border: none; margin: 0; background: rgba(0,0,0,0.9);
+            border: none; margin: 0; background: rgba(255,255,255,0.95); /* Fundo branco blur */
             position: fixed; inset: 0; z-index: 200;
             display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            backdrop-filter: blur(20px);
         }
         dialog#gallery-modal[open] { opacity: 1; pointer-events: auto; display: flex; }
         
         .gm-header { padding: 20px; display: flex; justify-content: flex-end; }
         .gm-close { 
-            color: white; font-size: 2rem; cursor: pointer; opacity: 0.8;
-            background: rgba(255,255,255,0.1); width: 44px; height: 44px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
+            color: var(--secondary); font-size: 1.5rem; cursor: pointer;
+            width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; border: 1px solid var(--border); transition: all 0.2s;
         }
+        .gm-close:hover { background: var(--secondary); color: white; }
+        
         .gm-stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
-        .gm-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .gm-nav { display: flex; justify-content: center; gap: 12px; padding: 30px 20px; overflow-x: auto; }
+        .gm-img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.1)); }
+        .gm-nav { display: flex; justify-content: center; gap: 15px; padding: 40px 20px; overflow-x: auto; }
         .gm-thumb { 
-            width: 60px; height: 60px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); 
-            object-fit: cover; opacity: 0.5; cursor: pointer; transition: all 0.2s;
+            width: 70px; height: 70px; border-radius: 4px; border: 1px solid var(--border);
+            object-fit: contain; opacity: 0.5; cursor: pointer; transition: all 0.3s; padding: 5px; background: white;
         }
-        .gm-thumb.active { border-color: white; opacity: 1; transform: scale(1.1); }
+        .gm-thumb.active { border-color: var(--secondary); opacity: 1; transform: translateY(-5px); }
 
         /* FOOTER + CREDIT BANNER */
         .credit-banner-container {
             position: fixed; bottom: var(--footer-h); left: 0; width: 100%;
             z-index: 99; pointer-events: none;
-            display: flex; justify-content: center; padding-bottom: 10px;
+            display: flex; justify-content: center; padding-bottom: 15px;
         }
         .credit-pill {
-            background: #111827; color: #4ade80;
-            padding: 8px 20px; border-radius: 50px;
-            font-size: 0.85rem; font-weight: 700;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: var(--secondary); color: #fff;
+            padding: 10px 24px; border-radius: 50px;
+            font-size: 0.85rem; font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             pointer-events: auto;
-            transform: translateY(20px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex; align-items: center; gap: 8px;
+            transform: translateY(20px); opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px;
         }
         .credit-pill.visible { transform: translateY(0); opacity: 1; }
 
         .order-summary-card {
-            background: var(--surface); border-top: 1px solid var(--border); 
-            height: var(--footer-h);
-            padding: 0 20px;
+            background: rgba(255,255,255,0.9); border-top: 1px solid var(--border); 
+            height: var(--footer-h); padding: 0 20px; backdrop-filter: blur(12px);
             position: fixed; bottom: 0; left: 0; width: 100%; z-index: 100;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
             display: flex; align-items: center; justify-content: space-between; gap: 15px;
             padding-bottom: max(0px, env(safe-area-inset-bottom));
         }
         
         .ff-info { display: flex; flex-direction: column; justify-content: center; }
-        .ff-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        /* Ajuste de peso da fonte */
-        .ff-value { font-size: 1.4rem; font-weight: 700; color: var(--secondary); line-height: 1; }
+        .ff-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .ff-value { font-size: 1.3rem; font-weight: 600; color: var(--primary); line-height: 1; font-feature-settings: "tnum"; }
         
         .btn-finish { 
-            background: #16a34a; color: white; padding: 0 24px; height: 48px;
-            border-radius: 50px; font-weight: 700; font-size: 1rem; 
-            display: flex; align-items: center; gap: 8px;
-            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); white-space: nowrap;
+            background: #16a34a; color: white; padding: 0 30px; height: 50px;
+            border-radius: 50px; font-weight: 600; font-size: 0.95rem; 
+            display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.2); transition: transform 0.2s;
         }
+        .btn-finish:active { transform: scale(0.97); }
 
         /* DESKTOP */
         @media (min-width: 1024px) {
-            .container { padding: 0 24px; }
-            .hero h1 { font-size: 2.5rem; }
-            .customizer-grid { display: grid; grid-template-columns: 1fr 340px; gap: 40px; align-items: start; }
+            .container { padding: 0 40px; }
+            .hero h1 { font-size: 3rem; }
+            .customizer-grid { display: grid; grid-template-columns: 1fr 360px; gap: 60px; align-items: start; }
             .products-col { padding-bottom: 40px; }
             
             .credit-banner-container { 
-                position: absolute; top: -50px; bottom: auto; left: 0; 
+                position: absolute; top: -70px; bottom: auto; left: 0; 
                 width: 100%; justify-content: center; 
             }
             .order-summary-card {
-                position: sticky; top: calc(var(--header-h) + 20px); 
+                position: sticky; top: calc(var(--header-h) + 40px); 
                 bottom: auto; left: auto; width: auto; height: auto;
-                border: 1px solid var(--border); border-radius: var(--radius-lg);
-                flex-direction: column; padding: 24px;
-                box-shadow: var(--shadow-lg); gap: 20px; z-index: 80;
+                border: 1px solid var(--border); border-radius: 12px;
+                flex-direction: column; padding: 30px; background: white;
+                box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05); gap: 24px; z-index: 80;
             }
-            .ff-info { align-items: center; text-align: center; padding-bottom: 20px; border-bottom: 1px dashed var(--border); width: 100%; }
-            .ff-value { font-size: 2rem; margin-top: 5px; color: var(--primary); }
-            .btn-finish { width: 100%; justify-content: center; height: 54px; font-size: 1.1rem; }
+            .ff-info { align-items: center; text-align: center; padding-bottom: 24px; border-bottom: 1px solid var(--border); width: 100%; }
+            .ff-value { font-size: 2.2rem; margin-top: 8px; color: var(--secondary); font-weight: 300; }
+            .btn-finish { width: 100%; justify-content: center; height: 56px; font-size: 1rem; }
         }
 
-        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
     </style>
 </head>
@@ -338,18 +362,18 @@
     <div id="home-view">
         <section class="hero">
             <div class="container">
-                <h1>Escolha sua Cesta Básica</h1>
-                <p>Qualidade, economia e entrega rápida para sua família.</p>
+                <h1>Cestas Básicas Premium</h1>
+                <p>Personalize sua cesta com produtos selecionados e receba em casa.</p>
             </div>
         </section>
 
         <section class="container">
             <div id="baskets-list" class="baskets-grid">
-                <div style="padding:40px; text-align:center;">Carregando...</div>
+                <div style="padding:40px; text-align:center; font-weight:300;">Carregando coleções...</div>
             </div>
         </section>
         
-        <div style="margin-top: auto; padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border);">
+        <div style="margin-top: auto; padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); font-weight: 300;">
             <p>© 2024 Dona Antônia Alimentos • Entregas Seg a Sáb.</p>
         </div>
     </div>
@@ -358,10 +382,10 @@
     <div id="customizer-view" class="hidden">
         <div class="customizer-header">
             <div class="container ch-inner">
-                <button class="btn-back" onclick="App.showHome()" aria-label="Voltar para Home">❮</button>
+                <button class="btn-back" onclick="App.showHome()" aria-label="Voltar">❮</button>
                 <div class="cust-basket-info">
                     <h2 id="cust-basket-name">Nome da Cesta</h2>
-                    <span>Monte do seu jeito</span>
+                    <span>Personalize sua escolha</span>
                 </div>
                 <div id="changes-badge" class="changes-counter">
                     Trocas: 0/0
@@ -372,39 +396,32 @@
         <div class="container customizer-grid">
             <!-- COLUNA ESQUERDA: LISTAS -->
             <div class="products-col">
-                <!-- SESSÃO 1: SEU PEDIDO (COMPLETO) -->
-                <div class="section-card">
-                    <div class="section-header primary">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                        Itens na Cesta
-                    </div>
+                <!-- SESSÃO 1: ITENS NA CESTA -->
+                <div style="margin-bottom: 40px;">
+                    <div class="section-header">Itens Inclusos</div>
                     <div id="basket-items-container"></div>
                 </div>
 
-                <!-- SESSÃO 2: ADICIONAR EXTRAS (VITRINE) -->
-                <div style="margin-top: 30px;">
-                    <div class="section-header" style="border-radius: 12px; margin-bottom: 20px; background: #fff; border: 1px solid var(--border);">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-                        Adicionar Extras
-                    </div>
+                <!-- SESSÃO 2: ADICIONAR EXTRAS -->
+                <div>
+                    <div class="section-header">Adicionar Extras</div>
                     <div id="other-items-container"></div>
                 </div>
             </div>
 
-            <!-- COLUNA DIREITA (OU FOOTER MOBILE): RESUMO -->
+            <!-- COLUNA DIREITA: RESUMO -->
             <div style="position:relative;">
-                <!-- Banner de Crédito Flutuante -->
                 <div class="credit-banner-container">
                     <div id="credit-pill" class="credit-pill"></div>
                 </div>
 
                 <div class="order-summary-card">
                     <div class="ff-info">
-                        <span class="ff-label">Total Final</span>
+                        <span class="ff-label">Total Estimado</span>
                         <span class="ff-value" id="ff-total-val">R$ 0,00</span>
                     </div>
                     <button class="btn-finish" onclick="App.finishOrder()">
-                        <span>Pedir no Zap</span>
+                        <span>Finalizar Pedido</span>
                         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     </button>
                 </div>
@@ -434,21 +451,25 @@
 
         const GalleryModal = {
             currentImages: [],
-            // Função para verificar silenciosamente se existe mais de 1 imagem
+            // Verifica fotos extras. Se Desktop, sempre exibe o botão.
             checkMultipleImages(mainImg, elementId) {
+                const btn = document.getElementById(elementId);
+                if (!btn) return;
+
+                // Regra: Desktop sempre mostra. Mobile só se tiver extras.
+                const isDesktop = window.innerWidth >= 1024;
+                
+                if (isDesktop) {
+                    btn.style.display = 'flex';
+                    return;
+                }
+
                 const baseName = mainImg.replace(/(\.[\w\d_-]+)$/i, '');
                 const ext = mainImg.match(/(\.[\w\d_-]+)$/i)[0];
                 const testUrl = baseName + 'A' + ext;
                 
                 const img = new Image();
-                img.onload = () => {
-                    // Se carregou, mostra o botão de galeria
-                    const btn = document.getElementById(elementId);
-                    if(btn) {
-                        btn.style.display = 'flex';
-                        btn.classList.add('visible');
-                    }
-                };
+                img.onload = () => { btn.style.display = 'flex'; };
                 img.src = testUrl;
             },
             open(mainImg, productName) {
@@ -502,8 +523,6 @@
                     const response = await fetch('./produtos/produtos.json');
                     const raw = await response.json();
                     
-                    // 1. Filtrar estoque <= 0
-                    // 2. Normalizar dados
                     this.data = raw
                         .filter(p => !p.estoque || parseInt(p.estoque) > 0)
                         .map(p => ({
@@ -523,29 +542,16 @@
                 }
             },
 
-            // Helper para ordenar produtos (Prioridade Alimentar)
             sortProducts(products) {
-                const PRIORITY = [
-                    'arroz', 'feijão', 'feijao', 
-                    'óleo', 'oleo', 
-                    'açúcar', 'acucar', 
-                    'café', 'cafe', 
-                    'ovo', 
-                    'macarrão', 'macarrao', 
-                    'molho'
-                ];
-
-                // Função auxiliar para pegar o índice de prioridade
+                const PRIORITY = ['arroz', 'feijão', 'feijao', 'óleo', 'oleo', 'açúcar', 'acucar', 'café', 'cafe', 'ovo', 'macarrão', 'macarrao', 'molho'];
                 const getPriorityIndex = (name) => {
                     const lowerName = name.toLowerCase();
                     const index = PRIORITY.findIndex(key => lowerName.includes(key));
                     return index === -1 ? 999 : index;
                 };
-
                 return products.sort((a, b) => {
                     const pA = getPriorityIndex(a.nome);
                     const pB = getPriorityIndex(b.nome);
-                    
                     if (pA !== pB) return pA - pB;
                     return a.nome.localeCompare(b.nome);
                 });
@@ -556,9 +562,7 @@
                 const cestas = this.data.filter(p => p.categoria === 'CESTA BÁSICA');
 
                 container.innerHTML = cestas.map(p => {
-                    const offerBadge = p.isOffer ? '<span class="badge-offer" style="border-radius:0 0 12px 0;">OFERTA</span>' : '';
-                    const priceClass = p.isOffer ? 'bc-price price-offer' : 'bc-price';
-
+                    const offerBadge = p.isOffer ? '<span class="badge-offer">OFERTA</span>' : '';
                     return `
                     <div class="big-card fade-in">
                         <div class="bc-image-box">
@@ -567,10 +571,10 @@
                         </div>
                         <div class="bc-content">
                             <h3 class="bc-title">${p.nome}</h3>
-                            <div class="${priceClass}">R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
+                            <div class="bc-price">R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
                             <div class="bc-actions">
                                 <button class="btn-full btn-customize" onclick="App.openCustomizer('${p.id}')">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                                     Personalizar
                                 </button>
                                 <button class="btn-full btn-whatsapp-outline" onclick="App.directOrder('${p.id}')">
@@ -603,16 +607,12 @@
                         if (productMatch) {
                             const qtd = item.qtd || item.qty || 1;
                             this.cart[productMatch.id] = parseInt(qtd);
-
-                            if (productMatch.nome.toLowerCase().includes('arroz')) {
-                                this.lockedRiceId = productMatch.id;
-                            }
+                            if (productMatch.nome.toLowerCase().includes('arroz')) this.lockedRiceId = productMatch.id;
                         }
                     });
                 }
 
                 this.originalCart = JSON.parse(JSON.stringify(this.cart));
-
                 const ruleKey = basket.nome.toLowerCase().replace('cesta ', '').trim();
                 this.currentLimit = BASKET_LIMITS[ruleKey] || 99; 
                 
@@ -621,11 +621,9 @@
                     const p = this.data.find(x => x.id === id);
                     if (p) initialProductsSum += p.valor * qty;
                 }
-
                 this.baseFee = basket.valor - initialProductsSum;
 
                 document.getElementById('cust-basket-name').innerText = basket.nome;
-                
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
                 window.scrollTo({top: 0, behavior: 'auto'}); 
@@ -644,26 +642,19 @@
                 const basketContainer = document.getElementById('basket-items-container');
                 const othersContainer = document.getElementById('other-items-container');
                 
-                // 1. LISTA COMPLETA
                 let allCartIds = Object.keys(this.cart);
-                
-                // Ordenar itens da cesta
                 let basketItems = allCartIds.map(id => this.data.find(x => x.id === id)).filter(p => p);
                 basketItems = this.sortProducts(basketItems);
 
                 if (basketItems.length === 0) {
-                    basketContainer.innerHTML = `<div style="padding:30px; text-align:center; color:var(--text-muted); font-size:0.9rem;">Cesta vazia.</div>`;
+                    basketContainer.innerHTML = `<div style="padding:30px; text-align:center; color:var(--text-muted); font-weight:300;">Cesta vazia.</div>`;
                 } else {
                     basketContainer.innerHTML = basketItems.map(p => this.itemRowHTML(p)).join('');
                 }
 
-                // 2. LISTA DE EXTRAS
                 let otherProducts = this.data.filter(p => {
                     if (p.categoria === 'CESTA BÁSICA') return false;
-                    // REGRA DO ARROZ
-                    if (p.nome.toLowerCase().includes('arroz') && this.lockedRiceId && p.id !== this.lockedRiceId) {
-                        return false; 
-                    }
+                    if (p.nome.toLowerCase().includes('arroz') && this.lockedRiceId && p.id !== this.lockedRiceId) return false; 
                     return true;
                 });
 
@@ -685,13 +676,10 @@
                 
                 cats.forEach(cat => {
                     const isSpecial = /^(Oferta|Dica|Só Hoje)/i.test(cat);
-                    const badge = isSpecial ? '<span class="cat-badge">🔥 Destaque</span>' : '';
+                    const badge = isSpecial ? '<span class="cat-badge">Destaque</span>' : '';
                     
                     othersHTML += `<div class="cat-separator">${cat} ${badge}</div>`;
-                    
-                    // Ordenar produtos dentro da categoria
                     let sortedGroup = this.sortProducts(groups[cat]);
-
                     othersHTML += `<div class="extras-grid">`;
                     othersHTML += sortedGroup.map(p => this.itemCardHTML(p)).join('');
                     othersHTML += `</div>`;
@@ -704,7 +692,7 @@
             itemRowHTML(p) {
                 const qty = this.cart[p.id] || 0;
                 const isOriginal = this.originalCart[p.id] && this.originalCart[p.id] > 0;
-                const label = isOriginal ? 'Incluso na cesta' : 'Item Adicionado';
+                const label = isOriginal ? 'Incluso' : 'Adicionado';
                 const labelColor = isOriginal ? 'var(--text-muted)' : 'var(--primary)';
 
                 return `
@@ -712,7 +700,7 @@
                     <img src="${p.imagem}" class="c-img-list" loading="lazy" alt="${p.nome}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1 1\' fill=\'%23f3f4f6\'%3E%3C/svg%3E'">
                     <div class="c-info">
                         <div class="c-name">${p.nome}</div>
-                        <span style="font-size:0.75rem; color:${labelColor}; font-weight:600;">${label}</span>
+                        <span style="font-size:0.75rem; color:${labelColor}; font-weight:500;">${label}</span>
                     </div>
                     <div style="width: 100px;">
                         <div class="qty-control-compact">
@@ -732,16 +720,13 @@
 
                 let actionBtn;
                 if (qty === 0) {
-                    actionBtn = `<button class="btn-add-lg" onclick="App.changeQty('${p.id}', 1)">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-                        Adicionar
-                    </button>`;
+                    actionBtn = `<button class="btn-add-lg" onclick="App.changeQty('${p.id}', 1)">Adicionar</button>`;
                 } else {
                     actionBtn = `
-                        <div class="qty-control-compact" style="background:#dcfce7;">
-                            <button class="qty-btn-c" style="background:white; color:#16a34a;" onclick="App.changeQty('${p.id}', -1)">-</button>
+                        <div class="qty-control-compact" style="background:#f0fdf4; border-color:#dcfce7;">
+                            <button class="qty-btn-c" style="color:#16a34a;" onclick="App.changeQty('${p.id}', -1)">-</button>
                             <span class="qty-val-c" style="color:#15803d;">${qty}</span>
-                            <button class="qty-btn-c" style="background:white; color:#16a34a;" onclick="App.changeQty('${p.id}', 1)">+</button>
+                            <button class="qty-btn-c" style="color:#16a34a;" onclick="App.changeQty('${p.id}', 1)">+</button>
                         </div>`;
                 }
 
@@ -754,7 +739,7 @@
                         ${offerBadge}
                         <img src="${p.imagem}" class="extra-img" loading="lazy" alt="${p.nome}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1 1\' fill=\'%23f3f4f6\'%3E%3C/svg%3E'">
                         <button id="${galleryBtnId}" class="btn-gallery-overlay" onclick="GalleryModal.open('${p.imagem}', '${p.nome}')">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
                         </button>
                     </div>
                     <div class="extra-info-box">
@@ -768,22 +753,16 @@
             changeQty(id, delta) {
                 const currentQty = this.cart[id] || 0;
                 const newQty = currentQty + delta;
-                
                 const simulatedCart = { ...this.cart };
-                if (newQty <= 0) delete simulatedCart[id];
-                else simulatedCart[id] = newQty;
+                if (newQty <= 0) delete simulatedCart[id]; else simulatedCart[id] = newQty;
 
                 if (this.currentLimit && delta < 0 && this.originalCart[id]) {
                     const removals = this.calculateRemovals(simulatedCart);
-                    if (removals > this.currentLimit) {
-                        alert(`Você atingiu o limite de ${this.currentLimit} trocas (itens originais retirados) para a ${this.currentBasket.nome}.`);
-                        return;
-                    }
+                    if (removals > this.currentLimit) return alert(`Limite de ${this.currentLimit} trocas atingido.`);
                 }
 
                 if (!this.cart[id]) this.cart[id] = 0;
                 this.cart[id] += delta;
-                
                 if (this.cart[id] <= 0) delete this.cart[id];
                 this.renderCustomizerLists();
             },
@@ -807,7 +786,6 @@
                 
                 const calculatedTotal = productsTotal + this.baseFee;
                 const originalPrice = this.currentBasket.valor;
-
                 let displayTotal = calculatedTotal;
                 let credit = 0;
                 const creditEl = document.getElementById('credit-pill');
@@ -815,43 +793,33 @@
                 if (calculatedTotal < originalPrice) {
                     displayTotal = originalPrice;
                     credit = originalPrice - calculatedTotal;
-                    
-                    creditEl.innerHTML = `
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                        Adicione mais produtos, você tem R$ ${credit.toFixed(2).replace('.', ',')} de crédito.
-                    `;
+                    creditEl.innerHTML = `Complete: você tem R$ ${credit.toFixed(2).replace('.', ',')} de crédito.`;
                     creditEl.classList.add('visible');
                 } else {
                     creditEl.classList.remove('visible');
                 }
                 
-                const el = document.getElementById('ff-total-val');
-                el.innerText = `R$ ${displayTotal.toFixed(2).replace('.', ',')}`;
+                document.getElementById('ff-total-val').innerText = `R$ ${displayTotal.toFixed(2).replace('.', ',')}`;
 
                 if (this.currentLimit) {
                     const removals = this.calculateRemovals(this.cart);
                     const badge = document.getElementById('changes-badge');
                     badge.innerText = `Trocas: ${removals}/${this.currentLimit}`;
-                    
                     if (removals >= this.currentLimit) badge.classList.add('limit-reached');
                     else badge.classList.remove('limit-reached');
-                } else {
-                    document.getElementById('changes-badge').innerText = '';
                 }
             },
 
             directOrder(id) {
                 const p = this.data.find(x => x.id === id);
-                let msg = `Olá! Gostaria de encomendar a *${p.nome}* (R$ ${p.valor.toFixed(2).replace('.', ',')}) conforme anúncio no site.`;
+                let msg = `Olá! Quero encomendar a *${p.nome}* (R$ ${p.valor.toFixed(2).replace('.', ',')}).`;
                 window.open(`https://api.whatsapp.com/send?phone=${this.phone}&text=${encodeURIComponent(msg)}`, '_blank');
             },
 
             finishOrder() {
-                if (Object.keys(this.cart).length === 0) return alert("Sua cesta está vazia.");
-
+                if (Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
                 let productsTotal = 0;
-                let msg = `*PEDIDO PERSONALIZADO: ${this.currentBasket.nome}*\n--------------------------------\n`;
-
+                let msg = `*PEDIDO: ${this.currentBasket.nome}*\n--------------------------------\n`;
                 for (const [id, qty] of Object.entries(this.cart)) {
                     const p = this.data.find(x => x.id === id);
                     if (p) {
@@ -860,13 +828,10 @@
                         msg += `${qty}x ${p.nome}\n`;
                     }
                 }
-                
                 const calculatedTotal = productsTotal + this.baseFee;
                 const originalPrice = this.currentBasket.valor;
                 const finalTotal = Math.max(calculatedTotal, originalPrice);
-                
-                msg += `--------------------------------\n*TOTAL FINAL: R$ ${finalTotal.toFixed(2).replace('.', ',')}*\n(Valor mínimo da cesta garantido)\n\nGostaria de confirmar a disponibilidade e entrega.`;
-                
+                msg += `--------------------------------\n*TOTAL: R$ ${finalTotal.toFixed(2).replace('.', ',')}*`;
                 window.open(`https://api.whatsapp.com/send?phone=${this.phone}&text=${encodeURIComponent(msg)}`, '_blank');
             }
         };
