@@ -380,7 +380,7 @@
                 display: grid; 
                 grid-template-columns: 1fr 380px; 
                 gap: 60px; 
-                align-items: start; 
+                /* Removed align-items: start; to ensure right column height stretches */
             }
             .products-col { padding-bottom: 60px; }
             .credit-banner-container { 
@@ -394,6 +394,7 @@
                 border: 1px solid var(--border); border-radius: 12px;
                 flex-direction: column; padding: 30px; background: white;
                 box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05); gap: 24px; z-index: 80;
+                /* align-self: start is required now that parent stretches, to prevent card from stretching */
                 align-self: start; 
             }
             .ff-info { align-items: center; text-align: center; padding-bottom: 24px; border-bottom: 1px solid var(--border); width: 100%; }
