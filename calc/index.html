@@ -4,7 +4,8 @@
     <!-- 
         ================================================================
         SEO CONFIGURATION: OPTIMIZED
-        - Geo Tags, Open Graph, Schema.org included
+        - Fix: Carregamento exato de produtos por ID
+        - Fix: Limpeza automática de caminhos de imagem
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -740,15 +741,29 @@
                     const response = await fetch('produtos/produtos.json');
                     const raw = await response.json();
 
-                    this.data = raw.map(p => ({
-                        ...p, 
-                        id: String(p.id), 
-                        valor: parseFloat(p.valor || 0),
-                        categoria: (p.categoria || 'OUTROS').toUpperCase().trim(),
-                        imagem: (p.imagem && !p.imagem.includes('/')) ? `img/produtos/${p.imagem}` : (p.imagem || ''),
-                        items: p.items || [], 
-                        isOffer: p.oferta && p.oferta.toLowerCase() === 'sim'
-                    }));
+                    this.data = raw.map(p => {
+                        // Limpeza robusta do caminho da imagem
+                        // Se o JSON trouxer caminhos complexos, forçamos 'img/produtos/nomedoarquivo'
+                        let imgPath = p.imagem || '';
+                        if (imgPath && imgPath.includes('/')) {
+                            const parts = imgPath.split('/');
+                            // Pega a última parte (o nome do arquivo)
+                            const fileName = parts[parts.length - 1];
+                            imgPath = `img/produtos/${fileName}`;
+                        } else if (imgPath) {
+                            imgPath = `img/produtos/${imgPath}`;
+                        }
+
+                        return {
+                            ...p, 
+                            id: String(p.id), 
+                            valor: parseFloat(p.valor || 0),
+                            categoria: (p.categoria || 'OUTROS').toUpperCase().trim(),
+                            imagem: imgPath,
+                            items: p.items || [], 
+                            isOffer: p.oferta && p.oferta.toLowerCase() === 'sim'
+                        };
+                    });
 
                     this.renderHome();
                     this.setupScroll();
@@ -759,7 +774,7 @@
                     });
                 } catch (e) {
                     console.error("Erro ao carregar:", e);
-                    document.getElementById('baskets-list').innerHTML = '<div style="padding:40px; text-align:center;">Erro ao carregar produtos.</div>';
+                    document.getElementById('baskets-list').innerHTML = '<div style="padding:40px; text-align:center;">Erro ao carregar produtos. Verifique se o arquivo produtos.json existe.</div>';
                 }
             },
 
@@ -812,14 +827,39 @@
                 this.searchTerm = "";
                 document.getElementById('product-search').value = "";
 
-                // Populate Cart
-                if (basket.items) {
+                // POPULA O CARRINHO COM BASE NOS IDS (Correção Principal)
+                if (basket.items && Array.isArray(basket.items)) {
                     basket.items.forEach(item => {
-                        let itemName = (item.nome||item).toString();
-                        let p = this.data.find(x => x.categoria !== 'CESTA BÁSICA' && x.nome.toLowerCase().includes(itemName.split(' ')[0].toLowerCase()));
-                        if (p) this.cart[p.id] = (this.cart[p.id] || 0) + (item.qty || 1);
+                        let productMatch = null;
+
+                        // 1. Tenta buscar EXATAMENTE pelo ID (Mais seguro e preciso)
+                        if (item.id) {
+                            productMatch = this.data.find(p => p.id === String(item.id));
+                        }
+
+                        // 2. Fallback: Se não achar por ID, tenta pelo nome (Modo legado)
+                        if (!productMatch && (item.nome || typeof item === 'string')) {
+                            const nameToSearch = (item.nome || item).toString().toLowerCase();
+                            // Tenta match exato primeiro
+                            productMatch = this.data.find(p => p.categoria !== 'CESTA BÁSICA' && p.nome.toLowerCase() === nameToSearch);
+                            
+                            // Se ainda não achar, tenta parcial (primeira palavra) - Cuidado com falsos positivos
+                            if (!productMatch) {
+                                const firstWord = nameToSearch.split(' ')[0];
+                                if (firstWord.length > 3) { 
+                                    productMatch = this.data.find(p => p.categoria !== 'CESTA BÁSICA' && p.nome.toLowerCase().includes(firstWord));
+                                }
+                            }
+                        }
+
+                        // Se encontrou o produto, adiciona ao carrinho
+                        if (productMatch) {
+                            const qty = parseInt(item.qty || item.qtd || 1);
+                            this.cart[productMatch.id] = (this.cart[productMatch.id] || 0) + qty;
+                        }
                     });
                 }
+                
                 this.originalCart = {...this.cart};
                 
                 const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
@@ -855,7 +895,7 @@
                 const catListMobile = document.getElementById('mobile-cat-list');
                 const badge = document.getElementById('changes-badge');
 
-                // 1. Itens Inclusos (Agora usando card unificado)
+                // 1. Itens Inclusos
                 let basketItems = Object.keys(this.cart).map(id => this.data.find(x => x.id === id)).filter(p => p);
                 
                 if (basketItems.length === 0) basketContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#999;">Cesta vazia</div>';
