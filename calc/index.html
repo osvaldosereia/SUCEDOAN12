@@ -12,19 +12,22 @@
     <link rel="icon" href="img/favicon.ico" sizes="any">
     
     <style>
-        /* --- 1. CORE & RESET (MINIMALIST) --- */
+        /* --- 1. CORE & RESET (ACESSIBILIDADE + MINIMALISMO) --- */
         :root { 
             --primary: #dc2626; 
-            --secondary: #1f2937; 
-            --bg: #ffffff; /* Fundo branco puro para visual clean */
+            --primary-dark: #b91c1c; 
+            --secondary: #111827; 
+            --bg: #ffffff; 
             --surface: #ffffff; 
-            --text-main: #374151; 
-            --text-muted: #9ca3af; 
-            --border: #f3f4f6; /* Bordas super sutis */
+            /* Acessibilidade: Cinza mais escuro para contraste AA/AAA */
+            --text-main: #1f2937; 
+            --text-muted: #4b5563; /* Era #9ca3af (muito claro) */
+            --border: #e5e7eb; /* Borda levemente mais visível */
             --header-h: 70px; 
-            --radius: 8px; /* Raios menores para elegância */
+            --radius: 8px; 
             --footer-h: 80px;
-            --offer-color: #ca8a04; 
+            --offer-color: #b45309; /* Mais escuro para contraste em fundo branco */
+            --focus-ring: #dc2626;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -35,12 +38,17 @@
             color: var(--text-main); 
             line-height: 1.6; 
             padding-bottom: 0; 
-            font-weight: 300; /* Fonte base mais leve */
+            font-weight: 400; /* Fonte Regular para melhor leitura */
+            font-size: 16px; /* Base 16px para evitar zoom automático no iOS */
         }
         
         .container { max-width: 1000px; margin: 0 auto; padding: 0 20px; width: 100%; }
         .hidden { display: none !important; }
+        
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
+        /* Foco visível é obrigatório para acessibilidade */
+        button:focus-visible, a:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+        
         img { display: block; max-width: 100%; height: auto; }
 
         /* --- 2. HEADER CLEAN --- */
@@ -50,21 +58,26 @@
             display: flex; align-items: center; backdrop-filter: blur(10px);
         }
         .header-inner { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .logo { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.1rem; color: var(--secondary); text-decoration: none; letter-spacing: -0.02em; }
-        .logo-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #f9fafb; }
-        .location-badge { font-size: 0.75rem; font-weight: 500; color: var(--text-muted); background: #f9fafb; padding: 6px 12px; border-radius: 20px; letter-spacing: 0.5px; }
+        
+        .logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.2rem; color: var(--secondary); text-decoration: none; letter-spacing: -0.01em; }
+        .logo-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #f9fafb; border: 1px solid var(--border); }
+        
+        .location-badge { 
+            font-size: 0.85rem; font-weight: 600; color: var(--text-main); 
+            background: #f3f4f6; padding: 8px 14px; border-radius: 20px; 
+        }
 
         /* --- 3. HOME VIEW --- */
         #home-view { padding-top: var(--header-h); min-height: 100vh; display: flex; flex-direction: column; }
         .hero { padding: 60px 0 40px; text-align: center; }
-        .hero h1 { font-size: 2.2rem; font-weight: 300; color: var(--secondary); margin-bottom: 16px; letter-spacing: -0.03em; }
-        .hero p { color: var(--text-muted); font-size: 1rem; max-width: 500px; margin: 0 auto; font-weight: 300; }
+        .hero h1 { font-size: 2.2rem; font-weight: 700; color: var(--secondary); margin-bottom: 16px; letter-spacing: -0.02em; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; font-weight: 400; }
 
         .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 40px; padding-bottom: 60px; }
         @media (min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); } }
         
-        /* CARD MINIMALISTA DA HOME */
+        /* CARD DA HOME */
         .big-card { 
             background: transparent; overflow: hidden; 
             display: flex; flex-direction: column; 
@@ -73,93 +86,95 @@
         .big-card:hover { transform: translateY(-5px); }
 
         .bc-image-box { 
-            width: 100%; aspect-ratio: 4/5; /* Formato mais vertical/retrato */
-            background: #f9fafb; overflow: hidden; border-radius: 4px;
-            position: relative;
+            width: 100%; aspect-ratio: 4/5; 
+            background: #f9fafb; overflow: hidden; border-radius: 8px; /* Bordas levemente mais arredondadas */
+            position: relative; border: 1px solid var(--border); /* Delimitação clara */
         }
         .bc-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease; }
         .big-card:hover .bc-image { transform: scale(1.03); }
         
         .bc-content { padding: 20px 0 0; display: flex; flex-direction: column; flex: 1; text-align: center; }
-        .bc-title { font-size: 1.4rem; font-weight: 400; color: var(--secondary); margin-bottom: 4px; letter-spacing: -0.02em; }
-        .bc-price { font-size: 1.2rem; font-weight: 600; color: var(--primary); margin-bottom: 20px; }
+        .bc-title { font-size: 1.5rem; font-weight: 700; color: var(--secondary); margin-bottom: 4px; letter-spacing: -0.01em; }
+        .bc-price { font-size: 1.4rem; font-weight: 700; color: var(--primary); margin-bottom: 24px; }
         
-        .bc-actions { display: grid; gap: 12px; }
+        .bc-actions { display: grid; gap: 16px; }
+        /* Botões maiores (min 48px) */
         .btn-full { 
-            width: 100%; padding: 14px; border-radius: 50px; font-weight: 500; letter-spacing: 0.5px;
-            display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; transition: all 0.3s;
+            width: 100%; min-height: 52px; padding: 14px; border-radius: 50px; 
+            font-weight: 600; font-size: 1rem; letter-spacing: 0.5px;
+            display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s;
         }
-        .btn-customize { background: var(--secondary); color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        .btn-customize:hover { background: black; transform: translateY(-2px); }
-        .btn-whatsapp-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
-        .btn-whatsapp-outline:hover { border-color: var(--secondary); }
+        .btn-customize { background: var(--secondary); color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .btn-customize:hover { background: #000; transform: translateY(-2px); }
+        .btn-whatsapp-outline { background: white; color: var(--text-main); border: 2px solid var(--border); }
+        .btn-whatsapp-outline:hover { border-color: var(--secondary); background: #f9fafb; }
 
         /* --- 4. CUSTOMIZER VIEW --- */
         #customizer-view { padding-top: var(--header-h); background: var(--bg); min-height: 100vh; }
         
         .customizer-header { 
-            background: rgba(255,255,255,0.95); padding: 10px 0; border-bottom: 1px solid var(--border); 
+            background: rgba(255,255,255,0.98); padding: 12px 0; border-bottom: 1px solid var(--border); 
             position: sticky; top: var(--header-h); z-index: 90; backdrop-filter: blur(10px);
         }
         .ch-inner { display: flex; align-items: center; gap: 20px; }
+        /* Botão voltar grande */
         .btn-back { 
-            width: 40px; height: 40px; border-radius: 50%; background: transparent; border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--text-main); transition: all 0.2s;
+            width: 48px; height: 48px; border-radius: 50%; background: white; border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-main); transition: all 0.2s;
         }
         .btn-back:hover { background: var(--secondary); color: white; border-color: var(--secondary); }
         
-        .cust-basket-info h2 { font-size: 1.1rem; font-weight: 600; line-height: 1.1; margin: 0; color: var(--secondary); }
-        .cust-basket-info span { font-size: 0.8rem; color: var(--text-muted); font-weight: 300; }
+        .cust-basket-info h2 { font-size: 1.2rem; font-weight: 700; line-height: 1.1; margin: 0; color: var(--secondary); }
+        .cust-basket-info span { font-size: 0.9rem; color: var(--text-muted); font-weight: 400; }
         
         .changes-counter { 
-            font-size: 0.75rem; font-weight: 500; color: #b45309; 
-            background: #fffbeb; padding: 6px 14px; border-radius: 50px; 
-            letter-spacing: 0.5px;
+            font-size: 0.85rem; font-weight: 600; color: #b45309; 
+            background: #fffbeb; padding: 8px 16px; border-radius: 50px; 
+            letter-spacing: 0.5px; border: 1px solid #fde68a;
         }
-        .changes-counter.limit-reached { color: #b91c1c; background: #fee2e2; }
+        .changes-counter.limit-reached { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
 
         .customizer-grid { display: block; margin-top: 40px; }
         .products-col { padding-bottom: 140px; }
         
-        /* Seções Limpas */
         .section-header { 
-            padding: 0 0 15px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); 
+            padding: 0 0 15px; font-size: 1rem; font-weight: 700; color: var(--text-main); 
             text-transform: uppercase; letter-spacing: 1px;
-            display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+            display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border); margin-bottom: 24px;
         }
         
-        /* LIST LAYOUT (Topo - Imagens Maiores) */
+        /* LIST LAYOUT (Itens Inclusos) */
         .c-item-list { 
             display: flex; align-items: center; padding: 20px 0; 
             border-bottom: 1px solid var(--border); gap: 20px; background: white; 
         }
         .c-img-list { 
-            width: 90px; height: 90px; border-radius: 4px; object-fit: contain; 
-            background: #fff; border: 1px solid #f9fafb; flex-shrink: 0; 
+            width: 90px; height: 90px; border-radius: 8px; object-fit: contain; 
+            background: #fff; border: 1px solid var(--border); flex-shrink: 0; 
             padding: 5px;
         }
         .c-info { flex: 1; min-width: 0; }
-        .c-name { font-weight: 500; font-size: 0.95rem; line-height: 1.4; margin-bottom: 4px; color: var(--secondary); }
-        .c-meta { font-size: 0.8rem; color: var(--text-muted); font-weight: 300; }
+        .c-name { font-weight: 600; font-size: 1rem; line-height: 1.4; margin-bottom: 6px; color: var(--secondary); }
+        .c-meta { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; }
 
-        /* --- VISUAL DE EXTRAS REQUINTADO --- */
         /* Categorias */
         .cat-separator {
-            padding: 40px 0 20px; background: transparent; 
-            font-size: 1.1rem; font-weight: 300; color: var(--secondary); 
-            text-transform: uppercase; letter-spacing: 2px; text-align: center;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 40px 0 24px; background: transparent; 
+            font-size: 1.2rem; font-weight: 700; color: var(--secondary); 
+            text-transform: uppercase; letter-spacing: 1px; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 15px;
         }
         .cat-separator::before, .cat-separator::after {
-            content: ""; height: 1px; background: var(--border); flex: 1; margin: 0 20px;
+            content: ""; height: 2px; background: var(--border); flex: 1; margin: 0 20px;
         }
-        .cat-badge { font-size: 0.65rem; background: var(--offer-color); color: white; padding: 4px 10px; border-radius: 50px; font-weight: 600; letter-spacing: 0.5px; }
+        /* Contraste melhorado no badge */
+        .cat-badge { font-size: 0.75rem; background: var(--offer-color); color: white; padding: 6px 12px; border-radius: 50px; font-weight: 700; letter-spacing: 0.5px; }
 
-        /* Grid 1 Coluna Mobile / 3 Desktop */
+        /* Grid de Extras */
         .extras-grid {
             display: grid;
             grid-template-columns: 1fr; /* 1 Coluna Mobile */
-            gap: 40px; /* Muito respiro */
+            gap: 48px;
             padding: 0;
         }
         @media(min-width: 1024px) { 
@@ -170,128 +185,100 @@
             background: transparent; 
             display: flex; flex-direction: column;
             position: relative;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border); /* Linha separadora sutil */
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
         }
-        @media(min-width: 1024px) { .extra-card { border-bottom: none; } } /* Sem linha no grid desktop */
+        @media(min-width: 1024px) { .extra-card { border-bottom: none; } }
         
         .extra-img-box { 
             width: 100%; aspect-ratio: 1/1; position: relative; 
-            background: #fff; /* Fundo branco puro */
-            overflow: hidden;
-            margin-bottom: 16px;
+            background: #fff; border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; margin-bottom: 16px;
             display: flex; align-items: center; justify-content: center;
         }
         
         .extra-img { 
-            width: 100%; height: 100%; object-fit: contain; padding: 10px;
+            width: 100%; height: 100%; object-fit: contain; padding: 12px;
             mix-blend-mode: multiply; transition: transform 0.5s ease;
         }
         
-        /* Botão de Galeria (Discreto) */
+        /* Botão Lupa (Touch Target Grande) */
         .btn-gallery-overlay {
-            position: absolute; bottom: 10px; right: 10px;
-            background: rgba(255,255,255,0.8); border-radius: 50%;
-            width: 40px; height: 40px;
-            display: none; /* JS controla visibilidade */
+            position: absolute; bottom: 12px; right: 12px;
+            background: rgba(255,255,255,0.95); border-radius: 50%;
+            width: 48px; height: 48px; /* Touch target 48px */
+            display: none; 
             align-items: center; justify-content: center;
             color: var(--secondary); z-index: 10; cursor: pointer;
-            backdrop-filter: blur(4px); border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
             transition: all 0.2s;
         }
-        .btn-gallery-overlay:hover { background: white; transform: scale(1.1); }
+        .btn-gallery-overlay:hover { background: white; transform: scale(1.05); border-color: var(--secondary); }
 
-        .extra-info-box { 
-            display: flex; flex-direction: column; flex: 1; 
-        }
+        .extra-info-box { display: flex; flex-direction: column; flex: 1; }
         
         .extra-name { 
-            font-size: 1rem; font-weight: 400; line-height: 1.4; 
-            margin-bottom: 6px; color: var(--secondary); 
+            font-size: 1.1rem; font-weight: 600; line-height: 1.4; 
+            margin-bottom: 8px; color: var(--secondary); 
         }
         
         .extra-price { 
-            font-size: 1.1rem; font-weight: 600; color: var(--primary); 
+            font-size: 1.25rem; font-weight: 700; color: var(--primary); 
             margin-bottom: 16px; font-feature-settings: "tnum";
         }
         .price-offer { color: var(--offer-color); }
         
-        /* Badge de Oferta Delicado */
+        /* Badge Oferta */
         .badge-offer {
-            position: absolute; top: 10px; left: 0;
+            position: absolute; top: 12px; left: 0;
             background: var(--offer-color); color: white;
-            font-size: 0.65rem; font-weight: 600;
-            padding: 4px 10px;
+            font-size: 0.75rem; font-weight: 700;
+            padding: 6px 12px;
             border-radius: 0 50px 50px 0;
-            letter-spacing: 1px;
-            z-index: 5;
+            letter-spacing: 1px; z-index: 5;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
         }
 
-        /* Botão Adicionar Delicado */
+        /* Botão Adicionar (Mais robusto) */
         .btn-add-lg {
-            width: 100%; background: transparent; color: var(--secondary);
-            border: 1px solid var(--border); 
-            font-weight: 500; font-size: 0.85rem;
-            padding: 12px; border-radius: 50px;
+            width: 100%; min-height: 48px; /* Altura mínima acessível */
+            background: transparent; color: var(--secondary);
+            border: 2px solid var(--border); 
+            font-weight: 600; font-size: 0.95rem;
+            padding: 0 16px; border-radius: 50px;
             text-transform: uppercase; letter-spacing: 1px;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
-        .btn-add-lg:hover { border-color: var(--secondary); }
+        .btn-add-lg:hover { border-color: var(--secondary); background: #f9fafb; }
         .btn-add-lg:active { transform: scale(0.98); }
 
-        /* Controles de Quantidade Clean */
+        /* Controles de Quantidade */
         .qty-control-compact { 
             display: flex; align-items: center; justify-content: space-between;
-            background: white; border: 1px solid var(--border); border-radius: 50px; 
-            height: 44px; padding: 2px; width: 100%; margin-top: auto;
+            background: white; border: 2px solid var(--border); border-radius: 50px; 
+            height: 48px; /* Altura 48px */
+            padding: 2px; width: 100%; margin-top: auto;
         }
         .qty-btn-c { 
-            width: 40px; height: 100%; display: flex; align-items: center; justify-content: center; 
-            font-size: 1.2rem; color: var(--text-main); border-radius: 50%; background: transparent; 
+            width: 44px; height: 100%; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.4rem; color: var(--text-main); border-radius: 50%; background: transparent; 
             transition: background 0.2s;
         }
         .qty-btn-c:active { background: #f3f4f6; }
-        .qty-val-c { font-weight: 500; font-size: 1rem; flex: 1; text-align: center; color: var(--secondary); }
+        .qty-val-c { font-weight: 700; font-size: 1.1rem; flex: 1; text-align: center; color: var(--secondary); }
 
-        /* GALLERY MODAL */
-        dialog#gallery-modal {
-            width: 100%; height: 100%; max-width: 100%; max-height: 100%;
-            border: none; margin: 0; background: rgba(255,255,255,0.95); /* Fundo branco blur */
-            position: fixed; inset: 0; z-index: 200;
-            display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            backdrop-filter: blur(20px);
-        }
-        dialog#gallery-modal[open] { opacity: 1; pointer-events: auto; display: flex; }
-        
-        .gm-header { padding: 20px; display: flex; justify-content: flex-end; }
-        .gm-close { 
-            color: var(--secondary); font-size: 1.5rem; cursor: pointer;
-            width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; border: 1px solid var(--border); transition: all 0.2s;
-        }
-        .gm-close:hover { background: var(--secondary); color: white; }
-        
-        .gm-stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
-        .gm-img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.1)); }
-        .gm-nav { display: flex; justify-content: center; gap: 15px; padding: 40px 20px; overflow-x: auto; }
-        .gm-thumb { 
-            width: 70px; height: 70px; border-radius: 4px; border: 1px solid var(--border);
-            object-fit: contain; opacity: 0.5; cursor: pointer; transition: all 0.3s; padding: 5px; background: white;
-        }
-        .gm-thumb.active { border-color: var(--secondary); opacity: 1; transform: translateY(-5px); }
-
-        /* FOOTER + CREDIT BANNER */
+        /* FOOTER & CRÉDITO */
         .credit-banner-container {
             position: fixed; bottom: var(--footer-h); left: 0; width: 100%;
             z-index: 99; pointer-events: none;
-            display: flex; justify-content: center; padding-bottom: 15px;
+            display: flex; justify-content: center; padding-bottom: 20px;
         }
         .credit-pill {
             background: var(--secondary); color: #fff;
-            padding: 10px 24px; border-radius: 50px;
-            font-size: 0.85rem; font-weight: 500;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 12px 24px; border-radius: 50px;
+            font-size: 0.95rem; font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
             pointer-events: auto;
             transform: translateY(20px); opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px;
@@ -299,7 +286,7 @@
         .credit-pill.visible { transform: translateY(0); opacity: 1; }
 
         .order-summary-card {
-            background: rgba(255,255,255,0.9); border-top: 1px solid var(--border); 
+            background: rgba(255,255,255,0.95); border-top: 1px solid var(--border); 
             height: var(--footer-h); padding: 0 20px; backdrop-filter: blur(12px);
             position: fixed; bottom: 0; left: 0; width: 100%; z-index: 100;
             display: flex; align-items: center; justify-content: space-between; gap: 15px;
@@ -307,16 +294,42 @@
         }
         
         .ff-info { display: flex; flex-direction: column; justify-content: center; }
-        .ff-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
-        .ff-value { font-size: 1.3rem; font-weight: 600; color: var(--primary); line-height: 1; font-feature-settings: "tnum"; }
+        .ff-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
+        .ff-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); line-height: 1; font-feature-settings: "tnum"; }
         
         .btn-finish { 
-            background: #16a34a; color: white; padding: 0 30px; height: 50px;
-            border-radius: 50px; font-weight: 600; font-size: 0.95rem; 
+            background: #16a34a; color: white; padding: 0 32px; height: 52px;
+            border-radius: 50px; font-weight: 700; font-size: 1rem; 
             display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.2); transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.25); transition: transform 0.2s;
         }
         .btn-finish:active { transform: scale(0.97); }
+
+        /* GALLERY MODAL */
+        dialog#gallery-modal {
+            width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+            border: none; margin: 0; background: rgba(255,255,255,0.98);
+            position: fixed; inset: 0; z-index: 200;
+            display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        dialog#gallery-modal[open] { opacity: 1; pointer-events: auto; display: flex; }
+        
+        .gm-header { padding: 20px; display: flex; justify-content: flex-end; }
+        .gm-close { 
+            color: var(--secondary); font-size: 1.5rem; cursor: pointer;
+            width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; border: 1px solid var(--border); transition: all 0.2s;
+            background: white;
+        }
+        .gm-close:hover { background: var(--secondary); color: white; }
+        .gm-stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
+        .gm-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .gm-nav { display: flex; justify-content: center; gap: 15px; padding: 40px 20px; overflow-x: auto; }
+        .gm-thumb { 
+            width: 70px; height: 70px; border-radius: 8px; border: 2px solid var(--border);
+            object-fit: cover; opacity: 0.6; cursor: pointer; transition: all 0.3s; padding: 5px; background: white;
+        }
+        .gm-thumb.active { border-color: var(--secondary); opacity: 1; transform: translateY(-5px); }
 
         /* DESKTOP */
         @media (min-width: 1024px) {
@@ -337,8 +350,8 @@
                 box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05); gap: 24px; z-index: 80;
             }
             .ff-info { align-items: center; text-align: center; padding-bottom: 24px; border-bottom: 1px solid var(--border); width: 100%; }
-            .ff-value { font-size: 2.2rem; margin-top: 8px; color: var(--secondary); font-weight: 300; }
-            .btn-finish { width: 100%; justify-content: center; height: 56px; font-size: 1rem; }
+            .ff-value { font-size: 2.2rem; margin-top: 8px; color: var(--secondary); font-weight: 700; }
+            .btn-finish { width: 100%; justify-content: center; height: 56px; font-size: 1.1rem; }
         }
 
         .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -350,8 +363,8 @@
 
     <header>
         <div class="container header-inner">
-            <a href="#" class="logo" onclick="location.reload()">
-                <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="logo-img">
+            <a href="#" class="logo" onclick="location.reload()" aria-label="Voltar ao início">
+                <img src="img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo Dona Antônia" class="logo-img" width="48" height="48">
                 <span>Dona Antônia</span>
             </a>
             <span class="location-badge">Cuiabá & VG</span>
@@ -359,30 +372,30 @@
     </header>
 
     <!-- VIEW: HOME (VITRINE) -->
-    <div id="home-view">
+    <main id="home-view">
         <section class="hero">
             <div class="container">
                 <h1>Cestas Básicas Premium</h1>
-                <p>Personalize sua cesta com produtos selecionados e receba em casa.</p>
+                <p>Personalize sua cesta com produtos selecionados e receba em casa com segurança.</p>
             </div>
         </section>
 
         <section class="container">
             <div id="baskets-list" class="baskets-grid">
-                <div style="padding:40px; text-align:center; font-weight:300;">Carregando coleções...</div>
+                <div style="padding:40px; text-align:center; font-weight:400;">Carregando coleções...</div>
             </div>
         </section>
         
-        <div style="margin-top: auto; padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); font-weight: 300;">
+        <footer style="margin-top: auto; padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem; border-top: 1px solid var(--border); font-weight: 400;">
             <p>© 2024 Dona Antônia Alimentos • Entregas Seg a Sáb.</p>
-        </div>
-    </div>
+        </footer>
+    </main>
 
     <!-- VIEW: CUSTOMIZER (PERSONALIZAR) -->
     <div id="customizer-view" class="hidden">
         <div class="customizer-header">
             <div class="container ch-inner">
-                <button class="btn-back" onclick="App.showHome()" aria-label="Voltar">❮</button>
+                <button class="btn-back" onclick="App.showHome()" aria-label="Voltar para a página inicial">❮</button>
                 <div class="cust-basket-info">
                     <h2 id="cust-basket-name">Nome da Cesta</h2>
                     <span>Personalize sua escolha</span>
@@ -420,9 +433,9 @@
                         <span class="ff-label">Total Estimado</span>
                         <span class="ff-value" id="ff-total-val">R$ 0,00</span>
                     </div>
-                    <button class="btn-finish" onclick="App.finishOrder()">
+                    <button class="btn-finish" onclick="App.finishOrder()" aria-label="Finalizar pedido no WhatsApp">
                         <span>Finalizar Pedido</span>
-                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     </button>
                 </div>
             </div>
@@ -430,14 +443,14 @@
     </div>
 
     <!-- GALLERY MODAL -->
-    <dialog id="gallery-modal">
+    <dialog id="gallery-modal" aria-modal="true" aria-label="Galeria de imagens">
         <div class="gm-header">
-            <div class="gm-close" onclick="GalleryModal.close()">✕</div>
+            <button class="gm-close" onclick="GalleryModal.close()" aria-label="Fechar galeria">✕</button>
         </div>
         <div class="gm-stage">
-            <img src="" class="gm-img" id="gm-main-img">
+            <img src="" class="gm-img" id="gm-main-img" alt="Imagem do produto ampliada">
         </div>
-        <div class="gm-nav" id="gm-thumbs"></div>
+        <div class="gm-nav" id="gm-thumbs" role="listbox" aria-label="Miniaturas"></div>
     </dialog>
 
     <script>
@@ -491,7 +504,7 @@
                 thumbs.innerHTML = this.currentImages.map((src, idx) => `
                     <img src="${src}" class="gm-thumb ${idx===0?'active':''}" 
                     onclick="GalleryModal.setImage('${src}', this)"
-                    onerror="this.style.display='none'">
+                    onerror="this.style.display='none'" alt="Foto ${idx + 1} de ${productName}">
                 `).join('');
 
                 modal.showModal();
@@ -573,11 +586,11 @@
                             <h3 class="bc-title">${p.nome}</h3>
                             <div class="bc-price">R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
                             <div class="bc-actions">
-                                <button class="btn-full btn-customize" onclick="App.openCustomizer('${p.id}')">
-                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                <button class="btn-full btn-customize" onclick="App.openCustomizer('${p.id}')" aria-label="Personalizar ${p.nome}">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                                     Personalizar
                                 </button>
-                                <button class="btn-full btn-whatsapp-outline" onclick="App.directOrder('${p.id}')">
+                                <button class="btn-full btn-whatsapp-outline" onclick="App.directOrder('${p.id}')" aria-label="Pedir ${p.nome} direto">
                                     Pedir Direto
                                 </button>
                             </div>
@@ -647,7 +660,7 @@
                 basketItems = this.sortProducts(basketItems);
 
                 if (basketItems.length === 0) {
-                    basketContainer.innerHTML = `<div style="padding:30px; text-align:center; color:var(--text-muted); font-weight:300;">Cesta vazia.</div>`;
+                    basketContainer.innerHTML = `<div style="padding:30px; text-align:center; color:var(--text-muted); font-weight:400;">Cesta vazia.</div>`;
                 } else {
                     basketContainer.innerHTML = basketItems.map(p => this.itemRowHTML(p)).join('');
                 }
@@ -700,13 +713,13 @@
                     <img src="${p.imagem}" class="c-img-list" loading="lazy" alt="${p.nome}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1 1\' fill=\'%23f3f4f6\'%3E%3C/svg%3E'">
                     <div class="c-info">
                         <div class="c-name">${p.nome}</div>
-                        <span style="font-size:0.75rem; color:${labelColor}; font-weight:500;">${label}</span>
+                        <span style="font-size:0.75rem; color:${labelColor}; font-weight:600;">${label}</span>
                     </div>
                     <div style="width: 100px;">
                         <div class="qty-control-compact">
-                            <button class="qty-btn-c" onclick="App.changeQty('${p.id}', -1)">-</button>
+                            <button class="qty-btn-c" onclick="App.changeQty('${p.id}', -1)" aria-label="Diminuir quantidade de ${p.nome}">-</button>
                             <span class="qty-val-c">${qty}</span>
-                            <button class="qty-btn-c" onclick="App.changeQty('${p.id}', 1)">+</button>
+                            <button class="qty-btn-c" onclick="App.changeQty('${p.id}', 1)" aria-label="Aumentar quantidade de ${p.nome}">+</button>
                         </div>
                     </div>
                 </div>`;
@@ -720,13 +733,13 @@
 
                 let actionBtn;
                 if (qty === 0) {
-                    actionBtn = `<button class="btn-add-lg" onclick="App.changeQty('${p.id}', 1)">Adicionar</button>`;
+                    actionBtn = `<button class="btn-add-lg" onclick="App.changeQty('${p.id}', 1)" aria-label="Adicionar ${p.nome}">Adicionar</button>`;
                 } else {
                     actionBtn = `
                         <div class="qty-control-compact" style="background:#f0fdf4; border-color:#dcfce7;">
-                            <button class="qty-btn-c" style="color:#16a34a;" onclick="App.changeQty('${p.id}', -1)">-</button>
+                            <button class="qty-btn-c" style="color:#16a34a;" onclick="App.changeQty('${p.id}', -1)" aria-label="Diminuir ${p.nome}">-</button>
                             <span class="qty-val-c" style="color:#15803d;">${qty}</span>
-                            <button class="qty-btn-c" style="color:#16a34a;" onclick="App.changeQty('${p.id}', 1)">+</button>
+                            <button class="qty-btn-c" style="color:#16a34a;" onclick="App.changeQty('${p.id}', 1)" aria-label="Aumentar ${p.nome}">+</button>
                         </div>`;
                 }
 
@@ -738,8 +751,8 @@
                     <div class="extra-img-box">
                         ${offerBadge}
                         <img src="${p.imagem}" class="extra-img" loading="lazy" alt="${p.nome}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1 1\' fill=\'%23f3f4f6\'%3E%3C/svg%3E'">
-                        <button id="${galleryBtnId}" class="btn-gallery-overlay" onclick="GalleryModal.open('${p.imagem}', '${p.nome}')">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                        <button id="${galleryBtnId}" class="btn-gallery-overlay" onclick="GalleryModal.open('${p.imagem}', '${p.nome}')" aria-label="Ver mais fotos de ${p.nome}">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
                         </button>
                     </div>
                     <div class="extra-info-box">
