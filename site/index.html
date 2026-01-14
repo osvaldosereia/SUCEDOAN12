@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 3.1 - Mobile Visual Adjustments
+        VERSION: 3.2 - UX Visual Guide for Customizer
         LIGHTHOUSE TARGET: 100/100
         CHANGELOG:
-        - Mobile: Increased product image size by 30%
-        - Mobile: Decreased font size/weight for product title and price
+        - Added: Distinct visual sections for "Included" vs "Extras"
+        - Added: Colored section banners/headers
+        - Added: Light background container for included items
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -329,11 +330,58 @@
         .customizer-grid { display: block; margin-top: 24px; }
         .products-col { padding-bottom: 120px; } 
         
-        .section-header { 
-            width: 100%; padding: 0 0 12px; font-size: 1.1rem; font-weight: 800; color: var(--secondary); 
-            text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 12px; 
-            border-bottom: 2px solid var(--border); margin-bottom: 24px;
+        /* NOVO: SECTION BANNER (ESTILO FAIXA) */
+        .section-banner {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
+        .section-banner h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+            line-height: 1.2;
+        }
+        .section-banner p {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        /* Cor para a sessão de Itens Inclusos */
+        .section-banner.secondary {
+            background-color: var(--secondary); /* Azul Escuro */
+            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);
+        }
+
+        /* Cor para as sessões de Extras (Categorias) */
+        .section-banner.primary {
+            background-color: var(--primary); /* Vermelho */
+            box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2);
+            margin-top: 30px;
+        }
+
+        /* NOVO: CAIXA DE PRODUTOS INCLUSOS */
+        .included-products-box {
+            background-color: #eff6ff; /* Fundo azulzinho/cinza claro */
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 30px;
+        }
+        /* Ajuste para grid dentro da caixa */
+        .included-products-box .basket-grid { margin-bottom: 0; }
         
         .basket-grid, .extras-grid {
             display: grid; grid-template-columns: 1fr; gap: 0; 
@@ -342,23 +390,16 @@
         @media(min-width: 600px) { .basket-grid, .extras-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
         @media(min-width: 1024px) { .basket-grid, .extras-grid { grid-template-columns: repeat(4, 1fr); gap: 24px; } }
 
-        .cat-separator {
-            grid-column: 1 / -1; padding: 40px 0 20px;
-            font-size: 1.25rem; font-weight: 800; color: var(--secondary);
-            text-transform: uppercase; letter-spacing: 1px;
-            display: flex; align-items: center; gap: 16px; scroll-margin-top: 140px;
-        }
-        .cat-separator::after { content: ""; height: 2px; background: var(--border); flex: 1; }
-
         /* PRODUCT CARD OPTIMIZED */
         .product-card {
             background: transparent; padding: 16px 0; border-bottom: 1px solid #cbd5e1; 
             display: flex; flex-direction: row; gap: 16px; align-items: center;
             transition: all 0.2s; position: relative;
         }
+        /* Tira borda do último item se estiver dentro da caixa */
+        .included-products-box .product-card:last-child { border-bottom: none; }
         
         .pc-img-box { 
-            /* AJUSTE MOBILE: Aumentado 30% (de 100px para 130px) */
             width: 130px; height: 130px; flex-shrink: 0; 
             display: flex; align-items: center; justify-content: center;
             cursor: zoom-in; background: transparent; 
@@ -369,11 +410,9 @@
         
         /* Semantic H3 for Product Name */
         .pc-name { 
-            /* AJUSTE MOBILE: Fonte menor (0.9rem) e mais leve (500) */
             font-size: 0.9rem; font-weight: 500; line-height: 1.35; color: var(--secondary); margin-bottom: 4px;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0 0 4px 0;
         }
-        /* AJUSTE MOBILE: Fonte menor (0.95rem) e mais leve (600) */
         .pc-price { font-size: 0.95rem; font-weight: 600; color: var(--primary); font-feature-settings: "tnum"; }
         
         .pc-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; width: fit-content; }
@@ -751,13 +790,31 @@
             <div class="products-col">
                 <!-- ITENS INCLUSOS -->
                 <section class="basket-group" aria-labelledby="items-included-title">
-                    <h3 id="items-included-title" class="section-header">Itens da Cesta</h3>
-                    <div id="basket-items-container" class="basket-grid"></div>
+                    
+                    <!-- NOVO HEADER -->
+                    <div class="section-banner secondary">
+                        <h3>
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                            Itens da Cesta
+                        </h3>
+                        <p>Estes são os produtos que já vêm na sua cesta.</p>
+                    </div>
+                    
+                    <!-- NOVA CAIXA COM FUNDO -->
+                    <div class="included-products-box">
+                        <div id="basket-items-container" class="basket-grid"></div>
+                    </div>
                 </section>
 
                 <!-- EXTRAS -->
                 <section aria-labelledby="items-extra-title">
-                    <h3 id="items-extra-title" class="section-header">Adicionar Extras</h3>
+                    <div class="section-banner primary">
+                        <h3>
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+                            Adicionar Extras
+                        </h3>
+                        <p>Toque nos produtos abaixo para adicionar mais itens.</p>
+                    </div>
                     <div id="other-items-container"></div>
                 </section>
             </div>
@@ -1077,7 +1134,18 @@
                 if(extras.length === 0) html = '<div style="text-align:center; padding:40px;">Nenhum produto encontrado.</div>';
                 else {
                     cats.forEach(c => {
-                        html += `<div id="cat-${c}" class="cat-separator"><span>${c}</span></div><div class="extras-grid">`;
+                        // Header com estilo "FAIXA VERMELHA" para cada categoria
+                        html += `
+                        <div id="cat-${c}" style="scroll-margin-top:140px;">
+                            <div class="section-banner primary">
+                                <h3>
+                                   <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+                                   ${c}
+                                </h3>
+                                <p>Toque para adicionar à cesta</p>
+                            </div>
+                            <div class="extras-grid">`;
+                        
                         html += groups[c].map(p => {
                             let qty = this.cart[p.id] || 0;
                             let btn = qty === 0 
@@ -1101,7 +1169,7 @@
                                     </div>
                                 </article>`;
                         }).join('');
-                        html += `</div>`;
+                        html += `</div></div>`; // Fecha grid e container
                     });
                 }
                 othersContainer.innerHTML = html;
