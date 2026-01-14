@@ -988,11 +988,13 @@
                     .filter(p => !p.personalized) 
                     .map(p => {
                         // Logic for image name export
-                        const imgName = p.imageName ? p.imageName.trim() : p.codigo.toLowerCase();
+                        // MODIFICADO: Caminho alterado para ../site/img/produtos/
+                        // O nome da imagem recebe o sufixo fixo -cesta-basica-cuiaba-varzea-grande
+                        const imgNameInput = p.imageName ? p.imageName.trim() : '';
                         return {
                             ...p,
                             caracteristicas: p.caracteristicas || '', 
-                            imagem: `../calc/img/produtos/${imgName}.webp`, // Updated to use custom name
+                            imagem: `../site/img/produtos/${imgNameInput}-cesta-basica-cuiaba-varzea-grande.webp`,
                             Limit: p.limit || 0,
                             Oferta: p.isOffer ? 'Sim' : 'Não',
                             Valor_Oferta: p.isOffer ? Number(p.offerPrice || 0) : 0
