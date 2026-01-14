@@ -110,6 +110,21 @@
             font-size: 0.9rem;
             font-weight: 500;
         }
+        
+        /* Sub-controls for shadow */
+        .sub-controls {
+            padding-left: 0.75rem;
+            border-left: 2px solid var(--border);
+            margin-top: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: opacity 0.2s;
+        }
+        .sub-controls.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
 
         input[type="range"] {
             width: 100%;
@@ -215,7 +230,8 @@
                         Escala do Produto
                         <span id="scaleVal">85%</span>
                     </label>
-                    <input type="range" id="scaleRange" min="50" max="100" value="85">
+                    <!-- Max aumentado para 200% -->
+                    <input type="range" id="scaleRange" min="50" max="200" value="85">
                     
                     <div class="btn-group" style="margin-top: 0.5rem;">
                          <button id="btnFit" type="button" title="Ajustar automaticamente">
@@ -259,10 +275,26 @@
 
                 <fieldset>
                     <legend>3. Acabamento</legend>
-                    <label>
+                    <label style="margin-bottom: 0;">
                         <input type="checkbox" id="checkShadow" checked>
                         <span>Sombra de Apoio (Drop Shadow)</span>
                     </label>
+                    
+                    <!-- Shadow Controls -->
+                    <div id="shadowControls" class="sub-controls">
+                        <label>
+                            Tamanho
+                            <input type="range" id="shadowSizeRange" min="20" max="150" value="60">
+                        </label>
+                        <label>
+                            Intensidade
+                            <input type="range" id="shadowOpRange" min="0" max="100" value="30">
+                        </label>
+                        <label>
+                            Posição Vertical
+                            <input type="range" id="shadowYRange" min="-50" max="50" value="0">
+                        </label>
+                    </div>
                 </fieldset>
 
                 <button id="downloadBtn" class="btn-primary" disabled style="background: #10b981; border-color: #10b981; margin-top: 1rem;">
@@ -296,6 +328,10 @@
             sharpVal: document.getElementById('sharpVal'),
             removeBg: document.getElementById('checkRemoveBg'),
             shadow: document.getElementById('checkShadow'),
+            shadowControls: document.getElementById('shadowControls'),
+            shadowSize: document.getElementById('shadowSizeRange'),
+            shadowOp: document.getElementById('shadowOpRange'),
+            shadowY: document.getElementById('shadowYRange'),
             btnFit: document.getElementById('btnFit'),
             btnCenter: document.getElementById('btnCenter')
         };
@@ -304,8 +340,8 @@
         const state = {
             originalImage: null,
             ctx: els.canvas.getContext('2d', { willReadFrequently: true }),
-            width: 400, // Ajustado para 400px conforme solicitado
-            height: 400, // Ajustado para 400px
+            width: 400,
+            height: 400,
             scale: 0.85,
             offsetX: 0,
             offsetY: 0,
@@ -316,7 +352,10 @@
             contrast: 10,
             sharpness: 0,
             removeBg: false,
-            shadow: true
+            shadow: true,
+            shadowSize: 0.6,    // % relative to width
+            shadowOpacity: 0.3, // 0-1
+            shadowY: 0          // px offset
         };
 
         // Inicialização
@@ -343,7 +382,15 @@
             els.contrast.addEventListener('input', (e) => updateState('contrast', parseInt(e.target.value)));
             els.sharp.addEventListener('input', (e) => updateState('sharpness', parseInt(e.target.value)));
             els.removeBg.addEventListener('change', (e) => updateState('removeBg', e.target.checked));
-            els.shadow.addEventListener('change', (e) => updateState('shadow', e.target.checked));
+            
+            // Shadow Controls
+            els.shadow.addEventListener('change', (e) => {
+                updateState('shadow', e.target.checked);
+                els.shadowControls.classList.toggle('disabled', !e.target.checked);
+            });
+            els.shadowSize.addEventListener('input', (e) => updateState('shadowSize', e.target.value / 100));
+            els.shadowOp.addEventListener('input', (e) => updateState('shadowOpacity', e.target.value / 100));
+            els.shadowY.addEventListener('input', (e) => updateState('shadowY', parseInt(e.target.value)));
             
             // Botões de Posição
             els.btnCenter.addEventListener('click', () => { state.offsetX = 0; state.offsetY = 0; render(); });
@@ -438,7 +485,6 @@
             let drawWidth, drawHeight;
             
             // Lógica "Contain" com escala customizável
-            // Base: 85% do canvas (para respiro)
             const targetSize = state.width * state.scale;
 
             if (aspect > 1) {
@@ -454,17 +500,26 @@
             const x = (state.width - drawWidth) / 2 + state.offsetX;
             const y = (state.height - drawHeight) / 2 + state.offsetY;
 
-            // 4. Sombra de Apoio (Simulada)
+            // 4. Sombra de Apoio (Simulada & Editável)
             if (state.shadow) {
                 ctx.save();
-                ctx.translate(x + drawWidth / 2, y + drawHeight);
-                ctx.scale(1, 0.15); // Achatamento oval
-                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, drawWidth * 0.6);
-                gradient.addColorStop(0, 'rgba(0,0,0,0.3)');
+                // Base shadow position at the bottom of the image rect + Y offset
+                const shadowX = x + drawWidth / 2;
+                const shadowY = y + drawHeight + state.shadowY;
+                
+                ctx.translate(shadowX, shadowY);
+                ctx.scale(1, 0.15); // Achatamento oval constante
+                
+                // Shadow radius based on image width and user setting
+                const radius = Math.max(1, drawWidth * state.shadowSize);
+                
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+                gradient.addColorStop(0, `rgba(0,0,0,${state.shadowOpacity})`);
                 gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(0, 0, drawWidth * 0.6, 0, Math.PI * 2);
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
@@ -522,20 +577,7 @@
 
         // Algoritmo de Nitidez Manual (Já que ctx.filter não tem sharpen nativo cross-browser)
         function applySharpen(ctx, w, h, amount) {
-            // Nota: Isso é pesado em mobile para 1024px, usar com moderação.
-            // Implementação simplificada para performance: apenas bordas.
-            // Para "Sistemas", menos é mais. Não vamos fazer uma convolução completa lenta.
-            // Usaremos um truque de composição: imagem original + imagem highpass overlay.
-            // Infelizmente Canvas não tem blend mode HighPass fácil.
-            // Vamos pular a implementação pesada e confiar no contraste para "sensação" de nitidez
-            // ou fazer uma convolução muito leve se o usuário pedir.
-            // Vou manter o código limpo: o controle de "Nitidez" no meu código 
-            // na verdade vai fazer um unsharp mask fake usando globalCompositeOperation se possível,
-            // ou omitir se for travar o browser.
-            
-            // Decisão: Melhor não travar o celular do usuário com loop de pixel JS em 1MP.
-            // Alternativa visual: Desenhar a imagem levemente deslocada com blend mode 'overlay' para realçar bordas?
-            // Não, vamos apenas aceitar que contraste ajuda na percepção de nitidez web.
+            // Placeholder: Em mobile a convolução pode ser lenta.
         }
 
         function resizeCanvasDisplay() {
