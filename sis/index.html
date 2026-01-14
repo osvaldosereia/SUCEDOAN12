@@ -401,7 +401,7 @@
                                     </div>
                                     
                                     <!-- NOME -->
-                                    <div class="form-group"><label>Nome</label><input type="text" id="p-nome" required></div>
+                                    <div class="form-group"><label>Nome</label><input type="text" id="p-nome" required oninput="UI.updateImageSlug()"></div>
                                     
                                     <!-- CARACTERÍSTICAS -->
                                     <div class="form-group"><label>Características</label><textarea id="p-caracteristicas" rows="2"></textarea></div>
@@ -464,14 +464,18 @@
                                             </div>
                                         </div>
 
-                                        <!-- NOVO CAMPO: NOME IMAGEM MANUAL -->
+                                        <!-- NOVO CAMPO: NOME IMAGEM AUTO -->
                                         <div class="form-group">
-                                            <label>Nome Imagem JSON (sem .webp)</label>
-                                            <input type="text" id="p-image-name" placeholder="ex: arroz-tio-urbano-5kg-cuiaba" class="font-mono">
+                                            <label>Nome do Arquivo de Imagem (Auto)</label>
+                                            <div style="display: flex; gap: 0.5rem;">
+                                                <input type="text" id="p-image-slug" readonly style="background-color: var(--slate-50); color: var(--slate-500); font-family: monospace;">
+                                                <button type="button" onclick="UI.copyImageSlug()" class="btn btn-ghost" title="Copiar Nome"><i class="fa-regular fa-copy"></i></button>
+                                            </div>
+                                            <small style="font-size: 0.65rem; color: var(--slate-400);">../site/img/produtos/<b>nome-gerado</b>.webp</small>
                                         </div>
 
                                         <div class="form-group">
-                                            <label>Foto (../calc/img/produtos/NOME.webp)</label>
+                                            <label>Foto (Preview)</label>
                                             <div style="width: 100%; aspect-ratio: 1/1; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--slate-50); position: relative;">
                                                 <img id="p-img-preview" src="" onerror="this.style.display='none'; document.getElementById('p-img-icon').style.display='block';" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                                                 <i id="p-img-icon" class="fa-solid fa-box-open" style="color: var(--slate-300); font-size: 3rem;"></i>
@@ -987,14 +991,22 @@
                 const data = DB.load().produto
                     .filter(p => !p.personalized) 
                     .map(p => {
-                        // Logic for image name export
-                        // MODIFICADO: Caminho alterado para ../site/img/produtos/
-                        // O nome da imagem recebe o sufixo fixo -cesta-basica-cuiaba-varzea-grande
-                        const imgNameInput = p.imageName ? p.imageName.trim() : '';
+                        // Logic for image name export based on product name (slugified)
+                        let imgName = p.codigo.toLowerCase();
+                        if (p.nome) {
+                            imgName = p.nome.toString().toLowerCase()
+                                .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // remove accents
+                                .replace(/\s+/g, '-')           // Replace spaces with -
+                                .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+                                .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+                                .replace(/^-+/, '')             // Trim - from start
+                                .replace(/-+$/, '');            // Trim - from end
+                        }
+                        
                         return {
                             ...p,
                             caracteristicas: p.caracteristicas || '', 
-                            imagem: `../site/img/produtos/${imgNameInput}-cesta-basica-cuiaba-varzea-grande.webp`,
+                            imagem: `../site/img/produtos/${imgName}.webp`, // Updated to use slugified name and new path
                             Limit: p.limit || 0,
                             Oferta: p.isOffer ? 'Sim' : 'Não',
                             Valor_Oferta: p.isOffer ? Number(p.offerPrice || 0) : 0
@@ -1770,11 +1782,11 @@
                     data.limit = Number(document.getElementById('p-limit').value) || 0;
 
                     // Images: Logic updated to use custom name or fallback to code
-                    const imgNameInput = document.getElementById('p-image-name').value.trim();
+                    const imgNameInput = document.getElementById('p-image-slug').value.trim();
                     const imgName = imgNameInput || data.codigo.toLowerCase();
                     
-                    data.imageName = imgNameInput; // Store the raw input
-                    data.imagem = `../calc/img/produtos/${imgName}.webp`; // Store the full path for internal use
+                    // The path is now strictly based on the slug
+                    data.imagem = `../site/img/produtos/${imgName}.webp`; 
 
                     // Combos
                     if(document.getElementById('p-is-combo').checked) {
@@ -1836,7 +1848,7 @@
                     document.getElementById('p-is-offer').checked = false;
                     UI.toggleOfferInput();
                     // Reset Image Name
-                    document.getElementById('p-image-name').value = '';
+                    document.getElementById('p-image-slug').value = '';
                     
                     Views.catalogo.render();
                 } else if(type === 'cliente') {
@@ -1884,8 +1896,8 @@
                     document.getElementById('p-offer-price').value = item.offerPrice || '';
                     UI.toggleOfferInput();
 
-                    // Populate Image Name
-                    document.getElementById('p-image-name').value = item.imageName || '';
+                    // Update Slug from Name
+                    UI.updateImageSlug();
 
                     document.getElementById('p-variacoesNome').value = (item.variacoesNome || []).join(' | ');
                     document.getElementById('p-variacoesEan').value = (item.variacoesEan || []).join(' | ');
@@ -1895,7 +1907,7 @@
 
                     // Load Image Preview 
                     // Priority: Saved full path > Generated from Code
-                    const imgUrl = item.imagem || `../calc/img/produtos/${item.codigo.toLowerCase()}.webp`;
+                    const imgUrl = item.imagem || `../site/img/produtos/${item.codigo.toLowerCase()}.webp`;
                     const imgEl = document.getElementById('p-img-preview');
                     const iconEl = document.getElementById('p-img-icon');
 
@@ -1998,7 +2010,7 @@
                     document.getElementById('p-is-offer').checked = false;
                     UI.toggleOfferInput();
                     // Reset Image Name
-                    document.getElementById('p-image-name').value = '';
+                    document.getElementById('p-image-slug').value = '';
                 }
                 if(t === 'cliente') {
                     document.getElementById('client-history-area').style.display = 'none';
@@ -2013,6 +2025,32 @@
             toggleOfferInput: () => {
                 const isOffer = document.getElementById('p-is-offer').checked;
                 document.getElementById('offer-price-container').style.display = isOffer ? 'block' : 'none';
+            },
+            // GERA SLUG DA IMAGEM E ATUALIZA CAMPO
+            updateImageSlug: () => {
+                const name = document.getElementById('p-nome').value;
+                const slug = name.toString().toLowerCase()
+                                .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // remove acentos
+                                .replace(/\s+/g, '-')           // espaços para -
+                                .replace(/[^\w\-]+/g, '')       // remove especiais
+                                .replace(/\-\-+/g, '-')         // remove múltiplos -
+                                .replace(/^-+/, '')             // trim start -
+                                .replace(/-+$/, '');            // trim end -
+                
+                document.getElementById('p-image-slug').value = slug;
+                
+                // Update Preview immediately if wanted, but might be annoying if typing
+                // const imgUrl = `../site/img/produtos/${slug}.webp`;
+                // ... logic to update preview ...
+            },
+            // COPIAR SLUG PARA CLIPBOARD
+            copyImageSlug: () => {
+                const copyText = document.getElementById("p-image-slug");
+                copyText.select();
+                copyText.setSelectionRange(0, 99999); // For mobile devices
+                navigator.clipboard.writeText(copyText.value + ".webp").then(() => {
+                    alert("Nome copiado: " + copyText.value + ".webp");
+                });
             },
             calcMargin: () => {
                 const cost = parseFloat(document.getElementById('p-custo').value) || 0;
