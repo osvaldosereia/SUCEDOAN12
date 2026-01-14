@@ -991,26 +991,25 @@
                 const data = DB.load().produto
                     .filter(p => !p.personalized) 
                     .map(p => {
-                        // Use saved slug (imageName) or regenerate if missing
-                        let imgName = p.imageName;
-                        if (!imgName) {
-                             if (p.nome) {
-                                imgName = p.nome.toString().toLowerCase()
-                                    .normalize('NFD').replace(/[\u0300-\u036f]/g, "") 
-                                    .replace(/\s+/g, '-')           
-                                    .replace(/[^\w\-]+/g, '')       
-                                    .replace(/\-\-+/g, '-')         
-                                    .replace(/^-+/, '')             
-                                    .replace(/-+$/, '');            
-                             } else {
-                                 imgName = p.codigo.toLowerCase();
-                             }
+                        // FORCE REGENERATE SLUG from current Name to fix old data
+                        // This strictly ignores any saved 'imageName' property
+                        let imgName = p.codigo.toLowerCase();
+                        if (p.nome) {
+                            imgName = p.nome.toString().toLowerCase()
+                                .normalize('NFD').replace(/[\u0300-\u036f]/g, "") 
+                                .replace(/\s+/g, '-')           
+                                .replace(/[^\w\-]+/g, '')       
+                                .replace(/\-\-+/g, '-')         
+                                .replace(/^-+/, '')             
+                                .replace(/-+$/, '');            
                         }
                         
+                        // Create a clean object to avoid leaking old 'imageName' properties
                         return {
                             ...p,
+                            imageName: undefined, // Explicitly remove manual name field from export
                             caracteristicas: p.caracteristicas || '', 
-                            // MODIFICADO: Sufixo padrão adicionado
+                            // MODIFICADO: Sufixo padrão adicionado e forçado
                             imagem: `../site/img/produtos/${imgName}-cesta-basica-cuiaba-varzea-grande.webp`, 
                             Limit: p.limit || 0,
                             Oferta: p.isOffer ? 'Sim' : 'Não',
