@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 3.4 - FAQ Integration (Mobile Sheet & Desktop Modal)
+        VERSION: 3.5 - Auto Gallery Detection (A-Z Suffix)
         LIGHTHOUSE TARGET: 100/100
         CHANGELOG:
-        - Added: Floating '?' FAB for Mobile FAQ
-        - Added: Sidebar 'Questions?' button for Desktop FAQ
-        - Added: FAQ Bottom Sheet (Mobile) and FAQ Modal (Desktop)
+        - Added: Gallery visual indicator (eye icon) on product cards
+        - Logic: Automatic suffix checking (A, B, C...) for image variations
+        - UX: Dynamic gallery thumbnails population
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -393,10 +393,32 @@
         .pc-img-box { 
             width: 130px; height: 130px; flex-shrink: 0; 
             display: flex; align-items: center; justify-content: center;
-            cursor: zoom-in; background: transparent; 
+            cursor: zoom-in; background: transparent; position: relative;
         }
         .pc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
+        /* NEW: GALLERY INDICATOR (EYE) */
+        .gallery-indicator {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background: rgba(255,255,255,0.9);
+            color: var(--secondary);
+            border: 1px solid #cbd5e1;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .gallery-indicator.has-more { opacity: 1; }
+
         .pc-info { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
         
         /* Semantic H3 for Product Name */
@@ -980,13 +1002,52 @@
                 const img = document.getElementById('gallery-img');
                 const thumbs = document.getElementById('gallery-thumbs');
                 
+                // Clear and Setup
+                thumbs.innerHTML = '';
                 img.src = mainSrc;
                 img.alt = `Foto de ${productName}`;
                 ol.classList.add('open');
 
-                let html = `<img src="${mainSrc}" class="g-thumb active" onclick="Gallery.swap(this, '${mainSrc}')" alt="Miniatura ${productName}">`;
-                thumbs.innerHTML = html;
+                // Add Main Image Thumb
+                this.addThumb(mainSrc, true);
+
+                // Auto-detect suffixes A-Z
+                // Logic: Try to fetch 'NameA.jpg', 'NameB.jpg' etc.
+                // If it loads, add to thumbs.
+                this.checkSuffixes(mainSrc);
             },
+
+            addThumb(src, active) {
+                const thumbs = document.getElementById('gallery-thumbs');
+                const cls = active ? 'g-thumb active' : 'g-thumb';
+                const el = document.createElement('img');
+                el.src = src;
+                el.className = cls;
+                el.onclick = () => Gallery.swap(el, src);
+                thumbs.appendChild(el);
+            },
+
+            checkSuffixes(mainSrc) {
+                // Split filename and extension
+                const lastDot = mainSrc.lastIndexOf('.');
+                if(lastDot === -1) return;
+                
+                const base = mainSrc.substring(0, lastDot);
+                const ext = mainSrc.substring(lastDot);
+                
+                // Try letters A to E (Limit to 5 extra photos to avoid too many 404s)
+                const suffixes = ['A', 'B', 'C', 'D', 'E'];
+                
+                suffixes.forEach(suffix => {
+                    const testUrl = base + suffix + ext;
+                    const img = new Image();
+                    img.onload = () => {
+                        this.addThumb(testUrl, false);
+                    };
+                    img.src = testUrl;
+                });
+            },
+
             swap(el, src) {
                 document.getElementById('gallery-img').src = src;
                 document.querySelectorAll('.g-thumb').forEach(t => t.classList.remove('active'));
@@ -1165,6 +1226,7 @@
                         <article class="product-card">
                             <div class="pc-img-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
                                 <img src="${p.imagem}" alt="${p.nome}" class="pc-img" loading="lazy" width="200" height="200">
+                                <div class="gallery-indicator" id="gal-ind-${p.id}">👁️</div>
                             </div>
                             <div class="pc-info">
                                 <h3 class="pc-name">${p.nome}</h3>
@@ -1228,6 +1290,7 @@
                                 <article class="product-card">
                                     <div class="pc-img-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
                                         <img src="${p.imagem}" alt="${p.nome}" class="pc-img" loading="lazy" width="200" height="200">
+                                        <div class="gallery-indicator" id="gal-ind-${p.id}">👁️</div>
                                     </div>
                                     <div class="pc-info">
                                         <h3 class="pc-name">${p.nome}</h3>
@@ -1250,6 +1313,28 @@
                 else badge.classList.remove('limit-reached');
 
                 this.updateTotal();
+                
+                // TRIGGER CHECK FOR GALLERY INDICATORS
+                setTimeout(() => this.checkGalleryIndicators(), 500);
+            },
+
+            checkGalleryIndicators() {
+                // For every product rendered, check if 'NameA.ext' exists. If so, show icon.
+                // We use a small timeout to not block UI rendering.
+                const cards = document.querySelectorAll('.gallery-indicator');
+                cards.forEach(el => {
+                    const pid = el.id.replace('gal-ind-', '');
+                    const p = this.data.find(x => x.id === pid);
+                    if(p && p.imagem) {
+                        const lastDot = p.imagem.lastIndexOf('.');
+                        if(lastDot > -1) {
+                            const testUrl = p.imagem.substring(0, lastDot) + 'A' + p.imagem.substring(lastDot);
+                            const img = new Image();
+                            img.onload = () => { el.classList.add('has-more'); };
+                            img.src = testUrl;
+                        }
+                    }
+                });
             },
 
             countRemovals() {
