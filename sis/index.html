@@ -474,17 +474,18 @@
                                         <div class="form-group">
                                             <label>Nome do Arquivo de Imagem (Manual)</label>
                                             <div style="display: flex; gap: 0.5rem;">
-                                                <input type="text" id="p-image-slug" oninput="UI.updatePreviewManual()" style="background-color: var(--white); color: var(--slate-700); font-family: monospace; border: 1px solid var(--primary);">
+                                                <input type="text" id="p-image-slug" oninput="UI.updatePreviewManual()" placeholder="Ex: arroz-5kg" style="background-color: var(--white); color: var(--slate-700); font-family: monospace; border: 1px solid var(--primary);">
                                                 <button type="button" onclick="UI.copyImageSlug()" class="btn btn-ghost" title="Copiar Nome"><i class="fa-regular fa-copy"></i></button>
                                             </div>
-                                            <small style="font-size: 0.65rem; color: var(--slate-400);">Caminho: ../site/img/produtos/<b>[nome-aqui]</b>-cesta-basica-cuiaba-varzea-grande.webp</small>
+                                            <small style="font-size: 0.65rem; color: var(--slate-400);">Escreva o nome exato. O sistema adiciona .webp no final.</small>
                                         </div>
 
                                         <div class="form-group">
                                             <label>Foto (Preview)</label>
-                                            <div style="width: 100%; aspect-ratio: 1/1; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--slate-50); position: relative;">
-                                                <img id="p-img-preview" src="" onerror="this.style.display='none'; document.getElementById('p-img-icon').style.display='block';" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                            <div style="width: 100%; aspect-ratio: 1/1; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--slate-50); position: relative; flex-direction: column;">
+                                                <img id="p-img-preview" src="" onerror="UI.onImgError()" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                                                 <i id="p-img-icon" class="fa-solid fa-box-open" style="color: var(--slate-300); font-size: 3rem;"></i>
+                                                <p id="debug-path" style="position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); color: white; font-size: 0.6rem; padding: 2px; text-align: center; font-family: monospace; word-break: break-all;"></p>
                                             </div>
                                         </div>
                                     </div>
@@ -1032,8 +1033,6 @@
                 const data = DB.load().produto
                     .filter(p => !p.personalized && p.estoque > 0) 
                     .map(p => {
-                        // FORCE REGENERATE SLUG from current Name to fix old data
-                        // This strictly ignores any saved 'imageName' property
                         let imgName = p.codigo.toLowerCase();
                         if (p.nome) {
                             imgName = p.nome.toString().toLowerCase()
@@ -1050,7 +1049,6 @@
                             ...p,
                             imageName: undefined, // Explicitly remove manual name field from export
                             caracteristicas: p.caracteristicas || '', 
-                            // MODIFICADO: Caminho relativo correto para estrutura SIS/SITE
                             imagem: `../site/img/produtos/${imgName}-cesta-basica-cuiaba-varzea-grande.webp`, 
                             Limit: p.limit || 0,
                             Oferta: p.isOffer ? 'Sim' : 'Não',
@@ -1140,7 +1138,7 @@
             }
         };
 
-        // --- IMPORT ENGINE (MODIFIED FOR MULTIPLE EAN/NAMES) ---
+        // --- IMPORT ENGINE ---
         const ImportEngine = {
             stagedData: [],
             processFile: () => {
@@ -1329,7 +1327,6 @@
                     if(!selectedIds.has(d._id)) return;
 
                     let prod = d.match ? db.produto.find(p => p.id === d.match.id) : null;
-                    
                     if (!prod && d.allEans.length > 0) {
                         prod = db.produto.find(p => {
                             const pEans = [p.ean, ...(p.variacoesEan || [])].filter(Boolean);
@@ -1344,22 +1341,15 @@
                     }
 
                     const jsonItem = d.json; 
-
                     if(prod) {
                         if(dest !== 'fiscal') {
-                            // LÓGICA DE IMPORTAÇÃO COM LOTES
-                            // Se for estoque Físico ou Ambos, adiciona um lote "Sem Data" ou soma ao existente
                             if (!prod.batches) prod.batches = [];
-                            
-                            // Procura lote sem data (ou data genérica)
                             let defaultBatch = prod.batches.find(b => !b.date);
                             if(defaultBatch) {
                                 defaultBatch.qty += d.qty;
                             } else {
                                 prod.batches.push({ date: '', qty: d.qty });
                             }
-                            
-                            // Recalcula total
                             prod.estoque = prod.batches.reduce((acc, b) => acc + b.qty, 0);
                         }
                         
@@ -1369,7 +1359,6 @@
                         const cleanNewEans = d.allEans.map(e => e.trim()).filter(Boolean);
                         const existingEans = [prod.ean, ...(prod.variacoesEan || [])].filter(Boolean);
                         const newEansList = [...new Set([...existingEans, ...cleanNewEans])];
-                        
                         if(newEansList.length > 0) {
                             if(!prod.ean) prod.ean = newEansList[0];
                             prod.variacoesEan = newEansList;
@@ -1378,17 +1367,13 @@
                         const cleanNewNames = d.allNames.map(n => n.trim()).filter(Boolean);
                         const existingNames = [prod.nome, ...(prod.variacoesNome || [])].filter(Boolean);
                         const newNamesList = [...new Set([...existingNames, ...cleanNewNames])];
-                        
-                        if(newNamesList.length > 0) {
-                            prod.variacoesNome = newNamesList;
-                        }
+                        if(newNamesList.length > 0) prod.variacoesNome = newNamesList;
 
                         if(jsonItem.NCM) prod.ncm = jsonItem.NCM;
                         if(jsonItem.CEST) prod.cest = jsonItem.CEST;
                         if(jsonItem.CFOP_SAIDA) prod.cfop = jsonItem.CFOP_SAIDA;
                         if(jsonItem.CSOSN_SAIDA) prod.csosn = jsonItem.CSOSN_SAIDA;
                         if(jsonItem.Unidade_Venda) prod.unidade = jsonItem.Unidade_Venda;
-                        
                         prod.jsonData = jsonItem; 
                         prod.nota = jsonItem.Numero_Nota;
 
@@ -1405,7 +1390,6 @@
                             variacoesEan: cleanEans, 
                             custo: d.cost,
                             valor: 0,
-                            // Inicializa Lotes
                             batches: dest !== 'fiscal' ? [{ date: '', qty: d.qty }] : [],
                             estoque: dest !== 'fiscal' ? d.qty : 0,
                             estoqueFiscal: dest !== 'fisico' ? d.qty : 0,
@@ -1495,12 +1479,11 @@
                     ComboApp.renderList();
                 }
             },
-            // MODIFICADO: Filtra estoque > 0 e aplica busca textual
             populateSelect: (filterText = '') => {
                 const db = DB.load();
                 const select = document.getElementById('p-combo-select');
                 let items = db.produto
-                    .filter(p => p.estoque > 0) // Filtro: Estoque > 0
+                    .filter(p => p.estoque > 0)
                     .sort((a,b) => a.nome.localeCompare(b.nome));
 
                 if(filterText) {
@@ -1626,13 +1609,11 @@
                     const prod = db.produto.find(p => p.id === cartItem.id);
                     if(prod) {
                         if(stockType === 'fisico') {
-                             // USAR LOGICA FEFO
                              StockManager.deduct(prod, cartItem.qty);
                         } else {
                              prod.estoqueFiscal = (prod.estoqueFiscal||0) - cartItem.qty;
                         }
 
-                        // Deduzir Combo também
                         if(prod.items && prod.items.length > 0) {
                             prod.items.forEach(childItem => {
                                 const childProd = db.produto.find(cp => cp.id === childItem.id);
@@ -1696,11 +1677,9 @@
                         const personBadge = p.personalized ? '<i class="fa-solid fa-star" title="Personalizado" style="color:var(--warning); font-size:0.7rem; margin-left:4px;"></i>' : '';
                         const offerBadge = p.isOffer ? '<span class="badge badge-orange">OFERTA</span>' : '';
 
-                        // Renderiza Lotes na Tabela
                         let batchDisplay = `<div style="font-weight:700; ${estStyle}">${p.estoque} <span style="font-size:0.6rem; color:var(--slate-400);">total</span></div>`;
                         
                         if(p.batches && p.batches.length > 0) {
-                            // Ordena para exibir vencimento proximo
                             const sorted = [...p.batches].sort((a,b) => {
                                 if(!a.date) return 1; if(!b.date) return -1;
                                 return new Date(a.date) - new Date(b.date);
@@ -1709,7 +1688,6 @@
                             batchDisplay += `<div style="margin-top:2px;">`;
                             sorted.forEach(b => {
                                 let d = b.date ? new Date(b.date).toLocaleDateString() : 'S/ Val';
-                                // Verifica se venceu
                                 let isExpired = b.date && new Date(b.date) < new Date();
                                 let color = isExpired ? 'color:var(--danger);' : 'color:var(--slate-500);';
                                 batchDisplay += `<div style="font-size:0.65rem; ${color}"><i class="fa-regular fa-calendar" style="margin-right:2px;"></i> ${d}: <b>${b.qty}</b></div>`;
@@ -1736,23 +1714,17 @@
                         </tr>`;
                     }).join('');
                 },
-                // MODIFICADO: Filtro unificado (Texto + Categoria + Estoque)
                 filter: () => {
                     const text = document.getElementById('catalogo-search').value.toLowerCase();
                     const cat = document.getElementById('filter-cat').value;
                     const stock = document.getElementById('filter-stock').value;
 
                     const list = DB.load().produto.filter(p => {
-                        // Filtro Texto
                         const pNames = [p.nome, ...(p.variacoesNome||[])].join(' ').toLowerCase();
                         const pEans = [p.ean, ...(p.variacoesEan||[])].join(' ');
                         const matchText = pNames.includes(text) || p.codigo.toLowerCase().includes(text) || pEans.includes(text);
                         if(!matchText) return false;
-
-                        // Filtro Categoria
                         if(cat && p.categoria !== cat) return false;
-
-                        // Filtro Estoque
                         if(stock) {
                             const q = p.estoque;
                             if(stock === '<=0' && q > 0) return false;
@@ -1761,7 +1733,6 @@
                             if(stock === '51-100' && (q < 51 || q > 100)) return false;
                             if(stock === '>100' && q <= 100) return false;
                         }
-
                         return true;
                     });
                     Views.catalogo.render(list);
@@ -1789,7 +1760,6 @@
             venda: {
                 render: () => {
                     const db = DB.load();
-                    // Ordena por data decrescente (mais recente primeiro)
                     const list = db.venda.sort((a, b) => b.date - a.date);
                     
                     document.getElementById('table-venda').innerHTML = list.map(v => {
@@ -1813,10 +1783,9 @@
                 render: () => {
                     const db = DB.load();
                     ['CX','VG','CBA','CPA'].forEach(r => {
-                        const pedidos = db.venda.filter(v => v.rota === r).slice(-8); // Show last 8
+                        const pedidos = db.venda.filter(v => v.rota === r).slice(-8); 
                         document.getElementById(`col-${r}`).innerHTML = pedidos.map(p => {
                             const cli = db.cliente.find(c => c.id === p.cliId);
-                            // Itens sum
                             const itemsText = p.items.map(i => `${i.qty}x ${i.nome.substring(0,10)}..`).join('<br>');
                             return `
                             <div style="background: white; padding: 0.75rem; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.75rem;">
@@ -1842,10 +1811,7 @@
                 let data = {};
 
                 if (type === 'produto') {
-                    // Manual object construction for Products to keep JSON clean
-                    // Core Data
                     data.id = document.getElementById('p-id').value;
-                    // Generate new code if missing (new product)
                     if (!data.id) {
                         data.id = Date.now().toString() + Math.random().toString().slice(2,5);
                         data.codigo = DB.nextCode('P');
@@ -1859,11 +1825,9 @@
                     data.fornecedor = document.getElementById('p-fornecedor').value; 
                     data.caracteristicas = document.getElementById('p-caracteristicas').value;
                     
-                    // Numeric Data
                     data.custo = Number(document.getElementById('p-custo').value) || 0;
                     data.valor = Number(document.getElementById('p-valor').value) || 0;
                     
-                    // --- CAPTURA DE LOTES (3 SLOTS) ---
                     data.batches = [];
                     for(let i=1; i<=3; i++) {
                         const d = document.getElementById(`p-batch-date-${i}`).value;
@@ -1872,18 +1836,31 @@
                             data.batches.push({ date: d, qty: q });
                         }
                     }
-                    // Calcula Total Físico baseado nos lotes
                     data.estoque = data.batches.reduce((acc, b) => acc + b.qty, 0);
 
                     data.estoqueFiscal = Number(document.getElementById('p-estoqueFiscal').value) || 0;
                     data.peso = Number(document.getElementById('p-peso').value) || 0;
                     data.limit = Number(document.getElementById('p-limit').value) || 0;
 
+                    // --- NOVA LÓGICA DE IMAGEM ---
                     const imgNameInput = document.getElementById('p-image-slug').value.trim();
-                    const imgName = imgNameInput || data.codigo.toLowerCase();
-                    
-                    data.imageName = imgNameInput;
-                    data.imagem = `../site/img/produtos/${imgName}-cesta-basica-cuiaba-varzea-grande.webp`; 
+                    if(imgNameInput) {
+                        // MANUAL: Usa exatamente o que foi digitado + .webp
+                        data.imageName = imgNameInput;
+                        data.imagem = `../site/img/produtos/${imgNameInput}.webp`;
+                    } else {
+                        // AUTOMÁTICO: Usa padrão longo
+                        const slug = data.nome.toLowerCase()
+                            .normalize('NFD').replace(/[\u0300-\u036f]/g, "") 
+                            .replace(/\s+/g, '-')           
+                            .replace(/[^\w\-]+/g, '')       
+                            .replace(/\-\-+/g, '-')         
+                            .replace(/^-+/, '')             
+                            .replace(/-+$/, '');   
+                        
+                        data.imageName = ''; // Limpa manual
+                        data.imagem = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
+                    }
 
                     if(document.getElementById('p-is-combo').checked) {
                         data.items = ComboApp.comboItems;
@@ -1913,7 +1890,6 @@
                     data.unidade = document.getElementById('p-unidade').value;
 
                 } else {
-                    // Standard Loop for other types
                     Array.from(form.elements).forEach(el => {
                         if(el.id) {
                             const key = el.id.split('-')[1];
@@ -1931,12 +1907,12 @@
                     document.getElementById('p-img-preview').src = '';
                     document.getElementById('p-img-preview').style.display = 'none';
                     document.getElementById('p-img-icon').style.display = 'block';
+                    document.getElementById('debug-path').innerText = ''; // Clear debug
                     document.getElementById('p-margem').value = '';
                     document.getElementById('p-is-offer').checked = false;
                     UI.toggleOfferInput();
                     document.getElementById('p-image-slug').value = '';
-                    document.getElementById('p-total-fisico-display').innerText = '0'; // Reset display
-                    
+                    document.getElementById('p-total-fisico-display').innerText = '0';
                     Views.catalogo.render();
                 } else if(type === 'cliente') {
                     document.getElementById('c-id').value = '';
@@ -1948,14 +1924,12 @@
                 const item = DB.load()[type].find(x => x.id === id);
                 if(!item) return;
                 
-                // Populate fields
                 for(let k in item) {
                     const el = document.getElementById(`${type.charAt(0)}-${k}`);
                     if (k === 'obs' && type === 'produto') {
                          document.getElementById('p-obs-produto').value = item[k];
                          continue;
                     }
-
                     if(el) {
                         if(el.type === 'checkbox') el.checked = item[k];
                         else el.value = item[k];
@@ -1974,15 +1948,11 @@
                         UI.toggleComboArea(false);
                     }
 
-                    // --- POPULAR LOTES ---
-                    // Limpa inputs
                     for(let i=1; i<=3; i++) {
                         document.getElementById(`p-batch-date-${i}`).value = '';
                         document.getElementById(`p-batch-qty-${i}`).value = '';
                     }
-                    // Preenche
                     if(item.batches && item.batches.length > 0) {
-                        // Ordena por data
                         const sorted = item.batches.sort((a,b) => {
                              if(!a.date) return 1; if(!b.date) return -1;
                              return new Date(a.date) - new Date(b.date);
@@ -1992,7 +1962,6 @@
                             document.getElementById(`p-batch-qty-${i+1}`).value = sorted[i].qty;
                         }
                     } else if(item.estoque > 0) {
-                        // Legacy: se tem estoque mas não tem lote, poe no slot 1 sem data
                         document.getElementById(`p-batch-qty-1`).value = item.estoque;
                     }
                     StockManager.calcTotalDisplay();
@@ -2001,52 +1970,26 @@
                     document.getElementById('p-is-offer').checked = !!item.isOffer;
                     document.getElementById('p-offer-price').value = item.offerPrice || '';
                     UI.toggleOfferInput();
-                    UI.updateImageSlug(); // Tenta o slug automático
 
-                    // Se tiver nome manual salvo, usa ele
+                    // --- PREVIEW LOGIC ---
                     if(item.imageName) {
+                        // Se tem nome manual salvo, usa ele
                         document.getElementById('p-image-slug').value = item.imageName;
                         UI.updatePreviewManual();
+                    } else {
+                        // Se não, tenta o automático
+                        document.getElementById('p-image-slug').value = '';
+                        UI.updateImageSlug();
                     }
 
                     document.getElementById('p-variacoesNome').value = (item.variacoesNome || []).join(' | ');
                     document.getElementById('p-variacoesEan').value = (item.variacoesEan || []).join(' | ');
                     UI.calcMargin();
-
-                    // Preview Imagem
-                    let slugPadrao = item.codigo.toLowerCase();
-                    if (item.nome) {
-                        slugPadrao = item.nome.toLowerCase()
-                            .normalize('NFD').replace(/[\u0300-\u036f]/g, "") 
-                            .replace(/\s+/g, '-')           
-                            .replace(/[^\w\-]+/g, '')       
-                            .replace(/\-\-+/g, '-')         
-                            .replace(/^-+/, '')             
-                            .replace(/-+$/, '');   
-                    }
-
-                    const imgUrl = item.imagem || `../site/img/produtos/${slugPadrao}-cesta-basica-cuiaba-varzea-grande.webp`;
-                    const imgEl = document.getElementById('p-img-preview');
-                    const iconEl = document.getElementById('p-img-icon');
-
-                    imgEl.style.display = 'none';
-                    iconEl.style.display = 'block';
-
-                    imgEl.src = imgUrl;
-                    imgEl.onload = () => {
-                        imgEl.style.display = 'block';
-                        iconEl.style.display = 'none';
-                    };
-                    imgEl.onerror = () => {
-                        imgEl.style.display = 'none';
-                        iconEl.style.display = 'block';
-                    };
                 } else if (type === 'cliente') {
                     const db = DB.load();
                     const sales = db.venda.filter(v => v.cliId === item.id).sort((a,b) => b.date - a.date);
                     const historyArea = document.getElementById('client-history-area');
                     const historyList = document.getElementById('c-history-list');
-                    
                     if(sales.length > 0) {
                         historyArea.style.display = 'block';
                         historyList.innerHTML = sales.map(s => `
@@ -2116,6 +2059,7 @@
                     document.getElementById('p-img-preview').src = '';
                     document.getElementById('p-img-preview').style.display = 'none';
                     document.getElementById('p-img-icon').style.display = 'block';
+                    document.getElementById('debug-path').innerText = ''; 
                     document.getElementById('p-margem').value = '';
                     document.getElementById('p-is-offer').checked = false;
                     UI.toggleOfferInput();
@@ -2136,6 +2080,9 @@
                 document.getElementById('offer-price-container').style.display = isOffer ? 'block' : 'none';
             },
             updateImageSlug: () => {
+                // SÓ EXECUTA SE O CAMPO MANUAL ESTIVER VAZIO
+                if(document.getElementById('p-image-slug').value) return;
+
                 const name = document.getElementById('p-nome').value;
                 const slug = name.toString().toLowerCase()
                                 .normalize('NFD').replace(/[\u0300-\u036f]/g, "") 
@@ -2145,40 +2092,43 @@
                                 .replace(/^-+/, '')             
                                 .replace(/-+$/, '');            
                 
-                // Só atualiza se o campo manual estiver vazio
-                if(!document.getElementById('p-image-slug').value) {
-                    // Update Preview
-                    const previewUrl = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
-                    const imgEl = document.getElementById('p-img-preview');
-                    const iconEl = document.getElementById('p-img-icon');
-
-                    imgEl.src = previewUrl;
-                    imgEl.onload = () => {
-                        imgEl.style.display = 'block';
-                        iconEl.style.display = 'none';
-                    };
-                    imgEl.onerror = () => {
-                        imgEl.style.display = 'none';
-                        iconEl.style.display = 'block';
-                    };
-                }
+                // AUTOMÁTICO = COM O SUFIXO
+                const previewUrl = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
+                UI.updatePreviewCommon(previewUrl);
             },
             updatePreviewManual: () => {
                 const slug = document.getElementById('p-image-slug').value;
-                const previewUrl = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
-                
+                if(!slug) {
+                    UI.updateImageSlug(); // Se apagar manual, volta pro auto
+                    return;
+                }
+                // MANUAL = SEM SUFIXO EXTRA
+                const previewUrl = `../site/img/produtos/${slug}.webp`;
+                UI.updatePreviewCommon(previewUrl);
+            },
+            updatePreviewCommon: (url) => {
                 const imgEl = document.getElementById('p-img-preview');
                 const iconEl = document.getElementById('p-img-icon');
+                const debugEl = document.getElementById('debug-path');
+                
+                debugEl.innerText = `Tentando: ${url}`;
+                debugEl.style.background = "rgba(0,0,0,0.7)"; // Reset color
 
-                imgEl.src = previewUrl;
+                imgEl.src = url;
                 imgEl.onload = () => {
                     imgEl.style.display = 'block';
                     iconEl.style.display = 'none';
+                    debugEl.style.background = "rgba(16, 185, 129, 0.9)"; // Green if found
                 };
                 imgEl.onerror = () => {
-                    imgEl.style.display = 'none';
-                    iconEl.style.display = 'block';
+                   UI.onImgError();
                 };
+            },
+            onImgError: () => {
+                 document.getElementById('p-img-preview').style.display = 'none';
+                 document.getElementById('p-img-icon').style.display = 'block';
+                 const debugEl = document.getElementById('debug-path');
+                 debugEl.style.background = "rgba(239, 68, 68, 0.9)"; // Red if not found
             },
             copyImageSlug: () => {
                 const copyText = document.getElementById("p-image-slug");
