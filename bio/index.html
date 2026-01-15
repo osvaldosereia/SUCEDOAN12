@@ -370,8 +370,8 @@
         const state = {
             originalImage: null,
             ctx: els.canvas.getContext('2d', { willReadFrequently: true }),
-            width: 400,
-            height: 400,
+            width: 300,
+            height: 300,
             scale: 0.85,
             offsetX: 0,
             offsetY: 0,
@@ -380,9 +380,9 @@
             startPanY: 0,
             brightness: 0,
             contrast: 10,
-            sharpness: 0,
-            removeBg: false,
-            shadow: true,
+            sharpness: 80,
+            removeBg: true,
+            shadow: false,
             shadowSize: 0.6,    // % relative to width
             shadowOpacity: 0.3, // 0-1
             shadowY: 0          // px offset
@@ -646,7 +646,7 @@
             const MAX_CHARS = 13700; 
 
             // Loop simples de redução de qualidade se exceder o tamanho
-            // Para 400x400px, raramente precisará de muitos loops
+            // Para 300x300px, raramente precisará de muitos loops
             while (dataUrl.length > MAX_CHARS && quality > 0.1) {
                 quality -= 0.1;
                 dataUrl = els.canvas.toDataURL('image/webp', quality);
