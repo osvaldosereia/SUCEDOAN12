@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 3.5 - Auto Gallery Detection (A-Z Suffix)
+        VERSION: 3.8 - Robust Image Detection (No JSON Edits)
         LIGHTHOUSE TARGET: 100/100
         CHANGELOG:
-        - Added: Gallery visual indicator (eye icon) on product cards
-        - Logic: Automatic suffix checking (A, B, C...) for image variations
-        - UX: Dynamic gallery thumbnails population
+        - Fix: Added naturalWidth check to prevent "soft 404" broken images
+        - Fix: Thumbnails auto-remove if rendering fails
+        - Logic: Enhanced sequential loading A->B->C reliability
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -483,6 +483,16 @@
         }
         .btn-finish:hover { background: #15803d; transform: translateY(-1px); }
 
+        /* NEW: DESKTOP FAQ BUTTON */
+        .btn-faq-sidebar {
+            width: 100%; height: 48px; border-radius: 50px;
+            border: 2px solid var(--border); background: white;
+            color: var(--secondary); font-weight: 600; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: all 0.2s; cursor: pointer;
+        }
+        .btn-faq-sidebar:hover { border-color: var(--secondary); background: #f8fafc; }
+
         .credit-toast {
             position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
             background: var(--secondary); color: white; padding: 12px 24px; border-radius: 50px;
@@ -746,7 +756,7 @@
                 <details class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
                     <summary itemprop="name">Quais são as formas de pagamento?</summary>
                     <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer" class="faq-answer">
-                        <span itemprop="text">Dinheiro, Pix, Cartão de Débito, Cartão de Crédito (parcelado em até 3x sem juros), Cartões Alimentação e Refeição Pluxee, Alelo, Flash, Caju, Ifood.</span>
+                        <span itemprop="text">Dinheiro, Pix, Cartão de Débito, Cartão de Crédito (parcelado em até 3x sem juros), Cartões Alimentação e Refeição Pluxee, Alelo, Flash, Caju, iFood.</span>
                     </div>
                 </details>
 
@@ -884,7 +894,7 @@
                     </button>
                 </div>
 
-                <!-- NEW: FAQ Button (Desktop) -->
+                <!-- NEW: DESKTOP FAQ BUTTON -->
                 <button class="btn-faq-sidebar" onclick="document.getElementById('faq-modal').showModal()" aria-label="Abrir Dúvidas">
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span>Dúvidas Frequentes?</span>
@@ -1024,28 +1034,49 @@
                 el.src = src;
                 el.className = cls;
                 el.onclick = () => Gallery.swap(el, src);
+                // Robustness: If image fails to load/render, remove it
+                el.onerror = () => { el.remove(); };
                 thumbs.appendChild(el);
             },
 
             checkSuffixes(mainSrc) {
-                // Split filename and extension
                 const lastDot = mainSrc.lastIndexOf('.');
                 if(lastDot === -1) return;
                 
                 const base = mainSrc.substring(0, lastDot);
                 const ext = mainSrc.substring(lastDot);
+                const suffixes = ['A', 'B', 'C', 'D', 'E', 'F', 'G']; // Extended range
                 
-                // Try letters A to E (Limit to 5 extra photos to avoid too many 404s)
-                const suffixes = ['A', 'B', 'C', 'D', 'E'];
+                let idx = 0;
                 
-                suffixes.forEach(suffix => {
+                const tryNext = () => {
+                    if (idx >= suffixes.length) return;
+                    
+                    const suffix = suffixes[idx];
                     const testUrl = base + suffix + ext;
+                    
+                    // Create a probe image
                     const img = new Image();
                     img.onload = () => {
-                        this.addThumb(testUrl, false);
+                        // Image exists AND has content (width > 0)
+                        if (img.naturalWidth > 0) {
+                            this.addThumb(testUrl, false);
+                            idx++;
+                            tryNext();
+                        } else {
+                            // Empty/Corrupt file, stop or skip
+                            // Usually safer to stop to save data
+                            return; 
+                        }
+                    };
+                    img.onerror = () => {
+                        // Image missing: stop sequence
+                        return;
                     };
                     img.src = testUrl;
-                });
+                };
+                
+                tryNext();
             },
 
             swap(el, src) {
@@ -1133,6 +1164,7 @@
                     <article class="big-card">
                         <div class="bc-image-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
                             <img src="${p.imagem}" alt="Cesta Básica ${p.nome}" class="bc-image" width="500" height="500" fetchpriority="high">
+                            <div class="gallery-indicator" id="gal-ind-home-${p.id}">👁️</div>
                         </div>
                         <div class="bc-content">
                             <h2 class="bc-title">${p.nome}</h2>
@@ -1148,6 +1180,9 @@
                         </div>
                     </article>
                 `).join('');
+                
+                // Check indicators for home items
+                setTimeout(() => this.checkGalleryIndicators('home-'), 500);
             },
 
             openCustomizer(basketId) {
@@ -1318,19 +1353,25 @@
                 setTimeout(() => this.checkGalleryIndicators(), 500);
             },
 
-            checkGalleryIndicators() {
+            checkGalleryIndicators(prefix = '') {
                 // For every product rendered, check if 'NameA.ext' exists. If so, show icon.
                 // We use a small timeout to not block UI rendering.
                 const cards = document.querySelectorAll('.gallery-indicator');
                 cards.forEach(el => {
-                    const pid = el.id.replace('gal-ind-', '');
+                    if (!el.id.includes(prefix)) return; // Filter by scope (home or customizer)
+                    
+                    const pid = el.id.replace('gal-ind-' + prefix, '').replace('gal-ind-', ''); // Cleanup ID
+                    
                     const p = this.data.find(x => x.id === pid);
                     if(p && p.imagem) {
                         const lastDot = p.imagem.lastIndexOf('.');
                         if(lastDot > -1) {
                             const testUrl = p.imagem.substring(0, lastDot) + 'A' + p.imagem.substring(lastDot);
                             const img = new Image();
-                            img.onload = () => { el.classList.add('has-more'); };
+                            img.onload = () => { 
+                                // Only show if valid image content
+                                if(img.naturalWidth > 0) el.classList.add('has-more'); 
+                            };
                             img.src = testUrl;
                         }
                     }
