@@ -1083,8 +1083,20 @@
                                 .replace(/-+$/, '');            
                         }
                         
+                        // Lógica para obter a primeira data de validade (a mais próxima)
+                        let validade = undefined;
+                        if (p.batches && p.batches.length > 0) {
+                            // Filtra apenas lotes com data
+                            const datedBatches = p.batches.filter(b => b.date);
+                            if (datedBatches.length > 0) {
+                                // Ordena por data (ascendente) para pegar a mais antiga/próxima
+                                datedBatches.sort((a, b) => new Date(a.date) - new Date(b.date));
+                                validade = datedBatches[0].date;
+                            }
+                        }
+
                         // Create a clean object to avoid leaking old 'imageName' properties
-                        return {
+                        const obj = {
                             ...p,
                             imageName: undefined, // Explicitly remove manual name field from export
                             caracteristicas: p.caracteristicas || '', 
@@ -1094,6 +1106,13 @@
                             Oferta: p.isOffer ? 'Sim' : 'Não',
                             Valor_Oferta: p.isOffer ? Number(p.offerPrice || 0) : 0
                         };
+                        
+                        // Adiciona validade apenas se encontrada
+                        if (validade) {
+                            obj.validade = validade;
+                        }
+                        
+                        return obj;
                     });
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
                 const url = URL.createObjectURL(blob);
@@ -1964,12 +1983,14 @@
                 const item = DB.load()[type].find(x => x.id === id);
                 if(!item) return;
                 
+                // Populate fields
                 for(let k in item) {
                     const el = document.getElementById(`${type.charAt(0)}-${k}`);
                     if (k === 'obs' && type === 'produto') {
                          document.getElementById('p-obs-produto').value = item[k];
                          continue;
                     }
+
                     if(el) {
                         if(el.type === 'checkbox') el.checked = item[k];
                         else el.value = item[k];
@@ -1988,11 +2009,15 @@
                         UI.toggleComboArea(false);
                     }
 
+                    // --- POPULAR LOTES ---
+                    // Limpa inputs
                     for(let i=1; i<=3; i++) {
                         document.getElementById(`p-batch-date-${i}`).value = '';
                         document.getElementById(`p-batch-qty-${i}`).value = '';
                     }
+                    // Preenche
                     if(item.batches && item.batches.length > 0) {
+                        // Ordena por data
                         const sorted = item.batches.sort((a,b) => {
                              if(!a.date) return 1; if(!b.date) return -1;
                              return new Date(a.date) - new Date(b.date);
@@ -2002,6 +2027,7 @@
                             document.getElementById(`p-batch-qty-${i+1}`).value = sorted[i].qty;
                         }
                     } else if(item.estoque > 0) {
+                        // Legacy: se tem estoque mas não tem lote, poe no slot 1 sem data
                         document.getElementById(`p-batch-qty-1`).value = item.estoque;
                     }
                     StockManager.calcTotalDisplay();
@@ -2010,26 +2036,42 @@
                     document.getElementById('p-is-offer').checked = !!item.isOffer;
                     document.getElementById('p-offer-price').value = item.offerPrice || '';
                     UI.toggleOfferInput();
+                    UI.updateImageSlug(); // Tenta o slug automático
 
-                    // --- PREVIEW LOGIC ---
+                    // Se tiver nome manual salvo, usa ele
                     if(item.imageName) {
-                        // Se tem prefixo salvo, carrega ele
                         document.getElementById('p-image-slug').value = item.imageName;
                         UI.updatePreviewManual();
-                    } else {
-                        // Se não tem, gera do nome
-                        document.getElementById('p-image-slug').value = '';
-                        UI.updateImageSlug();
                     }
 
                     document.getElementById('p-variacoesNome').value = (item.variacoesNome || []).join(' | ');
                     document.getElementById('p-variacoesEan').value = (item.variacoesEan || []).join(' | ');
+                    
+                    // Calc Margin on Edit
                     UI.calcMargin();
+
+                    // MODIFICADO: Lógica inteligente para encontrar a imagem pelo NOME (slug) e não pelo código
+                    let slugPadrao = item.codigo.toLowerCase();
+                    if (item.nome) {
+                        slugPadrao = item.nome.toLowerCase()
+                            .normalize('NFD').replace(/[\u0300-\u036f]/g, "") 
+                            .replace(/\s+/g, '-')           
+                            .replace(/[^\w\-]+/g, '')       
+                            .replace(/\-\-+/g, '-')         
+                            .replace(/^-+/, '')             
+                            .replace(/-+$/, '');   
+                    }
+
+                    // Load Image Preview (Priority: Saved Path -> Slug Name -> Code)
+                    const imgUrl = item.imagem || `../site/img/produtos/${slugPadrao}-cesta-basica-cuiaba-varzea-grande.webp`;
+                    UI.updatePreviewCommon(imgUrl);
                 } else if (type === 'cliente') {
+                    // LOAD HISTORY
                     const db = DB.load();
                     const sales = db.venda.filter(v => v.cliId === item.id).sort((a,b) => b.date - a.date);
                     const historyArea = document.getElementById('client-history-area');
                     const historyList = document.getElementById('c-history-list');
+                    
                     if(sales.length > 0) {
                         historyArea.style.display = 'block';
                         historyList.innerHTML = sales.map(s => `
