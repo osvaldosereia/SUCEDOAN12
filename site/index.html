@@ -4,11 +4,10 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 4.6 - Search UX Improvement
+        VERSION: 4.7 - Desktop UI Compact Fix
         LIGHTHOUSE TARGET: 100/100
         CHANGELOG:
-        - UX: Auto-scroll to "Extras" section when search input is focused
-        - Logic: Maintained Stock/Limit checks and Offer System
+        - UI: Compacted Order Summary Card on Desktop for more vertical space
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -518,23 +517,9 @@
         }
         .btn-finish:hover { background: #15803d; transform: translateY(-1px); }
 
-        /* Compact Desktop Sidebar Override */
+        /* Compact Desktop Sidebar Override - MAINTAINING ONLY THIS VERSION */
         @media(min-width: 1024px) {
-            .order-summary-card {
-                /* Compact Layout */
-                padding: 20px; 
-                gap: 12px; 
-                border-radius: 12px;
-                /* Keep other properties */
-            }
-            .order-summary-card .ff-value {
-                font-size: 1.5rem; /* Smaller than previous 2rem */
-                margin-top: 2px;
-            }
-            .order-summary-card .btn-finish {
-                height: 48px; /* Compact height */
-                font-size: 1rem;
-            }
+           /* ... previously empty or duplicate ... */
         }
 
         /* NEW: DESKTOP FAQ BUTTON */
@@ -676,19 +661,39 @@
             
             .sidebar-col { 
                 position: sticky; top: 100px; height: fit-content; 
-                display: flex; flex-direction: column; gap: 24px; align-self: start;
+                display: flex; flex-direction: column; gap: 16px; /* Compact gap */
+                align-self: start;
             }
             
-            .order-summary-card { position: static; height: auto; border: 1px solid var(--border); border-radius: 16px; flex-direction: column; padding: 32px; gap: 24px; box-shadow: none; align-items: stretch; text-align: center; }
-            .ff-info { align-items: center; }
-            .ff-value { font-size: 2rem; margin-top: 5px; }
-            .btn-finish { height: 56px; width: 100%; justify-content: center; font-size: 1.1rem; }
+            /* COMPACT ORDER SUMMARY FOR DESKTOP */
+            .order-summary-card { 
+                position: static; 
+                height: auto; 
+                border: 1px solid var(--border); 
+                border-radius: 12px; 
+                flex-direction: column; 
+                padding: 16px 20px; /* Reduced padding (was 32px) */
+                gap: 12px; /* Reduced gap (was 24px) */
+                box-shadow: none; 
+                align-items: stretch; 
+                text-align: center; 
+            }
+            .ff-info { align-items: center; flex-direction: row; justify-content: space-between; }
+            .ff-label { margin: 0; font-size: 0.8rem; }
+            .ff-value { font-size: 1.4rem; margin-top: 0; color: var(--primary-dark); }
+            
+            .btn-finish { 
+                height: 44px; /* Reduced height (was 56px) */
+                width: 100%; 
+                justify-content: center; 
+                font-size: 0.95rem; 
+            }
 
             /* NEW: DESKTOP FAQ BUTTON */
             .btn-faq-sidebar {
-                width: 100%; height: 48px; border-radius: 50px;
+                width: 100%; height: 44px; border-radius: 50px;
                 border: 2px solid var(--border); background: white;
-                color: var(--secondary); font-weight: 600; font-size: 1rem;
+                color: var(--secondary); font-weight: 600; font-size: 0.95rem;
                 display: flex; align-items: center; justify-content: center; gap: 10px;
                 transition: all 0.2s; cursor: pointer;
             }
@@ -1742,4 +1747,4 @@
         document.addEventListener('DOMContentLoaded', () => { App.init(); });
     </script>
 </body>
-</html>"
+</html>
