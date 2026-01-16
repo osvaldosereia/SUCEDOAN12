@@ -4,12 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 5.2 - Desktop Ultra Compact Sidebar
+        VERSION: 5.3 - Stability Fix & Visual Refinement
         LIGHTHOUSE TARGET: 100/100
         CHANGELOG:
-        - UI (Desktop): Barra lateral reduzida para 180px (metade do espaço anterior).
-        - UI (Desktop): Botões de categoria minúsculos (duas colunas, fonte pequena).
-        - UI (Desktop): Remoção completa de Botões Flutuantes e Barra Inferior.
+        - FIX: Sanitização de aspas em nomes de produtos (prevenção de quebra de HTML).
+        - FIX: Fallback de visibilidade de imagens.
+        - UI: Refinamento final da barra lateral desktop (Grid 2 colunas compacta).
+        - UI: Modal de checkout mais discreto e organizado.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -271,7 +272,7 @@
             padding: 20px; cursor: zoom-in; overflow: hidden;
         }
         
-        /* LAZY LOAD FADE-IN SYSTEM */
+        /* LAZY LOAD FADE-IN SYSTEM WITH SAFETY FALLBACK */
         .img-fade-in {
             opacity: 0;
             transition: opacity 0.5s ease-out;
@@ -279,6 +280,9 @@
         .img-fade-in.visible {
             opacity: 1;
         }
+        /* Fallback: If JS fails to set class, ensure image is visible after 2s */
+        @keyframes safeFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .img-fade-in { animation: safeFadeIn 0.5s ease-out 2s forwards; }
 
         .bc-image { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s ease; mix-blend-mode: multiply; }
         .big-card:hover .bc-image { transform: scale(1.05); }
@@ -649,10 +653,6 @@
             color: var(--secondary);
             background: #f8fafc;
         }
-
-        /* NEW: DESKTOP FAQ BUTTON - HIDDEN IF SIDEBAR IS STRICTLY CATEGORIES */
-        /* If you want to keep FAQ in sidebar but compact, uncomment below */
-        /* .btn-faq-sidebar { ... } */
 
         /* FOOTER STYLES */
         .footer-contacts {
@@ -1038,6 +1038,60 @@
                         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <div class="container customizer-grid">
+            <div class="products-col">
+                <!-- ITENS INCLUSOS -->
+                <section class="basket-group" aria-labelledby="items-included-title">
+                    
+                    <!-- HEADER PASTEL -->
+                    <div class="section-banner" style="background-color: #f1f5f9; color: #475569;">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                            Itens Inclusos
+                        </h3>
+                        <p style="color:#64748b;">Já vêm na cesta</p>
+                    </div>
+                    
+                    <!-- CAIXA COM FUNDO CLARO -->
+                    <div class="included-products-box" style="background-color: #ffffff; border-color: #e2e8f0;">
+                        <div id="basket-items-container" class="basket-grid"></div>
+                    </div>
+                </section>
+
+                <!-- BANNER SEPARADOR -->
+                <div class="extras-separator-banner">
+                    <h3>Adicionar Extras</h3>
+                    <p>Toque nos produtos abaixo para adicionar mais itens.</p>
+                </div>
+
+                <!-- EXTRAS (CATEGORIAS) -->
+                <section aria-labelledby="items-extra-title">
+                    <div id="other-items-container"></div>
+                </section>
+            </div>
+
+            <!-- SIDEBAR (Desktop) -->
+            <aside class="sidebar-col">
+                <!-- (Resumo de Pedido Removido na Desktop) -->
+                <div class="order-summary-card">
+                    <div class="ff-info">
+                        <span class="ff-label">Valor Total</span>
+                        <span class="ff-value" id="ff-total-val">R$ 0,00</span>
+                    </div>
+                    <button class="btn-finish" onclick="App.openCheckout()">
+                        <span>Encomendar no Whatsapp</span>
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </button>
+                </div>
+
+                <!-- NEW: DESKTOP FAQ BUTTON -->
+                <button class="btn-faq-sidebar" onclick="document.getElementById('faq-modal').showModal()" aria-label="Abrir Dúvidas">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Dúvidas Frequentes?</span>
+                </button>
 
                 <!-- 2. Nav Categorias Desktop -->
                 <nav class="desktop-cat-nav" aria-label="Navegação rápida de categorias">
@@ -1536,13 +1590,16 @@
 
             // HELPER: Generate just the button HTML
             getButtonHtml(id, qty, productName) {
+                // SANITIZE: Escape quotes to prevent breaking HTML attributes
+                const safeName = productName ? productName.replace(/"/g, '&quot;') : '';
+                
                 if (!qty || qty === 0) {
-                    return `<button class="btn-add-sm" onclick="App.changeQty('${id}', 1)" aria-label="Adicionar ${productName}">Adicionar</button>`;
+                    return `<button class="btn-add-sm" onclick="App.changeQty('${id}', 1)" aria-label="Adicionar ${safeName}">Adicionar</button>`;
                 } else {
                     return `<div class="qty-control">
-                            <button class="qty-btn" onclick="App.changeQty('${id}', -1)" aria-label="Remover 1 ${productName}">-</button>
+                            <button class="qty-btn" onclick="App.changeQty('${id}', -1)" aria-label="Remover 1 ${safeName}">-</button>
                             <span class="qty-val">${qty}</span>
-                            <button class="qty-btn" onclick="App.changeQty('${id}', 1)" aria-label="Adicionar 1 ${productName}">+</button>
+                            <button class="qty-btn" onclick="App.changeQty('${id}', 1)" aria-label="Adicionar 1 ${safeName}">+</button>
                         </div>`;
                 }
             },
