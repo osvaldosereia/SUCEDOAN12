@@ -4,13 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 5.5 - Nutritional Info & Validity
+        VERSION: 5.6 - Search Auto-Scroll & UX
         LIGHTHOUSE TARGET: 100/100
         CHANGELOG:
-        - FEAT: Campo "Validade" nos cards de ALIMENTOS.
-        - FEAT: Botão "Valor Nutricional" (abre foto A) condicional em ALIMENTOS.
-        - JS: Galeria suporta abertura direta em imagem específica.
-        - JS: Verificador de mídia agora ativa o botão nutricional se a imagem A existir.
+        - UX: Auto-scroll para seção de Extras ao focar na busca (Mobile/Desktop).
+        - FEAT: Campo "Validade" e botão "Valor Nutricional" (mantidos).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -1441,6 +1439,23 @@
                         this.searchTerm = e.target.value.toLowerCase();
                         this.renderCustomizerLists(true); // Force re-render on search
                     });
+
+                    // NEW: Auto-scroll on focus
+                    document.getElementById('product-search').addEventListener('focus', () => {
+                        setTimeout(() => {
+                            const section = document.querySelector('.extras-separator-banner');
+                            if(section) {
+                                const headerOffset = 150; // Compensate for sticky headers
+                                const elementPosition = section.getBoundingClientRect().top;
+                                const offsetPosition = elementPosition + window.scrollY - headerOffset;
+                                window.scrollTo({
+                                    top: offsetPosition,
+                                    behavior: "smooth"
+                                });
+                            }
+                        }, 300); // Delay for keyboard opening on mobile
+                    });
+
                 } catch (e) {
                     console.error("Erro ao carregar dados:", e);
                     document.getElementById('baskets-list').innerHTML = '<div style="padding:40px; text-align:center;">Erro ao carregar catálogo. Tente atualizar a página.</div>';
