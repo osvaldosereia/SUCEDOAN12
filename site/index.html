@@ -4,12 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 5.0 - Stability & Compact UI
+        VERSION: 5.1 - Desktop Header Checkout & Refined Modal
         LIGHTHOUSE TARGET: 100/100
         CHANGELOG:
-        - JS: Renderização inteligente (DOM Diffing parcial) para evitar "pisca" nas fotos
-        - UI: Lista de Categorias Desktop com Scroll e Compacta
-        - UI: Lista de Categorias Mobile em Grid (2 colunas)
+        - UI (Desktop): Resumo de pedido movido para o cabeçalho (Header).
+        - UI (Desktop): Barra lateral dedicada apenas a categorias (Grid 2 colunas).
+        - UI (Global): Modal de checkout com tipografia reduzida e design elegante.
+        - JS: Atualização simultânea de totais (Header Desktop + Barra Mobile).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -309,8 +310,10 @@
         }
         body.header-hidden .customizer-header { top: 0; }
 
+        /* HEADER LAYOUT */
         .ch-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
         
+        .left-group { display: flex; gap: 12px; align-items: center; flex: 1; min-width: 140px; }
         .btn-back { 
             width: 44px; height: 44px; border-radius: 50%; background: white; border: 1px solid var(--border);
             display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--secondary); flex-shrink: 0;
@@ -318,7 +321,6 @@
         }
         .btn-back:hover { background: #f1f5f9; border-color: var(--text-muted); }
         
-        .cust-basket-info { flex: 1; min-width: 120px; }
         .cust-basket-info h2 { font-size: 1.1rem; font-weight: 700; line-height: 1.2; margin: 0; color: var(--secondary); }
         .cust-basket-info span { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; }
         
@@ -338,6 +340,8 @@
             border: 1px solid #fde68a; white-space: nowrap; display: flex; align-items: center;
         }
         .changes-counter.limit-reached { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
+
+        .desktop-actions { display: none; } /* HIDDEN ON MOBILE */
 
         .customizer-grid { display: block; margin-top: 24px; }
         .products-col { padding-bottom: 120px; } 
@@ -514,20 +518,49 @@
 
         /* DESKTOP TWEAKS */
         @media(min-width: 1024px) {
-            .container { padding: 0 40px; } /* Reset padding for desktop */
+            .container { padding: 0 40px; }
+            .hero h1 { font-size: 3.5rem; }
+            
+            /* HEADER DESKTOP LAYOUT */
+            .ch-inner { flex-wrap: nowrap; justify-content: space-between; }
+            .search-row { width: auto; flex: 1; max-width: 450px; margin: 0 20px; }
+            
+            /* SHOW DESKTOP ACTIONS */
+            .desktop-actions { 
+                display: flex; align-items: center; gap: 16px; 
+                padding-left: 20px; border-left: 1px solid #f1f5f9;
+            }
+            .desktop-total-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+            .desktop-total-info .lbl { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+            .desktop-total-info .val { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+            
+            .btn-header-checkout {
+                background: #16a34a; color: white; padding: 0 20px; height: 44px;
+                border-radius: 6px; font-weight: 600; font-size: 0.9rem;
+                display: flex; align-items: center; gap: 8px; cursor: pointer;
+                box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15); transition: transform 0.2s;
+            }
+            .btn-header-checkout:hover { background: #15803d; transform: translateY(-1px); }
+
+            /* LAYOUT GRID */
+            .customizer-grid { display: grid; grid-template-columns: 1fr 280px; gap: 40px; align-items: start; }
+            .products-col { padding-bottom: 60px; }
             
             .product-card { 
                 /* Mantem vertical */
                 padding: 16px 16px; 
                 gap: 12px; height: 100%; border-bottom: none; border: 1px solid transparent; border-radius: 12px;
             }
-            .product-card:hover { border-color: var(--border); background: white; } /* No Shadow on Hover per user request? Or minimal */
+            .product-card:hover { border-color: var(--border); background: white; } 
             .pc-name { font-size: 0.9rem; }
             .pc-price { font-size: 1rem; }
             .btn-add-sm, .qty-control { height: 40px; font-size: 0.9rem; }
+            
+            /* HIDE MOBILE BOTTOM BAR ON DESKTOP */
+            .order-summary-card { display: none; }
         }
 
-        /* --- BOTTOM BAR --- */
+        /* --- BOTTOM BAR (MOBILE ONLY) --- */
         .order-summary-card {
             background: rgba(255,255,255,0.95); border-top: 1px solid var(--border); 
             height: 70px; padding: 0 16px; backdrop-filter: blur(12px);
@@ -548,15 +581,20 @@
 
         /* Compact Desktop Sidebar Override */
         @media(min-width: 1024px) {
+            .sidebar-col { 
+                position: sticky; top: 100px; height: fit-content; 
+                display: flex; flex-direction: column; gap: 16px;
+                align-self: start;
+            }
+
             .desktop-cat-nav { 
                 display: block !important; 
                 background: white; 
-                padding: 16px; /* Compact padding */
+                padding: 16px;
                 border-radius: 16px; 
                 border: 1px solid var(--border);
-                max-height: calc(100vh - 120px); /* SCROLLABLE AREA */
-                overflow-y: auto; /* ENABLE SCROLL */
-                /* Custom Scrollbar for Webkit */
+                max-height: calc(100vh - 120px);
+                overflow-y: auto;
                 scrollbar-width: thin;
                 scrollbar-color: #cbd5e1 #f1f5f9;
             }
@@ -564,18 +602,27 @@
             .desktop-cat-nav::-webkit-scrollbar-track { background: #f1f5f9; }
             .desktop-cat-nav::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 
+            /* GRID LAYOUT FOR DESKTOP CATEGORIES (Same as Mobile) */
+            #desktop-cat-list {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* 2 Colunas */
+                gap: 8px;
+            }
+
             .desktop-cat-link { 
-                display: block; 
-                padding: 8px 0; /* Compact padding */
-                color: var(--text-muted); 
+                display: flex; align-items: center; justify-content: center;
+                text-align: center;
+                padding: 10px; 
+                color: var(--secondary);
                 transition: 0.2s; 
                 cursor: pointer; 
-                border-bottom: 1px solid #f8fafc; 
                 font-weight: 500; 
-                font-size: 0.9rem; /* Smaller font */
+                font-size: 0.85rem; 
+                background: #f8fafc; /* Fundo clarinho */
+                border: 1px solid #f1f5f9;
+                border-radius: 8px; /* Compact Button Style */
             }
-            .desktop-cat-link:last-child { border-bottom: none; }
-            .desktop-cat-link:hover { color: var(--primary); padding-left: 5px; }
+            .desktop-cat-link:hover { border-color: var(--border); background: #f1f5f9; color: var(--primary); }
         }
         .desktop-cat-nav { display: none; }
 
@@ -639,35 +686,52 @@
         }
         .credit-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 
-        /* DIALOG/MODAL */
+        /* DIALOG/MODAL REFINED */
         dialog {
-            border: none; border-radius: 16px; padding: 0; 
+            border: none; border-radius: 12px; padding: 0; 
             background: white; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            max-width: 500px; width: 95%; margin: auto;
+            max-width: 450px; width: 95%; margin: auto;
         }
         dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
         
-        .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-title { font-size: 1.25rem; font-weight: 600; color: var(--secondary); }
-        .modal-close { width: 40px; height: 40px; border-radius: 50%; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; color: var(--secondary); transition: background 0.2s; }
-        .modal-close:hover { background: #e2e8f0; }
+        .modal-header { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+        .modal-title { font-size: 1.1rem; font-weight: 600; color: var(--secondary); }
+        .modal-close { width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; color: var(--text-muted); transition: background 0.2s; }
+        .modal-close:hover { background: #f1f5f9; }
         
-        .modal-body { padding: 24px; max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .checkout-list { list-style: none; margin-bottom: 24px; }
-        .checkout-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 1rem; color: var(--text-main); font-weight: 300; }
+        .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         
-        .payment-section h4 { font-size: 1rem; font-weight: 600; margin-bottom: 12px; color: var(--secondary); }
-        .payment-options { display: grid; gap: 10px; }
+        /* CLEANER CHECKOUT LIST */
+        .checkout-list { list-style: none; margin-bottom: 20px; border: 1px solid #f1f5f9; border-radius: 8px; overflow: hidden; }
+        .checkout-item { 
+            display: flex; justify-content: space-between; 
+            padding: 10px 16px; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-size: 0.9rem; /* SMALLER FONT */
+            color: var(--text-main); 
+            font-weight: 400; 
+            background: white;
+        }
+        .checkout-item:last-child { border-bottom: none; }
+        .checkout-item span:first-child { font-weight: 500; color: var(--secondary); }
+        
+        .checkout-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 8px; }
+        .checkout-total-lbl { font-size: 1rem; color: var(--text-muted); }
+        .checkout-total-val { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+
+        .payment-section h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .payment-options { display: grid; gap: 8px; }
         .payment-opt { 
-            display: flex; align-items: center; gap: 12px; padding: 14px; 
-            border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 10px; padding: 12px; 
+            border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+            font-size: 0.9rem;
         }
         .payment-opt:hover { background: #f8fafc; border-color: #cbd5e1; }
         .payment-opt:has(input:checked) { border-color: var(--primary); background: #fef2f2; }
-        .payment-opt input { accent-color: var(--primary); width: 20px; height: 20px; }
+        .payment-opt input { accent-color: var(--primary); width: 18px; height: 18px; }
 
-        .modal-footer { padding: 20px 24px; background: #f8fafc; border-top: 1px solid var(--border); }
-        .btn-confirm { width: 100%; height: 50px; background: #16a34a; color: white; border-radius: 8px; font-weight: 600; font-size: 1.1rem; }
+        .modal-footer { padding: 16px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+        .btn-confirm { width: 100%; height: 44px; background: #16a34a; color: white; border-radius: 6px; font-weight: 600; font-size: 1rem; }
         .btn-confirm:hover { background: #15803d; }
 
         /* FLOATING ACTIONS */
@@ -723,58 +787,6 @@
         details.faq-item summary::after { content: "+"; font-size: 1.5rem; color: var(--primary); line-height: 0.5; font-weight: 600; }
         details.faq-item[open] summary::after { content: "-"; }
         .faq-answer { padding: 18px; color: var(--text-muted); line-height: 1.6; border-top: 1px solid #f3f4f6; font-weight: 300; }
-
-        /* DESKTOP LAYOUT (Sidebar & Grid) */
-        @media(min-width: 1024px) {
-            .container { padding: 0 40px; }
-            .hero h1 { font-size: 3.5rem; }
-            .search-row { width: 400px; margin-top: 0; margin-left: auto; }
-            
-            .customizer-grid { display: grid; grid-template-columns: 1fr 320px; gap: 40px; align-items: start; }
-            .products-col { padding-bottom: 60px; }
-            
-            .sidebar-col { 
-                position: sticky; top: 100px; height: fit-content; 
-                display: flex; flex-direction: column; gap: 16px; /* Compact gap */
-                align-self: start;
-            }
-            
-            /* COMPACT ORDER SUMMARY FOR DESKTOP */
-            .order-summary-card { 
-                position: static; 
-                height: auto; 
-                border: 1px solid var(--border); 
-                border-radius: 12px; 
-                flex-direction: column; 
-                padding: 16px 20px; /* Reduced padding (was 32px) */
-                gap: 12px; /* Reduced gap (was 24px) */
-                box-shadow: none; 
-                align-items: stretch; 
-                text-align: center; 
-            }
-            .ff-info { align-items: center; flex-direction: row; justify-content: space-between; }
-            .ff-label { margin: 0; font-size: 0.8rem; }
-            .ff-value { font-size: 1.4rem; margin-top: 0; color: var(--primary-dark); }
-            
-            .btn-finish { 
-                height: 44px; /* Reduced height (was 56px) */
-                width: 100%; 
-                justify-content: center; 
-                font-size: 0.95rem; 
-            }
-
-            /* NEW: DESKTOP FAQ BUTTON */
-            .btn-faq-sidebar {
-                width: 100%; height: 44px; border-radius: 50px;
-                border: 2px solid var(--border); background: white;
-                color: var(--secondary); font-weight: 600; font-size: 0.95rem;
-                display: flex; align-items: center; justify-content: center; gap: 10px;
-                transition: all 0.2s; cursor: pointer;
-            }
-            .btn-faq-sidebar:hover { border-color: var(--secondary); background: #f8fafc; }
-
-            .floating-actions { display: none; }
-        }
     </style>
 </head>
 <body>
@@ -996,18 +1008,34 @@
     <div id="customizer-view" class="hidden">
         <div class="customizer-header">
             <div class="container ch-inner">
-                <button class="btn-back" onclick="App.showHome()" aria-label="Voltar para a Home">❮</button>
-                <div class="cust-basket-info">
-                    <h2 id="cust-basket-name">Minha Cesta</h2>
-                    <span>Personalize os itens abaixo</span>
+                <!-- Left: Back & Title -->
+                <div class="left-group">
+                    <button class="btn-back" onclick="App.showHome()" aria-label="Voltar para a Home">❮</button>
+                    <div class="cust-basket-info">
+                        <h2 id="cust-basket-name">Minha Cesta</h2>
+                        <span>Personalize os itens abaixo</span>
+                    </div>
                 </div>
-                <!-- BUSCA + BADGE -->
+                
+                <!-- Center: Search & Counter -->
                 <div class="search-row">
                     <div class="search-container">
                         <input type="text" id="product-search" class="search-input" placeholder="O que você procura?" aria-label="Buscar produtos na lista">
                         <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                     <div id="changes-badge" class="changes-counter" style="display:none;" role="status">Excluídos: 0/0</div>
+                </div>
+
+                <!-- Right: Desktop Total & Action (New) -->
+                <div class="desktop-actions">
+                    <div class="desktop-total-info">
+                        <span class="lbl">Total</span>
+                        <span class="val" id="header-total-val">R$ 0,00</span>
+                    </div>
+                    <button class="btn-header-checkout" onclick="App.openCheckout()">
+                        <span>Encomendar (WhatsApp)</span>
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1046,7 +1074,7 @@
 
             <!-- SIDEBAR (Desktop) -->
             <aside class="sidebar-col">
-                <!-- 1. Resumo -->
+                <!-- (Resumo de Pedido Removido na Desktop) -->
                 <div class="order-summary-card">
                     <div class="ff-info">
                         <span class="ff-label">Valor Total</span>
@@ -1090,17 +1118,18 @@
             <button class="modal-close" onclick="document.getElementById('checkout-modal').close()" aria-label="Fechar Janela">✕</button>
         </div>
         <div class="modal-body">
+            <!-- Total -->
+            <div class="checkout-total-row">
+                <span class="checkout-total-lbl">Valor Total:</span>
+                <span class="checkout-total-val" id="checkout-total">R$ 0,00</span>
+            </div>
+
             <!-- Lista de Produtos -->
             <ul id="checkout-list" class="checkout-list"></ul>
 
-            <!-- Total -->
-            <div style="text-align:right; font-weight:700; font-size:1.5rem; color:var(--primary); margin-bottom:24px;">
-                Total: <span id="checkout-total">R$ 0,00</span>
-            </div>
-
             <!-- Forma de Pagamento -->
             <div class="payment-section">
-                <h4>Como você prefere pagar na entrega?</h4>
+                <h4>Como prefere pagar na entrega?</h4>
                 <div class="payment-options">
                     <label class="payment-opt">
                         <input type="radio" name="payment" value="Pix" checked>
@@ -1474,12 +1503,7 @@
                          sumItems += price * this.cart[id];
                     }
                 }
-                // Recalculate base fee based on potentially new prices? 
-                // Usually base fee is fixed, but let's stick to initial logic: 
-                // The base fee is the difference between Basket Price and Sum of Default Items.
-                // NOTE: If items inside basket are on offer, the basket price might already reflect that, 
-                // or we just calculate base fee using standard prices to keep consistent math.
-                // For simplicity, let's use the current prices of items.
+                
                 this.baseFee = basket.valor - sumItems;
 
                 document.getElementById('cust-basket-name').innerText = basket.nome;
@@ -1498,13 +1522,13 @@
                 this.currentBasket = null;
             },
 
-            // MAIN RENDERING LOGIC - NOW SMART SPLIT
+            // MAIN RENDERING LOGIC
             renderCustomizerLists(fullRender = false) {
-                this.renderBasketSummary(); // Always refresh top "Included" list
+                this.renderBasketSummary(); 
                 if (fullRender) {
-                    this.renderCatalog(); // Only refresh big list if needed
+                    this.renderCatalog(); 
                 }
-                this.updateUIStatus(); // Update counters and totals
+                this.updateUIStatus(); 
             },
 
             renderBasketSummary() {
@@ -1524,7 +1548,6 @@
                 const catListDesktop = document.getElementById('desktop-cat-list');
                 const catListMobile = document.getElementById('mobile-cat-list');
 
-                // 2. Extras (Filtered)
                 let extras = this.data.filter(p => p.categoria !== 'CESTA BÁSICA' && (!this.searchTerm || p.nome.toLowerCase().includes(this.searchTerm)));
                 
                 let groups = {};
@@ -1561,7 +1584,6 @@
                 }
                 othersContainer.innerHTML = html;
                 
-                // Smart Check with Observer
                 setTimeout(() => this.setupMediaObserver(), 500);
             },
 
@@ -1596,10 +1618,6 @@
                 }
 
                 let offerTag = (p.isOffer && p.offerPrice > 0) ? `<div class="pc-offer-tag">OFERTA</div>` : '';
-
-                // Add unique ID for button area: action-area-{id}
-                // Note: The ID might be duplicated if item is in both Included and Extras list.
-                // We will handle this in update logic.
                 
                 let uniqueContext = isIncluded ? 'inc' : 'ext'; 
 
@@ -1623,8 +1641,6 @@
             },
 
             // --- SMART LAZY LOADING FOR MEDIA CHECKS ---
-            // Replaces checkGalleryIndicators with IntersectionObserver logic
-            // Only checks for media existence when the element is near viewport
             setupMediaObserver(prefix = '') {
                 const containers = document.querySelectorAll(`[id^='media-ind-${prefix}']`);
                 
@@ -1669,8 +1685,6 @@
                             const vidIcon = container.querySelector('.video-icon');
                             if(vidIcon) vidIcon.classList.add('visible');
                         };
-                        // Note: 404s will still happen in console if file missing, 
-                        // but spread out over scroll time instead of all at once.
                         video.src = testUrlVideo;
                     }
                 }
@@ -1695,11 +1709,7 @@
                 
                 // --- STOCK / LIMIT CHECK LOGIC ---
                 if (delta > 0) {
-                    // Determine Max Quantity
-                    // Use Stock as base
                     let maxAllowed = product.estoque;
-                    
-                    // If limit is defined and greater than 0, take the smaller of the two
                     if (product.limit > 0) {
                         maxAllowed = Math.min(product.estoque, product.limit);
                     }
@@ -1725,16 +1735,13 @@
                 if(this.cart[id] <= 0) delete this.cart[id];
 
                 // === SMART UI UPDATE START ===
-                // 1. Re-render the "Included" list completely (it's small and items move around)
                 this.renderBasketSummary();
 
-                // 2. Update the "Extras" list items IN PLACE (no re-render = no flicker)
                 const extrasBtn = document.getElementById(`btn-area-${id}-ext`);
                 if (extrasBtn) {
                     extrasBtn.innerHTML = this.getButtonHtml(id, this.cart[id] || 0, product.nome);
                 }
 
-                // 3. Update Totals
                 this.updateUIStatus();
                 // === SMART UI UPDATE END ===
             },
@@ -1772,7 +1779,11 @@
                     credit = originalPrice - calculatedTotal;
                 }
 
-                document.getElementById('ff-total-val').innerText = 'R$ ' + finalTotal.toFixed(2).replace('.', ',');
+                const totalStr = 'R$ ' + finalTotal.toFixed(2).replace('.', ',');
+                
+                // Update BOTH Mobile and Desktop Totals
+                if(document.getElementById('ff-total-val')) document.getElementById('ff-total-val').innerText = totalStr;
+                if(document.getElementById('header-total-val')) document.getElementById('header-total-val').innerText = totalStr;
                 
                 const toast = document.getElementById('credit-toast');
                 if (credit > 0) {
