@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SISTEMA V3 | Professional Dashboard</title>
     
+    <!-- Fonte Inter -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     </style>
 
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -215,7 +217,6 @@
         .badge-purple { background-color: #f5f3ff; color: #7c3aed; border-color: #ede9fe; }
         .badge-gray { background-color: var(--slate-100); color: var(--slate-500); border-color: var(--slate-200); }
         .badge-orange { background-color: #fff7ed; color: var(--warning); border-color: #ffedd5; }
-        .badge-red { background-color: #fef2f2; color: var(--danger); border-color: #fee2e2; }
         
         .font-mono { font-family: 'Courier New', Courier, monospace; letter-spacing: -0.02em; }
         .text-right { text-align: right; }
@@ -313,6 +314,7 @@
 
         <div class="content-area">
             
+            <!-- VIEW: CLIENTE -->
             <div id="view-cliente" class="view-section active">
                 <div class="split-view">
                     <div class="panel-left">
@@ -333,18 +335,21 @@
                                         <div class="form-group"><label>Telefone</label><input type="text" id="c-tel"></div>
                                         <div class="form-group"><label>Cidade</label><select id="c-cidade"><option>Cuiabá</option><option>Várzea Grande</option></select></div>
                                     </div>
+                                    <!-- CAMPO BAIRRO -->
                                     <div class="form-group"><label>Bairro</label><input type="text" id="c-bairro"></div>
                                     
                                     <div class="form-group"><label>Endereço</label><textarea id="c-endereco" rows="2"></textarea></div>
                                     <button class="btn btn-primary btn-block">Salvar Cliente</button>
                                 </form>
 
+                                <!-- HISTÓRICO DE PEDIDOS (NOVO) -->
                                 <div id="client-history-area" style="margin-top: 1.5rem; border-top: 1px solid var(--slate-200); padding-top: 1rem; display: none;">
                                     <div style="font-size: 0.75rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 5px;">
                                         <i class="fa-solid fa-clock-rotate-left"></i> Histórico de Pedidos
                                     </div>
                                     <div id="c-history-list" class="item-list" style="max-height: 200px; background: var(--slate-50);">
-                                        </div>
+                                        <!-- Lista preenchida via JS -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -370,6 +375,7 @@
                 </div>
             </div>
 
+            <!-- VIEW: CATÁLOGO -->
             <div id="view-catalogo" class="view-section">
                 <div class="split-view">
                     <div class="panel-left">
@@ -382,6 +388,7 @@
                                 <form onsubmit="App.handleSave('produto', event)" id="form-produto">
                                     <input type="hidden" id="p-id">
                                     
+                                    <!-- CATEGORIA & FORNECEDOR (ALTERADO) -->
                                     <div class="row-2">
                                         <div class="form-group"><label>Categoria</label><select id="p-categoria"></select></div>
                                         <div class="form-group"><label>Fornecedor</label><input type="text" id="p-fornecedor"></div>
@@ -389,49 +396,32 @@
 
                                     <div class="row-2">
                                         <div class="form-group"><label>Código</label><input type="text" id="p-codigo" readonly></div>
+                                        <!-- EAN EDITÁVEL -->
                                         <div class="form-group"><label>EAN (Unid)</label><input type="text" id="p-ean" class="font-mono"></div>
                                     </div>
                                     
+                                    <!-- NOME -->
                                     <div class="form-group"><label>Nome</label><input type="text" id="p-nome" required oninput="UI.updateImageSlug()"></div>
                                     
+                                    <!-- CARACTERÍSTICAS -->
                                     <div class="form-group"><label>Características</label><textarea id="p-caracteristicas" rows="2"></textarea></div>
                                     
+                                    <!-- CONTROLE DE ESTOQUE -->
                                     <div style="background: var(--slate-50); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--slate-200);">
                                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                            <label>Estoque (Lotes e Validade)</label>
+                                            <label>Estoque</label>
                                             <div style="display: flex; gap: 0.5rem; font-size: 0.7rem;">
                                                 <label style="display: flex; align-items: center; gap: 4px; font-weight: 500; cursor: pointer;"><input type="radio" name="p-stock-type" value="ambos" checked onchange="UI.toggleStockInputs()" style="width: auto;"> Ambos</label>
                                                 <label style="display: flex; align-items: center; gap: 4px; font-weight: 500; cursor: pointer;"><input type="radio" name="p-stock-type" value="fisico" onchange="UI.toggleStockInputs()" style="width: auto;"> Fís</label>
                                             </div>
                                         </div>
-                                        
-                                        <div id="grp-fisico">
-                                            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:5px; margin-bottom:3px; color:var(--slate-400); font-size:0.65rem; font-weight:700;">
-                                                <span>DATA VALIDADE</span><span>QTD</span>
-                                            </div>
-                                            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:5px; margin-bottom:5px;">
-                                                <input type="date" id="p-batch-date-1" style="font-size:0.75rem;">
-                                                <input type="number" id="p-batch-qty-1" placeholder="0" class="text-center" oninput="StockManager.calcTotalDisplay()">
-                                            </div>
-                                            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:5px; margin-bottom:5px;">
-                                                <input type="date" id="p-batch-date-2" style="font-size:0.75rem;">
-                                                <input type="number" id="p-batch-qty-2" placeholder="0" class="text-center" oninput="StockManager.calcTotalDisplay()">
-                                            </div>
-                                            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:5px; margin-bottom:5px;">
-                                                <input type="date" id="p-batch-date-3" style="font-size:0.75rem;">
-                                                <input type="number" id="p-batch-qty-3" placeholder="0" class="text-center" oninput="StockManager.calcTotalDisplay()">
-                                            </div>
-                                            <div style="text-align: right; font-size: 0.75rem; color: var(--slate-600); border-top: 1px dashed var(--slate-300); padding-top: 4px; margin-top: 4px;">
-                                                Total Físico: <b id="p-total-fisico-display">0</b>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group" id="grp-fiscal" style="margin-top: 10px;">
-                                            <label style="color: #a855f7; font-size: 0.6rem;">Fiscal (Sem controle de lote)</label>
-                                            <input type="number" id="p-estoqueFiscal" placeholder="0" class="text-center text-bold" style="color: #7e22ce; border-color: #d8b4fe; background: #f3e8ff;">
+                                        <div class="row-2" id="stock-inputs-container">
+                                            <div class="form-group" id="grp-fisico"><label style="color: var(--slate-400); font-size: 0.6rem;">Físico</label><input type="number" id="p-estoque" placeholder="0" class="text-center text-bold"></div>
+                                            <div class="form-group" id="grp-fiscal"><label style="color: #a855f7; font-size: 0.6rem;">Fiscal</label><input type="number" id="p-estoqueFiscal" placeholder="0" class="text-center text-bold" style="color: #7e22ce; border-color: #d8b4fe; background: #f3e8ff;"></div>
                                         </div>
                                     </div>
 
+                                    <!-- PREÇOS E MARGEM (NOVA LINHA DE 3 COLUNAS) -->
                                     <div class="row-3">
                                         <div class="form-group">
                                             <label>Custo (R$)</label>
@@ -447,6 +437,7 @@
                                         </div>
                                     </div>
 
+                                    <!-- NOVA ÁREA DE OFERTA -->
                                     <div class="row-2" style="background: #fff7ed; border: 1px solid #ffedd5; border-radius: 6px; padding: 10px; margin-top: 0.75rem;">
                                         <div class="form-group">
                                             <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
@@ -459,7 +450,9 @@
                                         </div>
                                     </div>
 
+                                    <!-- PESO E FOTO -->
                                     <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                                        <!-- NOVO: Linha com Peso e Limite -->
                                         <div class="row-2">
                                             <div class="form-group">
                                                 <label>Peso (Kg)</label>
@@ -471,31 +464,33 @@
                                             </div>
                                         </div>
 
+                                        <!-- NOVO CAMPO: NOME IMAGEM AUTO -->
                                         <div class="form-group">
-                                            <label>Nome do Arquivo (Automático + Prefixo)</label>
+                                            <label>Nome do Arquivo de Imagem (Auto)</label>
                                             <div style="display: flex; gap: 0.5rem;">
-                                                <input type="text" id="p-image-slug" oninput="UI.updatePreviewManual()" placeholder="Nome base (ex: arroz-5kg)" style="background-color: var(--white); color: var(--slate-700); font-family: monospace; border: 1px solid var(--primary);">
+                                                <input type="text" id="p-image-slug" readonly style="background-color: var(--slate-50); color: var(--slate-500); font-family: monospace;">
                                                 <button type="button" onclick="UI.copyImageSlug()" class="btn btn-ghost" title="Copiar Nome"><i class="fa-regular fa-copy"></i></button>
                                             </div>
-                                            <small style="font-size: 0.65rem; color: var(--slate-400);">Caminho: ../site/img/produtos/<b>[nome]</b>-cesta-basica-cuiaba-varzea-grande.webp</small>
+                                            <small style="font-size: 0.65rem; color: var(--slate-400);">site/img/produtos/<b>nome-gerado</b>-cesta-basica-cuiaba-varzea-grande.webp</small>
                                         </div>
 
                                         <div class="form-group">
                                             <label>Foto (Preview)</label>
-                                            <div style="width: 100%; aspect-ratio: 1/1; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--slate-50); position: relative; flex-direction: column;">
-                                                <img id="p-img-preview" src="" onerror="UI.onImgError()" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                            <div style="width: 100%; aspect-ratio: 1/1; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--slate-50); position: relative;">
+                                                <img id="p-img-preview" src="" onerror="this.style.display='none'; document.getElementById('p-img-icon').style.display='block';" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                                                 <i id="p-img-icon" class="fa-solid fa-box-open" style="color: var(--slate-300); font-size: 3rem;"></i>
-                                                <p id="debug-path" style="position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); color: white; font-size: 0.6rem; padding: 2px; text-align: center; font-family: monospace; word-break: break-all;"></p>
                                             </div>
                                         </div>
                                     </div>
 
+                                    <!-- ÁREA COMBO & PERSONALIZADO -->
                                     <div style="border-top: 1px solid var(--slate-200); padding-top: 10px; margin-top: 1rem;">
                                         <div class="form-group">
                                             <label style="display: flex; align-items: center; gap: 5px;">
                                                 <input type="checkbox" id="p-is-combo" onchange="UI.toggleComboArea(this.checked)" style="width: auto;"> É Combo / Kit?
                                             </label>
                                         </div>
+                                        <!-- NOVO: CHECKBOX PERSONALIZADO -->
                                         <div class="form-group" style="margin-top: 5px;">
                                             <label style="display: flex; align-items: center; gap: 5px; color: var(--warning);">
                                                 <input type="checkbox" id="p-personalized" style="width: auto;"> Produto Personalizado (Não Exportar)
@@ -525,6 +520,7 @@
                                         </div>
                                     </div>
 
+                                    <!-- ÁREA DE VARIAÇÕES -->
                                     <details style="margin-top: 10px; border: 1px solid var(--slate-200); border-radius: 6px;">
                                         <summary style="background: var(--slate-50);">VARIAÇÕES / APELIDOS</summary>
                                         <div class="details-content">
@@ -595,10 +591,10 @@
                                     <thead>
                                         <tr>
                                             <th style="width: 40%;">Produto</th>
-                                            <th class="text-center" style="width: 20%;">Físico (Lotes)</th>
+                                            <th class="text-center" style="width: 10%;">Físico</th>
                                             <th class="text-center" style="width: 10%;">Fiscal</th>
-                                            <th style="width: 15%;">Preço</th>
-                                            <th class="text-right" style="width: 15%;">Ações</th>
+                                            <th style="width: 20%;">Preço</th>
+                                            <th class="text-right" style="width: 20%;">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody id="table-produto"></tbody>
@@ -609,9 +605,11 @@
                 </div>
             </div>
 
+            <!-- VIEW: LOGÍSTICA -->
             <div id="view-logistica" class="view-section">
                 <div class="split-view">
                     <div class="panel-left">
+                        <!-- Import Card -->
                         <div class="card">
                             <div class="card-header"><span style="color: var(--primary);">Importação JSON</span></div>
                             <div class="card-body">
@@ -624,6 +622,7 @@
                             </div>
                         </div>
                         
+                        <!-- Manual Card -->
                         <div class="card" style="flex: 1;">
                             <div class="card-header"><span style="color: var(--warning);">Movimento Manual</span></div>
                             <div class="card-body">
@@ -657,6 +656,7 @@
                 </div>
             </div>
 
+            <!-- VIEW: VENDA -->
             <div id="view-venda" class="view-section">
                 <div class="split-view">
                     <div class="panel-left">
@@ -667,6 +667,7 @@
                                     <input type="hidden" id="v-id">
                                     <div class="form-group"><label>Cliente</label><select id="v-cliente" required></select></div>
                                     
+                                    <!-- Área de Inserção de Itens -->
                                     <div style="background: var(--slate-50); padding: 0.75rem; border: 1px solid var(--slate-200); border-radius: 6px;">
                                         <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
                                             <div style="flex: 1;" class="form-group">
@@ -689,6 +690,7 @@
                                         </div>
                                     </div>
 
+                                    <!-- Lista de Itens do Carrinho -->
                                     <div id="v-cart-list" class="item-list" style="flex: 1; min-height: 150px;">
                                         <div style="text-align: center; color: var(--slate-400); padding: 1rem; font-size: 0.8rem;">Carrinho vazio</div>
                                     </div>
@@ -739,6 +741,7 @@
                 </div>
             </div>
 
+            <!-- VIEW: EXPEDIÇÃO -->
             <div id="view-expedicao" class="view-section">
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); height: 100%; gap: 1px; background: var(--slate-300); border: 1px solid var(--slate-300); border-radius: 8px; overflow: hidden;">
                     <div style="background: var(--slate-50); display: flex; flex-direction: column;">
@@ -771,6 +774,7 @@
         </div>
     </main>
 
+    <!-- MODAL CONFIRMAÇÃO VENDA -->
     <dialog id="sale-confirm-modal" style="width: 400px;">
         <div style="padding: 1.5rem;">
             <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--slate-800); margin-bottom: 1rem;">Baixar de qual estoque?</h3>
@@ -791,6 +795,7 @@
         </div>
     </dialog>
 
+    <!-- MODAL IMPORTAÇÃO -->
     <dialog id="import-modal">
         <div class="card-header" style="background: var(--slate-800); color: white; border-bottom: none;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -812,6 +817,7 @@
                 </div>
             </div>
             
+            <!-- Botão Global de Vínculo -->
             <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
                 <button onclick="ImportEngine.openBatchLinkModal()" class="btn btn-warning" id="btn-batch-link" disabled style="opacity: 0.5; font-size: 0.75rem;">
                     <i class="fa-solid fa-link"></i> Vincular Selecionados
@@ -840,6 +846,7 @@
         </div>
     </dialog>
     
+    <!-- MODAL SELEÇÃO DE PRODUTO PARA VÍNCULO -->
     <dialog id="product-select-modal" style="width: 500px;">
         <div style="padding: 1.5rem;">
              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -851,10 +858,12 @@
                 <input type="text" id="product-link-search" oninput="ImportEngine.searchLinkProduct(this.value)" placeholder="Buscar produto no sistema..." style="width: 100%;">
             </div>
             <div id="product-link-list" style="border: 1px solid var(--slate-200); border-radius: 6px; max-height: 300px; overflow-y: auto;">
-                </div>
+                <!-- List will be populated here -->
+            </div>
         </div>
     </dialog>
 
+    <!-- MODAL CATEGORIAS -->
     <dialog id="cat-modal" style="width: 400px;">
         <div style="padding: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -905,58 +914,6 @@
                     if(num > max) max = num;
                 });
                 return `${prefix}${String(max + 1).padStart(3, '0')}`;
-            }
-        };
-
-        // --- STOCK MANAGER (BATCHES / VALIDADE) ---
-        const StockManager = {
-            // Calcula o total para exibir no formulário
-            calcTotalDisplay: () => {
-                let total = 0;
-                for(let i=1; i<=3; i++) {
-                    const qty = Number(document.getElementById(`p-batch-qty-${i}`).value) || 0;
-                    total += qty;
-                }
-                document.getElementById('p-total-fisico-display').innerText = total;
-            },
-            
-            // Função para descontar estoque com lógica FEFO (First Expired First Out)
-            deduct: (prod, qtyToDeduct) => {
-                if (!prod.batches || prod.batches.length === 0) {
-                    // Fallback para estoque simples se não houver lotes
-                    prod.estoque = (prod.estoque || 0) - qtyToDeduct;
-                    return;
-                }
-
-                // Ordenar lotes por data (mais antigos/vencidos primeiro)
-                // Lotes sem data ("") vão para o final
-                prod.batches.sort((a, b) => {
-                    if (!a.date) return 1;
-                    if (!b.date) return -1;
-                    return new Date(a.date) - new Date(b.date);
-                });
-
-                let remaining = qtyToDeduct;
-
-                for (let i = 0; i < prod.batches.length; i++) {
-                    if (remaining <= 0) break;
-                    
-                    let batch = prod.batches[i];
-                    
-                    if (batch.qty >= remaining) {
-                        batch.qty -= remaining;
-                        remaining = 0;
-                    } else {
-                        remaining -= batch.qty;
-                        batch.qty = 0;
-                    }
-                }
-
-                // Remove lotes vazios
-                prod.batches = prod.batches.filter(b => b.qty > 0);
-                
-                // Recalcula total
-                prod.estoque = prod.batches.reduce((acc, b) => acc + b.qty, 0);
             }
         };
 
@@ -1033,6 +990,8 @@
                 const data = DB.load().produto
                     .filter(p => !p.personalized && p.estoque > 0) 
                     .map(p => {
+                        // FORCE REGENERATE SLUG from current Name to fix old data
+                        // This strictly ignores any saved 'imageName' property
                         let imgName = p.codigo.toLowerCase();
                         if (p.nome) {
                             imgName = p.nome.toString().toLowerCase()
@@ -1049,8 +1008,8 @@
                             ...p,
                             imageName: undefined, // Explicitly remove manual name field from export
                             caracteristicas: p.caracteristicas || '', 
-                            // FORÇA O SUFIXO PADRÃO
-                            imagem: `../site/img/produtos/${imgName}-cesta-basica-cuiaba-varzea-grande.webp`, 
+                            // MODIFICADO: Sufixo padrão adicionado e forçado
+                            imagem: `site/img/produtos/${imgName}-cesta-basica-cuiaba-varzea-grande.webp`, 
                             Limit: p.limit || 0,
                             Oferta: p.isOffer ? 'Sim' : 'Não',
                             Valor_Oferta: p.isOffer ? Number(p.offerPrice || 0) : 0
@@ -1139,7 +1098,7 @@
             }
         };
 
-        // --- IMPORT ENGINE ---
+        // --- IMPORT ENGINE (MODIFIED FOR MULTIPLE EAN/NAMES) ---
         const ImportEngine = {
             stagedData: [],
             processFile: () => {
@@ -1328,6 +1287,7 @@
                     if(!selectedIds.has(d._id)) return;
 
                     let prod = d.match ? db.produto.find(p => p.id === d.match.id) : null;
+                    
                     if (!prod && d.allEans.length > 0) {
                         prod = db.produto.find(p => {
                             const pEans = [p.ean, ...(p.variacoesEan || [])].filter(Boolean);
@@ -1342,24 +1302,16 @@
                     }
 
                     const jsonItem = d.json; 
+
                     if(prod) {
-                        if(dest !== 'fiscal') {
-                            if (!prod.batches) prod.batches = [];
-                            let defaultBatch = prod.batches.find(b => !b.date);
-                            if(defaultBatch) {
-                                defaultBatch.qty += d.qty;
-                            } else {
-                                prod.batches.push({ date: '', qty: d.qty });
-                            }
-                            prod.estoque = prod.batches.reduce((acc, b) => acc + b.qty, 0);
-                        }
-                        
+                        if(dest !== 'fiscal') prod.estoque += d.qty;
                         if(dest !== 'fisico') prod.estoqueFiscal = (prod.estoqueFiscal||0) + d.qty;
                         if(d.cost > 0) prod.custo = d.cost;
                         
                         const cleanNewEans = d.allEans.map(e => e.trim()).filter(Boolean);
                         const existingEans = [prod.ean, ...(prod.variacoesEan || [])].filter(Boolean);
                         const newEansList = [...new Set([...existingEans, ...cleanNewEans])];
+                        
                         if(newEansList.length > 0) {
                             if(!prod.ean) prod.ean = newEansList[0];
                             prod.variacoesEan = newEansList;
@@ -1368,13 +1320,17 @@
                         const cleanNewNames = d.allNames.map(n => n.trim()).filter(Boolean);
                         const existingNames = [prod.nome, ...(prod.variacoesNome || [])].filter(Boolean);
                         const newNamesList = [...new Set([...existingNames, ...cleanNewNames])];
-                        if(newNamesList.length > 0) prod.variacoesNome = newNamesList;
+                        
+                        if(newNamesList.length > 0) {
+                            prod.variacoesNome = newNamesList;
+                        }
 
                         if(jsonItem.NCM) prod.ncm = jsonItem.NCM;
                         if(jsonItem.CEST) prod.cest = jsonItem.CEST;
                         if(jsonItem.CFOP_SAIDA) prod.cfop = jsonItem.CFOP_SAIDA;
                         if(jsonItem.CSOSN_SAIDA) prod.csosn = jsonItem.CSOSN_SAIDA;
                         if(jsonItem.Unidade_Venda) prod.unidade = jsonItem.Unidade_Venda;
+                        
                         prod.jsonData = jsonItem; 
                         prod.nota = jsonItem.Numero_Nota;
 
@@ -1391,7 +1347,6 @@
                             variacoesEan: cleanEans, 
                             custo: d.cost,
                             valor: 0,
-                            batches: dest !== 'fiscal' ? [{ date: '', qty: d.qty }] : [],
                             estoque: dest !== 'fiscal' ? d.qty : 0,
                             estoqueFiscal: dest !== 'fisico' ? d.qty : 0,
                             tipo: 'normal',
@@ -1421,7 +1376,7 @@
                 });
 
                 DB.saveAll(db);
-                alert(`${count} itens processados. Verifique as validades no cadastro.`);
+                alert(`${count} itens processados e variações salvas.`);
                 document.getElementById('import-modal').close();
                 document.getElementById('import-filter').value = '';
                 Views.catalogo.render();
@@ -1431,6 +1386,21 @@
         // --- COMBO APP ---
         const ComboApp = {
             comboItems: [],
+            // New function to update cost based on component items
+            updateCost: () => {
+                const db = DB.load();
+                let totalCost = 0;
+                ComboApp.comboItems.forEach(item => {
+                    const prod = db.produto.find(p => p.id === item.id);
+                    if (prod && prod.custo) {
+                        totalCost += (Number(prod.custo) * item.qty);
+                    }
+                });
+                
+                // Update UI cost field
+                document.getElementById('p-custo').value = totalCost.toFixed(4); // Using 4 decimals for precision
+                UI.calcMargin(); // Update margin calculation
+            },
             processBulk: () => {
                 const text = document.getElementById('p-combo-bulk').value;
                 if(!text) return;
@@ -1465,6 +1435,7 @@
                     }
                 });
                 ComboApp.renderList();
+                ComboApp.updateCost(); // Update cost after bulk add
                 document.getElementById('p-combo-bulk').value = '';
             },
             addFromSelector: () => {
@@ -1478,13 +1449,15 @@
                 if (prod) {
                     ComboApp.comboItems.push({ id: prod.id, codigo: prod.codigo, nome: prod.nome, qty: qty });
                     ComboApp.renderList();
+                    ComboApp.updateCost(); // Update cost after single add
                 }
             },
+            // MODIFICADO: Filtra estoque > 0 e aplica busca textual
             populateSelect: (filterText = '') => {
                 const db = DB.load();
                 const select = document.getElementById('p-combo-select');
                 let items = db.produto
-                    .filter(p => p.estoque > 0)
+                    .filter(p => p.estoque > 0) // Filtro: Estoque > 0
                     .sort((a,b) => a.nome.localeCompare(b.nome));
 
                 if(filterText) {
@@ -1510,6 +1483,7 @@
             remove: (idx) => {
                 ComboApp.comboItems.splice(idx, 1);
                 ComboApp.renderList();
+                ComboApp.updateCost(); // Update cost after remove
             }
         };
 
@@ -1609,22 +1583,17 @@
                 Cart.items.forEach(cartItem => {
                     const prod = db.produto.find(p => p.id === cartItem.id);
                     if(prod) {
-                        if(stockType === 'fisico') {
-                             StockManager.deduct(prod, cartItem.qty);
-                        } else {
-                             prod.estoqueFiscal = (prod.estoqueFiscal||0) - cartItem.qty;
-                        }
-
+                        const deduct = (p, q) => {
+                            if(stockType === 'fisico') p.estoque -= q;
+                            else if(stockType === 'fiscal') p.estoqueFiscal = (p.estoqueFiscal||0) - q;
+                        };
+                        deduct(prod, cartItem.qty);
                         if(prod.items && prod.items.length > 0) {
                             prod.items.forEach(childItem => {
                                 const childProd = db.produto.find(cp => cp.id === childItem.id);
                                 if(childProd) {
                                     const totalChildQty = childItem.qty * cartItem.qty;
-                                    if(stockType === 'fisico') {
-                                         StockManager.deduct(childProd, totalChildQty);
-                                    } else {
-                                         childProd.estoqueFiscal = (childProd.estoqueFiscal||0) - totalChildQty;
-                                    }
+                                    deduct(childProd, totalChildQty);
                                 }
                             });
                         }
@@ -1643,7 +1612,6 @@
             }
         };
 
-        // --- VIEWS ---
         const Views = {
             cliente: {
                 render: (data = null) => {
@@ -1675,26 +1643,12 @@
                         
                         const hasVar = (p.variacoesEan && p.variacoesEan.length > 1) || (p.variacoesNome && p.variacoesNome.length > 1);
                         const varBadge = hasVar ? '<i class="fa-solid fa-layer-group" title="Possui variações cadastradas" style="color:var(--slate-400); font-size:0.7rem; margin-left:4px;"></i>' : '';
-                        const personBadge = p.personalized ? '<i class="fa-solid fa-star" title="Personalizado" style="color:var(--warning); font-size:0.7rem; margin-left:4px;"></i>' : '';
-                        const offerBadge = p.isOffer ? '<span class="badge badge-orange">OFERTA</span>' : '';
-
-                        let batchDisplay = `<div style="font-weight:700; ${estStyle}">${p.estoque} <span style="font-size:0.6rem; color:var(--slate-400);">total</span></div>`;
                         
-                        if(p.batches && p.batches.length > 0) {
-                            const sorted = [...p.batches].sort((a,b) => {
-                                if(!a.date) return 1; if(!b.date) return -1;
-                                return new Date(a.date) - new Date(b.date);
-                            });
-                            
-                            batchDisplay += `<div style="margin-top:2px;">`;
-                            sorted.forEach(b => {
-                                let d = b.date ? new Date(b.date).toLocaleDateString() : 'S/ Val';
-                                let isExpired = b.date && new Date(b.date) < new Date();
-                                let color = isExpired ? 'color:var(--danger);' : 'color:var(--slate-500);';
-                                batchDisplay += `<div style="font-size:0.65rem; ${color}"><i class="fa-regular fa-calendar" style="margin-right:2px;"></i> ${d}: <b>${b.qty}</b></div>`;
-                            });
-                            batchDisplay += `</div>`;
-                        }
+                        // Icone personalizado
+                        const personBadge = p.personalized ? '<i class="fa-solid fa-star" title="Personalizado" style="color:var(--warning); font-size:0.7rem; margin-left:4px;"></i>' : '';
+                        
+                        // Icone oferta
+                        const offerBadge = p.isOffer ? '<span class="badge badge-orange">OFERTA</span>' : '';
 
                         return `
                         <tr>
@@ -1702,7 +1656,7 @@
                                 <div style="font-weight: 700; color: var(--slate-800);">${p.codigo} - ${p.nome} ${isCombo} ${offerBadge} ${varBadge} ${personBadge}</div>
                                 <div style="font-size: 0.7rem; color: var(--slate-400); font-family: monospace; margin-top: 2px;">${p.ean || '<span style="font-style: italic; color: var(--slate-300);">Sem EAN</span>'}</div>
                             </td>
-                            <td style="text-align: center; vertical-align: top;">${batchDisplay}</td>
+                            <td style="text-align: center; font-weight: 700; ${estStyle}">${p.estoque}</td>
                             <td style="text-align: center;"><span class="badge badge-purple">${p.estoqueFiscal||0}</span></td>
                             <td>
                                 <div style="font-weight: 700; color: var(--primary);">R$ ${Number(p.valor).toFixed(2)}</div>
@@ -1715,17 +1669,23 @@
                         </tr>`;
                     }).join('');
                 },
+                // MODIFICADO: Filtro unificado (Texto + Categoria + Estoque)
                 filter: () => {
                     const text = document.getElementById('catalogo-search').value.toLowerCase();
                     const cat = document.getElementById('filter-cat').value;
                     const stock = document.getElementById('filter-stock').value;
 
                     const list = DB.load().produto.filter(p => {
+                        // Filtro Texto
                         const pNames = [p.nome, ...(p.variacoesNome||[])].join(' ').toLowerCase();
                         const pEans = [p.ean, ...(p.variacoesEan||[])].join(' ');
                         const matchText = pNames.includes(text) || p.codigo.toLowerCase().includes(text) || pEans.includes(text);
                         if(!matchText) return false;
+
+                        // Filtro Categoria
                         if(cat && p.categoria !== cat) return false;
+
+                        // Filtro Estoque
                         if(stock) {
                             const q = p.estoque;
                             if(stock === '<=0' && q > 0) return false;
@@ -1734,6 +1694,7 @@
                             if(stock === '51-100' && (q < 51 || q > 100)) return false;
                             if(stock === '>100' && q <= 100) return false;
                         }
+
                         return true;
                     });
                     Views.catalogo.render(list);
@@ -1761,6 +1722,7 @@
             venda: {
                 render: () => {
                     const db = DB.load();
+                    // Ordena por data decrescente (mais recente primeiro)
                     const list = db.venda.sort((a, b) => b.date - a.date);
                     
                     document.getElementById('table-venda').innerHTML = list.map(v => {
@@ -1784,9 +1746,10 @@
                 render: () => {
                     const db = DB.load();
                     ['CX','VG','CBA','CPA'].forEach(r => {
-                        const pedidos = db.venda.filter(v => v.rota === r).slice(-8); 
+                        const pedidos = db.venda.filter(v => v.rota === r).slice(-8); // Show last 8
                         document.getElementById(`col-${r}`).innerHTML = pedidos.map(p => {
                             const cli = db.cliente.find(c => c.id === p.cliId);
+                            // Itens sum
                             const itemsText = p.items.map(i => `${i.qty}x ${i.nome.substring(0,10)}..`).join('<br>');
                             return `
                             <div style="background: white; padding: 0.75rem; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.75rem;">
@@ -1812,7 +1775,10 @@
                 let data = {};
 
                 if (type === 'produto') {
+                    // Manual object construction for Products to keep JSON clean
+                    // Core Data
                     data.id = document.getElementById('p-id').value;
+                    // Generate new code if missing (new product)
                     if (!data.id) {
                         data.id = Date.now().toString() + Math.random().toString().slice(2,5);
                         data.codigo = DB.nextCode('P');
@@ -1823,67 +1789,54 @@
                     data.nome = document.getElementById('p-nome').value;
                     data.ean = document.getElementById('p-ean').value;
                     data.categoria = document.getElementById('p-categoria').value;
-                    data.fornecedor = document.getElementById('p-fornecedor').value; 
+                    data.fornecedor = document.getElementById('p-fornecedor').value; // CAMPO FORNECEDOR ADICIONADO
                     data.caracteristicas = document.getElementById('p-caracteristicas').value;
                     
+                    // Numeric Data
                     data.custo = Number(document.getElementById('p-custo').value) || 0;
                     data.valor = Number(document.getElementById('p-valor').value) || 0;
-                    
-                    data.batches = [];
-                    for(let i=1; i<=3; i++) {
-                        const d = document.getElementById(`p-batch-date-${i}`).value;
-                        const q = Number(document.getElementById(`p-batch-qty-${i}`).value);
-                        if(q > 0) {
-                            data.batches.push({ date: d, qty: q });
-                        }
-                    }
-                    data.estoque = data.batches.reduce((acc, b) => acc + b.qty, 0);
-
+                    data.estoque = Number(document.getElementById('p-estoque').value) || 0;
                     data.estoqueFiscal = Number(document.getElementById('p-estoqueFiscal').value) || 0;
                     data.peso = Number(document.getElementById('p-peso').value) || 0;
+                    // Campo Limite adicionado
                     data.limit = Number(document.getElementById('p-limit').value) || 0;
 
-                    // --- NOVA LÓGICA DE IMAGEM OBRIGATÓRIA ---
-                    // Se o usuário digitou algo no campo manual, usa como PREFIXO
-                    let prefixo = document.getElementById('p-image-slug').value.trim();
+                    // Images: Logic updated to use custom name or fallback to code
+                    const imgNameInput = document.getElementById('p-image-slug').value.trim();
+                    const imgName = imgNameInput || data.codigo.toLowerCase();
                     
-                    if(!prefixo) {
-                        // Se vazio, gera do nome
-                        prefixo = data.nome.toLowerCase()
-                            .normalize('NFD').replace(/[\u0300-\u036f]/g, "") 
-                            .replace(/\s+/g, '-')           
-                            .replace(/[^\w\-]+/g, '')       
-                            .replace(/\-\-+/g, '-')         
-                            .replace(/^-+/, '')             
-                            .replace(/-+$/, '');   
-                    }
+                    data.imageName = imgNameInput; // Store the raw input (slug)
+                    // MODIFICADO: Inclui sufixo padrão no caminho interno
+                    data.imagem = `site/img/produtos/${imgName}-cesta-basica-cuiaba-varzea-grande.webp`; 
 
-                    // SALVA O PREFIXO PARA EDIÇÃO FUTURA
-                    data.imageName = prefixo;
-                    // FORÇA O SUFIXO
-                    data.imagem = `../site/img/produtos/${prefixo}-cesta-basica-cuiaba-varzea-grande.webp`;
-
+                    // Combos
                     if(document.getElementById('p-is-combo').checked) {
                         data.items = ComboApp.comboItems;
                     } else {
                         data.items = [];
                     }
 
+                    // Personalizado (NEW)
                     data.personalized = document.getElementById('p-personalized').checked;
+                    
+                    // OFERTA (NEW)
                     data.isOffer = document.getElementById('p-is-offer').checked;
                     data.offerPrice = data.isOffer ? (Number(document.getElementById('p-offer-price').value) || 0) : 0;
 
+                    // Variations
                     const vNomes = document.getElementById('p-variacoesNome').value;
                     data.variacoesNome = vNomes ? vNomes.split('|').map(s => s.trim()).filter(Boolean) : [];
                     const vEans = document.getElementById('p-variacoesEan').value;
                     data.variacoesEan = vEans ? vEans.split('|').map(s => s.trim()).filter(Boolean) : [];
 
+                    // Fiscal Data (Hidden/Details)
                     data.ncm = document.getElementById('p-ncm').value;
                     data.cest = document.getElementById('p-cest').value;
                     data.cfop = document.getElementById('p-cfop').value;
                     data.csosn = document.getElementById('p-csosn').value;
-                    data.obs = document.getElementById('p-obs-produto').value;
+                    data.obs = document.getElementById('p-obs-produto').value; // Using correct ID from HTML but saving as 'obs'
                     
+                    // Hidden Legacy/Import Fields
                     data.subcategoria = document.getElementById('p-subcategoria').value;
                     data.nota = document.getElementById('p-nota').value;
                     data.refId = document.getElementById('p-refId').value;
@@ -1891,6 +1844,7 @@
                     data.unidade = document.getElementById('p-unidade').value;
 
                 } else {
+                    // Standard Loop for other types (Cliente, Entrada)
                     Array.from(form.elements).forEach(el => {
                         if(el.id) {
                             const key = el.id.split('-')[1];
@@ -1903,21 +1857,24 @@
                 form.reset();
                 if(type === 'produto') {
                     document.getElementById('p-id').value = '';
-                    ComboApp.comboItems = []; 
+                    ComboApp.comboItems = []; // reset combo
                     ComboApp.renderList();
+                    // Reset Image Preview
                     document.getElementById('p-img-preview').src = '';
                     document.getElementById('p-img-preview').style.display = 'none';
                     document.getElementById('p-img-icon').style.display = 'block';
-                    document.getElementById('debug-path').innerText = ''; 
+                    // Reset Margin
                     document.getElementById('p-margem').value = '';
+                    // Reset Offer
                     document.getElementById('p-is-offer').checked = false;
                     UI.toggleOfferInput();
+                    // Reset Image Name
                     document.getElementById('p-image-slug').value = '';
-                    document.getElementById('p-total-fisico-display').innerText = '0';
+                    
                     Views.catalogo.render();
                 } else if(type === 'cliente') {
                     document.getElementById('c-id').value = '';
-                    document.getElementById('client-history-area').style.display = 'none';
+                    document.getElementById('client-history-area').style.display = 'none'; // Hide history on reset
                     Views.cliente.render();
                 }
             },
@@ -1925,12 +1882,15 @@
                 const item = DB.load()[type].find(x => x.id === id);
                 if(!item) return;
                 
+                // Populate fields
                 for(let k in item) {
                     const el = document.getElementById(`${type.charAt(0)}-${k}`);
+                    // Handle special case for obs
                     if (k === 'obs' && type === 'produto') {
                          document.getElementById('p-obs-produto').value = item[k];
                          continue;
                     }
+
                     if(el) {
                         if(el.type === 'checkbox') el.checked = item[k];
                         else el.value = item[k];
@@ -1944,53 +1904,54 @@
                         UI.toggleComboArea(true);
                         ComboApp.comboItems = item.items;
                         ComboApp.renderList();
+                        ComboApp.updateCost(); // <--- Update cost on edit based on items
                     } else {
                         document.getElementById('p-is-combo').checked = false;
                         UI.toggleComboArea(false);
                     }
 
-                    for(let i=1; i<=3; i++) {
-                        document.getElementById(`p-batch-date-${i}`).value = '';
-                        document.getElementById(`p-batch-qty-${i}`).value = '';
-                    }
-                    if(item.batches && item.batches.length > 0) {
-                        const sorted = item.batches.sort((a,b) => {
-                             if(!a.date) return 1; if(!b.date) return -1;
-                             return new Date(a.date) - new Date(b.date);
-                        });
-                        for(let i=0; i<Math.min(sorted.length, 3); i++) {
-                            document.getElementById(`p-batch-date-${i+1}`).value = sorted[i].date;
-                            document.getElementById(`p-batch-qty-${i+1}`).value = sorted[i].qty;
-                        }
-                    } else if(item.estoque > 0) {
-                        document.getElementById(`p-batch-qty-1`).value = item.estoque;
-                    }
-                    StockManager.calcTotalDisplay();
-
+                    // Populate personalized check
                     document.getElementById('p-personalized').checked = !!item.personalized;
+                    
+                    // Populate Offer
                     document.getElementById('p-is-offer').checked = !!item.isOffer;
                     document.getElementById('p-offer-price').value = item.offerPrice || '';
                     UI.toggleOfferInput();
 
-                    // --- PREVIEW LOGIC ---
-                    if(item.imageName) {
-                        // Se tem prefixo salvo, carrega ele
-                        document.getElementById('p-image-slug').value = item.imageName;
-                        UI.updatePreviewManual();
-                    } else {
-                        // Se não tem, gera do nome
-                        document.getElementById('p-image-slug').value = '';
-                        UI.updateImageSlug();
-                    }
+                    // Update Slug from Name
+                    UI.updateImageSlug();
 
                     document.getElementById('p-variacoesNome').value = (item.variacoesNome || []).join(' | ');
                     document.getElementById('p-variacoesEan').value = (item.variacoesEan || []).join(' | ');
+                    
+                    // Calc Margin on Edit
                     UI.calcMargin();
+
+                    // Load Image Preview 
+                    // Priority: Saved full path > Generated from Code
+                    const imgUrl = item.imagem || `site/img/produtos/${item.codigo.toLowerCase()}.webp`;
+                    const imgEl = document.getElementById('p-img-preview');
+                    const iconEl = document.getElementById('p-img-icon');
+
+                    imgEl.style.display = 'none';
+                    iconEl.style.display = 'block';
+
+                    imgEl.src = imgUrl;
+                    imgEl.onload = () => {
+                        imgEl.style.display = 'block';
+                        iconEl.style.display = 'none';
+                    };
+                    imgEl.onerror = () => {
+                        imgEl.style.display = 'none';
+                        iconEl.style.display = 'block';
+                    };
                 } else if (type === 'cliente') {
+                    // LOAD HISTORY
                     const db = DB.load();
                     const sales = db.venda.filter(v => v.cliId === item.id).sort((a,b) => b.date - a.date);
                     const historyArea = document.getElementById('client-history-area');
                     const historyList = document.getElementById('c-history-list');
+                    
                     if(sales.length > 0) {
                         historyArea.style.display = 'block';
                         historyList.innerHTML = sales.map(s => `
@@ -2021,7 +1982,12 @@
                 document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                 document.getElementById(`view-${view}`).classList.add('active');
-                if(btn) btn.classList.add('active'); 
+                if(btn) btn.classList.add('active'); // btn can be null if called programmatically
+                else {
+                    // Try to find the button
+                    // const navBtn = document.querySelector(`.nav-item[onclick*="'${view}'"]`);
+                    // if(navBtn) navBtn.classList.add('active');
+                }
 
                 document.getElementById('page-title').innerText = view === 'logistica' ? 'Logística & Estoque' : view.charAt(0).toUpperCase() + view.slice(1);
                 
@@ -2057,15 +2023,16 @@
                     ComboApp.renderList();
                     document.getElementById('p-is-combo').checked = false;
                     UI.toggleComboArea(false);
+                    // Reset Image
                     document.getElementById('p-img-preview').src = '';
                     document.getElementById('p-img-preview').style.display = 'none';
                     document.getElementById('p-img-icon').style.display = 'block';
-                    document.getElementById('debug-path').innerText = ''; 
                     document.getElementById('p-margem').value = '';
+                    // Reset Offer
                     document.getElementById('p-is-offer').checked = false;
                     UI.toggleOfferInput();
+                    // Reset Image Name
                     document.getElementById('p-image-slug').value = '';
-                    document.getElementById('p-total-fisico-display').innerText = '0';
                 }
                 if(t === 'cliente') {
                     document.getElementById('client-history-area').style.display = 'none';
@@ -2076,65 +2043,34 @@
                 document.getElementById('grp-fisico').style.display = type === 'fiscal' ? 'none' : 'block';
                 document.getElementById('grp-fiscal').style.display = type === 'fisico' ? 'none' : 'block';
             },
+            // FUNÇÃO PARA MOSTRAR/OCULTAR INPUT DE OFERTA
             toggleOfferInput: () => {
                 const isOffer = document.getElementById('p-is-offer').checked;
                 document.getElementById('offer-price-container').style.display = isOffer ? 'block' : 'none';
             },
+            // GERA SLUG DA IMAGEM E ATUALIZA CAMPO
             updateImageSlug: () => {
-                // SÓ EXECUTA SE O CAMPO MANUAL ESTIVER VAZIO
-                if(document.getElementById('p-image-slug').value) return;
-
                 const name = document.getElementById('p-nome').value;
                 const slug = name.toString().toLowerCase()
-                                .normalize('NFD').replace(/[\u0300-\u036f]/g, "") 
-                                .replace(/\s+/g, '-')           
-                                .replace(/[^\w\-]+/g, '')       
-                                .replace(/\-\-+/g, '-')         
-                                .replace(/^-+/, '')             
-                                .replace(/-+$/, '');            
+                                .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // remove acentos
+                                .replace(/\s+/g, '-')           // espaços para -
+                                .replace(/[^\w\-]+/g, '')       // remove especiais
+                                .replace(/\-\-+/g, '-')         // remove múltiplos -
+                                .replace(/^-+/, '')             // trim start -
+                                .replace(/-+$/, '');            // trim end -
                 
-                // AUTOMÁTICO = COM O SUFIXO OBRIGATÓRIO
-                const previewUrl = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
-                UI.updatePreviewCommon(previewUrl);
-            },
-            updatePreviewManual: () => {
-                const slug = document.getElementById('p-image-slug').value;
-                if(!slug) {
-                    UI.updateImageSlug(); // Se apagar manual, volta pro auto
-                    return;
-                }
-                // MANUAL = USA O QUE DIGITOU + SUFIXO OBRIGATÓRIO
-                const previewUrl = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
-                UI.updatePreviewCommon(previewUrl);
-            },
-            updatePreviewCommon: (url) => {
-                const imgEl = document.getElementById('p-img-preview');
-                const iconEl = document.getElementById('p-img-icon');
-                const debugEl = document.getElementById('debug-path');
+                document.getElementById('p-image-slug').value = slug;
                 
-                debugEl.innerText = `Tentando: ${url}`;
-                debugEl.style.background = "rgba(0,0,0,0.7)"; // Reset color
-
-                imgEl.src = url;
-                imgEl.onload = () => {
-                    imgEl.style.display = 'block';
-                    iconEl.style.display = 'none';
-                    debugEl.style.background = "rgba(16, 185, 129, 0.9)"; // Green if found
-                };
-                imgEl.onerror = () => {
-                   UI.onImgError();
-                };
+                // Update Preview immediately if wanted, but might be annoying if typing
+                // const imgUrl = `site/img/produtos/${slug}.webp`;
+                // ... logic to update preview ...
             },
-            onImgError: () => {
-                 document.getElementById('p-img-preview').style.display = 'none';
-                 document.getElementById('p-img-icon').style.display = 'block';
-                 const debugEl = document.getElementById('debug-path');
-                 debugEl.style.background = "rgba(239, 68, 68, 0.9)"; // Red if not found
-            },
+            // COPIAR SLUG PARA CLIPBOARD
             copyImageSlug: () => {
                 const copyText = document.getElementById("p-image-slug");
                 copyText.select();
-                copyText.setSelectionRange(0, 99999); 
+                copyText.setSelectionRange(0, 99999); // For mobile devices
+                // MODIFICADO: Copia apenas o nome, sem a extensão, conforme solicitado
                 navigator.clipboard.writeText(copyText.value).then(() => {
                     alert("Nome copiado: " + copyText.value);
                 });
@@ -2168,14 +2104,19 @@
                 document.getElementById('combo-area').style.display = checked ? 'block' : 'none';
                 if(checked) ComboApp.populateSelect();
             },
+            // MODIFICADO: Popula também o filtro da lista lateral
             populateCategories: () => {
                 const db = DB.load();
+                
+                // Popula select do formulário
                 const sel = document.getElementById('p-categoria');
                 if(sel) {
                     const current = sel.value;
                     sel.innerHTML = '<option value="">Sem Categoria</option>' + db.categorias.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
                     sel.value = current;
                 }
+                
+                // Popula filtro da lista
                 const filterSel = document.getElementById('filter-cat');
                 if(filterSel) {
                     const currentFilter = filterSel.value;
@@ -2183,9 +2124,13 @@
                     filterSel.value = currentFilter;
                 }
             },
+            // FUNÇÃO PARA IR PARA O PEDIDO AO CLICAR NO HISTÓRICO
             goToOrder: (orderCode) => {
+                // Switch to Venda View
                 const btnVenda = document.querySelector("button[onclick*='venda']");
                 UI.switchView('venda', btnVenda);
+                
+                // Set Filter
                 const searchInput = document.getElementById('v-search-input');
                 if(searchInput) {
                     searchInput.value = orderCode;
@@ -2195,21 +2140,60 @@
         };
 
         const CategoryApp = {
-            openModal: () => document.getElementById('cat-modal').showModal(),
+            openModal: () => {
+                document.getElementById('cat-modal').showModal();
+                CategoryApp.renderList(); // Garante que a lista esteja atualizada ao abrir
+            },
             addCategory: (e) => {
                 e.preventDefault();
                 const name = document.getElementById('new-cat-name').value;
                 if(name) {
                     const db = DB.load();
-                    db.categorias.push({id: Date.now(), nome: name, subs: []});
+                    // db.categorias.push({id: Date.now(), nome: name, subs: []});
+                    db.categorias.push({id: Date.now(), nome: name});
                     DB.saveAll(db);
                     CategoryApp.renderList();
                     document.getElementById('new-cat-name').value = '';
                 }
             },
+            deleteCategory: (id) => {
+                if(confirm('Excluir categoria?')) {
+                    const db = DB.load();
+                    db.categorias = db.categorias.filter(c => c.id != id);
+                    DB.saveAll(db);
+                    CategoryApp.renderList();
+                }
+            },
+            editCategory: (id) => {
+                const db = DB.load();
+                const cat = db.categorias.find(c => c.id == id);
+                if(cat) {
+                    const newName = prompt("Novo nome da categoria:", cat.nome);
+                    if(newName && newName.trim() !== "") {
+                        cat.nome = newName.trim();
+                        DB.saveAll(db);
+                        CategoryApp.renderList();
+                    }
+                }
+            },
             renderList: () => {
                 const list = document.getElementById('cat-list-container');
-                list.innerHTML = DB.load().categorias.map(c => `<div style="padding: 0.5rem; border: 1px solid var(--slate-200); border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: var(--slate-700); background: var(--slate-50); display: flex; justify-content: space-between;"><span>${c.nome}</span> <i class="fa-solid fa-folder" style="color: var(--slate-300);"></i></div>`).join('');
+                const categorias = DB.load().categorias;
+                
+                if (categorias.length === 0) {
+                    list.innerHTML = '<div style="text-align: center; color: var(--slate-400); font-size: 0.7rem; padding: 1rem;">Nenhuma categoria.</div>';
+                    return;
+                }
+
+                list.innerHTML = categorias.map(c => `
+                    <div style="padding: 0.5rem; border: 1px solid var(--slate-200); border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: var(--slate-700); background: var(--slate-50); display: flex; justify-content: space-between; align-items: center;">
+                        <span style="flex: 1;">${c.nome}</span>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button onclick="CategoryApp.editCategory(${c.id})" class="btn-ghost" style="color: var(--primary); padding: 2px;"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="CategoryApp.deleteCategory(${c.id})" class="btn-ghost" style="color: var(--danger); padding: 2px;"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
             }
         };
 
