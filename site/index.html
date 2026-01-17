@@ -4,11 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.6 - Mobile Search Input & Sticky Sidebar
+        VERSION: 9.7 - Accessibility & SEO Master Fix
         CHANGELOG:
-        - FEAT (Mobile): Campo de texto adicionado dentro do modal "Busca Rápida".
-        - UI (Desktop): Barra lateral com 'position: sticky' reforçado para acompanhar a rolagem.
-        - UI: Ajustes finos de espaçamento e z-index.
+        - A11Y: Correção de contraste em textos claros e rodapé.
+        - A11Y: Adição de aria-labels em botões de ícone (Scroll Top, Fechar, etc).
+        - A11Y: Hierarquia de títulos corrigida (H1 -> H2 oculto -> H3).
+        - SEO: Botões de ação convertidos de <a> para <button> para semântica correta.
+        - FIX: Classe .visually-hidden adicionada para elementos de estrutura.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -31,7 +33,8 @@
             --primary-dark: #b91c1c; 
             --secondary: #1e293b; 
             --text-main: #334155; 
-            --text-light: #64748b; 
+            /* A11Y: Darkened for better contrast against white */
+            --text-light: #475569; 
             --bg-body: #ffffff;
             --border-color: #e2e8f0;
             --header-height: 60px;
@@ -58,6 +61,12 @@
         img { display: block; max-width: 100%; height: auto; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
+        
+        /* A11Y: Visually Hidden for Screen Readers */
+        .visually-hidden {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+        }
 
         /* --- 2. HEADER --- */
         header { 
@@ -70,7 +79,8 @@
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
         
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.2rem; color: var(--secondary); text-decoration: none; }
-        .logo-circle { width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 800; font-size: 0.9rem; }
+        /* A11Y: Increased contrast for logo text */
+        .logo-circle { width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #b91c1c; font-weight: 800; font-size: 0.9rem; }
         
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
@@ -87,9 +97,11 @@
         }
         @media (min-width: 1024px) { .mobile-app-bar { display: none !important; } }
 
+        /* SEO: Converted from <a> to <button> for semantics */
         .app-bar-btn {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 4px; color: var(--text-light); text-decoration: none; font-size: 0.7rem; font-weight: 500; height: 100%;
+            gap: 4px; color: var(--text-light); text-decoration: none; font-size: 0.7rem; 
+            font-weight: 500; height: 100%; border: none; background: transparent; padding: 0;
         }
         .app-bar-btn svg { width: 24px; height: 24px; stroke-width: 2px; }
         .app-bar-btn.highlight { color: #b45309; } 
@@ -381,8 +393,8 @@
 <body>
     <header>
         <div class="container header-inner">
-            <a href="#" class="logo" onclick="location.reload()">
-                <div class="logo-circle">DA</div> <span>Dona Antônia</span>
+            <a href="#" class="logo" onclick="location.reload()" aria-label="Voltar para a página inicial">
+                <div class="logo-circle" aria-hidden="true">DA</div> <span>Dona Antônia</span>
             </a>
             <div class="location-pill">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -392,13 +404,13 @@
     </header>
 
     <nav class="mobile-app-bar">
-        <a onclick="App.openSheet('cat-sheet')" class="app-bar-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>Categorias</a>
-        <a onclick="App.openSheet('tags-sheet')" class="app-bar-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>Busca</a>
-        <a onclick="App.openSheet('offers-sheet')" class="app-bar-btn highlight"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg><strong>Ofertas</strong></a>
-        <a onclick="App.openSheet('faq-sheet')" class="app-bar-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Dúvidas</a>
+        <button onclick="App.openSheet('cat-sheet')" class="app-bar-btn" aria-label="Abrir Categorias"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>Categorias</button>
+        <button onclick="App.openSheet('tags-sheet')" class="app-bar-btn" aria-label="Abrir Busca"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>Busca</button>
+        <button onclick="App.openSheet('offers-sheet')" class="app-bar-btn highlight" aria-label="Ver Ofertas"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg><strong>Ofertas</strong></button>
+        <button onclick="App.openSheet('faq-sheet')" class="app-bar-btn" aria-label="Ver Dúvidas"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Dúvidas</button>
     </nav>
 
-    <button id="btn-scroll-top" class="btn-scroll-top" onclick="window.scrollTo(0,0)">
+    <button id="btn-scroll-top" class="btn-scroll-top" onclick="window.scrollTo(0,0)" aria-label="Voltar ao topo">
         <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
     </button>
 
@@ -413,16 +425,17 @@
             </div>
         </section>
         <section class="home-grid-container" id="baskets-anchor">
+            <h2 class="visually-hidden">Nossas Cestas</h2>
             <div id="home-list" class="baskets-grid"><div class="loader"></div></div>
         </section>
-        <footer style="text-align:center; padding: 40px 20px; color:#94a3b8; font-size:0.9rem;"><p>&copy; 2024 Dona Antônia Alimentos</p></footer>
+        <footer style="text-align:center; padding: 40px 20px; color: var(--text-light); font-size:0.9rem;"><p>&copy; 2024 Dona Antônia Alimentos</p></footer>
     </main>
 
     <!-- CUSTOMIZER -->
     <div id="customizer-view" class="hidden">
         <div class="cust-header-bar">
             <div class="container ch-container">
-                <button class="ch-back-btn" onclick="App.goHome()">❮</button>
+                <button class="ch-back-btn" onclick="App.goHome()" aria-label="Voltar">❮</button>
                 <div class="ch-info">
                     <h2 id="cust-title">Minha Cesta</h2>
                     <span id="changes-badge" class="limit-badge">Alterações: 0/0</span>
@@ -464,7 +477,7 @@
 
     <!-- GALLERY -->
     <div id="gallery" class="gallery-wrap">
-        <button class="gallery-close-chip" onclick="Gallery.close()">FECHAR</button>
+        <button class="gallery-close-chip" onclick="Gallery.close()" aria-label="Fechar Galeria">FECHAR</button>
         <div class="gallery-stage">
             <img id="gallery-img" class="gallery-img" src="">
             <video id="gallery-video" class="gallery-video hidden" controls></video>
@@ -474,7 +487,7 @@
 
     <!-- MODALS -->
     <dialog id="checkout-modal" class="modal-checkout">
-        <div class="co-header"><span>Resumo do Pedido</span><button onclick="document.getElementById('checkout-modal').close()">✕</button></div>
+        <div class="co-header"><span>Resumo do Pedido</span><button onclick="document.getElementById('checkout-modal').close()" aria-label="Fechar">✕</button></div>
         <div class="co-body">
             <ul id="checkout-items" class="co-list"></ul>
             <div class="co-total-row"><span>Total</span><span id="co-total" class="co-total-val">R$ 0,00</span></div>
@@ -492,17 +505,17 @@
     <!-- INFO SHEET (Features) -->
     <div id="info-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('info-sheet')">
         <div class="sheet-content">
-            <div class="sheet-header"><h3 class="sheet-title" id="info-sheet-title">Informações</h3><span class="sheet-close" onclick="App.closeSheet('info-sheet')">✕</span></div>
+            <div class="sheet-header"><h3 class="sheet-title" id="info-sheet-title">Informações</h3><span class="sheet-close" onclick="App.closeSheet('info-sheet')" aria-label="Fechar">✕</span></div>
             <div id="info-sheet-body" class="info-text-body"></div>
         </div>
     </div>
 
-    <div id="cat-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('cat-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title">Categorias</h3><span class="sheet-close" onclick="App.closeSheet('cat-sheet')">✕</span></div><div id="mob-cat-grid" class="mobile-cat-grid"></div></div></div>
+    <div id="cat-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('cat-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title">Categorias</h3><span class="sheet-close" onclick="App.closeSheet('cat-sheet')" aria-label="Fechar">✕</span></div><div id="mob-cat-grid" class="mobile-cat-grid"></div></div></div>
     
     <!-- TAGS SHEET (WITH SEARCH) -->
     <div id="tags-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('tags-sheet')">
         <div class="sheet-content">
-            <div class="sheet-header"><h3 class="sheet-title">Busca Rápida</h3><span class="sheet-close" onclick="App.closeSheet('tags-sheet')">✕</span></div>
+            <div class="sheet-header"><h3 class="sheet-title">Busca Rápida</h3><span class="sheet-close" onclick="App.closeSheet('tags-sheet')" aria-label="Fechar">✕</span></div>
             <!-- SEARCH INPUT MOBILE -->
             <div class="ch-search-box" style="margin-bottom: 20px;">
                 <input type="text" class="ch-input" placeholder="Digite o que procura..." onchange="App.search(this.value)">
@@ -512,11 +525,11 @@
         </div>
     </div>
 
-    <div id="offers-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('offers-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title" style="color:#b45309;">🔥 Super Ofertas</h3><span class="sheet-close" onclick="App.closeSheet('offers-sheet')">✕</span></div><div id="mob-offers-grid" class="grid-products" style="grid-template-columns: repeat(2, 1fr) !important;"></div></div></div>
+    <div id="offers-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('offers-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title" style="color:#b45309;">🔥 Super Ofertas</h3><span class="sheet-close" onclick="App.closeSheet('offers-sheet')" aria-label="Fechar">✕</span></div><div id="mob-offers-grid" class="grid-products" style="grid-template-columns: repeat(2, 1fr) !important;"></div></div></div>
     
     <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
         <div class="sheet-content">
-            <div class="sheet-header"><h3 class="sheet-title">Dúvidas Frequentes</h3><span class="sheet-close" onclick="App.closeSheet('faq-sheet')">✕</span></div>
+            <div class="sheet-header"><h3 class="sheet-title">Dúvidas Frequentes</h3><span class="sheet-close" onclick="App.closeSheet('faq-sheet')" aria-label="Fechar">✕</span></div>
             <div style="padding-bottom:20px;">
                 <details class="faq-box"><summary>Formas de Pagamento</summary><div class="faq-text">Aceitamos Dinheiro, Pix, Cartão de Débito, Crédito (até 3x sem juros) e Vales Alimentação/Refeição (Pluxee, Alelo, Flash, etc).</div></details>
                 <details class="faq-box"><summary>Eu pago só na entrega?</summary><div class="faq-text">Sim! Para sua total segurança, o pagamento é realizado somente no momento em que você recebe o pedido na sua casa.</div></details>
