@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.8 - Desktop Scroll Behavior Fixes
+        VERSION: 9.9 - Sticky Restoration & Desktop Layout Fix
         CHANGELOG:
-        - FIX (Desktop): Header principal agora rola com a página (position: relative).
-        - FIX (Desktop): Barra de resumo (Customizer) fixa no topo (top: 0) ao rolar.
-        - FIX (Desktop): Sidebar direita sempre visível e fixa (sticky) acompanhando a lista.
-        - UI: Ajustes de padding para compensar a mudança de posicionamento do header.
+        - FIX CRÍTICO: Removido 'overflow-x: hidden' global que quebrava o 'position: sticky'.
+        - UX (Desktop): Header principal rola e some (relative).
+        - UX (Desktop): Barra de resumo fixa no topo (sticky top:0) ao rolar.
+        - UX (Desktop): Sidebar direita fixa (sticky) logo abaixo da barra de resumo.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -45,12 +45,14 @@
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
-        html, body { width: 100%; overflow-x: hidden; position: relative; scroll-behavior: smooth; }
+        /* FIX: Removed overflow-x: hidden from html/body to restore sticky behavior */
+        html { scroll-behavior: smooth; }
 
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--bg-body); color: var(--text-main); line-height: 1.5; 
             padding-bottom: var(--app-bar-height); -webkit-font-smoothing: antialiased; 
+            width: 100%;
         }
 
         @media (min-width: 1024px) { body { padding-bottom: 0; } }
@@ -72,10 +74,10 @@
             display: flex; align-items: center; backdrop-filter: blur(8px); transition: transform 0.3s ease;
         }
         
-        /* DESKTOP HEADER SCROLL BEHAVIOR FIX */
+        /* DESKTOP: Header relative to scroll with page */
         @media (min-width: 1024px) {
-            header { position: relative; } /* Scrolls with page */
-            body.header-hidden header { transform: none; } /* Disable hide animation on desktop */
+            header { position: relative; } 
+            body.header-hidden header { transform: none; } 
         }
         
         body.header-hidden header { transform: translateY(-100%); }
@@ -134,7 +136,7 @@
 
         /* --- 5. HERO --- */
         #home-view { padding-top: var(--header-height); }
-        @media (min-width: 1024px) { #home-view { padding-top: 0; } } /* Reset desktop padding */
+        @media (min-width: 1024px) { #home-view { padding-top: 0; } }
         
         .hero { background: #ffffff; padding: 40px 0 60px; text-align: center; border-bottom: 1px solid #f1f5f9; position: relative; overflow: hidden; }
         .hero-title { font-size: 2rem; font-weight: 800; color: var(--secondary); margin-bottom: 16px; line-height: 1.1; letter-spacing: -0.5px; }
@@ -174,8 +176,6 @@
 
         /* --- 7. CUSTOMIZER --- */
         #customizer-view { padding-top: var(--header-height); background: #f8fafc; min-height: 100vh; padding-bottom: 150px; }
-        
-        /* DESKTOP CUSTOMIZER FIXES */
         @media(min-width: 1024px) { 
             #customizer-view { padding-bottom: 0; padding-top: 0; } 
         }
@@ -185,9 +185,9 @@
             position: sticky; top: var(--header-height); z-index: 900; backdrop-filter: blur(10px);
             padding: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        /* DESKTOP STICKY BAR FIX */
+        /* DESKTOP STICKY BAR FIX: top:0 ensures it sticks to viewport top */
         @media(min-width: 1024px) {
-            .cust-header-bar { top: 0; z-index: 1050; } /* Sticks to very top */
+            .cust-header-bar { top: 0; z-index: 1050; } 
         }
 
         .ch-container { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -275,7 +275,7 @@
             .sidebar-desktop { 
                 display: block; 
                 position: sticky; 
-                top: 90px; /* Sticks right below the customizer bar (approx 80px tall) */
+                top: 80px; /* Sticks nicely below customizer bar (approx 70-80px tall) */
                 background: white; 
                 border: 1px solid var(--border-color); 
                 border-radius: 12px; 
