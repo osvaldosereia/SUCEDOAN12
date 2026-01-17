@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 8.5 - Image Fallback Protection
+        VERSION: 8.6 - Layout Stabilization & Sticky Fixes
         CHANGELOG:
-        - FIX: Adicionado tratamento de erro (onerror) nas tags <img>.
-        - UX: Imagens ausentes agora mostram um placeholder "Sem Foto" automaticamente.
-        - UI: Layout blindado contra imagens quebradas que distorciam os cards.
+        - FIX: "overflow-x: hidden" global para impedir rolagem lateral.
+        - FIX: Cards (.mini-card) com altura 100% e min-width:0 para evitar quebra do grid.
+        - FIX: Barras inferiores (Checkout/Nav) com z-index 9999 e travadas na viewport.
+        - UI: Placeholder de imagem mais robusto com fundo cinza suave.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -36,7 +37,7 @@
             --border-color: #e2e8f0;
             --header-height: 60px;
             --app-bar-height: 60px;
-            --checkout-bar-height: 80px; /* Altura da barra de checkout mobile */
+            --checkout-bar-height: 80px; 
             --radius-lg: 16px;
             --shadow-float: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
             --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -44,6 +45,12 @@
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
+        html, body {
+            width: 100%;
+            overflow-x: hidden; /* Impede a tela de "quebrar" para o lado */
+            position: relative;
+        }
+
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--bg-body); color: var(--text-main); line-height: 1.5; 
@@ -59,7 +66,7 @@
 
         /* --- 2. HEADER --- */
         header { 
-            position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height); 
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
             background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color); z-index: 1000; 
             display: flex; align-items: center; backdrop-filter: blur(8px); transition: transform 0.3s ease;
         }
@@ -78,9 +85,10 @@
 
         /* --- 3. MOBILE APP BAR (HOME NAV) --- */
         .mobile-app-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--app-bar-height);
+            position: fixed; bottom: 0; left: 0; right: 0; height: var(--app-bar-height);
             background: #ffffff; border-top: 1px solid var(--border-color);
-            z-index: 1100; display: grid; grid-template-columns: repeat(4, 1fr);
+            z-index: 9999; /* Z-Index Máximo */
+            display: grid; grid-template-columns: repeat(4, 1fr);
             box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
         }
         @media (min-width: 1024px) { .mobile-app-bar { display: none !important; } }
@@ -94,9 +102,10 @@
 
         /* --- 4. MOBILE CHECKOUT BAR (CUSTOMIZER ONLY) --- */
         .mobile-checkout-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--checkout-bar-height);
+            position: fixed; bottom: 0; left: 0; right: 0; height: var(--checkout-bar-height);
             background: #ffffff; border-top: 1px solid var(--border-color);
-            z-index: 1150; display: flex; align-items: center; justify-content: space-between;
+            z-index: 9999; /* Z-Index Máximo */
+            display: flex; align-items: center; justify-content: space-between;
             padding: 0 20px; box-shadow: 0 -4px 25px rgba(0,0,0,0.1);
             animation: slideUp 0.3s ease-out;
         }
@@ -153,7 +162,7 @@
         .btn-fill { background: var(--secondary); color: white; border: none; font-weight: 600; padding: 12px; border-radius: 50px; width: 100%; }
 
         /* --- 7. CUSTOMIZER --- */
-        #customizer-view { padding-top: var(--header-height); background: #f8fafc; min-height: 100vh; padding-bottom: 100px; /* Space for checkout bar */ }
+        #customizer-view { padding-top: var(--header-height); background: #f8fafc; min-height: 100vh; padding-bottom: 120px; /* Space for checkout bar */ }
         @media(min-width: 1024px) { #customizer-view { padding-bottom: 0; } }
 
         .cust-header-bar { 
@@ -188,21 +197,51 @@
         .extras-separator-banner h3 { font-size: 1.4rem; font-weight: 300; color: var(--secondary); margin-bottom: 5px; }
         .extras-separator-banner p { color: var(--text-light); font-size: 0.9rem; }
 
-        .grid-products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .grid-products { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 16px; 
+            align-items: stretch; /* Garante que os cards estiquem para ter a mesma altura */
+        }
         @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
 
-        /* PRODUCT MINI CARD */
+        /* PRODUCT MINI CARD (FIXED) */
         .mini-card {
-            display: flex; flex-direction: column; align-items: center; text-align: center;
-            padding: 10px; border-radius: 8px; border: 1px solid transparent;
-            transition: background 0.2s; position: relative;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            text-align: center;
+            padding: 10px; 
+            border-radius: 8px; 
+            border: 1px solid transparent;
+            transition: background 0.2s; 
+            position: relative;
+            height: 100%; /* Força altura total do grid */
+            min-width: 0; /* Evita estouro em Flex/Grid */
+            justify-content: space-between; /* Distribui conteúdo */
         }
         .mini-card:hover { background: #fff; border-color: var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .tag-offer { position: absolute; top: 0; left: 0; background: #16a34a; color: white; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
         
-        .mc-img-box { width: 100%; aspect-ratio: 1/1; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: zoom-in; }
-        .mc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .mc-img-box { 
+            width: 100%; 
+            aspect-ratio: 1/1; 
+            position: relative; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 8px; 
+            cursor: zoom-in; 
+            background-color: #f8fafc; /* Fundo para imagens faltantes */
+            border-radius: 8px;
+        }
+        .mc-img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; /* Garante que a imagem não estoure */
+            mix-blend-mode: multiply; 
+        }
         
         .media-indicators { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 4px; pointer-events: none; }
         .indicator-icon { width: 20px; height: 20px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--secondary); border: 1px solid #e2e8f0; opacity: 0; transition: opacity 0.3s; }
@@ -213,8 +252,8 @@
         .mc-price-old { font-size: 0.8rem; text-decoration: line-through; color: #94a3b8; margin-right: 6px; }
         .mc-price-new { color: var(--primary); }
 
-        .btn-add-mini { width: 100%; height: 32px; background: var(--primary); color: white; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); }
-        .qty-mini { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 6px; background: white; }
+        .btn-add-mini { width: 100%; height: 32px; background: var(--primary); color: white; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); margin-top: auto; }
+        .qty-mini { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 6px; background: white; margin-top: auto; }
         .qm-btn { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--secondary); font-size: 1.1rem; }
         .qm-val { font-weight: 700; font-size: 0.9rem; }
         
@@ -633,8 +672,7 @@
                 document.getElementById('cust-title').innerText = basket.nome;
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
-                // Hide main app bar on mobile when entering customizer
-                if(window.innerWidth < 1024) document.querySelector('.mobile-app-bar').style.display = 'none';
+                // Remove hiding logic for app bar
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
@@ -643,8 +681,7 @@
             goHome() {
                 document.getElementById('customizer-view').classList.add('hidden');
                 document.getElementById('home-view').classList.remove('hidden');
-                // Restore main app bar on mobile
-                if(window.innerWidth < 1024) document.querySelector('.mobile-app-bar').style.display = 'grid';
+                // Remove restore logic for app bar as it's never hidden now
                 this.currentBasket = null;
             },
 
