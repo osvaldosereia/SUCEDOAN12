@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.10 - Dark Mode Force Fix
+        VERSION: 9.11 - Video Chip Integration
         CHANGELOG:
-        - FIX CRÍTICO: Meta tag 'color-scheme' adicionada para bloquear modo noturno nativo.
-        - CSS: Propriedade 'color-scheme: light' forçada no :root.
-        - CSS: Media Query 'prefers-color-scheme: dark' adicionada para sobrescrever configurações do SO.
+        - FEAT: Adicionado chip "Vídeo" nos cards de produto.
+        - UI: Estilo visual para o chip de vídeo (vermelho).
+        - LOGIC: Detecção de vídeo agora exibe o chip e configura o clique.
+        - FIX: Suporte para vídeos com sufixo 'E.mp4' conforme convenção.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -283,6 +284,7 @@
         .btn-feat:hover { transform: scale(1.05); }
         .btn-feat.info { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; display: inline-block; }
         .btn-feat.nutri { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+        .btn-feat.video { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
 
         /* --- SIDEBAR DESKTOP --- */
         .sidebar-desktop { display: none; }
@@ -626,10 +628,36 @@
             checkVideo(baseSrc) {
                 const dot = baseSrc.lastIndexOf('.');
                 if(dot === -1) return;
-                const vidUrl = baseSrc.substring(0, dot) + '.mp4';
-                const v = document.createElement('video');
-                v.onloadedmetadata = () => this.addThumb(vidUrl, 'video', false);
-                v.src = vidUrl;
+                const root = baseSrc.substring(0, dot);
+                const vidUrl = root + '.mp4';
+                
+                // Helper to enable button and icon if video exists
+                const enableVideo = (url) => {
+                     const v = document.createElement('video');
+                     v.onloadedmetadata = () => {
+                         const btn = document.getElementById(`vid-btn-${this.currentPid}`); // Need current pid logic or pass p
+                         // Actually checkMedia has p in scope in App.checkMedia
+                         // Gallery.checkVideo is just helper.
+                         // But wait, the previous code had logic in App.checkMedia.
+                         // Gallery.checkVideo is for the slide thumbs.
+                         this.addThumb(url, 'video', false);
+                     };
+                     v.src = url;
+                };
+                
+                // For gallery thumbs, just try adding if it exists. 
+                // Since checkMedia in App handles the chip, here we handle gallery thumbs.
+                // We can reuse the logic from App.checkMedia but stripped down for just checking existence?
+                // Actually, let's keep it simple as it was: check standard .mp4.
+                // The user asked for "E" support in chips.
+                // I'll add E support here too for gallery thumbs.
+                const tryVid = (url) => {
+                     const v = document.createElement('video');
+                     v.onloadedmetadata = () => this.addThumb(url, 'video', false);
+                     v.src = url;
+                }
+                tryVid(root + '.mp4');
+                tryVid(root + 'E.mp4');
             },
             close() { document.getElementById('gallery').classList.remove('active'); document.getElementById('gallery-video').pause(); }
         };
@@ -811,6 +839,9 @@
                 
                 // Nutri Button (Visible via JS observer)
                 featBtns += `<div class="btn-feat nutri" id="nutri-${p.id}" onclick="Gallery.open('${p.imagem}','${p.nome}','${p.imagem.replace('.','A.')}')">Nutri</div>`;
+                
+                // Video Button (Visible via JS observer)
+                featBtns += `<div class="btn-feat video" id="vid-btn-${p.id}">Vídeo</div>`;
 
                 return `
                 <div class="mini-card" id="card-${p.id}">
@@ -849,6 +880,8 @@
                 if(dot === -1) return;
                 const root = p.imagem.substring(0, dot);
                 const ext = p.imagem.substring(dot);
+                
+                // Check Nutri Image (A)
                 const imgA = new Image();
                 imgA.onload = () => {
                     const btn = document.getElementById(`nutri-${p.id}`);
@@ -857,12 +890,24 @@
                     if(el) el.classList.add('visible');
                 };
                 imgA.src = root + 'A' + ext;
-                const vid = document.createElement('video');
-                vid.onloadedmetadata = () => {
-                    const el = document.querySelector(`#media-${p.id} .icon-vid`);
-                    if(el) el.classList.add('visible');
+
+                // Check Video (Standard .mp4 and E.mp4)
+                const checkVid = (url) => {
+                    const v = document.createElement('video');
+                    v.onloadedmetadata = () => {
+                        const btn = document.getElementById(`vid-btn-${p.id}`);
+                        if(btn) {
+                            btn.style.display = 'inline-block';
+                            btn.onclick = () => Gallery.open(p.imagem, p.nome, url);
+                        }
+                        const el = document.querySelector(`#media-${p.id} .icon-vid`);
+                        if(el) el.classList.add('visible');
+                    };
+                    v.src = url;
                 };
-                vid.src = root + '.mp4';
+                
+                checkVid(root + '.mp4');
+                checkVid(root + 'E.mp4');
             },
 
             countRemovals() {
