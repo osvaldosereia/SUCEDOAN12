@@ -336,7 +336,7 @@
 
                 <button id="recordBtn" class="btn btn-record" disabled>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-                    Gravar e Baixar
+                    Gravar e Baixar (MP4)
                 </button>
                 <div id="videoProgress" style="width: 0%; height: 4px; background: var(--action); margin-top: 10px; transition: width 0.2s; border-radius: 2px;"></div>
             </div>
@@ -729,13 +729,35 @@
             els.recBadge.classList.remove('hidden'); els.btnRec.disabled = true; els.btnRec.innerText = "Processando...";
 
             const stream = els.canvas.captureStream(30);
-            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
-            const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1000000 });
+            
+            // Priority: MP4 (H.264) -> WebM (VP9) -> WebM (Default)
+            const types = [
+                "video/mp4", 
+                "video/mp4;codecs=avc1", 
+                "video/mp4;codecs=h264", 
+                "video/webm;codecs=h264", 
+                "video/webm;codecs=vp9", 
+                "video/webm"
+            ];
+            
+            let mimeType = types.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+            
+            const recorder = new MediaRecorder(stream, { 
+                mimeType: mimeType, 
+                videoBitsPerSecond: 1500000 
+            });
+
             const chunks = [];
             recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
             recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                download(URL.createObjectURL(blob), '.webm');
+                const blob = new Blob(chunks, { type: mimeType });
+                const ext = mimeType.includes('mp4') ? '.mp4' : '.webm';
+                
+                if(ext === '.webm') {
+                    console.warn("Navegador não suporta MP4 nativo. Salvando como WebM.");
+                }
+
+                download(URL.createObjectURL(blob), ext);
                 state.isRecording = false; els.recBadge.classList.add('hidden');
                 els.btnRec.innerText = "Gravar e Baixar"; els.btnRec.disabled = false;
                 els.videoEl.loop = true; els.videoEl.play(); loopVideoPreview();
