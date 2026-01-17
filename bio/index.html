@@ -17,6 +17,7 @@
             --brand: #2563eb;
             --brand-dark: #1e40af;
             --action: #10b981; 
+            --action-dark: #059669;
             --danger: #ef4444;
             --border: #e2e8f0;
             --radius: 12px;
@@ -45,7 +46,7 @@
             border-radius: 10px;
             margin-bottom: 1.5rem;
             width: 100%;
-            max-width: 600px;
+            max-width: 400px; /* Limit width on desktop */
         }
         .mode-btn {
             flex: 1;
@@ -58,18 +59,39 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+        .mode-btn:hover { color: var(--text-main); }
         .mode-btn.active {
             background: var(--surface);
             color: var(--brand);
             box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
         }
 
-        /* Layout */
-        main { width: 100%; max-width: 600px; display: grid; gap: 1.5rem; }
+        /* Layout Main - Responsive Grid */
+        main { 
+            width: 100%; 
+            max-width: 600px; /* Mobile Default */
+            display: grid; 
+            gap: 1.5rem; 
+        }
+
+        /* Desktop Breakpoint */
+        @media (min-width: 800px) {
+            main {
+                max-width: 960px;
+                grid-template-columns: 350px 1fr; /* Fixed Sidebar, Fluid Content */
+                align-items: start;
+            }
+            
+            /* Make the preview sticky on desktop */
+            .preview-section {
+                position: sticky;
+                top: 1rem;
+            }
+        }
 
         .card {
             background: var(--surface);
-            padding: 1rem;
+            padding: 1.5rem; /* More breathing room */
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             border: 1px solid var(--border);
@@ -88,6 +110,14 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 1rem;
+            transition: border-color 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        /* Drag & Drop Visual Feedback */
+        .viewport.drag-over {
+            border-color: var(--brand);
+            background-color: #eff6ff;
         }
 
         canvas { 
@@ -95,10 +125,11 @@
             image-rendering: high-quality;
             max-width: 100%;
             max-height: 100%;
-            /* Força visualmente, mas o atributo width/height HTML é quem manda na gravação */
             width: 100%;
             height: 100%;
+            cursor: grab;
         }
+        canvas:active { cursor: grabbing; }
 
         /* Hidden video element for processing */
         video#sourceVideo { display: none; }
@@ -112,22 +143,27 @@
             align-items: center;
             gap: 0.5rem;
             font-size: 0.9rem;
+            pointer-events: none; /* Let clicks pass to container if needed */
         }
 
         /* Controls */
-        fieldset { border: 0; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
-        label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
+        fieldset { border: 0; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+        label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main); }
         
+        /* Sliders */
         input[type="range"] {
             width: 100%; height: 24px; background: transparent; -webkit-appearance: none; cursor: pointer;
         }
         input[type="range"]::-webkit-slider-runnable-track {
-            width: 100%; height: 6px; background: var(--border); border-radius: 4px;
+            width: 100%; height: 6px; background: var(--border); border-radius: 4px; transition: background 0.2s;
         }
+        input[type="range"]:hover::-webkit-slider-runnable-track { background: #cbd5e1; }
         input[type="range"]::-webkit-slider-thumb {
             height: 24px; width: 24px; border-radius: 50%; background: var(--brand); 
             -webkit-appearance: none; margin-top: -9px; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2);
+            transition: transform 0.1s, background 0.2s;
         }
+        input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.1); background: var(--brand-dark); }
 
         /* Buttons */
         .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem; }
@@ -136,28 +172,36 @@
             display: flex; align-items: center; justify-content: center; gap: 0.5rem;
             height: var(--touch-target); font-weight: 700; font-size: 0.95rem;
             border-radius: 8px; border: none; cursor: pointer; width: 100%;
-            text-decoration: none; transition: transform 0.1s;
+            text-decoration: none; transition: all 0.2s;
         }
         .btn:active { transform: scale(0.97); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
 
         .btn-upload { background: var(--bg); color: var(--text-main); border: 1px solid var(--border); }
-        .btn-camera { background: var(--text-main); color: white; }
-        .btn-save { background: var(--action); color: white; margin-top: 1rem; font-size: 1.1rem; }
-        .btn-record { background: var(--danger); color: white; margin-top: 1rem; font-size: 1.1rem; }
+        .btn-upload:hover { background: #e2e8f0; border-color: #cbd5e1; }
         
-        .btn-sm { height: 36px; font-size: 0.8rem; background: var(--bg); border: 1px solid var(--border); }
+        .btn-camera { background: var(--text-main); color: white; }
+        .btn-camera:hover { background: #1e293b; }
+
+        .btn-save { background: var(--action); color: white; margin-top: 1rem; font-size: 1.1rem; }
+        .btn-save:hover { background: var(--action-dark); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+
+        .btn-record { background: var(--danger); color: white; margin-top: 1rem; font-size: 1.1rem; }
+        .btn-record:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        
+        .btn-sm { height: 36px; font-size: 0.8rem; background: var(--bg); border: 1px solid var(--border); transition: all 0.2s; }
+        .btn-sm:hover { background: #e2e8f0; }
         .btn-sm.active { background: var(--brand); color: white; border-color: var(--brand); }
 
         .input-text {
             width: 100%; padding: 0.75rem; border: 1px solid var(--border);
-            border-radius: 8px; font-size: 1rem; outline: none;
+            border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s;
         }
-        .input-text:focus { border-color: var(--brand); }
+        .input-text:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
         .hidden { display: none !important; }
         .file-input { display: none; }
-        .val-badge { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+        .val-badge { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; font-size: 0.8em; color: var(--text-muted); }
         
         /* Video Recording Indicator */
         .rec-indicator {
@@ -179,12 +223,17 @@
     </div>
 
     <main>
-        <!-- Card Viewport -->
-        <div class="card">
+        <!-- PREVIEW SECTION (Left/Sticky on Desktop) -->
+        <div class="card preview-section">
             <div class="viewport" id="dropZone">
                 <div id="emptyState" class="empty-msg">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    <span>Carregar Arquivo</span>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--border); margin-bottom: 0.5rem;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Arraste e solte</span>
+                    <span style="font-size: 0.8em; opacity: 0.7;">ou use os botões abaixo</span>
                 </div>
                 <!-- Canvas com tamanho fixo interno -->
                 <canvas id="canvas" class="hidden" width="300" height="300"></canvas>
@@ -192,13 +241,13 @@
             </div>
 
             <div class="actions-grid">
-                <label class="btn btn-upload">
+                <label class="btn btn-upload" title="Carregar do dispositivo">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Galeria
+                    Arquivo
                     <input type="file" id="fileInput" class="file-input" accept="image/*">
                 </label>
                 
-                <label class="btn btn-camera">
+                <label class="btn btn-camera" title="Abrir Câmera">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     Câmera
                     <input type="file" id="cameraInput" class="file-input" accept="image/*" capture="environment">
@@ -206,62 +255,73 @@
             </div>
         </div>
 
-        <!-- Painel de Controle -->
+        <!-- CONTROLS SECTION (Right/Scrollable on Desktop) -->
         <div class="card" id="controlsCard">
             
             <!-- CONTROLES DE IMAGEM -->
             <div id="imageControls">
                 <fieldset>
-                    <label>Escala <span class="val-badge" id="scaleVal">85%</span></label>
+                    <label>Escala e Posição <span class="val-badge" id="scaleVal">85%</span></label>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <button class="btn btn-sm active" id="btnFit">Fit</button>
-                        <button class="btn btn-sm" id="btnMax">Full</button>
+                        <button class="btn btn-sm active" id="btnFit">Fit (85)</button>
+                        <button class="btn btn-sm" id="btnMax">Full (100)</button>
                         <button class="btn btn-sm" id="btnCenter">Centro</button>
                     </div>
                     <input type="range" id="scaleRange" min="50" max="200" value="85">
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        Arraste a imagem no quadro para ajustar
+                    </p>
                 </fieldset>
 
-                <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0;">
 
                 <fieldset>
-                    <label>Brilho / Contraste</label>
-                    <input type="range" id="brightRange" min="-50" max="50" value="0" style="margin-bottom: 10px;">
-                    <input type="range" id="contrastRange" min="-50" max="50" value="0">
+                    <label>Correção de Cor</label>
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted); width: 60px;">Brilho</span>
+                        <input type="range" id="brightRange" min="-50" max="50" value="0">
+                        
+                        <span style="font-size: 0.8rem; color: var(--text-muted); width: 60px;">Contraste</span>
+                        <input type="range" id="contrastRange" min="-50" max="50" value="0">
+                    </div>
                 </fieldset>
 
                 <fieldset style="background: #f0fdf4; padding: 1rem; border-radius: 8px; border: 1px solid #bbf7d0;">
                     <label style="color: #166534;">Ultra Nitidez (3x) <span class="val-badge" id="sharpVal">0</span></label>
                     <input type="range" id="sharpRange" min="0" max="30" value="0" step="1">
+                    <p style="font-size: 0.75rem; color: #166534; margin-top: 0.25rem;">Recomendado: Nível 5-10 para fotos normais</p>
                 </fieldset>
 
                 <button id="saveBtn" class="btn btn-save" disabled>
-                    Baixar WebP
+                    Baixar WebP Otimizado
                 </button>
             </div>
 
             <!-- CONTROLES DE VIDEO -->
             <div id="videoControls" class="hidden">
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; text-align: center;">
-                    O vídeo será cortado para 300x300 e comprimido para uso mobile.
-                    <br>O áudio será removido para máxima leveza.
-                </p>
+                <div style="background: #eff6ff; padding: 1rem; border-radius: 8px; border: 1px solid #bfdbfe; margin-bottom: 1.5rem;">
+                    <p style="font-size: 0.85rem; color: #1e40af; text-align: center;">
+                        <strong>Modo Vídeo Mobile</strong><br>
+                        O vídeo será recortado para 300x300px e comprimido para envio rápido (WhatsApp/Web). Áudio removido.
+                    </p>
+                </div>
                 
                 <fieldset>
-                    <label>Ajuste de Enquadramento <span class="val-badge" id="vScaleVal">100%</span></label>
+                    <label>Zoom do Vídeo <span class="val-badge" id="vScaleVal">100%</span></label>
                     <input type="range" id="vScaleRange" min="50" max="200" value="100">
                 </fieldset>
 
                 <button id="recordBtn" class="btn btn-record" disabled>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-                    Processar e Baixar (MP4/WebM)
+                    Gravar, Processar e Baixar
                 </button>
-                <div id="videoProgress" style="width: 0%; height: 4px; background: var(--action); margin-top: 10px; transition: width 0.2s;"></div>
+                <div id="videoProgress" style="width: 0%; height: 4px; background: var(--action); margin-top: 10px; transition: width 0.2s; border-radius: 2px;"></div>
             </div>
 
             <!-- Input Nome -->
-            <div style="margin-top: 1.5rem;">
-                <label style="font-size: 0.8rem; color: var(--text-muted);">Nome do Arquivo</label>
-                <input type="text" id="nameInput" class="input-text" placeholder="nome-produto" value="produto">
+            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+                <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Nome do Arquivo (SEO)</label>
+                <input type="text" id="nameInput" class="input-text" placeholder="ex: arroz-prato-fino" value="produto">
             </div>
         </div>
     </main>
@@ -272,7 +332,7 @@
     <script>
         /**
          * SISTEMAS ENGINE HYBRID
-         * Mode: Photo (WebP) | Video (WebM/MP4)
+         * Desktop & Mobile Optimized
          */
         
         const state = {
@@ -296,6 +356,7 @@
         const els = {
             canvas: document.getElementById('canvas'),
             ctx: null, // set in init
+            dropZone: document.getElementById('dropZone'),
             videoEl: document.getElementById('sourceVideo'),
             empty: document.getElementById('emptyState'),
             recBadge: document.getElementById('recBadge'),
@@ -335,6 +396,9 @@
             els.fileInput.addEventListener('change', handleFile);
             els.camInput.addEventListener('change', handleFile);
 
+            // Drag & Drop
+            setupDragDrop();
+
             // Photo Sliders
             els.scale.oninput = (e) => { state.scale = e.target.value / 100; document.getElementById('scaleVal').innerText = e.target.value + '%'; requestRender(); };
             els.bright.oninput = (e) => { state.brightness = parseInt(e.target.value); requestRender(); };
@@ -355,11 +419,57 @@
             window.addEventListener('touchmove', (e) => movePan(e.touches[0]), {passive: false});
             window.addEventListener('mouseup', endPan);
             window.addEventListener('touchend', endPan);
+            els.canvas.addEventListener('mouseleave', endPan);
 
             // Preset Buttons
-            document.getElementById('btnFit').onclick = () => { els.scale.value=85; state.scale=0.85; requestRender(); };
-            document.getElementById('btnMax').onclick = () => { els.scale.value=100; state.scale=1.0; requestRender(); };
-            document.getElementById('btnCenter').onclick = () => { state.x=0; state.y=0; requestRender(); };
+            document.getElementById('btnFit').onclick = () => { els.scale.value=85; state.scale=0.85; requestRender(); updateActivePreset('btnFit'); };
+            document.getElementById('btnMax').onclick = () => { els.scale.value=100; state.scale=1.0; requestRender(); updateActivePreset('btnMax'); };
+            document.getElementById('btnCenter').onclick = () => { state.x=0; state.y=0; requestRender(); updateActivePreset('btnCenter'); };
+
+            // Paste Support
+            document.addEventListener('paste', handlePaste);
+        }
+
+        function updateActivePreset(id) {
+            ['btnFit', 'btnMax', 'btnCenter'].forEach(b => document.getElementById(b).classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function setupDragDrop() {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                els.dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                els.dropZone.addEventListener(eventName, () => els.dropZone.classList.add('drag-over'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                els.dropZone.addEventListener(eventName, () => els.dropZone.classList.remove('drag-over'), false);
+            });
+
+            els.dropZone.addEventListener('drop', handleDrop, false);
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if(files.length > 0) handleFile({ target: { files: files } });
+        }
+
+        function handlePaste(e) {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    loadImage(item.getAsFile());
+                    break;
+                }
+            }
         }
 
         function setMode(mode) {
@@ -376,14 +486,12 @@
                 els.cPhoto.classList.remove('hidden'); els.cVideo.classList.add('hidden');
                 els.fileInput.accept = "image/*"; 
                 els.camInput.accept = "image/*";
-                // FIX: Force camera for photo mode
                 els.camInput.setAttribute('capture', 'environment');
             } else {
                 els.mVideo.classList.add('active'); els.mPhoto.classList.remove('active');
                 els.cVideo.classList.remove('hidden'); els.cPhoto.classList.add('hidden');
                 els.fileInput.accept = "video/*"; 
                 els.camInput.accept = "video/*";
-                // FIX: Force camera for video mode
                 els.camInput.setAttribute('capture', 'environment');
             }
             
@@ -398,7 +506,6 @@
             const file = e.target.files[0];
             if(!file) return;
 
-            // Auto-switch mode based on file type
             if(file.type.startsWith('video/')) {
                 if(state.mode !== 'video') setMode('video');
                 loadVideo(file);
@@ -588,7 +695,7 @@
                 // Reset UI
                 state.isRecording = false;
                 els.recBadge.classList.add('hidden');
-                els.btnRec.innerText = "Processar e Baixar";
+                els.btnRec.innerText = "Gravar, Processar e Baixar";
                 els.btnRec.disabled = false;
                 els.videoEl.loop = true;
                 els.videoEl.play();
@@ -632,6 +739,7 @@
             isPanning = true;
             panStartX = (e.clientX || e.pageX) - state.x;
             panStartY = (e.clientY || e.pageY) - state.y;
+            els.canvas.style.cursor = 'grabbing';
         }
         function movePan(e) {
             if(!isPanning) return;
@@ -641,7 +749,10 @@
             if(state.mode === 'photo') requestRender();
             // Video updates automatically in loop
         }
-        function endPan() { isPanning = false; }
+        function endPan() { 
+            isPanning = false; 
+            els.canvas.style.cursor = 'grab';
+        }
 
         function download(url, ext) {
             const clean = (els.nameInput.value || 'produto').toLowerCase().replace(/[^a-z0-9]/g, '-');
