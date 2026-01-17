@@ -95,6 +95,9 @@
             image-rendering: high-quality;
             max-width: 100%;
             max-height: 100%;
+            /* Força visualmente, mas o atributo width/height HTML é quem manda na gravação */
+            width: 100%;
+            height: 100%;
         }
 
         /* Hidden video element for processing */
@@ -183,7 +186,8 @@
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     <span>Carregar Arquivo</span>
                 </div>
-                <canvas id="canvas" class="hidden"></canvas>
+                <!-- Canvas com tamanho fixo interno -->
+                <canvas id="canvas" class="hidden" width="300" height="300"></canvas>
                 <div id="recBadge" class="rec-indicator hidden">REC</div>
             </div>
 
@@ -317,6 +321,10 @@
         };
 
         function init() {
+            // FIX: Force internal resolution to 300x300
+            els.canvas.width = 300;
+            els.canvas.height = 300;
+            
             els.ctx = els.canvas.getContext('2d', { willReadFrequently: true });
             
             // Mode Switching
@@ -358,16 +366,25 @@
             state.mode = mode;
             state.x = 0; state.y = 0;
             
+            // Ensure resolution is maintained
+            els.canvas.width = 300;
+            els.canvas.height = 300;
+            
             // UI Toggle
             if(mode === 'photo') {
                 els.mPhoto.classList.add('active'); els.mVideo.classList.remove('active');
                 els.cPhoto.classList.remove('hidden'); els.cVideo.classList.add('hidden');
-                els.fileInput.accept = "image/*"; els.camInput.accept = "image/*";
-                els.camInput.removeAttribute('capture'); // Allow gallery or cam selection menu
+                els.fileInput.accept = "image/*"; 
+                els.camInput.accept = "image/*";
+                // FIX: Force camera for photo mode
+                els.camInput.setAttribute('capture', 'environment');
             } else {
                 els.mVideo.classList.add('active'); els.mPhoto.classList.remove('active');
                 els.cVideo.classList.remove('hidden'); els.cPhoto.classList.add('hidden');
-                els.fileInput.accept = "video/*"; els.camInput.accept = "video/*";
+                els.fileInput.accept = "video/*"; 
+                els.camInput.accept = "video/*";
+                // FIX: Force camera for video mode
+                els.camInput.setAttribute('capture', 'environment');
             }
             
             // Reset Canvas
