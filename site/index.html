@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.12 - Critical Video Playback Fix
+        VERSION: 9.13 - Gallery Navigation & Swipe
         CHANGELOG:
-        - FIX CRÍTICO: Gallery.open agora detecta links .mp4 e alterna para a tag <video>.
-        - FIX: Miniaturas de vídeo agora ficam ativas corretamente ao abrir.
-        - LOGIC: Suporte aprimorado para vídeo direto e vídeo "E.mp4".
+        - FEAT: Adicionadas setas de navegação (Anterior/Próximo) na galeria.
+        - FEAT: Suporte a gestos de arrastar (Swipe) para mobile na galeria.
+        - UI: Estilização dos botões de navegação para serem discretos e funcionais.
+        - LOGIC: Navegação percorre dinamicamente as miniaturas carregadas (Principal -> Nutri -> Vídeo).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -30,8 +31,7 @@
     <style>
         /* --- 1. RESET & VARIABLES --- */
         :root { 
-            color-scheme: light; /* Informa ao CSS que o esquema é claro */
-            
+            color-scheme: light;
             --primary: #dc2626; 
             --primary-dark: #b91c1c; 
             --secondary: #1e293b; 
@@ -331,6 +331,18 @@
             padding: 8px 16px; border-radius: 50px; font-size: 0.9rem; font-weight: 600;
             cursor: pointer; z-index: 2010; backdrop-filter: blur(4px);
         }
+
+        .gallery-nav {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2);
+            width: 44px; height: 44px; border-radius: 50%; font-size: 1.2rem;
+            cursor: pointer; z-index: 2015; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px); transition: all 0.2s;
+        }
+        .gallery-nav:hover { background: rgba(0,0,0,0.6); }
+        .gallery-nav.prev { left: 15px; }
+        .gallery-nav.next { right: 15px; }
+
         .gallery-thumbs { height: 70px; display: flex; justify-content: center; gap: 8px; padding-top: 10px; overflow-x: auto; width: 100%; }
         .g-thumb { width: 50px; height: 50px; border-radius: 4px; border: 2px solid transparent; opacity: 0.5; object-fit: cover; cursor: pointer; flex-shrink: 0; }
         .g-thumb.active { border-color: var(--primary); opacity: 1; }
@@ -508,8 +520,10 @@
     <div id="gallery" class="gallery-wrap">
         <button class="gallery-close-chip" onclick="Gallery.close()" aria-label="Fechar Galeria">FECHAR</button>
         <div class="gallery-stage">
+            <button class="gallery-nav prev" onclick="Gallery.prev()">❮</button>
             <img id="gallery-img" class="gallery-img" src="">
             <video id="gallery-video" class="gallery-video hidden" controls></video>
+            <button class="gallery-nav next" onclick="Gallery.next()">❯</button>
         </div>
         <div id="gallery-thumbs" class="gallery-thumbs"></div>
     </div>
@@ -579,6 +593,9 @@
         };
 
         const Gallery = {
+            touchStartX: 0,
+            touchEndX: 0,
+
             open(mainSrc, productName, startWith=null) {
                 const el = document.getElementById('gallery');
                 const img = document.getElementById('gallery-img');
@@ -607,6 +624,15 @@
                 this.checkVideo(mainSrc, startWith); 
                 
                 el.classList.add('active');
+
+                // Initialize swipe listeners
+                const stage = document.querySelector('.gallery-stage');
+                stage.ontouchstart = (e) => { this.touchStartX = e.changedTouches[0].screenX; };
+                stage.ontouchend = (e) => {
+                    this.touchEndX = e.changedTouches[0].screenX;
+                    if(this.touchStartX - this.touchEndX > 50) this.next();
+                    if(this.touchEndX - this.touchStartX > 50) this.prev();
+                };
             },
             
             swap(src, type, el) {
@@ -634,6 +660,8 @@
                 t.src = type === 'video' ? 'img/video-placeholder.png' : src;
                 t.onerror = () => t.src = 'https://placehold.co/50x50?text=VID';
                 t.onclick = () => this.swap(src, type, t);
+                t.dataset.src = src; // Store src for next/prev logic
+                t.dataset.type = type;
                 document.getElementById('gallery-thumbs').appendChild(t);
             },
 
@@ -643,7 +671,6 @@
                 if(dot === -1) return;
                 const root = baseSrc.substring(0, dot);
                 const ext = baseSrc.substring(dot);
-                
                 suffixes.forEach(s => {
                     const url = root + s + ext;
                     const i = new Image();
@@ -665,6 +692,20 @@
                 }
                 tryVid(root + '.mp4');
                 tryVid(root + 'E.mp4');
+            },
+
+            next() {
+                const active = document.querySelector('.g-thumb.active');
+                if(active && active.nextElementSibling) {
+                    active.nextElementSibling.click();
+                }
+            },
+
+            prev() {
+                const active = document.querySelector('.g-thumb.active');
+                if(active && active.previousElementSibling) {
+                    active.previousElementSibling.click();
+                }
             },
 
             close() { 
@@ -768,6 +809,7 @@
                 document.getElementById('cust-title').innerText = basket.nome;
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
+                
                 window.scrollTo(0,0);
                 this.renderAllLists();
             },
@@ -829,7 +871,9 @@
                     `<span class="mc-price-old">R$${p.valor.toFixed(2)}</span><span class="mc-price-new">R$${price.toFixed(2)}</span>` : 
                     `R$ ${price.toFixed(2).replace('.', ',')}`;
                 
+                // Smart Buttons
                 let featBtns = '';
+                // Info Button now opens sheet
                 if(p.caracteristicas) {
                     const safeText = p.caracteristicas.replace(/"/g, '&quot;').replace(/'/g, "\\'").replace(/\n/g, '<br>');
                     const safeTitle = p.nome.replace(/"/g, '&quot;');
@@ -921,10 +965,10 @@
             },
 
             updateTotal() {
-                let total = this.baseFee;
+                let itemsSum = 0;
                 for(let id in this.cart) {
                     const p = this.data.find(x => x.id === id);
-                    if(p) total += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
+                    if(p) itemsSum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
                 }
                 const fmt = 'R$ ' + total.toFixed(2).replace('.', ',');
                 document.getElementById('desk-total-val').innerText = fmt;
