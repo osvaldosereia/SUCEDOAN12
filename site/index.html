@@ -4,12 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 8.4 - Mobile Checkout & FAQ UI Polish
+        VERSION: 8.5 - Image Fallback Protection
         CHANGELOG:
-        - FEAT: Barra de Checkout Flutuante no Mobile (Total + Botão Encomendar).
-        - UI: Design do FAQ modernizado (Cards, Chevron animado, Tipografia limpa).
-        - UX: Botão de Dúvidas no Desktop agora abre o Modal de FAQ.
-        - FIX: Ajuste de padding no mobile para o conteúdo não ficar atrás das barras.
+        - FIX: Adicionado tratamento de erro (onerror) nas tags <img>.
+        - UX: Imagens ausentes agora mostram um placeholder "Sem Foto" automaticamente.
+        - UI: Layout blindado contra imagens quebradas que distorciam os cards.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -505,6 +504,7 @@
                     t.src = src;
                 }
                 t.onclick = () => this.swap(src, type, t);
+                t.onerror = () => t.src = 'https://placehold.co/50x50?text=X';
                 document.getElementById('gallery-thumbs').appendChild(t);
             },
 
@@ -587,7 +587,7 @@
                     return `
                     <article class="home-card">
                         <div class="hc-image-wrap" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
-                            <img src="${p.imagem}" class="hc-image" loading="lazy" alt="${p.nome}">
+                            <img src="${p.imagem}" class="hc-image" loading="lazy" alt="${p.nome}" onerror="this.onerror=null;this.src='https://placehold.co/500?text=Imagem+Indisponível';">
                         </div>
                         <div class="hc-content">
                             <h3 class="hc-title">${p.nome}</h3>
@@ -709,7 +709,7 @@
                 <div class="mini-card" id="card-${p.id}">
                     ${(p.isOffer && p.offerPrice > 0) ? '<span class="tag-offer">OFERTA</span>' : ''}
                     <div class="mc-img-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
-                        <img src="${p.imagem}" class="mc-img" loading="lazy">
+                        <img src="${p.imagem}" class="mc-img" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/300?text=No+Image';">
                         <div class="media-indicators" id="media-${p.id}">
                             <div class="indicator-icon icon-cam">📷</div>
                             <div class="indicator-icon icon-vid">🎥</div>
