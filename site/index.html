@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.15 - Vertical Image Adaptation
+        VERSION: 9.16 - Fixes: Image BG, Totals, Counters & Scroll
         CHANGELOG:
-        - UI: Galeria ajustada para imagens verticais (flex: 1, min-height: 0).
-        - FIX: Removida restrição de 80vh na galeria para usar toda a tela disponível.
-        - UI: Imagens e vídeos agora se adaptam automaticamente à proporção (auto width/height).
+        - FIX: Fundo das imagens (.mc-img-box) agora é transparente.
+        - FIX: Cálculo do valor total restaurado e corrigido.
+        - FIX: Contador de alterações (limite de trocas) restaurado.
+        - UX: Clique na busca agora rola a tela para o início da lista de produtos extras.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -256,7 +257,9 @@
         .mc-img-box { 
             width: 100%; aspect-ratio: 1/1; position: relative; display: flex; 
             align-items: center; justify-content: center; margin-bottom: 8px; 
-            cursor: zoom-in; background-color: #f8fafc; border-radius: 8px;
+            cursor: zoom-in; 
+            background-color: transparent; /* CORRIGIDO: Removido o fundo cinza */
+            border-radius: 8px;
         }
         .mc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
@@ -321,7 +324,6 @@
         .gallery-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; justify-content: center; padding: 20px; }
         .gallery-wrap.active { display: flex; }
         
-        /* FIX: Removed max-height constraint to allow full adaptation */
         .gallery-stage { 
             flex: 1; 
             display: flex; 
@@ -330,10 +332,9 @@
             justify-content: center; 
             position: relative; 
             width: 100%; 
-            min-height: 0; /* Critical for flex child */
+            min-height: 0; 
         }
         
-        /* FIX: Auto dimensions to preserve aspect ratio */
         .gallery-img { 
             max-width: 100%; 
             max-height: 100%; 
@@ -381,7 +382,6 @@
         .sheet-content { 
             background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; 
             max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s;
-            /* FIX: Extra padding to avoid content being hidden by checkout bar */
             padding-bottom: 160px; 
         }
         .sheet-overlay.open .sheet-content { transform: translateY(0); }
@@ -810,11 +810,8 @@
                 const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))].sort();
                 document.getElementById('desk-cat-list').innerHTML = cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`).join('');
                 document.getElementById('mob-cat-grid').innerHTML = cats.map(c => `<div class="mobile-cat-btn" onclick="App.filterCat('${c}')">${c}</div>`).join('');
-                
-                // Sort Tags Alphabetically
-                const sortedTags = [...CONSTANTS.TAGS].sort();
-                document.getElementById('desk-tag-list').innerHTML = sortedTags.map(t => `<button class="sidebar-chip" onclick="App.search('${t}')">${t}</button>`).join('');
-                document.getElementById('mob-tags-grid').innerHTML = sortedTags.map(t => `<div class="mobile-tag-btn" onclick="App.search('${t}')">${t}</div>`).join('');
+                document.getElementById('desk-tag-list').innerHTML = CONSTANTS.TAGS.map(t => `<button class="sidebar-chip" onclick="App.search('${t}')">${t}</button>`).join('');
+                document.getElementById('mob-tags-grid').innerHTML = CONSTANTS.TAGS.map(t => `<div class="mobile-tag-btn" onclick="App.search('${t}')">${t}</div>`).join('');
             },
 
             openCustomizer(id) {
@@ -830,6 +827,11 @@
                         if(match) this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(item.qtd || 1));
                     });
                 }
+
+                this.originalCart = { ...this.cart };
+                const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
+                let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
+                this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
 
                 let itemsSum = 0;
                 for(let pid in this.cart) {
@@ -974,16 +976,32 @@
                 checkVid(root + 'E.mp4');
             },
 
+            countRemovals() {
+                let removals = 0;
+                for(let id in this.originalCart) {
+                    if (this.originalCart[id] > 0 && (!this.cart[id] || this.cart[id] === 0)) {
+                        removals++;
+                    }
+                }
+                return removals;
+            },
+
             modQty(id, delta) {
-                if(!this.cart[id]) this.cart[id] = 0;
                 const p = this.data.find(x => x.id === id);
-                if(delta > 0 && p.limit > 0 && (this.cart[id] + delta > p.limit)) return alert(`Limite de ${p.limit} unidades.`);
-                
-                // Removal limits check... (restored logic)
+                if(!this.cart[id]) this.cart[id] = 0;
                 const newQty = this.cart[id] + delta;
-                 // ... (omitted standard logic for brevity, same as v9.11)
-                 
-                this.cart[id] += delta;
+
+                // Check Limits
+                if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
+                
+                // Check Removal Limits
+                if (this.originalCart[id] && delta < 0 && newQty === 0) {
+                    if (this.countRemovals() >= this.currentLimit) {
+                        return alert(`Limite de ${this.currentLimit} trocas/exclusões atingido para esta cesta.`);
+                    }
+                }
+
+                this.cart[id] = newQty;
                 if(this.cart[id] <= 0) delete this.cart[id];
                 this.renderAllLists(document.getElementById('main-search').value);
             },
@@ -994,17 +1012,47 @@
                     const p = this.data.find(x => x.id === id);
                     if(p) itemsSum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
                 }
-                const fmt = 'R$ ' + total.toFixed(2).replace('.', ',');
+                
+                const calculatedTotal = itemsSum + this.baseFee;
+                let finalTotal = Math.max(calculatedTotal, this.currentBasket.valor);
+                let credit = 0;
+                
+                if (calculatedTotal < this.currentBasket.valor) {
+                    credit = this.currentBasket.valor - calculatedTotal;
+                }
+
+                // Update UI Counters
+                const removals = this.countRemovals();
+                const badge = document.getElementById('changes-badge');
+                badge.innerText = `Alterações: ${removals}/${this.currentLimit}`;
+                badge.className = removals >= this.currentLimit ? 'limit-badge error' : 'limit-badge';
+
+                const fmt = 'R$ ' + finalTotal.toFixed(2).replace('.', ',');
                 document.getElementById('desk-total-val').innerText = fmt;
                 const mobTotal = document.getElementById('mcb-total-val');
                 if(mobTotal) mobTotal.innerText = fmt;
                 document.getElementById('co-total').innerText = fmt;
+
+                // Credit Toast
+                const toast = document.getElementById('toast');
+                if (credit > 0) {
+                    document.getElementById('toast-msg').innerText = `Você tem R$ ${credit.toFixed(2).replace('.', ',')} de crédito`;
+                    toast.classList.add('visible');
+                } else {
+                    toast.classList.remove('visible');
+                }
             },
 
             setupSearch() { 
                 const input = document.getElementById('main-search');
                 input.addEventListener('input', (e) => this.renderAllLists(e.target.value)); 
-                input.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+                input.addEventListener('click', () => {
+                    const el = document.querySelector('.extras-separator-banner') || document.querySelector('.products-section');
+                    if(el) {
+                        const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                        window.scrollTo({top: y, behavior: 'smooth'});
+                    }
+                });
             },
 
             search(term) {
@@ -1028,7 +1076,9 @@
             },
 
             openSheet(id) { 
+                // Close any open sheets first
                 document.querySelectorAll('.sheet-overlay.open').forEach(el => el.classList.remove('open'));
+                
                 if(id === 'offers-sheet') this.renderOffersInSheet();
                 document.getElementById(id).classList.add('open'); 
             },
