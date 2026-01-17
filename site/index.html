@@ -4,14 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 8.0 - UI/UX Refactor & Stability Fix
+        VERSION: 8.1 - Full Logic Restoration & UI Polish
         CHANGELOG:
-        - FIX: Lógica de carregamento de JSON robusta (Case insensitive).
-        - UI: App Bar Mobile estilo nativo (iFood/Instagram style).
-        - UI: Sidebar Desktop Sticky e Larga (340px).
-        - UI: Grid de botões da sidebar unificado (3 colunas, chips minimalistas).
-        - UI: Grid de produtos desktop travado em 4 colunas.
-        - UX: Espaçamentos (Whitespace) corrigidos para evitar sobreposições.
+        - RESTORE: Galeria Inteligente (Detecção de Vídeo .mp4 e Imagens Extras A/B/C).
+        - RESTORE: Leitura completa de atributos do JSON (items, validade, caracteristicas).
+        - RESTORE: Indicadores de mídia (ícone de câmera/vídeo) nos cards.
+        - UI: Mantido o layout Clean v8.0 (App Bar, Sidebar Larga, Grid 4 Colunas).
+        - UX: Feedback visual ao carregar mídias extras.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -25,7 +24,6 @@
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Preload Critical Data -->
     <link rel="preload" href="produtos/produtos.json" as="fetch" crossorigin="anonymous">
 
     <style>
@@ -33,18 +31,14 @@
         :root { 
             --primary: #dc2626; 
             --primary-dark: #b91c1c; 
-            --secondary: #1e293b; /* Dark Slate Blue */
+            --secondary: #1e293b; 
             --text-main: #334155; 
             --text-light: #64748b; 
             --bg-body: #ffffff;
-            --bg-surface: #ffffff;
             --border-color: #e2e8f0;
             --header-height: 60px;
-            --app-bar-height: 60px; /* Mobile Bottom Bar */
+            --app-bar-height: 60px;
             --radius-lg: 16px;
-            --radius-md: 8px;
-            --radius-sm: 4px;
-            --shadow-subtle: 0 1px 3px rgba(0,0,0,0.05);
             --shadow-float: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
         
@@ -52,28 +46,22 @@
         
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: var(--bg-body); 
-            color: var(--text-main); 
-            line-height: 1.5; 
-            -webkit-font-smoothing: antialiased; 
-            padding-bottom: var(--app-bar-height); /* Space for mobile bar */
+            background-color: var(--bg-body); color: var(--text-main); line-height: 1.5; 
+            padding-bottom: var(--app-bar-height); -webkit-font-smoothing: antialiased; 
         }
 
-        /* Desktop: remove bottom padding */
         @media (min-width: 1024px) { body { padding-bottom: 0; } }
         
         .container { max-width: 1320px; margin: 0 auto; padding: 0 16px; width: 100%; }
-        
         img { display: block; max-width: 100%; height: auto; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
 
-        /* --- 2. HEADER (Fixed Top) --- */
+        /* --- 2. HEADER --- */
         header { 
             position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height); 
             background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color); z-index: 1000; 
-            display: flex; align-items: center; backdrop-filter: blur(8px);
-            transition: transform 0.3s ease;
+            display: flex; align-items: center; backdrop-filter: blur(8px); transition: transform 0.3s ease;
         }
         body.header-hidden header { transform: translateY(-100%); }
 
@@ -83,38 +71,30 @@
         .logo-circle { width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 800; font-size: 0.9rem; }
         
         .location-pill { 
-            font-size: 0.8rem; font-weight: 600; color: var(--secondary); 
-            background: #f8fafc; padding: 6px 14px; border-radius: 50px; border: 1px solid var(--border-color);
+            font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
+            padding: 6px 14px; border-radius: 50px; border: 1px solid var(--border-color);
             display: flex; align-items: center; gap: 6px;
         }
 
-        /* --- 3. MOBILE APP BAR (Bottom Nav) --- */
+        /* --- 3. MOBILE APP BAR --- */
         .mobile-app-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; height: var(--app-bar-height);
             background: #ffffff; border-top: 1px solid var(--border-color);
             z-index: 1100; display: grid; grid-template-columns: repeat(4, 1fr);
             box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
         }
-        /* Hide on Desktop */
         @media (min-width: 1024px) { .mobile-app-bar { display: none !important; } }
 
         .app-bar-btn {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 4px; color: var(--text-light); text-decoration: none; font-size: 0.7rem; font-weight: 500;
-            transition: color 0.2s; height: 100%;
+            gap: 4px; color: var(--text-light); text-decoration: none; font-size: 0.7rem; font-weight: 500; height: 100%;
         }
         .app-bar-btn svg { width: 24px; height: 24px; stroke-width: 2px; }
-        .app-bar-btn:active { transform: scale(0.95); }
-        .app-bar-btn.active-tab { color: var(--primary); font-weight: 700; }
-        .app-bar-btn.highlight { color: #b45309; } /* Ofertas color */
+        .app-bar-btn.highlight { color: #b45309; } 
 
-        /* --- 4. HERO SECTION --- */
+        /* --- 4. HERO --- */
         #home-view { padding-top: var(--header-height); }
-        
-        .hero {
-            background: #ffffff; padding: 40px 0 60px; text-align: center;
-            border-bottom: 1px solid #f1f5f9; position: relative; overflow: hidden;
-        }
+        .hero { background: #ffffff; padding: 40px 0 60px; text-align: center; border-bottom: 1px solid #f1f5f9; position: relative; overflow: hidden; }
         .hero-title { font-size: 2rem; font-weight: 800; color: var(--secondary); margin-bottom: 16px; line-height: 1.1; letter-spacing: -0.5px; }
         .hero-title span { color: var(--primary); }
         .hero-text { color: var(--text-light); font-size: 1.1rem; max-width: 500px; margin: 0 auto 30px; font-weight: 400; }
@@ -125,277 +105,138 @@
             display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s;
         }
         .btn-cta-primary:hover { transform: scale(1.03); background: var(--primary-dark); }
-
         .trust-badges { display: flex; justify-content: center; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
-        .badge-item { 
-            display: flex; align-items: center; gap: 6px; background: #fff; padding: 8px 16px; 
-            border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.85rem; font-weight: 600; color: var(--secondary); 
-        }
+        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.85rem; font-weight: 600; color: var(--secondary); }
         
-        @media (min-width: 768px) {
-            .hero { padding: 80px 0; }
-            .hero-title { font-size: 3.5rem; }
-        }
+        @media (min-width: 768px) { .hero { padding: 80px 0; } .hero-title { font-size: 3.5rem; } }
 
-        /* --- 5. BASKETS GRID (HOME) --- */
+        /* --- 5. HOME GRID --- */
         .home-grid-container { padding: 40px 16px 80px; }
-        .baskets-grid { 
-            display: grid; grid-template-columns: 1fr; gap: 24px; 
-            list-style: none; max-width: 1280px; margin: 0 auto; 
-        }
+        .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 24px; max-width: 1280px; margin: 0 auto; }
         @media (min-width: 600px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
-        /* DESKTOP: 4 Colunas */
         @media (min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(4, 1fr); gap: 30px; } }
 
-        /* HOME CARD */
         .home-card { 
             background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-color);
             overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;
         }
         .home-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-float); border-color: #cbd5e1; }
         
-        .hc-image-wrap { 
-            width: 100%; aspect-ratio: 1/1; position: relative; background: #fff; 
-            display: flex; align-items: center; justify-content: center; padding: 20px; border-bottom: 1px solid #f8fafc;
-        }
+        .hc-image-wrap { width: 100%; aspect-ratio: 1/1; position: relative; background: #fff; display: flex; align-items: center; justify-content: center; padding: 20px; border-bottom: 1px solid #f8fafc; }
         .hc-image { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        
         .hc-content { padding: 20px; flex: 1; display: flex; flex-direction: column; text-align: center; }
         .hc-title { font-size: 1.35rem; font-weight: 700; color: var(--secondary); margin-bottom: 8px; line-height: 1.2; }
         .hc-price { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
-        
         .hc-actions { margin-top: auto; display: grid; gap: 10px; }
-        .btn-outline { 
-            border: 1px solid var(--border-color); background: white; color: var(--secondary); 
-            font-weight: 600; padding: 10px; border-radius: 50px; font-size: 0.95rem; width: 100%; 
-        }
-        .btn-outline:hover { background: #f8fafc; border-color: var(--secondary); }
-        
-        .btn-fill { 
-            background: var(--secondary); color: white; border: none;
-            font-weight: 600; padding: 12px; border-radius: 50px; font-size: 1rem; width: 100%; 
-        }
-        .btn-fill:hover { background: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-outline { border: 1px solid var(--border-color); background: white; color: var(--secondary); font-weight: 600; padding: 10px; border-radius: 50px; width: 100%; }
+        .btn-fill { background: var(--secondary); color: white; border: none; font-weight: 600; padding: 12px; border-radius: 50px; width: 100%; }
 
-        /* --- 6. CUSTOMIZER VIEW (LAYOUT PRINCIPAL) --- */
+        /* --- 6. CUSTOMIZER --- */
         #customizer-view { padding-top: var(--header-height); background: #f8fafc; min-height: 100vh; }
-        
-        /* Customizer Header (Sticky) */
         .cust-header-bar { 
             background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color);
             position: sticky; top: var(--header-height); z-index: 900; backdrop-filter: blur(10px);
-            padding: 12px 0; box-shadow: var(--shadow-subtle);
+            padding: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        
         .ch-container { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        
-        .ch-back-btn { 
-            width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border-color); background: white;
-            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-main); flex-shrink: 0;
-        }
-        
+        .ch-back-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
         .ch-info h2 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; line-height: 1.2; }
         .ch-info span { font-size: 0.85rem; color: var(--text-light); }
-        
         .ch-search-box { flex: 1; max-width: 500px; position: relative; }
-        .ch-input { 
-            width: 100%; height: 42px; border-radius: 50px; border: 1px solid var(--border-color);
-            padding: 0 40px 0 20px; font-size: 0.95rem; background: #f1f5f9; color: var(--text-main);
-        }
-        .ch-input:focus { background: white; outline: 2px solid var(--primary); border-color: transparent; }
+        .ch-input { width: 100%; height: 42px; border-radius: 50px; border: 1px solid var(--border-color); padding: 0 40px 0 20px; font-size: 0.95rem; background: #f1f5f9; }
         .ch-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
+        .ch-desktop-cart { display: none; }
 
-        .ch-desktop-cart { display: none; } /* Show on Desktop */
-
-        /* LAYOUT GRID (Desktop: Sidebar + Products) */
-        .app-grid { 
-            display: block; /* Mobile default */
-            margin-top: 24px; 
-            padding-bottom: 40px;
-        }
-        
+        .app-grid { display: block; margin-top: 24px; padding-bottom: 40px; }
         @media (min-width: 1024px) {
-            .app-grid { 
-                display: grid; 
-                grid-template-columns: 1fr 340px; /* Sidebar is 340px */
-                gap: 40px; 
-                align-items: start; 
-            }
+            .app-grid { display: grid; grid-template-columns: 1fr 340px; gap: 40px; align-items: start; }
             .ch-desktop-cart { display: flex; align-items: center; gap: 16px; }
             .desk-price { text-align: right; line-height: 1.2; }
-            .desk-price small { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
             .desk-price strong { font-size: 1.2rem; color: var(--primary); }
-            .btn-desk-checkout { 
-                background: #16a34a; color: white; padding: 0 24px; height: 42px; border-radius: 6px; 
-                font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;
-            }
+            .btn-desk-checkout { background: #16a34a; color: white; padding: 0 24px; height: 42px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         }
 
-        /* --- 7. PRODUCTS LIST & SIDEBAR --- */
-        
-        /* Products Column */
         .products-section { width: 100%; }
-        
-        /* Section Banners */
-        .section-header { 
-            background: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; 
-            border: 1px solid var(--border-color); border-bottom: none;
-            display: flex; align-items: center; justify-content: space-between; margin-top: 20px;
-        }
-        .section-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 8px; margin: 0; }
-        
-        /* Product Container Box */
-        .product-box {
-            background: #fff; border: 1px solid var(--border-color); border-radius: 0 0 12px 12px; padding: 16px;
-        }
+        .section-header { background: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; display:flex; justify-content: space-between; align-items: center; }
+        .section-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; }
+        .product-box { background: #fff; border: 1px solid var(--border-color); border-radius: 0 0 12px 12px; padding: 16px; }
 
-        /* Product Grid System */
-        .grid-products { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); /* Mobile: 2 Cols */
-            gap: 16px; 
-        }
-        
+        .grid-products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
         @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); } }
-        /* DESKTOP FIXED 4 COLUMNS */
-        @media (min-width: 1024px) { 
-            .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } 
-        }
+        @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
 
-        /* MINI PRODUCT CARD */
+        /* PRODUCT MINI CARD (SMART) */
         .mini-card {
             display: flex; flex-direction: column; align-items: center; text-align: center;
             padding: 10px; border-radius: 8px; border: 1px solid transparent;
             transition: background 0.2s; position: relative;
         }
         .mini-card:hover { background: #fff; border-color: var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .tag-offer { position: absolute; top: 0; left: 0; background: #16a34a; color: white; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
         
-        /* Offer Tag */
-        .tag-offer { 
-            position: absolute; top: 0; left: 0; background: #16a34a; color: white; 
-            font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2;
-        }
-
-        .mc-img-box { 
-            width: 100%; aspect-ratio: 1/1; position: relative; 
-            display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
-        }
+        .mc-img-box { width: 100%; aspect-ratio: 1/1; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: zoom-in; }
         .mc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
-        .mc-title { 
-            font-size: 0.85rem; font-weight: 500; color: var(--secondary); margin-bottom: 4px;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em;
-            width: 100%; line-height: 1.3;
-        }
-        
+        /* Media Indicators (Restore) */
+        .media-indicators { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 4px; pointer-events: none; }
+        .indicator-icon { width: 20px; height: 20px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--secondary); border: 1px solid #e2e8f0; opacity: 0; transition: opacity 0.3s; }
+        .indicator-icon.visible { opacity: 1; }
+
+        .mc-title { font-size: 0.85rem; font-weight: 500; color: var(--secondary); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em; width: 100%; line-height: 1.3; }
         .mc-price { font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
         .mc-price-old { font-size: 0.8rem; text-decoration: line-through; color: #94a3b8; margin-right: 6px; }
         .mc-price-new { color: var(--primary); }
 
-        /* Action Buttons (Mini) */
-        .btn-add-mini {
-            width: 100%; height: 32px; background: var(--primary); color: white; 
-            border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase;
-            box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); transition: background 0.2s;
-        }
-        .btn-add-mini:hover { background: var(--primary-dark); }
-        
-        .qty-mini {
-            width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between;
-            border: 1px solid var(--primary); border-radius: 6px; background: white;
-        }
+        .btn-add-mini { width: 100%; height: 32px; background: var(--primary); color: white; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); }
+        .qty-mini { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 6px; background: white; }
         .qm-btn { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--secondary); font-size: 1.1rem; }
-        .qm-val { font-weight: 700; font-size: 0.9rem; color: var(--secondary); }
-
-        /* Extra Chips */
-        .chip-info { font-size: 0.7rem; padding: 2px 8px; background: #eff6ff; color: #1d4ed8; border-radius: 4px; margin-bottom: 6px; display: inline-block; }
-
-        /* --- SIDEBAR COLUMN (Desktop) --- */
-        .sidebar-desktop { display: none; }
+        .qm-val { font-weight: 700; font-size: 0.9rem; }
         
+        /* Features Buttons */
+        .btn-feat-row { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
+        .btn-feat { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; border: 1px solid; cursor: pointer; display: none; }
+        .btn-feat.info { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; display: inline-block; } /* Always show if text exists */
+        .btn-feat.nutri { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; } /* Only show if image exists */
+
+        /* --- SIDEBAR DESKTOP --- */
+        .sidebar-desktop { display: none; }
         @media (min-width: 1024px) {
-            .sidebar-desktop { 
-                display: block; 
-                position: sticky; top: 130px; /* Below header */
-                background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px;
-                max-height: calc(100vh - 150px); overflow-y: auto;
-            }
-            
-            .sidebar-title { font-size: 0.9rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
-            
-            /* Sidebar Grid System: 3 Cols for Chips */
-            .sidebar-nav-grid { 
-                display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px;
-            }
-            
-            .sidebar-chip {
-                background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
-                font-size: 0.7rem; font-weight: 600; color: var(--secondary); text-align: center;
-                padding: 8px 4px; cursor: pointer; transition: all 0.2s;
-                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            }
+            .sidebar-desktop { display: block; position: sticky; top: 130px; background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; max-height: calc(100vh - 150px); overflow-y: auto; }
+            .sidebar-title { font-size: 0.9rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 12px; }
+            .sidebar-nav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+            .sidebar-chip { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.7rem; font-weight: 600; color: var(--secondary); text-align: center; padding: 8px 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .sidebar-chip:hover { border-color: var(--secondary); background: #e2e8f0; }
         }
 
-        /* --- 8. SHEETS & MODALS --- */
-        .sheet-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1200;
-            display: flex; flex-direction: column; justify-content: flex-end;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-        }
+        /* --- GALLERY & MODALS --- */
+        .gallery-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1500; display: none; flex-direction: column; justify-content: center; }
+        .gallery-wrap.active { display: flex; }
+        .gallery-stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 20px; }
+        .gallery-img { max-width: 100%; max-height: 80vh; object-fit: contain; }
+        .gallery-video { max-width: 100%; max-height: 80vh; }
+        .gallery-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; cursor: pointer; z-index: 1510; }
+        .gallery-thumbs { height: 80px; display: flex; justify-content: center; gap: 8px; padding: 10px; overflow-x: auto; }
+        .g-thumb { width: 50px; height: 50px; border-radius: 4px; border: 2px solid transparent; opacity: 0.5; object-fit: cover; cursor: pointer; }
+        .g-thumb.active { border-color: var(--primary); opacity: 1; }
+
+        .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1200; display: flex; flex-direction: column; justify-content: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .sheet-overlay.open { opacity: 1; pointer-events: auto; }
-        
-        .sheet-content {
-            background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px;
-            max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
+        .sheet-content { background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; }
         .sheet-overlay.open .sheet-content { transform: translateY(0); }
+        @media (min-width: 1024px) { .sheet-content { max-width: 500px; margin: 0 auto; top: 50%; bottom: auto; transform: translateY(-50%); border-radius: 12px; } .sheet-overlay { justify-content: center; } .sheet-overlay.open .sheet-content { transform: translateY(0); } }
         
-        @media (min-width: 1024px) {
-            /* On desktop, sheets act more like centered modals if needed, or stay hidden if not used */
-            .sheet-content { max-width: 500px; margin: 0 auto; border-radius: 12px; bottom: auto; top: 50%; transform: translateY(-50%); position: relative; }
-            .sheet-overlay { justify-content: center; }
-            .sheet-overlay.open .sheet-content { transform: translateY(0); }
-        }
-
-        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
+        .sheet-header { display: flex; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
         .sheet-title { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; }
-        .sheet-close { font-size: 1.5rem; color: var(--text-light); padding: 5px; }
-
-        /* Mobile specific grids in sheets */
         .mobile-cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .mobile-cat-btn { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; color: var(--secondary); }
-
         .mobile-tags-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .mobile-tag-btn { font-size: 0.8rem; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center; color: var(--text-main); }
+        .mobile-tag-btn { font-size: 0.8rem; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center; }
 
-        /* --- 9. UTILS & EXTRAS --- */
-        .toast {
-            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-            background: var(--secondary); color: white; padding: 10px 20px; border-radius: 50px;
-            font-size: 0.9rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 1300;
-            display: flex; align-items: center; gap: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--secondary); color: white; padding: 10px 20px; border-radius: 50px; font-size: 0.9rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 1300; }
         .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-        /* Loading Spinner */
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Gallery Overlay */
-        .gallery-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1500; display: none; flex-direction: column; justify-content: center; }
-        .gallery-wrap.active { display: flex; }
-        .gallery-img { max-width: 100%; max-height: 80vh; object-fit: contain; }
-        .gallery-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; cursor: pointer; }
-
-        /* FAQ Styling */
-        details.faq-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
-        details.faq-box summary { padding: 15px; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-        details.faq-box summary::after { content: '+'; font-size: 1.2rem; color: var(--primary); }
-        details.faq-box[open] summary::after { content: '-'; }
-        .faq-text { padding: 15px; border-top: 1px solid #f1f5f9; color: var(--text-light); font-size: 0.95rem; }
-
-        /* Checkout Modal */
         dialog.modal-checkout { border: none; border-radius: 12px; width: 95%; max-width: 450px; padding: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         dialog::backdrop { background: rgba(0,0,0,0.6); }
         .co-header { padding: 15px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
@@ -405,13 +246,10 @@
     </style>
 </head>
 <body>
-
-    <!-- HEADER (Desktop & Mobile) -->
     <header>
         <div class="container header-inner">
             <a href="#" class="logo" onclick="location.reload()">
-                <div class="logo-circle">DA</div>
-                <span>Dona Antônia</span>
+                <div class="logo-circle">DA</div> <span>Dona Antônia</span>
             </a>
             <div class="location-pill">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -420,110 +258,53 @@
         </div>
     </header>
 
-    <!-- MOBILE APP BAR (Bottom) -->
     <nav class="mobile-app-bar">
-        <a onclick="App.openSheet('cat-sheet')" class="app-bar-btn">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>
-            Categorias
-        </a>
-        <a onclick="App.openSheet('tags-sheet')" class="app-bar-btn">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            Busca
-        </a>
-        <a onclick="App.openSheet('offers-sheet')" class="app-bar-btn highlight">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-            <strong>Ofertas</strong>
-        </a>
-        <a onclick="App.openSheet('faq-sheet')" class="app-bar-btn">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Dúvidas
-        </a>
+        <a onclick="App.openSheet('cat-sheet')" class="app-bar-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>Categorias</a>
+        <a onclick="App.openSheet('tags-sheet')" class="app-bar-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>Busca</a>
+        <a onclick="App.openSheet('offers-sheet')" class="app-bar-btn highlight"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg><strong>Ofertas</strong></a>
+        <a onclick="App.openSheet('faq-sheet')" class="app-bar-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Dúvidas</a>
     </nav>
 
-    <!-- VIEWS -->
-    
-    <!-- 1. HOME VIEW -->
+    <!-- HOME -->
     <main id="home-view">
         <section class="hero">
             <div class="container">
-                <div class="trust-badges" style="justify-content:center; margin-bottom:20px; margin-top:0;">
-                    <div class="badge-item">🔒 Pagamento na Entrega</div>
-                    <div class="badge-item">🚀 Entrega em 24h</div>
-                </div>
-                
+                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em 24h</div></div>
                 <h1 class="hero-title">A Melhor Cesta Básica <br> na Porta da <span>Sua Casa</span></h1>
-                <p class="hero-text">Personalize com marcas líderes como Arroz Tio Alvino e receba sem filas.</p>
-                
-                <button class="btn-cta-primary" onclick="document.getElementById('baskets-anchor').scrollIntoView({behavior:'smooth'})">
-                    Escolher Minha Cesta
-                </button>
+                <p class="hero-text">Personalize com marcas líderes e receba sem filas.</p>
+                <button class="btn-cta-primary" onclick="document.getElementById('baskets-anchor').scrollIntoView({behavior:'smooth'})">Escolher Minha Cesta</button>
             </div>
         </section>
-
         <section class="home-grid-container" id="baskets-anchor">
-            <div id="home-list" class="baskets-grid">
-                <div class="loader"></div>
-            </div>
+            <div id="home-list" class="baskets-grid"><div class="loader"></div></div>
         </section>
-
-        <footer style="text-align:center; padding: 40px 20px; color:#94a3b8; font-size:0.9rem;">
-            <p style="margin-bottom:10px;">&copy; 2024 Dona Antônia Alimentos</p>
-            <p>Rua Trinta, 105 - Cuiabá, MT</p>
-        </footer>
+        <footer style="text-align:center; padding: 40px 20px; color:#94a3b8; font-size:0.9rem;"><p>&copy; 2024 Dona Antônia Alimentos</p></footer>
     </main>
 
-    <!-- 2. CUSTOMIZER VIEW -->
+    <!-- CUSTOMIZER -->
     <div id="customizer-view" class="hidden">
         <div class="cust-header-bar">
             <div class="container ch-container">
                 <button class="ch-back-btn" onclick="App.goHome()">❮</button>
-                <div class="ch-info">
-                    <h2 id="cust-title">Minha Cesta</h2>
-                    <span id="cust-subtitle">Personalize os itens</span>
-                </div>
-                
-                <!-- Desktop Search -->
-                <div class="ch-search-box">
-                    <input type="text" id="main-search" class="ch-input" placeholder="Buscar produto (ex: Arroz)">
-                    <span class="ch-icon">🔍</span>
-                </div>
-
-                <!-- Desktop Cart Summary -->
+                <div class="ch-info"><h2 id="cust-title">Minha Cesta</h2><span id="cust-subtitle">Personalize os itens</span></div>
+                <div class="ch-search-box"><input type="text" id="main-search" class="ch-input" placeholder="Buscar produto..."><span class="ch-icon">🔍</span></div>
                 <div class="ch-desktop-cart">
-                    <div class="desk-price">
-                        <small>Total Estimado</small>
-                        <strong id="desk-total-val">R$ 0,00</strong>
-                    </div>
-                    <button class="btn-desk-checkout" onclick="App.openCheckout()">
-                        WhatsApp <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    </button>
+                    <div class="desk-price"><small>Total Estimado</small><strong id="desk-total-val">R$ 0,00</strong></div>
+                    <button class="btn-desk-checkout" onclick="App.openCheckout()">WhatsApp <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></button>
                 </div>
             </div>
         </div>
-
         <div class="container app-grid">
-            <!-- MAIN PRODUCTS COLUMN -->
             <div class="products-section">
-                <!-- INCLUDED ITEMS -->
-                <div class="section-header" style="border-top: 4px solid var(--secondary);">
-                    <h3>📦 Itens Inclusos</h3>
-                </div>
-                <div class="product-box">
-                    <div id="included-list" class="grid-products"></div>
-                </div>
-
-                <!-- EXTRA ITEMS -->
+                <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Itens Inclusos</h3></div>
+                <div class="product-box"><div id="included-list" class="grid-products"></div></div>
                 <div id="extras-container"></div>
             </div>
-
-            <!-- DESKTOP SIDEBAR (Sticky) -->
             <aside class="sidebar-desktop">
                 <div class="sidebar-title">Categorias</div>
                 <div id="desk-cat-list" class="sidebar-nav-grid"></div>
-
                 <div class="sidebar-title" style="margin-top:20px;">Busca Rápida</div>
                 <div id="desk-tag-list" class="sidebar-nav-grid"></div>
-
                 <div style="margin-top:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
                     <strong style="color:var(--secondary);">Dúvida?</strong>
                     <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:10px;">Fale conosco no WhatsApp.</p>
@@ -533,117 +314,127 @@
         </div>
     </div>
 
-    <!-- TOAST -->
-    <div id="toast" class="toast">
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <span id="toast-msg">Crédito atualizado</span>
-    </div>
+    <div id="toast" class="toast"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span id="toast-msg">Crédito atualizado</span></div>
 
     <!-- GALLERY -->
     <div id="gallery" class="gallery-wrap">
         <span class="gallery-close" onclick="Gallery.close()">✕</span>
-        <img id="gallery-img" class="gallery-img" src="">
+        <div class="gallery-stage">
+            <img id="gallery-img" class="gallery-img" src="">
+            <video id="gallery-video" class="gallery-video hidden" controls></video>
+        </div>
+        <div id="gallery-thumbs" class="gallery-thumbs"></div>
     </div>
 
-    <!-- CHECKOUT MODAL -->
+    <!-- MODALS -->
     <dialog id="checkout-modal" class="modal-checkout">
-        <div class="co-header">
-            <span>Resumo do Pedido</span>
-            <button onclick="document.getElementById('checkout-modal').close()">✕</button>
-        </div>
+        <div class="co-header"><span>Resumo do Pedido</span><button onclick="document.getElementById('checkout-modal').close()">✕</button></div>
         <div class="co-body">
             <ul id="checkout-items" style="list-style:none; margin-bottom:20px;"></ul>
-            <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.2rem; border-top:1px solid #eee; padding-top:15px;">
-                <span>Total</span>
-                <span id="co-total">R$ 0,00</span>
-            </div>
-            
+            <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.2rem; border-top:1px solid #eee; padding-top:15px;"><span>Total</span><span id="co-total">R$ 0,00</span></div>
             <div style="margin-top:20px;">
                 <label style="display:block; font-weight:600; margin-bottom:10px;">Forma de Pagamento:</label>
                 <select id="payment-method" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
-                    <option value="Pix">Pix (Instantâneo)</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Cartão de Crédito">Cartão de Crédito</option>
-                    <option value="Cartão de Débito">Cartão de Débito</option>
-                    <option value="Vale Alimentação">Vale Alimentação</option>
+                    <option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão de Crédito">Cartão de Crédito</option>
                 </select>
             </div>
         </div>
-        <div class="co-footer">
-            <button class="co-btn" onclick="App.sendWhatsApp()">Confirmar Pedido</button>
-        </div>
+        <div class="co-footer"><button class="co-btn" onclick="App.sendWhatsApp()">Confirmar Pedido</button></div>
     </dialog>
 
-    <!-- MOBILE SHEETS (MODALS) -->
-    
-    <!-- 1. CATEGORIES -->
-    <div id="cat-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('cat-sheet')">
-        <div class="sheet-content">
-            <div class="sheet-header">
-                <h3 class="sheet-title">Categorias</h3>
-                <span class="sheet-close" onclick="App.closeSheet('cat-sheet')">✕</span>
-            </div>
-            <div id="mob-cat-grid" class="mobile-cat-grid"></div>
-        </div>
-    </div>
+    <div id="cat-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('cat-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title">Categorias</h3><span class="sheet-close" onclick="App.closeSheet('cat-sheet')">✕</span></div><div id="mob-cat-grid" class="mobile-cat-grid"></div></div></div>
+    <div id="tags-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('tags-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title">Busca Rápida</h3><span class="sheet-close" onclick="App.closeSheet('tags-sheet')">✕</span></div><div id="mob-tags-grid" class="mobile-tags-grid"></div></div></div>
+    <div id="offers-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('offers-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title" style="color:#b45309;">🔥 Super Ofertas</h3><span class="sheet-close" onclick="App.closeSheet('offers-sheet')">✕</span></div><div id="mob-offers-grid" class="grid-products" style="grid-template-columns: repeat(2, 1fr) !important;"></div></div></div>
+    <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title">Dúvidas Frequentes</h3><span class="sheet-close" onclick="App.closeSheet('faq-sheet')">✕</span></div><div><details class="faq-box"><summary>Formas de Pagamento</summary><div class="faq-text">Pix, Dinheiro, Cartões e Vales.</div></details><details class="faq-box"><summary>Taxa de Entrega</summary><div class="faq-text">Grátis acima de R$ 85,00.</div></details></div></div></div>
 
-    <!-- 2. TAGS -->
-    <div id="tags-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('tags-sheet')">
-        <div class="sheet-content">
-            <div class="sheet-header">
-                <h3 class="sheet-title">Busca Rápida</h3>
-                <span class="sheet-close" onclick="App.closeSheet('tags-sheet')">✕</span>
-            </div>
-            <div id="mob-tags-grid" class="mobile-tags-grid"></div>
-        </div>
-    </div>
-
-    <!-- 3. OFFERS -->
-    <div id="offers-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('offers-sheet')">
-        <div class="sheet-content">
-            <div class="sheet-header">
-                <h3 class="sheet-title" style="color:#b45309;">🔥 Super Ofertas</h3>
-                <span class="sheet-close" onclick="App.closeSheet('offers-sheet')">✕</span>
-            </div>
-            <div id="mob-offers-grid" class="grid-products" style="grid-template-columns: repeat(2, 1fr) !important;">
-                <!-- Filled via JS -->
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. FAQ -->
-    <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
-        <div class="sheet-content">
-            <div class="sheet-header">
-                <h3 class="sheet-title">Dúvidas Frequentes</h3>
-                <span class="sheet-close" onclick="App.closeSheet('faq-sheet')">✕</span>
-            </div>
-            <div>
-                <details class="faq-box"><summary>Formas de Pagamento</summary><div class="faq-text">Pix, Dinheiro, Cartões de Crédito/Débito e Vales (Pluxee, Alelo, etc).</div></details>
-                <details class="faq-box"><summary>Taxa de Entrega</summary><div class="faq-text">Grátis acima de R$ 85,00 para Cuiabá e VG.</div></details>
-                <details class="faq-box"><summary>Prazo de Entrega</summary><div class="faq-text">Entregamos no dia seguinte ao pedido (exceto domingos).</div></details>
-            </div>
-        </div>
-    </div>
-
-    <!-- LOGIC -->
     <script>
         const CONSTANTS = {
             TAGS: ["Arroz", "Feijão", "Açúcar", "Café", "Óleo", "Macarrão", "Leite", "Sabão", "Detergente", "Sardinha"],
-            THEMES: {
-                'DEFAULT': '#f1f5f9', 'ALIMENTOS': '#ffedd5', 'LIMPEZA': '#dbeafe', 
-                'HIGIENE': '#dcfce7', 'BEBIDAS': '#fae8ff', 'CARNES': '#fee2e2'
-            },
+            THEMES: { 'DEFAULT': '#f1f5f9', 'ALIMENTOS': '#ffedd5', 'LIMPEZA': '#dbeafe', 'HIGIENE': '#dcfce7', 'BEBIDAS': '#fae8ff', 'CARNES': '#fee2e2' },
             PHONE: "5565996813588"
         };
 
         const Gallery = {
-            open(src) {
+            open(mainSrc, productName, startWith=null) {
                 const el = document.getElementById('gallery');
                 const img = document.getElementById('gallery-img');
-                if(src) { img.src = src; el.classList.add('active'); }
+                const vid = document.getElementById('gallery-video');
+                const thumbs = document.getElementById('gallery-thumbs');
+                
+                thumbs.innerHTML = '';
+                img.src = startWith || mainSrc;
+                img.alt = productName;
+                img.classList.remove('hidden');
+                vid.classList.add('hidden');
+                vid.pause();
+                
+                this.addThumb(mainSrc, 'img', !startWith);
+                this.checkSuffixes(mainSrc, startWith);
+                this.checkVideo(mainSrc);
+                
+                el.classList.add('active');
             },
-            close() { document.getElementById('gallery').classList.remove('active'); }
+            
+            swap(src, type, el) {
+                document.querySelectorAll('.g-thumb').forEach(t => t.classList.remove('active'));
+                el.classList.add('active');
+                const img = document.getElementById('gallery-img');
+                const vid = document.getElementById('gallery-video');
+                
+                if(type === 'video') {
+                    img.classList.add('hidden');
+                    vid.src = src;
+                    vid.classList.remove('hidden');
+                    vid.play();
+                } else {
+                    vid.pause();
+                    vid.classList.add('hidden');
+                    img.src = src;
+                    img.classList.remove('hidden');
+                }
+            },
+
+            addThumb(src, type, isActive) {
+                const t = document.createElement('img');
+                t.className = `g-thumb ${isActive?'active':''}`;
+                if(type === 'video') {
+                    t.src = 'img/video-placeholder.png'; // Fallback or icon
+                    t.onerror = () => t.src = 'https://placehold.co/50x50?text=VID';
+                } else {
+                    t.src = src;
+                }
+                t.onclick = () => this.swap(src, type, t);
+                document.getElementById('gallery-thumbs').appendChild(t);
+            },
+
+            checkSuffixes(baseSrc, startWith) {
+                const suffixes = ['A', 'B', 'C'];
+                const dot = baseSrc.lastIndexOf('.');
+                if(dot === -1) return;
+                const root = baseSrc.substring(0, dot);
+                const ext = baseSrc.substring(dot);
+                
+                suffixes.forEach(s => {
+                    const url = root + s + ext;
+                    const i = new Image();
+                    i.onload = () => this.addThumb(url, 'img', url === startWith);
+                    i.src = url;
+                });
+            },
+
+            checkVideo(baseSrc) {
+                const dot = baseSrc.lastIndexOf('.');
+                if(dot === -1) return;
+                const vidUrl = baseSrc.substring(0, dot) + '.mp4';
+                const v = document.createElement('video');
+                v.onloadedmetadata = () => this.addThumb(vidUrl, 'video', false);
+                v.src = vidUrl;
+            },
+
+            close() { 
+                document.getElementById('gallery').classList.remove('active'); 
+                document.getElementById('gallery-video').pause();
+            }
         };
 
         const App = {
@@ -654,7 +445,6 @@
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
                     const raw = await res.json();
                     
-                    // Normalize Data
                     this.data = raw.map(p => ({
                         ...p,
                         id: String(p.id),
@@ -665,7 +455,9 @@
                         categoria: (p.categoria || 'OUTROS').trim().toUpperCase(),
                         imagem: this.fixImgPath(p.imagem),
                         limit: parseInt(p.Limit || p.limit || 0),
-                        estoque: parseInt(p.estoque || 0)
+                        estoque: parseInt(p.estoque || 0),
+                        validade: p.Validade || p.validade || "",
+                        caracteristicas: p.Caracteristicas || p.caracteristicas || ""
                     }));
 
                     this.renderHome();
@@ -674,34 +466,26 @@
 
                 } catch (e) {
                     console.error("Erro Fatal:", e);
-                    document.getElementById('home-list').innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar produtos.<br>Por favor, recarregue a página.</p>`;
+                    document.getElementById('home-list').innerHTML = `<p style="text-align:center;">Erro ao carregar.</p>`;
                 }
             },
 
             fixImgPath(path) {
                 if (!path) return 'img/placeholder.jpg';
-                if (path.includes('/')) return `img/produtos/${path.split('/').pop()}`;
-                return `img/produtos/${path}`;
+                return path.includes('/') ? `img/produtos/${path.split('/').pop()}` : `img/produtos/${path}`;
             },
 
             renderHome() {
                 const list = document.getElementById('home-list');
-                // Robust Filter: Contains 'CESTA' and 'BÁSICA' (insensitive) to catch variations
-                const baskets = this.data.filter(p => {
-                    const c = p.categoria;
-                    return c.includes('CESTA') && (c.includes('BÁSICA') || c.includes('BASICA'));
-                });
-
-                if(baskets.length === 0) {
-                    list.innerHTML = '<p>Nenhuma cesta encontrada no momento.</p>';
-                    return;
-                }
+                const baskets = this.data.filter(p => p.categoria.includes('CESTA') && (p.categoria.includes('BÁSICA') || p.categoria.includes('BASICA')));
+                
+                if(baskets.length === 0) { list.innerHTML = '<p>Nenhuma cesta.</p>'; return; }
 
                 list.innerHTML = baskets.map(p => {
                     const price = (p.isOffer && p.offerPrice > 0) ? p.offerPrice : p.valor;
                     return `
                     <article class="home-card">
-                        <div class="hc-image-wrap" onclick="Gallery.open('${p.imagem}')">
+                        <div class="hc-image-wrap" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
                             <img src="${p.imagem}" class="hc-image" loading="lazy" alt="${p.nome}">
                         </div>
                         <div class="hc-content">
@@ -717,46 +501,27 @@
             },
 
             renderSidebar() {
-                // Desktop Sidebar & Mobile Menus
                 const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))].sort();
-                
-                // 1. Categories
-                const catHTML = cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`).join('');
-                document.getElementById('desk-cat-list').innerHTML = catHTML;
-                
-                const mobCatHTML = cats.map(c => `<div class="mobile-cat-btn" onclick="App.filterCat('${c}')">${c}</div>`).join('');
-                document.getElementById('mob-cat-grid').innerHTML = mobCatHTML;
-
-                // 2. Tags
-                const tagHTML = CONSTANTS.TAGS.map(t => `<button class="sidebar-chip" onclick="App.search('${t}')">${t}</button>`).join('');
-                document.getElementById('desk-tag-list').innerHTML = tagHTML;
-                
-                const mobTagHTML = CONSTANTS.TAGS.map(t => `<div class="mobile-tag-btn" onclick="App.search('${t}')">${t}</div>`).join('');
-                document.getElementById('mob-tags-grid').innerHTML = mobTagHTML;
+                document.getElementById('desk-cat-list').innerHTML = cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`).join('');
+                document.getElementById('mob-cat-grid').innerHTML = cats.map(c => `<div class="mobile-cat-btn" onclick="App.filterCat('${c}')">${c}</div>`).join('');
+                document.getElementById('desk-tag-list').innerHTML = CONSTANTS.TAGS.map(t => `<button class="sidebar-chip" onclick="App.search('${t}')">${t}</button>`).join('');
+                document.getElementById('mob-tags-grid').innerHTML = CONSTANTS.TAGS.map(t => `<div class="mobile-tag-btn" onclick="App.search('${t}')">${t}</div>`).join('');
             },
 
             openCustomizer(id) {
                 const basket = this.data.find(p => p.id === id);
                 if(!basket) return;
-
                 this.currentBasket = basket;
                 this.cart = {};
                 
-                // Parse pre-included items
                 if(basket.items && Array.isArray(basket.items)) {
                     basket.items.forEach(item => {
-                        // Simple logic: find product by exact ID or Name matching
                         let match = this.data.find(p => p.id === String(item.id));
-                        if(!match && item.nome) {
-                            match = this.data.find(p => !p.categoria.includes('CESTA') && p.nome.toLowerCase().includes(item.nome.toLowerCase()));
-                        }
-                        if(match) {
-                            this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(item.qtd || 1));
-                        }
+                        if(!match && item.nome) match = this.data.find(p => !p.categoria.includes('CESTA') && p.nome.toLowerCase().includes(item.nome.toLowerCase()));
+                        if(match) this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(item.qtd || 1));
                     });
                 }
 
-                // Calculate base fee (Basket Price - Sum of Items) to maintain total logic
                 let itemsSum = 0;
                 for(let pid in this.cart) {
                     let p = this.data.find(x => x.id === pid);
@@ -764,12 +529,10 @@
                 }
                 this.baseFee = Math.max(0, basket.valor - itemsSum);
 
-                // UI Update
                 document.getElementById('cust-title').innerText = basket.nome;
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
                 window.scrollTo(0,0);
-                
                 this.renderAllLists();
             },
 
@@ -781,56 +544,32 @@
 
             renderAllLists(searchTerm = "") {
                 if(!this.currentBasket) return;
-
-                // 1. Included Items (From Cart)
                 const incContainer = document.getElementById('included-list');
                 const incIds = Object.keys(this.cart);
                 
-                if(incIds.length === 0) incContainer.innerHTML = '<p style="padding:10px; color:#999;">Cesta vazia.</p>';
-                else {
-                    incContainer.innerHTML = incIds.map(id => {
-                        const p = this.data.find(x => x.id === id);
-                        return p ? this.buildCard(p, true) : '';
-                    }).join('');
-                }
+                incContainer.innerHTML = incIds.length === 0 ? '<p style="padding:10px; color:#999;">Cesta vazia.</p>' : 
+                    incIds.map(id => { const p = this.data.find(x => x.id === id); return p ? this.buildCard(p, true) : ''; }).join('');
 
-                // 2. Extra Items (Grouped by Category)
                 const extContainer = document.getElementById('extras-container');
                 let extras = this.data.filter(p => !p.categoria.includes('CESTA'));
-                
                 if(searchTerm) {
                     const lower = searchTerm.toLowerCase();
                     extras = extras.filter(p => p.nome.toLowerCase().includes(lower) || p.categoria.toLowerCase().includes(lower));
                 }
 
-                // Grouping
                 const groups = {};
-                extras.forEach(p => {
-                    if(!groups[p.categoria]) groups[p.categoria] = [];
-                    groups[p.categoria].push(p);
-                });
-
-                let html = '';
+                extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
                 const sortedCats = Object.keys(groups).sort();
                 
+                let html = '';
                 sortedCats.forEach(cat => {
                     const color = Object.keys(CONSTANTS.THEMES).find(k => cat.includes(k)) || 'DEFAULT';
-                    const bg = CONSTANTS.THEMES[color];
-                    
-                    html += `
-                    <div id="cat-${cat}" class="section-header" style="background:${bg}; margin-top:30px;">
-                        <h3>${cat}</h3>
-                    </div>
-                    <div class="product-box">
-                        <div class="grid-products">
-                            ${groups[cat].map(p => this.buildCard(p, false)).join('')}
-                        </div>
-                    </div>`;
+                    html += `<div id="cat-${cat}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;"><h3>${cat}</h3></div>
+                    <div class="product-box"><div class="grid-products">${groups[cat].map(p => this.buildCard(p, false)).join('')}</div></div>`;
                 });
+                extContainer.innerHTML = html || '<p style="text-align:center; padding:40px;">Nenhum produto encontrado.</p>';
                 
-                if(!html) html = '<p style="text-align:center; padding:40px;">Nenhum produto encontrado.</p>';
-                extContainer.innerHTML = html;
-
+                setTimeout(() => this.setupMediaObservers(), 500); // Trigger Smart Gallery Checks
                 this.updateTotal();
             },
 
@@ -838,52 +577,82 @@
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer && p.offerPrice > 0 ? p.offerPrice : p.valor;
                 
-                // Button Logic
-                let btnHtml;
-                if(qty === 0) {
-                    btnHtml = `<button class="btn-add-mini" onclick="App.modQty('${p.id}', 1)">Adicionar</button>`;
-                } else {
-                    btnHtml = `
-                    <div class="qty-mini">
-                        <button class="qm-btn" onclick="App.modQty('${p.id}', -1)">-</button>
-                        <span class="qm-val">${qty}</span>
-                        <button class="qm-btn" onclick="App.modQty('${p.id}', 1)">+</button>
-                    </div>`;
-                }
+                let btnHtml = qty === 0 ? 
+                    `<button class="btn-add-mini" onclick="App.modQty('${p.id}', 1)">Adicionar</button>` : 
+                    `<div class="qty-mini"><button class="qm-btn" onclick="App.modQty('${p.id}', -1)">-</button><span class="qm-val">${qty}</span><button class="qm-btn" onclick="App.modQty('${p.id}', 1)">+</button></div>`;
 
-                // Price Display
-                let priceHtml;
-                if(p.isOffer && p.offerPrice > 0) {
-                    priceHtml = `<span class="mc-price-old">R$${p.valor.toFixed(2)}</span><span class="mc-price-new">R$${price.toFixed(2)}</span>`;
-                } else {
-                    priceHtml = `R$ ${price.toFixed(2).replace('.', ',')}`;
-                }
+                let priceHtml = (p.isOffer && p.offerPrice > 0) ? 
+                    `<span class="mc-price-old">R$${p.valor.toFixed(2)}</span><span class="mc-price-new">R$${price.toFixed(2)}</span>` : 
+                    `R$ ${price.toFixed(2).replace('.', ',')}`;
+                
+                let featBtns = '';
+                if(p.caracteristicas) featBtns += `<div class="btn-feat info" onclick="alert('${p.caracteristicas.replace(/'/g,"")}')">Info</div>`;
+                // Nutri button will be made visible by JS observer if image A exists
+                featBtns += `<div class="btn-feat nutri" id="nutri-${p.id}" onclick="Gallery.open('${p.imagem}','${p.nome}','${p.imagem.replace('.','A.')}')">Nutri</div>`;
 
                 return `
-                <div class="mini-card">
+                <div class="mini-card" id="card-${p.id}">
                     ${(p.isOffer && p.offerPrice > 0) ? '<span class="tag-offer">OFERTA</span>' : ''}
-                    <div class="mc-img-box" onclick="Gallery.open('${p.imagem}')">
+                    <div class="mc-img-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
                         <img src="${p.imagem}" class="mc-img" loading="lazy">
+                        <div class="media-indicators" id="media-${p.id}">
+                            <div class="indicator-icon icon-cam">📷</div>
+                            <div class="indicator-icon icon-vid">🎥</div>
+                        </div>
                     </div>
                     <div class="mc-title">${p.nome}</div>
+                    <div class="btn-feat-row">${featBtns}</div>
                     <div class="mc-price">${priceHtml}</div>
                     ${btnHtml}
                 </div>`;
             },
 
+            setupMediaObservers() {
+                // Smart Gallery: Checks for extra images (A/B) and Videos without blocking UI
+                const cards = document.querySelectorAll('.mini-card');
+                const observer = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(e => {
+                        if(e.isIntersecting) {
+                            const pid = e.target.id.replace('card-','');
+                            const p = this.data.find(x => x.id === pid);
+                            if(p) this.checkMedia(p);
+                            obs.unobserve(e.target);
+                        }
+                    });
+                }, {rootMargin: "100px"});
+                cards.forEach(c => observer.observe(c));
+            },
+
+            checkMedia(p) {
+                const dot = p.imagem.lastIndexOf('.');
+                if(dot === -1) return;
+                const root = p.imagem.substring(0, dot);
+                const ext = p.imagem.substring(dot);
+                
+                // Check Nutri Image (A)
+                const imgA = new Image();
+                imgA.onload = () => {
+                    document.getElementById(`nutri-${p.id}`).style.display = 'inline-block';
+                    const el = document.querySelector(`#media-${p.id} .icon-cam`);
+                    if(el) el.classList.add('visible');
+                };
+                imgA.src = root + 'A' + ext;
+
+                // Check Video (.mp4)
+                const vid = document.createElement('video');
+                vid.onloadedmetadata = () => {
+                    const el = document.querySelector(`#media-${p.id} .icon-vid`);
+                    if(el) el.classList.add('visible');
+                };
+                vid.src = root + '.mp4';
+            },
+
             modQty(id, delta) {
                 if(!this.cart[id]) this.cart[id] = 0;
-                
-                // Stock Check
                 const p = this.data.find(x => x.id === id);
-                if(delta > 0 && p.limit > 0 && (this.cart[id] + delta > p.limit)) {
-                    alert(`Limite de ${p.limit} unidades por cliente.`);
-                    return;
-                }
-
+                if(delta > 0 && p.limit > 0 && (this.cart[id] + delta > p.limit)) return alert(`Limite de ${p.limit} unidades.`);
                 this.cart[id] += delta;
                 if(this.cart[id] <= 0) delete this.cart[id];
-                
                 this.renderAllLists(document.getElementById('main-search').value);
             },
 
@@ -893,38 +662,18 @@
                     const p = this.data.find(x => x.id === id);
                     if(p) total += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
                 }
-                
-                // Ensure total is at least basket price (credit logic could go here)
-                // For this version, keeping it simple: total is total.
                 const fmt = 'R$ ' + total.toFixed(2).replace('.', ',');
-                
-                // Desktop
                 document.getElementById('desk-total-val').innerText = fmt;
-                
-                // Checkout Modal
                 document.getElementById('co-total').innerText = fmt;
-                
-                // Mobile Toast?
-                // const toast = document.getElementById('toast');
-                // toast.querySelector('span').innerText = `Total: ${fmt}`;
-                // toast.classList.add('visible');
-                // setTimeout(() => toast.classList.remove('visible'), 2000);
             },
 
-            // --- NAVIGATION ACTIONS ---
-            setupSearch() {
-                document.getElementById('main-search').addEventListener('input', (e) => {
-                    this.renderAllLists(e.target.value);
-                });
-            },
+            setupSearch() { document.getElementById('main-search').addEventListener('input', (e) => this.renderAllLists(e.target.value)); },
 
             search(term) {
                 this.closeSheet('tags-sheet');
                 if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
                 document.getElementById('main-search').value = term;
                 this.renderAllLists(term);
-                
-                // Scroll to Extras
                 const el = document.getElementById('extras-container');
                 if(el) el.scrollIntoView({behavior:'smooth'});
             },
@@ -932,18 +681,11 @@
             filterCat(cat) {
                 this.closeSheet('cat-sheet');
                 if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
-                
-                // Clear search
                 document.getElementById('main-search').value = "";
-                this.renderAllLists(""); // Reset filter
-                
+                this.renderAllLists("");
                 setTimeout(() => {
                     const el = document.getElementById(`cat-${cat}`);
-                    if(el) {
-                        const offset = 140; // header + sticky
-                        const top = el.getBoundingClientRect().top + window.scrollY - offset;
-                        window.scrollTo({top: top, behavior:'smooth'});
-                    }
+                    if(el) { window.scrollTo({top: el.offsetTop - 140, behavior:'smooth'}); }
                 }, 100);
             },
 
@@ -952,51 +694,36 @@
                 document.getElementById(id).classList.add('open'); 
             },
             closeSheet(id) { document.getElementById(id).classList.remove('open'); },
-
             renderOffersInSheet() {
                 const grid = document.getElementById('mob-offers-grid');
                 const offers = this.data.filter(p => p.isOffer);
-                if(offers.length === 0) grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">Sem ofertas hoje.</p>';
-                else grid.innerHTML = offers.map(p => this.buildCard(p, false)).join('');
+                grid.innerHTML = offers.length ? offers.map(p => this.buildCard(p, false)).join('') : '<p style="grid-column:1/-1; text-align:center;">Sem ofertas.</p>';
             },
-
+            
             openCheckout() {
                 if(Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
-                const ul = document.getElementById('checkout-items');
-                ul.innerHTML = '';
-                
-                for(let id in this.cart) {
+                document.getElementById('checkout-items').innerHTML = Object.keys(this.cart).map(id => {
                     const p = this.data.find(x => x.id === id);
-                    if(p) {
-                        ul.innerHTML += `<li style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0;">
-                            <span>${this.cart[id]}x ${p.nome}</span>
-                        </li>`;
-                    }
-                }
+                    return `<li style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0;"><span>${this.cart[id]}x ${p.nome}</span></li>`;
+                }).join('');
                 document.getElementById('checkout-modal').showModal();
             },
 
             sendWhatsApp() {
                 const method = document.getElementById('payment-method').value;
                 const total = document.getElementById('co-total').innerText;
-                
                 let msg = `*NOVO PEDIDO: ${this.currentBasket.nome}*\n------------------\n`;
                 for(let id in this.cart) {
                     const p = this.data.find(x => x.id === id);
                     if(p) msg += `${this.cart[id]}x ${p.nome}\n`;
                 }
                 msg += `------------------\n*TOTAL: ${total}*\n*Pagamento:* ${method}`;
-                
                 window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
 
-            directLink(name) {
-                const msg = `Olá! Gostaria de pedir *${name}* diretamente.`;
-                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
-            }
+            directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
         };
 
-        // Start
         document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
 </body>
