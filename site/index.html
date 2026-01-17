@@ -4,11 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.14 - Clean Cards (No Icons) & Compact Chips
+        VERSION: 9.15 - Vertical Image Adaptation
         CHANGELOG:
-        - UI: Removidos ícones de sobreposição (câmera/vídeo) nas imagens.
-        - UI: Chips (Info, Nutri, Vídeo) ajustados para ficarem na mesma linha (compactos).
-        - CLEANUP: Código de indicadores de mídia removido.
+        - UI: Galeria ajustada para imagens verticais (flex: 1, min-height: 0).
+        - FIX: Removida restrição de 80vh na galeria para usar toda a tela disponível.
+        - UI: Imagens e vídeos agora se adaptam automaticamente à proporção (auto width/height).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -321,9 +321,36 @@
         .gallery-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; justify-content: center; padding: 20px; }
         .gallery-wrap.active { display: flex; }
         
-        .gallery-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 100%; max-height: 80vh; }
-        .gallery-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        .gallery-video { max-width: 100%; max-height: 100%; border-radius: 8px; }
+        /* FIX: Removed max-height constraint to allow full adaptation */
+        .gallery-stage { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative; 
+            width: 100%; 
+            min-height: 0; /* Critical for flex child */
+        }
+        
+        /* FIX: Auto dimensions to preserve aspect ratio */
+        .gallery-img { 
+            max-width: 100%; 
+            max-height: 100%; 
+            width: auto; 
+            height: auto; 
+            object-fit: contain; 
+            border-radius: 8px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
+        }
+        
+        .gallery-video { 
+            max-width: 100%; 
+            max-height: 100%; 
+            width: auto; 
+            height: auto; 
+            border-radius: 8px; 
+        }
         
         .gallery-close-chip { 
             position: absolute; top: 20px; right: 20px;
@@ -689,11 +716,6 @@
                      const isActive = (url === startWith);
                      v.onloadedmetadata = () => {
                          this.addThumb(url, 'video', isActive);
-                         // Enable chip on card if found
-                         // Note: We need a way to find the card ID here if we want to enable the chip.
-                         // But Gallery.checkVideo is called when Gallery opens. 
-                         // The chips are enabled by App.checkMedia which runs on intersection observer.
-                         // So we don't need to enable chips here.
                      };
                      v.src = url;
                 }
@@ -788,8 +810,11 @@
                 const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))].sort();
                 document.getElementById('desk-cat-list').innerHTML = cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`).join('');
                 document.getElementById('mob-cat-grid').innerHTML = cats.map(c => `<div class="mobile-cat-btn" onclick="App.filterCat('${c}')">${c}</div>`).join('');
-                document.getElementById('desk-tag-list').innerHTML = CONSTANTS.TAGS.map(t => `<button class="sidebar-chip" onclick="App.search('${t}')">${t}</button>`).join('');
-                document.getElementById('mob-tags-grid').innerHTML = CONSTANTS.TAGS.map(t => `<div class="mobile-tag-btn" onclick="App.search('${t}')">${t}</div>`).join('');
+                
+                // Sort Tags Alphabetically
+                const sortedTags = [...CONSTANTS.TAGS].sort();
+                document.getElementById('desk-tag-list').innerHTML = sortedTags.map(t => `<button class="sidebar-chip" onclick="App.search('${t}')">${t}</button>`).join('');
+                document.getElementById('mob-tags-grid').innerHTML = sortedTags.map(t => `<div class="mobile-tag-btn" onclick="App.search('${t}')">${t}</div>`).join('');
             },
 
             openCustomizer(id) {
