@@ -4,12 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.16 - Fixes: Image BG, Totals, Counters & Scroll
+        VERSION: 9.17 - Validity Date Display
         CHANGELOG:
-        - FIX: Fundo das imagens (.mc-img-box) agora é transparente.
-        - FIX: Cálculo do valor total restaurado e corrigido.
-        - FIX: Contador de alterações (limite de trocas) restaurado.
-        - UX: Clique na busca agora rola a tela para o início da lista de produtos extras.
+        - FEAT: Exibição da Data de Validade nos cards (se != '00').
+        - UI: Estilo .pc-validity adicionado para formatar a data (verde, discreto).
+        - FIX: Mantida toda a lógica de checkout, galeria e navegação.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -258,7 +257,7 @@
             width: 100%; aspect-ratio: 1/1; position: relative; display: flex; 
             align-items: center; justify-content: center; margin-bottom: 8px; 
             cursor: zoom-in; 
-            background-color: transparent; /* CORRIGIDO: Removido o fundo cinza */
+            background-color: transparent; 
             border-radius: 8px;
         }
         .mc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
@@ -277,6 +276,13 @@
         .btn-feat.info { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; display: inline-block; }
         .btn-feat.nutri { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
         .btn-feat.video { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+        
+        /* Validity Date Style */
+        .pc-validity {
+            font-size: 0.75rem; color: #15803d; font-weight: 600;
+            background: #f0fdf4; padding: 2px 8px; border-radius: 4px;
+            margin-bottom: 6px; width: fit-content;
+        }
 
         .mc-title { font-size: 0.85rem; font-weight: 500; color: var(--secondary); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em; width: 100%; line-height: 1.3; }
         .mc-price { font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
@@ -917,6 +923,12 @@
                 featBtns += `<div class="btn-feat nutri" id="nutri-${p.id}" onclick="Gallery.open('${p.imagem}','${p.nome}','${p.imagem.replace('.','A.')}')">Nutri</div>`;
                 featBtns += `<div class="btn-feat video" id="vid-btn-${p.id}">Vídeo</div>`;
 
+                // NEW: Validity Date
+                let valHtml = '';
+                if(p.validade && p.validade !== '00') {
+                    valHtml = `<div class="pc-validity">Val: ${p.validade}</div>`;
+                }
+
                 return `
                 <div class="mini-card" id="card-${p.id}">
                     ${(p.isOffer && p.offerPrice > 0) ? '<span class="tag-offer">OFERTA</span>' : ''}
@@ -924,6 +936,7 @@
                         <img src="${p.imagem}" class="mc-img" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/300?text=No+Image';">
                     </div>
                     <div class="mc-title">${p.nome}</div>
+                    ${valHtml}
                     <div class="btn-feat-row">${featBtns}</div>
                     <div class="mc-price">${priceHtml}</div>
                     ${btnHtml}
