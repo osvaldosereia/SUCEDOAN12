@@ -4,13 +4,14 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 7.0 - App Bar & Sidebar Grid Redesign
+        VERSION: 7.1 - App Bar Integration & Wide Sidebar
         CHANGELOG:
-        - MOBILE: Nova barra de navegação inferior estilo App (4 botões).
-        - MOBILE: Novo modal "Ofertas" (Slide-up) com produtos em 2 colunas.
-        - DESKTOP: Sidebar expandida (mais larga).
-        - DESKTOP: Grid de produtos fixo em 4 colunas.
-        - DESKTOP: Botões da sidebar (Cats e Tags) padronizados em grid de 3 colunas minimalistas.
+        - MOBILE: Implementada barra de navegação inferior (App Bar).
+        - MOBILE: Botões flutuantes removidos em favor da App Bar.
+        - MOBILE: Nova aba "Ofertas" com grid de 2 colunas.
+        - DESKTOP: Sidebar expandida para 360px (+40% a +60%).
+        - DESKTOP: Grid de produtos travado em 4 colunas.
+        - DESKTOP: Botões de navegação lateral (Cats/Tags) unificados em grid de 3 colunas.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -52,8 +53,10 @@
     
     <link rel="icon" href="img/favicon.ico" sizes="any">
     
+    <!-- PERFORMANCE FIX: Preload Critical Assets -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- FIX LCP CHAIN: Baixar o JSON junto com o HTML -->
     <link rel="preload" href="produtos/produtos.json" as="fetch" crossorigin="anonymous">
 
     <!-- ADVANCED SCHEMA.ORG JSON-LD -->
@@ -124,7 +127,7 @@
     </script>
     
     <style>
-        /* --- 1. CORE & RESET --- */
+        /* --- 1. CORE & RESET (Optimized) --- */
         :root { 
             --primary: #dc2626; 
             --primary-dark: #b91c1c; 
@@ -135,12 +138,12 @@
             --text-muted: #64748b; 
             --border: #e2e8f0; 
             --header-h: 60px;
+            --app-bar-h: 60px; /* Mobile App Bar Height */
             --radius: 12px; 
             --offer-color: #b45309;
             --focus-ring: #dc2626;
             --shadow-sm: none; 
             --shadow-md: none; 
-            --app-bar-height: 65px; /* Altura da barra inferior mobile */
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -150,13 +153,14 @@
             background-color: var(--bg); 
             color: var(--text-main); 
             line-height: 1.6; 
-            padding-bottom: var(--app-bar-height); /* Espaço para App Bar Mobile */
+            padding-bottom: var(--app-bar-h); /* Space for mobile bottom bar */
             font-weight: 300; 
             font-size: 16px; 
             -webkit-font-smoothing: antialiased; 
             text-rendering: optimizeLegibility;
         }
         
+        /* MOBILE PADDING REDUCED: 8px */
         .container { max-width: 1280px; margin: 0 auto; padding: 0 8px; width: 100%; }
         
         .hidden { display: none !important; }
@@ -187,15 +191,34 @@
             display: flex; align-items: center; gap: 6px;
         }
 
-        /* --- 3. HOME VIEW --- */
+        /* --- 3. MOBILE APP BAR (NEW) --- */
+        .mobile-app-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--app-bar-h);
+            background: #ffffff; border-top: 1px solid var(--border);
+            z-index: 1000; display: grid; grid-template-columns: repeat(4, 1fr);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+        }
+        
+        .app-bar-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 4px; color: var(--text-muted); text-decoration: none; font-size: 0.7rem; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .app-bar-btn svg { width: 22px; height: 22px; }
+        .app-bar-btn:hover, .app-bar-btn:active { color: var(--primary); }
+        .app-bar-btn.highlight { color: #b45309; font-weight: 600; } /* Highlight for offers */
+
+        /* --- 4. HOME VIEW & HERO --- */
         #home-view { padding-top: var(--header-h); min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
         
         .hero {
-            background: #ffffff; padding: 40px 0; text-align: center; border-bottom: 1px solid #f1f5f9; position: relative; overflow: hidden;
+            background: #ffffff; padding: 40px 0; text-align: center;
+            border-bottom: 1px solid #f1f5f9; position: relative; overflow: hidden;
         }
         .hero::before {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(220, 38, 38, 0.01) 0%, transparent 70%); z-index: 0; pointer-events: none;
+            background: radial-gradient(circle, rgba(220, 38, 38, 0.01) 0%, transparent 70%);
+            z-index: 0; pointer-events: none;
         }
         .hero .container { position: relative; z-index: 1; }
 
@@ -206,11 +229,21 @@
             border: 1px solid #dcfce7; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
-        .hero h1 { font-size: 2rem; font-weight: 700; color: var(--secondary); margin-bottom: 16px; letter-spacing: -0.02em; line-height: 1.1; }
+        .hero h1 { 
+            font-size: 2rem; font-weight: 700; color: var(--secondary); 
+            margin-bottom: 16px; letter-spacing: -0.02em; line-height: 1.1; 
+        }
         .hero h1 span { color: var(--primary); }
-        .hero p { color: var(--text-muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto 24px; line-height: 1.5; font-weight: 400; }
 
-        .features-bar { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+        .hero p { 
+            color: var(--text-muted); font-size: 1.05rem; max-width: 600px; 
+            margin: 0 auto 24px; line-height: 1.5; font-weight: 400;
+        }
+
+        /* Features Bar */
+        .features-bar {
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 24px;
+        }
         .feature-item {
             display: flex; align-items: center; gap: 6px; background: white;
             padding: 8px 14px; border-radius: 8px; border: 1px solid #f1f5f9;
@@ -218,6 +251,7 @@
         }
         .feature-icon { color: var(--primary); display: flex; align-items: center; }
 
+        /* CTA Button */
         .btn-hero-cta {
             display: inline-flex; align-items: center; background: var(--primary); color: white;
             font-weight: 600; padding: 14px 32px; border-radius: 50px; font-size: 1.1rem;
@@ -233,10 +267,13 @@
             .feature-item { padding: 10px 16px; font-size: 0.9rem; }
         }
 
-        /* Grid de Cestas */
+        /* Baskets Grid */
         .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 24px; padding-bottom: 60px; list-style: none; }
         @media (min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+        /* DESKTOP HOME GRID - Compact */
+        @media (min-width: 1024px) { 
+            .baskets-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } 
+        }
         
         .big-card { 
             background: var(--surface); border-radius: 16px; overflow: hidden; 
@@ -260,6 +297,7 @@
         .big-card:hover .bc-image { transform: scale(1.05); }
         
         .bc-content { padding: 20px; display: flex; flex-direction: column; flex: 1; text-align: center; }
+        
         .bc-title { font-size: 1.4rem; font-weight: 600; color: var(--secondary); margin-bottom: 6px; line-height: 1.2; }
         .bc-price { font-size: 1.4rem; font-weight: 700; color: var(--primary); margin-bottom: 20px; font-feature-settings: "tnum"; }
         
@@ -273,7 +311,7 @@
         .btn-whatsapp-outline { background: white; color: var(--secondary); border: 1px solid var(--border); }
         .btn-whatsapp-outline:hover { border-color: var(--secondary); background: #f8fafc; }
 
-        /* --- 4. CUSTOMIZER VIEW --- */
+        /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { padding-top: var(--header-h); background: #ffffff; min-height: 100vh; }
         
         .customizer-header { 
@@ -312,15 +350,15 @@
         }
         .changes-counter.limit-reached { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
 
-        .desktop-actions { display: none; }
+        .desktop-actions { display: none; } /* HIDDEN ON MOBILE */
 
         .customizer-grid { display: block; margin-top: 24px; }
         .products-col { padding-bottom: 120px; } 
         
+        /* Section Banner */
         .section-banner {
-            width: 100%; padding: 14px 20px; margin-bottom: 0;
-            border-radius: 12px 12px 0 0; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid transparent;
+            width: 100%; padding: 14px 20px; margin-bottom: 0; border-radius: 12px 12px 0 0;
+            display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid transparent;
         }
         .section-banner h3 {
             font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
@@ -330,9 +368,12 @@
         .extras-separator-banner {
             text-align: center; padding: 40px 20px 20px; margin-bottom: 10px; border-bottom: 1px solid transparent;
         }
-        .extras-separator-banner h3 { font-size: 1.5rem; font-weight: 300; color: var(--secondary); margin-bottom: 8px; letter-spacing: -0.5px; }
+        .extras-separator-banner h3 {
+            font-size: 1.5rem; font-weight: 300; color: var(--secondary); margin-bottom: 8px; letter-spacing: -0.5px;
+        }
         .extras-separator-banner p { color: var(--text-muted); font-size: 0.95rem; font-weight: 400; }
 
+        /* Generic Category Box */
         .category-box {
             border: none; border-radius: 0 0 12px 12px; padding: 10px 16px 16px; margin-bottom: 30px;
             background-color: #ffffff !important;
@@ -343,10 +384,11 @@
         }
         @media(min-width: 600px) { .basket-grid, .extras-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
 
+        /* PRODUCT CARD */
         .product-card {
             background: transparent; padding: 0 0 16px 0; border-bottom: 1px solid #f1f5f9;
-            display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
-            transition: all 0.2s; position: relative;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            gap: 8px; transition: all 0.2s; position: relative;
         }
         .category-box .product-card:last-child { border-bottom: none; }
         
@@ -384,18 +426,25 @@
             height: 2.7em; margin: 0; width: 100%;
         }
         .pc-price { font-size: 0.95rem; font-weight: 600; color: var(--text-main); font-feature-settings: "tnum"; }
+        
         .pc-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; width: fit-content; margin: 0 auto; }
         
         .pc-validity { font-size: 0.75rem; color: #65a30d; font-weight: 500; margin-top: -2px; margin-bottom: 4px; }
 
-        .btn-nutri, .btn-features {
+        .btn-nutri {
             display: inline-flex; align-items: center; justify-content: center;
-            padding: 4px 10px; border-radius: 50px; font-size: 0.7rem; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+            padding: 4px 10px; border: 1px solid #e2e8f0; background: #fff;
+            border-radius: 50px; font-size: 0.7rem; color: #475569; margin-bottom: 8px;
+            cursor: pointer; transition: all 0.2s; display: none;
         }
-        .btn-nutri { border: 1px solid #e2e8f0; background: #fff; color: #475569; display: none; }
         .btn-nutri:hover { background: #f1f5f9; border-color: #cbd5e1; color: var(--secondary); }
-        
-        .btn-features { gap: 4px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; font-weight: 500; }
+
+        .btn-features {
+            display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+            padding: 4px 12px; border: 1px solid #bfdbfe; background: #eff6ff;
+            border-radius: 50px; font-size: 0.7rem; color: #1d4ed8; margin-bottom: 8px;
+            cursor: pointer; transition: all 0.2s; font-weight: 500;
+        }
         .btn-features:hover { background: #dbeafe; border-color: #93c5fd; }
         .btn-features + .btn-nutri, .btn-nutri + .btn-features { margin-top: 4px; }
 
@@ -403,21 +452,23 @@
         
         .btn-add-sm {
             height: 36px; width: 100%; padding: 0 16px; border-radius: 6px; border: none;
-            font-size: 0.8rem; font-weight: 700; text-transform: uppercase; background: var(--primary); color: white;
-            cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.15);
+            font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+            background: var(--primary); color: white; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.15);
         }
         .btn-add-sm:hover { background: var(--primary-dark); }
         
         .qty-control { 
             display: flex; align-items: center; justify-content: space-between;
-            background: white; border: 1px solid var(--primary); border-radius: 6px; height: 36px; width: 100%;
+            background: white; border: 1px solid var(--primary); border-radius: 6px;
+            height: 36px; width: 100%;
         }
         .qty-btn { width: 32px; height: 100%; font-size: 1.2rem; color: var(--secondary); display:flex; align-items:center; justify-content:center; }
         .qty-val { font-weight: 600; font-size: 0.95rem; color: var(--secondary); }
 
-        /* DESKTOP TWEAKS - OPTIMIZED FOR DENSITY */
+        /* DESKTOP TWEAKS - CRITICAL ADJUSTMENTS */
         @media(min-width: 1024px) {
-            body { padding-bottom: 0; } /* Remove bottom padding on desktop */
+            body { padding-bottom: 0; } /* Remove App Bar padding on Desktop */
             .container { padding: 0 40px; }
             .hero h1 { font-size: 3rem; }
             .hero p { font-size: 1.15rem; }
@@ -441,30 +492,33 @@
             }
             .btn-header-checkout:hover { background: #15803d; transform: translateY(-1px); }
 
-            /* LAYOUT GRID - INCREASED SIDEBAR WIDTH (320px = ~60% larger than 200px base) */
-            .customizer-grid { display: grid; grid-template-columns: 1fr 320px; gap: 30px; align-items: start; }
+            /* SIDEBAR EXPANSION: 360px (Approx 60% larger than 220px standard) */
+            .customizer-grid { display: grid; grid-template-columns: 1fr 360px; gap: 30px; align-items: start; }
             .products-col { padding-bottom: 60px; }
             
-            /* DESKTOP PRODUCT GRID - FIXED 4 COLUMNS */
+            /* DESKTOP PRODUCT GRID: FIXED 4 COLUMNS */
             .basket-grid, .extras-grid { 
                 grid-template-columns: repeat(4, 1fr) !important; 
                 gap: 16px; 
             }
             
+            /* COMPACT CARD STYLING FOR DESKTOP */
             .product-card { 
                 padding: 12px; gap: 8px; height: 100%; border-bottom: none; border: 1px solid transparent; border-radius: 12px;
             }
             .product-card:hover { border-color: var(--border); background: white; } 
             
-            .pc-name { font-size: 0.8rem; height: 2.6em; line-height: 1.3; } 
+            .pc-name { font-size: 0.8rem; height: 2.6em; line-height: 1.3; }
             .pc-price { font-size: 0.9rem; margin-bottom: 4px; }
             .btn-add-sm, .qty-control { height: 34px; font-size: 0.75rem; border-radius: 6px; }
             
+            /* Hide Mobile Elements */
             .order-summary-card { display: none !important; }
-            .mobile-app-bar { display: none !important; } /* Hide Mobile App Bar on Desktop */
+            .mobile-app-bar { display: none !important; }
             
-            /* HIDE FLOATING BUTTONS ON DESKTOP */
-            .floating-actions, .floating-actions-left { display: none !important; }
+            /* Hide Floating Buttons */
+            .fab-btn { display: none !important; }
+            /* Exception: Scroll top still useful? Maybe disable if sidebar has nav. Let's keep scroll top but move it. */
             #btn-scroll-top { display: flex !important; right: 40px; bottom: 40px; }
 
             .sidebar-col { display: flex; flex-direction: column; gap: 20px; align-self: start; }
@@ -475,26 +529,25 @@
                 max-height: calc(100vh - 120px); overflow-y: auto;
             }
 
-            /* UNIFIED SIDEBAR BUTTON GRID (3 COLUMNS - MINIMALIST) */
+            /* UNIFIED SIDEBAR GRID: 3 COLUMNS */
             #desktop-cat-list, #desktop-tags-list {
                 display: grid;
-                grid-template-columns: repeat(3, 1fr); /* 3 COLUNAS FIXAS */
+                grid-template-columns: repeat(3, 1fr); /* 3 COLUMNS */
                 gap: 6px;
             }
 
-            /* Shared style for Categories and Tags in Sidebar */
             .desktop-cat-link, .tag-chip { 
                 display: flex; align-items: center; justify-content: center;
                 text-align: center;
-                padding: 8px 4px; /* Minimal padding */
+                padding: 0 4px;
                 color: var(--secondary);
                 transition: 0.2s; cursor: pointer; 
-                font-weight: 600; font-size: 0.7rem; /* Small font */
+                font-weight: 600; font-size: 0.7rem; 
                 background: #f8fafc; 
                 border: 1px solid #f1f5f9;
-                border-radius: 6px; /* Rounded Box */
+                border-radius: 6px; 
                 text-transform: uppercase; letter-spacing: 0.5px;
-                height: 40px; /* Fixed height for uniformity */
+                height: 36px; /* Uniform Height */
                 width: 100%;
                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             }
@@ -511,22 +564,6 @@
         #mobile-cat-list .cat-link {
             border: 1px solid #f1f5f9; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.9rem; color: var(--secondary); background: #f8fafc;
         }
-
-        /* --- MOBILE APP BAR (NEW) --- */
-        .mobile-app-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--app-bar-height);
-            background: #ffffff; border-top: 1px solid var(--border);
-            display: grid; grid-template-columns: repeat(4, 1fr); /* 4 BOTÕES */
-            z-index: 1000; box-shadow: 0 -4px 10px rgba(0,0,0,0.03);
-        }
-
-        .app-bar-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 4px; color: var(--text-muted); font-size: 0.7rem; font-weight: 500;
-            text-decoration: none; cursor: pointer;
-        }
-        .app-bar-item.active { color: var(--primary); font-weight: 700; }
-        .app-bar-item svg { width: 24px; height: 24px; stroke-width: 2px; }
 
         /* FOOTER STYLES */
         .footer-contacts { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -556,6 +593,7 @@
         }
         .credit-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 
+        /* DIALOG/MODAL */
         dialog {
             border: none; border-radius: 12px; padding: 0; 
             background: white; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
@@ -597,7 +635,7 @@
         .btn-confirm { width: 100%; height: 44px; background: #16a34a; color: white; border-radius: 6px; font-weight: 600; font-size: 1rem; }
         .btn-confirm:hover { background: #15803d; }
 
-        /* SCROLL BUTTON (Mantido como único floating) */
+        /* SCROLL BUTTON */
         .fab-btn {
             width: 48px; height: 48px; position: fixed; bottom: 80px; right: 16px; z-index: 90;
             border-radius: 50%; background: white; 
@@ -608,7 +646,7 @@
         .fab-btn.visible { opacity: 1; pointer-events: auto; }
         .fab-btn.active { transform: scale(0.95); }
         
-        /* CATEGORY/TAGS SHEETS */
+        /* SHEETS */
         .cat-sheet {
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200;
             display: flex; flex-direction: column; justify-content: flex-end;
@@ -647,7 +685,6 @@
         .g-thumb { width: 60px; height: 60px; border-radius: 6px; border: 2px solid transparent; opacity: 0.5; object-fit: cover; cursor: pointer; }
         .g-thumb.active { border-color: white; opacity: 1; }
 
-        .faq-section { /* content-visibility removed */ }
         details.faq-item { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
         details.faq-item summary { padding: 18px; cursor: pointer; font-weight: 500; display: flex; justify-content: space-between; list-style: none; align-items: center; color: var(--secondary); font-size: 1.05rem; }
         details.faq-item summary::after { content: "+"; font-size: 1.5rem; color: var(--primary); line-height: 0.5; font-weight: 600; }
@@ -672,20 +709,20 @@
 
     <!-- MOBILE APP BAR (NAV INFERIOR) -->
     <nav class="mobile-app-bar" id="mobile-app-bar" style="display:none;">
-        <a onclick="App.toggleCategorySheet()" class="app-bar-item">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+        <a onclick="App.toggleCategorySheet()" class="app-bar-btn">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
             <span>Categorias</span>
         </a>
-        <a onclick="App.toggleTagsSheet()" class="app-bar-item">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <a onclick="App.toggleTagsSheet()" class="app-bar-btn">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             <span>Busca</span>
         </a>
-        <a onclick="App.toggleOffersSheet()" class="app-bar-item" style="color:#b45309;">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-            <span style="font-weight:700;">OFERTAS</span>
+        <a onclick="App.toggleOffersSheet()" class="app-bar-btn highlight">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+            <span>OFERTAS</span>
         </a>
-        <a onclick="App.toggleFAQSheet()" class="app-bar-item">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <a onclick="App.toggleFAQSheet()" class="app-bar-btn">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>Dúvidas</span>
         </a>
     </nav>
@@ -900,46 +937,6 @@
                     </div>
                     <button class="btn-header-checkout" onclick="App.openCheckout()">
                         <span>Encomendar (WhatsApp)</span>
-                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="container customizer-grid">
-            <div class="products-col">
-                <section class="basket-group" aria-labelledby="items-included-title">
-                    <div class="section-banner" style="background-color: #f1f5f9; color: #475569;">
-                        <h3>
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                            Itens Inclusos
-                        </h3>
-                        <p style="color:#64748b;">Já vêm na cesta</p>
-                    </div>
-                    <div class="included-products-box" style="background-color: #ffffff; border-color: #e2e8f0;">
-                        <div id="basket-items-container" class="basket-grid"></div>
-                    </div>
-                </section>
-
-                <div class="extras-separator-banner">
-                    <h3>Adicionar Extras</h3>
-                    <p>Toque nos produtos abaixo para adicionar mais itens.</p>
-                </div>
-
-                <section aria-labelledby="items-extra-title">
-                    <div id="other-items-container"></div>
-                </section>
-            </div>
-
-            <!-- SIDEBAR (Desktop) -->
-            <aside class="sidebar-col">
-                <div class="order-summary-card">
-                    <div class="ff-info">
-                        <span class="ff-label">Valor Total</span>
-                        <span class="ff-value" id="ff-total-val">R$ 0,00</span>
-                    </div>
-                    <button class="btn-finish" onclick="App.openCheckout()">
-                        <span>Encomendar no Whatsapp</span>
                         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     </button>
                 </div>
@@ -1287,7 +1284,6 @@
                         }
                     } else {
                         topBtn.classList.remove('visible');
-                        // Optional: hide nav on top? Keeping it visible if basket open is usually better UX
                     }
                 });
             },
@@ -1621,8 +1617,6 @@
                 if (extrasBtn) extrasBtn.innerHTML = this.getButtonHtml(id, this.cart[id] || 0, product.nome);
                 
                 // Also update button in offers list if present
-                // Since IDs must be unique, the offers list buttons might need dynamic ID adjustment if rendered simultaneously
-                // But for now, user is likely in one context. Re-rendering offers sheet handles it.
                 if(document.getElementById('offers-sheet').classList.contains('open')) {
                    this.renderOffersSheet();
                 }
