@@ -37,7 +37,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            overscroll-behavior: none; /* Previne reload ao puxar */
+            overscroll-behavior: none;
         }
 
         .mode-switch {
@@ -131,7 +131,7 @@
             margin-bottom: 0.75rem;
             transition: all 0.3s ease;
             border: 2px solid transparent;
-            touch-action: none; /* Vital para pinch zoom funcionar bem */
+            touch-action: none;
         }
         .viewport.drag-over { border-color: var(--brand); background-color: #eff6ff; }
 
@@ -143,6 +143,7 @@
             object-fit: contain; 
             cursor: grab;
         }
+        canvas.brush-active { cursor: crosshair !important; }
         canvas:active { cursor: grabbing; }
 
         /* --- ZOOM BAR --- */
@@ -193,6 +194,23 @@
         .btn-magic { background: #8b5cf6; color: white; margin-top: 1rem; }
         .btn-magic.processing { opacity: 0.7; cursor: wait; }
         
+        /* Botão Restaurar (Novo) */
+        .btn-restore { background: #f59e0b; color: white; margin-top: 0.5rem; display: none;}
+        .btn-restore.active { background: #d97706; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); border: 2px solid #fff; }
+
+        /* Controles do Pincel (Novo) */
+        .brush-controls {
+            display: none;
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #b45309;
+        }
+        .brush-controls.visible { display: block; }
+        
         .btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(1); }
 
         .btn-mini {
@@ -238,10 +256,9 @@
     </div>
 
     <main>
-        <!-- CARD PREVIEW (ESQUERDA NO DESKTOP, TOPO NO MOBILE) -->
+        <!-- CARD PREVIEW -->
         <div class="card preview-section">
             
-            <!-- 1. SELETOR DE FORMATO (NO TOPO) -->
             <div class="format-selector">
                 <button class="btn-fmt active" id="fmtSquare" onclick="setFormat('square')">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
@@ -253,7 +270,6 @@
                 </button>
             </div>
 
-            <!-- 2. VIEWPORT -->
             <div class="viewport" id="dropZone" style="aspect-ratio: 1;">
                 <div id="emptyState" class="empty-msg">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--border); margin-bottom: 0.5rem;">
@@ -267,23 +283,16 @@
                 <div id="recBadge" class="rec-indicator hidden">REC</div>
             </div>
 
-            <!-- 3. ZOOM SLIDER (LOGO ABAIXO DA IMAGEM) -->
             <div class="zoom-bar">
                 <svg class="zoom-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
                 
-                <!-- Zoom Foto -->
                 <input type="range" id="scaleRange" min="50" max="250" value="85" class="zoom-input">
-                
-                <!-- Zoom Video (Alternado via JS) -->
                 <input type="range" id="vScaleRange" min="50" max="250" value="100" class="zoom-input hidden">
                 
                 <span id="zoomValDisplay" class="zoom-val">85%</span>
-                
-                <!-- Reset Btn -->
                 <button id="btnFit" class="btn-mini" title="Resetar Zoom">Fit</button>
             </div>
 
-            <!-- 4. BOTÕES DE AÇÃO -->
             <div class="actions-grid">
                 <label class="btn btn-upload">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -299,7 +308,7 @@
             </div>
         </div>
 
-        <!-- CARD CONTROLS (DIREITA NO DESKTOP, BAIXO NO MOBILE) -->
+        <!-- CARD CONTROLS -->
         <div class="card" id="controlsCard">
             
             <fieldset>
@@ -329,6 +338,18 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.5 9.5l-2.5-2.5"/><path d="M21 11l-9 9-5-5 9-9z"/><path d="M3 3l6 6"/><path d="M15 4l-4 4"/><path d="M4 15l4-4"/><path d="M9 19l2 2"/></svg>
                     🪄 Remover Fundo
                 </button>
+
+                <!-- NOVO: Controles de Restauração -->
+                <button id="btnRestore" class="btn btn-restore">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+                    🖌️ Pincel Restaurar
+                </button>
+
+                <div id="brushControls" class="brush-controls">
+                    <label style="margin-bottom: 5px; color: #b45309;">Tamanho do Pincel: <span id="brushSizeVal">20</span>px</label>
+                    <input type="range" id="brushSize" min="5" max="100" value="20">
+                    <div style="font-size: 0.75rem; margin-top: 5px; opacity: 0.8;">Passe o dedo onde quer trazer a imagem original de volta.</div>
+                </div>
 
                 <button id="saveBtn" class="btn btn-save" disabled>
                     Baixar WebP Otimizado (30KB)
@@ -367,14 +388,21 @@
         const state = {
             mode: 'photo',
             format: 'square',
-            img: null, imgNoBg: null, useNoBg: false,
+            img: null, 
+            // Modificado: Armazena o canvas editado em vez de apenas uma imagem
+            noBgCanvas: null, 
+            useNoBg: false,
             video: null,
             ctx: null, width: 300, height: 300,
             scale: 0.85, vScale: 1.0, x: 0, y: 0,
             recorder: null, chunks: [], isRecording: false,
             brightness: 0, contrast: 0, saturation: 0, sharpness: 0,
             // Pinch Vars
-            isPinching: false, pinchStartDist: 0, pinchStartScale: 1
+            isPinching: false, pinchStartDist: 0, pinchStartScale: 1,
+            // Brush Vars
+            isRestoring: false,
+            brushSize: 20,
+            isBrushing: false
         };
 
         const els = {
@@ -408,7 +436,12 @@
             btnRec: document.getElementById('recordBtn'),
             // Format
             fmtSquare: document.getElementById('fmtSquare'),
-            fmtVertical: document.getElementById('fmtVertical')
+            fmtVertical: document.getElementById('fmtVertical'),
+            // Restore Tools
+            btnRestore: document.getElementById('btnRestore'),
+            brushControls: document.getElementById('brushControls'),
+            brushSize: document.getElementById('brushSize'),
+            brushSizeVal: document.getElementById('brushSizeVal')
         };
 
         function init() {
@@ -437,14 +470,16 @@
             els.btnSave.onclick = savePhotoHighQuality; 
             els.btnRec.onclick = processVideo;
             els.btnMagic.onclick = toggleMagicBackground;
+            els.btnRestore.onclick = toggleRestoreMode;
+            els.brushSize.oninput = (e) => { state.brushSize = parseInt(e.target.value); els.brushSizeVal.innerText = state.brushSize; };
 
-            // Touch Gestures (Pan & Pinch)
-            els.canvas.addEventListener('mousedown', startPan);
+            // Touch Gestures (Pan & Pinch & Brush)
+            els.canvas.addEventListener('mousedown', handlePointerDown);
             els.canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
-            window.addEventListener('mousemove', movePan);
+            window.addEventListener('mousemove', handlePointerMove);
             window.addEventListener('touchmove', handleTouchMove, {passive: false});
-            window.addEventListener('mouseup', endPan);
-            window.addEventListener('touchend', endPan);
+            window.addEventListener('mouseup', handlePointerUp);
+            window.addEventListener('touchend', handlePointerUp);
             document.addEventListener('paste', handlePaste);
             
             window.setFormat = setFormat; 
@@ -466,7 +501,7 @@
             if(state.mode === 'video') drawVideoFrame(); else requestRender();
         }
 
-        // --- GESTURES (PINCH & PAN) ---
+        // --- GESTURES (PINCH, PAN & BRUSH) ---
         function handleTouchStart(e) {
             if (e.touches.length === 2) {
                 // Pinch Start
@@ -478,9 +513,22 @@
                 );
                 state.pinchStartScale = (state.mode === 'photo') ? state.scale : state.vScale;
             } else {
-                // Pan Start
-                startPan(e.touches[0]);
+                // Single touch: Pan or Brush
+                handlePointerDown(e.touches[0], e);
             }
+        }
+
+        function handlePointerDown(e, originalEvent) {
+            // Se estiver no modo Restaurar e tiver uma imagem sem fundo ativa
+            if (state.isRestoring && state.useNoBg && state.noBgCanvas) {
+                if (originalEvent) originalEvent.preventDefault();
+                state.isBrushing = true;
+                applyBrush(e);
+                return;
+            }
+
+            // Caso contrário, Pan
+            startPan(e);
         }
 
         function handleTouchMove(e) {
@@ -495,9 +543,26 @@
                     const delta = dist / state.pinchStartDist;
                     updateZoom(state.pinchStartScale * delta);
                 }
-            } else if (!state.isPinching && e.touches.length === 1) {
-                movePan(e.touches[0], e);
+            } else if (e.touches.length === 1) {
+                handlePointerMove(e.touches[0], e);
             }
+        }
+
+        function handlePointerMove(e, originalEvent) {
+            // Brush Move
+            if (state.isBrushing) {
+                if (originalEvent) originalEvent.preventDefault();
+                applyBrush(e);
+                return;
+            }
+
+            // Pan Move
+            if (!state.isPinching) movePan(e, originalEvent);
+        }
+
+        function handlePointerUp() {
+            state.isBrushing = false;
+            endPan();
         }
 
         function startPan(e) {
@@ -505,7 +570,7 @@
             state.isPanning = true; 
             state.panStartX = (e.clientX || e.pageX) - state.x; 
             state.panStartY = (e.clientY || e.pageY) - state.y; 
-            els.canvas.style.cursor = 'grabbing';
+            if (!state.isRestoring) els.canvas.style.cursor = 'grabbing';
         }
 
         function movePan(e, originalEvent) {
@@ -520,7 +585,72 @@
         function endPan() { 
             state.isPanning = false; 
             state.isPinching = false;
-            els.canvas.style.cursor = 'grab'; 
+            if (!state.isRestoring) els.canvas.style.cursor = 'grab'; 
+        }
+
+        // --- BRUSH LOGIC (RESTAURAÇÃO) ---
+        function toggleRestoreMode() {
+            state.isRestoring = !state.isRestoring;
+            if (state.isRestoring) {
+                els.btnRestore.classList.add('active');
+                els.brushControls.classList.add('visible');
+                els.canvas.classList.add('brush-active');
+                els.btnRestore.innerHTML = "✅ Terminar Restauração";
+            } else {
+                els.btnRestore.classList.remove('active');
+                els.brushControls.classList.remove('visible');
+                els.canvas.classList.remove('brush-active');
+                els.btnRestore.innerHTML = "🖌️ Pincel Restaurar";
+            }
+        }
+
+        function applyBrush(e) {
+            if (!state.img || !state.noBgCanvas) return;
+            
+            const rect = els.canvas.getBoundingClientRect();
+            const mouseX = (e.clientX || e.pageX) - rect.left;
+            const mouseY = (e.clientY || e.pageY) - rect.top;
+
+            // Calcular coordenadas da imagem baseada no Zoom e Pan
+            const w = state.width; 
+            const h = state.height;
+            const sourceImg = state.img;
+            
+            const aspect = sourceImg.width / sourceImg.height;
+            let dw, dh, targetSize = w * state.scale;
+            if (aspect > 1) { dw = targetSize; dh = targetSize / aspect; } else { dh = targetSize; dw = targetSize * aspect; }
+            
+            const dx = (w - dw)/2 + state.x; 
+            const dy = (h - dh)/2 + state.y;
+
+            // Converter coordenada do mouse para coordenada da imagem original
+            // Coordenada relativa ao desenho na tela
+            const relX = mouseX - dx;
+            const relY = mouseY - dy;
+
+            // Fator de escala entre o que está na tela e a imagem real
+            const scaleFactor = sourceImg.width / dw;
+
+            const imgX = relX * scaleFactor;
+            const imgY = relY * scaleFactor;
+            
+            // Desenhar no Canvas Offscreen (noBgCanvas)
+            // Copiamos a parte da imagem original para o canvas sem fundo
+            const ctxNoBg = state.noBgCanvas.getContext('2d');
+            
+            // Configurar pincel
+            const bSize = state.brushSize * scaleFactor; // Ajustar pincel para escala da imagem
+            
+            ctxNoBg.save();
+            ctxNoBg.beginPath();
+            ctxNoBg.arc(imgX, imgY, bSize / 2, 0, Math.PI * 2);
+            ctxNoBg.clip();
+            // Limpa a área (para garantir) e desenha a imagem original por cima
+            ctxNoBg.clearRect(imgX - bSize/2, imgY - bSize/2, bSize, bSize);
+            ctxNoBg.drawImage(state.img, 0, 0); 
+            ctxNoBg.restore();
+
+            requestRender();
         }
 
         // --- FORMAT & LAYOUT ---
@@ -552,20 +682,14 @@
             if(mode === 'photo') {
                 els.mPhoto.classList.add('active'); els.mVideo.classList.remove('active');
                 els.photoExtras.classList.remove('hidden'); els.videoExtras.classList.add('hidden');
-                
-                // Toggle Zoom Slider
                 els.scale.classList.remove('hidden'); els.vScale.classList.add('hidden');
                 els.zoomVal.innerText = Math.round(state.scale * 100) + '%';
-                
                 els.fileInput.accept = "image/*"; els.camInput.accept = "image/*"; 
             } else {
                 els.mVideo.classList.add('active'); els.mPhoto.classList.remove('active');
                 els.videoExtras.classList.remove('hidden'); els.photoExtras.classList.add('hidden');
-                
-                // Toggle Zoom Slider
                 els.vScale.classList.remove('hidden'); els.scale.classList.add('hidden');
                 els.zoomVal.innerText = Math.round(state.vScale * 100) + '%';
-                
                 els.fileInput.accept = "video/*"; els.camInput.accept = "video/*"; 
             }
             els.camInput.setAttribute('capture', 'environment');
@@ -594,9 +718,14 @@
             const url = URL.createObjectURL(file);
             const img = new Image();
             img.onload = () => {
-                state.img = img; state.imgNoBg = null; state.useNoBg = false;
+                state.img = img; state.noBgCanvas = null; state.useNoBg = false;
                 state.x = 0; state.y = 0;
+                
+                // Reset UI
                 els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
+                els.btnRestore.style.display = 'none'; // Esconde botão restaurar
+                state.isRestoring = false; els.btnRestore.classList.remove('active'); els.brushControls.classList.remove('visible');
+
                 els.empty.classList.add('hidden'); els.canvas.classList.remove('hidden');
                 els.btnSave.disabled = false; requestRender(); URL.revokeObjectURL(url);
             };
@@ -628,16 +757,22 @@
             const ctx = els.ctx; const w = state.width; const h = state.height;
             ctx.filter = 'none'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
             
-            const sourceImg = (state.useNoBg && state.imgNoBg) ? state.imgNoBg : state.img;
-            if (!sourceImg.complete && state.useNoBg) return requestRender();
-
-            const aspect = sourceImg.width / sourceImg.height;
+            // Decide qual fonte usar: Imagem Original ou Canvas Sem Fundo
+            const source = (state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : state.img;
+            
+            const aspect = source.width / source.height;
             let dw, dh, targetSize = w * state.scale;
             if (aspect > 1) { dw = targetSize; dh = targetSize / aspect; } else { dh = targetSize; dw = targetSize * aspect; }
             const dx = (w - dw)/2 + state.x; const dy = (h - dh)/2 + state.y;
             
             ctx.filter = getFilterString();
-            ctx.drawImage(sourceImg, dx, dy, dw, dh);
+            ctx.drawImage(source, dx, dy, dw, dh);
+            
+            // Indicador de Pincel (opcional, só visual)
+            if (state.isRestoring && state.isBrushing) {
+                 // Poderíamos desenhar um círculo aqui, mas o cursor já ajuda
+            }
+
             ctx.filter = 'none';
             if (state.sharpness > 0) applySharpen(ctx, w, h, state.sharpness); 
         }
@@ -696,32 +831,44 @@
             if (state.useNoBg) {
                 state.useNoBg = false;
                 els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
+                els.btnRestore.style.display = 'none'; // Esconde botão restaurar
                 requestRender();
             } else {
-                if (state.imgNoBg) {
+                if (state.noBgCanvas) {
                     state.useNoBg = true;
                     els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido';
+                    els.btnRestore.style.display = 'flex'; // Mostra botão restaurar
                     requestRender();
                 } else {
                     els.btnMagic.innerHTML = '⏳ Processando...'; els.btnMagic.classList.add('processing');
                     setTimeout(() => {
                         processRemoveBackground(); state.useNoBg = true;
                         els.btnMagic.classList.remove('processing'); els.btnMagic.style.background = '#059669';
-                        els.btnMagic.innerHTML = '✅ Fundo Removido'; requestRender();
+                        els.btnMagic.innerHTML = '✅ Fundo Removido'; 
+                        els.btnRestore.style.display = 'flex'; // Mostra botão restaurar
+                        requestRender();
                     }, 50);
                 }
             }
         }
 
         function processRemoveBackground() {
+            // Cria um canvas OFFSCREEN para manipulação
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = state.img.width; tempCanvas.height = state.img.height;
-            const ctx = tempCanvas.getContext('2d'); ctx.drawImage(state.img, 0, 0);
+            tempCanvas.width = state.img.width; 
+            tempCanvas.height = state.img.height;
+            const ctx = tempCanvas.getContext('2d'); 
+            
+            // Desenha imagem original
+            ctx.drawImage(state.img, 0, 0);
+            
+            // Processa remoção de fundo
             const imgData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
             floodFillBackground(imgData, 20); 
             ctx.putImageData(imgData, 0, 0);
-            const newImg = new Image(); newImg.src = tempCanvas.toDataURL();
-            state.imgNoBg = newImg;
+            
+            // Salva esse canvas no estado (não converte pra imagem para poder editar depois com pincel)
+            state.noBgCanvas = tempCanvas;
         }
 
         function floodFillBackground(imgData, tolerance) {
@@ -752,20 +899,22 @@
             els.btnSave.disabled = true; els.btnSave.innerHTML = "Gerando...";
 
             try {
-                const sourceImg = (state.useNoBg && state.imgNoBg) ? state.imgNoBg : state.img;
+                // Fonte agora pode ser a imagem OU o canvas editado
+                const source = (state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : state.img;
+                
                 const superW = state.width * 3; const superH = state.height * 3;
                 const superCanvas = document.createElement('canvas');
                 superCanvas.width = superW; superCanvas.height = superH;
                 const sCtx = superCanvas.getContext('2d');
                 sCtx.fillStyle = '#ffffff'; sCtx.fillRect(0, 0, superW, superH);
 
-                const aspect = sourceImg.width / sourceImg.height;
+                const aspect = source.width / source.height;
                 let dw, dh, targetSize = (state.width * 3) * state.scale;
                 if (aspect > 1) { dw = targetSize; dh = targetSize / aspect; } else { dh = targetSize; dw = targetSize * aspect; }
                 const dx = (superW - dw)/2 + (state.x * 3); const dy = (superH - dh)/2 + (state.y * 3);
 
                 sCtx.filter = getFilterString();
-                sCtx.drawImage(sourceImg, dx, dy, dw, dh);
+                sCtx.drawImage(source, dx, dy, dw, dh);
                 sCtx.filter = 'none';
 
                 const finalCanvas = document.createElement('canvas');
