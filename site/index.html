@@ -4,12 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.30 - Scroll Indicator & Mobile Nav UX
+        VERSION: 9.31 - Fix Scroll Arrow Visibility
         CHANGELOG:
-        - UX (Mobile Nav): Adicionada seta visual (indicador de scroll) na base da lista de categorias.
-        - FEAT: Função scrollNavDown() para rolar a lista ao clicar na seta.
-        - CSS: Animação 'bounce' para a seta chamar atenção.
-        - LAYOUT: Refatoração da sidebar mobile para suportar o overlay do botão.
+        - FIX (CSS): Altura da .mobile-nav-wrapper ajustada para calc(100vh - 180px).
+          Isso previne que a seta de rolagem fique escondida atrás da barra de checkout (80px).
+        - UI: Refinamento do z-index para garantir sobreposição correta.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -238,7 +237,8 @@
             display: block;
             position: sticky;
             top: 85px; 
-            height: calc(100vh - 100px);
+            /* FIXED HEIGHT CALCULATION: 100vh - 85px (Top Sticky) - 80px (Checkout Bar) - 15px (Buffer) */
+            height: calc(100vh - 180px);
             display: flex;
             flex-direction: column;
         }
