@@ -4,12 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.19 - Unified Info Button & Dynamic Media Loading
+        VERSION: 9.22 - Info Button Conditional Logic
         CHANGELOG:
-        - UI: Card de produto simplificado: Apenas 1 botão "Informações".
-        - FEAT: Modal de Informações agora carrega mídias (Fotos Extras/Vídeos) automaticamente após o texto.
-        - PERF: Removida lógica pesada de IntersectionObserver para detecção prévia de mídia.
-        - UI: Estilos adicionados para mídias dentro do Sheet.
+        - LOGIC: Botão 'Informações' agora só aparece se o produto tiver características preenchidas.
+        - CONFIG: Mantido o controle global 'SHOW_INFO_BUTTON'.
+        - FIX: Mantida toda a estrutura de layout e funcionalidades anteriores.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -165,7 +164,9 @@
             display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s;
         }
         .btn-cta-primary:hover { transform: scale(1.03); background: var(--primary-dark); }
-        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
+        
+        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-top: 30px; margin-bottom: 24px; flex-wrap: wrap; }
+        
         .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.85rem; font-weight: 600; color: var(--secondary); }
         
         @media (min-width: 768px) { .hero { padding: 80px 0; } .hero-title { font-size: 3.5rem; } }
@@ -228,6 +229,7 @@
             .app-grid { display: grid; grid-template-columns: 1fr 340px; gap: 40px; align-items: start; }
             .ch-desktop-cart { display: flex; align-items: center; gap: 16px; }
             .desk-price { text-align: right; line-height: 1.2; }
+            .desk-price small { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
             .desk-price strong { font-size: 1.2rem; color: var(--primary); }
             .btn-desk-checkout { background: #16a34a; color: white; padding: 0 24px; height: 42px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         }
@@ -635,7 +637,8 @@
             TAGS: ["Arroz", "Feijão", "Açúcar", "Café", "Óleo", "Macarrão", "Leite", "Sabão", "Detergente", "Sardinha"],
             THEMES: { 'DEFAULT': '#f1f5f9', 'ALIMENTOS': '#ffedd5', 'LIMPEZA': '#dbeafe', 'HIGIENE': '#dcfce7', 'BEBIDAS': '#fae8ff', 'CARNES': '#fee2e2' },
             PHONE: "5565996813588",
-            LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 }
+            LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 },
+            SHOW_INFO_BUTTON: true // CONFIG: Master Toggle for Info Button
         };
 
         const Gallery = {
@@ -923,8 +926,12 @@
                     `<span class="mc-price-old">R$${p.valor.toFixed(2)}</span><span class="mc-price-new">R$${price.toFixed(2)}</span>` : 
                     `R$ ${price.toFixed(2).replace('.', ',')}`;
                 
-                // SINGLE INFO BUTTON
-                let infoBtn = `<div class="btn-feat info" onclick="App.openInfo('${p.id}')">Informações</div>`;
+                // UNIFIED INFO BUTTON (Controlled by Config AND Content)
+                let infoBtn = '';
+                // SHOW_INFO_BUTTON allows the button to exist, AND p.caracteristicas checks if there's actual content.
+                if (CONSTANTS.SHOW_INFO_BUTTON && p.caracteristicas) {
+                    infoBtn = `<div class="btn-feat info" onclick="App.openInfo('${p.id}')">Informações</div>`;
+                }
 
                 // Validity Date (BR Format)
                 let valHtml = '';
