@@ -4,13 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.27 - Centralização e Scroll Behavior
+        VERSION: 9.28 - No-Blink & UI Optimization
         CHANGELOG:
-        - UI (Mobile): Conteúdo do card centralizado (texto, botão, preço).
-        - UI (Mobile): Título do produto exibe até 3 linhas.
-        - UX (Mobile): Header (Logo) se esconde ao rolar para baixo.
-        - UX (Nav): Botão "Minha Cesta" adicionado como padrão (substitui Ver Tudo).
-        - UX (Nav): Botão "Ver Tudo" removido.
+        - PERF: Implementada atualização parcial do DOM (modQty) para evitar piscadas.
+        - UI (Mobile): Header/Logo oculto permanentemente no modo customizer.
+        - UI (Mobile): Título da cesta reduzido e campo de busca aumentado.
+        - UX: Botão "Minha Cesta" rola para o topo absoluto da lista.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -87,15 +86,19 @@
             position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
             background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color); z-index: 1000; 
             display: flex; align-items: center; backdrop-filter: blur(8px); 
-            transition: transform 0.3s ease; /* Smooth hide transition */
+            transition: transform 0.3s ease;
         }
         
-        /* Class to hide header on scroll */
+        /* Rule to Hide Header completely when in Customizer Mode */
+        body.customizer-mode header { display: none !important; }
+
+        /* Legacy Scroll Hide (still useful for Home) */
         body.header-hidden header { transform: translateY(-100%); }
 
         @media (min-width: 1024px) {
             header { position: relative; } 
             body.header-hidden header { transform: none; } 
+            body.customizer-mode header { display: flex !important; } /* Keep visible on Desktop */
         }
 
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
@@ -176,21 +179,19 @@
         .btn-fill { background: var(--secondary); color: white; border: none; font-weight: 600; padding: 12px; border-radius: 50px; width: 100%; }
 
         /* --- 7. CUSTOMIZER --- */
-        #customizer-view { padding-top: var(--header-height); background: #f8fafc; min-height: 100vh; padding-bottom: 150px; }
+        /* Changed: Removed padding-top since we hide header */
+        #customizer-view { background: #f8fafc; min-height: 100vh; padding-bottom: 150px; padding-top: 0; }
         @media(min-width: 1024px) { 
-            #customizer-view { padding-bottom: 0; padding-top: 0; } 
+            #customizer-view { padding-bottom: 0; } 
         }
 
         .cust-header-bar { 
             background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color);
-            position: sticky; top: var(--header-height); z-index: 900; backdrop-filter: blur(10px);
+            position: sticky; top: 0; /* Always top 0 now */
+            z-index: 900; backdrop-filter: blur(10px);
             padding: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: top 0.3s ease; /* Adjust sticky position smoothly */
         }
         
-        /* When header is hidden, sticky bar moves to top */
-        body.header-hidden .cust-header-bar { top: 0; }
-
         @media(min-width: 1024px) {
             .cust-header-bar { top: 0; z-index: 1050; } 
         }
@@ -198,23 +199,29 @@
         .ch-container { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .ch-back-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
         
-        .ch-info { display: flex; flex-direction: column; }
-        .ch-info h2 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; line-height: 1.2; }
+        .ch-info { display: flex; flex-direction: column; min-width: 80px; }
+        /* Reduced Title Font Size */
+        .ch-info h2 { font-size: 0.85rem; font-weight: 700; color: var(--secondary); margin: 0; line-height: 1.2; }
         
         .limit-badge {
-            font-size: 0.75rem; color: #b45309; background: #fffbeb; 
-            border: 1px solid #fde68a; padding: 2px 8px; border-radius: 4px;
+            font-size: 0.65rem; color: #b45309; background: #fffbeb; 
+            border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px;
             margin-top: 2px; display: inline-block; width: fit-content;
         }
         .limit-badge.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
 
-        .ch-search-box { flex: 1; max-width: 500px; position: relative; }
-        .ch-input { width: 100%; height: 42px; border-radius: 50px; border: 1px solid var(--border-color); padding: 0 45px 0 20px; font-size: 0.95rem; background: #f1f5f9; }
+        /* Increased Search Box Size */
+        .ch-search-box { flex: 1; position: relative; margin-left: 10px; }
+        .ch-input { 
+            width: 100%; height: 48px; /* Taller */
+            border-radius: 50px; border: 1px solid var(--border-color); 
+            padding: 0 45px 0 20px; font-size: 1rem; /* Larger Text */
+            background: #f1f5f9; 
+        }
         .ch-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
-        .ch-clear-btn { position: absolute; right: 40px; top: 50%; transform: translateY(-50%); background: #cbd5e1; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; cursor: pointer; border: none; z-index: 2; transition: all 0.2s; }
+        .ch-clear-btn { position: absolute; right: 40px; top: 50%; transform: translateY(-50%); background: #cbd5e1; color: #fff; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: none; z-index: 2; transition: all 0.2s; }
         .ch-clear-btn:hover { background: var(--text-light); }
         
-        /* Updated Sidebar Button Styles */
         .sidebar-chip.minha-cesta { background: var(--secondary); color: white; border-color: var(--secondary); }
         .sidebar-chip.ofertas-btn { background: #b45309; color: white; border-color: #b45309; }
         
@@ -236,18 +243,13 @@
         .mobile-nav-sidebar {
             display: block;
             position: sticky;
-            top: calc(var(--header-height) + 70px); 
-            height: calc(100vh - 150px);
+            top: 85px; /* Fixed top position since header is gone */
+            height: calc(100vh - 100px);
             overflow-y: auto;
             padding-right: 4px;
             scrollbar-width: thin;
-            transition: top 0.3s ease;
         }
         
-        /* Adjust Nav Sidebar top when header hides */
-        body.header-hidden .mobile-nav-sidebar { top: 70px; } /* 0 header + 70 customizer bar */
-
-        /* Nav Item Styles */
         .nav-side-btn {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             width: 100%; padding: 10px 4px; margin-bottom: 8px;
@@ -256,14 +258,10 @@
             cursor: pointer; transition: all 0.2s; line-height: 1.2; word-break: break-word;
         }
         .nav-side-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); transform: scale(1.05); }
-        
-        /* Special styles for Chips */
         .nav-side-btn.nav-ofertas { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
         .nav-side-btn.nav-ofertas.active { background: #b45309; color: white; border-color: #b45309; }
-        
         .nav-side-btn.nav-cesta { color: var(--secondary); border-color: var(--secondary); background: #f8fafc; }
         .nav-side-btn.nav-cesta.active { background: var(--secondary); color: white; }
-
         .nav-side-btn:hover { border-color: #cbd5e1; }
 
         @media (min-width: 1024px) {
@@ -790,13 +788,13 @@
             renderSidebar() {
                 const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))].sort();
                 
-                // DESKTOP: Minha Cesta > Ofertas > Categorias
+                // DESKTOP
                 const deskBtns = [
                     `<button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>`,
                     `<button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>`
                 ].concat(cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`));
                 
-                // MOBILE NAV: Minha Cesta > Ofertas > Categorias
+                // MOBILE NAV
                 const mobNavBtns = [
                     `<div class="nav-side-btn nav-cesta active" onclick="App.clearSearch(); App.highlightNav(this);">Minha Cesta</div>`,
                     `<div class="nav-side-btn nav-ofertas" onclick="App.showOffers(); App.highlightNav(this);">🔥 Ofertas</div>`
@@ -840,6 +838,7 @@
                 document.getElementById('cust-title').innerText = basket.nome;
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
+                document.body.classList.add('customizer-mode'); // CSS trigger to hide header
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
@@ -848,6 +847,7 @@
             goHome() {
                 document.getElementById('customizer-view').classList.add('hidden');
                 document.getElementById('home-view').classList.remove('hidden');
+                document.body.classList.remove('customizer-mode');
                 this.currentBasket = null;
             },
 
@@ -860,12 +860,11 @@
 
             renderAllLists(searchTerm = "", showOffersOnly = false) {
                 if(!this.currentBasket) return;
-                const incContainer = document.getElementById('included-list');
-                const incIds = Object.keys(this.cart);
                 
-                incContainer.innerHTML = incIds.length === 0 ? '<p style="padding:10px; color:#999;">Cesta vazia.</p>' : 
-                    incIds.map(id => { const p = this.data.find(x => x.id === id); return p ? this.buildCard(p, true) : ''; }).join('');
+                // 1. Render Included Items (Top List)
+                this.renderIncluded();
 
+                // 2. Render Extras (Bottom List) - Main Content
                 const extContainer = document.getElementById('extras-container');
                 let extras = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
@@ -908,7 +907,7 @@
                     sortedCats.forEach(cat => {
                         const color = Object.keys(CONSTANTS.THEMES).find(k => cat.includes(k)) || 'DEFAULT';
                         html += `<div id="cat-${cat}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;"><h3>${cat}</h3></div>
-                        <div class="product-box"><div class="grid-products">${groups[cat].map(p => this.buildCard(p, false)).join('')}</div></div>`;
+                        <div class="product-box"><div class="grid-products">${groups[cat].map(p => this.buildCard(p)).join('')}</div></div>`;
                     });
                 }
                 
@@ -919,13 +918,19 @@
                 this.updateTotal();
             },
 
-            buildCard(p, isIncluded) {
+            // New optimized function for just the top list
+            renderIncluded() {
+                const incContainer = document.getElementById('included-list');
+                const incIds = Object.keys(this.cart);
+                incContainer.innerHTML = incIds.length === 0 ? '<p style="padding:10px; color:#999;">Cesta vazia.</p>' : 
+                    incIds.map(id => { const p = this.data.find(x => x.id === id); return p ? this.buildCard(p) : ''; }).join('');
+            },
+
+            buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer && p.offerPrice > 0 ? p.offerPrice : p.valor;
                 
-                let btnHtml = qty === 0 ? 
-                    `<button class="btn-add-mini" onclick="App.modQty('${p.id}', 1)">Adicionar</button>` : 
-                    `<div class="qty-mini"><button class="qm-btn" onclick="App.modQty('${p.id}', -1)">-</button><span class="qm-val">${qty}</span><button class="qm-btn" onclick="App.modQty('${p.id}', 1)">+</button></div>`;
+                let btnHtml = this.getBtnHtml(p.id, qty); // Extracted for reuse
 
                 let priceHtml = (p.isOffer && p.offerPrice > 0) ? 
                     `<span class="mc-price-old">R$${p.valor.toFixed(2)}</span><span class="mc-price-new">R$${price.toFixed(2)}</span>` : 
@@ -962,6 +967,14 @@
                 </div>`;
             },
 
+            getBtnHtml(id, qty) {
+                if (qty === 0) {
+                    return `<button class="btn-add-mini" onclick="App.modQty('${id}', 1)">Adicionar</button>`;
+                } else {
+                    return `<div class="qty-mini"><button class="qm-btn" onclick="App.modQty('${id}', -1)">-</button><span class="qm-val">${qty}</span><button class="qm-btn" onclick="App.modQty('${id}', 1)">+</button></div>`;
+                }
+            },
+
             formatDateBr(dateStr) {
                  if (!dateStr) return '';
                  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -984,10 +997,12 @@
                 return removals;
             },
 
+            // OPTIMIZED modQty - No full re-render
             modQty(id, delta) {
                 const p = this.data.find(x => x.id === id);
                 if(!this.cart[id]) this.cart[id] = 0;
-                const newQty = this.cart[id] + delta;
+                const oldQty = this.cart[id];
+                const newQty = oldQty + delta;
 
                 if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
                 
@@ -999,7 +1014,24 @@
 
                 this.cart[id] = newQty;
                 if(this.cart[id] <= 0) delete this.cart[id];
-                this.renderAllLists(document.getElementById('main-search').value);
+
+                // --- SMART UPDATE DOM ---
+                // 1. If an item was added (0->1) or removed (1->0), we MUST re-render the "Included" list at top.
+                if ((oldQty === 0 && newQty > 0) || (oldQty > 0 && newQty === 0)) {
+                    this.renderIncluded();
+                }
+
+                // 2. For the "Extras" list (and existing cards in included), just update the button HTML in-place
+                // This prevents the whole list from blinking/reloading images.
+                const cards = document.querySelectorAll(`#card-${id}`);
+                const newBtnHtml = this.getBtnHtml(id, newQty);
+                
+                cards.forEach(card => {
+                    const actionCol = card.querySelector('.mc-action-col');
+                    if (actionCol) actionCol.innerHTML = newBtnHtml;
+                });
+
+                this.updateTotal();
             },
 
             updateTotal() {
@@ -1053,9 +1085,11 @@
                     });
                 }
 
-                // SCROLL LISTENER FOR HEADER HIDING
+                // SCROLL LISTENER (Only affects Home now, since Customizer has permanent hidden header)
                 let lastScroll = 0;
                 window.addEventListener('scroll', () => {
+                    if (document.body.classList.contains('customizer-mode')) return; // Ignore in customizer
+                    
                     const currentScroll = window.pageYOffset;
                     if (currentScroll > lastScroll && currentScroll > 60) {
                         document.body.classList.add('header-hidden');
@@ -1078,8 +1112,17 @@
                 
                 this.renderAllLists("");
                 
-                const el = document.getElementById('extras-container');
-                if(el) el.scrollIntoView({behavior:'smooth'});
+                // Scroll to VERY TOP of the content area (Included List)
+                // Use a small timeout to ensure DOM update
+                setTimeout(() => {
+                    const topEl = document.querySelector('.products-section');
+                    if(topEl) {
+                        const y = topEl.getBoundingClientRect().top + window.scrollY - 120; // Adjust for sticky header
+                        window.scrollTo({top: y > 0 ? y : 0, behavior: 'smooth'});
+                    } else {
+                        window.scrollTo({top: 0, behavior: 'smooth'});
+                    }
+                }, 50);
             },
 
             filterCat(cat) {
@@ -1177,7 +1220,7 @@
                 const grid = document.getElementById('mob-offers-grid');
                 if(!grid) return;
                 const offers = this.data.filter(p => p.isOffer);
-                grid.innerHTML = offers.length ? offers.map(p => this.buildCard(p, false)).join('') : '<p style="grid-column:1/-1; text-align:center;">Sem ofertas.</p>';
+                grid.innerHTML = offers.length ? offers.map(p => this.buildCard(p)).join('') : '<p style="grid-column:1/-1; text-align:center;">Sem ofertas.</p>';
             },
             
             openCheckout() {
