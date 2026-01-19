@@ -4,11 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.31 - Fix Scroll Arrow Visibility
+        VERSION: 9.32 - Custom Category Sequence
         CHANGELOG:
-        - FIX (CSS): Altura da .mobile-nav-wrapper ajustada para calc(100vh - 180px).
-          Isso previne que a seta de rolagem fique escondida atrás da barra de checkout (80px).
-        - UI: Refinamento do z-index para garantir sobreposição correta.
+        - FEAT: Adicionada configuração manual 'CATEGORY_SEQUENCE' para ordem do menu.
+        - LOGIC: renderSidebar() agora respeita a ordem definida pelo usuário.
+        - UI: Mantida a lógica de botões especiais (Minha Cesta/Ofertas) no topo.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -624,6 +624,40 @@
     </div>
 
     <script>
+        // CONFIGURAÇÃO DA ORDEM DAS CATEGORIAS
+        // Edite esta lista para mudar a ordem ou os nomes que aparecem no menu.
+        // O sistema só vai mostrar as categorias que tiverem produtos disponíveis.
+        const CATEGORY_SEQUENCE = [
+            "ARROZ",
+            "AÇÚCAR",
+            "FEIJÃO",
+            "ÓLEO",
+            "CAFÉ",
+            "MACARRÃO",
+            "ACHOCOLATADOS",
+            "BISCOITOS, BOLACHAS E SALGADINHOS",
+            "BOLOS E SOBREMESAS",
+            "CASA",
+            "CHÁ E TERERÉ",
+            "COSTURA",
+            "COZINHA",
+            "CREMES E HIDRATANTES",
+            "DESODORANTES",
+            "EMBALAGEM",
+            "FESTA",
+            "GRÃOS, FARINHAS E CEREAIS",
+            "HIGIENE",
+            "LEITES",
+            "LIMPEZA",
+            "MOLHOS E EXTRATOS",
+            "OVOS",
+            "SABONETES",
+            "SAL",
+            "SUCO EM PÓ",
+            "TEMPEROS",
+            "TEMPEROS, VINAGRE E AZEITE"
+        ];
+
         const CONSTANTS = {
             THEMES: { 'DEFAULT': '#f1f5f9', 'ALIMENTOS': '#ffedd5', 'LIMPEZA': '#dbeafe', 'HIGIENE': '#dcfce7', 'BEBIDAS': '#fae8ff', 'CARNES': '#fee2e2' },
             PHONE: "5565996813588",
@@ -819,19 +853,32 @@
             },
 
             renderSidebar() {
-                const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))].sort();
+                // Get all categories that actually exist in the data
+                const availableCats = new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria));
                 
+                // Filter the pre-defined sequence to only include available categories
+                // This ensures empty categories don't show up, but the order is respected
+                const orderedCats = CATEGORY_SEQUENCE.filter(cat => availableCats.has(cat));
+                
+                // Optional: Append any available categories that were NOT in the sequence list (at the end)
+                // Remove this block if you want strict adherence to the list only
+                availableCats.forEach(cat => {
+                    if (!CATEGORY_SEQUENCE.includes(cat)) {
+                        orderedCats.push(cat);
+                    }
+                });
+
                 // DESKTOP
                 const deskBtns = [
                     `<button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>`,
                     `<button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>`
-                ].concat(cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`));
+                ].concat(orderedCats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`));
                 
                 // MOBILE NAV
                 const mobNavBtns = [
                     `<div class="nav-side-btn nav-cesta active" onclick="App.clearSearch(); App.highlightNav(this);">Minha Cesta</div>`,
                     `<div class="nav-side-btn nav-ofertas" onclick="App.showOffers(); App.highlightNav(this);">🔥 Ofertas</div>`
-                ].concat(cats.map(c => `<div class="nav-side-btn" onclick="App.filterCat('${c}'); App.highlightNav(this);">${c}</div>`));
+                ].concat(orderedCats.map(c => `<div class="nav-side-btn" onclick="App.filterCat('${c}'); App.highlightNav(this);">${c}</div>`));
 
                 document.getElementById('desk-cat-list').innerHTML = deskBtns.join('');
                 document.getElementById('mobile-nav-sidebar').innerHTML = mobNavBtns.join('');
@@ -924,7 +971,12 @@
                 // DYNAMIC GROUPING LOGIC
                 const groups = {};
                 extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
-                const sortedCats = Object.keys(groups).sort();
+                
+                // Use the ordered list for the group display order too!
+                // Filter available group keys based on ordered list, then append any others
+                const groupKeys = Object.keys(groups);
+                const sortedCats = CATEGORY_SEQUENCE.filter(c => groupKeys.includes(c));
+                groupKeys.forEach(k => { if(!sortedCats.includes(k)) sortedCats.push(k); });
                 
                 let html = '';
                 if(showOffersOnly) {
