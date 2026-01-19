@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.32 - Mobile Sidebar UX Fix
+        VERSION: 9.33 - Left Sidebar & Wide Desktop Nav
         CHANGELOG:
-        - UI (Mobile): Aumentado padding-bottom da sidebar (120px) para evitar obstrução pela barra de checkout.
-        - UI (Mobile): Adicionado indicador visual (seta) ao final da lista de categorias.
-        - UI (Mobile): Ajuste de altura da sidebar para ocupar toda a área vertical disponível.
+        - LAYOUT: Sidebar movida para a esquerda (Mobile e Desktop).
+        - UI (Desktop): Sidebar ampliada para 380px.
+        - UI (Desktop): Botões de categoria agora em 2 colunas (mais largos).
+        - UI (Mobile): Mantida largura de 115px na sidebar esquerda.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -227,10 +228,10 @@
         .ch-desktop-cart { display: none; }
 
         /* === SPLIT LAYOUT MOBILE (Products | Nav) === */
-        /* Changed: Width increased from 90px to 115px */
+        /* Changed: Column order flipped (115px first) */
         .app-grid { 
             display: grid; 
-            grid-template-columns: 1fr 115px; 
+            grid-template-columns: 115px 1fr; /* Sidebar Left | Content Right */
             gap: 10px; 
             margin-top: 24px; 
             padding-bottom: 40px; 
@@ -247,6 +248,7 @@
             /* Adjusted to go to bottom minus header */
             height: calc(100vh - 85px); 
             overflow-y: auto;
+            /* Changed to push content to the right */
             padding-right: 4px;
             /* CRITICAL FIX: Extra padding to allow scrolling past the fixed checkout bar (80px) */
             padding-bottom: 120px; 
@@ -283,7 +285,8 @@
         }
 
         @media (min-width: 1024px) {
-            .app-grid { grid-template-columns: 1fr 340px; gap: 40px; align-items: start; padding-right: 16px; }
+            /* Changed: Sidebar width increased to 380px, Gap adjusted */
+            .app-grid { grid-template-columns: 380px 1fr; gap: 30px; align-items: start; padding-right: 16px; }
             .mobile-nav-sidebar { display: none; }
             .ch-desktop-cart { display: flex; align-items: center; gap: 16px; }
             .desk-price { text-align: right; line-height: 1.2; }
@@ -387,7 +390,8 @@
                 align-self: start; 
             }
             .sidebar-title { font-size: 0.9rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 12px; }
-            .sidebar-nav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+            /* Changed: 2 Columns for wider buttons */
+            .sidebar-nav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 24px; }
             .sidebar-chip { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.7rem; font-weight: 600; color: var(--secondary); text-align: center; padding: 8px 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .sidebar-chip:hover { border-color: var(--secondary); background: #e2e8f0; }
         }
@@ -531,13 +535,7 @@
             </div>
         </div>
         <div class="container app-grid">
-            <div class="products-section">
-                <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Itens Inclusos</h3></div>
-                <div class="product-box"><div id="included-list" class="grid-products"></div></div>
-                <div id="extras-container"></div>
-            </div>
-            
-            <!-- DESKTOP SIDEBAR -->
+            <!-- DESKTOP SIDEBAR (NOW ON LEFT) -->
             <aside class="sidebar-desktop">
                 <div class="sidebar-title">Categorias</div>
                 <div id="desk-cat-list" class="sidebar-nav-grid"></div>
@@ -548,10 +546,16 @@
                 </div>
             </aside>
             
-            <!-- MOBILE NAV SIDEBAR (Replaces Right Column) -->
+            <!-- MOBILE NAV SIDEBAR (NOW ON LEFT) -->
             <aside id="mobile-nav-sidebar" class="mobile-nav-sidebar">
                 <!-- Injected via JS -->
             </aside>
+
+            <div class="products-section">
+                <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Itens Inclusos</h3></div>
+                <div class="product-box"><div id="included-list" class="grid-products"></div></div>
+                <div id="extras-container"></div>
+            </div>
         </div>
         
         <!-- MOBILE CHECKOUT BAR -->
