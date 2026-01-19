@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.33 - Left Sidebar & Wide Desktop Nav
+        VERSION: 9.34 - Hierarchy & Sidebar Categories
         CHANGELOG:
-        - LAYOUT: Sidebar movida para a esquerda (Mobile e Desktop).
-        - UI (Desktop): Sidebar ampliada para 380px.
-        - UI (Desktop): Botões de categoria agora em 2 colunas (mais largos).
-        - UI (Mobile): Mantida largura de 115px na sidebar esquerda.
+        - DATA: Lógica de parsing de categorias (Categoria > Subcategoria).
+        - UI (Sidebar): Agrupamento hierárquico (Título da Categoria Principal + Chips de Subcategorias).
+        - CSS: Estilos para títulos de seção na sidebar.
+        - LOGIC: Filtragem e renderização ajustadas para estrutura Pai/Filho.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -284,6 +284,21 @@
             60% {transform: translateY(-3px);}
         }
 
+        /* --- NEW HIERARCHY STYLES --- */
+        .nav-section-title {
+            width: 100%;
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--secondary);
+            margin: 20px 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .nav-section-title:first-of-type { margin-top: 10px; }
+
         @media (min-width: 1024px) {
             /* Changed: Sidebar width increased to 380px, Gap adjusted */
             .app-grid { grid-template-columns: 380px 1fr; gap: 30px; align-items: start; padding-right: 16px; }
@@ -293,6 +308,8 @@
             .desk-price small { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
             .desk-price strong { font-size: 1.2rem; color: var(--primary); }
             .btn-desk-checkout { background: #16a34a; color: white; padding: 0 24px; height: 42px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+            
+            .nav-section-title { font-size: 0.9rem; margin-top: 24px; text-align: left; }
         }
 
         .section-header { background: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; display:flex; justify-content: space-between; align-items: center; scroll-margin-top: 140px; }
@@ -537,13 +554,7 @@
         <div class="container app-grid">
             <!-- DESKTOP SIDEBAR (NOW ON LEFT) -->
             <aside class="sidebar-desktop">
-                <div class="sidebar-title">Categorias</div>
-                <div id="desk-cat-list" class="sidebar-nav-grid"></div>
-                <div style="margin-top:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                    <strong style="color:var(--secondary);">Dúvida?</strong>
-                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:10px;">Fale conosco no WhatsApp ou veja as perguntas frequentes.</p>
-                    <button class="btn-outline" onclick="App.openSheet('faq-sheet')">Perguntas Frequentes</button>
-                </div>
+                <!-- Content Injected via JS -->
             </aside>
             
             <!-- MOBILE NAV SIDEBAR (NOW ON LEFT) -->
@@ -764,20 +775,29 @@
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
                     const raw = await res.json();
                     
-                    this.data = raw.map(p => ({
-                        ...p,
-                        id: String(p.id),
-                        nome: p.nome.trim(),
-                        valor: parseFloat(p.valor || 0),
-                        offerPrice: parseFloat(p.Valor_Oferta || 0),
-                        isOffer: (p.Oferta && p.Oferta.toLowerCase() === 'sim'),
-                        categoria: (p.categoria || 'OUTROS').trim().toUpperCase(),
-                        imagem: this.fixImgPath(p.imagem),
-                        limit: parseInt(p.Limit || p.limit || 0),
-                        estoque: parseInt(p.estoque || 0),
-                        validade: p.Validade || p.validade || "",
-                        caracteristicas: p.Caracteristicas || p.caracteristicas || ""
-                    }));
+                    this.data = raw.map(p => {
+                        const rawCat = (p.categoria || 'OUTROS').trim().toUpperCase();
+                        const parts = rawCat.split('>');
+                        const mainCat = parts[0].trim();
+                        const subCat = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+
+                        return {
+                            ...p,
+                            id: String(p.id),
+                            nome: p.nome.trim(),
+                            valor: parseFloat(p.valor || 0),
+                            offerPrice: parseFloat(p.Valor_Oferta || 0),
+                            isOffer: (p.Oferta && p.Oferta.toLowerCase() === 'sim'),
+                            categoria: rawCat, // Keep original for unique grouping key
+                            mainCategory: mainCat,
+                            subCategory: subCat,
+                            imagem: this.fixImgPath(p.imagem),
+                            limit: parseInt(p.Limit || p.limit || 0),
+                            estoque: parseInt(p.estoque || 0),
+                            validade: p.Validade || p.validade || "",
+                            caracteristicas: p.Caracteristicas || p.caracteristicas || ""
+                        };
+                    });
 
                     this.renderHome();
                     this.renderSidebar();
@@ -820,26 +840,73 @@
             },
 
             renderSidebar() {
-                // Changed: Removed .sort() to respect JSON order
-                const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))];
+                // Filter out Cestas and get structure
+                const relevantProducts = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                // DESKTOP
-                const deskBtns = [
-                    `<button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>`,
-                    `<button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>`
-                ].concat(cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`));
-                
-                // MOBILE NAV
-                const mobNavBtns = [
-                    `<div class="nav-side-btn nav-cesta active" onclick="App.clearSearch(); App.highlightNav(this);">Minha Cesta</div>`,
-                    `<div class="nav-side-btn nav-ofertas" onclick="App.showOffers(); App.highlightNav(this);">🔥 Ofertas</div>`
-                ].concat(cats.map(c => `<div class="nav-side-btn" onclick="App.filterCat('${c}'); App.highlightNav(this);">${c}</div>`));
-                
-                // Add Arrow/End indicator
-                mobNavBtns.push(`<div class="nav-arrow-indicator">▼</div>`);
+                // Group Subcats by Maincats
+                const structure = {};
+                const mainOrder = []; 
 
-                document.getElementById('desk-cat-list').innerHTML = deskBtns.join('');
-                document.getElementById('mobile-nav-sidebar').innerHTML = mobNavBtns.join('');
+                relevantProducts.forEach(p => {
+                    if (!structure[p.mainCategory]) {
+                        structure[p.mainCategory] = new Set();
+                        mainOrder.push(p.mainCategory); // Preserve approximate JSON order
+                    }
+                    structure[p.mainCategory].add(p.categoria); // Store full key for filtering
+                });
+
+                // --- BUILD HTML ---
+                let deskHTML = `<div class="sidebar-title">Menu Rápido</div>
+                    <div class="sidebar-nav-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>
+                        <button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>
+                    </div>`;
+                
+                let mobHTML = `
+                    <div class="nav-side-btn nav-cesta active" onclick="App.clearSearch(); App.highlightNav(this);">Minha Cesta</div>
+                    <div class="nav-side-btn nav-ofertas" onclick="App.showOffers(); App.highlightNav(this);">🔥 Ofertas</div>
+                `;
+
+                // Deduplicate mainOrder
+                const uniqueMain = [...new Set(mainOrder)];
+
+                uniqueMain.forEach(main => {
+                    // DESKTOP
+                    deskHTML += `<div class="nav-section-title">${main}</div>`;
+                    deskHTML += `<div class="sidebar-nav-grid" style="margin-bottom:10px;">`;
+                    
+                    // MOBILE
+                    mobHTML += `<div class="nav-section-title">${main}</div>`;
+
+                    // Sort subcategories logic? Or keep JSON order?
+                    // Set iteration follows insertion order usually.
+                    const subKeys = Array.from(structure[main]);
+                    
+                    subKeys.forEach(fullKey => {
+                        // Find a representative product to get the nice sub name
+                        const sample = this.data.find(p => p.categoria === fullKey);
+                        const label = sample ? sample.subCategory : fullKey;
+
+                        deskHTML += `<button class="sidebar-chip" onclick="App.filterCat('${fullKey}')">${label}</button>`;
+                        
+                        mobHTML += `<div class="nav-side-btn" onclick="App.filterCat('${fullKey}'); App.highlightNav(this);">${label}</div>`;
+                    });
+
+                    deskHTML += `</div>`; // Close grid
+                });
+
+                // Add footer elements
+                deskHTML += `
+                <div style="margin-top:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <strong style="color:var(--secondary);">Dúvida?</strong>
+                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:10px;">Fale conosco no WhatsApp ou veja as perguntas frequentes.</p>
+                    <button class="btn-outline" onclick="App.openSheet('faq-sheet')">Perguntas Frequentes</button>
+                </div>`;
+
+                mobHTML += `<div class="nav-arrow-indicator">▼</div>`;
+
+                document.querySelector('.sidebar-desktop').innerHTML = deskHTML;
+                document.getElementById('mobile-nav-sidebar').innerHTML = mobHTML;
             },
 
             highlightNav(el) {
@@ -921,10 +988,10 @@
                 if(deskBtn) showClear ? deskBtn.classList.remove('hidden') : deskBtn.classList.add('hidden');
 
                 const groups = {};
+                // Group by full category key to match sidebar filtering
                 extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
                 
-                // Changed: Removed .sort() to respect JSON order
-                const sortedCats = Object.keys(groups);
+                const sortedKeys = Object.keys(groups); // Keep parse order essentially
                 
                 let html = '';
                 if(showOffersOnly) {
@@ -933,7 +1000,7 @@
                         <h3 style="color:#b45309;">🔥 Ofertas Especiais</h3>
                         <p>Aproveite os descontos exclusivos.</p>
                     </div>`;
-                } else if(sortedCats.length > 0 && !searchTerm) {
+                } else if(sortedKeys.length > 0 && !searchTerm) {
                     html += `
                     <div class="extras-separator-banner">
                         <h3>Adicionar Extras</h3>
@@ -941,13 +1008,16 @@
                     </div>`;
                 }
 
-                if(sortedCats.length === 0) {
+                if(sortedKeys.length === 0) {
                      html += '<p style="text-align:center; padding:40px;">Nenhum produto encontrado.</p>';
                 } else {
-                    sortedCats.forEach(cat => {
-                        const color = Object.keys(CONSTANTS.THEMES).find(k => cat.includes(k)) || 'DEFAULT';
-                        html += `<div id="cat-${cat}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;"><h3>${cat}</h3></div>
-                        <div class="product-box"><div class="grid-products">${groups[cat].map(p => this.buildCard(p)).join('')}</div></div>`;
+                    sortedKeys.forEach(key => {
+                        const sample = groups[key][0];
+                        const title = sample.subCategory; // Show only subcategory in header
+                        const colorKey = Object.keys(CONSTANTS.THEMES).find(k => key.includes(k)) || 'DEFAULT';
+                        
+                        html += `<div id="cat-${key}" class="section-header" style="background:${CONSTANTS.THEMES[colorKey]}; margin-top:30px;"><h3>${title}</h3></div>
+                        <div class="product-box"><div class="grid-products">${groups[key].map(p => this.buildCard(p)).join('')}</div></div>`;
                     });
                 }
                 
