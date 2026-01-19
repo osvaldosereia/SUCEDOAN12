@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SISTEMAS | Studio 300 Pro</title>
+    <meta name="description" content="Editor Híbrido: Fotos, Vídeos e Botões Interativos.">
+    <meta name="theme-color" content="#2563eb">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pica/9.0.1/pica.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --brand: #2563eb;
+            --brand-dark: #1e40af;
+            --action: #10b981; 
+            --action-dark: #059669;
+            --danger: #ef4444;
+            --border: #e2e8f0;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --touch-target: 48px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            padding: 1rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overscroll-behavior: none;
+        }
+
+        .mode-switch {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            width: 100%;
+            max-width: 400px;
+        }
+        .mode-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn.active {
+            background: var(--surface);
+            color: var(--brand);
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
+        }
+
+        main { 
+            width: 100%; 
+            max-width: 600px; 
+            display: grid; 
+            gap: 1.5rem; 
+        }
+
+        @media (min-width: 800px) {
+            main {
+                max-width: 960px;
+                grid-template-columns: 380px 1fr;
+                align-items: start;
+            }
+            .preview-section { position: sticky; top: 1rem; }
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        /* --- FORMAT BUTTONS --- */
+        .format-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .btn-fmt {
+            flex: 1;
+            height: 32px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .btn-fmt.active {
+            background: #eff6ff;
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+
+        /* --- VIEWPORT --- */
+        .viewport {
+            width: 100%;
+            background: #e5e5e5 radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            touch-action: none;
+        }
+        .viewport.drag-over { border-color: var(--brand); background-color: #eff6ff; }
+
+        canvas { 
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            image-rendering: high-quality;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; 
+            cursor: grab;
+        }
+        canvas.brush-active { cursor: none !important; }
+        canvas.pointer-active { cursor: pointer !important; }
+        canvas.move-active { cursor: move !important; }
+        canvas.resize-active { cursor: nwse-resize !important; }
+        canvas:active { cursor: grabbing; }
+
+        /* --- ZOOM BAR --- */
+        .zoom-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+        .zoom-icon { color: var(--text-muted); }
+        .zoom-val { 
+            font-size: 0.75rem; 
+            font-variant-numeric: tabular-nums; 
+            color: var(--text-main); 
+            font-weight: bold;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        input[type="range"] {
+            width: 100%; height: 24px; background: transparent; -webkit-appearance: none; cursor: pointer; flex: 1;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px; background: #cbd5e1; border-radius: 4px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            height: 20px; width: 20px; border-radius: 50%; background: var(--brand); 
+            -webkit-appearance: none; margin-top: -7px; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2);
+        }
+
+        /* --- ACTIONS --- */
+        .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        
+        .btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            height: var(--touch-target); font-weight: 700; font-size: 0.95rem;
+            border-radius: 8px; border: none; cursor: pointer; width: 100%;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .btn-upload { background: var(--bg); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-camera { background: var(--text-main); color: white; }
+        .btn-save { background: var(--action); color: white; margin-top: 1rem; font-size: 1.1rem; }
+        .btn-record { background: var(--danger); color: white; margin-top: 1rem; font-size: 1.1rem; }
+        .btn-magic { background: #8b5cf6; color: white; margin-top: 1rem; }
+        .btn-magic.processing { opacity: 0.7; cursor: wait; }
+        
+        /* Botão Restaurar */
+        .btn-restore { background: #f59e0b; color: white; margin-top: 0.5rem; display: none;}
+        .btn-restore.active { background: #d97706; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); border: 2px solid #fff; }
+
+        /* Botão Add Overlay */
+        .btn-add-overlay { background: #3b82f6; color: white; width: 100%; margin-top: 0.5rem;}
+        
+        .brush-controls {
+            display: none;
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #b45309;
+        }
+        .brush-controls.visible { display: block; }
+
+        .overlay-controls {
+            display: none;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 0.8rem;
+        }
+        .overlay-controls.visible { display: block; animation: slideDown 0.2s ease; }
+        @keyframes slideDown { from {opacity: 0; transform: translateY(-5px);} to {opacity: 1; transform: translateY(0);} }
+        
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(1); }
+
+        .btn-mini {
+            height: 28px; padding: 0 8px; font-size: 0.7rem; 
+            background: #fff; border: 1px solid var(--border); border-radius: 4px;
+            color: var(--text-muted); cursor: pointer;
+        }
+        .btn-mini:hover { background: #f1f5f9; color: var(--brand); border-color: var(--brand); }
+
+        /* --- CONTROLS --- */
+        fieldset { border: 0; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+        label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main); }
+        
+        .input-text, .input-select {
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-main);
+            border-radius: 8px; font-size: 1rem; outline: none; appearance: none;
+        }
+
+        .color-picker-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+        input[type="color"] {
+            -webkit-appearance: none; border: none; width: 40px; height: 40px; border-radius: 50%; padding: 0; overflow: hidden; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; }
+        
+        .hidden { display: none !important; }
+        .file-input { display: none; }
+        .rec-indicator {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(239, 68, 68, 0.9); color: white;
+            padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;
+            display: flex; align-items: center; gap: 6px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        .empty-msg {
+            text-align: center; color: var(--text-muted); display: flex;
+            flex-direction: column; align-items: center; gap: 0.5rem;
+            font-size: 0.9rem; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mode-switch">
+        <button class="mode-btn active" id="modePhoto">FOTO HQ</button>
+        <button class="mode-btn" id="modeVideo">VÍDEO HQ</button>
+    </div>
+
+    <main>
+        <!-- CARD PREVIEW -->
+        <div class="card preview-section">
+            
+            <div class="format-selector">
+                <button class="btn-fmt active" id="fmtSquare" onclick="setFormat('square')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                    Quadrado
+                </button>
+                <button class="btn-fmt" id="fmtVertical" onclick="setFormat('vertical')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect></svg>
+                    Vertical
+                </button>
+            </div>
+
+            <div class="viewport" id="dropZone" style="aspect-ratio: 1;">
+                <div id="emptyState" class="empty-msg">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--border); margin-bottom: 0.5rem;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Arraste ou Cole</span>
+                </div>
+                <canvas id="canvas" class="hidden" width="300" height="300"></canvas>
+                <div id="recBadge" class="rec-indicator hidden">REC</div>
+            </div>
+
+            <div class="zoom-bar">
+                <svg class="zoom-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                
+                <input type="range" id="scaleRange" min="50" max="250" value="85" class="zoom-input">
+                <input type="range" id="vScaleRange" min="50" max="250" value="100" class="zoom-input hidden">
+                
+                <span id="zoomValDisplay" class="zoom-val">85%</span>
+                <button id="btnFit" class="btn-mini" title="Resetar Zoom">Fit</button>
+            </div>
+
+            <div class="actions-grid">
+                <label class="btn btn-upload">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Arquivo
+                    <input type="file" id="fileInput" class="file-input" accept="image/*">
+                </label>
+                
+                <label class="btn btn-camera">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    Câmera
+                    <input type="file" id="cameraInput" class="file-input" accept="image/*" capture="environment">
+                </label>
+            </div>
+        </div>
+
+        <!-- CARD CONTROLS -->
+        <div class="card" id="controlsCard">
+            
+            <!-- Botões Info (Novo) -->
+            <fieldset>
+                <label>Botões de Informação</label>
+                <button id="btnAddOverlay" class="btn btn-add-overlay">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Adicionar Botão
+                </button>
+
+                <div id="overlayControls" class="overlay-controls">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-weight:700; font-size:0.9rem; color:var(--brand);">Editar Botão</span>
+                        <button id="btnDeleteOverlay" class="btn-mini" style="color:var(--danger); border-color:var(--danger);">Excluir</button>
+                    </div>
+                    
+                    <input type="text" id="overlayText" class="input-text" placeholder="Texto do botão..." style="margin-bottom:8px;">
+                    
+                    <div class="color-picker-row">
+                        <span style="font-size:0.85rem; color:var(--text-muted);">Cor do Fundo:</span>
+                        <input type="color" id="overlayColor" value="#ef4444">
+                        <span style="font-size:0.85rem; color:var(--text-muted); margin-left:10px;">Cor do Texto:</span>
+                        <input type="color" id="overlayTextColor" value="#ffffff">
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
+                        Arraste o botão na imagem para mover. Puxe a borda branca inferior-direita para redimensionar.
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <label>Ajustes de Imagem</label>
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center; margin-bottom: 0.8rem;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted); width: 65px;">Brilho</span>
+                    <input type="range" id="brightRange" min="-50" max="50" value="0">
+                </div>
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center; margin-bottom: 0.8rem;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted); width: 65px;">Contraste</span>
+                    <input type="range" id="contrastRange" min="-50" max="50" value="0">
+                </div>
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted); width: 65px;">Saturação</span>
+                    <input type="range" id="satRange" min="-50" max="50" value="0">
+                </div>
+            </fieldset>
+
+            <fieldset style="background: #f0fdf4; padding: 1rem; border-radius: 8px; border: 1px solid #bbf7d0;">
+                <label style="color: #166534;">Nitidez Pro (3x) <span class="val-badge" id="sharpVal">0</span></label>
+                <input type="range" id="sharpRange" min="0" max="30" value="0" step="1">
+            </fieldset>
+
+            <!-- PHOTO EXTRAS -->
+            <div id="photoExtras">
+                <button id="btnMagic" class="btn btn-magic">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.5 9.5l-2.5-2.5"/><path d="M21 11l-9 9-5-5 9-9z"/><path d="M3 3l6 6"/><path d="M15 4l-4 4"/><path d="M4 15l4-4"/><path d="M9 19l2 2"/></svg>
+                    🪄 Remover Fundo
+                </button>
+
+                <!-- Controles de Restauração -->
+                <button id="btnRestore" class="btn btn-restore">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+                    🖌️ Pincel Restaurar
+                </button>
+
+                <div id="brushControls" class="brush-controls">
+                    <label style="margin-bottom: 5px; color: #b45309;">Tamanho do Pincel: <span id="brushSizeVal">20</span>px</label>
+                    <input type="range" id="brushSize" min="5" max="100" value="20">
+                    <div style="font-size: 0.75rem; margin-top: 5px; opacity: 0.8;">Passe o dedo onde quer trazer a imagem original de volta.</div>
+                </div>
+
+                <button id="saveBtn" class="btn btn-save" disabled>
+                    Baixar WebP Otimizado (30KB)
+                </button>
+            </div>
+
+            <!-- VIDEO EXTRAS -->
+            <div id="videoExtras" class="hidden">
+                <button id="recordBtn" class="btn btn-record" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                    Gravar e Baixar (MP4)
+                </button>
+                <div id="videoProgress" style="width: 0%; height: 4px; background: var(--action); margin-top: 10px; transition: width 0.2s; border-radius: 2px;"></div>
+            </div>
+
+            <!-- SEO -->
+            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+                <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Nome do Arquivo (SEO)</label>
+                <input type="text" id="nameInput" class="input-text" placeholder="ex: arroz-prato-fino" value="produto" style="margin-bottom: 0.5rem;">
+                
+                <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; margin-top: 0.5rem;">Variação SEO</label>
+                <select id="suffixSelect" class="input-select">
+                    <option value="-cesta-basica-cuiaba-varzea-grande">1 - Padrão (...varzea-grande)</option>
+                    <option value="-cesta-basica-cuiaba-varzea-grandeA">2 - Variação A (...grandeA)</option>
+                    <option value="-cesta-basica-cuiaba-varzea-grandeB">3 - Variação B (...grandeB)</option>
+                    <option value="-cesta-basica-cuiaba-varzea-grandeC">4 - Variação C (...grandeC)</option>
+                    <option value="-cesta-basica-cuiaba-varzea-grandeD">5 - Variação D (...grandeD)</option>
+                </select>
+            </div>
+        </div>
+    </main>
+
+    <video id="sourceVideo" muted playsinline crossorigin="anonymous"></video>
+
+    <script>
+        const state = {
+            mode: 'photo',
+            format: 'square',
+            img: null, 
+            noBgCanvas: null, 
+            useNoBg: false,
+            video: null,
+            ctx: null, width: 300, height: 300,
+            scale: 0.85, vScale: 1.0, x: 0, y: 0,
+            recorder: null, chunks: [], isRecording: false,
+            brightness: 0, contrast: 0, saturation: 0, sharpness: 0,
+            // Pinch Vars
+            isPinching: false, pinchStartDist: 0, pinchStartScale: 1,
+            // Brush Vars
+            isRestoring: false, brushSize: 20, isBrushing: false, cursorX: -100, cursorY: -100,
+            // OVERLAY VARS (NEW)
+            overlays: [], // {id, x, y, w, h, text, bg, color}
+            activeOverlayId: null,
+            isDraggingOverlay: false,
+            isResizingOverlay: false,
+            dragStartX: 0, dragStartY: 0 // Offset do mouse relativo ao objeto
+        };
+
+        const els = {
+            canvas: document.getElementById('canvas'),
+            viewport: document.getElementById('dropZone'),
+            videoEl: document.getElementById('sourceVideo'),
+            empty: document.getElementById('emptyState'),
+            recBadge: document.getElementById('recBadge'),
+            fileInput: document.getElementById('fileInput'),
+            camInput: document.getElementById('cameraInput'),
+            nameInput: document.getElementById('nameInput'),
+            suffixSelect: document.getElementById('suffixSelect'),
+            progressBar: document.getElementById('videoProgress'),
+            mPhoto: document.getElementById('modePhoto'),
+            mVideo: document.getElementById('modeVideo'),
+            photoExtras: document.getElementById('photoExtras'),
+            videoExtras: document.getElementById('videoExtras'),
+            // Sliders
+            bright: document.getElementById('brightRange'),
+            contrast: document.getElementById('contrastRange'),
+            sat: document.getElementById('satRange'),
+            sharp: document.getElementById('sharpRange'),
+            // Zoom Area
+            scale: document.getElementById('scaleRange'),
+            vScale: document.getElementById('vScaleRange'),
+            zoomVal: document.getElementById('zoomValDisplay'),
+            btnFit: document.getElementById('btnFit'),
+            // Btns
+            btnMagic: document.getElementById('btnMagic'),
+            btnSave: document.getElementById('saveBtn'),
+            btnRec: document.getElementById('recordBtn'),
+            // Format
+            fmtSquare: document.getElementById('fmtSquare'),
+            fmtVertical: document.getElementById('fmtVertical'),
+            // Restore Tools
+            btnRestore: document.getElementById('btnRestore'),
+            brushControls: document.getElementById('brushControls'),
+            brushSize: document.getElementById('brushSize'),
+            brushSizeVal: document.getElementById('brushSizeVal'),
+            // OVERLAY UI
+            btnAddOverlay: document.getElementById('btnAddOverlay'),
+            overlayControls: document.getElementById('overlayControls'),
+            overlayText: document.getElementById('overlayText'),
+            overlayColor: document.getElementById('overlayColor'),
+            overlayTextColor: document.getElementById('overlayTextColor'),
+            btnDeleteOverlay: document.getElementById('btnDeleteOverlay')
+        };
+
+        function init() {
+            updateCanvasDimensions();
+            els.ctx = els.canvas.getContext('2d', { willReadFrequently: true });
+            
+            els.mPhoto.onclick = () => setMode('photo');
+            els.mVideo.onclick = () => setMode('video');
+            
+            els.fileInput.addEventListener('change', handleFile);
+            els.camInput.addEventListener('change', handleFile);
+            setupDragDrop();
+
+            // Zoom Listeners
+            els.scale.oninput = (e) => updateZoom(e.target.value / 100);
+            els.vScale.oninput = (e) => updateZoom(e.target.value / 100);
+            els.btnFit.onclick = () => updateZoom(0.85); // Reset to default
+
+            // Filter Listeners
+            els.bright.oninput = (e) => { state.brightness = parseInt(e.target.value); requestRender(); };
+            els.contrast.oninput = (e) => { state.contrast = parseInt(e.target.value); requestRender(); };
+            els.sat.oninput = (e) => { state.saturation = parseInt(e.target.value); requestRender(); };
+            els.sharp.oninput = (e) => { state.sharpness = parseInt(e.target.value); document.getElementById('sharpVal').innerText = e.target.value; requestRender(); };
+
+            // Buttons Actions
+            els.btnSave.onclick = savePhotoHighQuality; 
+            els.btnRec.onclick = processVideo;
+            els.btnMagic.onclick = toggleMagicBackground;
+            els.btnRestore.onclick = toggleRestoreMode;
+            els.brushSize.oninput = (e) => { 
+                state.brushSize = parseInt(e.target.value); 
+                els.brushSizeVal.innerText = state.brushSize; 
+                requestRender();
+            };
+
+            // Overlay UI Actions
+            els.btnAddOverlay.onclick = addOverlay;
+            els.btnDeleteOverlay.onclick = deleteActiveOverlay;
+            els.overlayText.oninput = (e) => updateActiveOverlay('text', e.target.value);
+            els.overlayColor.oninput = (e) => updateActiveOverlay('bg', e.target.value);
+            els.overlayTextColor.oninput = (e) => updateActiveOverlay('color', e.target.value);
+
+            // Touch/Mouse Gestures
+            els.canvas.addEventListener('mousedown', handlePointerDown);
+            els.canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+            
+            window.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('touchmove', handleTouchMove, {passive: false});
+            
+            window.addEventListener('mouseup', handlePointerUp);
+            window.addEventListener('touchend', handlePointerUp);
+            
+            els.canvas.addEventListener('mouseleave', () => {
+                state.cursorX = -100; state.cursorY = -100; requestRender();
+            });
+            document.addEventListener('paste', handlePaste);
+            
+            window.setFormat = setFormat; 
+        }
+
+        // --- OVERLAY LOGIC ---
+        function addOverlay() {
+            if (!state.img && !state.video) { alert("Carregue uma imagem ou vídeo primeiro."); return; }
+            
+            // Pega o tamanho da imagem base
+            const source = (state.mode === 'photo' && state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : (state.img || state.video);
+            if (!source) return;
+
+            // Cria um botão relativo ao tamanho da imagem (aprox 20% da largura)
+            const baseSize = (source.width || source.videoWidth) * 0.2;
+            
+            const newOverlay = {
+                id: Date.now(),
+                x: (source.width || source.videoWidth) / 2 - (baseSize/2), // Center X
+                y: (source.height || source.videoHeight) / 2 - (baseSize/4), // Center Y
+                w: baseSize,
+                h: baseSize * 0.4,
+                text: "INFO",
+                bg: "#ef4444",
+                color: "#ffffff"
+            };
+            
+            state.overlays.push(newOverlay);
+            setActiveOverlay(newOverlay.id);
+            requestRender();
+        }
+
+        function setActiveOverlay(id) {
+            state.activeOverlayId = id;
+            if (id === null) {
+                els.overlayControls.classList.remove('visible');
+            } else {
+                const ov = state.overlays.find(o => o.id === id);
+                if (ov) {
+                    els.overlayText.value = ov.text;
+                    els.overlayColor.value = ov.bg;
+                    els.overlayTextColor.value = ov.color;
+                    els.overlayControls.classList.add('visible');
+                }
+            }
+            requestRender();
+        }
+
+        function updateActiveOverlay(prop, val) {
+            if (!state.activeOverlayId) return;
+            const ov = state.overlays.find(o => o.id === state.activeOverlayId);
+            if (ov) { ov[prop] = val; requestRender(); }
+        }
+
+        function deleteActiveOverlay() {
+            if (!state.activeOverlayId) return;
+            state.overlays = state.overlays.filter(o => o.id !== state.activeOverlayId);
+            setActiveOverlay(null);
+        }
+
+        // --- HELPER GEOMETRY ---
+        // Calcula onde a imagem está sendo desenhada na tela
+        function getRenderGeometry() {
+            const w = state.width; const h = state.height;
+            const source = (state.mode === 'photo' && state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : (state.img || state.video);
+            
+            if (!source) return null;
+
+            const sw = source.width || source.videoWidth;
+            const sh = source.height || source.videoHeight;
+            const aspect = sw / sh;
+
+            let dw, dh, targetSize = w * (state.mode === 'photo' ? state.scale : state.vScale);
+            if (aspect > 1) { dw = targetSize; dh = targetSize / aspect; } else { dh = targetSize; dw = targetSize * aspect; }
+            
+            const dx = (w - dw)/2 + state.x; 
+            const dy = (h - dh)/2 + state.y;
+
+            return { dx, dy, dw, dh, sw, sh };
+        }
+
+        // Converte coordenadas da tela (mouse) para coordenadas da Imagem
+        function screenToImage(sx, sy, geo) {
+            if (!geo) return null;
+            // Escala atual de renderização
+            const scaleFactorX = geo.sw / geo.dw;
+            const scaleFactorY = geo.sh / geo.dh;
+            
+            const ix = (sx - geo.dx) * scaleFactorX;
+            const iy = (sy - geo.dy) * scaleFactorY;
+            return { x: ix, y: iy };
+        }
+
+        // --- GESTURES & INTERACTION UPDATE ---
+        function handleTouchStart(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                state.isPinching = true;
+                state.pinchStartDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                state.pinchStartScale = (state.mode === 'photo') ? state.scale : state.vScale;
+            } else {
+                handlePointerDown(e.touches[0], e);
+            }
+        }
+
+        function handlePointerDown(e, originalEvent) {
+            if (originalEvent) originalEvent.preventDefault();
+
+            const rect = els.canvas.getBoundingClientRect();
+            const mx = (e.clientX || e.pageX) - rect.left;
+            const my = (e.clientY || e.pageY) - rect.top;
+            const geo = getRenderGeometry();
+
+            if (!geo) return;
+
+            // 1. Verificar Resize Handle (Prioridade)
+            if (state.activeOverlayId) {
+                const ov = state.overlays.find(o => o.id === state.activeOverlayId);
+                // Calcula posição do handle na tela
+                const scaleX = geo.dw / geo.sw;
+                const scaleY = geo.dh / geo.sh;
+                const ox = geo.dx + ov.x * scaleX;
+                const oy = geo.dy + ov.y * scaleY;
+                const ow = ov.w * scaleX;
+                const oh = ov.h * scaleY;
+                
+                // Área de clique do resize (canto inferior direito)
+                const handleSize = 20; // Hitbox maior para touch
+                if (mx >= ox + ow - handleSize && mx <= ox + ow + handleSize &&
+                    my >= oy + oh - handleSize && my <= oy + oh + handleSize) {
+                    state.isResizingOverlay = true;
+                    // Salva posição inicial pra calcular delta
+                    state.dragStartX = mx; 
+                    state.dragStartY = my;
+                    state.initialW = ov.w; // Tamanho original na imagem
+                    state.initialH = ov.h;
+                    return;
+                }
+            }
+
+            // 2. Verificar Hit em Overlays (Z-Index simulado: último array = topo)
+            const mouseImg = screenToImage(mx, my, geo);
+            for (let i = state.overlays.length - 1; i >= 0; i--) {
+                const ov = state.overlays[i];
+                if (mouseImg.x >= ov.x && mouseImg.x <= ov.x + ov.w &&
+                    mouseImg.y >= ov.y && mouseImg.y <= ov.y + ov.h) {
+                    
+                    setActiveOverlay(ov.id);
+                    state.isDraggingOverlay = true;
+                    // Diferença entre clique e topo do objeto
+                    state.dragStartX = mouseImg.x - ov.x;
+                    state.dragStartY = mouseImg.y - ov.y;
+                    
+                    // Reordenar para o topo
+                    state.overlays.push(state.overlays.splice(i, 1)[0]);
+                    return;
+                }
+            }
+
+            // Se clicou fora, deseleciona
+            if (state.activeOverlayId) setActiveOverlay(null);
+
+            // 3. Brushing Logic
+            if (state.isRestoring && state.useNoBg && state.noBgCanvas) {
+                state.isBrushing = true;
+                applyBrush(e);
+                return;
+            }
+
+            // 4. Pan Logic
+            startPan(e);
+        }
+
+        function handleTouchMove(e) {
+            if (state.isPinching && e.touches.length === 2) {
+                e.preventDefault();
+                const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                if (state.pinchStartDist > 0) {
+                    updateZoom(state.pinchStartScale * (dist / state.pinchStartDist));
+                }
+            } else if (e.touches.length === 1) {
+                handlePointerMove(e.touches[0], e);
+            }
+        }
+
+        function handlePointerMove(e, originalEvent) {
+            if (state.isRestoring) {
+                const rect = els.canvas.getBoundingClientRect();
+                state.cursorX = (e.clientX || e.pageX) - rect.left;
+                state.cursorY = (e.clientY || e.pageY) - rect.top;
+                requestRender();
+            }
+
+            // Lógica de Mover Overlay
+            if (state.isDraggingOverlay && state.activeOverlayId) {
+                if(originalEvent) originalEvent.preventDefault();
+                const rect = els.canvas.getBoundingClientRect();
+                const mx = (e.clientX || e.pageX) - rect.left;
+                const my = (e.clientY || e.pageY) - rect.top;
+                const geo = getRenderGeometry();
+                const mImg = screenToImage(mx, my, geo);
+                
+                const ov = state.overlays.find(o => o.id === state.activeOverlayId);
+                ov.x = mImg.x - state.dragStartX;
+                ov.y = mImg.y - state.dragStartY;
+                requestRender();
+                return;
+            }
+
+            // Lógica de Resize Overlay
+            if (state.isResizingOverlay && state.activeOverlayId) {
+                if(originalEvent) originalEvent.preventDefault();
+                const rect = els.canvas.getBoundingClientRect();
+                const mx = (e.clientX || e.pageX) - rect.left;
+                const geo = getRenderGeometry();
+                
+                // Quanto o mouse moveu na tela?
+                const deltaScreenX = mx - state.dragStartX;
+                
+                // Converte delta de tela para delta de imagem
+                const scaleX = geo.dw / geo.sw; // pixels tela / pixels imagem
+                const deltaImageW = deltaScreenX / scaleX;
+                
+                const ov = state.overlays.find(o => o.id === state.activeOverlayId);
+                const newW = state.initialW + deltaImageW;
+                
+                if (newW > 20) { // Tamanho mínimo
+                    ov.w = newW;
+                    // Mantém proporção do botão (pill shape) ou livre?
+                    // Vamos manter livre ou fixar aspect? Vamos escalar H propocional para manter texto ok
+                    // Ou melhor, apenas largura, pois altura é calculada por texto? Não, usuário quer redimensionar.
+                    // Simples: Resize uniforme (aspect ratio lock)
+                    const aspect = state.initialH / state.initialW;
+                    ov.h = newW * aspect;
+                }
+                requestRender();
+                return;
+            }
+
+            if (state.isBrushing) {
+                if (originalEvent) originalEvent.preventDefault();
+                applyBrush(e);
+                return;
+            }
+
+            if (!state.isPinching) movePan(e, originalEvent);
+        }
+
+        function handlePointerUp() {
+            state.isBrushing = false;
+            state.isDraggingOverlay = false;
+            state.isResizingOverlay = false;
+            endPan();
+            requestRender(); // Redraw to clear cursors/guides
+        }
+
+        function startPan(e) {
+            if((state.mode==='photo' && !state.img) || (state.mode==='video' && !state.video)) return;
+            state.isPanning = true; 
+            state.panStartX = (e.clientX || e.pageX) - state.x; 
+            state.panStartY = (e.clientY || e.pageY) - state.y; 
+            if (!state.isRestoring) els.canvas.style.cursor = 'grabbing';
+        }
+        function movePan(e, originalEvent) {
+            if(!state.isPanning) return;
+            if(originalEvent && originalEvent.cancelable) originalEvent.preventDefault();
+            state.x = (e.clientX || e.pageX) - state.panStartX; 
+            state.y = (e.clientY || e.pageY) - state.panStartY;
+            requestRender();
+        }
+        function endPan() { state.isPanning = false; state.isPinching = false; if (!state.isRestoring) els.canvas.style.cursor = 'grab'; }
+
+        // --- DRAWING ---
+        function updateZoom(val) {
+            val = Math.max(0.5, Math.min(3.0, val));
+            const displayVal = Math.round(val * 100);
+            if (state.mode === 'photo') { state.scale = val; els.scale.value = displayVal; } 
+            else { state.vScale = val; els.vScale.value = displayVal; }
+            els.zoomVal.innerText = displayVal + '%';
+            requestRender();
+        }
+
+        function requestRender() {
+            if(state.mode === 'photo') requestAnimationFrame(renderPhoto);
+            else if (state.mode === 'video') requestAnimationFrame(drawVideoFrame);
+        }
+
+        function renderPhoto() {
+            if(!state.img) return;
+            const ctx = els.ctx; const w = state.width; const h = state.height;
+            ctx.filter = 'none'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+            
+            const source = (state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : state.img;
+            
+            // Re-use logic from getRenderGeometry but manually here for performance inside render loop
+            const sw = source.width; const sh = source.height;
+            const aspect = sw / sh;
+            let dw, dh, targetSize = w * state.scale;
+            if (aspect > 1) { dw = targetSize; dh = targetSize / aspect; } else { dh = targetSize; dw = targetSize * aspect; }
+            const dx = (w - dw)/2 + state.x; const dy = (h - dh)/2 + state.y;
+            
+            ctx.filter = getFilterString();
+            ctx.drawImage(source, dx, dy, dw, dh);
+            ctx.filter = 'none';
+            if (state.sharpness > 0) applySharpen(ctx, w, h, state.sharpness); 
+
+            // Draw Overlays
+            drawOverlays(ctx, dx, dy, dw, dh, sw, sh);
+
+            // Draw Brush Cursor
+            if (state.isRestoring && state.cursorX > -50) {
+                ctx.save(); ctx.beginPath();
+                ctx.arc(state.cursorX, state.cursorY, state.brushSize / 2, 0, Math.PI * 2);
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        function drawVideoFrame() {
+            if(!state.video) return;
+            const ctx = els.ctx; const w = state.width; const h = state.height;
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+            const vw = state.video.videoWidth; const vh = state.video.videoHeight;
+            const aspect = vw / vh;
+            let dw, dh, targetSize = w * state.vScale;
+            if (aspect > 1) { dw = targetSize; dh = targetSize / aspect; } else { dh = targetSize; dw = targetSize * aspect; }
+            const dx = (w - dw)/2 + state.x; const dy = (h - dh)/2 + state.y;
+            
+            ctx.filter = getFilterString();
+            ctx.drawImage(state.video, dx, dy, dw, dh);
+            ctx.filter = 'none';
+            if (state.sharpness > 0) applySharpen(ctx, w, h, state.sharpness); 
+
+            // Draw Overlays
+            drawOverlays(ctx, dx, dy, dw, dh, vw, vh);
+        }
+
+        // Função Genérica para desenhar Overlays
+        function drawOverlays(ctx, dx, dy, dw, dh, sw, sh) {
+            if (state.overlays.length === 0) return;
+
+            const scaleX = dw / sw;
+            const scaleY = dh / sh;
+
+            state.overlays.forEach(ov => {
+                const ox = dx + (ov.x * scaleX);
+                const oy = dy + (ov.y * scaleY);
+                const ow = ov.w * scaleX;
+                const oh = ov.h * scaleY;
+
+                ctx.save();
+                
+                // Shadow
+                ctx.shadowColor = "rgba(0,0,0,0.3)";
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetY = 3;
+
+                // Button Shape (Rounded)
+                ctx.beginPath();
+                const radius = Math.min(ow, oh) / 2; // Pill shape fully rounded sides
+                ctx.roundRect(ox, oy, ow, oh, radius); // Modern Canvas API
+                ctx.fillStyle = ov.bg;
+                ctx.fill();
+                
+                // Remove shadow for text
+                ctx.shadowColor = "transparent";
+
+                // Text
+                ctx.fillStyle = ov.color;
+                // Auto font size based on height
+                const fontSize = oh * 0.5;
+                ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(ov.text, ox + (ow/2), oy + (oh/2));
+
+                // Selection Outline
+                if (state.activeOverlayId === ov.id) {
+                    ctx.strokeStyle = "#fff";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(ox - 2, oy - 2, ow + 4, oh + 4);
+                    
+                    ctx.strokeStyle = "#2563eb";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(ox - 2, oy - 2, ow + 4, oh + 4);
+
+                    // Resize Handle
+                    ctx.fillStyle = "#fff";
+                    ctx.fillRect(ox + ow - 6, oy + oh - 6, 12, 12);
+                    ctx.strokeRect(ox + ow - 6, oy + oh - 6, 12, 12);
+                }
+
+                ctx.restore();
+            });
+        }
+
+        // --- EXPORT LOGIC ---
+        async function savePhotoHighQuality() {
+            if (!state.img) return;
+            const originalText = els.btnSave.innerText;
+            els.btnSave.disabled = true; els.btnSave.innerHTML = "Gerando...";
+
+            try {
+                const source = (state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : state.img;
+                
+                const superW = state.width * 3; const superH = state.height * 3;
+                const superCanvas = document.createElement('canvas');
+                superCanvas.width = superW; superCanvas.height = superH;
+                const sCtx = superCanvas.getContext('2d');
+                sCtx.fillStyle = '#ffffff'; sCtx.fillRect(0, 0, superW, superH);
+
+                const sw = source.width; const sh = source.height;
+                const aspect = sw / sh;
+                let dw, dh, targetSize = (state.width * 3) * state.scale;
+                if (aspect > 1) { dw = targetSize; dh = targetSize / aspect; } else { dh = targetSize; dw = targetSize * aspect; }
+                const dx = (superW - dw)/2 + (state.x * 3); const dy = (superH - dh)/2 + (state.y * 3);
+
+                sCtx.filter = getFilterString();
+                sCtx.drawImage(source, dx, dy, dw, dh);
+                sCtx.filter = 'none';
+
+                // Draw Overlays on High Res Canvas
+                // Important: pass the high-res dimensions
+                drawOverlays(sCtx, dx, dy, dw, dh, sw, sh);
+
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = state.width; finalCanvas.height = state.height;
+                
+                // Resize down with high quality
+                if (window.pica) await window.pica().resize(superCanvas, finalCanvas, { unsharpAmount: 0, quality: 3 });
+                else finalCanvas.getContext('2d').drawImage(superCanvas, 0, 0, state.width, state.height);
+
+                if (state.sharpness > 0) applySharpen(finalCanvas.getContext('2d'), state.width, state.height, state.sharpness);
+
+                els.btnSave.innerHTML = "Otimizando...";
+                const blob = await new Promise(r => finalCanvas.toBlob(r, 'image/webp', 0.85));
+                download(URL.createObjectURL(blob), '.webp');
+
+            } catch (err) { console.error(err); alert("Erro ao salvar."); }
+            els.btnSave.disabled = false; els.btnSave.innerHTML = originalText;
+        }
+
+        // --- EXISTING UTILS ---
+        function getFilterString() { return `brightness(${100 + state.brightness}%) contrast(${100 + state.contrast}%) saturate(${100 + state.saturation}%)`; }
+        function loopVideoPreview() { if(state.mode !== 'video' || state.isRecording) return; drawVideoFrame(); requestAnimationFrame(loopVideoPreview); }
+        function applySharpen(ctx, w, h, level) {
+            const strength = level/10.0; if(strength<=0.01)return;
+            const id=ctx.getImageData(0,0,w,h); const d=id.data; const out=ctx.createImageData(w,h); const dst=out.data;
+            dst.set(d);
+            const kern = 1+(4*strength); const neg = -strength;
+            for(let i=w*4+4; i<d.length-(w*4)-4; i+=4) {
+                for(let c=0;c<3;c++){
+                    dst[i+c] = Math.min(255, Math.max(0, (d[i+c]*kern) + ((d[i-4+c]+d[i+4+c]+d[i-(w*4)+c]+d[i+(w*4)+c])*neg)));
+                }
+            }
+            ctx.putImageData(out,0,0);
+        }
+        function toggleMagicBackground() {
+            if (!state.img) return;
+            if (state.useNoBg) {
+                state.useNoBg = false; els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
+                els.btnRestore.style.display = 'none'; requestRender();
+            } else {
+                if (state.noBgCanvas) {
+                    state.useNoBg = true; els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido';
+                    els.btnRestore.style.display = 'flex'; requestRender();
+                } else {
+                    els.btnMagic.innerHTML = '⏳ Processando...'; els.btnMagic.classList.add('processing');
+                    setTimeout(() => { processRemoveBackground(); state.useNoBg = true; els.btnMagic.classList.remove('processing'); els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido'; els.btnRestore.style.display = 'flex'; requestRender(); }, 50);
+                }
+            }
+        }
+        function processRemoveBackground() {
+            const c = document.createElement('canvas'); c.width = state.img.width; c.height = state.img.height;
+            const ctx = c.getContext('2d'); ctx.drawImage(state.img, 0, 0);
+            const id = ctx.getImageData(0,0,c.width,c.height); floodFillBackground(id, 20); ctx.putImageData(id,0,0);
+            state.noBgCanvas = c;
+        }
+        function floodFillBackground(imgData, tolerance) {
+            const w=imgData.width; const h=imgData.height; const d=imgData.data; const visited=new Uint8Array(w*h); const stack=[];
+            const sr=d[0], sg=d[1], sb=d[2];
+            [[0,0],[w-1,0],[0,h-1],[w-1,h-1]].forEach(p=>stack.push(p[0],p[1]));
+            while(stack.length){
+                const y=stack.pop(), x=stack.pop(); const p=y*w+x; if(visited[p])continue; visited[p]=1;
+                const idx=p*4;
+                if(Math.abs(d[idx]-sr)<=tolerance && Math.abs(d[idx+1]-sg)<=tolerance && Math.abs(d[idx+2]-sb)<=tolerance){
+                    d[idx+3]=0;
+                    if(x>0)stack.push(x-1,y); if(x<w-1)stack.push(x+1,y); if(y>0)stack.push(x,y-1); if(y<h-1)stack.push(x,y+1);
+                }
+            }
+        }
+        async function processVideo() {
+            if(!state.video) return;
+            state.isRecording = true; els.videoEl.pause(); els.videoEl.currentTime = 0; els.videoEl.loop = false;
+            els.btnRec.disabled = true; els.btnRec.innerText = "Processando..."; els.recBadge.classList.remove('hidden');
+            
+            // Re-select active overlay to null to avoid recording selection box
+            const savedActive = state.activeOverlayId;
+            setActiveOverlay(null);
+
+            const stream = els.canvas.captureStream(30);
+            const types = ["video/mp4", "video/webm;codecs=vp9", "video/webm"];
+            let mimeType = types.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+            const recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1500000 });
+            const chunks = [];
+            recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType });
+                download(URL.createObjectURL(blob), mimeType.includes('mp4')?'.mp4':'.webm');
+                state.isRecording = false; els.recBadge.classList.add('hidden');
+                els.btnRec.innerText = "Gravar e Baixar (MP4)"; els.btnRec.disabled = false;
+                els.videoEl.loop = true; els.videoEl.play(); loopVideoPreview();
+                setActiveOverlay(savedActive); // Restore selection if any
+            };
+            recorder.start();
+            try {
+                await els.videoEl.play();
+                function recordLoop() {
+                    if(!state.isRecording) return;
+                    if(els.videoEl.ended) { recorder.stop(); return; }
+                    drawVideoFrame();
+                    els.progressBar.style.width = ((els.videoEl.currentTime/els.videoEl.duration)*100) + '%';
+                    requestAnimationFrame(recordLoop);
+                }
+                recordLoop();
+            } catch(e) { alert("Erro."); state.isRecording = false; els.recBadge.classList.add('hidden'); }
+        }
+        function download(url, ext) {
+            const link = document.createElement('a');
+            link.download = (els.nameInput.value || 'produto').toLowerCase().replace(/[^a-z0-9]/g, '-') + els.suffixSelect.value + ext;
+            link.href = url; link.click();
+        }
+        // --- BRUSH RESTORE LOGIC ---
+        function toggleRestoreMode() {
+            state.isRestoring = !state.isRestoring;
+            if (state.isRestoring) {
+                els.btnRestore.classList.add('active'); els.brushControls.classList.add('visible'); els.canvas.classList.add('brush-active');
+                els.btnRestore.innerHTML = "✅ Terminar Restauração";
+                setActiveOverlay(null); // Desativa seleção de botão para não atrapalhar
+            } else {
+                els.btnRestore.classList.remove('active'); els.brushControls.classList.remove('visible'); els.canvas.classList.remove('brush-active');
+                els.btnRestore.innerHTML = "🖌️ Pincel Restaurar"; state.cursorX = -100; requestRender();
+            }
+        }
+        function applyBrush(e) {
+            if (!state.img || !state.noBgCanvas) return;
+            const r = els.canvas.getBoundingClientRect();
+            const geo = getRenderGeometry();
+            const m = screenToImage((e.clientX||e.pageX)-r.left, (e.clientY||e.pageY)-r.top, geo);
+            if(!m) return;
+
+            const ctxNoBg = state.noBgCanvas.getContext('2d');
+            ctxNoBg.save(); ctxNoBg.beginPath();
+            ctxNoBg.arc(m.x, m.y, state.brushSize/2, 0, Math.PI*2); ctxNoBg.clip();
+            ctxNoBg.clearRect(m.x-state.brushSize, m.y-state.brushSize, state.brushSize*2, state.brushSize*2);
+            ctxNoBg.drawImage(state.img, 0, 0); ctxNoBg.restore();
+            requestRender();
+        }
+        function handleFile(e) {
+            const f = e.target.files[0]; if(!f) return;
+            if(f.type.startsWith('video/')) { if(state.mode !== 'video') setMode('video'); loadVideo(f); } 
+            else { if(state.mode !== 'photo') setMode('photo'); loadImage(f); }
+        }
+        function handlePaste(e) {
+            for (let i of e.clipboardData.items) { if (i.type.indexOf('image')!==-1) { loadImage(i.getAsFile()); break; } }
+        }
+        function setupDragDrop() {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => els.viewport.addEventListener(ev, e => {e.preventDefault(); e.stopPropagation();}));
+            els.viewport.addEventListener('drop', e => { if(e.dataTransfer.files.length) handleFile({target: {files: e.dataTransfer.files}}); });
+        }
+        function loadImage(file) {
+            const url = URL.createObjectURL(file); const img = new Image();
+            img.onload = () => {
+                state.img = img; state.noBgCanvas = null; state.useNoBg = false; state.x = 0; state.y = 0; state.overlays = [];
+                els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
+                els.btnRestore.style.display = 'none'; state.isRestoring = false; els.btnRestore.classList.remove('active'); els.brushControls.classList.remove('visible');
+                els.empty.classList.add('hidden'); els.canvas.classList.remove('hidden'); els.btnSave.disabled = false; requestRender(); URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        }
+        function loadVideo(file) {
+            const url = URL.createObjectURL(file); els.videoEl.src = url;
+            els.videoEl.onloadedmetadata = () => {
+                state.video = els.videoEl; state.x = 0; state.y = 0; state.overlays = [];
+                els.empty.classList.add('hidden'); els.canvas.classList.remove('hidden'); els.btnRec.disabled = false;
+                els.videoEl.currentTime = 0;
+            };
+            els.videoEl.loop = true; els.videoEl.muted = true; els.videoEl.play(); loopVideoPreview();
+        }
+        function setMode(mode) {
+            state.mode = mode; els.ctx.fillStyle = '#fff'; els.ctx.fillRect(0,0,state.width, state.height);
+            if(mode === 'photo') {
+                els.mPhoto.classList.add('active'); els.mVideo.classList.remove('active');
+                els.photoExtras.classList.remove('hidden'); els.videoExtras.classList.add('hidden');
+                els.scale.classList.remove('hidden'); els.vScale.classList.add('hidden');
+                els.fileInput.accept = "image/*"; els.camInput.accept = "image/*"; 
+            } else {
+                els.mVideo.classList.add('active'); els.mPhoto.classList.remove('active');
+                els.videoExtras.classList.remove('hidden'); els.photoExtras.classList.add('hidden');
+                els.vScale.classList.remove('hidden'); els.scale.classList.add('hidden');
+                els.fileInput.accept = "video/*"; els.camInput.accept = "video/*"; 
+            }
+            els.camInput.setAttribute('capture', 'environment'); els.empty.classList.remove('hidden'); els.canvas.classList.add('hidden');
+            requestRender(); 
+        }
+        function setFormat(fmt) {
+            state.format = fmt;
+            if (fmt === 'square') { els.fmtSquare.classList.add('active'); els.fmtVertical.classList.remove('active'); state.width = 300; state.height = 300; els.viewport.style.aspectRatio = '1 / 1'; } 
+            else { els.fmtVertical.classList.add('active'); els.fmtSquare.classList.remove('active'); state.width = 300; state.height = 400; els.viewport.style.aspectRatio = '3 / 4'; }
+            updateCanvasDimensions(); state.x = 0; state.y = 0; requestRender();
+        }
+        function updateCanvasDimensions() {
+            els.canvas.width = state.width; els.canvas.height = state.height;
+            if (els.ctx) { els.ctx.fillStyle = '#fff'; els.ctx.fillRect(0, 0, state.width, state.height); }
+        }
+
+        init();
+    </script>
+</body>
+</html>
