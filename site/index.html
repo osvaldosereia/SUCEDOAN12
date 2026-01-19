@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.34 - Fix Category Scroll & Navigation
+        VERSION: 9.34 - Strict Category Sequence & Normalization
         CHANGELOG:
-        - FIX: Implementada função toId() para sanitizar nomes de categorias em IDs HTML válidos (remove acentos, espaços, vírgulas).
-        - FIX: Função filterCat() agora busca o elemento pelo ID sanitizado, garantindo que o scroll funcione para nomes complexos.
-        - UX: Cálculo de scroll aprimorado para descontar a altura exata do cabeçalho fixo.
+        - CONFIG: Lista 'CATEGORY_SEQUENCE' atualizada com a nova seleção exata do usuário.
+        - LOGIC: Adicionada função 'normalizeString' para comparação robusta (ignora acentos/case).
+        - LOGIC: A renderização da sidebar agora força a ordem exata da lista configurada.
+        - FIX: Ajuste no z-index e posicionamento da seta de scroll mobile.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -237,10 +238,11 @@
             display: block;
             position: sticky;
             top: 85px; 
-            /* FIXED HEIGHT CALCULATION: 100vh - 85px (Top Sticky) - 80px (Checkout Bar) - 15px (Buffer) */
-            height: calc(100vh - 180px);
+            /* Fixed: Ensure enough space above the 80px checkout bar */
+            height: calc(100vh - 180px); 
             display: flex;
             flex-direction: column;
+            z-index: 950;
         }
 
         .mobile-nav-sidebar {
@@ -248,33 +250,32 @@
             overflow-y: auto;
             padding-right: 4px;
             scrollbar-width: thin;
-            padding-bottom: 60px; /* Space for the arrow */
+            padding-bottom: 20px;
         }
         
         /* SCROLL ARROW INDICATOR */
         .nav-scroll-indicator {
             position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 60px;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1) 40%);
+            bottom: -5px; left: 0; right: 0;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1) 30%);
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             justify-content: center;
-            padding-bottom: 10px;
             cursor: pointer;
-            z-index: 5;
+            z-index: 10; /* Higher Z-index to float above */
             pointer-events: auto;
         }
         
         .nav-scroll-arrow-icon {
-            width: 32px; height: 32px;
+            width: 28px; height: 28px;
             background: var(--secondary);
             color: white;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.25);
             animation: bounce 2s infinite;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
         
         @keyframes bounce {
@@ -625,8 +626,7 @@
 
     <script>
         // CONFIGURAÇÃO DA ORDEM DAS CATEGORIAS
-        // Edite esta lista para mudar a ordem ou os nomes que aparecem no menu.
-        // O sistema só vai mostrar as categorias que tiverem produtos disponíveis.
+        // O sistema normaliza automaticamente (ignora acentos e maiúsculas) para encontrar os produtos.
         const CATEGORY_SEQUENCE = [
             "ARROZ",
             "FEIJÃO",
@@ -841,6 +841,11 @@
                 return path.includes('/') ? `img/produtos/${path.split('/').pop()}` : `img/produtos/${path}`;
             },
 
+            // Normalization Helper
+            normalizeString(str) {
+                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+            },
+
             renderHome() {
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria.includes('CESTA') && (p.categoria.includes('BÁSICA') || p.categoria.includes('BASICA')));
@@ -867,13 +872,34 @@
             },
 
             renderSidebar() {
-                const availableCats = new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria));
+                // Collect all available unique categories from product data (Excluding Cesta Basica)
+                const availableCatsRaw = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))];
                 
-                const orderedCats = CATEGORY_SEQUENCE.filter(cat => availableCats.has(cat));
-                
-                availableCats.forEach(cat => {
-                    if (!CATEGORY_SEQUENCE.includes(cat)) {
-                        orderedCats.push(cat);
+                // Map for normalized comparison
+                const availableCatsNormalized = availableCatsRaw.map(c => ({
+                    original: c,
+                    normalized: this.normalizeString(c)
+                }));
+
+                // Build the list strictly following CATEGORY_SEQUENCE
+                let finalCats = [];
+                let usedOriginals = new Set();
+
+                CATEGORY_SEQUENCE.forEach(seqItem => {
+                    const seqNorm = this.normalizeString(seqItem);
+                    // Find if any available category matches this sequence item
+                    const match = availableCatsNormalized.find(ac => ac.normalized === seqNorm);
+                    
+                    if (match && !usedOriginals.has(match.original)) {
+                        finalCats.push(match.original); // Use the original name from JSON for display/ID
+                        usedOriginals.add(match.original);
+                    }
+                });
+
+                // Optional: Append categories found in JSON but NOT in the list (Safety fallback)
+                availableCatsRaw.forEach(cat => {
+                    if (!usedOriginals.has(cat)) {
+                        finalCats.push(cat);
                     }
                 });
 
@@ -881,13 +907,13 @@
                 const deskBtns = [
                     `<button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>`,
                     `<button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>`
-                ].concat(orderedCats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`));
+                ].concat(finalCats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`));
                 
                 // MOBILE NAV
                 const mobNavBtns = [
                     `<div class="nav-side-btn nav-cesta active" onclick="App.clearSearch(); App.highlightNav(this);">Minha Cesta</div>`,
                     `<div class="nav-side-btn nav-ofertas" onclick="App.showOffers(); App.highlightNav(this);">🔥 Ofertas</div>`
-                ].concat(orderedCats.map(c => `<div class="nav-side-btn" onclick="App.filterCat('${c}'); App.highlightNav(this);">${c}</div>`));
+                ].concat(finalCats.map(c => `<div class="nav-side-btn" onclick="App.filterCat('${c}'); App.highlightNav(this);">${c}</div>`));
 
                 document.getElementById('desk-cat-list').innerHTML = deskBtns.join('');
                 document.getElementById('mobile-nav-sidebar').innerHTML = mobNavBtns.join('');
@@ -898,6 +924,7 @@
                 el.classList.add('active');
             },
 
+            // NEW SCROLL FUNCTION
             scrollNavDown() {
                 const el = document.getElementById('mobile-nav-sidebar');
                 if(el) {
@@ -954,17 +981,6 @@
                 this.renderAllLists("", true); 
             },
 
-            // HELPER: Sanitiza string para ID HTML válido (remove acentos, espaços e chars especiais)
-            toId(text) {
-                return text.toString().toLowerCase()
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-                    .replace(/\s+/g, '-')           // Espaços para hífens
-                    .replace(/[^\w\-]+/g, '')       // Remove caracteres não-alfanuméricos (como vírgula)
-                    .replace(/\-\-+/g, '-')         // Hífens duplicados
-                    .replace(/^-+/, '')             // Remove hífens do início
-                    .replace(/-+$/, '');            // Remove hífens do fim
-            },
-
             renderAllLists(searchTerm = "", showOffersOnly = false) {
                 if(!this.currentBasket) return;
                 
@@ -987,13 +1003,29 @@
                 const deskBtn = document.getElementById('desk-clear-btn');
                 if(deskBtn) showClear ? deskBtn.classList.remove('hidden') : deskBtn.classList.add('hidden');
 
-                // DYNAMIC GROUPING LOGIC
+                // DYNAMIC GROUPING LOGIC (Using strict sequence)
                 const groups = {};
                 extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
                 
                 const groupKeys = Object.keys(groups);
-                const sortedCats = CATEGORY_SEQUENCE.filter(c => groupKeys.includes(c));
-                groupKeys.forEach(k => { if(!sortedCats.includes(k)) sortedCats.push(k); });
+                
+                // Sort the groups based on CATEGORY_SEQUENCE + normalization
+                let sortedCats = [];
+                let usedGroupKeys = new Set();
+
+                CATEGORY_SEQUENCE.forEach(seqItem => {
+                    const seqNorm = this.normalizeString(seqItem);
+                    const matchKey = groupKeys.find(k => this.normalizeString(k) === seqNorm);
+                    if (matchKey && !usedGroupKeys.has(matchKey)) {
+                        sortedCats.push(matchKey);
+                        usedGroupKeys.add(matchKey);
+                    }
+                });
+
+                // Append any remaining
+                groupKeys.forEach(k => {
+                    if (!usedGroupKeys.has(k)) sortedCats.push(k);
+                });
                 
                 let html = '';
                 if(showOffersOnly) {
@@ -1015,13 +1047,11 @@
                 } else {
                     sortedCats.forEach(cat => {
                         const color = Object.keys(CONSTANTS.THEMES).find(k => cat.includes(k)) || 'DEFAULT';
+                        // Add Count to Header
                         const count = groups[cat].length;
                         const catTitle = showOffersOnly ? `${cat} <span style="font-size:0.8em; opacity:0.8;">(${count})</span>` : cat;
                         
-                        // ID gerado com a função sanitizadora
-                        const safeId = this.toId(cat);
-
-                        html += `<div id="cat-${safeId}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;">
+                        html += `<div id="cat-${cat}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;">
                                     <h3>${catTitle}</h3>
                                  </div>
                                  <div class="product-box">
@@ -1037,54 +1067,6 @@
                 this.updateTotal();
             },
 
-            clearSearch() {
-                document.getElementById('main-search').value = "";
-                this.closeSheet('cat-sheet');
-                this.renderAllLists("");
-                
-                setTimeout(() => {
-                    const topEl = document.querySelector('.products-section');
-                    if(topEl) {
-                        const y = topEl.getBoundingClientRect().top + window.scrollY - 120; 
-                        window.scrollTo({top: y > 0 ? y : 0, behavior: 'smooth'});
-                    } else {
-                        window.scrollTo({top: 0, behavior: 'smooth'});
-                    }
-                }, 50);
-            },
-
-            filterCat(cat) {
-                this.closeSheet('cat-sheet');
-                if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
-                
-                // Limpa a busca para garantir que a categoria apareça
-                document.getElementById('main-search').value = "";
-                this.renderAllLists("");
-
-                // ID alvo com a mesma sanitização da criação
-                const targetId = 'cat-' + this.toId(cat);
-
-                setTimeout(() => {
-                    const el = document.getElementById(targetId);
-                    if(el) { 
-                        // Altura da barra fixa (cust-header-bar + margem segurança)
-                        // A barra tem ~70-80px. Usamos 130px para garantir visibilidade do título.
-                        const headerOffset = 130; 
-                        const elementPosition = el.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                  
-                        window.scrollTo({
-                             top: offsetPosition,
-                             behavior: "smooth"
-                        });
-                    } else {
-                        console.log("Elemento não encontrado:", targetId);
-                    }
-                }, 100);
-            },
-
-            // ... restante das funções ...
-            
             renderIncluded() {
                 const incContainer = document.getElementById('included-list');
                 const incIds = Object.keys(this.cart);
@@ -1262,18 +1244,6 @@
             search(term) {
                 if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
                 this.renderAllLists(term);
-            },
-
-            sendWhatsApp() {
-                const method = document.getElementById('payment-method').value;
-                const total = document.getElementById('co-total').innerText;
-                let msg = `*NOVO PEDIDO: ${this.currentBasket.nome}*\n------------------\n`;
-                for(let id in this.cart) {
-                    const p = this.data.find(x => x.id === id);
-                    if(p) msg += `${this.cart[id]}x ${p.nome}\n`;
-                }
-                msg += `------------------\n*TOTAL: ${total}*\n*Pagamento:* ${method}`;
-                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
 
             directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
