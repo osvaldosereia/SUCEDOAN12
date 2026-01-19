@@ -4,10 +4,10 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.35 - Elegant Section Headers
+        VERSION: 9.36 - Themed Sidebar Headers
         CHANGELOG:
-        - UI (CSS): Estilização refinada para .nav-section-title (Fundo claro, fonte leve, sem borda inferior pesada).
-        - UI (Visual): Melhoria na legibilidade e elegância da separação de categorias na sidebar.
+        - UI (JS): Títulos da sidebar agora herdam as cores temáticas (CONSTANTS.THEMES).
+        - UI (Visual): Cores de fundo específicas para cada categoria na navegação (Alimentos, Limpeza, etc.).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -871,12 +871,17 @@
                 const uniqueMain = [...new Set(mainOrder)];
 
                 uniqueMain.forEach(main => {
+                    // Determine Color
+                    const colorKey = Object.keys(CONSTANTS.THEMES).find(k => main.includes(k)) || 'DEFAULT';
+                    const bgColor = CONSTANTS.THEMES[colorKey];
+                    const textColor = 'var(--secondary)'; // Ensure good contrast
+
                     // DESKTOP
-                    deskHTML += `<div class="nav-section-title">${main}</div>`;
+                    deskHTML += `<div class="nav-section-title" style="background-color: ${bgColor}; color: ${textColor};">${main}</div>`;
                     deskHTML += `<div class="sidebar-nav-grid" style="margin-bottom:10px;">`;
                     
                     // MOBILE
-                    mobHTML += `<div class="nav-section-title">${main}</div>`;
+                    mobHTML += `<div class="nav-section-title" style="background-color: ${bgColor}; color: ${textColor};">${main}</div>`;
 
                     // Sort subcategories logic? Or keep JSON order?
                     // Set iteration follows insertion order usually.
