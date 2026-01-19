@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMAS | Studio 300 Pro v4</title>
-    <meta name="description" content="Editor Híbrido: Fotos, Vídeos e Botões Multilinhas.">
+    <title>SISTEMAS | Studio 300 Pro v5</title>
+    <meta name="description" content="Editor Híbrido: Fotos, Vídeos e Botões com Presets.">
     <meta name="theme-color" content="#2563eb">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pica/9.0.1/pica.min.js"></script>
@@ -226,6 +226,23 @@
         }
         .overlay-controls.visible { display: block; animation: slideDown 0.2s ease; }
         @keyframes slideDown { from {opacity: 0; transform: translateY(-5px);} to {opacity: 1; transform: translateY(0);} }
+
+        /* PRESETS STYLES (NEW) */
+        .presets-section { margin-top:12px; padding-top:12px; border-top:1px dashed #bfdbfe; }
+        .chips-container { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
+        .chips-container::-webkit-scrollbar { display: none; }
+        .preset-chip {
+            padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 500;
+            background: #ffffff; color: var(--text-main); border: 1px solid #cbd5e1;
+            white-space: nowrap; cursor: pointer; transition: transform 0.1s;
+        }
+        .preset-chip:active { transform: scale(0.95); background: #f1f5f9; }
+        .color-chip {
+            width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer; flex-shrink: 0;
+            transition: transform 0.1s;
+        }
+        .color-chip:active { transform: scale(0.9); }
         
         .btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(1); }
 
@@ -358,6 +375,20 @@
                         <span style="font-size:0.85rem; color:var(--text-muted); margin-left:10px;">Cor do Texto:</span>
                         <input type="color" id="overlayTextColor" value="#ffffff">
                     </div>
+
+                    <!-- PRESETS AREA -->
+                    <div class="presets-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:0.75rem; font-weight:bold; color:var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Meus Presets</span>
+                            <div>
+                                <button id="btnSavePreset" class="btn-mini" style="color:var(--brand); border-color:var(--brand); font-weight:600; margin-right:4px;">+ Salvar Atual</button>
+                                <button id="btnClearPresets" class="btn-mini" style="color:var(--text-muted);">Limpar</button>
+                            </div>
+                        </div>
+                        <div id="textPresets" class="chips-container"></div>
+                        <div id="colorPresets" class="chips-container" style="margin-top:6px;"></div>
+                    </div>
+
                     <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
                         Arraste o botão para mover. Puxe a borda branca (canto inferior direito) para aumentar o tamanho da letra.
                     </div>
@@ -453,13 +484,15 @@
             isPinching: false, pinchStartDist: 0, pinchStartScale: 1,
             // Brush Vars
             isRestoring: false, brushSize: 20, isBrushing: false, cursorX: -100, cursorY: -100,
-            // OVERLAY VARS (NEW)
+            // OVERLAY VARS
             overlays: [], 
             activeOverlayId: null,
             isDraggingOverlay: false,
             isResizingOverlay: false,
-            dragStartX: 0, dragStartY: 0 // Offset do mouse
+            dragStartX: 0, dragStartY: 0
         };
+
+        const PRESET_KEY = 'studio300_presets_v1';
 
         const els = {
             canvas: document.getElementById('canvas'),
@@ -504,7 +537,12 @@
             overlayText: document.getElementById('overlayText'),
             overlayColor: document.getElementById('overlayColor'),
             overlayTextColor: document.getElementById('overlayTextColor'),
-            btnDeleteOverlay: document.getElementById('btnDeleteOverlay')
+            btnDeleteOverlay: document.getElementById('btnDeleteOverlay'),
+            // Presets
+            textPresets: document.getElementById('textPresets'),
+            colorPresets: document.getElementById('colorPresets'),
+            btnSavePreset: document.getElementById('btnSavePreset'),
+            btnClearPresets: document.getElementById('btnClearPresets')
         };
 
         function init() {
@@ -547,6 +585,11 @@
             els.overlayColor.oninput = (e) => updateActiveOverlay('bg', e.target.value);
             els.overlayTextColor.oninput = (e) => updateActiveOverlay('color', e.target.value);
 
+            // Presets Actions
+            loadPresets();
+            els.btnSavePreset.onclick = saveCurrentPreset;
+            els.btnClearPresets.onclick = clearPresets;
+
             // Touch/Mouse Gestures
             els.canvas.addEventListener('mousedown', handlePointerDown);
             els.canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
@@ -563,6 +606,82 @@
             document.addEventListener('paste', handlePaste);
             
             window.setFormat = setFormat; 
+        }
+
+        // --- PRESETS LOGIC ---
+        function getPresets() {
+            return JSON.parse(localStorage.getItem(PRESET_KEY)) || { texts: [], colors: [] };
+        }
+
+        function loadPresets() {
+            const data = getPresets();
+            
+            // Render Texts
+            els.textPresets.innerHTML = '';
+            if (data.texts.length === 0) {
+                els.textPresets.innerHTML = '<span style="font-size:0.7rem; color:var(--text-muted); padding:4px;">Sem textos salvos.</span>';
+            } else {
+                data.texts.forEach(txt => {
+                    const chip = document.createElement('div');
+                    chip.className = 'preset-chip';
+                    chip.textContent = txt.length > 15 ? txt.substring(0,15)+'...' : txt;
+                    chip.onclick = () => {
+                        els.overlayText.value = txt;
+                        updateActiveOverlay('text', txt);
+                    };
+                    els.textPresets.appendChild(chip);
+                });
+            }
+
+            // Render Colors
+            els.colorPresets.innerHTML = '';
+            if (data.colors.length === 0) {
+                els.colorPresets.innerHTML = '<span style="font-size:0.7rem; color:var(--text-muted); padding:4px;">Sem cores salvas.</span>';
+            } else {
+                data.colors.forEach(col => {
+                    const chip = document.createElement('div');
+                    chip.className = 'color-chip';
+                    chip.style.backgroundColor = col;
+                    chip.onclick = () => {
+                        els.overlayColor.value = col;
+                        updateActiveOverlay('bg', col);
+                    };
+                    els.colorPresets.appendChild(chip);
+                });
+            }
+        }
+
+        function saveCurrentPreset() {
+            if (!state.activeOverlayId && !els.overlayText.value) return;
+            
+            const currentText = els.overlayText.value.trim();
+            const currentColor = els.overlayColor.value;
+            const data = getPresets();
+            let changed = false;
+
+            if (currentText && !data.texts.includes(currentText)) {
+                data.texts.unshift(currentText); // Add to beginning
+                if (data.texts.length > 10) data.texts.pop(); // Max 10
+                changed = true;
+            }
+
+            if (currentColor && !data.colors.includes(currentColor)) {
+                data.colors.unshift(currentColor);
+                if (data.colors.length > 10) data.colors.pop();
+                changed = true;
+            }
+
+            if (changed) {
+                localStorage.setItem(PRESET_KEY, JSON.stringify(data));
+                loadPresets();
+            }
+        }
+
+        function clearPresets() {
+            if(confirm("Limpar todos os presets salvos?")) {
+                localStorage.removeItem(PRESET_KEY);
+                loadPresets();
+            }
         }
 
         // --- OVERLAY LOGIC ---
