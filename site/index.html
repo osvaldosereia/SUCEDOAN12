@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.28 - No-Blink & UI Optimization
+        VERSION: 9.29 - Mobile List View & Width Optimization
         CHANGELOG:
-        - PERF: Implementada atualização parcial do DOM (modQty) para evitar piscadas.
-        - UI (Mobile): Header/Logo oculto permanentemente no modo customizer.
-        - UI (Mobile): Título da cesta reduzido e campo de busca aumentado.
-        - UX: Botão "Minha Cesta" rola para o topo absoluto da lista.
+        - UI (Mobile): Transformação dos cards em lista contínua (sem bordas laterais).
+        - UI (Mobile): Remoção do padding do container de produtos para ganho de largura (>10px).
+        - UI (Mobile): Adicionadas linhas separadoras entre os itens.
+        - UI (Desktop): Mantido o layout original de cards e grid.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -276,31 +276,43 @@
 
         .section-header { background: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; display:flex; justify-content: space-between; align-items: center; scroll-margin-top: 140px; }
         .section-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; }
-        .product-box { background: #fff; border: 1px solid var(--border-color); border-radius: 0 0 12px 12px; padding: 12px; }
+        
+        /* ADJUSTMENT: Mobile Padding removed to widen column */
+        .product-box { background: #fff; border: 1px solid var(--border-color); border-radius: 0 0 12px 12px; padding: 0; }
+        @media (min-width: 600px) { .product-box { padding: 12px; } }
         
         .extras-separator-banner { text-align: center; padding: 30px 20px 10px; margin-bottom: 10px; }
         .extras-separator-banner h3 { font-size: 1.4rem; font-weight: 300; color: var(--secondary); margin-bottom: 5px; }
         .extras-separator-banner p { color: var(--text-light); font-size: 0.9rem; }
 
-        /* GRID: 1 Column on Mobile */
-        .grid-products { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: stretch; }
-        @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); } }
+        /* GRID: 1 Column on Mobile - Gap 0 for List View */
+        .grid-products { display: grid; grid-template-columns: 1fr; gap: 0; align-items: stretch; }
+        
+        /* DESKTOP GRID RESTORE */
+        @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
         @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
 
-        /* PRODUCT MINI CARD (MOBILE LAYOUT) */
+        /* PRODUCT MINI CARD (MOBILE LIST LAYOUT) */
         .mini-card {
             display: grid; 
             grid-template-columns: 110px 1fr; /* Image 110px */
             grid-template-rows: auto auto;
             gap: 12px; align-items: center; text-align: center; /* Center Text */
-            padding: 10px; border-radius: 8px; border: 1px solid transparent;
+            padding: 16px 10px; /* Increased vertical padding */
+            border-radius: 0; /* Remove radius */
+            border: none; /* Remove box border */
+            border-bottom: 1px solid #f1f5f9; /* Separator Line */
             transition: background 0.2s; position: relative; height: auto; min-width: 0;
-            background: #fff; border: 1px solid #f1f5f9;
+            background: #fff;
         }
+        .mini-card:last-child { border-bottom: none; }
         
-        /* DESKTOP LAYOUT */
+        /* DESKTOP LAYOUT (Card Look Restore) */
         @media (min-width: 600px) {
-            .mini-card { display: flex; flex-direction: column; text-align: center; height: 100%; }
+            .mini-card { 
+                display: flex; flex-direction: column; text-align: center; height: 100%; 
+                border: 1px solid #f1f5f9; border-radius: 8px; padding: 10px; /* Restore Box/Radius */
+            }
             .mc-img-box { margin-right: 0; margin-bottom: 8px; width: 100%; height: auto; aspect-ratio: 1/1; }
             .mc-info-col { align-items: center; text-align: center; } 
             .mc-action-col { justify-content: center; margin-top: auto; } 
