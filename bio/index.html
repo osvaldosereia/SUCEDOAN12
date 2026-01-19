@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMAS | Studio 300 Pro</title>
-    <meta name="description" content="Editor Híbrido: Fotos, Vídeos e Botões Interativos.">
+    <title>SISTEMAS | Studio 300 Pro v4</title>
+    <meta name="description" content="Editor Híbrido: Fotos, Vídeos e Botões Multilinhas.">
     <meta name="theme-color" content="#2563eb">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pica/9.0.1/pica.min.js"></script>
@@ -240,11 +240,13 @@
         fieldset { border: 0; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
         label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main); }
         
-        .input-text, .input-select {
+        .input-text, .input-select, textarea {
             width: 100%; padding: 0.75rem; border: 1px solid var(--border);
             background: var(--surface); color: var(--text-main);
             border-radius: 8px; font-size: 1rem; outline: none; appearance: none;
+            font-family: inherit;
         }
+        textarea { resize: vertical; min-height: 60px; }
 
         .color-picker-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
         input[type="color"] {
@@ -348,7 +350,7 @@
                         <button id="btnDeleteOverlay" class="btn-mini" style="color:var(--danger); border-color:var(--danger);">Excluir</button>
                     </div>
                     
-                    <input type="text" id="overlayText" class="input-text" placeholder="Texto do botão..." style="margin-bottom:8px;">
+                    <textarea id="overlayText" rows="2" placeholder="Digite seu texto aqui (Use Enter para quebrar linha)..." style="margin-bottom:8px;"></textarea>
                     
                     <div class="color-picker-row">
                         <span style="font-size:0.85rem; color:var(--text-muted);">Cor do Fundo:</span>
@@ -357,7 +359,7 @@
                         <input type="color" id="overlayTextColor" value="#ffffff">
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
-                        Arraste o botão na imagem para mover. Puxe a borda branca inferior-direita para redimensionar.
+                        Arraste o botão para mover. Puxe a borda branca (canto inferior direito) para aumentar o tamanho da letra.
                     </div>
                 </div>
             </fieldset>
@@ -452,11 +454,11 @@
             // Brush Vars
             isRestoring: false, brushSize: 20, isBrushing: false, cursorX: -100, cursorY: -100,
             // OVERLAY VARS (NEW)
-            overlays: [], // {id, x, y, w, h, text, bg, color}
+            overlays: [], 
             activeOverlayId: null,
             isDraggingOverlay: false,
             isResizingOverlay: false,
-            dragStartX: 0, dragStartY: 0 // Offset do mouse relativo ao objeto
+            dragStartX: 0, dragStartY: 0 // Offset do mouse
         };
 
         const els = {
@@ -519,7 +521,7 @@
             // Zoom Listeners
             els.scale.oninput = (e) => updateZoom(e.target.value / 100);
             els.vScale.oninput = (e) => updateZoom(e.target.value / 100);
-            els.btnFit.onclick = () => updateZoom(0.85); // Reset to default
+            els.btnFit.onclick = () => updateZoom(0.85); 
 
             // Filter Listeners
             els.bright.oninput = (e) => { state.brightness = parseInt(e.target.value); requestRender(); };
@@ -567,19 +569,19 @@
         function addOverlay() {
             if (!state.img && !state.video) { alert("Carregue uma imagem ou vídeo primeiro."); return; }
             
-            // Pega o tamanho da imagem base
             const source = (state.mode === 'photo' && state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : (state.img || state.video);
             if (!source) return;
 
-            // Cria um botão relativo ao tamanho da imagem (aprox 20% da largura)
-            const baseSize = (source.width || source.videoWidth) * 0.2;
+            // Define um tamanho de fonte base inicial (proporcional à imagem)
+            const baseFontSize = (source.height || source.videoHeight) * 0.05;
             
             const newOverlay = {
                 id: Date.now(),
-                x: (source.width || source.videoWidth) / 2 - (baseSize/2), // Center X
-                y: (source.height || source.videoHeight) / 2 - (baseSize/4), // Center Y
-                w: baseSize,
-                h: baseSize * 0.4,
+                x: (source.width || source.videoWidth) / 2, 
+                y: (source.height || source.videoHeight) / 2,
+                fontSize: baseFontSize, // Tamanho da letra controla tudo
+                w: 100, // Será calculado
+                h: 50,  // Será calculado
                 text: "INFO",
                 bg: "#ef4444",
                 color: "#ffffff"
@@ -619,33 +621,23 @@
         }
 
         // --- HELPER GEOMETRY ---
-        // Calcula onde a imagem está sendo desenhada na tela
         function getRenderGeometry() {
             const w = state.width; const h = state.height;
             const source = (state.mode === 'photo' && state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : (state.img || state.video);
-            
             if (!source) return null;
-
             const sw = source.width || source.videoWidth;
             const sh = source.height || source.videoHeight;
             const aspect = sw / sh;
-
             let dw, dh, targetSize = w * (state.mode === 'photo' ? state.scale : state.vScale);
             if (aspect > 1) { dw = targetSize; dh = targetSize / aspect; } else { dh = targetSize; dw = targetSize * aspect; }
-            
-            const dx = (w - dw)/2 + state.x; 
-            const dy = (h - dh)/2 + state.y;
-
+            const dx = (w - dw)/2 + state.x; const dy = (h - dh)/2 + state.y;
             return { dx, dy, dw, dh, sw, sh };
         }
 
-        // Converte coordenadas da tela (mouse) para coordenadas da Imagem
         function screenToImage(sx, sy, geo) {
             if (!geo) return null;
-            // Escala atual de renderização
             const scaleFactorX = geo.sw / geo.dw;
             const scaleFactorY = geo.sh / geo.dh;
-            
             const ix = (sx - geo.dx) * scaleFactorX;
             const iy = (sy - geo.dy) * scaleFactorY;
             return { x: ix, y: iy };
@@ -676,7 +668,6 @@
             // 1. Verificar Resize Handle (Prioridade)
             if (state.activeOverlayId) {
                 const ov = state.overlays.find(o => o.id === state.activeOverlayId);
-                // Calcula posição do handle na tela
                 const scaleX = geo.dw / geo.sw;
                 const scaleY = geo.dh / geo.sh;
                 const ox = geo.dx + ov.x * scaleX;
@@ -684,21 +675,18 @@
                 const ow = ov.w * scaleX;
                 const oh = ov.h * scaleY;
                 
-                // Área de clique do resize (canto inferior direito)
-                const handleSize = 20; // Hitbox maior para touch
+                const handleSize = 25; 
                 if (mx >= ox + ow - handleSize && mx <= ox + ow + handleSize &&
                     my >= oy + oh - handleSize && my <= oy + oh + handleSize) {
                     state.isResizingOverlay = true;
-                    // Salva posição inicial pra calcular delta
-                    state.dragStartX = mx; 
                     state.dragStartY = my;
-                    state.initialW = ov.w; // Tamanho original na imagem
-                    state.initialH = ov.h;
+                    // Agora usamos o fontSize inicial para calcular o delta
+                    state.initialFontSize = ov.fontSize;
                     return;
                 }
             }
 
-            // 2. Verificar Hit em Overlays (Z-Index simulado: último array = topo)
+            // 2. Verificar Hit em Overlays
             const mouseImg = screenToImage(mx, my, geo);
             for (let i = state.overlays.length - 1; i >= 0; i--) {
                 const ov = state.overlays[i];
@@ -707,17 +695,14 @@
                     
                     setActiveOverlay(ov.id);
                     state.isDraggingOverlay = true;
-                    // Diferença entre clique e topo do objeto
                     state.dragStartX = mouseImg.x - ov.x;
                     state.dragStartY = mouseImg.y - ov.y;
                     
-                    // Reordenar para o topo
                     state.overlays.push(state.overlays.splice(i, 1)[0]);
                     return;
                 }
             }
 
-            // Se clicou fora, deseleciona
             if (state.activeOverlayId) setActiveOverlay(null);
 
             // 3. Brushing Logic
@@ -751,7 +736,6 @@
                 requestRender();
             }
 
-            // Lógica de Mover Overlay
             if (state.isDraggingOverlay && state.activeOverlayId) {
                 if(originalEvent) originalEvent.preventDefault();
                 const rect = els.canvas.getBoundingClientRect();
@@ -767,31 +751,24 @@
                 return;
             }
 
-            // Lógica de Resize Overlay
             if (state.isResizingOverlay && state.activeOverlayId) {
                 if(originalEvent) originalEvent.preventDefault();
                 const rect = els.canvas.getBoundingClientRect();
-                const mx = (e.clientX || e.pageX) - rect.left;
+                const my = (e.clientY || e.pageY) - rect.top;
                 const geo = getRenderGeometry();
                 
-                // Quanto o mouse moveu na tela?
-                const deltaScreenX = mx - state.dragStartX;
+                // Arrastar para baixo aumenta o fontSize
+                const deltaScreenY = my - state.dragStartY;
+                const scaleY = geo.dh / geo.sh;
                 
-                // Converte delta de tela para delta de imagem
-                const scaleX = geo.dw / geo.sw; // pixels tela / pixels imagem
-                const deltaImageW = deltaScreenX / scaleX;
+                // Converte movimento da tela em "unidades de imagem" para ajuste de fonte
+                const deltaFontSize = deltaScreenY / scaleY;
                 
                 const ov = state.overlays.find(o => o.id === state.activeOverlayId);
-                const newW = state.initialW + deltaImageW;
+                const newSize = state.initialFontSize + (deltaFontSize * 0.5); // 0.5 para suavizar
                 
-                if (newW > 20) { // Tamanho mínimo
-                    ov.w = newW;
-                    // Mantém proporção do botão (pill shape) ou livre?
-                    // Vamos manter livre ou fixar aspect? Vamos escalar H propocional para manter texto ok
-                    // Ou melhor, apenas largura, pois altura é calculada por texto? Não, usuário quer redimensionar.
-                    // Simples: Resize uniforme (aspect ratio lock)
-                    const aspect = state.initialH / state.initialW;
-                    ov.h = newW * aspect;
+                if (newSize > 10) { 
+                    ov.fontSize = newSize;
                 }
                 requestRender();
                 return;
@@ -811,7 +788,7 @@
             state.isDraggingOverlay = false;
             state.isResizingOverlay = false;
             endPan();
-            requestRender(); // Redraw to clear cursors/guides
+            requestRender(); 
         }
 
         function startPan(e) {
@@ -852,7 +829,6 @@
             
             const source = (state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : state.img;
             
-            // Re-use logic from getRenderGeometry but manually here for performance inside render loop
             const sw = source.width; const sh = source.height;
             const aspect = sw / sh;
             let dw, dh, targetSize = w * state.scale;
@@ -864,10 +840,8 @@
             ctx.filter = 'none';
             if (state.sharpness > 0) applySharpen(ctx, w, h, state.sharpness); 
 
-            // Draw Overlays
             drawOverlays(ctx, dx, dy, dw, dh, sw, sh);
 
-            // Draw Brush Cursor
             if (state.isRestoring && state.cursorX > -50) {
                 ctx.save(); ctx.beginPath();
                 ctx.arc(state.cursorX, state.cursorY, state.brushSize / 2, 0, Math.PI * 2);
@@ -892,11 +866,10 @@
             ctx.filter = 'none';
             if (state.sharpness > 0) applySharpen(ctx, w, h, state.sharpness); 
 
-            // Draw Overlays
             drawOverlays(ctx, dx, dy, dw, dh, vw, vh);
         }
 
-        // Função Genérica para desenhar Overlays
+        // --- MULTILINE DRAW OVERLAYS ---
         function drawOverlays(ctx, dx, dy, dw, dh, sw, sh) {
             if (state.overlays.length === 0) return;
 
@@ -904,51 +877,81 @@
             const scaleY = dh / sh;
 
             state.overlays.forEach(ov => {
+                // Configurar Fonte Baseada no ov.fontSize (que é em pixels da imagem original)
+                // Precisamos escalar para o canvas atual
+                const scaledFontSize = ov.fontSize * scaleY; // Usa escala Y para manter proporção
+                ctx.font = `bold ${scaledFontSize}px system-ui, sans-serif`;
+                
+                // Quebrar linhas
+                const lines = ov.text.split('\n');
+                const lineHeight = scaledFontSize * 1.2;
+                const paddingH = scaledFontSize * 0.8; 
+                const paddingV = scaledFontSize * 0.4;
+                
+                // Medir largura máxima
+                let maxLineWidth = 0;
+                lines.forEach(line => {
+                    const m = ctx.measureText(line);
+                    if (m.width > maxLineWidth) maxLineWidth = m.width;
+                });
+
+                // Calcular dimensão visual (renderizada)
+                const renderW = maxLineWidth + (paddingH * 2);
+                const renderH = (lines.length * lineHeight) + (paddingV * 2);
+
+                // Atualizar dimensão lógica na Imagem Original (para hit test e persistência)
+                ov.w = renderW / scaleX; 
+                ov.h = renderH / scaleY;
+
+                // Coordenadas de desenho
                 const ox = dx + (ov.x * scaleX);
                 const oy = dy + (ov.y * scaleY);
-                const ow = ov.w * scaleX;
-                const oh = ov.h * scaleY;
 
                 ctx.save();
                 
-                // Shadow
+                // Sombra
                 ctx.shadowColor = "rgba(0,0,0,0.3)";
                 ctx.shadowBlur = 6;
                 ctx.shadowOffsetY = 3;
 
-                // Button Shape (Rounded)
+                // Fundo do Botão
                 ctx.beginPath();
-                const radius = Math.min(ow, oh) / 2; // Pill shape fully rounded sides
-                ctx.roundRect(ox, oy, ow, oh, radius); // Modern Canvas API
+                const radius = Math.min(16, renderH / 3); 
+                ctx.roundRect(ox, oy, renderW, renderH, radius); 
                 ctx.fillStyle = ov.bg;
                 ctx.fill();
                 
-                // Remove shadow for text
+                // Texto
                 ctx.shadowColor = "transparent";
-
-                // Text
                 ctx.fillStyle = ov.color;
-                // Auto font size based on height
-                const fontSize = oh * 0.5;
-                ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
                 ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(ov.text, ox + (ow/2), oy + (oh/2));
+                ctx.textBaseline = "middle"; // Vamos calcular manualmente o Y
+                
+                // Desenhar cada linha
+                const startY = oy + paddingV + (lineHeight / 2); // Primeiro meio de linha
+                
+                lines.forEach((line, i) => {
+                    // Ajuste fino vertical para centralizar visualmente
+                    // offset para o meio da linha atual
+                    const lineY = startY + (i * lineHeight); 
+                    // Correção para centralizar bloco de texto no botão se sobrar espaço (opcional, mas aqui o botão abraça o texto)
+                    ctx.fillText(line, ox + (renderW/2), lineY);
+                });
 
                 // Selection Outline
                 if (state.activeOverlayId === ov.id) {
                     ctx.strokeStyle = "#fff";
                     ctx.lineWidth = 2;
-                    ctx.strokeRect(ox - 2, oy - 2, ow + 4, oh + 4);
+                    ctx.strokeRect(ox - 2, oy - 2, renderW + 4, renderH + 4);
                     
                     ctx.strokeStyle = "#2563eb";
                     ctx.lineWidth = 1;
-                    ctx.strokeRect(ox - 2, oy - 2, ow + 4, oh + 4);
+                    ctx.strokeRect(ox - 2, oy - 2, renderW + 4, renderH + 4);
 
-                    // Resize Handle
+                    // Resize Handle (Controla ov.fontSize)
                     ctx.fillStyle = "#fff";
-                    ctx.fillRect(ox + ow - 6, oy + oh - 6, 12, 12);
-                    ctx.strokeRect(ox + ow - 6, oy + oh - 6, 12, 12);
+                    ctx.fillRect(ox + renderW - 6, oy + renderH - 6, 12, 12);
+                    ctx.strokeRect(ox + renderW - 6, oy + renderH - 6, 12, 12);
                 }
 
                 ctx.restore();
@@ -980,14 +983,11 @@
                 sCtx.drawImage(source, dx, dy, dw, dh);
                 sCtx.filter = 'none';
 
-                // Draw Overlays on High Res Canvas
-                // Important: pass the high-res dimensions
                 drawOverlays(sCtx, dx, dy, dw, dh, sw, sh);
 
                 const finalCanvas = document.createElement('canvas');
                 finalCanvas.width = state.width; finalCanvas.height = state.height;
                 
-                // Resize down with high quality
                 if (window.pica) await window.pica().resize(superCanvas, finalCanvas, { unsharpAmount: 0, quality: 3 });
                 else finalCanvas.getContext('2d').drawImage(superCanvas, 0, 0, state.width, state.height);
 
@@ -1055,7 +1055,6 @@
             state.isRecording = true; els.videoEl.pause(); els.videoEl.currentTime = 0; els.videoEl.loop = false;
             els.btnRec.disabled = true; els.btnRec.innerText = "Processando..."; els.recBadge.classList.remove('hidden');
             
-            // Re-select active overlay to null to avoid recording selection box
             const savedActive = state.activeOverlayId;
             setActiveOverlay(null);
 
@@ -1097,7 +1096,7 @@
             if (state.isRestoring) {
                 els.btnRestore.classList.add('active'); els.brushControls.classList.add('visible'); els.canvas.classList.add('brush-active');
                 els.btnRestore.innerHTML = "✅ Terminar Restauração";
-                setActiveOverlay(null); // Desativa seleção de botão para não atrapalhar
+                setActiveOverlay(null); 
             } else {
                 els.btnRestore.classList.remove('active'); els.brushControls.classList.remove('visible'); els.canvas.classList.remove('brush-active');
                 els.btnRestore.innerHTML = "🖌️ Pincel Restaurar"; state.cursorX = -100; requestRender();
