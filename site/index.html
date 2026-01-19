@@ -4,12 +4,10 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.34 - Hierarchy & Sidebar Categories
+        VERSION: 9.35 - Elegant Section Headers
         CHANGELOG:
-        - DATA: Lógica de parsing de categorias (Categoria > Subcategoria).
-        - UI (Sidebar): Agrupamento hierárquico (Título da Categoria Principal + Chips de Subcategorias).
-        - CSS: Estilos para títulos de seção na sidebar.
-        - LOGIC: Filtragem e renderização ajustadas para estrutura Pai/Filho.
+        - UI (CSS): Estilização refinada para .nav-section-title (Fundo claro, fonte leve, sem borda inferior pesada).
+        - UI (Visual): Melhoria na legibilidade e elegância da separação de categorias na sidebar.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -288,14 +286,16 @@
         .nav-section-title {
             width: 100%;
             text-align: center;
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: var(--secondary);
-            margin: 20px 0 8px 0;
+            font-size: 0.75rem; /* Slightly Larger */
+            font-weight: 600; /* Lighter Weight */
+            color: var(--text-light); /* Elegant Grey */
+            margin: 24px 0 10px 0;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding-bottom: 4px;
-            border-bottom: 2px solid #e2e8f0;
+            letter-spacing: 0.8px;
+            padding: 6px 0;
+            background: #f8fafc; /* Subtle Background */
+            border-radius: 6px; /* Soft Rounded */
+            /* Removed Bottom Border */
         }
         .nav-section-title:first-of-type { margin-top: 10px; }
 
@@ -309,7 +309,7 @@
             .desk-price strong { font-size: 1.2rem; color: var(--primary); }
             .btn-desk-checkout { background: #16a34a; color: white; padding: 0 24px; height: 42px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
             
-            .nav-section-title { font-size: 0.9rem; margin-top: 24px; text-align: left; }
+            .nav-section-title { font-size: 0.85rem; margin-top: 24px; text-align: left; padding-left: 10px; }
         }
 
         .section-header { background: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; display:flex; justify-content: space-between; align-items: center; scroll-margin-top: 140px; }
