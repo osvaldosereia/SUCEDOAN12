@@ -4,11 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.33 - Category Logic Update
+        VERSION: 9.34 - Fix Category Scroll & Navigation
         CHANGELOG:
-        - CONFIG: Lista 'CATEGORY_SEQUENCE' atualizada com a nova estrutura de produtos.
-        - LOGIC: 'CESTA BÁSICA' removida explicitamente da lista de navegação lateral.
-        - UI: Mantida a lógica de exibição condicional (só mostra se tiver produto).
+        - FIX: Implementada função toId() para sanitizar nomes de categorias em IDs HTML válidos (remove acentos, espaços, vírgulas).
+        - FIX: Função filterCat() agora busca o elemento pelo ID sanitizado, garantindo que o scroll funcione para nomes complexos.
+        - UX: Cálculo de scroll aprimorado para descontar a altura exata do cabeçalho fixo.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -628,7 +628,48 @@
         // Edite esta lista para mudar a ordem ou os nomes que aparecem no menu.
         // O sistema só vai mostrar as categorias que tiverem produtos disponíveis.
         const CATEGORY_SEQUENCE = [
-            "CESTA BÁSICA", "ARROZ", "FEIJÃO", "ÓLEO", "SAL", "AÇÚCAR", "OVOS", "GRÃOS, FARINHAS E CEREAIS", "MACARRÃO", "MOLHOS E EXTRATOS", "TEMPEROS, VINAGRE E AZEITE", "CAFÉ", "CHÁ E TERERÉ", "LEITES", "ACHOCOLATADOS", "SUCO EM PÓ", "BISCOITOS, BOLACHAS E SALGADINHOS", "BOLOS, DOCES E SOBREMESAS", "LEITE CONDENSADO", "CREME DE LEITE", "CASA", "COZINHA", "EMBALAGEM", "FESTA", "COSTURA", "LÂMPADA", "PILHAS E BATERIAS", "LIMPEZA", "ÁGUA SANITÁRIA", "DESINFETANTES", "DETERGENTES", "SABÃO EM PÓ, BARRA E LÍQUIDO", "AMACIANTE", "BUCHAS, ESPONJAS E ESCOVAS", "RODOS E VASSOURAS", "PANOS", "INSETICÍDA", "PURIFICADOR DE AR", "HIGIENE", "SABONETES", "DESODORANTES", "CREMES E HIDRATANTES", "ABSORVENTE", "MANUCIRE", "DESCOLORANTE"
+            "ARROZ",
+            "FEIJÃO",
+            "ÓLEO",
+            "SAL",
+            "AÇÚCAR",
+            "OVOS",
+            "GRÃOS, FARINHAS E CEREAIS",
+            "MACARRÃO",
+            "MOLHOS E EXTRATOS",
+            "MOLHOS E TEMPEROS",
+            "TEMPEROS, VINAGRE E AZEITE",
+            "CAFÉ",
+            "CHÁ E TERERÉ",
+            "LEITES",
+            "ACHOCOLATADOS",
+            "SUCO EM PÓ",
+            "BISCOITOS, BOLACHAS E SALGADINHOS",
+            "BOLO",
+            "BOLOS E SOBREMESAS",
+            "BOLOS, DOCES E SOBREMESAS",
+            "CASA",
+            "COZINHA",
+            "EMBALAGEM",
+            "FESTA",
+            "COSTURA",
+            "LÂMPADA",
+            "PILHAS E BATERIAS",
+            "LIMPEZA",
+            "ÁGUA SANITÁRIA",
+            "DETERGENTES",
+            "SABÃO EM PÓ, BARRA E LÍQUIDO",
+            "AMACIANTE",
+            "BUCHAS, ESPONJAS E ESCOVAS",
+            "PANOS",
+            "INSETICÍDA",
+            "PURIFICADOR DE AR",
+            "HIGIENE",
+            "SABONETES",
+            "DESODORANTES",
+            "CREMES E HIDRATANTES",
+            "MANUCIRE",
+            "DESCOLORANTE"
         ];
 
         const CONSTANTS = {
@@ -826,15 +867,10 @@
             },
 
             renderSidebar() {
-                // Get all categories that actually exist in the data
                 const availableCats = new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria));
                 
-                // Filter the pre-defined sequence to only include available categories
-                // This ensures empty categories don't show up, but the order is respected
                 const orderedCats = CATEGORY_SEQUENCE.filter(cat => availableCats.has(cat));
                 
-                // Optional: Append any available categories that were NOT in the sequence list (at the end)
-                // Remove this block if you want strict adherence to the list only
                 availableCats.forEach(cat => {
                     if (!CATEGORY_SEQUENCE.includes(cat)) {
                         orderedCats.push(cat);
@@ -862,7 +898,6 @@
                 el.classList.add('active');
             },
 
-            // NEW SCROLL FUNCTION
             scrollNavDown() {
                 const el = document.getElementById('mobile-nav-sidebar');
                 if(el) {
@@ -919,6 +954,17 @@
                 this.renderAllLists("", true); 
             },
 
+            // HELPER: Sanitiza string para ID HTML válido (remove acentos, espaços e chars especiais)
+            toId(text) {
+                return text.toString().toLowerCase()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                    .replace(/\s+/g, '-')           // Espaços para hífens
+                    .replace(/[^\w\-]+/g, '')       // Remove caracteres não-alfanuméricos (como vírgula)
+                    .replace(/\-\-+/g, '-')         // Hífens duplicados
+                    .replace(/^-+/, '')             // Remove hífens do início
+                    .replace(/-+$/, '');            // Remove hífens do fim
+            },
+
             renderAllLists(searchTerm = "", showOffersOnly = false) {
                 if(!this.currentBasket) return;
                 
@@ -945,8 +991,6 @@
                 const groups = {};
                 extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
                 
-                // Use the ordered list for the group display order too!
-                // Filter available group keys based on ordered list, then append any others
                 const groupKeys = Object.keys(groups);
                 const sortedCats = CATEGORY_SEQUENCE.filter(c => groupKeys.includes(c));
                 groupKeys.forEach(k => { if(!sortedCats.includes(k)) sortedCats.push(k); });
@@ -971,11 +1015,13 @@
                 } else {
                     sortedCats.forEach(cat => {
                         const color = Object.keys(CONSTANTS.THEMES).find(k => cat.includes(k)) || 'DEFAULT';
-                        // Add Count to Header
                         const count = groups[cat].length;
                         const catTitle = showOffersOnly ? `${cat} <span style="font-size:0.8em; opacity:0.8;">(${count})</span>` : cat;
                         
-                        html += `<div id="cat-${cat}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;">
+                        // ID gerado com a função sanitizadora
+                        const safeId = this.toId(cat);
+
+                        html += `<div id="cat-${safeId}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;">
                                     <h3>${catTitle}</h3>
                                  </div>
                                  <div class="product-box">
@@ -991,6 +1037,54 @@
                 this.updateTotal();
             },
 
+            clearSearch() {
+                document.getElementById('main-search').value = "";
+                this.closeSheet('cat-sheet');
+                this.renderAllLists("");
+                
+                setTimeout(() => {
+                    const topEl = document.querySelector('.products-section');
+                    if(topEl) {
+                        const y = topEl.getBoundingClientRect().top + window.scrollY - 120; 
+                        window.scrollTo({top: y > 0 ? y : 0, behavior: 'smooth'});
+                    } else {
+                        window.scrollTo({top: 0, behavior: 'smooth'});
+                    }
+                }, 50);
+            },
+
+            filterCat(cat) {
+                this.closeSheet('cat-sheet');
+                if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
+                
+                // Limpa a busca para garantir que a categoria apareça
+                document.getElementById('main-search').value = "";
+                this.renderAllLists("");
+
+                // ID alvo com a mesma sanitização da criação
+                const targetId = 'cat-' + this.toId(cat);
+
+                setTimeout(() => {
+                    const el = document.getElementById(targetId);
+                    if(el) { 
+                        // Altura da barra fixa (cust-header-bar + margem segurança)
+                        // A barra tem ~70-80px. Usamos 130px para garantir visibilidade do título.
+                        const headerOffset = 130; 
+                        const elementPosition = el.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                  
+                        window.scrollTo({
+                             top: offsetPosition,
+                             behavior: "smooth"
+                        });
+                    } else {
+                        console.log("Elemento não encontrado:", targetId);
+                    }
+                }, 100);
+            },
+
+            // ... restante das funções ...
+            
             renderIncluded() {
                 const incContainer = document.getElementById('included-list');
                 const incIds = Object.keys(this.cart);
@@ -1168,6 +1262,18 @@
             search(term) {
                 if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
                 this.renderAllLists(term);
+            },
+
+            sendWhatsApp() {
+                const method = document.getElementById('payment-method').value;
+                const total = document.getElementById('co-total').innerText;
+                let msg = `*NOVO PEDIDO: ${this.currentBasket.nome}*\n------------------\n`;
+                for(let id in this.cart) {
+                    const p = this.data.find(x => x.id === id);
+                    if(p) msg += `${this.cart[id]}x ${p.nome}\n`;
+                }
+                msg += `------------------\n*TOTAL: ${total}*\n*Pagamento:* ${method}`;
+                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
 
             directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
