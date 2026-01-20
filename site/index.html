@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.43 - App-Like Navigation & Layout Adjustments
+        VERSION: 9.44 - Fix: Suggestion Toast Visibility
         CHANGELOG:
+        - FIX: Ocultação robusta do 'suggestion-toast' usando opacity/visibility para evitar que apareça na home devido à nova posição elevada.
         - UI: Barra de navegação movida para o rodapé (estilo App Tab Bar).
         - UI: Adicionado botão "Dúvidas" na barra inferior.
         - LAYOUT: Coluna lateral esquerda aumentada (+20px) e direita ajustada.
-        - FIX: Ajuste de posicionamento da barra de checkout acima da navegação.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -600,11 +600,22 @@
             padding: 12px; 
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); 
             display: flex; align-items: center; gap: 12px;
-            transform: translateY(150%); /* Hidden by default */
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            
+            /* FIX: Use opacity/visibility instead of just transform to ensure it hides */
+            transform: translateY(20px); 
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 9995;
         }
-        .suggestion-toast.visible { transform: translateY(0); }
+        .suggestion-toast.visible { 
+            transform: translateY(0); 
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
         .st-img { width: 50px; height: 50px; border-radius: 6px; object-fit: contain; mix-blend-mode: multiply; }
         .st-content { flex: 1; display: flex; flex-direction: column; }
         .st-title { font-size: 0.8rem; font-weight: 700; color: var(--secondary); line-height: 1.2; margin-bottom: 2px; }
