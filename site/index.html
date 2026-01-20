@@ -3,14 +3,14 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Professional Build
-        TARGET: 100/100 Lighthouse Performance & SEO
-        TYPE: E-commerce Hybrid (Desktop Sidebar / Mobile App-Bar)
+        ARCHITECT: SEO Code Architect (SCA) - UX/UI Refined Build
+        TARGET: 100/100 Lighthouse Performance
+        UX PATTERN: iFood-Like Navigation & Smart Typography
         CHANGELOG:
-        - RESTORE: SEO Completo, Footer Rico e Estrutura Desktop.
-        - UI: Títulos de categorias principais ocultos (apenas subcategorias visíveis).
-        - UX: "Zero-Jank" ao adicionar produtos (atualização pontual do DOM sem re-render).
-        - LAYOUT: Desktop com largura controlada (container 1280px) e sidebar fixa.
+        - TYPOGRAPHY: Algoritmo 'SmartTitleCase' para nomes de produtos (Ex: "Sabão em Pó YPÊ 500g").
+        - HEADER: Novo App-Header (Voltar | Busca | Ajuda) fixo e compacto.
+        - LAYOUT: Desktop contido em 1280px para leitura otimizada.
+        - PERFORMANCE: Search Input com debounce nativo via evento 'input'.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -21,82 +21,29 @@
     <link rel="canonical" href="https://www.donaantonia.com.br/">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="author" content="Dona Antônia Mercadinho">
+    <meta name="theme-color" content="#ffffff">
     
-    <!-- SEO: Visual & UI -->
-    <meta name="color-scheme" content="light only">
-    <meta name="theme-color" content="#f7f7f7">
-    
-    <!-- SEO: Content & Keywords -->
+    <!-- SEO: Content -->
     <title>Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia</title>
-    <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG com entrega grátis*. Monte e personalize sua cesta com Arroz Tio Alvino. Mercadinho online com pagamento na entrega.">
-    <meta name="keywords" content="cesta básica cuiabá, cesta básica várzea grande, mercado online, entrega de compras, arroz tio alvino, sacolão cuiabá, dona antônia">
+    <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG. Monte e personalize sua cesta. Mercadinho online com pagamento na entrega.">
 
-    <!-- SEO: Geo-Targeting -->
-    <meta name="geo.region" content="BR-MT">
-    <meta name="geo.placename" content="Cuiabá">
-    <meta name="geo.position" content="-15.6014;-56.0979">
-    <meta name="ICBM" content="-15.6014, -56.0979">
-
-    <!-- Social SEO: Open Graph -->
-    <meta property="og:locale" content="pt_BR">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Cestas Básicas Dona Antônia | Qualidade na sua Porta">
-    <meta property="og:description" content="Personalize sua cesta básica e receba em casa em até 24h. Atendemos Cuiabá e Várzea Grande.">
-    <meta property="og:url" content="https://www.donaantonia.com.br/">
-    <meta property="og:site_name" content="Dona Antônia">
-    <meta property="og:image" content="https://www.donaantonia.com.br/img/og-social-share.jpg">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Cestas Básicas Dona Antônia">
-
-    <!-- Social SEO: Twitter Cards -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Cestas Básicas Dona Antônia | Cuiabá e VG">
-    <meta name="twitter:description" content="Economia e qualidade com entrega rápida. Peça pelo site!">
-    <meta name="twitter:image" content="https://www.donaantonia.com.br/img/og-social-share.jpg">
-    
-    <!-- Performance -->
+    <!-- Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- STRUCTURED DATA: JSON-LD -->
+    <!-- JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "GroceryStore",
-          "@id": "https://www.donaantonia.com.br/#store",
-          "name": "Dona Antônia Cestas Básicas",
-          "image": "https://www.donaantonia.com.br/img/logo.png",
-          "url": "https://www.donaantonia.com.br/",
-          "telephone": "+5565996813588",
-          "priceRange": "$$",
-          "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "Jardim Nossa Senhora Aparecida",
-            "addressLocality": "Cuiabá",
-            "addressRegion": "MT",
-            "postalCode": "78000-000",
-            "addressCountry": "BR"
-          },
-          "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": -15.6014,
-            "longitude": -56.0979
-          },
-          "areaServed": [
-            {
-              "@type": "City",
-              "name": "Cuiabá"
-            },
-            {
-              "@type": "City",
-              "name": "Várzea Grande"
-            }
-          ]
-        }
-      ]
+      "@type": "GroceryStore",
+      "name": "Dona Antônia Cestas Básicas",
+      "image": "https://www.donaantonia.com.br/img/logo.png",
+      "telephone": "+5565996813588",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Cuiabá",
+        "addressRegion": "MT"
+      }
     }
     </script>
 
@@ -111,7 +58,8 @@
             --bg-body: #f7f7f7; 
             --border-color: #f2f2f2;
             --header-height: 60px; 
-            --sidebar-width: 320px;
+            --app-header-height: 56px; /* Altura compacta estilo App */
+            --sidebar-width: 340px;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -122,27 +70,27 @@
             background-color: var(--bg-body);
         }
         
-        /* Container Limitado mas Confortável */
+        /* Container Principal: Limita a largura no Desktop */
         .container { max-width: 1280px; margin: 0 auto; padding: 0 16px; width: 100%; }
         
         img { display: block; max-width: 100%; height: auto; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
 
-        /* --- SCROLLBAR --- */
+        /* Scrollbar */
         * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
 
-        /* --- 2. HEADER --- */
-        header { 
+        /* --- 2. HEADER (HOME) --- */
+        #main-header { 
             position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
             background: #ffffff; border-bottom: 1px solid #f0f0f0; z-index: 1000; 
             display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
         }
-        body.customizer-mode header { display: none !important; }
+        /* Oculta header principal quando no modo customizador */
+        body.customizer-mode #main-header { display: none !important; }
         
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
@@ -153,9 +101,46 @@
             padding: 6px 14px; border-radius: 50px; border: 1px solid #e2e8f0;
             display: flex; align-items: center; gap: 6px;
         }
-        @media(max-width: 360px) { .location-pill span { display: none; } }
 
-        /* --- 3. HERO & HOME STYLES --- */
+        /* --- 3. CUSTOMIZER HEADER (APP STYLE) --- */
+        .app-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
+            background: #fff; height: var(--app-header-height);
+            border-bottom: 1px solid #f0f0f0; display: none; /* Hidden by default */
+            align-items: center; padding: 0 16px; gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        body.customizer-mode .app-header { display: flex; }
+
+        /* Voltar Button */
+        .ah-back-btn { 
+            color: var(--primary); font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
+            padding: 4px; margin-left: -4px;
+        }
+
+        /* Busca Compacta */
+        .ah-search-box {
+            flex: 1; position: relative;
+        }
+        .ah-search-input {
+            width: 100%; background: #f2f2f2; border: none; border-radius: 8px;
+            padding: 8px 12px 8px 36px; font-size: 0.9rem; color: #333; outline: none;
+            height: 36px; /* Altura compacta */
+        }
+        .ah-search-input::placeholder { color: #888; }
+        .ah-search-icon {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            color: #ea1d2c; font-size: 1rem;
+        }
+
+        /* Ajuda Button (Integrado) */
+        .ah-help-btn {
+            font-size: 0.9rem; font-weight: 600; color: var(--secondary);
+            display: flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; /* border-radius: 50%; background: #f8fafc; */
+        }
+
+        /* --- 4. HERO & HOME CONTENT --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         .hero { padding: 50px 0; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
         .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--secondary); margin-bottom: 12px; }
@@ -164,35 +149,6 @@
         
         .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
         .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
-
-        /* FOOTER (Restaurado) */
-        .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 20px; margin-top: 40px; }
-        .footer-info { text-align: center; margin-bottom: 30px; }
-        .footer-info h3 { font-size: 1.4rem; color: var(--secondary); margin-bottom: 10px; font-weight: 800; }
-        .footer-info p { color: var(--text-light); margin-bottom: 6px; font-size: 0.95rem; }
-        .footer-info strong { color: var(--secondary); }
-
-        .footer-actions { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; 
-            max-width: 600px; margin: 0 auto 30px; padding: 0 10px;
-        }
-        @media(min-width: 640px) { .footer-actions { grid-template-columns: repeat(3, 1fr); } }
-
-        .f-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-            padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; 
-            background: #f8fafc; color: var(--secondary); font-weight: 600; font-size: 0.85rem;
-            text-decoration: none; transition: all 0.2s; text-align: center;
-        }
-        .f-btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-color: #cbd5e1; }
-        .f-btn icon { font-size: 1.4rem; margin-bottom: 2px; }
-        
-        .f-btn.whatsapp { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
-        .f-btn.group { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
-        .f-btn.insta { background: #fdf2f8; color: #db2777; border-color: #fce7f3; }
-        .f-btn.google { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-
-        .copyright { text-align: center; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
 
         /* HOME GRID */
         .home-grid-container { padding: 0px 0 60px; }
@@ -217,7 +173,7 @@
         .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
-        .hbc-title { font-size: 1rem; font-weight: 700; color: #2e2e2e; line-height: 1.3; margin-bottom: 6px; }
+        .hbc-title { font-size: 1rem; font-weight: 700; color: #2e2e2e; line-height: 1.3; margin-bottom: 6px; text-transform: capitalize; }
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #50a773; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
@@ -230,65 +186,16 @@
         .btn-home-cust { width: 100%; padding: 12px; background: #ffffff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; font-weight: 700; font-size: 0.95rem; text-align: center; }
         .btn-home-order { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; text-align: center; }
 
-        /* --- 4. CUSTOMIZER VIEW --- */
+        /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { 
-            padding-bottom: 100px; /* Space for floating bar */
+            /* Espaço para o header fixo e footer */
+            padding-top: var(--app-header-height); 
+            padding-bottom: 100px; 
             min-height: 100vh; background: #f7f7f7; 
-            padding-top: 20px; 
-        }
-        
-        .fab-faq {
-            position: fixed; top: 20px; right: 20px; z-index: 10000;
-            width: 36px; height: 36px; background: #fff; border: none;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: var(--text-light); font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .welcome-overlay {
-            position: fixed; inset: 0; z-index: 12000;
-            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
-        }
-        .welcome-overlay.visible { opacity: 1; pointer-events: auto; }
-        
-        .welcome-card {
-            background: white; padding: 30px 24px; border-radius: 16px;
-            text-align: center; max-width: 90%; width: 360px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            transform: translateY(20px); transition: transform 0.4s ease;
-        }
-        .welcome-overlay.visible .welcome-card { transform: translateY(0); }
-        .welcome-title { font-size: 1.3rem; font-weight: 700; color: #2e2e2e; margin-bottom: 12px; line-height: 1.2; }
-        .welcome-sub { font-size: 0.95rem; color: #717171; margin-bottom: 24px; line-height: 1.5; }
-        .welcome-btn { background: var(--primary); color: white; border-radius: 8px; padding: 12px 30px; font-weight: 600; font-size: 1rem; width: 100%; }
-
-        /* --- 5. IFOOD STYLE FLOATING CART BAR --- */
-        .ifood-cart-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #ffffff; border-top: 1px solid #f0f0f0;
-            padding: 12px 16px; z-index: 9999;
-            display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-            transform: translateY(100%); transition: transform 0.3s ease;
-            padding-bottom: max(12px, env(safe-area-inset-bottom));
-        }
-        .ifood-cart-bar.visible { transform: translateY(0); }
-
-        .icb-info { display: flex; flex-direction: column; }
-        .icb-label { font-size: 0.75rem; color: #717171; }
-        .icb-total { font-size: 1.1rem; font-weight: 700; color: #2e2e2e; }
-        
-        .icb-btn {
-            background: var(--primary); color: white;
-            padding: 10px 20px; border-radius: 8px;
-            font-weight: 600; font-size: 0.95rem;
-            cursor: pointer; display: flex; align-items: center; gap: 8px;
         }
 
         /* --- 6. PRODUCTS --- */
-        .subcat-section { margin-bottom: 30px; }
+        .subcat-section { margin-bottom: 30px; margin-top: 20px; }
         .subcat-title { 
             font-size: 1.1rem; font-weight: 800; color: #3e3e3e; 
             margin: 0 0 12px 16px; letter-spacing: -0.5px;
@@ -349,7 +256,7 @@
         }
         .qc-val { font-weight: 600; font-size: 0.9rem; }
 
-        /* --- 7. DESKTOP SPECIFIC --- */
+        /* --- 7. DESKTOP LAYOUT --- */
         .desktop-sidebar { display: none; }
         
         @media(min-width: 1024px) {
@@ -357,46 +264,29 @@
                 padding-bottom: 0; display: grid !important; 
                 grid-template-columns: 1fr var(--sidebar-width); gap: 40px; 
                 max-width: 1280px; margin: 0 auto; padding: 40px 20px; align-items: start;
+                /* Compensa o header fixo no desktop para não cobrir conteúdo */
+                padding-top: calc(var(--app-header-height) + 20px); 
             }
             .ifood-cart-bar { display: none; }
             
             .desktop-sidebar {
                 display: flex; flex-direction: column;
-                position: sticky; top: 20px;
+                position: sticky; top: 90px; /* Abaixo do header */
                 background: white; border-radius: 16px;
                 padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-                max-height: calc(100vh - 40px); overflow-y: auto;
+                max-height: calc(100vh - 110px); overflow-y: auto;
             }
             
-            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; transition: all 0.2s; font-size: 0.7rem; }
-            .v-nav-ctrl:hover { background: #e2e8f0; color: var(--secondary); }
-            .v-nav-ctrl.down { margin-top: 5px; }
-            .v-nav-ctrl.up { margin-bottom: 5px; }
-            
-            #included-list-desk.vertical-slider {
-                display: flex; flex-direction: column; gap: 0;
-                overflow: hidden; max-height: 330px; transition: scroll-top 0.3s;
-                border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; padding: 5px 0;
-            }
-
+            /* Ajustes Sidebar */
             .ds-section-title { font-size: 1rem; font-weight: 700; color: #2e2e2e; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
             .ds-divider { height: 1px; background: #f0f0f0; margin: 20px 0; }
             .ds-total { font-size: 1.4rem; font-weight: 700; color: #2e2e2e; text-align: right; margin: 10px 0 20px; }
-            
             .ds-actions-row { display: flex; gap: 10px; margin-bottom: 15px; }
             .ds-btn { flex: 1; padding: 12px; background: var(--primary); color: white; font-weight: 600; border-radius: 8px; font-size: 0.95rem; cursor: pointer; border: none; white-space: nowrap; }
-            .ds-btn:hover { background: var(--primary-dark); }
             .ds-btn-outline { flex: 1; padding: 12px; background: #fff; border: 1px solid #e2e8f0; color: #2e2e2e; font-weight: 600; border-radius: 8px; cursor: pointer; font-size: 0.95rem; white-space: nowrap; }
-            .ds-btn-outline:hover { background: #f8fafc; }
             
-            .ds-nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
-            .ds-nav-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: #f8fafc; border: none; border-radius: 8px; color: #717171; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-            
-            /* Cart Items in Sidebar */
-            .card-inc {
-                display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc;
-                align-items: center;
-            }
+            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; transition: all 0.2s; font-size: 0.7rem; }
+            .card-inc { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; align-items: center; }
             .ci-img { width: 40px; height: 40px; object-fit: contain; mix-blend-mode: multiply; cursor: pointer; }
             .ci-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
             .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 28px; }
@@ -405,134 +295,89 @@
             .ci-trash { color: #b91c1c; padding: 4px; cursor: pointer; }
         }
 
-        /* --- 9. SHEETS --- */
-        .sheet-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            display: flex; flex-direction: column; justify-content: flex-end;
+        /* --- 8. FLOATING CART BAR (MOBILE) --- */
+        .ifood-cart-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #ffffff; border-top: 1px solid #f0f0f0;
+            padding: 12px 16px; z-index: 9999;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            transform: translateY(100%); transition: transform 0.3s ease;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
         }
+        .ifood-cart-bar.visible { transform: translateY(0); }
+        .icb-total { font-size: 1.1rem; font-weight: 700; color: #2e2e2e; }
+        .icb-btn { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+
+        /* --- 9. MODALS & OVERLAYS --- */
+        .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000; opacity: 0; pointer-events: none; transition: opacity 0.3s; display: flex; flex-direction: column; justify-content: flex-end; }
         .sheet-overlay.open { opacity: 1; pointer-events: auto; }
-        .sheet-box {
-            background: #fff; width: 100%; border-radius: 20px 20px 0 0;
-            max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s;
-            padding: 20px; padding-bottom: 40px;
-        }
+        .sheet-box { background: #fff; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; padding: 20px; }
         .sheet-overlay.open .sheet-box { transform: translateY(0); }
         
-        .cat-list-btn {
-            display: flex; width: 100%; padding: 16px; text-align: left;
-            border-bottom: 1px solid #f1f5f9; font-weight: 600; color: var(--secondary);
-            align-items: center; justify-content: space-between; font-size: 0.9rem;
-        }
-        
-        details.faq-box { margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
-        details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
-        .faq-text { padding: 15px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
+        /* Welcome Overlay */
+        .welcome-overlay { position: fixed; inset: 0; z-index: 12000; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+        .welcome-overlay.visible { opacity: 1; pointer-events: auto; }
+        .welcome-card { background: white; padding: 30px 24px; border-radius: 16px; text-align: center; max-width: 90%; width: 360px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.4s ease; }
+        .welcome-overlay.visible .welcome-card { transform: translateY(0); }
+        .welcome-btn { background: var(--primary); color: white; border-radius: 8px; padding: 12px 30px; font-weight: 600; font-size: 1rem; width: 100%; }
 
         /* Toasts */
-        .sug-toast {
-            position: fixed; bottom: 100px; left: 16px; right: 16px; background: white;
-            border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 4px solid var(--primary);
-            transform: translateY(20px); opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 9998;
-        }
+        .sug-toast { position: fixed; bottom: 100px; left: 16px; right: 16px; background: white; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 4px solid var(--primary); transform: translateY(20px); opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 9998; }
         .sug-toast.visible { transform: translateY(0); opacity: 1; visibility: visible; }
-        .st-content { flex: 1; font-size: 0.8rem; line-height: 1.3; }
         .st-btn { background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
         
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
-        .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
-        
-        .credit-toast {
-            position: fixed; top: 30px; left: 50%; transform: translate(-50%, 0);
-            background: rgba(30, 41, 59, 0.95); color: white;
-            padding: 12px 24px; border-radius: 50px; font-weight: 600;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            z-index: 12000; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
+        .credit-toast { position: fixed; top: 30px; left: 50%; transform: translate(-50%, 0); background: rgba(30, 41, 59, 0.95); color: white; padding: 12px 24px; border-radius: 50px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 12000; text-align: center; }
         .credit-toast.visible { opacity: 1; }
-
-        .credit-sub-toast {
-            position: fixed; top: 80px; left: 50%; transform: translate(-50%, 0);
-            background: #dcfce7; color: #166534;
-            padding: 6px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 600;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            z-index: 11900; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
+        .credit-sub-toast { position: fixed; top: 80px; left: 50%; transform: translate(-50%, 0); background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 11900; }
         .credit-sub-toast.visible { opacity: 1; }
 
-        /* CHECKOUT MODAL (FULL EXPERIENCE) */
-        dialog.modal-checkout {
-            margin: auto; inset: 0; position: fixed; border: none; border-radius: 16px 16px 0 0;
-            width: 100%; height: 90vh; max-width: 600px; bottom: 0; top: auto;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.2); 
-            padding: 0; background: #fff;
-            flex-direction: column;
-        }
+        /* CHECKOUT MODAL */
+        dialog.modal-checkout { margin: auto; inset: 0; position: fixed; border: none; border-radius: 16px 16px 0 0; width: 100%; height: 90vh; max-width: 600px; bottom: 0; top: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); padding: 0; background: #fff; flex-direction: column; }
         dialog.modal-checkout[open] { display: flex; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
-
         .co-header { padding: 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
-        .co-title { font-size: 1.1rem; font-weight: 700; color: #2e2e2e; }
-        .co-close { font-size: 1.5rem; color: #999; padding: 5px; cursor: pointer; }
-
         .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #f7f7f7; }
-        
-        .co-section-title { font-size: 0.9rem; font-weight: 700; color: #717171; margin-bottom: 10px; text-transform: uppercase; }
-        
-        /* HORIZONTAL SCROLL IN CHECKOUT (NEW) */
-        .co-horizontal-list {
-            display: flex; gap: 10px; overflow-x: auto; 
-            padding: 5px 0 15px 0; margin-bottom: 20px;
-        }
+        .co-horizontal-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 20px; }
         .co-horizontal-list::-webkit-scrollbar { display: none; }
-
-        /* CHECKOUT CARD (NEW VERTICAL STYLE) */
-        .co-card {
-            min-width: 140px; max-width: 140px;
-            background: white; border-radius: 12px;
-            padding: 10px; display: flex; flex-direction: column; align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            flex-shrink: 0;
-        }
+        .co-card { min-width: 140px; max-width: 140px; background: white; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-shrink: 0; }
         .co-card-img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 8px; mix-blend-mode: multiply; }
         .co-card-title { font-size: 0.75rem; color: #3e3e3e; text-align: center; font-weight: 500; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; margin-bottom: 6px; width: 100%; }
-        .co-card-price { font-size: 0.85rem; font-weight: 700; color: #2e2e2e; margin-bottom: 8px; }
-        
-        /* Controls Row in Checkout Card */
         .co-card-controls { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
-        
-        .qty-mini-co { 
-            display: flex; align-items: center; background: #f5f5f5; border-radius: 6px; height: 28px; border: 1px solid #e0e0e0; flex: 1; margin-right: 6px;
-        }
+        .qty-mini-co { display: flex; align-items: center; background: #f5f5f5; border-radius: 6px; height: 28px; border: 1px solid #e0e0e0; flex: 1; margin-right: 6px; }
         .qm-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #555; cursor: pointer; }
         .qm-val { font-size: 0.8rem; font-weight: 700; flex: 1; text-align: center; }
-
-        .co-trash-btn { 
-            width: 28px; height: 28px; border-radius: 6px; background: #fee2e2; color: #b91c1c; 
-            display: flex; align-items: center; justify-content: center; cursor: pointer; 
-        }
-
-        .co-total-row { 
-            background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .co-total-label { font-size: 1rem; color: #2e2e2e; }
-        .co-total-val { font-size: 1.4rem; font-weight: 700; color: #2e2e2e; }
-
+        .co-trash-btn { width: 28px; height: 28px; border-radius: 6px; background: #fee2e2; color: #b91c1c; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .co-total-row { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .co-payment-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .co-payment-box select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; margin-top: 10px; background: white; }
-
         .co-footer { padding: 16px; border-top: 1px solid #f0f0f0; background: white; }
         .co-btn-final { width: 100%; padding: 14px; background: var(--primary); color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; text-align: center; }
 
+        /* FOOTER PRINCIPAL (SITE) */
+        .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 20px; margin-top: 40px; }
+        .footer-info { text-align: center; margin-bottom: 30px; }
+        .f-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: var(--secondary); font-weight: 600; font-size: 0.85rem; text-decoration: none; text-align: center; }
+        .copyright { text-align: center; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
+        
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+
+    <!-- HOME HEADER -->
+    <header id="main-header">
+        <div class="container header-inner">
+            <a href="#" class="logo" onclick="location.reload()"><div class="logo-circle">DA</div> Dona Antônia</a>
+            <div class="location-pill">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Cuiabá & VG
+            </div>
+        </div>
+    </header>
 
     <!-- WELCOME OVERLAY -->
     <div id="welcome-overlay" class="welcome-overlay">
@@ -545,21 +390,11 @@
 
     <!-- HOME VIEW -->
     <main id="home-view">
-        <header>
-            <div class="container header-inner">
-                <a href="#" class="logo" onclick="location.reload()"><div class="logo-circle">DA</div> Dona Antônia</a>
-                <div class="location-pill">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Cuiabá & VG
-                </div>
-            </div>
-        </header>
-        
         <section class="hero">
             <div class="container">
                 <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em 24h</div></div>
                 <h1>Monte a Cesta Básica <br>Perfeita para sua <span>Família</span></h1>
-                <p>Personalize com suas marcas favoritas (como Arroz Tio Alvino) ou escolha opções prontas. Economia real e entrega garantida.</p>
+                <p>Personalize com suas marcas favoritas (como Arroz Tio Alvino) ou escolha opções prontas.</p>
                 <button class="btn-cta" onclick="document.getElementById('baskets-anchor').scrollIntoView()" aria-label="Ver Cestas Disponíveis" style="margin-top:10px; background:var(--primary); color:white; padding:12px 30px; border-radius:50px; font-weight:800; font-size:1.1rem; box-shadow:0 4px 15px rgba(220,38,38,0.3);">Escolher Minha Cesta</button>
             </div>
         </section>
@@ -575,7 +410,7 @@
                 <div class="footer-info">
                     <h3>Dona Antônia Alimentos</h3>
                     <p>📍 Jardim Nossa Senhora Aparecida, Cuiabá - MT</p>
-                    <p>📞 <strong>(65) 99681-3588</strong> | <strong>(65) 99815-0975</strong></p>
+                    <p>📞 <strong>(65) 99681-3588</strong></p>
                 </div>
 
                 <div class="footer-actions">
@@ -586,21 +421,12 @@
                         <icon>📞</icon> Ligar Agora
                     </a>
                     <a href="https://g.page/r/CaIREJtO1L6WEAE/review" target="_blank" class="f-btn google">
-                        <icon>⭐</icon> Avaliar Google
-                    </a>
-                    <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="f-btn insta">
-                        <icon>📸</icon> Instagram
-                    </a>
-                    <a href="https://chat.whatsapp.com/IOI3gSBLRVk4jGK2QMunp1" target="_blank" class="f-btn group">
-                        <icon>🎁</icon> Grupo Ofertas
-                    </a>
-                    <a href="https://www.google.com/maps/search/?api=1&query=Dona+Antonia+Cestas+Basicas+Cuiaba" target="_blank" class="f-btn">
-                        <icon>📍</icon> Ver no Mapa
+                        <icon>⭐</icon> Avaliar
                     </a>
                 </div>
                 
                 <div class="copyright">
-                    &copy; 2024 Dona Antônia Alimentos. Todos os direitos reservados.
+                    &copy; 2024 Dona Antônia Alimentos.
                 </div>
             </div>
         </footer>
@@ -609,10 +435,20 @@
     <!-- CUSTOMIZER VIEW -->
     <div id="customizer-view" class="hidden">
         
-        <button class="fab-faq" onclick="App.openSheet('faq-sheet')">?</button>
+        <!-- NEW APP HEADER (IFOOD STYLE) -->
+        <div class="app-header">
+            <div class="ah-back-btn" onclick="App.goHome()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+            </div>
+            <div class="ah-search-box">
+                <svg class="ah-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" class="ah-search-input" placeholder="Buscar em Mercadinho" oninput="App.renderAllLists(this.value)">
+            </div>
+            <div class="ah-help-btn" onclick="App.openSheet('faq-sheet')">?</div>
+        </div>
 
         <div class="main-content-col">
-            <div class="container" style="padding-top:10px;">
+            <div class="container">
                 <div id="extras-container"></div>
             </div>
         </div>
@@ -635,14 +471,9 @@
                 <button class="ds-btn" onclick="App.openCheckout()">Concluir</button>
                 <button class="ds-btn-outline" onclick="App.goHome()">Voltar</button>
             </div>
-
-            <div class="ds-nav-row">
-                <div class="ds-nav-btn" onclick="App.openSheet('categories-sheet')">☰ Categorias</div>
-                <div class="ds-nav-btn" onclick="App.openSheet('faq-sheet')">? Dúvidas</div>
-            </div>
         </aside>
 
-        <!-- IFOOD STYLE CART BAR -->
+        <!-- FLOATING CART BAR -->
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
                 <span class="icb-label">Total sem taxa de entrega</span>
@@ -656,19 +487,6 @@
     </div>
 
     <!-- SHEETS & MODALS -->
-    <div id="categories-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('categories-sheet')">
-        <div class="sheet-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700; color:var(--secondary);">
-                <span>Categorias</span><span onclick="App.closeSheet('categories-sheet')">✕</span>
-            </div>
-            <button class="cat-list-btn" onclick="App.scrollToCat('MERCEARIA E ALIMENTOS')">MERCEARIA E ALIMENTOS <span>❯</span></button>
-            <button class="cat-list-btn" onclick="App.scrollToCat('CAFÉ DA MANHÃ E LANCHES')">CAFÉ DA MANHÃ E LANCHES <span>❯</span></button>
-            <button class="cat-list-btn" onclick="App.scrollToCat('LIMPEZA E LAVANDERIA')">LIMPEZA E LAVANDERIA <span>❯</span></button>
-            <button class="cat-list-btn" onclick="App.scrollToCat('CUIDADOS PESSOAIS')">CUIDADOS PESSOAIS <span>❯</span></button>
-            <button class="cat-list-btn" onclick="App.scrollToCat('BAZAR E UTILIDADES')">BAZAR E UTILIDADES <span>❯</span></button>
-        </div>
-    </div>
-
     <div id="info-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('info-sheet')">
         <div class="sheet-box">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
@@ -689,7 +507,6 @@
                 <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-text">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação (Alelo, Sodexo, Ticket, etc).</div></details>
                 <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
                 <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
-                <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho.</div></details>
             </div>
         </div>
     </div>
@@ -707,7 +524,7 @@
     <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
     <div id="credit-sub-toast" class="credit-sub-toast">Adicione novos produtos</div>
 
-    <!-- CHECKOUT MODAL (FULL EXPERIENCE) -->
+    <!-- CHECKOUT MODAL -->
     <dialog id="checkout-modal" class="modal-checkout">
         <div class="co-header">
             <span class="co-title">Finalizar Pedido</span>
@@ -715,7 +532,6 @@
         </div>
         <div class="co-body">
             <div class="co-section-title">Seus Itens</div>
-            <!-- Horizontal Scroll inside Modal as requested -->
             <div id="modal-cart-list" class="co-horizontal-list"></div>
             
             <div class="co-total-row">
@@ -753,24 +569,17 @@
                 try {
                     let res;
                     const paths = ['produtos/produtos.json', 'produtos.json'];
-                    
                     for (const path of paths) {
-                        try {
-                            res = await fetch(path + '?v=' + Date.now());
-                            if (res.ok) break;
-                        } catch (e) { continue; }
+                        try { res = await fetch(path + '?v=' + Date.now()); if (res.ok) break; } catch (e) { continue; }
                     }
-
                     if (!res || !res.ok) throw new Error("Arquivo de produtos não encontrado em nenhum local padrão.");
 
                     const raw = await res.json();
                     
                     this.data = raw.map(p => {
                         const catRaw = (p.categoria || "OUTROS").trim();
-                        // 1. Force Uppercase for internal logic (matches 'CESTA')
                         const catUpper = catRaw.toUpperCase();
                         
-                        // 2. Parse Subcategories from original string
                         const parts = catRaw.split('>');
                         const mainCat = parts[0].trim().toUpperCase();
                         const subCat = parts.length > 1 ? parts[1].trim() : "Geral";
@@ -783,22 +592,21 @@
                         else if (mainCat.includes('BAZAR') || mainCat.includes('UTILIDADES')) appCat = "BAZAR E UTILIDADES";
 
                         let rawVal = p.validade || p.Validade || "";
-                        let fmtVal = "";
-                        if (rawVal && rawVal !== '0' && rawVal !== '00') {
-                            fmtVal = App.formatDateBr(rawVal);
-                        }
+                        let fmtVal = (rawVal && rawVal !== '0' && rawVal !== '00') ? App.formatDateBr(rawVal) : "";
 
                         let hasLink = p.Tem_Ligacao || p.tem_ligacao || "Não";
                         let linkCode = p.Codigo_Produto_Ligado || p.codigo_produto_ligado || "";
 
+                        // SMART TITLE CASE LOGIC
+                        let smartName = this.toSmartTitleCase(p.nome.trim());
+
                         return {
                             ...p,
                             id: String(p.id),
-                            nome: p.nome.trim(),
+                            nome: smartName, // Applied Smart Casing
                             valor: parseFloat(p.valor || 0),
                             offerPrice: parseFloat(p.Valor_Oferta || 0),
                             isOffer: (p.Oferta === 'Sim'),
-                            isBest: (p.Mais_Vendido === 'Sim'),
                             appCategory: appCat,
                             subCategory: subCat, 
                             imagem: p.imagem ? (p.imagem.includes('/') ? `img/produtos/${p.imagem.split('/').pop()}` : `img/produtos/${p.imagem}`) : 'img/placeholder.jpg',
@@ -807,18 +615,27 @@
                             linkedCode: linkCode,
                             hasLink: (hasLink === 'Sim'),
                             validade: fmtVal,
-                            categoria: catUpper // Must be Upper for Home Filter
+                            categoria: catUpper
                         };
                     });
                     this.renderHome();
                 } catch (e) { 
                     console.error("Erro Fatal:", e);
-                    document.getElementById('home-list').innerHTML = 
-                        `<div style="text-align:center; padding:40px; color:#666;">
-                            <p style="font-weight:bold; font-size:1.1rem; color:#d32f2f;">Ops! Não foi possível carregar os produtos.</p>
-                            <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; background:#ea1d2c; color:white; border-radius:8px;">Tentar Novamente</button>
-                        </div>`;
+                    document.getElementById('home-list').innerHTML = `<div style="text-align:center; padding:40px;">Erro ao carregar produtos.</div>`;
                 }
+            },
+
+            // LOGICA INTELIGENTE DE MAIÚSCULAS/MINÚSCULAS
+            toSmartTitleCase(str) {
+                const smallWords = ['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'sem', 'para', 'por', 'na', 'no', 'em', 'ao', 'a'];
+                const upperWords = ['kg', 'ml', 'g', 'l', 'un', 'pvc', 'uht', 'pet', 'ypê', 'ype', 'sbp', 'tixan', 'qboa', 'uva', 'waffer', 'wafer', 'm&ms'];
+                
+                return str.toLowerCase().split(' ').map((word, index) => {
+                    if (index === 0) return word.charAt(0).toUpperCase() + word.slice(1); // Sempre maiúscula no começo
+                    if (upperWords.includes(word)) return word.toUpperCase(); // Siglas e Marcas
+                    if (smallWords.includes(word)) return word; // Preposições
+                    return word.charAt(0).toUpperCase() + word.slice(1); // Padrão
+                }).join(' ');
             },
 
             formatDateBr(dateStr) {
@@ -905,10 +722,10 @@
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                const searchValue = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
-                const query = (filter !== null) ? filter : searchValue;
+                // Uses the input value or null
+                const query = filter ? filter : "";
 
-                if (query && query.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
+                if (query && query.length > 1) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
                 
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
                 let html = "";
@@ -917,7 +734,6 @@
                     const itemsInMain = products.filter(p => p.appCategory === mainCat);
                     
                     if(itemsInMain.length > 0) {
-                        // NOTE: Main Category Title removed as requested. Only Subcategories shown.
                         const subGroups = {};
                         itemsInMain.forEach(p => {
                             if(!subGroups[p.subCategory]) subGroups[p.subCategory] = [];
@@ -936,10 +752,8 @@
                     }
                 });
 
-                container.innerHTML = html || '<p style="text-align:center; padding:40px;">Nada encontrado.</p>';
+                container.innerHTML = html || '<p style="text-align:center; padding:40px; color:#999;">Nada encontrado.</p>';
                 this.updateTotal();
-                
-                // Update Desktop Sidebar
                 this.renderIncluded(document.getElementById('included-list-desk'));
             },
 
@@ -975,13 +789,10 @@
                 }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
             },
 
-            // Generates initial HTML for card. IMPORTANT: Adds IDs for targeted updates.
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 
-                // Button logic: If qty > 0, show controls. Else show Add button.
-                // We add specific IDs (btn-add-{id}, qty-ctrl-{id}, qty-val-{id}) to update them directly later.
                 const btnHtml = qty === 0 
                     ? `<button id="btn-add-${p.id}" class="btn-add" onclick="App.modQty('${p.id}', 1)">Adicionar</button>
                        <div id="qty-ctrl-${p.id}" class="qty-ctrl hidden">
@@ -1033,11 +844,7 @@
                 </div>`;
             },
 
-            removeItem(id) {
-                if (this.cart[id]) {
-                    this.modQty(id, -this.cart[id]); 
-                }
-            },
+            removeItem(id) { if (this.cart[id]) this.modQty(id, -this.cart[id]); },
 
             countRemovals() {
                 let count = 0;
@@ -1069,31 +876,19 @@
                     }
                 }
                 
-                // CRITICAL FIX: Targeted DOM Update instead of Full Re-render
-                // 1. Update the Card UI immediately without moving it
                 this.updateCardUI(id, newQty);
-                
-                // 2. Update Sidebar List (Full re-render of sidebar is cheap and okay, doesn't affect scroll of main list)
                 this.renderIncluded(document.getElementById('included-list-desk'));
-                
-                // 3. If Modal is Open, update that too
                 const modal = document.getElementById('checkout-modal');
-                if(modal.open) {
-                    this.renderIncluded(document.getElementById('modal-cart-list'), true);
-                }
+                if(modal.open) this.renderIncluded(document.getElementById('modal-cart-list'), true);
                 
-                // 4. Update Totals
                 this.updateTotal();
-
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
             },
 
-            // Helper to update card without re-rendering list
             updateCardUI(id, qty) {
                 const btnAdd = document.getElementById(`btn-add-${id}`);
                 const qtyCtrl = document.getElementById(`qty-ctrl-${id}`);
                 const qtyVal = document.getElementById(`qty-val-${id}`);
-
                 if (btnAdd && qtyCtrl && qtyVal) {
                     if (qty > 0) {
                         btnAdd.classList.add('hidden');
@@ -1196,7 +991,6 @@
 
             scrollToCat(name) {
                 App.closeSheet('categories-sheet');
-                // Scroll to top as default since headers are hidden
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
