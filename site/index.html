@@ -3,12 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Smart Pricing Engine
+        ARCHITECT: SEO Code Architect (SCA) - Clean Desktop Layout
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - CHECKOUT: Detalhamento financeiro (Base + Extras - Descontos).
-        - LOGIC: Algoritmo de Cortesia (Desconto automático se extras < 2%).
-        - UI: Breakdown visual claro no modal de pagamento.
+        - DESKTOP: Removida barra lateral (Sidebar).
+        - DESKTOP: Largura máxima de conteúdo fixada em 1200px.
+        - UI: Barra flutuante de checkout ativada para todas as resoluções.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -57,7 +57,6 @@
             --border-color: #f2f2f2;
             --header-height: 60px; 
             --app-header-height: 56px; 
-            --sidebar-width: 340px;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -68,7 +67,8 @@
             background-color: var(--bg-body);
         }
         
-        .container { max-width: 1280px; margin: 0 auto; padding: 0 16px; width: 100%; }
+        /* Ajuste de largura desktop solicitado: 1200px */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; width: 100%; }
         
         img { display: block; max-width: 100%; height: auto; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
@@ -262,47 +262,23 @@
         }
         .qc-val { font-weight: 600; font-size: 0.9rem; }
 
-        /* --- 7. DESKTOP LAYOUT (FIXED GRID OVERFLOW) --- */
-        .desktop-sidebar { display: none; }
-        
+        /* --- 7. DESKTOP LAYOUT --- */
         @media(min-width: 1024px) {
             .scroll-btn { display: flex; }
             
             #customizer-view:not(.hidden) { 
-                padding-bottom: 0; display: grid !important; 
-                grid-template-columns: minmax(0, 1fr) var(--sidebar-width); 
-                gap: 40px; 
-                max-width: 1280px; margin: 0 auto; padding: 40px 20px; align-items: start;
+                /* Removido layout de grid que incluia a sidebar */
+                max-width: 1200px; /* Limite de 1200px solicitado */
+                margin: 0 auto; 
+                padding: 40px 20px;
                 padding-top: calc(var(--app-header-height) + 20px); 
-            }
-            .ifood-cart-bar { display: none; }
-            
-            .desktop-sidebar {
-                display: flex; flex-direction: column;
-                position: sticky; top: 90px;
-                background: white; border-radius: 16px;
-                padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-                max-height: calc(100vh - 110px); overflow-y: auto;
+                padding-bottom: 100px; /* Espaço para barra flutuante */
             }
             
-            .ds-section-title { font-size: 1rem; font-weight: 700; color: #2e2e2e; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-            .ds-divider { height: 1px; background: #f0f0f0; margin: 20px 0; }
-            .ds-total { font-size: 1.4rem; font-weight: 700; color: #2e2e2e; text-align: right; margin: 10px 0 20px; }
-            .ds-actions-row { display: flex; gap: 10px; margin-bottom: 15px; }
-            .ds-btn { flex: 1; padding: 12px; background: var(--primary); color: white; font-weight: 600; border-radius: 8px; font-size: 0.95rem; cursor: pointer; border: none; white-space: nowrap; }
-            .ds-btn-outline { flex: 1; padding: 12px; background: #fff; border: 1px solid #e2e8f0; color: #2e2e2e; font-weight: 600; border-radius: 8px; cursor: pointer; font-size: 0.95rem; white-space: nowrap; }
-            
-            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; transition: all 0.2s; font-size: 0.7rem; }
-            .card-inc { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; align-items: center; }
-            .ci-img { width: 40px; height: 40px; object-fit: contain; mix-blend-mode: multiply; cursor: pointer; }
-            .ci-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
-            .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 28px; }
-            .qs-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; }
-            .qs-val { font-weight: 600; font-size: 0.8rem; padding: 0 6px; }
-            .ci-trash { color: #b91c1c; padding: 4px; cursor: pointer; }
+            /* Sidebar removida, nada a exibir aqui */
         }
 
-        /* --- 8. FLOATING CART BAR (MOBILE) --- */
+        /* --- 8. FLOATING CART BAR (MOBILE & DESKTOP) --- */
         .ifood-cart-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #ffffff; border-top: 1px solid #f0f0f0;
@@ -487,27 +463,9 @@
             </div>
         </div>
 
-        <aside class="desktop-sidebar">
-            <div class="ds-section-title">
-                Minha Cesta
-                <span id="limit-alert-desk" class="limit-alert">Alt: 0/0</span>
-            </div>
-            
-            <div class="v-nav-ctrl up" onclick="App.scrollVertical(-1)">▲</div>
-            <div id="included-list-desk" class="vertical-slider"></div>
-            <div class="v-nav-ctrl down" onclick="App.scrollVertical(1)">▼</div>
-            
-            <div class="ds-divider"></div>
-            
-            <div class="ds-total" id="ds-total">R$ 0,00</div>
-            
-            <div class="ds-actions-row">
-                <button class="ds-btn" onclick="App.openCheckout()">Concluir</button>
-                <button class="ds-btn-outline" onclick="App.goHome()">Voltar</button>
-            </div>
-        </aside>
+        <!-- SIDEBAR REMOVIDA NO DESKTOP -->
 
-        <!-- FLOATING CART BAR (MOBILE) -->
+        <!-- FLOATING CART BAR (MOBILE & DESKTOP) -->
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
                 <span class="icb-label">Total sem taxa de entrega</span>
