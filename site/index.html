@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 11.3 - Home Card Refinement
+        VERSION: 11.4 - Clean Header & Toast Refinement
         CHANGELOG:
-        - HOME UI: Card da cesta ajustado para layout horizontal (Foto Esq | Info Dir).
-        - HOME UI: Imagem da cesta reduzida e alinhada à esquerda.
-        - HOME UI: Itens do carrossel da cesta aumentados (+30% tamanho) para melhor visibilidade.
-        - CSS: Ajustes de grid e flexbox para o novo layout dos cards da home.
+        - UI: Removido cabeçalho textual redundante do customizador.
+        - UI: Toast de Crédito movido para top: 30px.
+        - UI: Adicionado Toast Auxiliar ("Adicione novos produtos") abaixo do crédito.
+        - HOME UI: Imagens da cesta e dos itens aumentadas em +20%.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -96,14 +96,14 @@
         /* Top Section: Image Left | Info Right */
         .hbc-top {
             display: grid; 
-            grid-template-columns: 100px 1fr; /* Image fixed width | Content fluid */
+            grid-template-columns: 120px 1fr; /* Increased image column */
             gap: 15px; padding: 15px;
             border-bottom: 1px solid #f8fafc;
             align-items: center;
         }
 
         .hbc-img-wrap { 
-            width: 100%; height: 100px; /* Reduced size */
+            width: 100%; height: 120px; /* Increased +20% */
             display: flex; align-items: center; justify-content: center; 
             background: #fff; border-radius: 8px;
         }
@@ -124,11 +124,11 @@
         
         /* Larger Items inside carousel */
         .hbc-item { 
-            flex: 0 0 80px; /* Increased from 60px (+33%) */
+            flex: 0 0 96px; /* Increased from 80px (+20%) */
             display: flex; flex-direction: column; align-items: center; gap: 4px; 
             background: #fff; border-radius: 6px; padding: 6px; border: 1px solid #eee;
         }
-        .hbc-item img { width: 60px; height: 60px; object-fit: contain; } /* Increased from 40px */
+        .hbc-item img { width: 72px; height: 72px; object-fit: contain; } /* Increased from 60px (+20%) */
         .hbc-item span { font-size: 0.65rem; font-weight: 700; color: var(--text-light); background: #e2e8f0; padding: 1px 6px; border-radius: 4px; }
 
         /* Action Buttons */
@@ -379,13 +379,23 @@
         .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
         
         .credit-toast {
-            position: fixed; top: 100px; left: 50%; transform: translate(-50%, 0);
+            position: fixed; top: 30px; left: 50%; transform: translate(-50%, 0);
             background: rgba(30, 41, 59, 0.95); color: white;
             padding: 12px 24px; border-radius: 50px; font-weight: 600;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
             z-index: 12000; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
         .credit-toast.visible { opacity: 1; }
+
+        /* Sub Toast for Credit Info */
+        .credit-sub-toast {
+            position: fixed; top: 80px; left: 50%; transform: translate(-50%, 0);
+            background: #dcfce7; color: #166534;
+            padding: 6px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 600;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            z-index: 11900; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .credit-sub-toast.visible { opacity: 1; }
 
         /* Checkout Modal */
         dialog.modal-checkout {
@@ -443,15 +453,10 @@
 
         <!-- LEFT COLUMN (MAIN CONTENT) -->
         <div class="main-content-col">
-            <!-- MERCADINHO HEADER -->
-            <div class="mercadinho-header">
-                <h2 id="cust-title-text" style="font-size:0.9rem; color:var(--text-light); margin-bottom:5px;">Personalizar Cesta</h2>
-                <h3>🏪 Mercadinho</h3>
-                <p style="font-size:0.8rem; color:var(--text-light);">Adicione itens extras à sua cesta</p>
-            </div>
+            <!-- REMOVED HEADER TEXT -->
             
             <!-- PRODUCTS GRID -->
-            <div class="container">
+            <div class="container" style="padding-top:10px;">
                 <div id="extras-container"></div>
             </div>
         </div>
@@ -566,8 +571,9 @@
         <div onclick="document.getElementById('suggestion-toast').classList.remove('visible')" style="padding:0 5px; font-size:1.2rem;">×</div>
     </div>
 
-    <!-- CREDIT TOAST -->
+    <!-- CREDIT TOASTS -->
     <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
+    <div id="credit-sub-toast" class="credit-sub-toast">Adicione novos produtos</div>
 
     <dialog id="checkout-modal" class="modal-checkout">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700;">
@@ -699,7 +705,6 @@
                     basket.items.forEach(i => {
                         let match = this.data.find(p => p.id === String(i.id));
                         if(match) {
-                            // FIXED: Use correct qty property from JSON (qty not qtd)
                             this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qty || 1));
                             if(!this.cartOrder.includes(match.id)) this.cartOrder.push(match.id);
                         }
@@ -736,9 +741,8 @@
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                // For desktop search
-                const deskInput = document.getElementById('desk-search');
-                const query = (filter !== null) ? filter : (deskInput ? deskInput.value : "");
+                const searchValue = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
+                const query = (filter !== null) ? filter : searchValue;
 
                 if (query && query.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
                 products.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
@@ -902,12 +906,16 @@
                 const txt = 'R$ ' + total.toFixed(2).replace('.', ',');
                 
                 const toast = document.getElementById('credit-toast');
+                const subToast = document.getElementById('credit-sub-toast');
+                
                 if (this.currentBasket.valor > (sum + this.baseFee)) {
                     const diff = this.currentBasket.valor - (sum + this.baseFee);
                     toast.innerText = `Você tem R$ ${diff.toFixed(2).replace('.',',')} em crédito!`;
                     toast.classList.add('visible');
+                    subToast.classList.add('visible');
                 } else {
                     toast.classList.remove('visible');
+                    subToast.classList.remove('visible');
                 }
 
                 if(document.getElementById('mba-total')) document.getElementById('mba-total').innerText = txt;
