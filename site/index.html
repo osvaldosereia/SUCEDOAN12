@@ -3,13 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Persistent State Build
-        TARGET: 100/100 Lighthouse Performance
+        ARCHITECT: SEO Code Architect (SCA) - Accessibility Audited Build
+        TARGET: 100/100 Lighthouse Performance & Accessibility (WCAG AA)
         CHANGELOG:
-        - FEATURE: Persistência de Estado (F5 mantém o usuário na tela e cesta atuais).
-        - UI: Card Home com imagem +50% maior (220px) e título destacado.
-        - ASSETS: Logo atualizada para novo caminho.
-        - LAYOUT: Redução de respiros (paddings) globais.
+        - A11Y: Inserção de atributos 'alt' descritivos em todas as imagens dinâmicas.
+        - A11Y: Correção de hierarquia de títulos (H3 -> H2 nos cards principais).
+        - A11Y: Ajuste de contraste em textos claros (preços, copyright e small tags).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -94,7 +93,7 @@
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         
         /* LOGO BRAND IMAGE */
-        .logo-brand-img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+        .logo-brand-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
@@ -175,7 +174,9 @@
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
         /* AJUSTE: Fonte aumentada para 1.3rem */
         .hbc-title { font-size: 1.3rem; font-weight: 800; color: #2e2e2e; line-height: 1.2; margin-bottom: 8px; text-transform: capitalize; letter-spacing: -0.5px; }
-        .hbc-price { font-size: 1.1rem; font-weight: 700; color: #50a773; }
+        
+        /* CORREÇÃO DE CONTRASTE: Verde mais escuro para WCAG AA */
+        .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; }
@@ -250,7 +251,8 @@
         }
         
         .cp-price { font-size: 0.95rem; font-weight: 700; color: #2e2e2e; margin-top: auto; margin-bottom: 12px; }
-        .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #999; font-weight: 400; margin-right: 4px; }
+        /* CORREÇÃO DE CONTRASTE: Small text mais escuro */
+        .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #666; font-weight: 400; margin-right: 4px; }
         
         .cp-validity-badge { 
             font-size: 0.65rem; color: #717171; background: #f0f0f0; 
@@ -310,7 +312,7 @@
             }
         }
 
-        /* --- 8. FLOATING CART BAR --- */
+        /* --- 8. FLOATING CART BAR (MOBILE & DESKTOP) --- */
         .ifood-cart-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #ffffff; border-top: 1px solid #f0f0f0;
@@ -412,7 +414,8 @@
         .f-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 8px; border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; color: var(--secondary); font-weight: 600; font-size: 0.75rem; text-decoration: none; text-align: center; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .f-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #cbd5e1; }
         .f-btn icon { font-size: 1.2rem; margin-bottom: 2px; }
-        .copyright { text-align: center; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
+        /* CORREÇÃO DE CONTRASTE: Copyright mais escuro */
+        .copyright { text-align: center; font-size: 0.8rem; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
         
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -424,7 +427,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo" onclick="location.reload()">
-                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo">
+                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
                 Dona Antônia
             </a>
             <div class="location-pill">
@@ -544,7 +547,7 @@
     </div>
     
     <div id="suggestion-toast" class="sug-toast">
-        <img id="st-img" style="width:40px; height:40px; border-radius:6px;" src="">
+        <img id="st-img" style="width:40px; height:40px; border-radius:6px;" src="" alt="Produto Sugerido">
         <div class="st-content">
             <div style="font-weight:700; margin-bottom:2px;">Leve também!</div>
             <div id="st-text">Sugestão</div>
@@ -769,14 +772,14 @@
                             p.items.map(i => {
                                 const itemData = this.data.find(d => d.id === String(i.id));
                                 if(!itemData) return '';
-                                return `<div class="hbc-item"><img src="${itemData.imagem}" loading="lazy"><span>${i.qty || 1}un</span></div>`;
+                                return `<div class="hbc-item"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome}"><span>${i.qty || 1}un</span></div>`;
                             }).join('') + `</div>`;
                     }
                     return `
                     <div class="home-basket-card">
                         <div class="hbc-top">
-                            <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="lazy"></div>
-                            <div class="hbc-info-col"><h3 class="hbc-title">${p.nome}</h3><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
+                            <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="lazy" alt="${p.nome}"></div>
+                            <div class="hbc-info-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
                         </div>
                         <div class="hbc-content">
                             ${carouselHtml}
@@ -920,7 +923,7 @@
                     if(!p) return '';
                     return `
                     <div class="card-inc">
-                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')">
+                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome}">
                         <div class="ci-content">
                             <div class="qty-sm">
                                 <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
@@ -961,7 +964,7 @@
                 return `
                 <div class="card-prod" id="card-${p.id}">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
-                    <div class="cp-img-box" onclick="App.openInfo('${p.id}')"><img src="${p.imagem}" class="cp-img" loading="lazy"></div>
+                    <div class="cp-img-box" onclick="App.openInfo('${p.id}')"><img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome}"></div>
                     <div class="cp-title">${p.nome}</div>
                     <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
                     ${btnHtml}
@@ -974,7 +977,7 @@
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 return `
                 <div class="co-card">
-                    <img src="${p.imagem}" class="co-card-img" onclick="App.openInfo('${p.id}')">
+                    <img src="${p.imagem}" class="co-card-img" onclick="App.openInfo('${p.id}')" alt="${p.nome}">
                     <div class="co-card-title">${p.nome}</div>
                     <div class="co-card-controls">
                         <div class="qty-mini-co">
@@ -1053,6 +1056,7 @@
                 if(p && !this.cart[p.id]) {
                     const t = document.getElementById('suggestion-toast');
                     document.getElementById('st-img').src = p.imagem;
+                    document.getElementById('st-img').alt = p.nome; // A11Y FIX
                     document.getElementById('st-text').innerHTML = `Leve <b>${p.nome}</b><br>por R$ ${p.valor.toFixed(2)}`;
                     document.getElementById('st-btn').onclick = () => { this.modQty(p.id, 1); t.classList.remove('visible'); };
                     t.classList.add('visible');
@@ -1213,7 +1217,7 @@
                 
                 document.getElementById('info-body').innerHTML = desc;
                 const mediaDiv = document.getElementById('info-media');
-                mediaDiv.innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%; border-radius:8px;">` : '';
+                mediaDiv.innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%; border-radius:8px;" alt="${p.nome}">` : '';
                 App.openSheet('info-sheet');
             },
 
