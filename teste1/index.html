@@ -1,526 +1,1010 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" dir="ltr">
 <head>
     <!-- 
         ================================================================
-        PILLAR 1: EXTREME PERFORMANCE & LOCAL SEO STRATEGY
-        (Conteúdo SEO Mantido Originalmente do index (14).html)
+        ARCHITECT: SEO Code Architect (SCA)
+        VERSION: 9.10 - Dark Mode Force Fix
+        CHANGELOG:
+        - FIX CRÍTICO: Meta tag 'color-scheme' adicionada para bloquear modo noturno nativo.
+        - CSS: Propriedade 'color-scheme: light' forçada no :root.
+        - CSS: Media Query 'prefers-color-scheme: dark' adicionada para sobrescrever configurações do SO.
         ================================================================
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
-    <title>Cestas Básicas em Cuiabá e VG | Dona Antônia | Entrega Grátis Hoje</title>
-    <meta name="description" content="Procurando Cesta Básica em Cuiabá ou Várzea Grande com menor preço? A Dona Antônia entrega hoje! Atacado e Varejo. Pague somente na entrega.">
-    
+    <!-- FORÇA O MODO CLARO (LIGHT MODE) NO NAVEGADOR -->
+    <meta name="color-scheme" content="light only">
     <meta name="theme-color" content="#ffffff">
-    <meta name="robots" content="index, follow">
     
-    <link rel="canonical" href="https://www.donaantonia.com.br">
-    <meta name="geo.region" content="BR-MT" />
-    <meta name="geo.placename" content="Cuiabá" />
-    <meta name="geo.position" content="-15.6025;-56.0968" />
-    <meta name="ICBM" content="-15.6025, -56.0968" />
-
-    <meta property="og:locale" content="pt_BR" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Cestas Básicas em Cuiabá e VG | Dona Antônia" />
-    <meta property="og:image" content="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" />
-
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-P4WL7N93');</script>
-
-    <!-- Meta Pixel Code -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1847274250009044');
-    fbq('track', 'PageView');
-    </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=1847274250009044&ev=PageView&noscript=1"
-    /></noscript>
-
-    <!-- Schema Markup Avançado (Mantido do Original) -->
-    <script type="application/ld+json">
-    [
-      {
-        "@context": "https://schema.org",
-        "@type": "GroceryStore",
-        "name": "Super Cestas Dona Antônia",
-        "image": "https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif",
-        "telephone": "+5565998150975",
-        "url": "https://www.donaantonia.com.br",
-        "priceRange": "$$",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "R. Trinta, 105 - Jardim Nossa Sra. Aparecida",
-          "addressLocality": "Cuiabá",
-          "addressRegion": "MT",
-          "postalCode": "78090-660",
-          "addressCountry": "BR"
-        },
-        "geo": { "@type": "GeoCoordinates", "latitude": -15.6025, "longitude": -56.0968 },
-        "openingHoursSpecification": [
-          { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], "opens": "07:30", "closes": "18:00" }
-        ],
-        "areaServed": [ { "@type": "City", "name": "Cuiabá" }, { "@type": "City", "name": "Várzea Grande" } ]
-      }
-    ]
-    </script>
+    <title>Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia</title>
+    <meta name="description" content="Compre Cesta Básica em Cuiabá e Várzea Grande com entrega grátis*. Personalize sua cesta com Arroz Tio Alvino. Pagamento na entrega.">
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="produtos/produtos.json" as="fetch" crossorigin="anonymous">
 
     <style>
-        /* =========================================
-           CSS CLASSLESS OTIMIZADO (SEM TAILWIND)
-           ========================================= */
-        :root {
-            --bg: #f9fafb;
-            --surface: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #4b5563;
-            --accent: #059669; /* Verde Vendas */
-            --accent-hover: #047857;
-            --brand-blue: #2563EB;
-            --border: #e5e7eb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --radius: 12px;
+        /* --- 1. RESET & VARIABLES --- */
+        :root { 
+            color-scheme: light; /* Informa ao CSS que o esquema é claro */
+            
+            --primary: #dc2626; 
+            --primary-dark: #b91c1c; 
+            --secondary: #1e293b; 
+            --text-main: #334155; 
+            --text-light: #475569; 
+            --bg-body: #ffffff;
+            --border-color: #e2e8f0;
+            --header-height: 60px;
+            --app-bar-height: 60px;
+            --checkout-bar-height: 80px; 
+            --radius-lg: 16px;
+            --shadow-float: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            margin: 0;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Layout Grid Principal */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .layout-grid {
-            display: grid;
-            gap: 30px;
-            grid-template-columns: 1fr;
-        }
-
-        @media (min-width: 1024px) {
-            .layout-grid {
-                grid-template-columns: 320px 1fr; /* Sidebar Fixa | Conteúdo */
-                align-items: start;
+        /* TRAVA DE SEGURANÇA PARA MODO NOTURNO FORÇADO */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #ffffff !important;
+                --text-main: #334155 !important;
+                --text-light: #475569 !important;
+                --border-color: #e2e8f0 !important;
             }
-            aside { position: sticky; top: 20px; }
+            body, html {
+                background-color: #ffffff !important;
+                color: #334155 !important;
+            }
         }
-
-        /* Cabeçalho */
-        header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 15px 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo-area { display: flex; align-items: center; gap: 12px; }
-        .logo-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .brand-name { font-size: 1.2rem; font-weight: 800; line-height: 1.1; color: var(--text-main); }
-        .brand-subtitle { color: var(--brand-blue); }
-
-        .nav-desktop { display: none; gap: 10px; }
-        @media (min-width: 768px) { .nav-desktop { display: flex; } }
-
-        /* Componentes Gerais */
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            box-shadow: var(--shadow);
-            margin-bottom: 24px;
-        }
-
-        h1, h2, h3 { margin-top: 0; color: #111; }
-        h2 { font-size: 1.5rem; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 20px; }
         
-        button {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        html { scroll-behavior: smooth; background-color: #ffffff; }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-body); color: var(--text-main); line-height: 1.5; 
+            padding-bottom: var(--app-bar-height); -webkit-font-smoothing: antialiased; 
             width: 100%;
-            font-size: 1rem;
-            transition: opacity 0.2s;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
-        button:hover { opacity: 0.9; }
-        
-        .btn-blue { background-color: var(--brand-blue); }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-
-        /* Lista de Produtos (Design Solicitado) */
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        
-        .basket-img-container { position: relative; overflow: hidden; border-radius: 8px; margin-bottom: 15px; background: #f3f4f6; }
-        .basket-img { width: 100%; height: auto; display: block; transition: transform 0.3s; }
-        .basket-img:hover { transform: scale(1.05); }
-        
-        .basket-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        .option-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
-        }
-        .option-item.selected { border-color: var(--accent); background-color: #ecfdf5; ring: 1px solid var(--accent); }
-        .option-price { font-weight: 800; color: var(--text-main); font-size: 1.1rem; }
-
-        /* LISTA LIMPA DE ITENS (Ajuste Solicitado) */
-        .item-list-container {
-            background-color: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            padding: 15px;
-            margin-top: 15px;
-        }
-        .item-list-header {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #64748b;
-            border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 8px;
-        }
-        .clean-list { list-style: none; padding: 0; margin: 0; }
-        .clean-list li {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 6px 0; border-bottom: 1px solid #e2e8f0;
-            font-size: 0.95rem; color: #334155;
-        }
-        .clean-list li:last-child { border-bottom: none; }
-        .qty-badge {
-            background: #e0f2fe; color: #0369a1; 
-            font-weight: 700; font-size: 0.85rem;
-            padding: 2px 8px; border-radius: 4px; min-width: 30px; text-align: center;
         }
 
-        /* Detalhes (FAQ) */
-        details {
-            background: white; border: 1px solid var(--border);
-            border-radius: 8px; margin-bottom: 10px; overflow: hidden;
+        @media (min-width: 1024px) { body { padding-bottom: 0; } }
+        
+        .container { max-width: 1320px; margin: 0 auto; padding: 0 16px; width: 100%; }
+        img { display: block; max-width: 100%; height: auto; }
+        button { cursor: pointer; border: none; font-family: inherit; background: none; }
+        .hidden { display: none !important; }
+        
+        .visually-hidden {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
-        summary { padding: 15px; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
-        summary::after { content: "+"; font-size: 1.2rem; color: var(--brand-blue); }
-        details[open] summary::after { content: "-"; }
-        details > div { padding: 15px; border-top: 1px solid #f3f4f6; color: var(--text-muted); font-size: 0.95rem; }
 
-        /* Footer */
-        footer { background: #111827; color: #9ca3af; padding: 40px 20px; text-align: center; font-size: 0.9rem; margin-top: 40px; }
+        /* --- 2. HEADER --- */
+        header { 
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
+            background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color); z-index: 1000; 
+            display: flex; align-items: center; backdrop-filter: blur(8px); transition: transform 0.3s ease;
+        }
         
-        /* Utilitários */
-        .badge-free { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-number { background: #eff6ff; color: #1d4ed8; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; margin-right: 8px; }
+        @media (min-width: 1024px) {
+            header { position: relative; } 
+            body.header-hidden header { transform: none; } 
+        }
         
-        /* Modal */
-        dialog { border: none; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 0; max-width: 500px; width: 90%; }
-        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        body.header-hidden header { transform: translateY(-100%); }
+
+        .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
+        
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.2rem; color: var(--secondary); text-decoration: none; }
+        .logo-circle { width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #b91c1c; font-weight: 800; font-size: 0.9rem; }
+        
+        .location-pill { 
+            font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
+            padding: 6px 14px; border-radius: 50px; border: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        /* --- 3. MOBILE APP BAR --- */
+        .mobile-app-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; height: var(--app-bar-height);
+            background: #ffffff; border-top: 1px solid var(--border-color);
+            z-index: 9999; display: grid; grid-template-columns: repeat(4, 1fr);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
+        }
+        @media (min-width: 1024px) { .mobile-app-bar { display: none !important; } }
+
+        .app-bar-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 4px; color: var(--text-light); text-decoration: none; font-size: 0.7rem; 
+            font-weight: 500; height: 100%; border: none; background: transparent; padding: 0;
+        }
+        .app-bar-btn svg { width: 24px; height: 24px; stroke-width: 2px; }
+        .app-bar-btn.highlight { color: #b45309; } 
+
+        /* --- 4. MOBILE CHECKOUT BAR --- */
+        .mobile-checkout-bar {
+            position: fixed; 
+            bottom: var(--app-bar-height); 
+            left: 0; right: 0; height: var(--checkout-bar-height);
+            background: #ffffff; border-top: 1px solid var(--border-color);
+            z-index: 9998; 
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; box-shadow: 0 -4px 25px rgba(0,0,0,0.1);
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @media (min-width: 1024px) { .mobile-checkout-bar { display: none !important; } }
+
+        .mcb-total { display: flex; flex-direction: column; line-height: 1.2; }
+        .mcb-label { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; font-weight: 600; }
+        .mcb-value { font-size: 1.3rem; font-weight: 800; color: var(--primary); }
+        
+        .mcb-btn {
+            background: #16a34a; color: white; border-radius: 50px; 
+            padding: 12px 24px; font-weight: 700; font-size: 1rem;
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+        }
+
+        /* --- 5. HERO --- */
+        #home-view { padding-top: var(--header-height); }
+        @media (min-width: 1024px) { #home-view { padding-top: 0; } }
+        
+        .hero { background: #ffffff; padding: 40px 0 60px; text-align: center; border-bottom: 1px solid #f1f5f9; position: relative; overflow: hidden; }
+        .hero-title { font-size: 2rem; font-weight: 800; color: var(--secondary); margin-bottom: 16px; line-height: 1.1; letter-spacing: -0.5px; }
+        .hero-title span { color: var(--primary); }
+        .hero-text { color: var(--text-light); font-size: 1.1rem; max-width: 500px; margin: 0 auto 30px; font-weight: 400; }
+        
+        .btn-cta-primary {
+            background: var(--primary); color: white; font-weight: 700; padding: 14px 36px; 
+            border-radius: 50px; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+            display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s;
+        }
+        .btn-cta-primary:hover { transform: scale(1.03); background: var(--primary-dark); }
+        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
+        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.85rem; font-weight: 600; color: var(--secondary); }
+        
+        @media (min-width: 768px) { .hero { padding: 80px 0; } .hero-title { font-size: 3.5rem; } }
+
+        /* --- 6. HOME GRID --- */
+        .home-grid-container { padding: 40px 16px 80px; }
+        .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 24px; max-width: 1280px; margin: 0 auto; }
+        @media (min-width: 600px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(4, 1fr); gap: 30px; } }
+
+        .home-card { 
+            background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-color);
+            overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .home-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-float); border-color: #cbd5e1; }
+        .hc-image-wrap { width: 100%; aspect-ratio: 1/1; position: relative; background: #fff; display: flex; align-items: center; justify-content: center; padding: 20px; border-bottom: 1px solid #f8fafc; }
+        .hc-image { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .hc-content { padding: 20px; flex: 1; display: flex; flex-direction: column; text-align: center; }
+        .hc-title { font-size: 1.35rem; font-weight: 700; color: var(--secondary); margin-bottom: 8px; line-height: 1.2; }
+        .hc-price { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
+        .hc-actions { margin-top: auto; display: grid; gap: 10px; }
+        .btn-outline { border: 1px solid var(--border-color); background: white; color: var(--secondary); font-weight: 600; padding: 10px; border-radius: 50px; width: 100%; }
+        .btn-fill { background: var(--secondary); color: white; border: none; font-weight: 600; padding: 12px; border-radius: 50px; width: 100%; }
+
+        /* --- 7. CUSTOMIZER --- */
+        #customizer-view { padding-top: var(--header-height); background: #f8fafc; min-height: 100vh; padding-bottom: 150px; }
+        @media(min-width: 1024px) { 
+            #customizer-view { padding-bottom: 0; padding-top: 0; } 
+        }
+
+        .cust-header-bar { 
+            background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color);
+            position: sticky; top: var(--header-height); z-index: 900; backdrop-filter: blur(10px);
+            padding: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        @media(min-width: 1024px) {
+            .cust-header-bar { top: 0; z-index: 1050; } 
+        }
+
+        .ch-container { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .ch-back-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        
+        .ch-info { display: flex; flex-direction: column; }
+        .ch-info h2 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; line-height: 1.2; }
+        
+        .limit-badge {
+            font-size: 0.75rem; color: #b45309; background: #fffbeb; 
+            border: 1px solid #fde68a; padding: 2px 8px; border-radius: 4px;
+            margin-top: 2px; display: inline-block; width: fit-content;
+        }
+        .limit-badge.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
+
+        .ch-search-box { flex: 1; max-width: 500px; position: relative; }
+        .ch-input { width: 100%; height: 42px; border-radius: 50px; border: 1px solid var(--border-color); padding: 0 40px 0 20px; font-size: 0.95rem; background: #f1f5f9; }
+        .ch-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
+        .ch-desktop-cart { display: none; }
+
+        .app-grid { display: block; margin-top: 24px; padding-bottom: 40px; }
+        @media (min-width: 1024px) {
+            .app-grid { display: grid; grid-template-columns: 1fr 340px; gap: 40px; align-items: start; }
+            .ch-desktop-cart { display: flex; align-items: center; gap: 16px; }
+            .desk-price { text-align: right; line-height: 1.2; }
+            .desk-price strong { font-size: 1.2rem; color: var(--primary); }
+            .btn-desk-checkout { background: #16a34a; color: white; padding: 0 24px; height: 42px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        }
+
+        .products-section { width: 100%; }
+        .section-header { background: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; display:flex; justify-content: space-between; align-items: center; }
+        .section-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; }
+        .product-box { background: #fff; border: 1px solid var(--border-color); border-radius: 0 0 12px 12px; padding: 16px; }
+        
+        .extras-separator-banner { text-align: center; padding: 30px 20px 10px; margin-bottom: 10px; }
+        .extras-separator-banner h3 { font-size: 1.4rem; font-weight: 300; color: var(--secondary); margin-bottom: 5px; }
+        .extras-separator-banner p { color: var(--text-light); font-size: 0.9rem; }
+
+        .grid-products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: stretch; }
+        @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
+
+        /* PRODUCT MINI CARD */
+        .mini-card {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: 10px; border-radius: 8px; border: 1px solid transparent;
+            transition: background 0.2s; position: relative; height: 100%; min-width: 0; justify-content: space-between;
+        }
+        .mini-card:hover { background: #fff; border-color: var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .tag-offer { position: absolute; top: 0; left: 0; background: #16a34a; color: white; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
+        
+        .mc-img-box { 
+            width: 100%; aspect-ratio: 1/1; position: relative; display: flex; 
+            align-items: center; justify-content: center; margin-bottom: 8px; 
+            cursor: zoom-in; background-color: #f8fafc; border-radius: 8px;
+        }
+        .mc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        
+        .media-indicators { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 4px; pointer-events: none; }
+        .indicator-icon { width: 20px; height: 20px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--secondary); border: 1px solid #e2e8f0; opacity: 0; transition: opacity 0.3s; }
+        .indicator-icon.visible { opacity: 1; }
+
+        .mc-title { font-size: 0.85rem; font-weight: 500; color: var(--secondary); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em; width: 100%; line-height: 1.3; }
+        .mc-price { font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+        .mc-price-old { font-size: 0.8rem; text-decoration: line-through; color: #94a3b8; margin-right: 6px; }
+        .mc-price-new { color: var(--primary); }
+
+        .btn-add-mini { width: 100%; height: 32px; background: var(--primary); color: white; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); margin-top: auto; }
+        .qty-mini { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 6px; background: white; margin-top: auto; }
+        .qm-btn { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--secondary); font-size: 1.1rem; }
+        .qm-val { font-weight: 700; font-size: 0.9rem; }
+        
+        .btn-feat-row { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
+        .btn-feat { 
+            font-size: 0.65rem; padding: 3px 10px; border-radius: 50px; font-weight: 600;
+            border: 1px solid; cursor: pointer; display: none; transition: transform 0.2s;
+        }
+        .btn-feat:hover { transform: scale(1.05); }
+        .btn-feat.info { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; display: inline-block; }
+        .btn-feat.nutri { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+
+        /* --- SIDEBAR DESKTOP --- */
+        .sidebar-desktop { display: none; }
+        @media (min-width: 1024px) {
+            .sidebar-desktop { 
+                display: block; 
+                position: sticky; 
+                top: 80px; 
+                background: white; 
+                border: 1px solid var(--border-color); 
+                border-radius: 12px; 
+                padding: 16px; 
+                max-height: calc(100vh - 100px); 
+                overflow-y: auto; 
+                align-self: start; 
+            }
+            .sidebar-title { font-size: 0.9rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 12px; }
+            .sidebar-nav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+            .sidebar-chip { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.7rem; font-weight: 600; color: var(--secondary); text-align: center; padding: 8px 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .sidebar-chip:hover { border-color: var(--secondary); background: #e2e8f0; }
+        }
+
+        /* --- SCROLL TO TOP BTN --- */
+        .btn-scroll-top {
+            position: fixed; bottom: 85px; right: 20px; width: 45px; height: 45px;
+            background: white; border: 1px solid var(--border-color); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; z-index: 1050;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; color: var(--secondary);
+        }
+        @media(min-width: 1024px) { .btn-scroll-top { bottom: 40px; right: 40px; } }
+        .btn-scroll-top.visible { opacity: 1; pointer-events: auto; }
+
+        /* --- GALLERY --- */
+        .gallery-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; justify-content: center; padding: 20px; }
+        .gallery-wrap.active { display: flex; }
+        
+        .gallery-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 100%; max-height: 80vh; }
+        .gallery-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .gallery-video { max-width: 100%; max-height: 100%; border-radius: 8px; }
+        
+        .gallery-close-chip { 
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px; border-radius: 50px; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; z-index: 2010; backdrop-filter: blur(4px);
+        }
+        .gallery-thumbs { height: 70px; display: flex; justify-content: center; gap: 8px; padding-top: 10px; overflow-x: auto; width: 100%; }
+        .g-thumb { width: 50px; height: 50px; border-radius: 4px; border: 2px solid transparent; opacity: 0.5; object-fit: cover; cursor: pointer; flex-shrink: 0; }
+        .g-thumb.active { border-color: var(--primary); opacity: 1; }
+
+        /* --- SHEETS --- */
+        .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1200; display: flex; flex-direction: column; justify-content: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        .sheet-content { 
+            background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; 
+            max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s;
+            /* FIX: Extra padding to avoid content being hidden by checkout bar */
+            padding-bottom: 160px; 
+        }
+        .sheet-overlay.open .sheet-content { transform: translateY(0); }
+        
+        @media (min-width: 1024px) { 
+            .sheet-content { 
+                max-width: 500px; margin: 0 auto; top: 50%; bottom: auto; 
+                transform: translateY(-50%); border-radius: 12px; padding-bottom: 20px; 
+            } 
+            .sheet-overlay { justify-content: center; } 
+            .sheet-overlay.open .sheet-content { transform: translateY(0); } 
+        }
+        
+        .sheet-header { display: flex; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
+        .sheet-title { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; }
+        
+        .mobile-cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .mobile-cat-btn { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; color: var(--secondary); }
+        
+        .mobile-tags-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .mobile-tag-btn { font-size: 0.8rem; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center; }
+
+        /* FAQ */
+        details.faq-box { background: #fff; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 16px; overflow: hidden; box-shadow: var(--shadow-card); transition: box-shadow 0.3s ease; }
+        details.faq-box:hover { box-shadow: var(--shadow-float); border-color: #cbd5e1; }
+        details.faq-box summary { padding: 20px; cursor: pointer; font-weight: 600; color: var(--secondary); list-style: none; display: flex; justify-content: space-between; align-items: center; font-size: 1rem; }
+        details.faq-box summary::after { content: ''; width: 10px; height: 10px; border-right: 2px solid var(--text-light); border-bottom: 2px solid var(--text-light); transform: rotate(45deg); transition: transform 0.2s ease; margin-left: 10px; }
+        details.faq-box[open] summary::after { transform: rotate(-135deg); border-color: var(--primary); }
+        details.faq-box summary::-webkit-details-marker { display: none; }
+        .faq-text { padding: 0 20px 20px 20px; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; border-top: 1px solid transparent; opacity: 0.9; }
+        details.faq-box[open] .faq-text { border-color: #f1f5f9; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+
+        /* INFO MODAL TEXT */
+        .info-text-body { font-size: 1rem; color: var(--text-main); line-height: 1.6; white-space: pre-wrap; }
+
+        /* CHECKOUT MODAL */
+        dialog.modal-checkout {
+            margin: auto; inset: 0; position: fixed;
+            border: none; border-radius: 16px; width: 90%; max-width: 400px; padding: 0;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            max-height: 85vh; display: none; flex-direction: column;
+        }
+        dialog.modal-checkout[open] { display: flex; }
+        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        
+        .co-header { padding: 16px 24px; background: #fff; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .co-header span { font-weight: 700; color: var(--secondary); font-size: 1.1rem; }
+        .co-body { padding: 24px; overflow-y: auto; flex: 1; }
+        .co-list { list-style: none; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+        .co-item { display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; color: var(--text-main); background: #fff; }
+        .co-item:last-child { border-bottom: none; }
+        .co-item span:first-child { font-weight: 500; color: var(--text-main); font-size: 0.85rem; }
+        .co-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-top: 10px; border-top: 2px solid #f1f5f9; }
+        .co-total-val { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .co-footer { padding: 16px 24px; border-top: 1px solid #f1f5f9; background: #f8fafc; }
+        .co-btn { width: 100%; padding: 14px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; transition: transform 0.2s; border: none; cursor: pointer; }
+        .co-btn:active { transform: scale(0.98); }
+
+        /* TOAST POSITIONING FIX */
+        .toast { 
+            position: fixed; bottom: 150px; /* Above Checkout Bar */
+            left: 50%; transform: translateX(-50%) translateY(20px); 
+            background: var(--secondary); color: white; padding: 12px 24px; 
+            border-radius: 50px; font-size: 0.9rem; font-weight: 600; 
+            opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
+            z-index: 2500; box-shadow: 0 10px 30px rgba(0,0,0,0.2); white-space: nowrap; 
+        }
+        .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        @media(min-width: 1024px) { .toast { bottom: 40px; } }
+
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
-    <!-- Header -->
     <header>
-        <div class="container header-content">
-            <div class="logo-area">
-                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="logo-img">
-                <div>
-                    <div class="brand-name">Dona Antônia</div>
-                    <div class="brand-subtitle" style="font-size: 0.8rem; font-weight: 600;">Super Cestas Básicas</div>
-                </div>
+        <div class="container header-inner">
+            <a href="#" class="logo" onclick="location.reload()" aria-label="Voltar para a página inicial">
+                <div class="logo-circle" aria-hidden="true">DA</div> <span>Dona Antônia</span>
+            </a>
+            <div class="location-pill">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Cuiabá & VG
             </div>
-            <nav class="nav-desktop">
-                <button class="btn-outline" onclick="document.getElementById('footer-contacts').scrollIntoView()">Contatos</button>
-                <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" style="text-decoration: none;">
-                    <button style="background: #E1306C;">Instagram</button>
-                </a>
-            </nav>
         </div>
     </header>
 
-    <!-- Hero SEO -->
-    <div style="background: white; border-bottom: 1px solid var(--border); padding: 30px 20px; text-align: center;">
-        <h1 style="font-size: 1.8rem; font-weight: 800; color: #111; margin-bottom: 8px;">Cestas Básicas em Cuiabá e VG</h1>
-        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
-            Menor preço garantido e <span style="color: var(--accent); font-weight: bold;">Entrega Grátis</span> em toda a região.
-        </p>
-    </div>
+    <nav class="mobile-app-bar">
+        <button onclick="App.openSheet('cat-sheet')" class="app-bar-btn" aria-label="Abrir Categorias"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>Categorias</button>
+        <button onclick="App.openSheet('tags-sheet')" class="app-bar-btn" aria-label="Abrir Busca"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>Busca</button>
+        <button onclick="App.openSheet('offers-sheet')" class="app-bar-btn highlight" aria-label="Ver Ofertas"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg><strong>Ofertas</strong></button>
+        <button onclick="App.openSheet('faq-sheet')" class="app-bar-btn" aria-label="Ver Dúvidas"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Dúvidas</button>
+    </nav>
 
-    <div class="container layout-grid">
-        
-        <!-- SIDEBAR (Ordem Original) -->
-        <aside>
-            <!-- Didactic Section (6 Coisas) -->
-            <div class="card" style="border-top: 4px solid var(--brand-blue);">
-                <h3 style="font-size: 1.1rem; margin-bottom: 15px;">6 coisas que você precisa saber:</h3>
-                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
-                    <li style="display: flex; align-items: center;"><span class="badge-number">1</span> Entregamos em Cuiabá e VG.</li>
-                    <li style="display: flex; align-items: center;"><span class="badge-number">2</span> Pague só na entrega.</li>
-                    <li style="display: flex; align-items: center;"><span class="badge-number">3</span> Entrega Grátis hoje.</li>
-                    <li style="display: flex; align-items: center;"><span class="badge-number">4</span> Pode trocar produtos.</li>
-                    <li style="display: flex; align-items: center;"><span class="badge-number">5</span> Marcas de qualidade.</li>
-                    <li style="display: flex; align-items: center;"><span class="badge-number">6</span> Parcelamos em 3x sem juros.</li>
-                </ul>
+    <button id="btn-scroll-top" class="btn-scroll-top" onclick="window.scrollTo(0,0)" aria-label="Voltar ao topo">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+    </button>
+
+    <!-- HOME -->
+    <main id="home-view">
+        <section class="hero">
+            <div class="container">
+                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em 24h</div></div>
+                <h1 class="hero-title">A Melhor Cesta Básica <br> na Porta da <span>Sua Casa</span></h1>
+                <p class="hero-text">Personalize com marcas líderes e receba sem filas.</p>
+                <button class="btn-cta-primary" onclick="document.getElementById('baskets-anchor').scrollIntoView({behavior:'smooth'})">Escolher Minha Cesta</button>
             </div>
+        </section>
+        <section class="home-grid-container" id="baskets-anchor">
+            <h2 class="visually-hidden">Nossas Cestas</h2>
+            <div id="home-list" class="baskets-grid"><div class="loader"></div></div>
+        </section>
+        <footer style="text-align:center; padding: 40px 20px; color: var(--text-light); font-size:0.9rem;"><p>&copy; 2024 Dona Antônia Alimentos</p></footer>
+    </main>
 
-            <!-- Regiões Atendidas -->
-            <div class="card">
-                <h3 style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.5rem;">📍</span> Regiões Atendidas</h3>
-                
-                <div style="margin-top: 15px;">
-                    <strong style="color: #111; display: block; margin-bottom: 5px;">🏠 CUIABÁ</strong>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0 0 15px 0; line-height: 1.4;">
-                        Grande Coxipó, CPA (I, II, III, IV), Morada da Serra, Centro, Porto, Goiabeiras, Tijucal, Pedra 90, e mais.
-                    </p>
-
-                    <div style="height: 1px; background: #eee; margin: 10px 0;"></div>
-
-                    <strong style="color: #111; display: block; margin-bottom: 5px; margin-top: 10px;">🚚 VÁRZEA GRANDE</strong>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
-                        Cristo Rei, Mapim, Centro, Ipase, Jardim Glória, São Mateus, Paiaguás e região.
-                    </p>
+    <!-- CUSTOMIZER -->
+    <div id="customizer-view" class="hidden">
+        <div class="cust-header-bar">
+            <div class="container ch-container">
+                <button class="ch-back-btn" onclick="App.goHome()" aria-label="Voltar">❮</button>
+                <div class="ch-info">
+                    <h2 id="cust-title">Minha Cesta</h2>
+                    <span id="changes-badge" class="limit-badge">Alterações: 0/0</span>
                 </div>
-                <div style="margin-top: 15px; color: var(--accent); font-weight: bold; font-size: 0.9rem; text-align: center; background: #ecfdf5; padding: 8px; border-radius: 6px;">
-                    ✅ Entrega Grátis em todos os bairros!
+                <div class="ch-search-box"><input type="text" id="main-search" class="ch-input" placeholder="Buscar produto..."><span class="ch-icon">🔍</span></div>
+                <div class="ch-desktop-cart">
+                    <div class="desk-price"><small>Total Estimado</small><strong id="desk-total-val">R$ 0,00</strong></div>
+                    <button class="btn-desk-checkout" onclick="App.openCheckout()">WhatsApp <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></button>
                 </div>
             </div>
-
-            <!-- Pagamento Desktop -->
-            <div class="card" style="display: none;">
-                <!-- Oculto via CSS inline para mobile, visível via lógica se necessário, mas mantendo simples -->
-                <h3>💳 Formas de Pagamento</h3>
-                <ul style="padding-left: 20px; font-size: 0.9rem; color: var(--text-muted);">
-                    <li>Dinheiro ou Pix</li>
-                    <li>Cartão de Crédito/Débito</li>
-                    <li>Cartão Alimentação (Alelo, Sodexo, Pluxee)</li>
-                </ul>
+        </div>
+        <div class="container app-grid">
+            <div class="products-section">
+                <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Itens Inclusos</h3></div>
+                <div class="product-box"><div id="included-list" class="grid-products"></div></div>
+                <div id="extras-container"></div>
             </div>
-        </aside>
-
-        <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
-        <main>
-            <!-- SEO Intro Block -->
-            <div class="card" style="background: #eff6ff; border-color: #dbeafe;">
-                <h2 style="font-size: 1.25rem; color: #1e40af; border: none; margin-bottom: 10px;">Sacolão e Cesta Básica em Cuiabá</h2>
-                <p style="font-size: 0.95rem; color: #1e3a8a; margin: 0;">
-                    A Dona Antônia é a sua <strong>distribuidora de alimentos</strong> completa. Montamos cestas ideais para famílias grandes, estudantes e doação. Se procura <strong>onde comprar cesta básica</strong> com entrega grátis, nós levamos até você.
-                </p>
-            </div>
-
-            <!-- CATÁLOGO DE PRODUTOS -->
-            <section id="catalog-area" class="product-grid">
-                <!-- Javascript vai preencher aqui -->
-                <p style="text-align: center; padding: 40px;">Carregando cestas...</p>
-            </section>
-
-            <!-- FAQ Section -->
-            <section style="margin-top: 40px;">
-                <h3 style="font-size: 1.5rem; margin-bottom: 20px;">Dúvidas Frequentes</h3>
-                
-                <details>
-                    <summary>Onde comprar cesta básica em Cuiabá e Várzea Grande?</summary>
-                    <div>Você pode comprar online aqui mesmo na Dona Antônia! Somos referência em entrega rápida e produtos de qualidade com frete grátis.</div>
-                </details>
-
-                <details>
-                    <summary>Vocês vendem cesta básica para doação ou empresas?</summary>
-                    <div>Sim! Atendemos pedidos de atacado para empresas e doações. Temos preços especiais para grandes volumes. *Não vendemos cestas de natal específicas.</div>
-                </details>
-
-                <details>
-                    <summary>Qual é a cesta básica mais barata?</summary>
-                    <div>Nossa opção mais acessível é a Cesta Econômica, ideal para quem busca o menor preço sem abrir mão de qualidade.</div>
-                </details>
-
-                <details>
-                    <summary>Vocês fazem entrega hoje?</summary>
-                    <div>Sim, temos delivery rápido. Pedidos feitos pela manhã geralmente são entregues no mesmo dia.</div>
-                </details>
-
-                <details>
-                    <summary>Quais são as formas de pagamento?</summary>
-                    <div>Aceitamos Alelo, Sodexo, Pluxee, Cartões de Crédito (3x sem juros), Pix e Dinheiro. Não aceitamos Ticket Alimentação.</div>
-                </details>
-            </section>
-        </main>
-
+            <aside class="sidebar-desktop">
+                <div class="sidebar-title">Categorias</div>
+                <div id="desk-cat-list" class="sidebar-nav-grid"></div>
+                <div class="sidebar-title" style="margin-top:20px;">Busca Rápida</div>
+                <div id="desk-tag-list" class="sidebar-nav-grid"></div>
+                <div style="margin-top:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <strong style="color:var(--secondary);">Dúvida?</strong>
+                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:10px;">Fale conosco no WhatsApp ou veja as perguntas frequentes.</p>
+                    <button class="btn-outline" onclick="App.openSheet('faq-sheet')">Perguntas Frequentes</button>
+                </div>
+            </aside>
+        </div>
+        
+        <!-- MOBILE CHECKOUT BAR -->
+        <div class="mobile-checkout-bar" id="mobile-checkout-bar">
+            <div class="mcb-total"><span class="mcb-label">Total Estimado</span><span class="mcb-value" id="mcb-total-val">R$ 0,00</span></div>
+            <button class="mcb-btn" onclick="App.openCheckout()">Encomendar <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
     </div>
 
-    <!-- Footer -->
-    <footer id="footer-contacts">
-        <p style="color: white; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px;">Super Cestas Básicas Dona Antônia</p>
-        <p>R. Trinta, 105 - Jardim Nossa Sra. Aparecida<br>Cuiabá - MT, 78090-660</p>
-        
-        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <a href="tel:65998150975" style="color: white; text-decoration: none; border: 1px solid #374151; padding: 8px 16px; border-radius: 20px;">(65) 99815-0975</a>
-            <a href="https://api.whatsapp.com/send?phone=5565998150975" style="color: #4ade80; text-decoration: none; border: 1px solid #059669; padding: 8px 16px; border-radius: 20px;">WhatsApp</a>
-        </div>
-        
-        <br>
-        <a href="https://maps.google.com/maps?q=9W4X%2BGX%20Jardim%20Nossa%20Sra.%20Aparecida%2C%20Cuiabá%20-%20MT" target="_blank" style="color: #60a5fa;">Ver no Google Maps</a>
-    </footer>
+    <div id="toast" class="toast"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span id="toast-msg">Crédito atualizado</span></div>
 
-    <!-- Modal de Pedido -->
-    <dialog id="confirmDialog">
-        <div style="padding: 25px;">
-            <h3 id="modalTitle" style="margin-top: 0;">Confirmar Pedido</h3>
-            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Escolha a variação do arroz para finalizar:</p>
-            <div id="modalOptions"></div>
-            <div style="display: flex; gap: 10px; margin-top: 25px;">
-                <button class="btn-outline" onclick="document.getElementById('confirmDialog').close()" style="flex: 1;">Cancelar</button>
-                <button id="modalConfirmBtn" style="flex: 1;">Pedir no WhatsApp</button>
+    <!-- GALLERY -->
+    <div id="gallery" class="gallery-wrap">
+        <button class="gallery-close-chip" onclick="Gallery.close()" aria-label="Fechar Galeria">FECHAR</button>
+        <div class="gallery-stage">
+            <img id="gallery-img" class="gallery-img" src="">
+            <video id="gallery-video" class="gallery-video hidden" controls></video>
+        </div>
+        <div id="gallery-thumbs" class="gallery-thumbs"></div>
+    </div>
+
+    <!-- MODALS -->
+    <dialog id="checkout-modal" class="modal-checkout">
+        <div class="co-header"><span>Resumo do Pedido</span><button onclick="document.getElementById('checkout-modal').close()" aria-label="Fechar">✕</button></div>
+        <div class="co-body">
+            <ul id="checkout-items" class="co-list"></ul>
+            <div class="co-total-row"><span>Total</span><span id="co-total" class="co-total-val">R$ 0,00</span></div>
+            <div>
+                <label style="display:block; font-weight:600; margin-bottom:10px; font-size:0.9rem;">Forma de Pagamento:</label>
+                <select id="payment-method" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:0.9rem;">
+                    <option value="Pix">Pix (Instantâneo)</option><option value="Dinheiro">Dinheiro</option><option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option><option value="Vale Alimentação">Vale Alimentação</option>
+                </select>
             </div>
         </div>
+        <div class="co-footer"><button class="co-btn" onclick="App.sendWhatsApp()">Confirmar Pedido no WhatsApp</button></div>
     </dialog>
 
+    <!-- INFO SHEET (Features) -->
+    <div id="info-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('info-sheet')">
+        <div class="sheet-content">
+            <div class="sheet-header"><h3 class="sheet-title" id="info-sheet-title">Informações</h3><span class="sheet-close" onclick="App.closeSheet('info-sheet')" aria-label="Fechar">✕</span></div>
+            <div id="info-sheet-body" class="info-text-body"></div>
+        </div>
+    </div>
+
+    <div id="cat-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('cat-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title">Categorias</h3><span class="sheet-close" onclick="App.closeSheet('cat-sheet')" aria-label="Fechar">✕</span></div><div id="mob-cat-grid" class="mobile-cat-grid"></div></div></div>
+    
+    <!-- TAGS SHEET (WITH SEARCH) -->
+    <div id="tags-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('tags-sheet')">
+        <div class="sheet-content">
+            <div class="sheet-header"><h3 class="sheet-title">Busca Rápida</h3><span class="sheet-close" onclick="App.closeSheet('tags-sheet')" aria-label="Fechar">✕</span></div>
+            <!-- SEARCH INPUT MOBILE -->
+            <div class="ch-search-box" style="margin-bottom: 20px;">
+                <input type="text" class="ch-input" placeholder="Digite o que procura..." onchange="App.search(this.value)">
+                <span class="ch-icon">🔍</span>
+            </div>
+            <div id="mob-tags-grid" class="mobile-tags-grid"></div>
+        </div>
+    </div>
+
+    <div id="offers-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('offers-sheet')"><div class="sheet-content"><div class="sheet-header"><h3 class="sheet-title" style="color:#b45309;">🔥 Super Ofertas</h3><span class="sheet-close" onclick="App.closeSheet('offers-sheet')" aria-label="Fechar">✕</span></div><div id="mob-offers-grid" class="grid-products" style="grid-template-columns: repeat(2, 1fr) !important;"></div></div></div>
+    
+    <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
+        <div class="sheet-content">
+            <div class="sheet-header"><h3 class="sheet-title">Dúvidas Frequentes</h3><span class="sheet-close" onclick="App.closeSheet('faq-sheet')" aria-label="Fechar">✕</span></div>
+            <div style="padding-bottom:20px;">
+                <details class="faq-box"><summary>Formas de Pagamento</summary><div class="faq-text">Aceitamos Dinheiro, Pix, Cartão de Débito, Crédito (até 3x sem juros) e Vales Alimentação/Refeição (Pluxee, Alelo, Flash, etc).</div></details>
+                <details class="faq-box"><summary>Eu pago só na entrega?</summary><div class="faq-text">Sim! Para sua total segurança, o pagamento é realizado somente no momento em que você recebe o pedido na sua casa.</div></details>
+                <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">Sim, o frete é totalmente Grátis para compras acima de R$ 85,00 em toda a nossa área de cobertura (Cuiabá e VG).</div></details>
+                <details class="faq-box"><summary>Posso trocar itens da cesta?</summary><div class="faq-text">Com certeza! Utilize o botão "Personalizar" para adicionar ou remover itens, ou fale diretamente com a gente no WhatsApp.</div></details>
+                <details class="faq-box"><summary>De onde vocês são?</summary><div class="faq-text">Somos de Cuiabá - MT, localizados no bairro Jardim Nossa Senhora Aparecida. Atendemos com frota própria.</div></details>
+                <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Nossas entregas são rápidas e realizadas no dia seguinte ao pedido, de segunda a sábado.</div></details>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Dados originais
-        const DB = {
-            baskets: {
-                'GRANDE': { id: 'GRANDE', name: 'Cesta Grande', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif', opts: [{ n: 'Com Arroz Tio Alvino', norm: 'R$ 380,00', sel: true }, { n: 'Com Arroz Koblenz', norm: 'R$ 390,00' }], items: [{q:4, n:'Arroz 5kg'}, {q:3, n:'Açúcar 2kg'}, {q:4, n:'Óleo 900ml'}, {q:4, n:'Feijão 1kg'}, {q:1, n:'Café 500g'}, {q:3, n:'Espaguete 500g'}, {q:1, n:'12 Ovos'}, {q:1, n:'Mistura Bolo'}, {q:1, n:'Trigo 1kg'}, {q:1, n:'Sal 1kg'}, {q:2, n:'Molho Tomate'}, {q:1, n:'Milho Lata'}, {q:1, n:'Tempero'}, {q:2, n:'Bolacha Recheada'}, {q:2, n:'Miojo'}, {q:4, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:2, n:'Creme Dental'}, {q:2, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'}, {q:1, n:'Sabão Pó OMO'}, {q:2, n:'Detergente'}, {q:1, n:'Qboa 1L'}, {q:4, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}] },
-                'MEDIA': { id: 'MEDIA', name: 'Cesta Média', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif', opts: [{ n: 'Com Arroz Tio Alvino', norm: 'R$ 320,00', sel: true }, { n: 'Com Arroz Koblenz', norm: 'R$ 325,00' }], items: [{q:3, n:'Arroz 5kg'}, {q:2, n:'Açúcar 2kg'}, {q:3, n:'Óleo 900ml'}, {q:3, n:'Feijão 1kg'}, {q:1, n:'Café 500g'}, {q:1, n:'12 Ovos'}, {q:1, n:'Mistura Bolo'}, {q:2, n:'Espaguete 500g'}, {q:1, n:'Trigo 1kg'}, {q:1, n:'Sal 1kg'}, {q:2, n:'Molho Tomate'}, {q:1, n:'Milho Lata'}, {q:1, n:'Tempero'}, {q:2, n:'Bolacha Recheada'}, {q:2, n:'Miojo'}, {q:3, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:2, n:'Creme Dental'}, {q:2, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'}, {q:1, n:'Sabão Pó OMO'}, {q:2, n:'Detergente'}, {q:1, n:'Qboa 1L'}, {q:3, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}] },
-                'PEQUENA': { id: 'PEQUENA', name: 'Cesta Pequena', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif', opts: [{ n: 'Com Arroz Tio Alvino', norm: 'R$ 215,00', sel: true }, { n: 'Com Arroz Koblenz', norm: 'R$ 220,00' }], items: [{q:2, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:2, n:'Óleo 900ml'}, {q:2, n:'Feijão 1kg'}, {q:1, n:'Café 250g'}, {q:1, n:'12 Ovos'}, {q:1, n:'Mistura Bolo'}, {q:1, n:'Espaguete 500g'}, {q:1, n:'Trigo 1kg'}, {q:1, n:'Sal 1kg'}, {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'}, {q:1, n:'Tempero'}, {q:2, n:'Bolacha Recheada'}, {q:2, n:'Miojo'}, {q:2, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:1, n:'Creme Dental'}, {q:1, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'}, {q:1, n:'Sabão Pó OMO'}, {q:2, n:'Detergente'}, {q:1, n:'Qboa 1L'}, {q:2, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}] },
-                'MINI': { id: 'MINI', name: 'Cesta Mini', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif', opts: [{ n: 'Com Arroz Tio Alvino', norm: 'R$ 165,00', sel: true }, { n: 'Com Arroz Koblenz', norm: 'R$ 170,00' }], items: [{q:1, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:2, n:'Óleo 900ml'}, {q:2, n:'Feijão 1kg'}, {q:1, n:'Café 250g'}, {q:1, n:'Espaguete 500g'}, {q:1, n:'Sal 1kg'}, {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'}, {q:1, n:'Bolacha Recheada'}, {q:1, n:'Miojo'}, {q:2, n:'Suco Pó'}, {q:1, n:'Sabão Barra'}, {q:1, n:'Creme Dental'}, {q:1, n:'Papel Higiênico'}, {q:1, n:'Amaciante 2L'}, {q:1, n:'Desinfetante 2L'}, {q:1, n:'Sabão Pó OMO'}, {q:1, n:'Detergente'}, {q:1, n:'Qboa 1L'}, {q:2, n:'Sabonete'}, {q:1, n:'Esponja Aço'}, {q:1, n:'Esponja Louça'}] },
-                'ECONOMICA': { id: 'ECONOMICA', name: 'Cesta Econômica', img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif', opts: [{ n: 'Valor Único', norm: 'R$ 85,00', sel: true }], items: [{q:1, n:'Arroz Tio Alvino 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:1, n:'Óleo 900ml'}, {q:1, n:'Feijão 1kg'}, {q:1, n:'Café Premiado 250g'}, {q:1, n:'Espaguete 400g'}, {q:1, n:'Trigo 1kg'}, {q:1, n:'Farinha Mandioca'}, {q:1, n:'Sal 1kg'}, {q:1, n:'Molho Tomate'}, {q:1, n:'Milho Lata'}, {q:1, n:'Bolacha Recheada'}, {q:1, n:'Miojo'}, {q:1, n:'Suco Pó'}] }
+        const CONSTANTS = {
+            TAGS: ["Arroz", "Feijão", "Açúcar", "Café", "Óleo", "Macarrão", "Leite", "Sabão", "Detergente", "Sardinha"],
+            THEMES: { 'DEFAULT': '#f1f5f9', 'ALIMENTOS': '#ffedd5', 'LIMPEZA': '#dbeafe', 'HIGIENE': '#dcfce7', 'BEBIDAS': '#fae8ff', 'CARNES': '#fee2e2' },
+            PHONE: "5565996813588",
+            LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 }
+        };
+
+        const Gallery = {
+            open(mainSrc, productName, startWith=null) {
+                const el = document.getElementById('gallery');
+                const img = document.getElementById('gallery-img');
+                const vid = document.getElementById('gallery-video');
+                const thumbs = document.getElementById('gallery-thumbs');
+                thumbs.innerHTML = '';
+                img.src = startWith || mainSrc;
+                img.alt = productName;
+                img.classList.remove('hidden');
+                vid.classList.add('hidden');
+                vid.pause();
+                this.addThumb(mainSrc, 'img', !startWith);
+                this.checkSuffixes(mainSrc, startWith);
+                this.checkVideo(mainSrc);
+                el.classList.add('active');
             },
-            keys: ['ECONOMICA', 'MINI', 'PEQUENA', 'MEDIA', 'GRANDE']
+            swap(src, type, el) {
+                document.querySelectorAll('.g-thumb').forEach(t => t.classList.remove('active'));
+                el.classList.add('active');
+                const img = document.getElementById('gallery-img');
+                const vid = document.getElementById('gallery-video');
+                if(type === 'video') { img.classList.add('hidden'); vid.src = src; vid.classList.remove('hidden'); vid.play(); } 
+                else { vid.pause(); vid.classList.add('hidden'); img.src = src; img.classList.remove('hidden'); }
+            },
+            addThumb(src, type, isActive) {
+                const t = document.createElement('img');
+                t.className = `g-thumb ${isActive?'active':''}`;
+                t.src = type === 'video' ? 'img/video-placeholder.png' : src;
+                t.onerror = () => t.src = 'https://placehold.co/50x50?text=VID';
+                t.onclick = () => this.swap(src, type, t);
+                document.getElementById('gallery-thumbs').appendChild(t);
+            },
+            checkSuffixes(baseSrc, startWith) {
+                const suffixes = ['A', 'B', 'C'];
+                const dot = baseSrc.lastIndexOf('.');
+                if(dot === -1) return;
+                const root = baseSrc.substring(0, dot);
+                const ext = baseSrc.substring(dot);
+                suffixes.forEach(s => {
+                    const url = root + s + ext;
+                    const i = new Image();
+                    i.onload = () => this.addThumb(url, 'img', url === startWith);
+                    i.src = url;
+                });
+            },
+            checkVideo(baseSrc) {
+                const dot = baseSrc.lastIndexOf('.');
+                if(dot === -1) return;
+                const vidUrl = baseSrc.substring(0, dot) + '.mp4';
+                const v = document.createElement('video');
+                v.onloadedmetadata = () => this.addThumb(vidUrl, 'video', false);
+                v.src = vidUrl;
+            },
+            close() { document.getElementById('gallery').classList.remove('active'); document.getElementById('gallery-video').pause(); }
         };
 
         const App = {
-            state: { phone: "5565998150975" },
-            
-            init() {
-                const container = document.getElementById('catalog-area');
-                container.innerHTML = DB.keys.map(key => this.renderCard(DB.baskets[key])).join('');
+            data: [], cart: {}, currentBasket: null, originalCart: {}, currentLimit: 99,
+
+            async init() {
+                try {
+                    const res = await fetch('produtos/produtos.json?v=' + Date.now());
+                    const raw = await res.json();
+                    this.data = raw.map(p => ({
+                        ...p,
+                        id: String(p.id),
+                        nome: p.nome.trim(),
+                        valor: parseFloat(p.valor || 0),
+                        offerPrice: parseFloat(p.Valor_Oferta || 0),
+                        isOffer: (p.Oferta && p.Oferta.toLowerCase() === 'sim'),
+                        categoria: (p.categoria || 'OUTROS').trim().toUpperCase(),
+                        imagem: this.fixImgPath(p.imagem),
+                        limit: parseInt(p.Limit || p.limit || 0),
+                        estoque: parseInt(p.estoque || 0),
+                        validade: p.Validade || p.validade || "",
+                        caracteristicas: p.Caracteristicas || p.caracteristicas || ""
+                    }));
+                    this.renderHome();
+                    this.renderSidebar();
+                    this.setupSearch();
+                    window.addEventListener('scroll', this.handleScroll);
+                } catch (e) {
+                    console.error("Erro Fatal:", e);
+                    document.getElementById('home-list').innerHTML = `<p style="text-align:center;">Erro ao carregar.</p>`;
+                }
             },
 
-            renderCard(basket) {
-                // Cálculo de totais
-                const totalItems = basket.items.reduce((acc, item) => acc + item.q, 0);
-                
-                // HTML das opções de preço
-                const optsHtml = basket.opts.map((opt, idx) => `
-                    <div class="option-item ${opt.sel ? 'selected' : ''}" onclick="App.selectOption('${basket.id}', ${idx})">
-                        <span style="font-size: 0.9rem; font-weight: 500;">${opt.n.replace('Com ', '')}</span>
-                        <span class="option-price">${opt.norm}</span>
-                    </div>
-                `).join('');
+            fixImgPath(path) {
+                if (!path) return 'img/placeholder.jpg';
+                return path.includes('/') ? `img/produtos/${path.split('/').pop()}` : `img/produtos/${path}`;
+            },
 
-                // GERAÇÃO DA LISTA DE ITENS LIMPA (SEM FOTOS)
-                const itemsListHtml = basket.items.map(i => `
-                    <li>
-                        <span>${i.n}</span>
-                        <span class="qty-badge">${i.q}x</span>
-                    </li>
-                `).join('');
+            handleScroll() {
+                const btn = document.getElementById('btn-scroll-top');
+                if (window.scrollY > 300) btn.classList.add('visible');
+                else btn.classList.remove('visible');
+            },
+
+            renderHome() {
+                const list = document.getElementById('home-list');
+                const baskets = this.data.filter(p => p.categoria.includes('CESTA') && (p.categoria.includes('BÁSICA') || p.categoria.includes('BASICA')));
+                if(baskets.length === 0) { list.innerHTML = '<p>Nenhuma cesta.</p>'; return; }
+                list.innerHTML = baskets.map(p => {
+                    const price = (p.isOffer && p.offerPrice > 0) ? p.offerPrice : p.valor;
+                    return `
+                    <article class="home-card">
+                        <div class="hc-image-wrap" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
+                            <img src="${p.imagem}" class="hc-image" loading="lazy" alt="${p.nome}" onerror="this.onerror=null;this.src='https://placehold.co/500?text=Imagem+Indisponível';">
+                        </div>
+                        <div class="hc-content">
+                            <h3 class="hc-title">${p.nome}</h3>
+                            <div class="hc-price">R$ ${price.toFixed(2).replace('.', ',')}</div>
+                            <div class="hc-actions">
+                                <button class="btn-fill" onclick="App.openCustomizer('${p.id}')">Personalizar Cesta</button>
+                                <button class="btn-outline" onclick="App.directLink('${p.nome}')">Pedir Direto</button>
+                            </div>
+                        </div>
+                    </article>`;
+                }).join('');
+            },
+
+            renderSidebar() {
+                const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))].sort();
+                document.getElementById('desk-cat-list').innerHTML = cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`).join('');
+                document.getElementById('mob-cat-grid').innerHTML = cats.map(c => `<div class="mobile-cat-btn" onclick="App.filterCat('${c}')">${c}</div>`).join('');
+                
+                // Sort Tags Alphabetically
+                const sortedTags = [...CONSTANTS.TAGS].sort();
+                document.getElementById('desk-tag-list').innerHTML = sortedTags.map(t => `<button class="sidebar-chip" onclick="App.search('${t}')">${t}</button>`).join('');
+                document.getElementById('mob-tags-grid').innerHTML = sortedTags.map(t => `<div class="mobile-tag-btn" onclick="App.search('${t}')">${t}</div>`).join('');
+            },
+
+            openCustomizer(id) {
+                const basket = this.data.find(p => p.id === id);
+                if(!basket) return;
+                this.currentBasket = basket;
+                this.cart = {};
+                
+                // Load items
+                if(basket.items && Array.isArray(basket.items)) {
+                    basket.items.forEach(item => {
+                        let match = this.data.find(p => p.id === String(item.id));
+                        if(!match && item.nome) match = this.data.find(p => !p.categoria.includes('CESTA') && p.nome.toLowerCase().includes(item.nome.toLowerCase()));
+                        if(match) this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(item.qtd || 1));
+                    });
+                }
+                
+                // Limits Logic
+                this.originalCart = { ...this.cart };
+                const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
+                let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
+                this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
+
+                // Base Fee Calculation (Price - Items)
+                let itemsSum = 0;
+                for(let pid in this.cart) {
+                    let p = this.data.find(x => x.id === pid);
+                    if(p) itemsSum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[pid];
+                }
+                this.baseFee = Math.max(0, basket.valor - itemsSum);
+
+                document.getElementById('cust-title').innerText = basket.nome;
+                document.getElementById('home-view').classList.add('hidden');
+                document.getElementById('customizer-view').classList.remove('hidden');
+                
+                window.scrollTo(0,0);
+                this.renderAllLists();
+            },
+
+            goHome() {
+                document.getElementById('customizer-view').classList.add('hidden');
+                document.getElementById('home-view').classList.remove('hidden');
+                this.currentBasket = null;
+            },
+
+            renderAllLists(searchTerm = "") {
+                if(!this.currentBasket) return;
+                const incContainer = document.getElementById('included-list');
+                const incIds = Object.keys(this.cart);
+                
+                incContainer.innerHTML = incIds.length === 0 ? '<p style="padding:10px; color:#999;">Cesta vazia.</p>' : 
+                    incIds.map(id => { const p = this.data.find(x => x.id === id); return p ? this.buildCard(p, true) : ''; }).join('');
+
+                const extContainer = document.getElementById('extras-container');
+                let extras = this.data.filter(p => !p.categoria.includes('CESTA'));
+                if(searchTerm) {
+                    const lower = searchTerm.toLowerCase();
+                    extras = extras.filter(p => p.nome.toLowerCase().includes(lower) || p.categoria.toLowerCase().includes(lower));
+                }
+
+                const groups = {};
+                extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
+                const sortedCats = Object.keys(groups).sort();
+                
+                let html = '';
+                if(sortedCats.length > 0 && !searchTerm) {
+                    html += `<div class="extras-separator-banner"><h3>Adicionar Extras</h3><p>Toque nos produtos abaixo para adicionar mais itens.</p></div>`;
+                }
+
+                sortedCats.forEach(cat => {
+                    const color = Object.keys(CONSTANTS.THEMES).find(k => cat.includes(k)) || 'DEFAULT';
+                    html += `<div id="cat-${cat}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;"><h3>${cat}</h3></div>
+                    <div class="product-box"><div class="grid-products">${groups[cat].map(p => this.buildCard(p, false)).join('')}</div></div>`;
+                });
+                extContainer.innerHTML = html || '<p style="text-align:center; padding:40px;">Nenhum produto encontrado.</p>';
+                
+                setTimeout(() => this.setupMediaObservers(), 500);
+                this.updateTotal();
+            },
+
+            buildCard(p, isIncluded) {
+                const qty = this.cart[p.id] || 0;
+                const price = p.isOffer && p.offerPrice > 0 ? p.offerPrice : p.valor;
+                
+                let btnHtml = qty === 0 ? 
+                    `<button class="btn-add-mini" onclick="App.modQty('${p.id}', 1)">Adicionar</button>` : 
+                    `<div class="qty-mini"><button class="qm-btn" onclick="App.modQty('${p.id}', -1)">-</button><span class="qm-val">${qty}</span><button class="qm-btn" onclick="App.modQty('${p.id}', 1)">+</button></div>`;
+
+                let priceHtml = (p.isOffer && p.offerPrice > 0) ? 
+                    `<span class="mc-price-old">R$${p.valor.toFixed(2)}</span><span class="mc-price-new">R$${price.toFixed(2)}</span>` : 
+                    `R$ ${price.toFixed(2).replace('.', ',')}`;
+                
+                // Smart Buttons
+                let featBtns = '';
+                // Info Button now opens sheet
+                if(p.caracteristicas) {
+                    const safeText = p.caracteristicas.replace(/"/g, '&quot;').replace(/'/g, "\\'").replace(/\n/g, '<br>');
+                    const safeTitle = p.nome.replace(/"/g, '&quot;');
+                    featBtns += `<div class="btn-feat info" onclick="App.openInfo('${safeText}', '${safeTitle}')">Info</div>`;
+                }
+                
+                // Nutri Button (Visible via JS observer)
+                featBtns += `<div class="btn-feat nutri" id="nutri-${p.id}" onclick="Gallery.open('${p.imagem}','${p.nome}','${p.imagem.replace('.','A.')}')">Nutri</div>`;
 
                 return `
-                <article class="card">
-                    <div class="basket-img-container">
-                        <img src="${basket.img}" alt="${basket.name}" class="basket-img" loading="lazy">
-                        <span style="position: absolute; top: 10px; right: 10px; background: #059669; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Entrega Grátis</span>
-                    </div>
-                    
-                    <h3 style="font-size: 1.4rem; margin-bottom: 5px;">${basket.name}</h3>
-                    <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Escolha a sua opção:</p>
-                    
-                    <div class="basket-options">
-                        ${optsHtml}
-                    </div>
-
-                    <button onclick="App.openOrderModal('${basket.id}')">PEDIR AGORA</button>
-                    
-                    <!-- ÁREA DA LISTA LIMPA -->
-                    <div class="item-list-container">
-                        <div class="item-list-header">
-                            <span>Descrição do Produto</span>
-                            <span>Qtd.</span>
-                        </div>
-                        <ul class="clean-list">
-                            ${itemsListHtml}
-                        </ul>
-                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 700; color: #1e293b;">Total de Itens:</span>
-                            <span style="background: #1e293b; color: white; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.9rem;">${totalItems}</span>
+                <div class="mini-card" id="card-${p.id}">
+                    ${(p.isOffer && p.offerPrice > 0) ? '<span class="tag-offer">OFERTA</span>' : ''}
+                    <div class="mc-img-box" onclick="Gallery.open('${p.imagem}', '${p.nome}')">
+                        <img src="${p.imagem}" class="mc-img" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/300?text=No+Image';">
+                        <div class="media-indicators" id="media-${p.id}">
+                            <div class="indicator-icon icon-cam">📷</div>
+                            <div class="indicator-icon icon-vid">🎥</div>
                         </div>
                     </div>
-                </article>
-                `;
+                    <div class="mc-title">${p.nome}</div>
+                    <div class="btn-feat-row">${featBtns}</div>
+                    <div class="mc-price">${priceHtml}</div>
+                    ${btnHtml}
+                </div>`;
             },
 
-            openOrderModal(basketId) {
-                const basket = DB.baskets[basketId];
-                const dialog = document.getElementById('confirmDialog');
-                const title = document.getElementById('modalTitle');
-                const optsContainer = document.getElementById('modalOptions');
-                const confirmBtn = document.getElementById('modalConfirmBtn');
+            setupMediaObservers() {
+                const cards = document.querySelectorAll('.mini-card');
+                const observer = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(e => {
+                        if(e.isIntersecting) {
+                            const pid = e.target.id.replace('card-','');
+                            const p = this.data.find(x => x.id === pid);
+                            if(p) this.checkMedia(p);
+                            obs.unobserve(e.target);
+                        }
+                    });
+                }, {rootMargin: "100px"});
+                cards.forEach(c => observer.observe(c));
+            },
 
-                title.innerText = basket.name;
-                
-                // Gera HTML das opções de preço
-                optsContainer.innerHTML = basket.opts.map((opt, idx) => `
-                    <div class="option-item ${opt.sel ? 'selected' : ''}" onclick="App.selectOption('${basketId}', ${idx})">
-                        <span>${opt.n}</span>
-                        <strong>${opt.norm}</strong>
-                    </div>
-                `).join('');
-
-                // Ação do botão confirmar
-                confirmBtn.onclick = () => {
-                    const selectedOpt = basket.opts.find(o => o.sel);
-                    const msg = `Olá, gostaria de encomendar a ${basket.name} (${selectedOpt.n}) por ${selectedOpt.norm}.`;
-                    window.open(`https://api.whatsapp.com/send?phone=${this.state.phone}&text=${encodeURIComponent(msg)}`, '_blank');
-                    dialog.close();
+            checkMedia(p) {
+                const dot = p.imagem.lastIndexOf('.');
+                if(dot === -1) return;
+                const root = p.imagem.substring(0, dot);
+                const ext = p.imagem.substring(dot);
+                const imgA = new Image();
+                imgA.onload = () => {
+                    const btn = document.getElementById(`nutri-${p.id}`);
+                    if(btn) btn.style.display = 'inline-block';
+                    const el = document.querySelector(`#media-${p.id} .icon-cam`);
+                    if(el) el.classList.add('visible');
                 };
-
-                dialog.showModal();
+                imgA.src = root + 'A' + ext;
+                const vid = document.createElement('video');
+                vid.onloadedmetadata = () => {
+                    const el = document.querySelector(`#media-${p.id} .icon-vid`);
+                    if(el) el.classList.add('visible');
+                };
+                vid.src = root + '.mp4';
             },
 
-            selectOption(basketId, idx) {
-                // Atualiza o estado
-                DB.baskets[basketId].opts.forEach((o, i) => o.sel = (i === idx));
-                // Re-renderiza tudo para atualizar a UI
-                const container = document.getElementById('catalog-area');
-                container.innerHTML = DB.keys.map(key => this.renderCard(DB.baskets[key])).join('');
-                
-                // Se o modal estiver aberto, atualiza ele também
-                if(document.getElementById('confirmDialog').open) {
-                    this.openOrderModal(basketId);
+            countRemovals() {
+                let removals = 0;
+                for(let id in this.originalCart) {
+                    if (this.originalCart[id] > 0 && (!this.cart[id] || this.cart[id] === 0)) {
+                        removals++;
+                    }
                 }
-            }
+                return removals;
+            },
+
+            modQty(id, delta) {
+                const p = this.data.find(x => x.id === id);
+                if(!this.cart[id]) this.cart[id] = 0;
+                const newQty = this.cart[id] + delta;
+
+                // Check Limits
+                if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
+                
+                // Check Removal Limits
+                if (this.originalCart[id] && delta < 0 && newQty === 0) {
+                    if (this.countRemovals() >= this.currentLimit) {
+                        return alert(`Limite de ${this.currentLimit} trocas/exclusões atingido para esta cesta.`);
+                    }
+                }
+
+                this.cart[id] = newQty;
+                if(this.cart[id] <= 0) delete this.cart[id];
+                this.renderAllLists(document.getElementById('main-search').value);
+            },
+
+            updateTotal() {
+                let itemsSum = 0;
+                for(let id in this.cart) {
+                    const p = this.data.find(x => x.id === id);
+                    if(p) itemsSum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
+                }
+                
+                const calculatedTotal = itemsSum + this.baseFee;
+                let finalTotal = Math.max(calculatedTotal, this.currentBasket.valor);
+                let credit = 0;
+                
+                if (calculatedTotal < this.currentBasket.valor) {
+                    credit = this.currentBasket.valor - calculatedTotal;
+                }
+
+                // Update UI Counters
+                const removals = this.countRemovals();
+                const badge = document.getElementById('changes-badge');
+                badge.innerText = `Alterações: ${removals}/${this.currentLimit}`;
+                badge.className = removals >= this.currentLimit ? 'limit-badge error' : 'limit-badge';
+
+                const fmt = 'R$ ' + finalTotal.toFixed(2).replace('.', ',');
+                document.getElementById('desk-total-val').innerText = fmt;
+                const mobTotal = document.getElementById('mcb-total-val');
+                if(mobTotal) mobTotal.innerText = fmt;
+                document.getElementById('co-total').innerText = fmt;
+
+                // Credit Toast
+                const toast = document.getElementById('toast');
+                if (credit > 0) {
+                    document.getElementById('toast-msg').innerText = `Você tem R$ ${credit.toFixed(2).replace('.', ',')} de crédito`;
+                    toast.classList.add('visible');
+                } else {
+                    toast.classList.remove('visible');
+                }
+            },
+
+            setupSearch() { 
+                const input = document.getElementById('main-search');
+                input.addEventListener('input', (e) => this.renderAllLists(e.target.value)); 
+                input.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+            },
+
+            search(term) {
+                this.closeSheet('tags-sheet');
+                if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
+                document.getElementById('main-search').value = term;
+                this.renderAllLists(term);
+                const el = document.getElementById('extras-container');
+                if(el) el.scrollIntoView({behavior:'smooth'});
+            },
+
+            filterCat(cat) {
+                this.closeSheet('cat-sheet');
+                if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
+                document.getElementById('main-search').value = "";
+                this.renderAllLists("");
+                setTimeout(() => {
+                    const el = document.getElementById(`cat-${cat}`);
+                    if(el) { window.scrollTo({top: el.offsetTop - 140, behavior:'smooth'}); }
+                }, 100);
+            },
+
+            openSheet(id) { 
+                // Close any open sheets first
+                document.querySelectorAll('.sheet-overlay.open').forEach(el => el.classList.remove('open'));
+                
+                if(id === 'offers-sheet') this.renderOffersInSheet();
+                document.getElementById(id).classList.add('open'); 
+            },
+            closeSheet(id) { document.getElementById(id).classList.remove('open'); },
+            
+            openInfo(text, title) {
+                document.getElementById('info-sheet-title').innerText = title;
+                document.getElementById('info-sheet-body').innerHTML = text;
+                this.openSheet('info-sheet');
+            },
+
+            renderOffersInSheet() {
+                const grid = document.getElementById('mob-offers-grid');
+                const offers = this.data.filter(p => p.isOffer);
+                grid.innerHTML = offers.length ? offers.map(p => this.buildCard(p, false)).join('') : '<p style="grid-column:1/-1; text-align:center;">Sem ofertas.</p>';
+                setTimeout(() => this.setupMediaObservers(), 300);
+            },
+            
+            openCheckout() {
+                if(Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
+                document.getElementById('checkout-items').innerHTML = Object.keys(this.cart).map(id => {
+                    const p = this.data.find(x => x.id === id);
+                    return `<li class="co-item"><span>${this.cart[id]}x ${p.nome}</span></li>`;
+                }).join('');
+                document.getElementById('checkout-modal').showModal();
+            },
+
+            sendWhatsApp() {
+                const method = document.getElementById('payment-method').value;
+                const total = document.getElementById('co-total').innerText;
+                let msg = `*NOVO PEDIDO: ${this.currentBasket.nome}*\n------------------\n`;
+                for(let id in this.cart) {
+                    const p = this.data.find(x => x.id === id);
+                    if(p) msg += `${this.cart[id]}x ${p.nome}\n`;
+                }
+                msg += `------------------\n*TOTAL: ${total}*\n*Pagamento:* ${method}`;
+                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
+            },
+
+            directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
         };
 
-        // Iniciar
-        App.init();
+        document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
 </body>
 </html>
