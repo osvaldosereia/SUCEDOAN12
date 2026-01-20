@@ -3,13 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Checkout Experience Polish
+        ARCHITECT: SEO Code Architect (SCA) - Smart Pricing Engine
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - CHECKOUT: Remoção de preços individuais nos cards do resumo.
-        - CHECKOUT: Adição de info sobre taxas inclusas (Frete/Montagem).
-        - CHECKOUT: Cálculo dinâmico de parcelamento (3x sem juros).
-        - UI: Renomeação de seção para "Sua Nova Cesta".
+        - CHECKOUT: Detalhamento financeiro (Base + Extras - Descontos).
+        - LOGIC: Algoritmo de Cortesia (Desconto automático se extras < 2%).
+        - UI: Breakdown visual claro no modal de pagamento.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -375,7 +374,7 @@
         
         .co-total-row { 
             background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; 
-            display: flex; flex-direction: column; /* Changed for stacking */
+            display: flex; flex-direction: column; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
         }
         
@@ -569,21 +568,22 @@
             <span class="co-close" onclick="document.getElementById('checkout-modal').close()">✕</span>
         </div>
         <div class="co-body">
-            <div class="co-section-title">Sua Nova Cesta</div> <!-- Título Alterado -->
+            <div class="co-section-title">Sua Nova Cesta</div>
             <div id="modal-cart-list" class="co-horizontal-list"></div>
             
             <div class="co-total-row">
+                <!-- BREAKDOWN CONTAINER (NEW) -->
+                <div id="co-breakdown" style="width:100%; margin-bottom:12px; display:flex; flex-direction:column; gap:6px;"></div>
+                
+                <div style="width:100%; height:1px; background:#e5e7eb; margin-bottom:12px;"></div>
+
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
-                    <span class="co-total-label">Total a pagar</span>
-                    <span class="co-total-val" id="co-total">R$ 0,00</span>
+                    <span class="co-total-label" style="font-weight:800; font-size:1.1rem;">Total a pagar</span>
+                    <span class="co-total-val" id="co-total" style="font-size:1.4rem; color:#ea1d2c;">R$ 0,00</span>
                 </div>
                 
-                <!-- Info Parcelamento 3x -->
-                <div id="co-installments" style="text-align:right; font-size:0.85rem; color:#16a34a; font-weight:600; margin-top:4px;">
-                    <!-- JS preenche aqui -->
-                </div>
+                <div id="co-installments" style="text-align:right; font-size:0.85rem; color:#16a34a; font-weight:600; margin-top:4px;"></div>
 
-                <!-- Info Taxas Inclusas -->
                 <div style="margin-top:12px; font-size:0.75rem; color:#717171; text-align:center; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; line-height:1.4;">
                     ✅ <strong>Tudo Incluso:</strong> Montagem, Embalagem e Entrega.<br>Sem taxas adicionais.
                 </div>
@@ -647,13 +647,12 @@
                         let hasLink = p.Tem_Ligacao || p.tem_ligacao || "Não";
                         let linkCode = p.Codigo_Produto_Ligado || p.codigo_produto_ligado || "";
 
-                        // SMART TITLE CASE LOGIC
                         let smartName = this.toSmartTitleCase(p.nome.trim());
 
                         return {
                             ...p,
                             id: String(p.id),
-                            nome: smartName, // Applied Smart Casing
+                            nome: smartName, 
                             valor: parseFloat(p.valor || 0),
                             offerPrice: parseFloat(p.Valor_Oferta || 0),
                             isOffer: (p.Oferta === 'Sim'),
@@ -675,16 +674,15 @@
                 }
             },
 
-            // LOGICA INTELIGENTE DE MAIÚSCULAS/MINÚSCULAS
             toSmartTitleCase(str) {
                 const smallWords = ['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'sem', 'para', 'por', 'na', 'no', 'em', 'ao', 'a'];
                 const upperWords = ['kg', 'ml', 'g', 'l', 'un', 'pvc', 'uht', 'pet', 'ypê', 'ype', 'sbp', 'tixan', 'qboa', 'uva', 'waffer', 'wafer', 'm&ms'];
                 
                 return str.toLowerCase().split(' ').map((word, index) => {
-                    if (index === 0) return word.charAt(0).toUpperCase() + word.slice(1); // Sempre maiúscula no começo
-                    if (upperWords.includes(word)) return word.toUpperCase(); // Siglas e Marcas
-                    if (smallWords.includes(word)) return word; // Preposições
-                    return word.charAt(0).toUpperCase() + word.slice(1); // Padrão
+                    if (index === 0) return word.charAt(0).toUpperCase() + word.slice(1); 
+                    if (upperWords.includes(word)) return word.toUpperCase(); 
+                    if (smallWords.includes(word)) return word; 
+                    return word.charAt(0).toUpperCase() + word.slice(1); 
                 }).join(' ');
             },
 
@@ -790,9 +788,7 @@
                         });
 
                         for (const [subName, subItems] of Object.entries(subGroups)) {
-                            // Unique ID for Scrolling
                             const rowId = `row-${mainCat}-${subName}`.replace(/\s+/g, '-').toLowerCase();
-                            
                             html += `
                             <div class="subcat-section">
                                 <div class="subcat-title">${subName}</div>
@@ -881,12 +877,11 @@
 
             buildCheckoutCard(p) {
                 const qty = this.cart[p.id] || 0;
-                // REMOVIDO: const price = p.isOffer ? p.offerPrice : p.valor;
+                const price = p.isOffer ? p.offerPrice : p.valor;
                 return `
                 <div class="co-card">
                     <img src="${p.imagem}" class="co-card-img" onclick="App.openInfo('${p.id}')">
                     <div class="co-card-title">${p.nome}</div>
-                    <!-- REMOVIDO: <div class="co-card-price">...</div> -->
                     <div class="co-card-controls">
                         <div class="qty-mini-co">
                             <div class="qm-btn" onclick="App.modQty('${p.id}', -1)">-</div>
@@ -989,20 +984,56 @@
                      this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
                 }
 
-                const total = Math.max(sum + this.baseFee, this.currentBasket.valor);
-                const txt = 'R$ ' + total.toFixed(2).replace('.', ',');
-                
-                // CALCULO PARCELAMENTO 3X
-                const parcelVal = total / 3;
-                const parcelTxt = '3x de R$ ' + parcelVal.toFixed(2).replace('.', ',');
-                const instEl = document.getElementById('co-installments');
-                if(instEl) instEl.innerText = `Ou em até ${parcelTxt} sem juros`;
+                // Cálculo Financeiro Detalhado
+                const basketPrice = this.currentBasket.valor;
+                const effectiveTotal = sum + this.baseFee;
+                let displayTotal = 0;
+                let breakdownHtml = '';
 
+                // 1. Linha Valor Base
+                breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Valor da Cesta</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div>`;
+
+                if (effectiveTotal > basketPrice) {
+                    const exceeded = effectiveTotal - basketPrice;
+                    const threshold = basketPrice * 0.02; // 2% do valor da cesta
+
+                    // 2. Linha Adicionais
+                    breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#ea1d2c;"><span>Itens Adicionais</span><span>+ R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
+
+                    if (exceeded < threshold) {
+                        // 3. Linha Desconto (Cortesia)
+                        displayTotal = basketPrice;
+                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Desconto (Cortesia)</span><span>- R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
+                    } else {
+                        displayTotal = effectiveTotal;
+                    }
+                } else {
+                    // Se não excedeu, paga o valor da cesta
+                    displayTotal = basketPrice;
+                }
+
+                // Atualiza breakdown no Modal
+                const bdEl = document.getElementById('co-breakdown');
+                if(bdEl) bdEl.innerHTML = breakdownHtml;
+
+                // Atualiza Totais
+                const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
+                document.getElementById('co-total').innerText = txtTotal;
+                document.getElementById('icb-total-val').innerText = txtTotal;
+                document.getElementById('cart-count-badge').innerText = count;
+                if(document.getElementById('ds-total')) document.getElementById('ds-total').innerText = txtTotal;
+                
+                // Parcelamento 3x
+                const parcelVal = displayTotal / 3;
+                const instEl = document.getElementById('co-installments');
+                if(instEl) instEl.innerText = `Ou em até 3x de R$ ${parcelVal.toFixed(2).replace('.', ',')} sem juros`;
+
+                // Toasts
                 const toast = document.getElementById('credit-toast');
                 const subToast = document.getElementById('credit-sub-toast');
                 
-                if (this.currentBasket.valor > (sum + this.baseFee)) {
-                    const diff = this.currentBasket.valor - (sum + this.baseFee);
+                if (basketPrice > effectiveTotal) {
+                    const diff = basketPrice - effectiveTotal;
                     toast.innerText = `Você tem R$ ${diff.toFixed(2).replace('.',',')} em crédito!`;
                     toast.classList.add('visible');
                     subToast.classList.add('visible');
@@ -1011,16 +1042,6 @@
                     subToast.classList.remove('visible');
                 }
 
-                document.getElementById('icb-total-val').innerText = txt;
-                document.getElementById('co-total').innerText = txt;
-                document.getElementById('cart-count-badge').innerText = count;
-                
-                if(document.getElementById('ds-total')) document.getElementById('ds-total').innerText = txt;
-
-                const rem = this.countRemovals();
-                const limitTxt = `Alt: ${rem}/${this.currentLimit}`;
-                document.getElementById('limit-alert-desk').innerText = limitTxt;
-                
                 const bar = document.getElementById('ifood-cart-bar');
                 if(count > 0) bar.classList.add('visible');
                 else bar.classList.remove('visible');
