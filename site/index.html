@@ -6,8 +6,8 @@
         ARCHITECT: SEO Code Architect (SCA) - Final Refined Build
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UI: Imagem principal da cesta aumentada em 30% (110px -> 145px).
-        - UI: Adicionado rótulo "Produtos da Cesta" antes do slider de itens.
+        - UX: Implementado "Bleeding Effect" nos carrosseis mobile (width: 42vw).
+          Isso força o corte visual do próximo card, indicando rolagem horizontal.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -34,7 +34,7 @@
       "@context": "https://schema.org",
       "@type": "GroceryStore",
       "name": "Dona Antônia Cestas Básicas",
-      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
+      "image": "https://www.donaantonia.com.br/img/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
       "telephone": "+5565996813588",
       "address": {
         "@type": "PostalAddress",
@@ -89,10 +89,10 @@
         body.customizer-mode #main-header { display: none !important; }
         
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
-        .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         
         /* LOGO BRAND IMAGE */
-        .logo-brand-img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+        .logo-brand-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
@@ -220,7 +220,10 @@
         .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
-            min-width: 160px; max-width: 160px;
+            /* CHANGE: Adjusted to 42vw for mobile bleeding effect */
+            width: 42vw; 
+            min-width: 150px; 
+            max-width: 170px;
             scroll-snap-align: start; flex-shrink: 0;
         }
 
@@ -395,7 +398,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo" onclick="location.reload()">
-                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo">
+                <img src="https://www.donaantonia.com.br/img/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo">
                 Dona Antônia
             </a>
             <div class="location-pill">
