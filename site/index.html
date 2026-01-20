@@ -3,13 +3,13 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Final Refined Build
+        ARCHITECT: SEO Code Architect (SCA) - Final Polish Build
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UX: Removido modal "Welcome" (Acesso direto).
-        - UI: Toasts de crédito aproximados visualmente.
-        - UI: Imagens ampliadas na Home e no Checkout.
-        - CHECKOUT: Removida informação de parcelamento.
+        - FEATURE: Sistema de Cupom de Desconto configurável.
+        - UX: Bloqueio de checkout se houver crédito pendente.
+        - UI: Toasts de crédito sobrepostos ao modal (Z-Index Fix).
+        - CHECKOUT: Detalhamento financeiro completo com cupom.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -171,7 +171,6 @@
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; }
-        /* AJUSTE: Imagens maiores na cesta home (de 50px para 65px) e flex-basis aumentado */
         .hbc-item { flex: 0 0 85px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f9f9f9; border-radius: 8px; padding: 6px; }
         .hbc-item img { width: 65px; height: 65px; object-fit: contain; mix-blend-mode: multiply; } 
         .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #888; }
@@ -270,15 +269,12 @@
             .scroll-btn { display: flex; }
             
             #customizer-view:not(.hidden) { 
-                /* Removido layout de grid que incluia a sidebar */
                 max-width: 1200px; /* Limite de 1200px solicitado */
                 margin: 0 auto; 
                 padding: 40px 20px;
                 padding-top: calc(var(--app-header-height) + 20px); 
                 padding-bottom: 100px; /* Espaço para barra flutuante */
             }
-            
-            /* Sidebar removida, nada a exibir aqui */
         }
 
         /* --- 8. FLOATING CART BAR (MOBILE & DESKTOP) --- */
@@ -322,10 +318,12 @@
         .st-btn { background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
         
-        .credit-toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, 0); background: rgba(30, 41, 59, 0.98); color: white; padding: 10px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 12000; text-align: center; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        /* AJUSTE: Z-Index MAXIMO para ficar sobre o modal */
+        .credit-toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, 0); background: rgba(30, 41, 59, 0.98); color: white; padding: 10px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2147483647; text-align: center; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .credit-toast.visible { opacity: 1; }
-        /* AJUSTE: Top reduzido para 65px (aproximando do toast acima) */
-        .credit-sub-toast { position: fixed; top: 65px; left: 50%; transform: translate(-50%, 0); background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 11900; text-align: center; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* AJUSTE: Z-Index MAXIMO */
+        .credit-sub-toast { position: fixed; top: 65px; left: 50%; transform: translate(-50%, 0); background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2147483647; text-align: center; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .credit-sub-toast.visible { opacity: 1; }
 
         /* CHECKOUT MODAL */
@@ -338,7 +336,6 @@
         .co-horizontal-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 20px; }
         .co-horizontal-list::-webkit-scrollbar { display: none; }
         .co-card { min-width: 140px; max-width: 140px; background: white; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-shrink: 0; }
-        /* AJUSTE: Imagens do checkout aumentadas (de 60px para 80px) */
         .co-card-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 8px; mix-blend-mode: multiply; }
         .co-card-title { font-size: 0.75rem; color: #3e3e3e; text-align: center; font-weight: 500; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; margin-bottom: 6px; width: 100%; }
         .co-card-controls { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
@@ -357,6 +354,12 @@
         .co-payment-box select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; margin-top: 10px; background: white; }
         .co-footer { padding: 16px; border-top: 1px solid #f0f0f0; background: white; }
         .co-btn-final { width: 100%; padding: 14px; background: var(--primary); color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; text-align: center; }
+        .co-btn-final:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* CUPOM */
+        .coupon-box { display: flex; gap: 8px; margin-bottom: 15px; }
+        .coupon-input { flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; text-transform: uppercase; }
+        .coupon-btn { padding: 0 16px; background: #3e3e3e; color: white; border-radius: 8px; font-weight: 600; font-size: 0.85rem; }
 
         /* FOOTER */
         .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 20px; margin-top: 40px; }
@@ -453,8 +456,6 @@
             </div>
         </div>
 
-        <!-- SIDEBAR REMOVIDA NO DESKTOP -->
-
         <!-- FLOATING CART BAR (MOBILE & DESKTOP) -->
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
@@ -520,6 +521,12 @@
             <div id="modal-cart-list" class="co-horizontal-list"></div>
             
             <div class="co-total-row">
+                <!-- CUPOM INPUT -->
+                <div class="coupon-box">
+                    <input type="text" id="coupon-input" class="coupon-input" placeholder="CUPOM DE DESCONTO">
+                    <button class="coupon-btn" onclick="App.applyCoupon()">Aplicar</button>
+                </div>
+
                 <!-- BREAKDOWN CONTAINER -->
                 <div id="co-breakdown" style="width:100%; margin-bottom:12px; display:flex; flex-direction:column; gap:6px;"></div>
                 
@@ -530,8 +537,6 @@
                     <span class="co-total-val" id="co-total" style="font-size:1.4rem; color:#ea1d2c;">R$ 0,00</span>
                 </div>
                 
-                <!-- PARCELAMENTO REMOVIDO DAQUI -->
-
                 <div style="margin-top:12px; font-size:0.75rem; color:#717171; text-align:center; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; line-height:1.4;">
                     ✅ <strong>Tudo Incluso:</strong> Montagem, Embalagem e Entrega.<br>Sem taxas adicionais.
                 </div>
@@ -550,18 +555,22 @@
             </div>
         </div>
         <div class="co-footer">
-            <button class="co-btn-final" onclick="App.sendWhatsApp()">Fazer Pedido no WhatsApp</button>
+            <button id="final-btn" class="co-btn-final" onclick="App.sendWhatsApp()">Fazer Pedido no WhatsApp</button>
         </div>
     </dialog>
 
     <script>
         const CONSTANTS = { 
             PHONE: "5565996813588",
-            LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 }
+            LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 },
+            // CONFIGURAÇÃO DO CUPOM
+            COUPON_CODE: "BEMVINDO",
+            COUPON_VAL: 5.00
         };
         
         const App = {
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [],
+            appliedCoupon: false,
 
             async init() {
                 try {
@@ -680,6 +689,7 @@
                 this.currentBasket = basket;
                 this.cart = {};
                 this.cartOrder = [];
+                this.appliedCoupon = false; // Reset Coupon
                 
                 if(basket.items) {
                     basket.items.forEach(i => {
@@ -699,14 +709,11 @@
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
-                // REMOVIDO: document.getElementById('welcome-overlay').classList.add('visible'); 
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
             },
             
-            // REMOVIDO: closeWelcome() { ... }
-
             goHome() {
                 document.getElementById('customizer-view').classList.add('hidden');
                 document.getElementById('home-view').classList.remove('hidden');
@@ -912,6 +919,17 @@
                 }
             },
 
+            applyCoupon() {
+                const input = document.getElementById('coupon-input');
+                if(input.value.toUpperCase() === CONSTANTS.COUPON_CODE) {
+                    this.appliedCoupon = true;
+                    alert("Cupom Aplicado!");
+                    this.updateTotal();
+                } else {
+                    alert("Cupom Inválido");
+                }
+            },
+
             updateTotal() {
                 let sum = 0;
                 let count = 0;
@@ -960,6 +978,13 @@
                     displayTotal = basketPrice;
                 }
 
+                // APLICAR CUPOM
+                if(this.appliedCoupon) {
+                    displayTotal -= CONSTANTS.COUPON_VAL;
+                    if(displayTotal < 0) displayTotal = 0;
+                    breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`;
+                }
+
                 // Atualiza breakdown no Modal
                 const bdEl = document.getElementById('co-breakdown');
                 if(bdEl) bdEl.innerHTML = breakdownHtml;
@@ -971,20 +996,31 @@
                 document.getElementById('cart-count-badge').innerText = count;
                 if(document.getElementById('ds-total')) document.getElementById('ds-total').innerText = txtTotal;
                 
-                // PARCELAMENTO REMOVIDO DAQUI
-
-                // Toasts
+                // Toasts & Bloqueio Checkout
                 const toast = document.getElementById('credit-toast');
                 const subToast = document.getElementById('credit-sub-toast');
+                const finalBtn = document.getElementById('final-btn');
                 
                 if (basketPrice > effectiveTotal) {
                     const diff = basketPrice - effectiveTotal;
                     toast.innerText = `Você tem R$ ${diff.toFixed(2).replace('.',',')} em crédito!`;
                     toast.classList.add('visible');
                     subToast.classList.add('visible');
+                    
+                    // BLOQUEIA BOTAO
+                    if(finalBtn) {
+                        finalBtn.disabled = true;
+                        finalBtn.innerText = "Complete sua cesta para finalizar";
+                    }
                 } else {
                     toast.classList.remove('visible');
                     subToast.classList.remove('visible');
+                    
+                    // DESBLOQUEIA BOTAO
+                    if(finalBtn) {
+                        finalBtn.disabled = false;
+                        finalBtn.innerText = "Fazer Pedido no WhatsApp";
+                    }
                 }
 
                 const bar = document.getElementById('ifood-cart-bar');
@@ -1039,6 +1075,7 @@
                     const p = this.data.find(x => x.id === id);
                     msg += `${this.cart[id]}x ${p.nome}\n`;
                 }
+                if(this.appliedCoupon) msg += `\n*CUPOM APLICADO: ${CONSTANTS.COUPON_CODE}*`;
                 msg += `\n*TOTAL: ${total}*\nPagamento: ${method}`;
                 window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
