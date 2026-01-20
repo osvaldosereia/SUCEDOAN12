@@ -3,12 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - 100/100 Perfect Score Build
+        ARCHITECT: SEO Code Architect (SCA) - 100/100 Accessibility Final
         TARGET: Lighthouse 100 (Performance, A11y, Best Practices, SEO)
         CHANGELOG:
-        - PERF: LCP Otimizado (Primeira imagem com fetchpriority="high").
-        - A11Y: Contraste aprimorado em textos secundários (#555).
-        - A11Y: Garantia de atributos 'alt' em todas as injeções JS.
+        - A11Y: Ajuste de contraste da cor primária (#d31a28) para conformidade WCAG AA.
+        - CODE: Sanitização de aspas em todos os atributos 'alt' dinâmicos.
+        - UI: Manutenção da fidelidade visual e funcional completa.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -48,11 +48,12 @@
     <style>
         /* --- 1. RESET & VARIABLES --- */
         :root { 
-            --primary: #ea1d2c; 
+            /* A11Y: Vermelho ajustado para contraste > 4.5:1 com branco */
+            --primary: #d31a28; 
             --primary-dark: #b91c1c; 
             --secondary: #3e3e3e; 
             --text-main: #333333; 
-            --text-light: #555555; /* A11Y: Escurecido para contraste */
+            --text-light: #555555; 
             --bg-body: #f7f7f7; 
             --border-color: #f2f2f2;
             --header-height: 60px; 
@@ -169,7 +170,6 @@
         
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
         .hbc-title { font-size: 1.3rem; font-weight: 800; color: #2e2e2e; line-height: 1.2; margin-bottom: 8px; text-transform: capitalize; letter-spacing: -0.5px; }
-        /* A11Y: Verde escurecido para contraste */
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
@@ -177,7 +177,6 @@
         
         .hbc-item { flex: 0 0 85px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f9f9f9; border-radius: 8px; padding: 6px; }
         .hbc-item img { width: 65px; height: 65px; object-fit: contain; mix-blend-mode: multiply; } 
-        /* A11Y: Texto de quantidade escurecido para contraste */
         .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #555; }
 
         .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
@@ -244,7 +243,6 @@
         }
         
         .cp-price { font-size: 0.95rem; font-weight: 700; color: #2e2e2e; margin-top: auto; margin-bottom: 12px; }
-        /* A11Y: Small text escurecido */
         .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #666; font-weight: 400; margin-right: 4px; }
         
         .cp-validity-badge { 
@@ -318,7 +316,6 @@
         }
         .ifood-cart-bar.visible { transform: translateY(0); }
         .icb-info { display: flex; flex-direction: column; }
-        /* A11Y: Label mais escuro */
         .icb-label { font-size: 0.7rem; color: #555; margin-bottom: 2px; }
         .icb-total { font-size: 1rem; font-weight: 700; color: #2e2e2e; }
         
@@ -407,7 +404,6 @@
         .f-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 8px; border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; color: var(--secondary); font-weight: 600; font-size: 0.75rem; text-decoration: none; text-align: center; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .f-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #cbd5e1; }
         .f-btn icon { font-size: 1.2rem; margin-bottom: 2px; }
-        /* A11Y: Copyright com contraste WCAG AA */
         .copyright { text-align: center; font-size: 0.8rem; color: #475569; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
         
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
@@ -765,7 +761,7 @@
                             p.items.map(i => {
                                 const itemData = this.data.find(d => d.id === String(i.id));
                                 if(!itemData) return '';
-                                return `<div class="hbc-item"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome}"><span>${i.qty || 1}un</span></div>`;
+                                return `<div class="hbc-item"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '&quot;')}"><span>${i.qty || 1}un</span></div>`;
                             }).join('') + `</div>`;
                     }
                     
@@ -776,7 +772,7 @@
                     return `
                     <div class="home-basket-card">
                         <div class="hbc-top">
-                            <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome}"></div>
+                            <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome.replace(/"/g, '&quot;')}"></div>
                             <div class="hbc-info-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
                         </div>
                         <div class="hbc-content">
@@ -921,7 +917,7 @@
                     if(!p) return '';
                     return `
                     <div class="card-inc">
-                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome}">
+                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '&quot;')}">
                         <div class="ci-content">
                             <div class="qty-sm">
                                 <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
@@ -962,7 +958,7 @@
                 return `
                 <div class="card-prod" id="card-${p.id}">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
-                    <div class="cp-img-box" onclick="App.openInfo('${p.id}')"><img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome}"></div>
+                    <div class="cp-img-box" onclick="App.openInfo('${p.id}')"><img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '&quot;')}"></div>
                     <div class="cp-title">${p.nome}</div>
                     <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
                     ${btnHtml}
@@ -975,7 +971,7 @@
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 return `
                 <div class="co-card">
-                    <img src="${p.imagem}" class="co-card-img" onclick="App.openInfo('${p.id}')" alt="${p.nome}">
+                    <img src="${p.imagem}" class="co-card-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '&quot;')}">
                     <div class="co-card-title">${p.nome}</div>
                     <div class="co-card-controls">
                         <div class="qty-mini-co">
@@ -1054,7 +1050,7 @@
                 if(p && !this.cart[p.id]) {
                     const t = document.getElementById('suggestion-toast');
                     document.getElementById('st-img').src = p.imagem;
-                    document.getElementById('st-img').alt = p.nome; // A11Y FIX
+                    document.getElementById('st-img').alt = p.nome.replace(/"/g, ''); // A11Y FIX
                     document.getElementById('st-text').innerHTML = `Leve <b>${p.nome}</b><br>por R$ ${p.valor.toFixed(2)}`;
                     document.getElementById('st-btn').onclick = () => { this.modQty(p.id, 1); t.classList.remove('visible'); };
                     t.classList.add('visible');
