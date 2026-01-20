@@ -4,12 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.70 - Integrated Bottom Basket Layout
+        VERSION: 9.80 - Vertical Carousel & Streamlined Mobile UI
         CHANGELOG:
-        - MOBILE LAYOUT: Painel fixo na base contendo: Slide Cesta + Total + Botão Encomendar + Limites.
-        - MOBILE NAV: Botão 'Cesta' substituído por 'Voltar' (Seta).
-        - UI: Barra superior do customizador removida.
-        - DESKTOP: Slide da cesta movido para o topo da barra lateral direita via Grid.
+        - MOBILE NAV: Nova barra fixa na base unificada (Voltar | Categ | Total | Encomendar).
+        - MOBILE UI: Busca removida. Botão Dúvidas flutuante no topo direito.
+        - DESKTOP UI: "Minha Cesta" transformada em carrossel vertical na sidebar (max 2 itens).
+        - DESKTOP UI: Sidebar totalmente fixa e visível.
+        - LOGIC: Controles de navegação vertical para a cesta no desktop.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -31,8 +32,7 @@
             --primary: #dc2626; --primary-dark: #b91c1c; 
             --secondary: #1e293b; --text-main: #334155; --text-light: #64748b; 
             --bg-body: #ffffff; --border-color: #f1f5f9;
-            --header-height: 60px; --nav-bar-height: 60px; --radius: 12px;
-            --basket-panel-height: 200px; /* Estimated height for bottom panel */
+            --header-height: 60px; --bottom-bar-height: 70px;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -47,7 +47,7 @@
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
 
-        /* --- 2. HEADER --- */
+        /* --- 2. HEADER (HOME ONLY) --- */
         header { 
             position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
             background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color); z-index: 1000; 
@@ -67,95 +67,111 @@
         .btn-cta { background: var(--primary); color: white; padding: 12px 30px; border-radius: 50px; font-weight: 700; font-size: 1rem; }
 
         /* --- 4. CUSTOMIZER VIEW --- */
-        /* Extra padding bottom to account for the large basket panel + nav */
-        #customizer-view { padding-bottom: 280px; min-height: 100vh; background: #fff; padding-top: 20px; }
+        /* Padding for fixed bottom bar */
+        #customizer-view { padding-bottom: calc(var(--bottom-bar-height) + 20px); min-height: 100vh; background: #fff; padding-top: 10px; }
         
-        .cust-header-bar { display: none; } /* HIDDEN AS REQUESTED */
+        /* Floating FAQ Button (Top Right) */
+        .fab-faq {
+            position: fixed; top: 20px; right: 20px; z-index: 10000;
+            width: 40px; height: 40px; background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--secondary); font-weight: 700;
+            font-size: 1.2rem; transition: transform 0.2s;
+        }
+        .fab-faq:active { transform: scale(0.95); }
 
-        /* --- 5. BASKET PANEL (NEW INTEGRATED BOTTOM) --- */
-        .basket-panel {
-            position: fixed; 
-            bottom: var(--nav-bar-height); /* Sits above Nav */
-            left: 0; right: 0;
-            background: #ffffff;
-            border-top: 1px solid #e2e8f0;
+        /* --- 5. MOBILE BOTTOM ACTIONS (FIXED BASE) --- */
+        .mobile-bottom-actions {
+            position: fixed; bottom: 0; left: 0; right: 0; height: var(--bottom-bar-height);
+            background: #fff; border-top: 1px solid #e2e8f0; z-index: 10000;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; padding-bottom: env(safe-area-inset-bottom);
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-            z-index: 9990;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: env(safe-area-inset-bottom);
-            transition: transform 0.3s ease;
+        }
+        
+        .mba-left { display: flex; align-items: center; gap: 16px; }
+        .mba-btn-icon { 
+            display: flex; align-items: center; justify-content: center; 
+            width: 40px; height: 40px; border-radius: 50%; background: #f8fafc; color: var(--secondary); 
+        }
+        .mba-btn-icon svg { width: 20px; height: 20px; stroke-width: 2.5; }
+        
+        .mba-right { display: flex; align-items: center; gap: 12px; }
+        .mba-total { font-size: 1rem; font-weight: 800; color: var(--secondary); white-space: nowrap; }
+        
+        .mba-btn-order {
+            background: #16a34a; color: white; border-radius: 50px;
+            padding: 10px 20px; font-weight: 700; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 6px; white-space: nowrap;
         }
 
-        /* Top Bar of Basket Panel (Title + Limit) */
-        .bp-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 16px 0;
+        /* --- 6. MINHA CESTA (Mobile Sticky Top) --- */
+        .sticky-basket-container {
+            position: sticky; top: 0; z-index: 800;
+            background: rgba(255,255,255,0.98); border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px; margin-bottom: 10px; backdrop-filter: blur(5px);
         }
-        .bp-title { font-size: 0.8rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .section-title-bar { 
+            padding: 10px 16px 5px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .section-title-bar h3 { font-size: 0.95rem; font-weight: 700; color: var(--secondary); margin: 0; text-transform: uppercase; }
         
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; }
         .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
 
-        /* Slider inside Panel */
+        /* Horizontal Slider (Mobile) */
         #included-list.horizontal-slider {
-            display: flex; gap: 10px; overflow-x: auto; padding: 10px 16px;
+            display: flex; gap: 10px; overflow-x: auto; padding: 5px 16px 10px;
             scroll-snap-type: x mandatory; scrollbar-width: none;
-            background: #fff;
         }
         #included-list.horizontal-slider::-webkit-scrollbar { display: none; }
         
-        /* Checkout Row inside Panel */
-        .bp-checkout-row {
-            padding: 10px 16px; 
-            border-top: 1px solid #f1f5f9;
-            display: flex; align-items: center; justify-content: space-between;
-            background: #f8fafc;
-        }
-        .bp-total-group { line-height: 1.1; }
-        .bp-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-light); font-weight: 600; }
-        .bp-total-val { font-size: 1.2rem; font-weight: 800; color: var(--secondary); }
-        
-        .bp-btn { 
-            background: #16a34a; color: white; padding: 10px 24px; border-radius: 50px; 
-            font-weight: 700; display: flex; align-items: center; gap: 6px; 
-            font-size: 0.95rem; box-shadow: 0 2px 10px rgba(22, 163, 74, 0.2);
+        /* Vertical Slider (Desktop) */
+        #included-list.vertical-slider {
+            display: flex; flex-direction: column; gap: 10px;
+            overflow-y: hidden; /* Controlled by buttons */
+            max-height: 220px; /* Fits approx 2 cards */
+            scroll-behavior: smooth;
+            padding: 2px;
         }
 
-        /* CARD CESTA REDESIGN */
+        /* Card Styles */
         .card-inc {
-            min-width: 260px; max-width: 300px; scroll-snap-align: start;
-            display: grid; 
-            grid-template-columns: 50px 1fr; 
-            gap: 8px; padding: 8px;
             background: #fff; border: 1px solid #fee2e2; border-left: 3px solid var(--primary);
-            border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+            border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 8px; display: grid; grid-template-columns: 50px 1fr; gap: 8px;
+            flex-shrink: 0;
         }
-        
-        .ci-img-wrap { display: flex; align-items: center; justify-content: center; }
-        .ci-img { width: 100%; height: 50px; object-fit: contain; mix-blend-mode: multiply; cursor: zoom-in; }
-        
+        /* Mobile specific card size */
+        .horizontal-slider .card-inc { min-width: 260px; max-width: 300px; scroll-snap-align: start; }
+        /* Desktop specific card size */
+        .vertical-slider .card-inc { width: 100%; }
+
+        .ci-img { width: 100%; height: 50px; object-fit: contain; mix-blend-mode: multiply; align-self: center; }
         .ci-content { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
         .ci-title { 
             font-size: 0.75rem; font-weight: 600; color: var(--text-main); 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
         }
-        
-        .ci-row-btm { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+        .ci-row-btm { display: flex; align-items: center; justify-content: space-between; }
         .ci-price { font-weight: 700; color: var(--secondary); font-size: 0.8rem; }
         
-        /* Small Qty Control */
         .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 24px; }
         .qs-btn { width: 24px; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--secondary); cursor: pointer; }
         .qs-val { font-size: 0.75rem; font-weight: 700; padding: 0 4px; min-width: 16px; text-align: center; }
 
-        /* --- 6. MERCADINHO (GRID) --- */
-        .mercadinho-header { text-align: center; padding: 0 16px 10px; background: transparent; }
-        .mercadinho-header h3 { color: var(--secondary); font-size: 1.3rem; margin-bottom: 5px; }
+        /* Vertical Nav Controls (Desktop) */
+        .v-nav-ctrl { display: none; width: 100%; text-align: center; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 4px; margin-bottom: 5px; }
+        .v-nav-ctrl:hover { background: #e2e8f0; color: var(--secondary); }
+        .v-nav-ctrl.down { margin-top: 5px; margin-bottom: 0; }
+
+        /* --- 7. MERCADINHO --- */
+        .mercadinho-header { text-align: center; padding: 10px 16px; }
+        .mercadinho-header h3 { color: var(--secondary); font-size: 1.2rem; margin-bottom: 2px; }
         
         .cat-header { 
-            position: sticky; top: 20px; z-index: 700;
+            position: sticky; top: 120px; z-index: 700; /* Adjust based on mobile header height */
             background: #f1f5f9; color: var(--secondary);
             padding: 8px 16px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.5px; margin: 15px 0; border-radius: 4px;
@@ -172,7 +188,7 @@
         .card-prod:active { border-color: #cbd5e1; }
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #dcfce7; color: #166534; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
-        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: zoom-in; }
+        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
         .cp-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .cp-title { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); 
@@ -193,34 +209,6 @@
         .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; cursor: pointer; }
         .qc-val { font-weight: 700; font-size: 0.9rem; }
 
-        /* --- 7. BOTTOM NAV & SEARCH --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-bar-height);
-            background: #fff; border-top: 1px solid #e2e8f0; z-index: 10000;
-            display: grid; grid-template-columns: repeat(5, 1fr);
-            padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
-        }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 0.6rem; color: var(--text-light); gap: 4px; font-weight: 600;
-        }
-        .nav-item svg { width: 22px; height: 22px; stroke-width: 2; stroke: currentColor; fill: none; }
-        .nav-item.active { color: var(--primary); }
-        
-        /* Floating Search Bar */
-        .search-float {
-            position: fixed; bottom: calc(var(--nav-bar-height) + 220px); /* Above basket panel */
-            left: 16px; right: 16px; z-index: 9995;
-            background: white; padding: 10px; border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            display: flex; align-items: center; 
-            transform: translateY(100px); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .search-float.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
-        .sf-input { flex: 1; border: none; outline: none; font-size: 1rem; padding: 5px 15px; }
-        .sf-close { width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-light); }
-
         /* --- 8. DESKTOP LAYOUT --- */
         .desktop-sidebar { display: none; }
         
@@ -228,46 +216,34 @@
             #customizer-view { 
                 padding-bottom: 0; 
                 display: grid !important; 
-                grid-template-columns: 1fr 380px; /* Main | Sidebar */
+                grid-template-columns: 1fr 320px; /* Main | Sidebar Fixed Width */
                 gap: 40px; 
                 max-width: 1200px; margin: 0 auto; padding: 40px 20px;
                 align-items: start;
-                padding-top: 40px;
             }
             
             /* Hide Mobile Elements */
-            .bottom-nav, .basket-panel .bp-checkout-row, .basket-panel .bp-header { display: none; }
+            .mobile-bottom-actions, .sticky-basket-container, .fab-faq { display: none; }
+            .mercadinho-header { text-align: left; padding: 0 0 20px 0; }
             
-            /* Reposition Basket Panel for Desktop (Grid Placement) */
-            /* We move the whole .basket-panel div into the top of the sidebar visually using Grid */
-            .basket-panel { 
-                position: static; 
-                box-shadow: none; border: 1px solid #e2e8f0; border-radius: 12px; 
-                padding: 0; margin-bottom: 20px; z-index: 1;
-                grid-column: 2; grid-row: 1; /* Sidebar Top */
-            }
-            #included-list.horizontal-slider { 
-                flex-wrap: wrap; overflow: visible; padding: 15px;
-            }
-            .card-inc { width: 100%; max-width: none; border-left: 4px solid var(--primary); }
-            
-            /* Desktop Sidebar (Summary) */
+            /* Desktop Sidebar (Fixed) */
             .desktop-sidebar {
-                display: block; 
+                display: block; position: sticky; top: 20px;
                 background: white; border: 1px solid #e2e8f0; border-radius: 12px;
-                padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-                grid-column: 2; grid-row: 2; /* Sidebar Bottom */
+                padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                max-height: calc(100vh - 40px); overflow-y: auto;
             }
             
-            .ds-title { font-size: 1.2rem; font-weight: 800; color: var(--secondary); margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
-            .ds-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; }
-            .ds-total { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-align: right; margin: 20px 0; }
-            .ds-btn { width: 100%; padding: 14px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; cursor: pointer; }
-            .ds-btn-outline { width: 100%; padding: 12px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; }
-            .ds-search { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 20px; }
+            /* Vertical Carousel Controls */
+            .v-nav-ctrl { display: block; }
             
-            /* Main Content Column */
-            .main-content-col { grid-column: 1; grid-row: 1 / span 3; }
+            .ds-section-title { font-size: 0.9rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; }
+            .ds-divider { height: 1px; background: #e2e8f0; margin: 15px 0; }
+            
+            .ds-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+            .ds-total { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-align: right; margin: 15px 0; }
+            .ds-btn { width: 100%; padding: 12px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; cursor: pointer; }
+            .ds-btn-outline { width: 100%; padding: 10px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; }
         }
 
         /* --- 9. SHEETS & MODALS --- */
@@ -279,11 +255,23 @@
         .sheet-overlay.open { opacity: 1; pointer-events: auto; }
         .sheet-box {
             background: #fff; width: 100%; border-radius: 20px 20px 0 0;
-            max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s;
+            max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s;
             padding: 20px; padding-bottom: 40px;
         }
         .sheet-overlay.open .sheet-box { transform: translateY(0); }
         
+        .cat-list-btn {
+            display: flex; width: 100%; padding: 16px; text-align: left;
+            border-bottom: 1px solid #f1f5f9; font-weight: 600; color: var(--secondary);
+            align-items: center; justify-content: space-between; font-size: 0.95rem;
+        }
+        
+        /* FAQ Details */
+        details.faq-box { margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+        details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
+        .faq-text { padding: 15px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
+
+        /* Gallery */
         .gallery-wrap { 
             position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 13000; 
             display: none; flex-direction: column; justify-content: center; 
@@ -294,20 +282,11 @@
         .gallery-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 1.5rem; background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
         .info-body { line-height: 1.6; color: var(--text-main); font-size: 0.95rem; }
-        .info-media img, .info-media video { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #eee; }
-
-        .cat-list-btn {
-            display: flex; width: 100%; padding: 16px; text-align: left;
-            border-bottom: 1px solid #f1f5f9; font-weight: 600; color: var(--secondary);
-            align-items: center; justify-content: space-between; font-size: 0.95rem;
-        }
-        details.faq-box { margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; }
-        .faq-text { padding-top: 10px; color: var(--text-light); font-size: 0.9rem; }
+        .info-media img { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #eee; }
 
         /* Toasts */
         .toast {
-            position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%) translateY(20px);
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
             background: var(--secondary); color: white; padding: 10px 20px; border-radius: 50px;
             font-size: 0.85rem; font-weight: 600; opacity: 0; pointer-events: none;
             transition: all 0.3s; z-index: 12000; white-space: nowrap;
@@ -315,7 +294,7 @@
         .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         .sug-toast {
-            position: fixed; bottom: 220px; left: 16px; right: 16px; background: white;
+            position: fixed; bottom: 90px; left: 16px; right: 16px; background: white;
             border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 4px solid #3b82f6;
             transform: translateY(20px); opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 11500;
@@ -335,7 +314,7 @@
         <header>
             <div class="container header-inner">
                 <a href="#" class="logo" onclick="location.reload()"><div class="logo-circle">DA</div> Dona Antônia</a>
-                <div class="location-pill">Cuiabá & VG</div>
+                <div class="logo-circle" style="background:transparent; font-size:1.5rem;">🏠</div>
             </div>
         </header>
         
@@ -357,11 +336,24 @@
     <!-- CUSTOMIZER VIEW -->
     <div id="customizer-view" class="hidden">
         
-        <!-- MAIN COLUMN -->
+        <!-- FLOATING FAQ BTN -->
+        <button class="fab-faq" onclick="App.openSheet('faq-sheet')">?</button>
+
+        <!-- LEFT COLUMN (MAIN CONTENT) -->
         <div class="main-content-col">
-            <!-- TITULO DO MERCADINHO -->
+            
+            <!-- MOBILE: STICKY BASKET -->
+            <div class="sticky-basket-container">
+                <div class="section-title-bar">
+                    <h3>📦 Minha Cesta</h3>
+                    <div id="limit-alert" class="limit-alert">Alt: 0/0</div>
+                </div>
+                <div id="included-list-mob" class="horizontal-slider"></div>
+            </div>
+
+            <!-- MERCADINHO TITLE -->
             <div class="mercadinho-header">
-                <h2 id="cust-title-text" style="font-size:1rem; color:var(--text-light); margin-bottom:5px;">Personalizar Cesta</h2>
+                <h2 id="cust-title-text" style="font-size:0.9rem; color:var(--text-light); margin-bottom:5px;">Personalizar Cesta</h2>
                 <h3>🏪 Mercadinho</h3>
                 <p style="font-size:0.8rem; color:var(--text-light);">Adicione itens extras à sua cesta</p>
             </div>
@@ -371,73 +363,46 @@
             </div>
         </div>
 
-        <!-- BASKET PANEL (Fix bottom mobile / Top Sidebar Desktop) -->
-        <div class="basket-panel">
-            <div class="bp-header">
-                <div class="bp-title">📦 Minha Cesta</div>
-                <div id="limit-alert" class="limit-alert">Alt: 0/0</div>
-            </div>
-            <div id="included-list" class="horizontal-slider"></div>
-            
-            <!-- Checkout Row (Mobile Only) -->
-            <div class="bp-checkout-row">
-                <div class="bp-total-group">
-                    <div class="bp-label">Total Estimado</div>
-                    <div class="bp-total-val" id="bp-total">R$ 0,00</div>
-                </div>
-                <button class="bp-btn" onclick="App.openCheckout()">
-                    Encomendar <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- RIGHT SIDEBAR (DESKTOP REST) -->
+        <!-- RIGHT COLUMN (DESKTOP SIDEBAR) -->
         <aside class="desktop-sidebar">
-            <div class="ds-title">Resumo do Pedido</div>
+            <div class="ds-section-title">
+                Minha Cesta
+                <span id="limit-alert-desk" class="limit-alert">Alt: 0/0</span>
+            </div>
             
-            <input type="text" id="desk-search" class="ds-search" placeholder="Buscar no mercadinho..." oninput="App.renderAllLists(this.value)">
+            <!-- Vertical Carousel -->
+            <div class="v-nav-ctrl" onclick="App.scrollVertical(-1)">▲</div>
+            <div id="included-list-desk" class="vertical-slider"></div>
+            <div class="v-nav-ctrl down" onclick="App.scrollVertical(1)">▼</div>
             
+            <div class="ds-divider"></div>
+            
+            <div class="ds-title">Resumo</div>
             <div class="ds-row"><span>Cesta Base</span><span id="ds-base">R$ 0,00</span></div>
             <div class="ds-row"><span>Extras</span><span id="ds-extras">R$ 0,00</span></div>
             <div class="ds-total" id="ds-total">R$ 0,00</div>
             
             <button class="ds-btn" onclick="App.openCheckout()">Concluir Pedido</button>
-            <button class="ds-btn-outline" onclick="App.goHome()">Trocar Cesta</button>
-            
-            <div style="margin-top:20px; font-size:0.8rem; color:#64748b; text-align:center;">
-                Pague somente na entrega.<br>Aceitamos Pix, Cartão e Vale.
-            </div>
+            <button class="ds-btn-outline" onclick="App.goHome()">Voltar / Trocar Cesta</button>
         </aside>
 
-        <!-- SEARCH FLOAT (MOBILE) -->
-        <div id="search-float" class="search-float">
-            <input type="text" id="mob-search-input" class="sf-input" placeholder="O que procura?">
-            <button class="sf-close" onclick="App.toggleSearch()">✕</button>
+        <!-- MOBILE BOTTOM ACTIONS (FIXED BASE) -->
+        <div class="mobile-bottom-actions">
+            <div class="mba-left">
+                <button class="mba-btn-icon" onclick="App.goHome()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <button class="mba-btn-icon" onclick="App.openSheet('categories-sheet')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+            </div>
+            <div class="mba-right">
+                <div class="mba-total" id="mba-total">R$ 0,00</div>
+                <button class="mba-btn-order" onclick="App.openCheckout()">
+                    Encomendar <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </div>
         </div>
-
-        <!-- BOTTOM NAV -->
-        <nav class="bottom-nav">
-            <button class="nav-item active" onclick="App.goHome()">
-                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                Voltar
-            </button>
-            <button class="nav-item" onclick="App.openSheet('categories-sheet')">
-                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                Categorias
-            </button>
-            <button class="nav-item" onclick="App.toggleSearch()">
-                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                Buscar
-            </button>
-            <button class="nav-item" onclick="App.showBestSellers(); App.setActiveNav(this)">
-                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
-                Top
-            </button>
-            <button class="nav-item" onclick="App.openSheet('faq-sheet')">
-                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Dúvidas
-            </button>
-        </nav>
     </div>
 
     <!-- SHEETS & MODALS -->
@@ -466,9 +431,17 @@
 
     <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
         <div class="sheet-box">
-            <h3 style="margin-bottom:15px; color:var(--secondary);">Dúvidas Frequentes</h3>
-            <details class="faq-box"><summary>Formas de Pagamento</summary><div class="faq-text">Dinheiro, Pix, Cartão (Crédito/Débito) e Vale Alimentação.</div></details>
-            <details class="faq-box"><summary>Entrega</summary><div class="faq-text">Entregamos em 24h em Cuiabá e VG. Grátis acima de R$ 85.</div></details>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                <h3 style="margin:0; color:var(--secondary);">Dúvidas Frequentes</h3>
+                <span onclick="App.closeSheet('faq-sheet')" style="font-size:1.5rem; color:#999;">✕</span>
+            </div>
+            <div style="overflow-y:auto; padding-bottom:20px;">
+                <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-text">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação (Alelo, Sodexo, Ticket, etc).</div></details>
+                <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
+                <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
+                <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho.</div></details>
+                <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto.</div></details>
+            </div>
         </div>
     </div>
 
@@ -494,7 +467,7 @@
 
     <dialog id="checkout-modal" class="modal-checkout" style="padding:20px; border:none; border-radius:16px; width:90%; max-width:400px; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700;">
-            <span>Resumo</span><span onclick="document.getElementById('checkout-modal').close()">✕</span>
+            <span>Resumo do Pedido</span><span onclick="document.getElementById('checkout-modal').close()">✕</span>
         </div>
         <ul id="checkout-items" style="list-style:none; margin-bottom:20px; max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px; border-radius:8px;"></ul>
         <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.2rem; margin-bottom:20px; color:var(--primary);">
@@ -537,7 +510,7 @@
         
         const App = {
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, 
-            cartOrder: [], // To track insertion order
+            cartOrder: [],
 
             async init() {
                 try {
@@ -547,7 +520,6 @@
                     this.data = raw.map(p => {
                         const catStr = (p.categoria || "").toUpperCase();
                         let appCat = "BAZAR E UTILIDADES"; 
-                        
                         if (catStr.includes('ALIMENTOS') || catStr.includes('MERCEARIA') || catStr.includes('GRÃOS') || catStr.includes('TEMPEROS') || catStr.includes('MOLHOS')) appCat = "MERCEARIA E ALIMENTOS";
                         else if (catStr.includes('MATINAIS') || catStr.includes('BISCOITOS') || catStr.includes('BEBIDAS') || catStr.includes('LANCHE')) appCat = "CAFÉ DA MANHÃ E LANCHES";
                         else if (catStr.includes('LIMPEZA') || catStr.includes('LAVANDERIA') || catStr.includes('SABÃO')) appCat = "LIMPEZA E LAVANDERIA";
@@ -572,17 +544,12 @@
                     });
 
                     this.renderHome();
-                    
-                    // Search listener
-                    document.getElementById('mob-search-input').addEventListener('input', (e) => this.renderAllLists(e.target.value));
-
                 } catch (e) { console.error(e); }
             },
 
             renderHome() {
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
-                
                 list.innerHTML = baskets.map(p => `
                     <div class="home-card" style="border:1px solid #eee; border-radius:12px; overflow:hidden;">
                         <div style="padding:20px; background:#fff; text-align:center;">
@@ -638,19 +605,11 @@
                 
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
-                let title = "";
-
-                if (filter === 'OFFERS') {
-                    products = products.filter(p => p.isOffer);
-                    title = `<div style="text-align:center; padding:20px; color:#b45309; font-weight:700;">🔥 OFERTAS ESPECIAIS</div>`;
-                } else if (filter === 'BEST') {
-                    products = products.filter(p => p.isBest);
-                    title = `<div style="text-align:center; padding:20px; color:#2563eb; font-weight:700;">🏆 MAIS VENDIDOS</div>`;
-                } else if (filter && filter.length > 2) {
+                
+                if (filter && filter.length > 2) {
                     products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
                 }
 
-                // Sort alphabetically by category/subcategory to group similar items
                 products.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
 
                 const groups = {};
@@ -660,7 +619,7 @@
                 });
 
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
-                let html = title;
+                let html = "";
                 
                 order.forEach(catName => {
                     if(groups[catName] && groups[catName].length > 0) {
@@ -677,21 +636,20 @@
             },
 
             renderIncluded() {
-                const list = document.getElementById('included-list');
+                // Two targets: Mobile (Horizontal) and Desktop (Vertical)
+                const listMob = document.getElementById('included-list-mob');
+                const listDesk = document.getElementById('included-list-desk');
                 const ids = this.cartOrder.filter(id => this.cart[id] > 0);
                 
-                list.innerHTML = ids.length ? ids.map(id => {
+                const html = ids.length ? ids.map(id => {
                     const p = this.data.find(x => x.id === id);
                     if(!p) return '';
                     const price = p.isOffer ? p.offerPrice : p.valor;
-                    
                     let infoBtn = p.caracteristicas ? `<span style="font-size:0.65rem; text-decoration:underline; cursor:pointer;" onclick="App.openInfo('${p.id}')">Info</span>` : '';
                     
                     return `
                     <div class="card-inc">
-                        <div class="ci-img-wrap">
-                            <img src="${p.imagem}" class="ci-img" onclick="Gallery.open('${p.imagem}')">
-                        </div>
+                        <div class="ci-img-wrap"><img src="${p.imagem}" class="ci-img" onclick="Gallery.open('${p.imagem}')"></div>
                         <div class="ci-content">
                             <div class="ci-title">${p.nome}</div>
                             <div class="ci-row-btm">
@@ -704,7 +662,10 @@
                             </div>
                         </div>
                     </div>`;
-                }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999;">Cesta vazia</p>';
+                }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
+
+                if(listMob) listMob.innerHTML = html;
+                if(listDesk) listDesk.innerHTML = html;
             },
 
             buildCard(p) {
@@ -736,7 +697,6 @@
             modQty(id, delta) {
                 const p = this.data.find(x => x.id === id);
                 if(!this.cart[id]) this.cart[id] = 0;
-                
                 const newQty = this.cart[id] + delta;
                 
                 if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
@@ -757,14 +717,17 @@
                 
                 this.renderIncluded();
                 
-                // Scroll to start of basket if adding new item
+                // Scroll Logic
                 if (delta > 0 && this.cart[id] === 1) {
-                    const slider = document.getElementById('included-list');
-                    if(slider) slider.scrollTo({left:0, behavior:'smooth'});
+                    const mobSlider = document.getElementById('included-list-mob');
+                    if(mobSlider) mobSlider.scrollTo({left:0, behavior:'smooth'});
+                    const deskSlider = document.getElementById('included-list-desk');
+                    if(deskSlider) deskSlider.scrollTop = 0;
                 }
 
-                const card = document.querySelectorAll(`[onclick="App.modQty('${p.id}', 1)"]`);
-                this.renderAllLists(document.getElementById('mob-search-input').value || document.getElementById('desk-search').value);
+                // Update cards in grid
+                const cards = document.querySelectorAll('.card-prod'); // Simple re-render for consistency
+                this.renderAllLists(document.getElementById('desk-search') ? document.getElementById('desk-search').value : "");
                 
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
             },
@@ -800,7 +763,8 @@
                 const total = Math.max(sum + this.baseFee, this.currentBasket.valor);
                 const txt = 'R$ ' + total.toFixed(2).replace('.', ',');
                 
-                document.getElementById('bp-total').innerText = txt;
+                // Update Displays
+                if(document.getElementById('mba-total')) document.getElementById('mba-total').innerText = txt;
                 document.getElementById('co-total').innerText = txt;
                 
                 if(document.getElementById('ds-total')) {
@@ -811,9 +775,14 @@
                 }
 
                 const rem = this.countRemovals();
-                const badge = document.getElementById('limit-alert');
-                badge.innerText = `Alt: ${rem}/${this.currentLimit}`;
-                badge.className = rem >= this.currentLimit ? 'limit-alert error' : 'limit-alert';
+                const limitTxt = `Alt: ${rem}/${this.currentLimit}`;
+                document.getElementById('limit-alert').innerText = limitTxt;
+                if(document.getElementById('limit-alert-desk')) document.getElementById('limit-alert-desk').innerText = limitTxt;
+            },
+
+            scrollVertical(dir) {
+                const el = document.getElementById('included-list-desk');
+                if(el) el.scrollBy({top: dir * 100, behavior: 'smooth'});
             },
 
             openInfo(id) {
@@ -827,9 +796,7 @@
             },
 
             scrollToCat(name) {
-                this.closeSheet('categories-sheet');
-                document.getElementById('mob-search-input').value = "";
-                this.renderAllLists();
+                App.closeSheet('categories-sheet');
                 setTimeout(() => {
                     const el = document.getElementById('cat-' + name);
                     if(el) {
@@ -837,42 +804,6 @@
                         window.scrollTo({top: y, behavior: 'smooth'});
                     }
                 }, 100);
-            },
-
-            setActiveNav(btn) {
-                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-                if(btn) btn.classList.add('active');
-            },
-
-            toggleSearch() {
-                const bar = document.getElementById('search-float');
-                const navBtn = document.querySelectorAll('.nav-item')[2]; 
-                
-                if (bar.classList.contains('visible')) {
-                    bar.classList.remove('visible');
-                    navBtn.classList.remove('active');
-                } else {
-                    bar.classList.add('visible');
-                    navBtn.classList.add('active');
-                    document.getElementById('mob-search-input').focus();
-                }
-            },
-
-            clearSearch() {
-                document.getElementById('mob-search-input').value = "";
-                document.getElementById('search-float').classList.remove('visible');
-                this.renderAllLists();
-                window.scrollTo({top:0, behavior:'smooth'});
-            },
-            
-            showOffers() {
-                this.renderAllLists('OFFERS');
-                window.scrollTo({top:document.getElementById('extras-container').offsetTop - 100, behavior:'smooth'});
-            },
-            
-            showBestSellers() {
-                this.renderAllLists('BEST');
-                window.scrollTo({top:document.getElementById('extras-container').offsetTop - 100, behavior:'smooth'});
             },
 
             openSheet(id) { document.getElementById(id).classList.add('open'); },
