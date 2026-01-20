@@ -4,12 +4,14 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.95 - Bottom Integrated Basket & Vertical Sidebar
+        VERSION: 10.0 - Final Refined Layout
         CHANGELOG:
-        - MOBILE LAYOUT: Cesta movida para a base, integrada num painel fixo acima dos botões de ação.
-        - MOBILE UI: Painel de base contém: [Slider Cesta] -> [Barra Ações (Voltar, Categ, Total, Encomendar)].
-        - DESKTOP: Sidebar direita mantém Carrossel Vertical no topo.
-        - CSS: Ajuste de padding-bottom para acomodar o painel de base mais alto (~160px).
+        - MOBILE: Cesta movida para o fundo absoluto (abaixo da barra de ações).
+        - LOGIC: Reordenação inteligente (apenas novos itens vão para o topo).
+        - DESKTOP: Sidebar compacta e carrossel vertical expandido.
+        - UI: Modal de checkout centralizado e compacto.
+        - UI: Títulos de categoria não são mais sticky (fixos).
+        - RESTORE: Toasts de crédito reativados.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -32,7 +34,7 @@
             --secondary: #1e293b; --text-main: #334155; --text-light: #64748b; 
             --bg-body: #f8fafc; --border-color: #e2e8f0;
             --header-height: 60px; 
-            --bottom-panel-height: 155px; /* Estimated height for Basket + Actions */
+            --bottom-panel-height: 180px; /* Taller for Action Bar + Basket */
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -68,7 +70,6 @@
 
         /* --- 4. CUSTOMIZER VIEW --- */
         #customizer-view { 
-            /* Large padding bottom so content isn't hidden by the fixed panel */
             padding-bottom: calc(var(--bottom-panel-height) + 20px); 
             min-height: 100vh; background: #f8fafc; 
             padding-top: 20px; 
@@ -90,28 +91,31 @@
             background: #fff; border-top: 1px solid #e2e8f0; z-index: 9999;
             display: flex; flex-direction: column;
             padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -4px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 -4px 30px rgba(0,0,0,0.12);
         }
 
-        /* Row 1: Basket Carousel */
-        .mbp-basket-row {
-            border-bottom: 1px solid #f1f5f9;
-            background: #ffffff;
-            padding: 8px 0;
-        }
-        .mbp-basket-header { padding: 0 16px 4px; display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
-        
-        /* Row 2: Actions */
+        /* Row 1: Actions (Top) */
         .mbp-actions-row {
             display: grid; 
             grid-template-columns: auto auto 1fr auto; /* Back | Cat | Total | Order */
             align-items: center; gap: 10px;
-            padding: 10px 12px; height: 70px;
+            padding: 8px 12px; height: 60px;
+            background: #fff; border-bottom: 1px solid #f1f5f9;
+        }
+        
+        /* Row 2: Basket Carousel (Bottom) */
+        .mbp-basket-row {
+            background: #f8fafc;
+            padding: 10px 0;
+        }
+        .mbp-basket-header { 
+            padding: 0 16px 4px; display: flex; justify-content: space-between; 
+            font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; font-weight: 700; 
         }
         
         .mba-btn-icon { 
             display: flex; align-items: center; justify-content: center; 
-            width: 42px; height: 42px; border-radius: 50%; background: #f1f5f9; color: var(--secondary); 
+            width: 40px; height: 40px; border-radius: 50%; background: #f1f5f9; color: var(--secondary); 
             border: 1px solid #e2e8f0; cursor: pointer;
         }
         .mba-btn-icon:active { background: #e2e8f0; }
@@ -123,7 +127,7 @@
         
         .mba-btn-order {
             background: #16a34a; color: white; border-radius: 50px;
-            padding: 0 20px; height: 42px; font-weight: 700; font-size: 0.9rem;
+            padding: 0 18px; height: 40px; font-weight: 700; font-size: 0.9rem;
             display: flex; align-items: center; gap: 6px; white-space: nowrap;
             box-shadow: 0 2px 5px rgba(22,163,74,0.3); border: none; cursor: pointer;
         }
@@ -149,17 +153,12 @@
         .vertical-slider .card-inc { width: 100%; margin-bottom: 8px; }
 
         .ci-img { width: 50px; height: 50px; object-fit: contain; mix-blend-mode: multiply; cursor: zoom-in; flex-shrink: 0; }
-        
         .ci-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-        
-        /* Name on top line full width */
         .ci-title { 
             font-size: 0.75rem; font-weight: 600; color: var(--secondary); 
             line-height: 1.2; margin: 0;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        
-        /* Controls on bottom line */
         .ci-row-btm { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         .ci-price { font-weight: 700; color: var(--text-main); font-size: 0.8rem; }
         .ci-info-btn { font-size: 0.65rem; text-decoration: underline; color: var(--text-light); margin-left: 5px; cursor: pointer; }
@@ -174,7 +173,7 @@
         .mercadinho-header p { font-size: 0.85rem; color: var(--text-light); margin: 4px 0 0; }
         
         .cat-header { 
-            position: sticky; top: 10px; z-index: 700;
+            position: static; /* NO LONGER STICKY */
             background: #f1f5f9; color: var(--secondary);
             padding: 8px 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.5px; margin: 15px 0; border-radius: 4px; border: 1px solid #e2e8f0;
@@ -219,7 +218,7 @@
             #customizer-view { 
                 padding-bottom: 0; 
                 display: grid !important; 
-                grid-template-columns: 1fr 350px; /* Main | Sidebar Fixed Width */
+                grid-template-columns: 1fr 320px; /* Main | Sidebar Fixed Width */
                 gap: 40px; 
                 max-width: 1280px; margin: 0 auto; padding: 40px 20px;
                 align-items: start;
@@ -227,43 +226,43 @@
             
             /* Hide Mobile Elements */
             .mobile-bottom-panel, .fab-faq { display: none; }
-            .cat-header { top: 20px; } /* Adjust sticky top for desktop */
+            .mercadinho-header { text-align: left; padding: 0 0 20px 0; }
             
             /* Desktop Sidebar (Fixed) */
             .desktop-sidebar {
                 display: flex; flex-direction: column;
                 position: sticky; top: 20px;
-                background: white; border: 1px solid #e2e8f0; border-radius: 16px;
-                padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+                background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+                padding: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); /* Compact padding */
                 max-height: calc(100vh - 40px); overflow-y: auto;
             }
             
             /* Vertical Carousel Controls */
-            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 4px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; transition: all 0.2s; font-size: 0.8rem; }
+            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; transition: all 0.2s; font-size: 0.7rem; }
             .v-nav-ctrl:hover { background: #e2e8f0; color: var(--secondary); }
-            .v-nav-ctrl.down { margin-top: 10px; }
-            .v-nav-ctrl.up { margin-bottom: 10px; }
+            .v-nav-ctrl.down { margin-top: 5px; }
+            .v-nav-ctrl.up { margin-bottom: 5px; }
             
             #included-list-desk.vertical-slider {
                 display: flex; flex-direction: column; gap: 0;
                 overflow: hidden; /* Hidden scroll, buttons control it */
-                max-height: 200px; /* Roughly 2 items (approx 90px each + gap) */
+                max-height: 400px; /* Increased height for desktop basket */
                 transition: scroll-top 0.3s;
                 border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;
-                padding: 10px 0;
+                padding: 5px 0;
             }
 
-            .ds-section-title { font-size: 1rem; font-weight: 800; color: var(--secondary); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-            .ds-divider { height: 1px; background: #e2e8f0; margin: 20px 0; }
+            .ds-section-title { font-size: 0.9rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+            .ds-divider { height: 1px; background: #e2e8f0; margin: 15px 0; }
             
-            .ds-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; color: var(--text-light); }
-            .ds-total { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-align: right; margin: 20px 0; letter-spacing: -0.5px; }
+            .ds-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-light); }
+            .ds-total { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-align: right; margin: 15px 0; letter-spacing: -0.5px; }
             
-            .ds-btn { width: 100%; padding: 14px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; cursor: pointer; transition: transform 0.2s; border: none; }
+            .ds-btn { width: 100%; padding: 12px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 0.95rem; margin-bottom: 10px; cursor: pointer; transition: transform 0.2s; border: none; }
             .ds-btn:hover { transform: scale(1.02); }
-            .ds-btn-outline { width: 100%; padding: 12px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+            .ds-btn-outline { width: 100%; padding: 10px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; transition: background 0.2s; font-size: 0.9rem; }
             .ds-btn-outline:hover { background: #f8fafc; }
-            .ds-search { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 20px; }
+            .ds-search { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px; font-size:0.9rem; }
         }
 
         /* --- 9. SHEETS & MODALS --- */
@@ -302,7 +301,7 @@
 
         /* Toasts */
         .sug-toast {
-            position: fixed; bottom: 170px; left: 16px; right: 16px; background: white;
+            position: fixed; bottom: 180px; left: 16px; right: 16px; background: white;
             border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 4px solid #3b82f6;
             transform: translateY(20px); opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 9998;
@@ -313,6 +312,26 @@
         
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
         .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
+        
+        /* Credit Toast (Center Screen) */
+        .credit-toast {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(30, 41, 59, 0.95); color: white;
+            padding: 12px 24px; border-radius: 50px; font-weight: 600;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            z-index: 12000; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .credit-toast.visible { opacity: 1; }
+
+        /* Checkout Modal Centered */
+        dialog.modal-checkout {
+            margin: auto; inset: 0; position: fixed; border: none; border-radius: 16px; 
+            width: 90%; max-width: 380px; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+            padding: 20px;
+            background: #fff;
+        }
+        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
 
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -352,7 +371,6 @@
 
         <!-- LEFT COLUMN (MAIN CONTENT) -->
         <div class="main-content-col">
-            
             <!-- MERCADINHO HEADER -->
             <div class="mercadinho-header">
                 <h2 id="cust-title-text" style="font-size:0.9rem; color:var(--text-light); margin-bottom:5px;">Personalizar Cesta</h2>
@@ -380,7 +398,7 @@
             
             <div class="ds-divider"></div>
             
-            <div class="ds-section-title">Resumo do Pedido</div>
+            <div class="ds-section-title">Resumo</div>
             <div class="ds-row"><span>Cesta Base</span><span id="ds-base">R$ 0,00</span></div>
             <div class="ds-row"><span>Extras</span><span id="ds-extras">R$ 0,00</span></div>
             <div class="ds-total" id="ds-total">R$ 0,00</div>
@@ -393,16 +411,7 @@
 
         <!-- MOBILE BOTTOM PANEL (UNIFIED FIXED) -->
         <div class="mobile-bottom-panel">
-            <!-- Row 1: Basket Slider -->
-            <div class="mbp-basket-row">
-                <div class="mbp-basket-header">
-                    <span>Minha Cesta</span>
-                    <span id="limit-alert">Alt: 0/0</span>
-                </div>
-                <div id="included-list-mob" class="horizontal-slider"></div>
-            </div>
-            
-            <!-- Row 2: Actions Bar -->
+            <!-- Row 1: Actions Bar (Top) -->
             <div class="mbp-actions-row">
                 <button class="mba-btn-icon" onclick="App.goHome()" aria-label="Voltar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
@@ -419,6 +428,15 @@
                 <button class="mba-btn-order" onclick="App.openCheckout()">
                     Encomendar <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
+            </div>
+
+            <!-- Row 2: Basket Slider (Bottom) -->
+            <div class="mbp-basket-row">
+                <div class="mbp-basket-header">
+                    <span>Minha Cesta</span>
+                    <span id="limit-alert">Alt: 0/0</span>
+                </div>
+                <div id="included-list-mob" class="horizontal-slider"></div>
             </div>
         </div>
     </div>
@@ -481,11 +499,14 @@
         <div onclick="document.getElementById('suggestion-toast').classList.remove('visible')" style="padding:0 5px; font-size:1.2rem;">×</div>
     </div>
 
-    <dialog id="checkout-modal" class="modal-checkout" style="padding:20px; border:none; border-radius:16px; width:90%; max-width:400px; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+    <!-- CREDIT TOAST -->
+    <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
+
+    <dialog id="checkout-modal" class="modal-checkout">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700;">
             <span>Resumo do Pedido</span><span onclick="document.getElementById('checkout-modal').close()">✕</span>
         </div>
-        <ul id="checkout-items" style="list-style:none; margin-bottom:20px; max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px; border-radius:8px;"></ul>
+        <ul id="checkout-items" style="list-style:none; margin-bottom:20px; max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px; border-radius:8px; font-size:0.85rem;"></ul>
         <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.2rem; margin-bottom:20px; color:var(--primary);">
             <span>Total</span><span id="co-total">R$ 0,00</span>
         </div>
@@ -689,19 +710,26 @@
                 const p = this.data.find(x => x.id === id);
                 if(!this.cart[id]) this.cart[id] = 0;
                 
+                const isNew = this.cart[id] === 0;
                 const newQty = this.cart[id] + delta;
+                
                 if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
                 if (this.originalCart[id] && delta < 0 && newQty === 0 && this.countRemovals() >= this.currentLimit) return alert(`Limite de ${this.currentLimit} trocas atingido.`);
 
                 this.cart[id] = newQty;
-                if(this.cart[id] <= 0) delete this.cart[id];
-                else {
+                
+                if(this.cart[id] <= 0) {
+                    delete this.cart[id];
                     this.cartOrder = this.cartOrder.filter(x => x !== id);
-                    this.cartOrder.unshift(id);
+                } else {
+                    if (isNew) {
+                        this.cartOrder = this.cartOrder.filter(x => x !== id);
+                        this.cartOrder.unshift(id);
+                    }
                 }
                 
                 this.renderIncluded();
-                if (delta > 0 && this.cart[id] === 1) {
+                if (isNew && delta > 0) {
                     const mobSlider = document.getElementById('included-list-mob');
                     if(mobSlider) mobSlider.scrollTo({left:0, behavior:'smooth'});
                     const deskSlider = document.getElementById('included-list-desk');
@@ -742,6 +770,16 @@
                 const total = Math.max(sum + this.baseFee, this.currentBasket.valor);
                 const txt = 'R$ ' + total.toFixed(2).replace('.', ',');
                 
+                // Credit Check
+                const toast = document.getElementById('credit-toast');
+                if (this.currentBasket.valor > (sum + this.baseFee)) {
+                    const diff = this.currentBasket.valor - (sum + this.baseFee);
+                    toast.innerText = `Você tem R$ ${diff.toFixed(2).replace('.',',')} em crédito!`;
+                    toast.classList.add('visible');
+                } else {
+                    toast.classList.remove('visible');
+                }
+
                 document.getElementById('mba-total').innerText = txt;
                 document.getElementById('co-total').innerText = txt;
                 if(document.getElementById('ds-total')) {
@@ -781,7 +819,7 @@
                 setTimeout(() => {
                     const el = document.getElementById('cat-' + name);
                     if(el) {
-                        const y = el.getBoundingClientRect().top + window.scrollY - 140;
+                        const y = el.getBoundingClientRect().top - 140;
                         window.scrollTo({top: y, behavior: 'smooth'});
                     }
                 }, 100);
