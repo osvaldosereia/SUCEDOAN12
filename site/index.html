@@ -4,14 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 10.0 - Final Refined Layout
+        VERSION: 10.1 - Product Details in Grid
         CHANGELOG:
+        - UI: Cards do mercadinho agora exibem Validade e Botão Info se disponíveis.
+        - CSS: Novos estilos .cp-meta, .cp-val, .cp-info para os detalhes no grid.
         - MOBILE: Cesta movida para o fundo absoluto (abaixo da barra de ações).
         - LOGIC: Reordenação inteligente (apenas novos itens vão para o topo).
         - DESKTOP: Sidebar compacta e carrossel vertical expandido.
-        - UI: Modal de checkout centralizado e compacto.
-        - UI: Títulos de categoria não são mais sticky (fixos).
-        - RESTORE: Toasts de crédito reativados.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -197,6 +196,12 @@
             margin-bottom: 4px; line-height: 1.3; min-height: 2.6em;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
+        
+        /* NEW: Styles for extra details in Grid Cards */
+        .cp-meta { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; min-height: 20px; align-items: center; }
+        .cp-val { font-size: 0.65rem; color: #15803d; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; }
+        .cp-info { font-size: 0.65rem; text-decoration: underline; color: var(--text-light); cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+
         .cp-price { font-size: 1rem; font-weight: 800; color: var(--text-main); margin-top: auto; margin-bottom: 8px; }
         .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; font-weight: 400; margin-right: 4px; }
         
@@ -218,7 +223,7 @@
             #customizer-view { 
                 padding-bottom: 0; 
                 display: grid !important; 
-                grid-template-columns: 1fr 320px; /* Main | Sidebar Fixed Width */
+                grid-template-columns: 1fr 350px; /* Main | Sidebar Fixed Width */
                 gap: 40px; 
                 max-width: 1280px; margin: 0 auto; padding: 40px 20px;
                 align-items: start;
@@ -688,11 +693,21 @@
                     ? `<button class="btn-add" onclick="App.modQty('${p.id}', 1)">Adicionar</button>` 
                     : `<div class="qty-ctrl"><div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div><div class="qc-val">${qty}</div><div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div></div>`;
 
+                // New Logic
+                let metaHtml = '';
+                if (p.validade || p.caracteristicas) {
+                    metaHtml += '<div class="cp-meta">';
+                    if (p.validade) metaHtml += `<span class="cp-val">Val: ${p.validade}</span>`;
+                    if (p.caracteristicas) metaHtml += `<span class="cp-info" onclick="App.openInfo('${p.id}')">Info</span>`;
+                    metaHtml += '</div>';
+                }
+
                 return `
                 <div class="card-prod">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
                     <div class="cp-img-box" onclick="Gallery.open('${p.imagem}')"><img src="${p.imagem}" class="cp-img" loading="lazy"></div>
                     <div class="cp-title">${p.nome}</div>
+                    ${metaHtml}
                     <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
                     ${btn}
                 </div>`;
@@ -847,7 +862,7 @@
                     msg += `${this.cart[id]}x ${p.nome}\n`;
                 }
                 msg += `\n*TOTAL: ${total}*\nPagamento: ${method}`;
-                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`);
+                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             }
         };
 
