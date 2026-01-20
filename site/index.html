@@ -3,13 +3,13 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Stable & Smooth Build
-        TARGET: 100/100 Lighthouse Performance & Stability
+        ARCHITECT: SEO Code Architect (SCA) - Final Content Polish
+        TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - CORE: Caminhos de JSON e Imagens fixados (produtos/produtos.json & img/produtos/).
-        - UX: Anti-Flicker (Prevenção de "pisco" na atualização de página).
-        - UX: Tratamento de erro robusto para falhas de carregamento.
-        - UI: Manutenção de todos os ajustes visuais anteriores (LCP, A11y, Layout).
+        - CONTENT: Novos textos de marketing na Home ("Do seu jeito", "Pague na entrega").
+        - BRAND: Logo aumentada (53px) e slogan adicionado ("A Melhor Cesta da Cidade").
+        - UI: Altura do card mobile ajustada para suportar títulos de 3 linhas.
+        - UI: Remoção do botão de CTA redundante na home.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -56,7 +56,7 @@
             --text-light: #555555; 
             --bg-body: #f7f7f7; 
             --border-color: #f2f2f2;
-            --header-height: 60px; 
+            --header-height: 70px; /* Aumentado levemente para acomodar logo maior + slogan */
             --app-header-height: 56px; 
             --sidebar-width: 340px;
         }
@@ -95,10 +95,15 @@
         body.customizer-mode #main-header { display: none !important; }
         
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
-        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         
-        /* LOGO BRAND IMAGE */
-        .logo-brand-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+        /* Logo ajustada com Slogan */
+        .logo-container { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--secondary); }
+        .logo-text-col { display: flex; flex-direction: column; justify-content: center; }
+        .logo-name { font-weight: 700; font-size: 1.1rem; line-height: 1.1; }
+        .logo-slogan { font-size: 0.65rem; color: #666; font-weight: 500; letter-spacing: 0.5px; }
+
+        /* LOGO BRAND IMAGE - AUMENTADA PARA 53px */
+        .logo-brand-img { width: 53px; height: 53px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
@@ -242,8 +247,10 @@
         
         .cp-title { 
             font-size: 0.85rem; font-weight: 500; color: #3e3e3e; 
-            margin-bottom: 4px; line-height: 1.3; min-height: 2.6em;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+            margin-bottom: 4px; line-height: 1.3; 
+            /* AJUSTE MOBILE: Altura aumentada para comportar 3 linhas */
+            min-height: 3.9em; 
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
         }
         
         .cp-price { font-size: 0.95rem; font-weight: 700; color: #2e2e2e; margin-top: auto; margin-bottom: 12px; }
@@ -305,6 +312,9 @@
                 padding-top: calc(var(--app-header-height) + 20px); 
                 padding-bottom: 100px; 
             }
+            
+            /* Desktop ajusta altura do título para 2 linhas por padrão */
+            .cp-title { -webkit-line-clamp: 2; min-height: 2.6em; }
         }
 
         /* --- 8. FLOATING CART BAR --- */
@@ -420,9 +430,12 @@
     <!-- HOME HEADER -->
     <header id="main-header">
         <div class="container header-inner">
-            <a href="#" class="logo" onclick="location.reload()">
+            <a href="#" class="logo-container" onclick="location.reload()">
                 <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
-                Dona Antônia
+                <div class="logo-text-col">
+                    <span class="logo-name">Dona Antônia</span>
+                    <span class="logo-slogan">A Melhor Cesta da Cidade</span>
+                </div>
             </a>
             <div class="location-pill">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -435,10 +448,10 @@
     <main id="home-view">
         <section class="hero">
             <div class="container">
-                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em 24h</div></div>
-                <h1>Monte a Cesta Básica <br>Perfeita para sua <span>Família</span></h1>
-                <p>Personalize com suas marcas favoritas (como Arroz Tio Alvino) ou escolha opções prontas.</p>
-                <button class="btn-cta" onclick="document.getElementById('baskets-anchor').scrollIntoView()" aria-label="Ver Cestas Disponíveis" style="margin-top:10px; background:var(--primary); color:white; padding:12px 30px; border-radius:50px; font-weight:800; font-size:1.1rem; box-shadow:0 4px 15px rgba(220,38,38,0.3);">Escolher Minha Cesta</button>
+                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em até 24h</div></div>
+                <h1>A cesta básica que fica do seu jeito.</h1>
+                <p>Encomende sua cesta e pague somente na entrega na sua casa.</p>
+                <!-- Botão 'Escolher Minha Cesta' removido -->
             </div>
         </section>
         
@@ -827,7 +840,7 @@
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
-                this.saveState(); 
+                this.saveState(); // SAVE STATE
             },
             
             goHome() {
@@ -863,11 +876,12 @@
                             subGroups[p.subCategory].push(p);
                         });
 
-                        let isFirstSection = (html === "");
+                        let isFirstSection = (html === ""); // Flag for first item
 
                         for (const [subName, subItems] of Object.entries(subGroups)) {
                             const rowId = `row-${mainCat}-${subName}`.replace(/\s+/g, '-').toLowerCase();
                             
+                            // Inject Hand Hint HTML in the first carousel only
                             const handHintHtml = isFirstSection 
                                 ? `<div class="hand-hint-overlay active"><svg class="hand-icon" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v10.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V10a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V11a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v4.6l-.2.9a5 5 0 0 1-4.8 3.5h-2.1a5 5 0 0 1-5-5V6a1 1 0 0 1 1-1h1zm-3 5a1 1 0 0 1 1 1v5.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V7a1 1 0 0 1 1-1h.5z"/></svg></div>`
                                 : '';
@@ -893,21 +907,24 @@
                 container.innerHTML = html || '<p style="text-align:center; padding:40px; color:#999;">Nada encontrado.</p>';
                 this.updateTotal();
                 
+                // Trigger animation logic
                 this.showHandHint();
             },
 
             showHandHint() {
                 if (localStorage.getItem('seenHandHint')) {
+                    // If seen, remove the element immediately to be safe
                     const el = document.querySelector('.hand-hint-overlay');
                     if(el) el.remove();
                     return;
                 }
                 
+                // If not seen, set timeout to remove it and mark as seen
                 setTimeout(() => {
                     const el = document.querySelector('.hand-hint-overlay');
                     if(el) el.remove();
                     localStorage.setItem('seenHandHint', 'true');
-                }, 6000); 
+                }, 6000); // Remove after animation ends (approx 3 loops)
             },
 
             renderIncluded(targetElement, isCheckout = false) {
