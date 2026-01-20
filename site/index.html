@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.38 - Mobile Quick Nav Bar
+        VERSION: 9.39 - Mobile Included Slider
         CHANGELOG:
-        - UI (Mobile): Adicionada barra de navegação rápida (.mobile-quick-nav) fixa abaixo do header.
-        - UI (Mobile): Botões "Minha Cesta", "Ofertas", "Mais Vendidos" movidos para o topo.
-        - UI (Layout): Ajuste do 'top' da sidebar para compensar a nova barra (73px + 42px).
-        - JS: Lógica para filtrar "Mais Vendidos" e gerenciar estado ativo dos botões superiores.
+        - UX (Mobile): "Minha Cesta" agora é um slide horizontal (carrossel).
+        - UI (Mobile): Fundo dos itens da cesta alterado para vermelho claro (#fff1f2) para distinção.
+        - UI (Mobile): Adicionados botões de navegação (Setas) abaixo do slide da cesta.
+        - CSS: Ajustes de scroll-snap para rolagem fluida e centralizada.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -368,6 +368,51 @@
             padding: 8px; /* Restored Grid Padding */
         }
         
+        /* MOBILE SLIDER MODE (INCLUDED ITEMS) */
+        @media (max-width: 1023px) {
+            #included-list.slider-mode {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                gap: 16px;
+                padding: 10px 16px;
+                scroll-snap-type: x mandatory;
+                scrollbar-width: none; /* Hide Scrollbar FF */
+                scroll-behavior: smooth;
+            }
+            #included-list.slider-mode::-webkit-scrollbar { display: none; } /* Hide Scrollbar Chrome */
+            
+            /* Customized Card for Slider */
+            #included-list.slider-mode .mini-card {
+                min-width: 85vw; /* Almost Full Width */
+                scroll-snap-align: center;
+                /* Light Red Background */
+                background-color: #fff1f2; 
+                border-color: #fecaca;
+            }
+            
+            .slider-controls {
+                display: flex;
+                justify-content: center;
+                gap: 30px;
+                padding: 10px 0 20px;
+                border-bottom: 1px solid #f1f5f9;
+                margin-bottom: 10px;
+            }
+            .sc-btn {
+                background: white; border: 1px solid #e2e8f0;
+                width: 40px; height: 40px; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                font-size: 1.2rem;
+            }
+            .sc-btn:active { background: #f8fafc; transform: scale(0.95); }
+        }
+        
+        @media (min-width: 1024px) {
+            .slider-controls { display: none; }
+        }
+
         /* DESKTOP GRID RESTORE */
         @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
         @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
@@ -604,7 +649,16 @@
 
             <div class="products-section">
                 <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Itens Inclusos</h3></div>
-                <div class="product-box"><div id="included-list" class="grid-products"></div></div>
+                
+                <!-- Modified for Slider -->
+                <div class="product-box">
+                    <div id="included-list" class="grid-products"></div>
+                    <div id="inc-nav-controls" class="slider-controls hidden">
+                        <button class="sc-btn" onclick="App.scrollIncluded(-1)">❮</button>
+                        <button class="sc-btn" onclick="App.scrollIncluded(1)">❯</button>
+                    </div>
+                </div>
+
                 <div id="extras-container"></div>
             </div>
         </div>
@@ -1104,9 +1158,31 @@
             // New optimized function for just the top list
             renderIncluded() {
                 const incContainer = document.getElementById('included-list');
+                const incNav = document.getElementById('inc-nav-controls'); // Controls wrapper
                 const incIds = Object.keys(this.cart);
-                incContainer.innerHTML = incIds.length === 0 ? '<p style="padding:10px; color:#999;">Cesta vazia.</p>' : 
+                
+                // Add class for Mobile Slider Mode
+                if(window.innerWidth < 1024) {
+                    incContainer.classList.add('slider-mode');
+                    incNav.classList.remove('hidden'); // Show nav
+                } else {
+                    incContainer.classList.remove('slider-mode');
+                    incNav.classList.add('hidden'); // Hide nav
+                }
+
+                incContainer.innerHTML = incIds.length === 0 ? '<p style="padding:10px; color:#999; width:100%; text-align:center;">Cesta vazia.</p>' : 
                     incIds.map(id => { const p = this.data.find(x => x.id === id); return p ? this.buildCard(p) : ''; }).join('');
+                
+                // Hide nav if empty
+                if(incIds.length === 0 && incNav) incNav.classList.add('hidden');
+            },
+
+            scrollIncluded(direction) {
+                const container = document.getElementById('included-list');
+                if(container) {
+                    const scrollAmount = window.innerWidth * 0.85; // Scroll one card width roughly
+                    container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+                }
             },
 
             buildCard(p) {
