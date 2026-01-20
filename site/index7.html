@@ -4,13 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.45 - New Layout: Full Width Basket Slider
+        VERSION: 9.46 - Horizontal Slider Card Layout Fix
         CHANGELOG:
-        - LAYOUT: "Minha Cesta" movida para o topo (largura total), fora das colunas.
-        - UI: Estilo dos cards da cesta alterado para horizontal (Foto Esq | Info Dir).
-        - UI: Adicionado título "Mercadinho" separando a cesta dos extras.
-        - FIX: Ocultação robusta do 'suggestion-toast'.
-        - UI: Mantida navegação inferior estilo App.
+        - UI: Ajuste no card do slider horizontal para exibir nome completo do produto (sem cortes).
+        - UI: Organização da coluna de informações no slider (Validade e Botão Info em linhas dedicadas).
+        - CSS: Refinamento do layout flex para cards horizontais (Foto | Info | Ação).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -323,16 +321,17 @@
 
         /* Cards inside Horizontal Slider */
         #included-list.horizontal-slider-container .mini-card {
-            min-width: 85%; /* Mobile: Peek next card */
-            max-width: 400px;
+            min-width: 90%; 
+            max-width: 450px;
             scroll-snap-align: center;
             flex-direction: row; /* HORIZONTAL LAYOUT */
             align-items: center;
             text-align: left;
-            padding: 10px;
+            padding: 12px;
             background: #fff;
-            border: 1px solid #fecaca; /* Highlight */
+            border: 1px solid #fecaca; 
             display: flex;
+            gap: 12px;
         }
         @media (min-width: 768px) {
             #included-list.horizontal-slider-container .mini-card { min-width: 320px; }
@@ -340,20 +339,52 @@
 
         /* Specific Horizontal Layout Overrides */
         #included-list.horizontal-slider-container .mc-img-box {
-            width: 80px; height: 80px; margin-bottom: 0; margin-right: 12px;
+            width: 80px; height: 80px; 
+            margin: 0;
             flex-shrink: 0;
         }
         #included-list.horizontal-slider-container .mc-info-col {
-            align-items: flex-start; text-align: left; flex: 1; margin-right: 8px;
+            align-items: flex-start; 
+            text-align: left; 
+            flex: 1; 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
         }
         #included-list.horizontal-slider-container .mc-title {
-            text-align: left; font-size: 0.85rem; height: auto; -webkit-line-clamp: 2; margin-bottom: 2px;
+            text-align: left; 
+            font-size: 0.9rem; 
+            font-weight: 700;
+            height: auto; 
+            -webkit-line-clamp: unset; /* FULL TEXT */
+            display: block; 
+            margin-bottom: 6px;
+            line-height: 1.3;
+            white-space: normal;
+        }
+        #included-list.horizontal-slider-container .pc-validity {
+            font-size: 0.75rem;
+            margin-bottom: 6px;
+            width: fit-content;
         }
         #included-list.horizontal-slider-container .btn-feat-row {
             justify-content: flex-start;
+            margin-bottom: 0;
+        }
+        #included-list.horizontal-slider-container .mc-price {
+            font-size: 1rem;
+            text-align: left;
+            margin-top: 4px;
         }
         #included-list.horizontal-slider-container .mc-action-col {
-            margin-top: 0; width: auto; padding-top: 0; min-width: 85px;
+            margin: 0; 
+            width: auto; 
+            padding: 0; 
+            min-width: 90px;
+            flex-shrink: 0;
+            align-self: center;
         }
         
         /* Standard Navigation Controls for Slider */
