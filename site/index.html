@@ -4,12 +4,10 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 10.4 - Info Modal & Smart Cards
+        VERSION: 10.5 - Scroll Fix
         CHANGELOG:
-        - UX: Clique na foto abre Modal com Foto Grande + Detalhes (Texto).
-        - UI: Validade posicionada abaixo do botão de quantidade.
-        - UI: Botão 'Info' posicionado acima do preço se houver características.
-        - LOGIC: Formatação inteligente do texto de características (Markdown para HTML).
+        - FIX: Correção na rolagem de categorias (scrollToCat). Agora calcula a posição absoluta e desconta a altura do cabeçalho fixo dinamicamente.
+        - UX: Garante que a categoria inicie visível no topo da área útil.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -213,7 +211,7 @@
         .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; cursor: pointer; }
         .qc-val { font-weight: 700; font-size: 0.9rem; }
 
-        /* --- 8. DESKTOP SIDEBAR --- */
+        /* --- 8. DESKTOP SPECIFIC --- */
         .desktop-sidebar { display: none; }
         
         @media(min-width: 1024px) {
@@ -803,13 +801,32 @@
 
             scrollToCat(name) {
                 App.closeSheet('categories-sheet');
+                
+                // Clear search if any (Desktop or Mobile input)
+                const dSearch = document.getElementById('desk-search');
+                if(dSearch) dSearch.value = "";
+                
+                // Re-render to ensure category headers exist
+                App.renderAllLists();
+
                 setTimeout(() => {
                     const el = document.getElementById('cat-' + name);
                     if(el) {
-                        const y = el.getBoundingClientRect().top - 140;
-                        window.scrollTo({top: y, behavior: 'smooth'});
+                        // Calculate offset based on sticky header height if visible
+                        const stickyHeader = document.querySelector('.sticky-basket-container');
+                        // In desktop stickyHeader is display:none, offsetHeight will be 0.
+                        const headerHeight = (stickyHeader && stickyHeader.offsetParent !== null) ? stickyHeader.offsetHeight : 0;
+                        const offset = headerHeight + 20; // 20px extra padding
+
+                        const elementPosition = el.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
                     }
-                }, 100);
+                }, 150);
             },
 
             openSheet(id) { document.getElementById(id).classList.add('open'); },
