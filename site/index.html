@@ -3,13 +3,13 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Final Content Polish
+        ARCHITECT: SEO Code Architect (SCA) - Product Card Redesign
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - CONTENT: Novos textos de marketing na Home ("Do seu jeito", "Pague na entrega").
-        - BRAND: Logo aumentada (53px) e slogan adicionado ("A Melhor Cesta da Cidade").
-        - UI: Altura do card mobile ajustada para suportar títulos de 3 linhas.
-        - UI: Remoção do botão de CTA redundante na home.
+        - UI: Novo design de Card de Produto (Estilo App/iFood).
+        - LAYOUT: Hierarquia Imagem > Botão Flutuante > Preço > Nome > Validade.
+        - CSS: Botão de adicionar circular e absoluto sobre a imagem.
+        - CSS: Ajuste de tipografia e remoção de blend-mode nas imagens.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -56,7 +56,7 @@
             --text-light: #555555; 
             --bg-body: #f7f7f7; 
             --border-color: #f2f2f2;
-            --header-height: 70px; /* Aumentado levemente para acomodar logo maior + slogan */
+            --header-height: 70px; 
             --app-header-height: 56px; 
             --sidebar-width: 340px;
         }
@@ -64,7 +64,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html { scroll-behavior: smooth; background: var(--bg-body); }
         
-        /* ANTI-FLICKER: Body starts invisible */
+        /* ANTI-FLICKER */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             color: var(--text-main); padding-bottom: 0; width: 100%; margin: 0;
@@ -73,7 +73,6 @@
         }
         body.loaded { opacity: 1; visibility: visible; }
         
-        /* Ajuste de largura desktop solicitado: 1200px */
         .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; width: 100%; }
         
         img { display: block; max-width: 100%; height: auto; }
@@ -96,13 +95,10 @@
         
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
         
-        /* Logo ajustada com Slogan */
         .logo-container { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--secondary); }
         .logo-text-col { display: flex; flex-direction: column; justify-content: center; }
         .logo-name { font-weight: 700; font-size: 1.1rem; line-height: 1.1; }
         .logo-slogan { font-size: 0.65rem; color: #666; font-weight: 500; letter-spacing: 0.5px; }
-
-        /* LOGO BRAND IMAGE - AUMENTADA PARA 53px */
         .logo-brand-img { width: 53px; height: 53px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
@@ -199,7 +195,7 @@
             min-height: 100vh; background: #f7f7f7; 
         }
 
-        /* --- 6. PRODUCTS & CAROUSEL --- */
+        /* --- 6. PRODUCTS (NEW CARD DESIGN) --- */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
         .subcat-title { 
             font-size: 1.1rem; font-weight: 800; color: #3e3e3e; 
@@ -215,7 +211,6 @@
         }
         .horizontal-products-row::-webkit-scrollbar { display: none; }
         
-        /* Botões de Scroll Desktop */
         .scroll-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
             width: 40px; height: 40px; border-radius: 50%;
@@ -235,51 +230,68 @@
             scroll-snap-align: start; flex-shrink: 0;
         }
 
+        /* CARD REDESIGN - APP STYLE */
         .card-prod {
             background: #fff; border: none; border-radius: 12px;
-            padding: 12px; display: flex; flex-direction: column;
+            padding: 10px; display: flex; flex-direction: column;
             position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #eef9f2; color: #2d6c4a; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
-        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; }
-        .cp-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        
+        .cp-img-box { 
+            width: 100%; aspect-ratio: 1; 
+            display: flex; align-items: center; justify-content: center; 
+            margin-bottom: 8px; cursor: pointer; position: relative; /* Anchor for btn */
+        }
+        .cp-img { 
+            width: 100%; height: 100%; object-fit: contain; 
+            /* REMOVIDO mix-blend-mode: multiply; para imagem normal */
+        }
+        
+        /* BOTÃO FLUTUANTE CIRCULAR */
+        .btn-circle-add {
+            position: absolute; bottom: 8px; right: 8px;
+            width: 32px; height: 32px; border-radius: 50%;
+            background: white; border: 1px solid #f0f0f0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary); font-size: 1.4rem; font-weight: 300;
+            cursor: pointer; transition: transform 0.1s;
+        }
+        .btn-circle-add:active { transform: scale(0.9); }
+
+        /* QTY CONTROLLER FLUTUANTE */
+        .qty-ctrl-float {
+            position: absolute; bottom: 8px; right: 8px;
+            height: 32px; background: white; border: 1px solid #e2e8f0;
+            border-radius: 16px; display: flex; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden;
+        }
+        .qcf-btn { 
+            width: 30px; height: 100%; display: flex; align-items: center; justify-content: center; 
+            color: var(--primary); font-size: 1.2rem; cursor: pointer; 
+        }
+        .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 2px; min-width: 20px; text-align: center; }
+
+        /* INFORMAÇÕES */
+        .cp-price { 
+            font-size: 1.1rem; font-weight: 700; color: #1f1f1f; 
+            margin-bottom: 2px; text-align: left; 
+        }
+        .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #888; font-weight: 400; margin-right: 4px; }
         
         .cp-title { 
-            font-size: 0.85rem; font-weight: 500; color: #3e3e3e; 
+            font-size: 0.9rem; font-weight: 400; color: #333; 
             margin-bottom: 4px; line-height: 1.3; 
-            /* AJUSTE MOBILE: Altura aumentada para comportar 3 linhas */
-            min-height: 3.9em; 
+            min-height: 3.9em; /* 3 linhas */
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+            text-align: left;
         }
         
-        .cp-price { font-size: 0.95rem; font-weight: 700; color: #2e2e2e; margin-top: auto; margin-bottom: 12px; }
-        .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #666; font-weight: 400; margin-right: 4px; }
-        
-        .cp-validity-badge { 
-            font-size: 0.65rem; color: #717171; background: #f0f0f0; 
-            padding: 2px 6px; border-radius: 4px; margin-top: 6px; 
-            display: inline-block; width: 100%; text-align: center; 
+        .cp-validity { 
+            font-size: 0.75rem; color: #888; text-align: left; margin-top: auto; 
         }
-
-        .btn-add { 
-            width: 100%; padding: 8px 0; background: white; 
-            border: 1px solid #e2e8f0; color: var(--primary); 
-            border-radius: 8px; font-weight: 700; font-size: 0.8rem; 
-            transition: all 0.1s; 
-        }
-        .btn-add:active { background: #f9f9f9; transform: scale(0.98); }
-        
-        .qty-ctrl { 
-            display: flex; align-items: center; justify-content: space-between; 
-            width: 100%; background: white; border: 1px solid #e2e8f0;
-            border-radius: 8px; height: 32px; color: #2e2e2e; overflow: hidden;
-        }
-        .qc-btn { 
-            width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; 
-            font-size: 1.2rem; color: var(--primary); cursor: pointer; font-weight: 300;
-        }
-        .qc-val { font-weight: 600; font-size: 0.9rem; }
 
         /* HAND ANIMATION */
         @keyframes swipe-hint {
@@ -294,26 +306,12 @@
             z-index: 50; pointer-events: none; display: none;
         }
         .hand-hint-overlay.active { display: block; animation: swipe-hint 1.8s ease-in-out 3 forwards; }
-        .hand-icon {
-            width: 60px; height: 60px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-            fill: rgba(255, 255, 255, 0.95);
-            stroke: #333; stroke-width: 1.5px;
-        }
+        .hand-icon { width: 60px; height: 60px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); fill: rgba(255, 255, 255, 0.95); stroke: #333; stroke-width: 1.5px; }
 
         /* --- 7. DESKTOP LAYOUT --- */
         @media(min-width: 1024px) {
             .scroll-btn { display: flex; }
-            
-            #customizer-view:not(.hidden) { 
-                max-width: 1200px; 
-                margin: 0 auto; 
-                padding: 40px 20px;
-                padding-top: calc(var(--app-header-height) + 20px); 
-                padding-bottom: 100px; 
-            }
-            
-            /* Desktop ajusta altura do título para 2 linhas por padrão */
+            #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 40px 20px; padding-top: calc(var(--app-header-height) + 20px); padding-bottom: 100px; }
             .cp-title { -webkit-line-clamp: 2; min-height: 2.6em; }
         }
 
@@ -321,8 +319,7 @@
         .ifood-cart-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #ffffff; border-top: 1px solid #f0f0f0;
-            padding: 10px 16px; 
-            z-index: 9999;
+            padding: 10px 16px; z-index: 9999;
             display: flex; align-items: center; justify-content: space-between;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
             transform: translateY(100%); transition: transform 0.3s ease;
@@ -335,9 +332,7 @@
         
         .icb-btn { 
             background: var(--primary); color: white;
-            padding: 8px 16px; 
-            border-radius: 8px;
-            font-weight: 600; font-size: 0.85rem;
+            padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
             cursor: pointer; display: flex; align-items: center; gap: 6px;
         }
 
@@ -347,7 +342,6 @@
         .sheet-box { background: #fff; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; padding: 20px; }
         .sheet-overlay.open .sheet-box { transform: translateY(0); }
         
-        /* FAQ */
         details.faq-box { margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
         details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
         .faq-text { padding: 15px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
@@ -358,7 +352,6 @@
         .st-btn { background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
         
-        /* Z-INDEX MAXIMO */
         .credit-toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, 0); background: rgba(30, 41, 59, 0.98); color: white; padding: 10px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2147483647; text-align: center; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .credit-toast.visible { opacity: 1; }
         
@@ -395,21 +388,13 @@
         .co-btn-final { width: 100%; padding: 14px; background: var(--primary); color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; text-align: center; }
         .co-btn-final:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* CUPOM RETRATIL */
         .coupon-toggle { font-size: 0.8rem; color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: underline; margin-top: 10px; display: inline-block; }
         .coupon-box { display: flex; gap: 8px; margin-top: 10px; }
         .coupon-input { flex: 1; padding: 8px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; text-transform: uppercase; }
         .coupon-btn { padding: 0 16px; background: #3e3e3e; color: white; border-radius: 8px; font-weight: 600; font-size: 0.8rem; }
 
-        /* ALERTA DE CREDITO DIDATICO */
-        .modal-credit-box {
-            background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 8px;
-            padding: 15px; margin-bottom: 20px; text-align: center; color: #14532d;
-        }
-        .mca-btn {
-            background: #16a34a; color: white; padding: 6px 14px; border-radius: 6px; 
-            font-size: 0.8rem; font-weight: 700; margin-top: 5px;
-        }
+        .modal-credit-box { background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center; color: #14532d; }
+        .mca-btn { background: #16a34a; color: white; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; margin-top: 5px; }
 
         /* FOOTER */
         .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 20px; margin-top: 40px; }
@@ -451,7 +436,6 @@
                 <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em até 24h</div></div>
                 <h1>A cesta básica que fica do seu jeito.</h1>
                 <p>Encomende sua cesta e pague somente na entrega na sua casa.</p>
-                <!-- Botão 'Escolher Minha Cesta' removido -->
             </div>
         </section>
         
@@ -627,7 +611,6 @@
         const CONSTANTS = { 
             PHONE: "5565996813588",
             LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 },
-            // CONFIGURAÇÃO DO CUPOM
             COUPON_CODE: "BEMVINDO",
             COUPON_VAL: 5.00
         };
@@ -638,7 +621,6 @@
 
             async init() {
                 try {
-                    // FIX: Caminho absoluto direto
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
                     
                     if (!res.ok) throw new Error("Erro ao carregar dados.");
@@ -667,10 +649,9 @@
 
                         let smartName = this.toSmartTitleCase(p.nome.trim());
 
-                        // FIX: Caminho de imagem absoluto
                         let imgUrl = 'img/placeholder.jpg';
                         if(p.imagem) {
-                             const imgName = p.imagem.split('/').pop(); // Pega só o nome do arquivo
+                             const imgName = p.imagem.split('/').pop(); 
                              imgUrl = `img/produtos/${imgName}`;
                         }
 
@@ -693,7 +674,6 @@
                         };
                     });
                     
-                    // CHECK FOR SAVED STATE
                     const saved = localStorage.getItem('da_state');
                     if (saved) {
                         try {
@@ -722,7 +702,7 @@
                                     document.body.classList.add('customizer-mode');
                                     
                                     this.renderAllLists();
-                                    document.body.classList.add('loaded'); // Show UI
+                                    document.body.classList.add('loaded'); 
                                     return; 
                                 }
                             }
@@ -730,7 +710,7 @@
                     }
 
                     this.renderHome();
-                    document.body.classList.add('loaded'); // Show UI
+                    document.body.classList.add('loaded'); 
                 } catch (e) { 
                     console.error("Erro Fatal:", e);
                     document.body.classList.add('loaded');
@@ -785,7 +765,6 @@
                             p.items.map(i => {
                                 const itemData = this.data.find(d => d.id === String(i.id));
                                 if(!itemData) return '';
-                                // A11Y: Safe ALT attribute
                                 return `<div class="hbc-item"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '&quot;')}"><span>${i.qty || 1}un</span></div>`;
                             }).join('') + `</div>`;
                     }
@@ -793,7 +772,6 @@
                     const loadingAttr = index === 0 ? 'eager' : 'lazy';
                     const fetchPriority = index === 0 ? 'fetchpriority="high"' : '';
                     
-                    // A11Y: Safe ALT attribute
                     return `
                     <div class="home-basket-card">
                         <div class="hbc-top">
@@ -840,7 +818,7 @@
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
-                this.saveState(); // SAVE STATE
+                this.saveState(); 
             },
             
             goHome() {
@@ -851,7 +829,6 @@
                 
                 localStorage.setItem('da_state', JSON.stringify({view: 'home'}));
                 
-                // IMPORTANT: Ensure home is rendered correctly when returning
                 if(this.data.length > 0) this.renderHome();
             },
 
@@ -876,12 +853,11 @@
                             subGroups[p.subCategory].push(p);
                         });
 
-                        let isFirstSection = (html === ""); // Flag for first item
+                        let isFirstSection = (html === ""); 
 
                         for (const [subName, subItems] of Object.entries(subGroups)) {
                             const rowId = `row-${mainCat}-${subName}`.replace(/\s+/g, '-').toLowerCase();
                             
-                            // Inject Hand Hint HTML in the first carousel only
                             const handHintHtml = isFirstSection 
                                 ? `<div class="hand-hint-overlay active"><svg class="hand-icon" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v10.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V10a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V11a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v4.6l-.2.9a5 5 0 0 1-4.8 3.5h-2.1a5 5 0 0 1-5-5V6a1 1 0 0 1 1-1h1zm-3 5a1 1 0 0 1 1 1v5.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V7a1 1 0 0 1 1-1h.5z"/></svg></div>`
                                 : '';
@@ -907,24 +883,21 @@
                 container.innerHTML = html || '<p style="text-align:center; padding:40px; color:#999;">Nada encontrado.</p>';
                 this.updateTotal();
                 
-                // Trigger animation logic
                 this.showHandHint();
             },
 
             showHandHint() {
                 if (localStorage.getItem('seenHandHint')) {
-                    // If seen, remove the element immediately to be safe
                     const el = document.querySelector('.hand-hint-overlay');
                     if(el) el.remove();
                     return;
                 }
                 
-                // If not seen, set timeout to remove it and mark as seen
                 setTimeout(() => {
                     const el = document.querySelector('.hand-hint-overlay');
                     if(el) el.remove();
                     localStorage.setItem('seenHandHint', 'true');
-                }, 6000); // Remove after animation ends (approx 3 loops)
+                }, 6000); 
             },
 
             renderIncluded(targetElement, isCheckout = false) {
@@ -963,32 +936,31 @@
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 
-                const btnHtml = qty === 0 
-                    ? `<button id="btn-add-${p.id}" class="btn-add" onclick="App.modQty('${p.id}', 1)">Adicionar</button>
-                       <div id="qty-ctrl-${p.id}" class="qty-ctrl hidden">
-                           <div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
-                           <div class="qc-val" id="qty-val-${p.id}">${qty}</div>
-                           <div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
-                       </div>`
-                    : `<button id="btn-add-${p.id}" class="btn-add hidden" onclick="App.modQty('${p.id}', 1)">Adicionar</button>
-                       <div id="qty-ctrl-${p.id}" class="qty-ctrl">
-                           <div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
-                           <div class="qc-val" id="qty-val-${p.id}">${qty}</div>
-                           <div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
-                       </div>`;
+                // HTML for the Add Button (Default state)
+                const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="App.modQty('${p.id}', 1)">+</div>`;
+                
+                // HTML for the Qty Controller (Active state)
+                const qtyHtml = `<div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}">
+                                    <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                                    <div class="qcf-val" id="qty-val-${p.id}">${qty}</div>
+                                    <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                                 </div>`;
 
                 let valHtml = '';
                 if (p.validade && p.validade.length > 2) {
-                     valHtml = `<div class="cp-validity-badge">Val: ${p.validade}</div>`;
+                     valHtml = `<div class="cp-validity">Val: ${p.validade}</div>`;
                 }
                 
                 return `
                 <div class="card-prod" id="card-${p.id}">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
-                    <div class="cp-img-box" onclick="App.openInfo('${p.id}')"><img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '&quot;')}"></div>
+                    <div class="cp-img-box" onclick="App.openInfo('${p.id}')">
+                        <img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '&quot;')}">
+                        ${btnHtml}
+                        ${qtyHtml}
+                    </div>
+                    <div class="cp-price">R$ ${price.toFixed(2).replace('.',',')}${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}</div>
                     <div class="cp-title">${p.nome}</div>
-                    <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
-                    ${btnHtml}
                     ${valHtml}
                 </div>`;
             },
@@ -1060,6 +1032,7 @@
                 const btnAdd = document.getElementById(`btn-add-${id}`);
                 const qtyCtrl = document.getElementById(`qty-ctrl-${id}`);
                 const qtyVal = document.getElementById(`qty-val-${id}`);
+                
                 if (btnAdd && qtyCtrl && qtyVal) {
                     if (qty > 0) {
                         btnAdd.classList.add('hidden');
