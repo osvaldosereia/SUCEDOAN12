@@ -4,13 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.50 - Clean Mobile App Layout
+        VERSION: 9.60 - Desktop Fixes & Mobile UX Refinement
         CHANGELOG:
-        - LAYOUT: Removida sidebar lateral. Layout agora é Full Width.
-        - UI: Grade de produtos fixa em 2 colunas no mobile (visual limpo).
-        - NAV: Barra inferior com 5 botões (Cesta, Categorias, Ofertas, Top, Dúvidas).
-        - FEATURE: Modal 'Categorias' substitui os chips de navegação.
-        - DATA: Agrupamento inteligente nas 5 categorias principais solicitadas.
+        - DESKTOP: Adicionada Sidebar lateral com resumo e checkout (antes estava vazio).
+        - MOBILE UI: "Minha Cesta" agora é Sticky (fixa) no topo ao rolar.
+        - MOBILE UI: Layout do card da cesta ajustado (Nome full width, Qty abaixo).
+        - NAV: Busca movida para botão flutuante acionado pela barra inferior.
+        - LOGIC: Produto adicionado aparece sempre em 1º lugar na cesta.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -47,7 +47,7 @@
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
 
-        /* --- 2. HEADER SIMPLIFICADO --- */
+        /* --- 2. HEADER --- */
         header { 
             position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
             background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color); z-index: 1000; 
@@ -66,68 +66,102 @@
         .hero p { color: var(--text-light); margin-bottom: 20px; font-size: 0.95rem; }
         .btn-cta { background: var(--primary); color: white; padding: 12px 30px; border-radius: 50px; font-weight: 700; font-size: 1rem; }
 
-        /* --- 4. CUSTOMIZER VIEW (APP LIKE) --- */
+        /* --- 4. CUSTOMIZER VIEW --- */
+        /* Padding bottom extra for nav + floating bars */
         #customizer-view { padding-bottom: 140px; min-height: 100vh; background: #fff; }
         
+        /* Sticky Header inside Customizer (Back Button + Title) */
         .cust-header-bar { 
             position: sticky; top: 0; z-index: 900; background: rgba(255,255,255,0.98); 
             border-bottom: 1px solid var(--border-color); padding: 10px 0; backdrop-filter: blur(10px);
         }
         
-        .ch-container { display: flex; align-items: center; gap: 12px; }
+        .ch-container { display: flex; align-items: center; justify-content: space-between; }
+        .ch-left { display: flex; align-items: center; gap: 12px; }
         .ch-back-btn { font-size: 1.2rem; padding: 5px 10px; color: var(--secondary); }
-        .ch-search-box { flex: 1; position: relative; }
-        .ch-input { 
-            width: 100%; height: 44px; background: #f8fafc; border: 1px solid #e2e8f0; 
-            border-radius: 50px; padding: 0 40px 0 16px; font-size: 0.95rem; 
-        }
-        .ch-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); opacity: 0.5; }
+        .ch-title h2 { font-size: 1rem; margin: 0; color: var(--secondary); }
+        .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; display: inline-block; }
+        .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
 
-        /* --- 5. MINHA CESTA (HORIZONTAL SLIDER) --- */
-        .section-title-bar { 
-            padding: 20px 16px 10px; display: flex; align-items: center; justify-content: space-between;
+        /* --- 5. MINHA CESTA (STICKY & REDESIGNED CARD) --- */
+        /* Sticky Container logic: sits below the cust-header-bar (approx 50-60px) */
+        .sticky-basket-container {
+            position: sticky; 
+            top: 55px; /* Adjust based on header height */
+            z-index: 880; 
+            background: rgba(255,255,255,0.98);
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+            margin-bottom: 10px;
+            backdrop-filter: blur(5px);
         }
-        .section-title-bar h3 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); }
+
+        .section-title-bar { 
+            padding: 10px 16px 5px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .section-title-bar h3 { font-size: 0.95rem; font-weight: 700; color: var(--secondary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
         
         #included-list.horizontal-slider {
-            display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 20px;
+            display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 10px;
             scroll-snap-type: x mandatory; scrollbar-width: none;
         }
         #included-list.horizontal-slider::-webkit-scrollbar { display: none; }
         
-        /* Card Horizontal (Cesta) */
+        /* CARD CESTA REDESIGN (Nome Full Width, Botão Baixo) */
         .card-inc {
-            min-width: 88%; max-width: 400px; scroll-snap-align: center;
-            display: flex; gap: 12px; padding: 12px;
+            min-width: 85%; max-width: 350px; scroll-snap-align: center;
+            display: grid; 
+            grid-template-columns: 70px 1fr; /* Image | Content */
+            grid-template-rows: auto auto;   /* Title | Bottom Row */
+            gap: 4px 12px; padding: 12px;
             background: #fff; border: 1px solid #fee2e2; border-left: 4px solid var(--primary);
-            border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); align-items: center;
+            border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); 
         }
-        @media(min-width: 768px) { .card-inc { min-width: 350px; } }
+        @media(min-width: 768px) { .card-inc { min-width: 300px; } }
 
-        .ci-img { width: 70px; height: 70px; object-fit: contain; mix-blend-mode: multiply; }
-        .ci-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-        .ci-title { font-size: 0.9rem; font-weight: 600; color: var(--secondary); margin-bottom: 4px; line-height: 1.2; }
-        .ci-sub { font-size: 0.75rem; color: var(--text-light); }
-        .ci-action { min-width: 90px; display: flex; justify-content: flex-end; }
+        /* Row 1: Image spans 2 rows, Title spans 1 col */
+        .ci-img-wrap { grid-row: 1 / -1; grid-column: 1; display: flex; align-items: center; justify-content: center; }
+        .ci-img { width: 100%; height: 70px; object-fit: contain; mix-blend-mode: multiply; cursor: zoom-in; }
+        
+        /* Row 1 Col 2: Title (Full width of right side) */
+        .ci-title { 
+            grid-row: 1; grid-column: 2; 
+            font-size: 0.85rem; font-weight: 500; /* Lighter font */
+            color: var(--text-main); line-height: 1.2; 
+            margin-bottom: 4px;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
 
-        /* --- 6. MERCADINHO (GRID 2 COLUNAS) --- */
-        .mercadinho-header { text-align: center; padding: 30px 16px 10px; background: #f8fafc; margin-bottom: 10px; border-top: 1px solid #f1f5f9; }
+        /* Row 2 Col 2: Info + Actions */
+        .ci-bottom { 
+            grid-row: 2; grid-column: 2; 
+            display: flex; align-items: flex-end; justify-content: space-between; 
+            width: 100%; margin-top: 4px;
+        }
+        
+        .ci-meta { font-size: 0.75rem; color: var(--text-light); display: flex; flex-direction: column; gap: 2px; }
+        .ci-price { font-weight: 700; color: var(--secondary); font-size: 0.9rem; }
+        .val-badge { font-size: 0.65rem; color: #15803d; background: #f0fdf4; padding: 1px 4px; border-radius: 4px; width: fit-content; }
+        .info-link { font-size: 0.65rem; text-decoration: underline; cursor: pointer; color: var(--text-light); }
+
+        .ci-qty { width: 90px; } /* Fixed width for button */
+
+        /* --- 6. MERCADINHO (GRID) --- */
+        .mercadinho-header { text-align: center; padding: 20px 16px 10px; background: transparent; border-top: 1px solid #f1f5f9; }
         .mercadinho-header h3 { color: var(--secondary); font-size: 1.1rem; }
         
-        /* Cat Headers */
         .cat-header { 
-            position: sticky; top: 64px; z-index: 800;
+            position: sticky; top: 130px; /* Below header + basket */
+            z-index: 700;
             background: #f1f5f9; color: var(--secondary);
             padding: 8px 16px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.5px; margin-top: 20px; border-radius: 4px;
+            letter-spacing: 0.5px; margin: 10px 0; border-radius: 4px;
         }
 
-        .products-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px;
-        }
+        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
         @media(min-width: 768px) { .products-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
 
-        /* Card Vertical Simplificado */
         .card-prod {
             background: #fff; border: 1px solid var(--border-color); border-radius: 12px;
             padding: 12px; display: flex; flex-direction: column; text-align: center;
@@ -135,17 +169,14 @@
         }
         .card-prod:active { border-color: #cbd5e1; }
         
-        .cp-tag { position: absolute; top: 8px; left: 8px; background: #dcfce7; color: #166534; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-        
-        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+        .cp-tag { position: absolute; top: 8px; left: 8px; background: #dcfce7; color: #166534; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
+        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: zoom-in; }
         .cp-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        
         .cp-title { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); 
             margin-bottom: 4px; line-height: 1.3; min-height: 2.6em;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
-        
         .cp-price { font-size: 1rem; font-weight: 800; color: var(--text-main); margin-top: auto; margin-bottom: 8px; }
         .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; font-weight: 400; margin-right: 4px; }
         
@@ -156,20 +187,18 @@
         }
         .btn-add:active { background: var(--primary); color: white; }
 
-        /* Quantity Control */
         .qty-ctrl { display: flex; align-items: center; justify-content: space-between; width: 100%; background: var(--primary); border-radius: 50px; height: 32px; color: white; }
-        .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; }
+        .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; cursor: pointer; }
         .qc-val { font-weight: 700; font-size: 0.9rem; }
 
-        /* --- 7. BOTTOM NAV --- */
+        /* --- 7. BOTTOM NAV & CHECKOUT & SEARCH --- */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-bar-height);
             background: #fff; border-top: 1px solid #e2e8f0; z-index: 10000;
-            display: grid; grid-template-columns: repeat(5, 1fr); /* 5 COLUMNS */
+            display: grid; grid-template-columns: repeat(5, 1fr);
             padding-bottom: env(safe-area-inset-bottom);
             box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
         }
-        
         .nav-item {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             font-size: 0.6rem; color: var(--text-light); gap: 4px; font-weight: 600;
@@ -177,45 +206,106 @@
         .nav-item svg { width: 22px; height: 22px; stroke-width: 2; stroke: currentColor; fill: none; }
         .nav-item.active { color: var(--primary); }
         
-        /* --- 8. FLOATING CHECKOUT BAR (Above Nav) --- */
         .float-checkout {
             position: fixed; bottom: calc(var(--nav-bar-height) + env(safe-area-inset-bottom));
             left: 0; right: 0; background: #fff; border-top: 1px solid #e2e8f0;
             padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
             z-index: 9990; box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
         }
-        .fc-info { line-height: 1.2; }
-        .fc-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-light); }
         .fc-total { font-size: 1.2rem; font-weight: 800; color: var(--secondary); }
         .fc-btn { 
             background: #16a34a; color: white; padding: 10px 24px; border-radius: 50px; 
             font-weight: 700; display: flex; align-items: center; gap: 6px; 
         }
 
-        /* --- 9. SHEETS / MODALS --- */
+        /* Floating Search Bar */
+        .search-float {
+            position: fixed; bottom: calc(var(--nav-bar-height) + 80px); 
+            left: 16px; right: 16px; z-index: 9995;
+            background: white; padding: 10px; border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex; align-items: center; 
+            transform: translateY(100px); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .search-float.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .sf-input { flex: 1; border: none; outline: none; font-size: 1rem; padding: 5px 15px; }
+        .sf-close { width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-light); }
+
+        /* --- 8. DESKTOP SIDEBAR --- */
+        .desktop-sidebar { display: none; }
+        
+        @media(min-width: 1024px) {
+            #customizer-view { 
+                padding-bottom: 0; 
+                display: grid !important; 
+                grid-template-columns: 1fr 350px; /* Main | Sidebar */
+                gap: 30px; 
+                max-width: 1200px; margin: 0 auto; padding: 20px;
+                align-items: start;
+            }
+            
+            /* Hide Mobile Elements */
+            .bottom-nav, .float-checkout, .cust-header-bar, .sticky-basket-container .section-title-bar { display: none; }
+            
+            /* Reset Layouts for Desktop Main Content */
+            .sticky-basket-container { 
+                position: static; box-shadow: none; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;
+            }
+            #included-list.horizontal-slider { flex-wrap: wrap; overflow: visible; }
+            .card-inc { min-width: 200px; }
+            
+            /* Desktop Sidebar Styling */
+            .desktop-sidebar {
+                display: block; position: sticky; top: 80px;
+                background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+                padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            }
+            .ds-title { font-size: 1.2rem; font-weight: 800; color: var(--secondary); margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+            .ds-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; }
+            .ds-total { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-align: right; margin: 20px 0; }
+            .ds-btn { width: 100%; padding: 14px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; cursor: pointer; }
+            .ds-btn-outline { width: 100%; padding: 12px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; }
+            
+            /* Show search in sidebar or keep hidden? Let's add a search in sidebar */
+            .ds-search { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 20px; }
+        }
+
+        /* --- 9. SHEETS & MODALS --- */
         .sheet-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
             display: flex; flex-direction: column; justify-content: flex-end;
         }
         .sheet-overlay.open { opacity: 1; pointer-events: auto; }
-        
         .sheet-box {
             background: #fff; width: 100%; border-radius: 20px 20px 0 0;
-            max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s;
             padding: 20px; padding-bottom: 40px;
         }
         .sheet-overlay.open .sheet-box { transform: translateY(0); }
         
+        .gallery-wrap { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 13000; 
+            display: none; flex-direction: column; justify-content: center; 
+        }
+        .gallery-wrap.active { display: flex; }
+        .gallery-stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        .gallery-img { max-width: 100%; max-height: 90vh; object-fit: contain; }
+        .gallery-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 1.5rem; background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        .info-body { line-height: 1.6; color: var(--text-main); font-size: 0.95rem; }
+        .info-media img, .info-media video { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #eee; }
+
         .cat-list-btn {
             display: flex; width: 100%; padding: 16px; text-align: left;
             border-bottom: 1px solid #f1f5f9; font-weight: 600; color: var(--secondary);
             align-items: center; justify-content: space-between; font-size: 0.95rem;
         }
-        .cat-list-btn:last-child { border-bottom: none; }
-        .cat-list-btn span { color: var(--primary); }
+        details.faq-box { margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; }
+        .faq-text { padding-top: 10px; color: var(--text-light); font-size: 0.9rem; }
 
-        /* Toast */
+        /* Toasts */
         .toast {
             position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%) translateY(20px);
             background: var(--secondary); color: white; padding: 10px 20px; border-radius: 50px;
@@ -224,7 +314,6 @@
         }
         .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        /* Suggestion Toast */
         .sug-toast {
             position: fixed; bottom: 140px; left: 16px; right: 16px; background: white;
             border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;
@@ -235,12 +324,8 @@
         .st-content { flex: 1; font-size: 0.8rem; line-height: 1.3; }
         .st-btn { background: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
 
-        @media(min-width: 1024px) {
-            #customizer-view { padding-bottom: 0; }
-            .container { max-width: 1000px; }
-            .bottom-nav, .float-checkout { display: none; }
-            /* Desktop Header Cart would go here if needed */
-        }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -271,33 +356,60 @@
 
     <!-- CUSTOMIZER VIEW -->
     <div id="customizer-view" class="hidden">
-        <div class="cust-header-bar">
-            <div class="container ch-container">
-                <button class="ch-back-btn" onclick="App.goHome()">❮</button>
-                <div class="ch-search-box">
-                    <input type="text" id="main-search" class="ch-input" placeholder="Buscar produto...">
-                    <span class="ch-icon">🔍</span>
+        
+        <!-- LEFT COLUMN (MOBILE & DESKTOP) -->
+        <div class="main-content-col">
+            <!-- MOBILE HEADER (BACK BTN) -->
+            <div class="cust-header-bar">
+                <div class="container ch-container">
+                    <div class="ch-left">
+                        <button class="ch-back-btn" onclick="App.goHome()">❮</button>
+                        <div class="ch-title">
+                            <h2 id="cust-title-text">Minha Cesta</h2>
+                        </div>
+                    </div>
+                    <div id="limit-alert" class="limit-alert">Alt: 0/0</div>
                 </div>
+            </div>
+
+            <!-- 1. INCLUDED ITEMS (STICKY SLIDER ON MOBILE) -->
+            <div class="sticky-basket-container">
+                <div class="section-title-bar">
+                    <h3>📦 Minha Cesta</h3>
+                </div>
+                <div id="included-list" class="horizontal-slider"></div>
+            </div>
+
+            <!-- 2. EXTRAS (GRID 2 COLS) -->
+            <div class="mercadinho-header">
+                <h3>🏪 Mercadinho</h3>
+                <p style="font-size:0.8rem; color:var(--text-light);">Adicione itens extras à sua cesta</p>
+            </div>
+            
+            <div class="container">
+                <div id="extras-container"></div>
             </div>
         </div>
 
-        <!-- 1. INCLUDED ITEMS (SLIDER) -->
-        <section class="container" style="margin-top: 10px;">
-            <div class="section-title-bar"><h3>📦 Minha Cesta</h3></div>
-            <div id="included-list" class="horizontal-slider"></div>
-        </section>
+        <!-- RIGHT COLUMN (DESKTOP ONLY SIDEBAR) -->
+        <aside class="desktop-sidebar">
+            <div class="ds-title">Resumo do Pedido</div>
+            
+            <input type="text" id="desk-search" class="ds-search" placeholder="Buscar no mercadinho..." oninput="App.renderAllLists(this.value)">
+            
+            <div class="ds-row"><span>Cesta Base</span><span id="ds-base">R$ 0,00</span></div>
+            <div class="ds-row"><span>Extras</span><span id="ds-extras">R$ 0,00</span></div>
+            <div class="ds-total" id="ds-total">R$ 0,00</div>
+            
+            <button class="ds-btn" onclick="App.openCheckout()">Concluir Pedido</button>
+            <button class="ds-btn-outline" onclick="App.goHome()">Trocar Cesta</button>
+            
+            <div style="margin-top:20px; font-size:0.8rem; color:#64748b; text-align:center;">
+                Pague somente na entrega.<br>Aceitamos Pix, Cartão e Vale.
+            </div>
+        </aside>
 
-        <!-- 2. EXTRAS (GRID 2 COLS) -->
-        <div class="mercadinho-header">
-            <h3>🏪 Mercadinho</h3>
-            <p style="font-size:0.8rem; color:var(--text-light);">Adicione itens extras à sua cesta</p>
-        </div>
-        
-        <div class="container">
-            <div id="extras-container"></div>
-        </div>
-
-        <!-- FLOATING CHECKOUT -->
+        <!-- FLOATING CHECKOUT (MOBILE) -->
         <div class="float-checkout" id="float-checkout">
             <div class="fc-info">
                 <div class="fc-label">Total Estimado</div>
@@ -308,7 +420,13 @@
             </button>
         </div>
 
-        <!-- BOTTOM NAV (5 BUTTONS) -->
+        <!-- SEARCH FLOAT (MOBILE) -->
+        <div id="search-float" class="search-float">
+            <input type="text" id="mob-search-input" class="sf-input" placeholder="O que procura?">
+            <button class="sf-close" onclick="App.toggleSearch()">✕</button>
+        </div>
+
+        <!-- BOTTOM NAV -->
         <nav class="bottom-nav">
             <button class="nav-item active" onclick="App.clearSearch(); App.setActiveNav(this)">
                 <svg viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -318,9 +436,9 @@
                 <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 Categorias
             </button>
-            <button class="nav-item" onclick="App.showOffers(); App.setActiveNav(this)">
-                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>
-                Ofertas
+            <button class="nav-item" onclick="App.toggleSearch()">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Buscar
             </button>
             <button class="nav-item" onclick="App.showBestSellers(); App.setActiveNav(this)">
                 <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
@@ -333,13 +451,12 @@
         </nav>
     </div>
 
-    <!-- SHEETS -->
+    <!-- SHEETS & MODALS -->
     <div id="categories-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('categories-sheet')">
         <div class="sheet-box">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700; color:var(--secondary);">
                 <span>Categorias</span><span onclick="App.closeSheet('categories-sheet')">✕</span>
             </div>
-            <!-- FIXED CATEGORIES -->
             <button class="cat-list-btn" onclick="App.scrollToCat('MERCEARIA E ALIMENTOS')">MERCEARIA E ALIMENTOS <span>❯</span></button>
             <button class="cat-list-btn" onclick="App.scrollToCat('CAFÉ DA MANHÃ E LANCHES')">CAFÉ DA MANHÃ E LANCHES <span>❯</span></button>
             <button class="cat-list-btn" onclick="App.scrollToCat('LIMPEZA E LAVANDERIA')">LIMPEZA E LAVANDERIA <span>❯</span></button>
@@ -348,11 +465,29 @@
         </div>
     </div>
 
+    <div id="info-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('info-sheet')">
+        <div class="sheet-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
+                <span id="info-title">Detalhes</span><span onclick="App.closeSheet('info-sheet')">✕</span>
+            </div>
+            <div id="info-body" class="info-body"></div>
+            <div id="info-media" class="info-media"></div>
+        </div>
+    </div>
+
     <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
         <div class="sheet-box">
             <h3 style="margin-bottom:15px; color:var(--secondary);">Dúvidas Frequentes</h3>
             <details class="faq-box"><summary>Formas de Pagamento</summary><div class="faq-text">Dinheiro, Pix, Cartão (Crédito/Débito) e Vale Alimentação.</div></details>
             <details class="faq-box"><summary>Entrega</summary><div class="faq-text">Entregamos em 24h em Cuiabá e VG. Grátis acima de R$ 85.</div></details>
+        </div>
+    </div>
+
+    <div id="gallery" class="gallery-wrap" onclick="Gallery.close()">
+        <div class="gallery-close">✕</div>
+        <div class="gallery-stage">
+            <img id="gallery-img" class="gallery-img" src="">
+            <video id="gallery-video" class="gallery-img hidden" controls></video>
         </div>
     </div>
 
@@ -368,7 +503,6 @@
         <div onclick="document.getElementById('suggestion-toast').classList.remove('visible')" style="padding:0 5px; font-size:1.2rem;">×</div>
     </div>
 
-    <!-- MODAL CHECKOUT -->
     <dialog id="checkout-modal" class="modal-checkout" style="padding:20px; border:none; border-radius:16px; width:90%; max-width:400px; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700;">
             <span>Resumo</span><span onclick="document.getElementById('checkout-modal').close()">✕</span>
@@ -384,10 +518,37 @@
     </dialog>
 
     <script>
-        const CONSTANTS = { PHONE: "5565996813588" };
+        const CONSTANTS = { 
+            PHONE: "5565996813588",
+            LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 }
+        };
+
+        const Gallery = {
+            open(src) {
+                const el = document.getElementById('gallery');
+                const img = document.getElementById('gallery-img');
+                const vid = document.getElementById('gallery-video');
+                
+                if (src.includes('.mp4')) {
+                    img.classList.add('hidden');
+                    vid.classList.remove('hidden');
+                    vid.src = src;
+                } else {
+                    vid.classList.add('hidden');
+                    img.classList.remove('hidden');
+                    img.src = src;
+                }
+                el.classList.add('active');
+            },
+            close() { 
+                document.getElementById('gallery').classList.remove('active'); 
+                document.getElementById('gallery-video').pause();
+            }
+        };
         
         const App = {
-            data: [], cart: {}, currentBasket: null, baseFee: 0,
+            data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, 
+            cartOrder: [], // To track insertion order
 
             async init() {
                 try {
@@ -396,9 +557,8 @@
                     
                     this.data = raw.map(p => {
                         const catStr = (p.categoria || "").toUpperCase();
-                        let appCat = "BAZAR E UTILIDADES"; // Default
+                        let appCat = "BAZAR E UTILIDADES"; 
                         
-                        // CLASSIFICAÇÃO INTELIGENTE NAS 5 CATEGORIAS
                         if (catStr.includes('ALIMENTOS') || catStr.includes('MERCEARIA') || catStr.includes('GRÃOS') || catStr.includes('TEMPEROS') || catStr.includes('MOLHOS')) appCat = "MERCEARIA E ALIMENTOS";
                         else if (catStr.includes('MATINAIS') || catStr.includes('BISCOITOS') || catStr.includes('BEBIDAS') || catStr.includes('LANCHE')) appCat = "CAFÉ DA MANHÃ E LANCHES";
                         else if (catStr.includes('LIMPEZA') || catStr.includes('LAVANDERIA') || catStr.includes('SABÃO')) appCat = "LIMPEZA E LAVANDERIA";
@@ -413,15 +573,20 @@
                             offerPrice: parseFloat(p.Valor_Oferta || 0),
                             isOffer: (p.Oferta === 'Sim'),
                             isBest: (p.Mais_Vendido === 'Sim'),
-                            appCategory: appCat, // Nova Categoria Fixa
+                            appCategory: appCat,
                             imagem: p.imagem ? (p.imagem.includes('/') ? `img/produtos/${p.imagem.split('/').pop()}` : `img/produtos/${p.imagem}`) : 'img/placeholder.jpg',
-                            limit: parseInt(p.Limit || 0),
-                            linkedCode: p.Codigo_Produto_Ligado || ""
+                            limit: parseInt(p.Limit || p.limit || 0),
+                            caracteristicas: p.Caracteristicas || p.caracteristicas || "",
+                            linkedCode: p.Codigo_Produto_Ligado || "",
+                            validade: p.Validade || ""
                         };
                     });
 
                     this.renderHome();
-                    this.setupSearch();
+                    
+                    // Search listener
+                    document.getElementById('mob-search-input').addEventListener('input', (e) => this.renderAllLists(e.target.value));
+
                 } catch (e) { console.error(e); }
             },
 
@@ -432,7 +597,7 @@
                 list.innerHTML = baskets.map(p => `
                     <div class="home-card" style="border:1px solid #eee; border-radius:12px; overflow:hidden;">
                         <div style="padding:20px; background:#fff; text-align:center;">
-                            <img src="${p.imagem}" style="width:100%; height:150px; object-fit:contain; margin-bottom:10px;">
+                            <img src="${p.imagem}" onclick="Gallery.open('${p.imagem}')" style="width:100%; height:150px; object-fit:contain; margin-bottom:10px; cursor:zoom-in;">
                             <h3 style="font-size:1.1rem; color:var(--secondary); margin-bottom:5px;">${p.nome}</h3>
                             <div style="font-weight:800; font-size:1.3rem; color:var(--primary); margin-bottom:15px;">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
                             <button onclick="App.openCustomizer('${p.id}')" style="width:100%; padding:12px; background:var(--secondary); color:white; border-radius:50px; font-weight:700;">Personalizar</button>
@@ -446,22 +611,24 @@
                 if(!basket) return;
                 this.currentBasket = basket;
                 this.cart = {};
+                this.cartOrder = [];
                 
-                // Load default items
+                document.getElementById('cust-title-text').innerText = basket.nome;
+                
                 if(basket.items) {
                     basket.items.forEach(i => {
                         let match = this.data.find(p => p.id === String(i.id));
-                        if(match) this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qtd || 1));
+                        if(match) {
+                            this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qtd || 1));
+                            if(!this.cartOrder.includes(match.id)) this.cartOrder.push(match.id);
+                        }
                     });
                 }
-
-                // Calc Base Fee
-                let sum = 0;
-                for(let pid in this.cart) {
-                    let p = this.data.find(x => x.id === pid);
-                    if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[pid];
-                }
-                this.baseFee = Math.max(0, basket.valor - sum);
+                
+                this.originalCart = { ...this.cart };
+                const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
+                let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
+                this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
 
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
@@ -491,20 +658,16 @@
                     products = products.filter(p => p.isBest);
                     title = `<div style="text-align:center; padding:20px; color:#2563eb; font-weight:700;">🏆 MAIS VENDIDOS</div>`;
                 } else if (filter && filter.length > 2) {
-                    // Search
                     products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
                 }
 
-                // Group by the 5 Fixed Categories
                 const groups = {};
                 products.forEach(p => {
                     if(!groups[p.appCategory]) groups[p.appCategory] = [];
                     groups[p.appCategory].push(p);
                 });
 
-                // Force Order based on user request
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
-                
                 let html = title;
                 
                 order.forEach(catName => {
@@ -523,23 +686,35 @@
 
             renderIncluded() {
                 const list = document.getElementById('included-list');
-                const ids = Object.keys(this.cart);
+                // Use cartOrder to respect insertion order (LIFO visual preference logic)
+                const ids = this.cartOrder.filter(id => this.cart[id] > 0);
+                
                 list.innerHTML = ids.length ? ids.map(id => {
                     const p = this.data.find(x => x.id === id);
                     if(!p) return '';
                     const price = p.isOffer ? p.offerPrice : p.valor;
+                    
+                    let infoBtn = p.caracteristicas ? `<span class="info-link" onclick="App.openInfo('${p.id}')">Info</span>` : '';
+                    let valDate = p.validade ? `<div class="val-badge">Val: ${p.validade}</div>` : '';
+
                     return `
                     <div class="card-inc">
-                        <img src="${p.imagem}" class="ci-img">
-                        <div class="ci-info">
-                            <div class="ci-title">${p.nome}</div>
-                            <div class="ci-sub">R$ ${price.toFixed(2)}</div>
+                        <div class="ci-img-wrap">
+                            <img src="${p.imagem}" class="ci-img" onclick="Gallery.open('${p.imagem}')">
                         </div>
-                        <div class="ci-action">
-                            <div class="qty-ctrl">
-                                <div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
-                                <div class="qc-val">${this.cart[p.id]}</div>
-                                <div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                        <div class="ci-title">${p.nome}</div>
+                        <div class="ci-bottom">
+                            <div class="ci-meta">
+                                <div class="ci-price">R$ ${price.toFixed(2)}</div>
+                                ${valDate}
+                                ${infoBtn}
+                            </div>
+                            <div class="ci-qty">
+                                <div class="qty-ctrl">
+                                    <div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                                    <div class="qc-val">${this.cart[p.id]}</div>
+                                    <div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                                </div>
                             </div>
                         </div>
                     </div>`;
@@ -557,22 +732,59 @@
                 return `
                 <div class="card-prod">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
-                    <div class="cp-img-box"><img src="${p.imagem}" class="cp-img" loading="lazy"></div>
+                    <div class="cp-img-box" onclick="Gallery.open('${p.imagem}')"><img src="${p.imagem}" class="cp-img" loading="lazy"></div>
                     <div class="cp-title">${p.nome}</div>
                     <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
                     ${btn}
                 </div>`;
             },
 
+            countRemovals() {
+                let count = 0;
+                for(let id in this.originalCart) {
+                    if (this.originalCart[id] > 0 && (!this.cart[id] || this.cart[id] === 0)) count++;
+                }
+                return count;
+            },
+
             modQty(id, delta) {
                 const p = this.data.find(x => x.id === id);
                 if(!this.cart[id]) this.cart[id] = 0;
-                this.cart[id] += delta;
-                if(this.cart[id] <= 0) delete this.cart[id];
                 
-                // Smart Refresh: If visible on screen, update HTML inplace, else renderAll
+                const newQty = this.cart[id] + delta;
+                
+                if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
+                
+                if (this.originalCart[id] && delta < 0 && newQty === 0) {
+                    if (this.countRemovals() >= this.currentLimit) {
+                        return alert(`Limite de ${this.currentLimit} trocas atingido.`);
+                    }
+                }
+
+                this.cart[id] = newQty;
+                if(this.cart[id] <= 0) {
+                    delete this.cart[id];
+                    // Remove from order array if deleted
+                    // this.cartOrder = this.cartOrder.filter(x => x !== id); // Optional: keep history or remove
+                } else {
+                    // Update Order: Move to Front
+                    this.cartOrder = this.cartOrder.filter(x => x !== id);
+                    this.cartOrder.unshift(id);
+                }
+                
                 this.renderIncluded();
-                this.renderAllLists(document.getElementById('main-search').value);
+                
+                // Scroll to start of basket if adding new item
+                if (delta > 0 && this.cart[id] === 1) {
+                    const slider = document.getElementById('included-list');
+                    if(slider) slider.scrollTo({left:0, behavior:'smooth'});
+                }
+
+                // Update extras view locally without full re-render if simple
+                // For simplicity, just update UI
+                const card = document.querySelectorAll(`[onclick="App.modQty('${p.id}', 1)"]`);
+                // Force re-render to update buttons state everywhere
+                this.renderAllLists(document.getElementById('mob-search-input').value || document.getElementById('desk-search').value);
                 
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
             },
@@ -592,21 +804,55 @@
             updateTotal() {
                 let sum = 0;
                 for(let id in this.cart) {
-                    const p = this.data.find(x => x.id === id);
+                    let p = this.data.find(x => x.id === id);
                     if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
                 }
+                
+                if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
+                     let startSum = 0;
+                     for(let i in this.originalCart) {
+                         let p = this.data.find(x => x.id === i);
+                         if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i];
+                     }
+                     this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
+                }
+
                 const total = Math.max(sum + this.baseFee, this.currentBasket.valor);
                 const txt = 'R$ ' + total.toFixed(2).replace('.', ',');
+                
+                // Update All Displays
                 document.getElementById('fc-total').innerText = txt;
                 document.getElementById('co-total').innerText = txt;
+                
+                // Desktop Sidebar Updates
+                if(document.getElementById('ds-total')) {
+                    document.getElementById('ds-total').innerText = txt;
+                    document.getElementById('ds-base').innerText = 'R$ ' + this.currentBasket.valor.toFixed(2).replace('.',',');
+                    // Extras calc
+                    let extras = Math.max(0, total - this.currentBasket.valor);
+                    document.getElementById('ds-extras').innerText = 'R$ ' + extras.toFixed(2).replace('.',',');
+                }
+
+                const rem = this.countRemovals();
+                const badge = document.getElementById('limit-alert');
+                badge.innerText = `Alt: ${rem}/${this.currentLimit}`;
+                badge.className = rem >= this.currentLimit ? 'limit-alert error' : 'limit-alert';
+            },
+
+            openInfo(id) {
+                const p = this.data.find(x => x.id === id);
+                if(!p) return;
+                document.getElementById('info-title').innerText = p.nome;
+                document.getElementById('info-body').innerHTML = p.caracteristicas.replace(/\n/g, '<br>');
+                const mediaDiv = document.getElementById('info-media');
+                mediaDiv.innerHTML = p.imagem ? `<img src="${p.imagem}">` : '';
+                App.openSheet('info-sheet');
             },
 
             scrollToCat(name) {
                 this.closeSheet('categories-sheet');
-                // Clear filters
-                document.getElementById('main-search').value = "";
+                document.getElementById('mob-search-input').value = "";
                 this.renderAllLists();
-                
                 setTimeout(() => {
                     const el = document.getElementById('cat-' + name);
                     if(el) {
@@ -618,11 +864,26 @@
 
             setActiveNav(btn) {
                 document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+                if(btn) btn.classList.add('active');
+            },
+
+            toggleSearch() {
+                const bar = document.getElementById('search-float');
+                const navBtn = document.querySelectorAll('.nav-item')[2]; // Buscar button
+                
+                if (bar.classList.contains('visible')) {
+                    bar.classList.remove('visible');
+                    navBtn.classList.remove('active');
+                } else {
+                    bar.classList.add('visible');
+                    navBtn.classList.add('active');
+                    document.getElementById('mob-search-input').focus();
+                }
             },
 
             clearSearch() {
-                document.getElementById('main-search').value = "";
+                document.getElementById('mob-search-input').value = "";
+                document.getElementById('search-float').classList.remove('visible');
                 this.renderAllLists();
                 window.scrollTo({top:0, behavior:'smooth'});
             },
@@ -648,10 +909,6 @@
                     return `<li>${this.cart[id]}x ${p.nome}</li>`;
                 }).join('');
                 document.getElementById('checkout-modal').showModal();
-            },
-
-            setupSearch() {
-                document.getElementById('main-search').addEventListener('input', (e) => this.renderAllLists(e.target.value));
             },
 
             sendWhatsApp() {
