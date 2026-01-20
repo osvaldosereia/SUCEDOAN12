@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.30 - Mobile Sidebar Widening
+        VERSION: 9.38 - Mobile Quick Nav Bar
         CHANGELOG:
-        - UI (Mobile): Aumentada a largura da coluna lateral (nav) de 90px para 115px.
-        - UI (Mobile): Botões de categoria mais largos (+25px).
-        - UI (Mobile): Mantida a lista contínua de produtos com linhas separadoras.
+        - UI (Mobile): Adicionada barra de navegação rápida (.mobile-quick-nav) fixa abaixo do header.
+        - UI (Mobile): Botões "Minha Cesta", "Ofertas", "Mais Vendidos" movidos para o topo.
+        - UI (Layout): Ajuste do 'top' da sidebar para compensar a nova barra (73px + 42px).
+        - JS: Lógica para filtrar "Mais Vendidos" e gerenciar estado ativo dos botões superiores.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -191,6 +192,39 @@
             padding: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
+        /* NEW: Mobile Quick Nav Bar */
+        .mobile-quick-nav {
+            position: sticky;
+            top: 73px; /* Header is ~73px tall (12+48+12+1) */
+            z-index: 890;
+            background: white;
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            height: 42px; /* Narrow height */
+            align-items: stretch;
+            box-shadow: 0 4px 6px -4px rgba(0,0,0,0.05);
+        }
+        @media (min-width: 1024px) { .mobile-quick-nav { display: none; } }
+
+        .mqn-btn {
+            flex: 1;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-light);
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            padding: 0 4px;
+            white-space: nowrap;
+        }
+        .mqn-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: #fff1f2;
+        }
+        
         @media(min-width: 1024px) {
             .cust-header-bar { top: 0; z-index: 1050; } 
         }
@@ -227,10 +261,10 @@
         .ch-desktop-cart { display: none; }
 
         /* === SPLIT LAYOUT MOBILE (Products | Nav) === */
-        /* Changed: Width increased from 90px to 115px */
+        /* Changed: Column order flipped (115px first) */
         .app-grid { 
             display: grid; 
-            grid-template-columns: 1fr 115px; 
+            grid-template-columns: 115px 1fr; /* Sidebar Left | Content Right */
             gap: 10px; 
             margin-top: 24px; 
             padding-bottom: 40px; 
@@ -243,10 +277,14 @@
         .mobile-nav-sidebar {
             display: block;
             position: sticky;
-            top: 85px; /* Fixed top position since header is gone */
-            height: calc(100vh - 100px);
+            /* CHANGED: Start below the new quick nav (73 + 42 = 115px) */
+            top: 115px; 
+            /* Adjusted height */
+            height: calc(100vh - 115px); 
             overflow-y: auto;
             padding-right: 4px;
+            /* CRITICAL FIX: Extra padding to allow scrolling past the fixed checkout bar (80px) */
+            padding-bottom: 120px; 
             scrollbar-width: thin;
         }
         
@@ -264,14 +302,49 @@
         .nav-side-btn.nav-cesta.active { background: var(--secondary); color: white; }
         .nav-side-btn:hover { border-color: #cbd5e1; }
 
+        /* New Arrow Indicator at bottom of Sidebar */
+        .nav-arrow-indicator {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            padding: 10px 0;
+            opacity: 0.7;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-5px);}
+            60% {transform: translateY(-3px);}
+        }
+
+        /* --- NEW HIERARCHY STYLES --- */
+        .nav-section-title {
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem; /* Slightly Larger */
+            font-weight: 600; /* Lighter Weight */
+            color: var(--text-light); /* Elegant Grey */
+            margin: 24px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 6px 0;
+            background: #f8fafc; /* Subtle Background */
+            border-radius: 6px; /* Soft Rounded */
+            /* Removed Bottom Border */
+        }
+        .nav-section-title:first-of-type { margin-top: 10px; }
+
         @media (min-width: 1024px) {
-            .app-grid { grid-template-columns: 1fr 340px; gap: 40px; align-items: start; padding-right: 16px; }
+            /* Changed: Sidebar width increased to 380px, Gap adjusted */
+            .app-grid { grid-template-columns: 380px 1fr; gap: 30px; align-items: start; padding-right: 16px; }
             .mobile-nav-sidebar { display: none; }
             .ch-desktop-cart { display: flex; align-items: center; gap: 16px; }
             .desk-price { text-align: right; line-height: 1.2; }
             .desk-price small { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
             .desk-price strong { font-size: 1.2rem; color: var(--primary); }
             .btn-desk-checkout { background: #16a34a; color: white; padding: 0 24px; height: 42px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+            
+            .nav-section-title { font-size: 0.85rem; margin-top: 24px; text-align: left; padding-left: 10px; }
         }
 
         .section-header { background: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; display:flex; justify-content: space-between; align-items: center; scroll-margin-top: 140px; }
@@ -285,56 +358,53 @@
         .extras-separator-banner h3 { font-size: 1.4rem; font-weight: 300; color: var(--secondary); margin-bottom: 5px; }
         .extras-separator-banner p { color: var(--text-light); font-size: 0.9rem; }
 
-        /* GRID: 1 Column on Mobile - Gap 0 for List View */
-        .grid-products { display: grid; grid-template-columns: 1fr; gap: 0; align-items: stretch; }
+        /* GRID: Adaptive Grid for Vertical Cards */
+        .grid-products { 
+            display: grid; 
+            /* Attempts to fit cards of min 130px. If width < 260px + gap, it collapses to 1 column. */
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+            gap: 10px; 
+            align-items: stretch; 
+            padding: 8px; /* Restored Grid Padding */
+        }
         
         /* DESKTOP GRID RESTORE */
         @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
         @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
 
-        /* PRODUCT MINI CARD (MOBILE LIST LAYOUT) */
+        /* PRODUCT MINI CARD (UNIFIED VERTICAL LAYOUT) */
         .mini-card {
-            display: grid; 
-            grid-template-columns: 110px 1fr; /* Image 110px */
-            grid-template-rows: auto auto;
-            gap: 12px; align-items: center; text-align: center; /* Center Text */
-            padding: 16px 10px; /* Increased vertical padding */
-            border-radius: 0; /* Remove radius */
-            border: none; /* Remove box border */
-            border-bottom: 1px solid #f1f5f9; /* Separator Line */
-            transition: background 0.2s; position: relative; height: auto; min-width: 0;
+            display: flex; 
+            flex-direction: column; 
+            text-align: center; 
+            height: 100%;
             background: #fff;
+            /* Restore Card Visuals on Mobile */
+            border: 1px solid #f1f5f9; 
+            border-radius: 8px; 
+            padding: 10px; 
+            position: relative; 
+            transition: background 0.2s, box-shadow 0.2s;
         }
-        .mini-card:last-child { border-bottom: none; }
+        .mini-card:last-child { border-bottom: 1px solid #f1f5f9; } /* Reset */
         
-        /* DESKTOP LAYOUT (Card Look Restore) */
-        @media (min-width: 600px) {
-            .mini-card { 
-                display: flex; flex-direction: column; text-align: center; height: 100%; 
-                border: 1px solid #f1f5f9; border-radius: 8px; padding: 10px; /* Restore Box/Radius */
-            }
-            .mc-img-box { margin-right: 0; margin-bottom: 8px; width: 100%; height: auto; aspect-ratio: 1/1; }
-            .mc-info-col { align-items: center; text-align: center; } 
-            .mc-action-col { justify-content: center; margin-top: auto; } 
-            .btn-feat-row { justify-content: center; }
-            .mc-title { text-align: center; }
-        }
-
         .mini-card:hover { background: #fff; border-color: var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .tag-offer { position: absolute; top: 0; left: 0; background: #16a34a; color: white; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
         
         .mc-img-box { 
-            width: 110px; height: 110px; 
+            width: 100%; 
+            height: auto; 
+            aspect-ratio: 1/1; /* Keep Square */
             position: relative; display: flex; 
             align-items: center; justify-content: center; 
             cursor: zoom-in; background-color: transparent; border-radius: 8px;
-            grid-row: 1 / 3; 
+            margin-bottom: 8px;
         }
         .mc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
-        /* Mobile Content Layout - CENTERED */
-        .mc-info-col { display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; text-align: center; }
-        .mc-action-col { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 6px; }
+        /* Content Layout - CENTERED Vertical */
+        .mc-info-col { display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; text-align: center; flex: 1; }
+        .mc-action-col { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: auto; padding-top: 8px;}
 
         .btn-feat-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; width: 100%; min-height: 0; justify-content: center; }
         .btn-feat { font-size: 0.65rem; padding: 2px 8px; border-radius: 50px; font-weight: 600; border: 1px solid; cursor: pointer; white-space: nowrap; }
@@ -348,8 +418,8 @@
         .mc-price-old { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; margin-right: 4px; }
         .mc-price-new { color: var(--primary); }
 
-        .btn-add-mini { width: auto; padding: 0 16px; height: 32px; background: var(--primary); color: white; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); }
-        .qty-mini { width: 100px; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 50px; background: white; }
+        .btn-add-mini { width: 100%; padding: 0 16px; height: 32px; background: var(--primary); color: white; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); }
+        .qty-mini { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 50px; background: white; }
         .qm-btn { width: 30px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--secondary); font-size: 1.1rem; }
         .qm-val { font-weight: 700; font-size: 0.9rem; }
         
@@ -369,7 +439,8 @@
                 align-self: start; 
             }
             .sidebar-title { font-size: 0.9rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 12px; }
-            .sidebar-nav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+            /* Changed: 2 Columns for wider buttons */
+            .sidebar-nav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 24px; }
             .sidebar-chip { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.7rem; font-weight: 600; color: var(--secondary); text-align: center; padding: 8px 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .sidebar-chip:hover { border-color: var(--secondary); background: #e2e8f0; }
         }
@@ -512,28 +583,30 @@
                 </div>
             </div>
         </div>
+        
+        <!-- NEW: Mobile Quick Nav Bar -->
+        <div class="mobile-quick-nav">
+            <button class="mqn-btn active" onclick="App.clearSearch(); App.setActiveQuick(this)">Minha Cesta</button>
+            <button class="mqn-btn" onclick="App.showOffers(); App.setActiveQuick(this)">Ofertas</button>
+            <button class="mqn-btn" onclick="App.showBestSellers(); App.setActiveQuick(this)">Mais Vendidos</button>
+        </div>
+
         <div class="container app-grid">
+            <!-- DESKTOP SIDEBAR (NOW ON LEFT) -->
+            <aside class="sidebar-desktop">
+                <!-- Content Injected via JS -->
+            </aside>
+            
+            <!-- MOBILE NAV SIDEBAR (NOW ON LEFT) -->
+            <aside id="mobile-nav-sidebar" class="mobile-nav-sidebar">
+                <!-- Injected via JS -->
+            </aside>
+
             <div class="products-section">
                 <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Itens Inclusos</h3></div>
                 <div class="product-box"><div id="included-list" class="grid-products"></div></div>
                 <div id="extras-container"></div>
             </div>
-            
-            <!-- DESKTOP SIDEBAR -->
-            <aside class="sidebar-desktop">
-                <div class="sidebar-title">Categorias</div>
-                <div id="desk-cat-list" class="sidebar-nav-grid"></div>
-                <div style="margin-top:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                    <strong style="color:var(--secondary);">Dúvida?</strong>
-                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:10px;">Fale conosco no WhatsApp ou veja as perguntas frequentes.</p>
-                    <button class="btn-outline" onclick="App.openSheet('faq-sheet')">Perguntas Frequentes</button>
-                </div>
-            </aside>
-            
-            <!-- MOBILE NAV SIDEBAR (Replaces Right Column) -->
-            <aside id="mobile-nav-sidebar" class="mobile-nav-sidebar">
-                <!-- Injected via JS -->
-            </aside>
         </div>
         
         <!-- MOBILE CHECKOUT BAR -->
@@ -742,20 +815,29 @@
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
                     const raw = await res.json();
                     
-                    this.data = raw.map(p => ({
-                        ...p,
-                        id: String(p.id),
-                        nome: p.nome.trim(),
-                        valor: parseFloat(p.valor || 0),
-                        offerPrice: parseFloat(p.Valor_Oferta || 0),
-                        isOffer: (p.Oferta && p.Oferta.toLowerCase() === 'sim'),
-                        categoria: (p.categoria || 'OUTROS').trim().toUpperCase(),
-                        imagem: this.fixImgPath(p.imagem),
-                        limit: parseInt(p.Limit || p.limit || 0),
-                        estoque: parseInt(p.estoque || 0),
-                        validade: p.Validade || p.validade || "",
-                        caracteristicas: p.Caracteristicas || p.caracteristicas || ""
-                    }));
+                    this.data = raw.map(p => {
+                        const rawCat = (p.categoria || 'OUTROS').trim().toUpperCase();
+                        const parts = rawCat.split('>');
+                        const mainCat = parts[0].trim();
+                        const subCat = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+
+                        return {
+                            ...p,
+                            id: String(p.id),
+                            nome: p.nome.trim(),
+                            valor: parseFloat(p.valor || 0),
+                            offerPrice: parseFloat(p.Valor_Oferta || 0),
+                            isOffer: (p.Oferta && p.Oferta.toLowerCase() === 'sim'),
+                            categoria: rawCat, // Keep original for unique grouping key
+                            mainCategory: mainCat,
+                            subCategory: subCat,
+                            imagem: this.fixImgPath(p.imagem),
+                            limit: parseInt(p.Limit || p.limit || 0),
+                            estoque: parseInt(p.estoque || 0),
+                            validade: p.Validade || p.validade || "",
+                            caracteristicas: p.Caracteristicas || p.caracteristicas || ""
+                        };
+                    });
 
                     this.renderHome();
                     this.renderSidebar();
@@ -798,22 +880,81 @@
             },
 
             renderSidebar() {
-                const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))].sort();
+                // Filter out Cestas and get structure
+                const relevantProducts = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                // DESKTOP
-                const deskBtns = [
-                    `<button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>`,
-                    `<button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>`
-                ].concat(cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`));
-                
-                // MOBILE NAV
-                const mobNavBtns = [
-                    `<div class="nav-side-btn nav-cesta active" onclick="App.clearSearch(); App.highlightNav(this);">Minha Cesta</div>`,
-                    `<div class="nav-side-btn nav-ofertas" onclick="App.showOffers(); App.highlightNav(this);">🔥 Ofertas</div>`
-                ].concat(cats.map(c => `<div class="nav-side-btn" onclick="App.filterCat('${c}'); App.highlightNav(this);">${c}</div>`));
+                // Group Subcats by Maincats
+                const structure = {};
+                const mainOrder = []; 
 
-                document.getElementById('desk-cat-list').innerHTML = deskBtns.join('');
-                document.getElementById('mobile-nav-sidebar').innerHTML = mobNavBtns.join('');
+                relevantProducts.forEach(p => {
+                    if (!structure[p.mainCategory]) {
+                        structure[p.mainCategory] = new Set();
+                        mainOrder.push(p.mainCategory); // Preserve approximate JSON order
+                    }
+                    structure[p.mainCategory].add(p.categoria); // Store full key for filtering
+                });
+
+                // --- BUILD HTML ---
+                let deskHTML = `<div class="sidebar-title">Menu Rápido</div>
+                    <div class="sidebar-nav-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>
+                        <button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>
+                    </div>`;
+                
+                // Note: Top buttons moved to .mobile-quick-nav, removed here
+                let mobHTML = ``;
+
+                // Deduplicate mainOrder
+                const uniqueMain = [...new Set(mainOrder)];
+
+                uniqueMain.forEach(main => {
+                    // Determine Color
+                    const colorKey = Object.keys(CONSTANTS.THEMES).find(k => main.includes(k)) || 'DEFAULT';
+                    const bgColor = CONSTANTS.THEMES[colorKey];
+                    const textColor = 'var(--secondary)'; // Ensure good contrast
+
+                    // DESKTOP
+                    deskHTML += `<div class="nav-section-title" style="background-color: ${bgColor}; color: ${textColor};">${main}</div>`;
+                    deskHTML += `<div class="sidebar-nav-grid" style="margin-bottom:10px;">`;
+                    
+                    // MOBILE
+                    mobHTML += `<div class="nav-section-title" style="background-color: ${bgColor}; color: ${textColor};">${main}</div>`;
+
+                    // Sort subcategories logic? Or keep JSON order?
+                    // Set iteration follows insertion order usually.
+                    const subKeys = Array.from(structure[main]);
+                    
+                    subKeys.forEach(fullKey => {
+                        // Find a representative product to get the nice sub name
+                        const sample = this.data.find(p => p.categoria === fullKey);
+                        const label = sample ? sample.subCategory : fullKey;
+
+                        deskHTML += `<button class="sidebar-chip" onclick="App.filterCat('${fullKey}')">${label}</button>`;
+                        
+                        mobHTML += `<div class="nav-side-btn" onclick="App.filterCat('${fullKey}'); App.highlightNav(this);">${label}</div>`;
+                    });
+
+                    deskHTML += `</div>`; // Close grid
+                });
+
+                // Add footer elements
+                deskHTML += `
+                <div style="margin-top:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <strong style="color:var(--secondary);">Dúvida?</strong>
+                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:10px;">Fale conosco no WhatsApp ou veja as perguntas frequentes.</p>
+                    <button class="btn-outline" onclick="App.openSheet('faq-sheet')">Perguntas Frequentes</button>
+                </div>`;
+
+                mobHTML += `<div class="nav-arrow-indicator">▼</div>`;
+
+                document.querySelector('.sidebar-desktop').innerHTML = deskHTML;
+                document.getElementById('mobile-nav-sidebar').innerHTML = mobHTML;
+            },
+
+            setActiveQuick(el) {
+                document.querySelectorAll('.mqn-btn').forEach(b => b.classList.remove('active'));
+                el.classList.add('active');
             },
 
             highlightNav(el) {
@@ -870,7 +1011,17 @@
                 this.renderAllLists("", true); 
             },
 
-            renderAllLists(searchTerm = "", showOffersOnly = false) {
+            showBestSellers() {
+                this.closeSheet('cat-sheet');
+                if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
+                document.getElementById('main-search').value = "";
+                // Logic: Filter by lower stock implies high sales (Simulation)
+                // In real app, check a specific 'sales_count' or 'is_bestseller' flag
+                // For now, we simulate by showing items with stock < 50 or ID ending in 5
+                this.renderAllLists("", false, true); 
+            },
+
+            renderAllLists(searchTerm = "", showOffersOnly = false, showBestSellers = false) {
                 if(!this.currentBasket) return;
                 
                 // 1. Render Included Items (Top List)
@@ -880,52 +1031,72 @@
                 const extContainer = document.getElementById('extras-container');
                 let extras = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
+                let titleHtml = '';
+
                 if(showOffersOnly) {
                     extras = extras.filter(p => p.isOffer);
                     const mobSearch = document.getElementById('main-search');
                     if(mobSearch) mobSearch.value = "";
-                } else if(searchTerm) {
-                    const lower = searchTerm.toLowerCase();
-                    extras = extras.filter(p => p.nome.toLowerCase().includes(lower) || p.categoria.toLowerCase().includes(lower));
-                    document.getElementById('main-search').value = searchTerm;
-                }
-
-                const showClear = searchTerm.length > 0 || showOffersOnly;
-                const deskBtn = document.getElementById('desk-clear-btn');
-                if(deskBtn) showClear ? deskBtn.classList.remove('hidden') : deskBtn.classList.add('hidden');
-
-                const groups = {};
-                extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
-                const sortedCats = Object.keys(groups).sort();
-                
-                let html = '';
-                if(showOffersOnly) {
-                    html += `
+                    titleHtml = `
                     <div class="extras-separator-banner">
                         <h3 style="color:#b45309;">🔥 Ofertas Especiais</h3>
                         <p>Aproveite os descontos exclusivos.</p>
                     </div>`;
-                } else if(sortedCats.length > 0 && !searchTerm) {
-                    html += `
+                } else if(showBestSellers) {
+                    // Logic: Simulate Best Sellers by sorting low stock first, or specific heuristic
+                    // Since we don't have real sales data, let's filter purely by random heuristic for demo or sort by 'estoque'
+                    extras.sort((a,b) => a.estoque - b.estoque); 
+                    // Take top 20 low stock items as "best sellers"
+                    extras = extras.slice(0, 20);
+                    
+                    const mobSearch = document.getElementById('main-search');
+                    if(mobSearch) mobSearch.value = "";
+                    
+                    titleHtml = `
+                    <div class="extras-separator-banner">
+                        <h3 style="color:#2563eb;">🏆 Mais Vendidos</h3>
+                        <p>Os produtos preferidos dos nossos clientes.</p>
+                    </div>`;
+                } else if(searchTerm) {
+                    const lower = searchTerm.toLowerCase();
+                    extras = extras.filter(p => p.nome.toLowerCase().includes(lower) || p.categoria.toLowerCase().includes(lower));
+                    document.getElementById('main-search').value = searchTerm;
+                } else {
+                    titleHtml = `
                     <div class="extras-separator-banner">
                         <h3>Adicionar Extras</h3>
                         <p>Toque nos produtos abaixo para adicionar mais itens.</p>
                     </div>`;
                 }
 
-                if(sortedCats.length === 0) {
+                const showClear = searchTerm.length > 0 || showOffersOnly || showBestSellers;
+                const deskBtn = document.getElementById('desk-clear-btn');
+                if(deskBtn) showClear ? deskBtn.classList.remove('hidden') : deskBtn.classList.add('hidden');
+
+                const groups = {};
+                // Group by full category key to match sidebar filtering
+                extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
+                
+                const sortedKeys = Object.keys(groups); // Keep parse order essentially
+                
+                let html = titleHtml;
+
+                if(sortedKeys.length === 0) {
                      html += '<p style="text-align:center; padding:40px;">Nenhum produto encontrado.</p>';
                 } else {
-                    sortedCats.forEach(cat => {
-                        const color = Object.keys(CONSTANTS.THEMES).find(k => cat.includes(k)) || 'DEFAULT';
-                        html += `<div id="cat-${cat}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;"><h3>${cat}</h3></div>
-                        <div class="product-box"><div class="grid-products">${groups[cat].map(p => this.buildCard(p)).join('')}</div></div>`;
+                    sortedKeys.forEach(key => {
+                        const sample = groups[key][0];
+                        const title = sample.subCategory; // Show only subcategory in header
+                        const colorKey = Object.keys(CONSTANTS.THEMES).find(k => key.includes(k)) || 'DEFAULT';
+                        
+                        html += `<div id="cat-${key}" class="section-header" style="background:${CONSTANTS.THEMES[colorKey]}; margin-top:30px;"><h3>${title}</h3></div>
+                        <div class="product-box"><div class="grid-products">${groups[key].map(p => this.buildCard(p)).join('')}</div></div>`;
                     });
                 }
                 
                 extContainer.innerHTML = html;
                 
-                if(showOffersOnly && extContainer) extContainer.scrollIntoView({behavior:'smooth'});
+                if((showOffersOnly || showBestSellers) && extContainer) extContainer.scrollIntoView({behavior:'smooth'});
                 
                 this.updateTotal();
             },
@@ -1124,6 +1295,12 @@
                 
                 this.renderAllLists("");
                 
+                // Reset quick nav active state if needed, or keep 'Minha Cesta' active?
+                // Usually clear search resets to full list view (which implies user wants to see everything or basket)
+                // Let's set 'Minha Cesta' as active visually
+                const mcBtn = document.querySelector('.mqn-btn:first-child');
+                if(mcBtn) this.setActiveQuick(mcBtn);
+
                 // Scroll to VERY TOP of the content area (Included List)
                 // Use a small timeout to ensure DOM update
                 setTimeout(() => {
@@ -1141,6 +1318,9 @@
                 this.closeSheet('cat-sheet');
                 if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
                 document.getElementById('main-search').value = "";
+
+                // Reset quick nav active buttons when clicking a specific category
+                document.querySelectorAll('.mqn-btn').forEach(b => b.classList.remove('active'));
 
                 this.renderAllLists("");
                 setTimeout(() => {
