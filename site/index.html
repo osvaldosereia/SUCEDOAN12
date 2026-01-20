@@ -3,11 +3,11 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Brand Identity Update
+        ARCHITECT: SEO Code Architect (SCA) - Final Refined Build
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - BRAND: Substituição do placeholder "DA" pela Logo Oficial Dona Antônia.
-        - UI: Ajuste de CSS para renderização perfeita da imagem da logo no header.
+        - UI: Imagem principal da cesta aumentada em 30% (110px -> 145px).
+        - UI: Adicionado rótulo "Produtos da Cesta" antes do slider de itens.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -161,8 +161,11 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        .hbc-top { display: grid; grid-template-columns: 110px 1fr; gap: 15px; padding: 16px; align-items: center; }
-        .hbc-img-wrap { width: 100%; height: 110px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
+        /* AJUSTE: Largura da coluna de imagem aumentada para acomodar 145px */
+        .hbc-top { display: grid; grid-template-columns: 145px 1fr; gap: 15px; padding: 16px; align-items: center; }
+        
+        /* AJUSTE: Altura aumentada em 30% (110px -> 145px) */
+        .hbc-img-wrap { width: 100%; height: 145px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
         .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
@@ -171,7 +174,7 @@
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; }
-        /* AJUSTE: Imagens maiores na cesta home (de 50px para 65px) e flex-basis aumentado */
+        
         .hbc-item { flex: 0 0 85px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f9f9f9; border-radius: 8px; padding: 6px; }
         .hbc-item img { width: 65px; height: 65px; object-fit: contain; mix-blend-mode: multiply; } 
         .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #888; }
@@ -681,7 +684,8 @@
                 list.innerHTML = baskets.map(p => {
                     let carouselHtml = '';
                     if (p.items && p.items.length > 0) {
-                        carouselHtml = `<div class="hbc-items-slider">` + 
+                        carouselHtml = `<div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>` + 
+                        `<div class="hbc-items-slider">` + 
                             p.items.map(i => {
                                 const itemData = this.data.find(d => d.id === String(i.id));
                                 if(!itemData) return '';
