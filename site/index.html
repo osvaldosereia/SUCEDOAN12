@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.42 - Fix: Toast Cleanup on Navigation
+        VERSION: 9.43 - App-Like Navigation & Layout Adjustments
         CHANGELOG:
-        - FIX: Ocultar suggestion-toast ao voltar para a Home (goHome).
-        - DATA: Mapeamento de novos campos JSON (Mais_Vendido, Tem_Ligacao, Codigo_Produto_Ligado).
-        - UI: Nova seção "Mais Vendidos" posicionada estrategicamente abaixo da cesta.
-        - UX: Sistema de sugestão inteligente (Cross-sell) via Toast interativo ao adicionar produtos relacionados.
+        - UI: Barra de navegação movida para o rodapé (estilo App Tab Bar).
+        - UI: Adicionado botão "Dúvidas" na barra inferior.
+        - LAYOUT: Coluna lateral esquerda aumentada (+20px) e direita ajustada.
+        - FIX: Ajuste de posicionamento da barra de checkout acima da navegação.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -40,6 +40,7 @@
             --header-height: 60px;
             --app-bar-height: 0px; 
             --checkout-bar-height: 80px; 
+            --nav-bar-height: 60px; /* NEW Bottom Nav Height */
             --radius-lg: 16px;
             --shadow-float: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
             --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -115,12 +116,13 @@
         /* --- 4. MOBILE CHECKOUT BAR --- */
         .mobile-checkout-bar {
             position: fixed; 
-            bottom: 0; 
+            /* Sits above the Bottom Nav (60px) */
+            bottom: var(--nav-bar-height); 
             left: 0; right: 0; height: var(--checkout-bar-height);
             background: #ffffff; border-top: 1px solid var(--border-color);
-            z-index: 9998; 
+            z-index: 9990; /* Below Nav but above content */
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 20px; box-shadow: 0 -4px 25px rgba(0,0,0,0.1);
+            padding: 0 20px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
             animation: slideUp 0.3s ease-out;
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -180,7 +182,8 @@
 
         /* --- 7. CUSTOMIZER --- */
         /* Changed: Removed padding-top since we hide header */
-        #customizer-view { background: #f8fafc; min-height: 100vh; padding-bottom: 150px; padding-top: 0; }
+        /* Increased bottom padding to accommodate stacked bars (80+60 + extra) */
+        #customizer-view { background: #f8fafc; min-height: 100vh; padding-bottom: 160px; padding-top: 0; }
         @media(min-width: 1024px) { 
             #customizer-view { padding-bottom: 0; } 
         }
@@ -192,38 +195,51 @@
             padding: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
-        /* NEW: Mobile Quick Nav Bar */
+        /* NEW: Mobile Quick Nav Bar (BOTTOM TAB STYLE) */
         .mobile-quick-nav {
-            position: sticky;
-            top: 73px; /* Header is ~73px tall (12+48+12+1) */
-            z-index: 890;
+            position: fixed;
+            bottom: 0;
+            top: auto; /* Reset top */
+            left: 0; right: 0;
+            height: var(--nav-bar-height);
+            z-index: 10000; /* Highest z-index */
             background: white;
-            display: flex;
-            border-bottom: 1px solid #e2e8f0;
-            height: 42px; /* Narrow height */
-            align-items: stretch;
-            box-shadow: 0 4px 6px -4px rgba(0,0,0,0.05);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 Buttons */
+            border-top: 1px solid #e2e8f0;
+            border-bottom: none;
+            align-items: center;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+            padding-bottom: env(safe-area-inset-bottom); /* Safe area for iPhone X+ */
+            height: calc(var(--nav-bar-height) + env(safe-area-inset-bottom));
         }
         @media (min-width: 1024px) { .mobile-quick-nav { display: none; } }
 
         .mqn-btn {
-            flex: 1;
-            font-size: 0.7rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 100%;
+            font-size: 0.65rem;
             font-weight: 600;
             color: var(--text-light);
             background: transparent;
             border: none;
-            border-bottom: 3px solid transparent;
             transition: all 0.2s;
-            text-transform: uppercase;
-            padding: 0 4px;
-            white-space: nowrap;
+            text-transform: capitalize;
+            padding: 4px 0;
         }
+        
+        .mqn-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; transition: all 0.2s; }
+
         .mqn-btn.active {
             color: var(--primary);
-            border-bottom-color: var(--primary);
-            background: #fff1f2;
+            background: transparent;
+            border: none;
         }
+        .mqn-btn.active svg { stroke: var(--primary); transform: translateY(-2px); }
         
         @media(min-width: 1024px) {
             .cust-header-bar { top: 0; z-index: 1050; } 
@@ -261,10 +277,11 @@
         .ch-desktop-cart { display: none; }
 
         /* === SPLIT LAYOUT MOBILE (Products | Nav) === */
-        /* Changed: Column order flipped (115px first) */
+        /* Changed: Column order flipped (135px first) */
         .app-grid { 
             display: grid; 
-            grid-template-columns: 115px 1fr; /* Sidebar Left | Content Right */
+            /* MODIFIED: Left column increased to 135px (+20px) */
+            grid-template-columns: 135px 1fr; 
             gap: 10px; 
             margin-top: 24px; 
             padding-bottom: 40px; 
@@ -277,14 +294,14 @@
         .mobile-nav-sidebar {
             display: block;
             position: sticky;
-            /* CHANGED: Start below the new quick nav (73 + 42 = 115px) */
-            top: 115px; 
+            /* CHANGED: Start below Header (75px approx) */
+            top: 75px; 
             /* Adjusted height */
-            height: calc(100vh - 115px); 
+            height: calc(100vh - 75px); 
             overflow-y: auto;
             padding-right: 4px;
-            /* CRITICAL FIX: Extra padding to allow scrolling past the fixed checkout bar (80px) */
-            padding-bottom: 120px; 
+            /* CRITICAL FIX: Increased padding for double bottom bars */
+            padding-bottom: 180px; 
             scrollbar-width: thin;
         }
         
@@ -574,7 +591,7 @@
         /* SUGGESTION TOAST (New Cross-Sell UI) */
         .suggestion-toast { 
             position: fixed; 
-            bottom: 90px; /* Above checkout bar (80px) + some margin */
+            bottom: 160px; /* Above double bottom bars */
             left: 20px; right: 20px; 
             background: white; 
             border: 1px solid #bfdbfe; 
@@ -661,11 +678,24 @@
             </div>
         </div>
         
-        <!-- NEW: Mobile Quick Nav Bar -->
+        <!-- NEW: Mobile Quick Nav Bar (BOTTOM TABS) -->
         <div class="mobile-quick-nav">
-            <button class="mqn-btn active" onclick="App.clearSearch(); App.setActiveQuick(this)">Minha Cesta</button>
-            <button class="mqn-btn" onclick="App.showOffers(); App.setActiveQuick(this)">Ofertas</button>
-            <button class="mqn-btn" onclick="App.showBestSellers(); App.setActiveQuick(this)">Mais Vendidos</button>
+            <button class="mqn-btn active" onclick="App.clearSearch(); App.setActiveQuick(this)">
+                <svg viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Cesta
+            </button>
+            <button class="mqn-btn" onclick="App.showOffers(); App.setActiveQuick(this)">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>
+                Ofertas
+            </button>
+            <button class="mqn-btn" onclick="App.showBestSellers(); App.setActiveQuick(this)">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                Top
+            </button>
+            <button class="mqn-btn" onclick="App.openSheet('faq-sheet');">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Dúvidas
+            </button>
         </div>
 
         <div class="container app-grid">
