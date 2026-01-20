@@ -4,13 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 10.1 - Product Details in Grid
+        VERSION: 10.2 - Desktop Sidebar Refined
         CHANGELOG:
-        - UI: Cards do mercadinho agora exibem Validade e Botão Info se disponíveis.
-        - CSS: Novos estilos .cp-meta, .cp-val, .cp-info para os detalhes no grid.
-        - MOBILE: Cesta movida para o fundo absoluto (abaixo da barra de ações).
-        - LOGIC: Reordenação inteligente (apenas novos itens vão para o topo).
-        - DESKTOP: Sidebar compacta e carrossel vertical expandido.
+        - DESKTOP: Carrossel vertical aumentado para mostrar 3 itens.
+        - DESKTOP: Botões "Concluir" e "Voltar" lado a lado (compactos).
+        - DESKTOP: Campo de busca removido da sidebar; adicionados botões "Categorias" e "Dúvidas".
+        - DESKTOP: Removido breakdown de valores (Base/Extras), mantendo apenas o Total.
+        - UI: Refinamentos gerais de espaçamento e visual "clean".
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -251,7 +251,7 @@
             #included-list-desk.vertical-slider {
                 display: flex; flex-direction: column; gap: 0;
                 overflow: hidden; /* Hidden scroll, buttons control it */
-                max-height: 400px; /* Increased height for desktop basket */
+                max-height: 330px; /* INCREASED to fit 3 items (approx 90-100px each) */
                 transition: scroll-top 0.3s;
                 border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;
                 padding: 5px 0;
@@ -260,14 +260,20 @@
             .ds-section-title { font-size: 0.9rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
             .ds-divider { height: 1px; background: #e2e8f0; margin: 15px 0; }
             
-            .ds-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-light); }
-            .ds-total { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-align: right; margin: 15px 0; letter-spacing: -0.5px; }
+            /* Summary (Only Total) */
+            .ds-total { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-align: center; margin: 20px 0; letter-spacing: -0.5px; }
             
-            .ds-btn { width: 100%; padding: 12px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 0.95rem; margin-bottom: 10px; cursor: pointer; transition: transform 0.2s; border: none; }
+            /* Action Buttons Side-by-Side */
+            .ds-actions-row { display: flex; gap: 10px; margin-bottom: 15px; }
+            .ds-btn { flex: 1; padding: 10px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: transform 0.2s; border: none; white-space: nowrap; }
             .ds-btn:hover { transform: scale(1.02); }
-            .ds-btn-outline { width: 100%; padding: 10px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; transition: background 0.2s; font-size: 0.9rem; }
+            .ds-btn-outline { flex: 1; padding: 10px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; transition: background 0.2s; font-size: 0.9rem; white-space: nowrap; }
             .ds-btn-outline:hover { background: #f8fafc; }
-            .ds-search { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px; font-size:0.9rem; }
+
+            /* Extra Nav Buttons in Sidebar */
+            .ds-nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+            .ds-nav-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: var(--text-light); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+            .ds-nav-btn:hover { background: #e2e8f0; color: var(--secondary); }
         }
 
         /* --- 9. SHEETS & MODALS --- */
@@ -403,15 +409,17 @@
             
             <div class="ds-divider"></div>
             
-            <div class="ds-section-title">Resumo</div>
-            <div class="ds-row"><span>Cesta Base</span><span id="ds-base">R$ 0,00</span></div>
-            <div class="ds-row"><span>Extras</span><span id="ds-extras">R$ 0,00</span></div>
             <div class="ds-total" id="ds-total">R$ 0,00</div>
             
-            <button class="ds-btn" onclick="App.openCheckout()">Concluir Pedido</button>
-            <button class="ds-btn-outline" onclick="App.goHome()">Voltar / Trocar Cesta</button>
-            
-            <input type="text" id="desk-search" class="ds-search" placeholder="Buscar no mercadinho..." oninput="App.renderAllLists(this.value)">
+            <div class="ds-actions-row">
+                <button class="ds-btn" onclick="App.openCheckout()">Concluir</button>
+                <button class="ds-btn-outline" onclick="App.goHome()">Voltar</button>
+            </div>
+
+            <div class="ds-nav-row">
+                <div class="ds-nav-btn" onclick="App.openSheet('categories-sheet')">☰ Categorias</div>
+                <div class="ds-nav-btn" onclick="App.openSheet('faq-sheet')">? Dúvidas</div>
+            </div>
         </aside>
 
         <!-- MOBILE BOTTOM PANEL (UNIFIED FIXED) -->
@@ -633,7 +641,12 @@
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                if (filter && filter.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
+                // Check if the search input exists before reading value
+                const searchValue = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
+                // If filter is provided use it, otherwise use existing search if applicable
+                const query = (filter !== null) ? filter : searchValue;
+
+                if (query && query.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
                 products.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
 
                 const groups = {};
@@ -682,8 +695,8 @@
                     </div>`;
                 }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
 
-                document.getElementById('included-list-mob').innerHTML = html;
-                document.getElementById('included-list-desk').innerHTML = html;
+                if(document.getElementById('included-list-mob')) document.getElementById('included-list-mob').innerHTML = html;
+                if(document.getElementById('included-list-desk')) document.getElementById('included-list-desk').innerHTML = html;
             },
 
             buildCard(p) {
@@ -750,7 +763,11 @@
                     const deskSlider = document.getElementById('included-list-desk');
                     if(deskSlider) deskSlider.scrollTop = 0;
                 }
-                this.renderAllLists(document.getElementById('desk-search') ? document.getElementById('desk-search').value : "");
+                
+                // Safe search update
+                const searchVal = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
+                this.renderAllLists(searchVal);
+                
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
             },
 
@@ -795,13 +812,11 @@
                     toast.classList.remove('visible');
                 }
 
-                document.getElementById('mba-total').innerText = txt;
+                if(document.getElementById('mba-total')) document.getElementById('mba-total').innerText = txt;
                 document.getElementById('co-total').innerText = txt;
                 if(document.getElementById('ds-total')) {
                     document.getElementById('ds-total').innerText = txt;
-                    document.getElementById('ds-base').innerText = 'R$ ' + this.currentBasket.valor.toFixed(2).replace('.',',');
-                    let extras = Math.max(0, total - this.currentBasket.valor);
-                    document.getElementById('ds-extras').innerText = 'R$ ' + extras.toFixed(2).replace('.',',');
+                    // Removed breakdown updates since elements removed
                 }
 
                 const rem = this.countRemovals();
@@ -848,7 +863,7 @@
                 const list = document.getElementById('checkout-items');
                 list.innerHTML = Object.keys(this.cart).map(id => {
                     const p = this.data.find(x => x.id === id);
-                    return `<li>${this.cart[id]}x ${p.nome}</li>`;
+                    return `<li class="co-item"><span>${this.cart[id]}x ${p.nome}</span></li>`;
                 }).join('');
                 document.getElementById('checkout-modal').showModal();
             },
@@ -863,7 +878,9 @@
                 }
                 msg += `\n*TOTAL: ${total}*\nPagamento: ${method}`;
                 window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
-            }
+            },
+
+            directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
         };
 
         document.addEventListener('DOMContentLoaded', () => App.init());
