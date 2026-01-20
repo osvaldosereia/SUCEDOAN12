@@ -3,12 +3,13 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Gold Master Build
+        ARCHITECT: SEO Code Architect (SCA) - Persistent State Build
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UX: "Bleeding" ajustado para 36vw (Corte visual claro no mobile).
-        - UX: Animação "Hand Swipe" no primeiro acesso (Ensina a rolar).
-        - UI: Respiro do topo reduzido para otimizar área útil.
+        - FEATURE: Persistência de Estado (F5 mantém o usuário na tela e cesta atuais).
+        - UI: Card Home com imagem +50% maior (220px) e título destacado.
+        - ASSETS: Logo atualizada para novo caminho.
+        - LAYOUT: Redução de respiros (paddings) globais.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -93,7 +94,7 @@
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         
         /* LOGO BRAND IMAGE */
-        .logo-brand-img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+        .logo-brand-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
@@ -136,7 +137,9 @@
 
         /* --- 4. HERO & HOME CONTENT --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
-        .hero { padding: 50px 0; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
+        
+        /* AJUSTE: Padding reduzido de 50px para 25px */
+        .hero { padding: 25px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
         .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--secondary); margin-bottom: 12px; }
         .hero h1 span { color: var(--primary); }
         .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
@@ -162,12 +165,16 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        .hbc-top { display: grid; grid-template-columns: 145px 1fr; gap: 15px; padding: 16px; align-items: center; }
-        .hbc-img-wrap { width: 100%; height: 145px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
+        /* AJUSTE: Largura da coluna de imagem aumentada para acomodar 220px (+50% aprox) */
+        .hbc-top { display: grid; grid-template-columns: 220px 1fr; gap: 15px; padding: 16px; align-items: center; }
+        
+        /* AJUSTE: Altura aumentada para 220px */
+        .hbc-img-wrap { width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
         .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
-        .hbc-title { font-size: 1rem; font-weight: 700; color: #2e2e2e; line-height: 1.3; margin-bottom: 6px; text-transform: capitalize; }
+        /* AJUSTE: Fonte aumentada para 1.3rem */
+        .hbc-title { font-size: 1.3rem; font-weight: 800; color: #2e2e2e; line-height: 1.2; margin-bottom: 8px; text-transform: capitalize; letter-spacing: -0.5px; }
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #50a773; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
@@ -184,7 +191,7 @@
         /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { 
             /* AJUSTE: Reduzi padding top para diminuir respiro */
-            padding-top: calc(var(--app-header-height) - 10px); 
+            padding-top: calc(var(--app-header-height) + 10px); /* Era -10px, ajustado para +10px por segurança visual */
             padding-bottom: 100px; 
             min-height: 100vh; background: #f7f7f7; 
         }
@@ -344,6 +351,7 @@
         .st-btn { background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
         
+        /* AJUSTE: Z-Index MAXIMO para ficar sobre o modal */
         .credit-toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, 0); background: rgba(30, 41, 59, 0.98); color: white; padding: 10px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2147483647; text-align: center; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .credit-toast.visible { opacity: 1; }
         
@@ -670,11 +678,62 @@
                             categoria: catUpper
                         };
                     });
+                    
+                    // CHECK FOR SAVED STATE
+                    const saved = localStorage.getItem('da_state');
+                    if (saved) {
+                        try {
+                            const state = JSON.parse(saved);
+                            if (state.view === 'customizer' && state.basketId) {
+                                // Restore cart and open customizer
+                                const basket = this.data.find(p => p.id === state.basketId);
+                                if (basket) {
+                                    this.cart = state.cart || {};
+                                    this.cartOrder = state.cartOrder || [];
+                                    this.currentBasket = basket;
+                                    
+                                    // Calc limit based on basket name
+                                    const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
+                                    let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
+                                    this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
+                                    
+                                    // Re-calculate original cart from basket items
+                                    this.originalCart = {};
+                                    if(basket.items) {
+                                        basket.items.forEach(i => {
+                                            let match = this.data.find(p => p.id === String(i.id));
+                                            if(match) this.originalCart[match.id] = (this.originalCart[match.id] || 0) + (parseInt(i.qty || 1));
+                                        });
+                                    }
+
+                                    // Switch view immediately
+                                    document.getElementById('home-view').classList.add('hidden');
+                                    document.getElementById('customizer-view').classList.remove('hidden');
+                                    document.body.classList.add('customizer-mode');
+                                    
+                                    // Render
+                                    this.renderAllLists();
+                                    return; // Skip rendering home
+                                }
+                            }
+                        } catch (e) { console.error("State restore error", e); localStorage.removeItem('da_state'); }
+                    }
+
                     this.renderHome();
                 } catch (e) { 
                     console.error("Erro Fatal:", e);
                     document.getElementById('home-list').innerHTML = `<div style="text-align:center; padding:40px;">Erro ao carregar produtos.</div>`;
                 }
+            },
+
+            saveState() {
+                const state = {
+                    view: document.body.classList.contains('customizer-mode') ? 'customizer' : 'home',
+                    basketId: this.currentBasket ? this.currentBasket.id : null,
+                    cart: this.cart,
+                    cartOrder: this.cartOrder
+                };
+                localStorage.setItem('da_state', JSON.stringify(state));
             },
 
             toSmartTitleCase(str) {
@@ -759,6 +818,7 @@
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
+                this.saveState(); // SAVE STATE
             },
             
             goHome() {
@@ -766,6 +826,9 @@
                 document.getElementById('home-view').classList.remove('hidden');
                 document.body.classList.remove('customizer-mode');
                 document.getElementById('suggestion-toast').classList.remove('visible');
+                
+                // Clear active state but keep history if needed, for now just reset view in state
+                localStorage.setItem('da_state', JSON.stringify({view: 'home'}));
             },
 
             renderAllLists(filter = null) {
@@ -965,6 +1028,8 @@
                 
                 this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
+                
+                this.saveState(); // SAVE STATE ON CHANGE
             },
 
             updateCardUI(id, qty) {
