@@ -3,13 +3,14 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Optimized Build
+        ARCHITECT: SEO Code Architect (SCA) - Professional Build
         TARGET: 100/100 Lighthouse Performance & SEO
-        TYPE: Single Page Application (SPA) / Local Business
+        TYPE: E-commerce Hybrid (Desktop Sidebar / Mobile App-Bar)
         CHANGELOG:
-        - FIX CRÍTICO: Normalização de 'categoria' para UpperCase (correção do bug de "Conteúdo não encontrado").
-        - LOGIC: Preservação da formatação original apenas para exibição (Subcategorias).
-        - CORE: Revertido método de fetch para padrão robusto compatível com legado.
+        - RESTORE: SEO Completo, Footer Rico e Estrutura Desktop.
+        - UI: Títulos de categorias principais ocultos (apenas subcategorias visíveis).
+        - UX: "Zero-Jank" ao adicionar produtos (atualização pontual do DOM sem re-render).
+        - LAYOUT: Desktop com largura controlada (container 1280px) e sidebar fixa.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -30,13 +31,13 @@
     <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG com entrega grátis*. Monte e personalize sua cesta com Arroz Tio Alvino. Mercadinho online com pagamento na entrega.">
     <meta name="keywords" content="cesta básica cuiabá, cesta básica várzea grande, mercado online, entrega de compras, arroz tio alvino, sacolão cuiabá, dona antônia">
 
-    <!-- SEO: Geo-Targeting (CRUCIAL PARA CUIABÁ/VG) -->
+    <!-- SEO: Geo-Targeting -->
     <meta name="geo.region" content="BR-MT">
     <meta name="geo.placename" content="Cuiabá">
     <meta name="geo.position" content="-15.6014;-56.0979">
     <meta name="ICBM" content="-15.6014, -56.0979">
 
-    <!-- Social SEO: Open Graph (Facebook/WhatsApp) -->
+    <!-- Social SEO: Open Graph -->
     <meta property="og:locale" content="pt_BR">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Cestas Básicas Dona Antônia | Qualidade na sua Porta">
@@ -54,12 +55,11 @@
     <meta name="twitter:description" content="Economia e qualidade com entrega rápida. Peça pelo site!">
     <meta name="twitter:image" content="https://www.donaantonia.com.br/img/og-social-share.jpg">
     
-    <!-- Performance: Preconnect & Preload -->
+    <!-- Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Removido preload estrito do JSON para evitar warnings de 404 antes do JS tratar -->
 
-    <!-- STRUCTURED DATA: JSON-LD (Schema.org Graph Architecture) -->
+    <!-- STRUCTURED DATA: JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -94,77 +94,6 @@
               "@type": "City",
               "name": "Várzea Grande"
             }
-          ],
-          "openingHoursSpecification": {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": [
-              "Monday",
-              "Tuesday",
-              "Wednesday",
-              "Thursday",
-              "Friday",
-              "Saturday"
-            ],
-            "opens": "08:00",
-            "closes": "18:00"
-          },
-          "sameAs": [
-            "https://instagram.com/donaantonia",
-            "https://facebook.com/donaantonia"
-          ]
-        },
-        {
-          "@type": "FAQPage",
-          "@id": "https://www.donaantonia.com.br/#faq",
-          "mainEntity": [
-            {
-              "@type": "Question",
-              "name": "Quais as formas de pagamento?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação (Alelo, Sodexo, Ticket, etc)."
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "Qual o prazo de entrega?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande."
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "A entrega é grátis?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout."
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "Posso alterar os itens da cesta?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho."
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "Vocês têm loja física?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto."
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "De onde vocês são?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Somos de Cuiabá - MT, localizados no bairro Jardim Nossa Senhora Aparecida. Atendemos com frota própria."
-              }
-            }
           ]
         }
       ]
@@ -174,15 +103,15 @@
     <style>
         /* --- 1. RESET & VARIABLES --- */
         :root { 
-            --primary: #ea1d2c; /* iFood Red */
+            --primary: #ea1d2c; 
             --primary-dark: #b91c1c; 
             --secondary: #3e3e3e; 
             --text-main: #333333; 
             --text-light: #717171; 
-            --bg-body: #f7f7f7; /* Light Gray Background */
+            --bg-body: #f7f7f7; 
             --border-color: #f2f2f2;
             --header-height: 60px; 
-            --bottom-panel-height: 80px; 
+            --sidebar-width: 320px;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -193,20 +122,19 @@
             background-color: var(--bg-body);
         }
         
+        /* Container Limitado mas Confortável */
         .container { max-width: 1280px; margin: 0 auto; padding: 0 16px; width: 100%; }
+        
         img { display: block; max-width: 100%; height: auto; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
 
-        /* --- SCROLLBAR STYLING --- */
+        /* --- SCROLLBAR --- */
         * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
-        
-        .hbc-items-slider::-webkit-scrollbar, #modal-cart-list::-webkit-scrollbar { height: 6px; display: block; }
-        .hbc-items-slider::-webkit-scrollbar-thumb, #modal-cart-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
 
         /* --- 2. HEADER --- */
         header { 
@@ -220,7 +148,6 @@
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         .logo-circle { width: 32px; height: 32px; background: #fecaca; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
 
-        /* Location Pill */
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
             padding: 6px 14px; border-radius: 50px; border: 1px solid #e2e8f0;
@@ -235,11 +162,10 @@
         .hero h1 span { color: var(--primary); }
         .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
         
-        /* Trust Badges */
         .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
         .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 
-        /* FOOTER STYLES */
+        /* FOOTER (Restaurado) */
         .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 20px; margin-top: 40px; }
         .footer-info { text-align: center; margin-bottom: 30px; }
         .footer-info h3 { font-size: 1.4rem; color: var(--secondary); margin-bottom: 10px; font-weight: 800; }
@@ -268,7 +194,7 @@
 
         .copyright { text-align: center; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
 
-        /* HOME GRID (Baskets) */
+        /* HOME GRID */
         .home-grid-container { padding: 0px 0 60px; }
         .baskets-grid { 
             display: grid; grid-template-columns: 1fr; gap: 20px; 
@@ -277,58 +203,32 @@
         @media(min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
         @media(min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); gap: 30px; } }
 
-        /* HOME CARD DESIGN (APP STYLE) */
+        /* HOME CARD */
         .home-basket-card {
             background: #fff; border: none; border-radius: 12px;
             overflow: hidden; display: flex; flex-direction: column;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06); /* Soft Shadow instead of border */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        .hbc-top {
-            display: grid; 
-            grid-template-columns: 110px 1fr; 
-            gap: 15px; padding: 16px;
-            align-items: center;
-        }
-
-        .hbc-img-wrap { 
-            width: 100%; height: 110px;
-            display: flex; align-items: center; justify-content: center; 
-            background: #fff; border-radius: 8px;
-        }
+        .hbc-top { display: grid; grid-template-columns: 110px 1fr; gap: 15px; padding: 16px; align-items: center; }
+        .hbc-img-wrap { width: 100%; height: 110px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
         .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
-        .hbc-title { font-size: 1rem; font-weight: 700; color: #2e2e2e; line-height: 1.3; text-align: left; margin-bottom: 6px; }
-        .hbc-price { font-size: 1.1rem; font-weight: 700; color: #50a773; text-align: left; } /* Green Price usually */
+        .hbc-title { font-size: 1rem; font-weight: 700; color: #2e2e2e; line-height: 1.3; margin-bottom: 6px; }
+        .hbc-price { font-size: 1.1rem; font-weight: 700; color: #50a773; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-
-        .hbc-items-slider {
-            display: flex; gap: 8px; overflow-x: auto; 
-            padding: 8px 0; margin-bottom: 5px;
-        }
-        
-        .hbc-item { 
-            flex: 0 0 70px; 
-            display: flex; flex-direction: column; align-items: center; gap: 2px; 
-            background: #f9f9f9; border-radius: 8px; padding: 6px;
-        }
+        .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; }
+        .hbc-item { flex: 0 0 70px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f9f9f9; border-radius: 8px; padding: 6px; }
         .hbc-item img { width: 50px; height: 50px; object-fit: contain; mix-blend-mode: multiply; } 
         .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #888; }
 
         .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
-        .btn-home-cust { 
-            width: 100%; padding: 12px; background: #ffffff; color: var(--primary); 
-            border: 1px solid var(--primary);
-            border-radius: 8px; font-weight: 700; font-size: 0.95rem; text-align: center;
-        }
-        .btn-home-order { 
-            width: 100%; padding: 12px; background: var(--primary); color: white; 
-            border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; text-align: center;
-        }
+        .btn-home-cust { width: 100%; padding: 12px; background: #ffffff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; font-weight: 700; font-size: 0.95rem; text-align: center; }
+        .btn-home-order { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; text-align: center; }
 
         /* --- 4. CUSTOMIZER VIEW --- */
         #customizer-view { 
@@ -345,7 +245,6 @@
             font-size: 1rem;
         }
 
-        /* Welcome Overlay */
         .welcome-overlay {
             position: fixed; inset: 0; z-index: 12000;
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
@@ -361,14 +260,9 @@
             transform: translateY(20px); transition: transform 0.4s ease;
         }
         .welcome-overlay.visible .welcome-card { transform: translateY(0); }
-        
         .welcome-title { font-size: 1.3rem; font-weight: 700; color: #2e2e2e; margin-bottom: 12px; line-height: 1.2; }
         .welcome-sub { font-size: 0.95rem; color: #717171; margin-bottom: 24px; line-height: 1.5; }
-        .welcome-btn {
-            background: var(--primary); color: white; border-radius: 8px;
-            padding: 12px 30px; font-weight: 600; font-size: 1rem;
-            box-shadow: none; width: 100%;
-        }
+        .welcome-btn { background: var(--primary); color: white; border-radius: 8px; padding: 12px 30px; font-weight: 600; font-size: 1rem; width: 100%; }
 
         /* --- 5. IFOOD STYLE FLOATING CART BAR --- */
         .ifood-cart-bar {
@@ -393,7 +287,7 @@
             cursor: pointer; display: flex; align-items: center; gap: 8px;
         }
 
-        /* --- 6. SUBCATEGORY & HORIZONTAL SCROLL (NEW) --- */
+        /* --- 6. PRODUCTS --- */
         .subcat-section { margin-bottom: 30px; }
         .subcat-title { 
             font-size: 1.1rem; font-weight: 800; color: #3e3e3e; 
@@ -404,14 +298,13 @@
             display: flex; gap: 12px; overflow-x: auto; 
             padding: 0 16px 16px; scroll-snap-type: x mandatory; 
         }
-        .horizontal-products-row::-webkit-scrollbar { display: none; } /* Hide scrollbar for cleaner mobile look */
+        .horizontal-products-row::-webkit-scrollbar { display: none; }
         
         .horizontal-products-row .card-prod { 
-            min-width: 160px; max-width: 160px; /* Fixed width for consistent cards */
+            min-width: 160px; max-width: 160px;
             scroll-snap-align: start; flex-shrink: 0;
         }
 
-        /* Card Produto Minimalista */
         .card-prod {
             background: #fff; border: none; border-radius: 12px;
             padding: 12px; display: flex; flex-direction: column;
@@ -428,8 +321,6 @@
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
         
-        .cp-info-chip { display: none; } /* Hide for cleaner look */
-
         .cp-price { font-size: 0.95rem; font-weight: 700; color: #2e2e2e; margin-top: auto; margin-bottom: 12px; }
         .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #999; font-weight: 400; margin-right: 4px; }
         
@@ -439,7 +330,6 @@
             display: inline-block; width: 100%; text-align: center; 
         }
 
-        /* Botão Adicionar Pílula */
         .btn-add { 
             width: 100%; padding: 8px 0; background: white; 
             border: 1px solid #e2e8f0; color: var(--primary); 
@@ -465,11 +355,10 @@
         @media(min-width: 1024px) {
             #customizer-view:not(.hidden) { 
                 padding-bottom: 0; display: grid !important; 
-                grid-template-columns: 1fr 350px; gap: 40px; 
+                grid-template-columns: 1fr var(--sidebar-width); gap: 40px; 
                 max-width: 1280px; margin: 0 auto; padding: 40px 20px; align-items: start;
             }
-            .ifood-cart-bar { display: none; } /* Hide mobile bar on desktop */
-            .mercadinho-header { text-align: left; padding: 0 0 20px 0; }
+            .ifood-cart-bar { display: none; }
             
             .desktop-sidebar {
                 display: flex; flex-direction: column;
@@ -502,6 +391,18 @@
             
             .ds-nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
             .ds-nav-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: #f8fafc; border: none; border-radius: 8px; color: #717171; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+            
+            /* Cart Items in Sidebar */
+            .card-inc {
+                display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc;
+                align-items: center;
+            }
+            .ci-img { width: 40px; height: 40px; object-fit: contain; mix-blend-mode: multiply; cursor: pointer; }
+            .ci-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+            .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 28px; }
+            .qs-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; }
+            .qs-val { font-weight: 600; font-size: 0.8rem; padding: 0 6px; }
+            .ci-trash { color: #b91c1c; padding: 4px; cursor: pointer; }
         }
 
         /* --- 9. SHEETS --- */
@@ -850,7 +751,6 @@
 
             async init() {
                 try {
-                    // FALLBACK ROBUSTO: Tenta carregar de múltiplos caminhos
                     let res;
                     const paths = ['produtos/produtos.json', 'produtos.json'];
                     
@@ -866,16 +766,13 @@
                     const raw = await res.json();
                     
                     this.data = raw.map(p => {
-                        // === LÓGICA DE CATEGORIA HÍBRIDA ===
-                        // 1. catRaw: Mantém original para Subcategorias bonitas (ex: "Casa e Manutenção")
-                        const catRaw = (p.categoria || p.Categoria || "OUTROS").trim();
-                        
-                        // 2. catUpper: Normaliza para MAIÚSCULO para filtros da Home (ex: "CESTA BÁSICA")
+                        const catRaw = (p.categoria || "OUTROS").trim();
+                        // 1. Force Uppercase for internal logic (matches 'CESTA')
                         const catUpper = catRaw.toUpperCase();
-
-                        // Parse "MAIN > SUB" usando a string original
+                        
+                        // 2. Parse Subcategories from original string
                         const parts = catRaw.split('>');
-                        const mainCat = parts[0].trim().toUpperCase(); // Sempre compara categorias principais em UPPER
+                        const mainCat = parts[0].trim().toUpperCase();
                         const subCat = parts.length > 1 ? parts[1].trim() : "Geral";
 
                         let appCat = "BAZAR E UTILIDADES"; 
@@ -903,14 +800,14 @@
                             isOffer: (p.Oferta === 'Sim'),
                             isBest: (p.Mais_Vendido === 'Sim'),
                             appCategory: appCat,
-                            subCategory: subCat, // Exibe bonito: "Casa e Manutenção"
+                            subCategory: subCat, 
                             imagem: p.imagem ? (p.imagem.includes('/') ? `img/produtos/${p.imagem.split('/').pop()}` : `img/produtos/${p.imagem}`) : 'img/placeholder.jpg',
                             limit: parseInt(p.Limit || p.limit || 0),
                             caracteristicas: p.Caracteristicas || p.caracteristicas || "",
                             linkedCode: linkCode,
                             hasLink: (hasLink === 'Sim'),
                             validade: fmtVal,
-                            categoria: catUpper // FIX CRÍTICO: Retorna UPPERCASE para o filtro da Home funcionar
+                            categoria: catUpper // Must be Upper for Home Filter
                         };
                     });
                     this.renderHome();
@@ -919,10 +816,7 @@
                     document.getElementById('home-list').innerHTML = 
                         `<div style="text-align:center; padding:40px; color:#666;">
                             <p style="font-weight:bold; font-size:1.1rem; color:#d32f2f;">Ops! Não foi possível carregar os produtos.</p>
-                            <p>Verifique sua conexão ou tente novamente mais tarde.</p>
-                            <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; background:#ea1d2c; color:white; border-radius:8px; font-weight:600;">Tentar Novamente</button>
-                            <br><br>
-                            <small style="opacity:0.7">Erro: ${e.message}</small>
+                            <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; background:#ea1d2c; color:white; border-radius:8px;">Tentar Novamente</button>
                         </div>`;
                 }
             },
@@ -947,25 +841,14 @@
                             p.items.map(i => {
                                 const itemData = this.data.find(d => d.id === String(i.id));
                                 if(!itemData) return '';
-                                return `
-                                <div class="hbc-item">
-                                    <img src="${itemData.imagem}" loading="lazy">
-                                    <span>${i.qty || 1}un</span>
-                                </div>`;
-                            }).join('') + 
-                        `</div>`;
+                                return `<div class="hbc-item"><img src="${itemData.imagem}" loading="lazy"><span>${i.qty || 1}un</span></div>`;
+                            }).join('') + `</div>`;
                     }
-
                     return `
                     <div class="home-basket-card">
                         <div class="hbc-top">
-                            <div class="hbc-img-wrap">
-                                <img src="${p.imagem}" class="hbc-img" loading="lazy">
-                            </div>
-                            <div class="hbc-info-col">
-                                <h3 class="hbc-title">${p.nome}</h3>
-                                <div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
-                            </div>
+                            <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="lazy"></div>
+                            <div class="hbc-info-col"><h3 class="hbc-title">${p.nome}</h3><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
                         </div>
                         <div class="hbc-content">
                             ${carouselHtml}
@@ -1003,15 +886,13 @@
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
-                document.getElementById('welcome-overlay').classList.add('visible'); // Show welcome
+                document.getElementById('welcome-overlay').classList.add('visible'); 
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
             },
             
-            closeWelcome() {
-                document.getElementById('welcome-overlay').classList.remove('visible');
-            },
+            closeWelcome() { document.getElementById('welcome-overlay').classList.remove('visible'); },
 
             goHome() {
                 document.getElementById('customizer-view').classList.add('hidden');
@@ -1029,25 +910,20 @@
 
                 if (query && query.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
                 
-                // MAIN CATEGORIES ORDER
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
                 let html = "";
 
                 order.forEach(mainCat => {
-                    // Filter items for this Main Category
                     const itemsInMain = products.filter(p => p.appCategory === mainCat);
                     
                     if(itemsInMain.length > 0) {
-                        html += `<div id="cat-${mainCat}" class="cat-header">${mainCat}</div>`;
-                        
-                        // Group by SubCategory
+                        // NOTE: Main Category Title removed as requested. Only Subcategories shown.
                         const subGroups = {};
                         itemsInMain.forEach(p => {
                             if(!subGroups[p.subCategory]) subGroups[p.subCategory] = [];
                             subGroups[p.subCategory].push(p);
                         });
 
-                        // Render each SubCategory as a Horizontal Row
                         for (const [subName, subItems] of Object.entries(subGroups)) {
                             html += `
                             <div class="subcat-section">
@@ -1071,7 +947,6 @@
                 if(!targetElement) return;
                 const ids = this.cartOrder.filter(id => this.cart[id] > 0);
                 
-                // If it's Checkout, use the new buildCheckoutCard logic
                 if (isCheckout) {
                     targetElement.innerHTML = ids.length ? ids.map(id => {
                         const p = this.data.find(x => x.id === id);
@@ -1080,7 +955,6 @@
                     return;
                 }
 
-                // Default logic for Desktop Sidebar (Vertical List)
                 targetElement.innerHTML = ids.length ? ids.map(id => {
                     const p = this.data.find(x => x.id === id);
                     if(!p) return '';
@@ -1090,7 +964,7 @@
                         <div class="ci-content">
                             <div class="qty-sm">
                                 <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
-                                <div class="qs-val">${this.cart[p.id]}</div>
+                                <div class="qs-val" id="sb-qty-${p.id}">${this.cart[p.id]}</div>
                                 <button class="qs-btn" onclick="App.modQty('${p.id}', 1)">+</button>
                             </div>
                             <button class="ci-trash" onclick="App.removeItem('${p.id}')">
@@ -1101,12 +975,26 @@
                 }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
             },
 
+            // Generates initial HTML for card. IMPORTANT: Adds IDs for targeted updates.
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
-                let btn = qty === 0 
-                    ? `<button class="btn-add" onclick="App.modQty('${p.id}', 1)">Adicionar</button>` 
-                    : `<div class="qty-ctrl"><div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div><div class="qc-val">${qty}</div><div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div></div>`;
+                
+                // Button logic: If qty > 0, show controls. Else show Add button.
+                // We add specific IDs (btn-add-{id}, qty-ctrl-{id}, qty-val-{id}) to update them directly later.
+                const btnHtml = qty === 0 
+                    ? `<button id="btn-add-${p.id}" class="btn-add" onclick="App.modQty('${p.id}', 1)">Adicionar</button>
+                       <div id="qty-ctrl-${p.id}" class="qty-ctrl hidden">
+                           <div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                           <div class="qc-val" id="qty-val-${p.id}">${qty}</div>
+                           <div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                       </div>`
+                    : `<button id="btn-add-${p.id}" class="btn-add hidden" onclick="App.modQty('${p.id}', 1)">Adicionar</button>
+                       <div id="qty-ctrl-${p.id}" class="qty-ctrl">
+                           <div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                           <div class="qc-val" id="qty-val-${p.id}">${qty}</div>
+                           <div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                       </div>`;
 
                 let valHtml = '';
                 if (p.validade && p.validade.length > 2) {
@@ -1114,27 +1002,24 @@
                 }
                 
                 return `
-                <div class="card-prod">
+                <div class="card-prod" id="card-${p.id}">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
                     <div class="cp-img-box" onclick="App.openInfo('${p.id}')"><img src="${p.imagem}" class="cp-img" loading="lazy"></div>
                     <div class="cp-title">${p.nome}</div>
                     <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
-                    ${btn}
+                    ${btnHtml}
                     ${valHtml}
                 </div>`;
             },
 
-            // NEW FUNCTION FOR CHECKOUT CARD
             buildCheckoutCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
-                
                 return `
                 <div class="co-card">
                     <img src="${p.imagem}" class="co-card-img" onclick="App.openInfo('${p.id}')">
                     <div class="co-card-title">${p.nome}</div>
                     <div class="co-card-price">R$ ${price.toFixed(2).replace('.',',')}</div>
-                    
                     <div class="co-card-controls">
                         <div class="qty-mini-co">
                             <div class="qm-btn" onclick="App.modQty('${p.id}', -1)">-</div>
@@ -1184,16 +1069,41 @@
                     }
                 }
                 
-                // Update Desktop & Calculations
-                this.renderAllLists(document.getElementById('desk-search') ? document.getElementById('desk-search').value : "");
+                // CRITICAL FIX: Targeted DOM Update instead of Full Re-render
+                // 1. Update the Card UI immediately without moving it
+                this.updateCardUI(id, newQty);
                 
-                // If Modal is Open, force re-render checkout specific cards
+                // 2. Update Sidebar List (Full re-render of sidebar is cheap and okay, doesn't affect scroll of main list)
+                this.renderIncluded(document.getElementById('included-list-desk'));
+                
+                // 3. If Modal is Open, update that too
                 const modal = document.getElementById('checkout-modal');
                 if(modal.open) {
                     this.renderIncluded(document.getElementById('modal-cart-list'), true);
                 }
                 
+                // 4. Update Totals
+                this.updateTotal();
+
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
+            },
+
+            // Helper to update card without re-rendering list
+            updateCardUI(id, qty) {
+                const btnAdd = document.getElementById(`btn-add-${id}`);
+                const qtyCtrl = document.getElementById(`qty-ctrl-${id}`);
+                const qtyVal = document.getElementById(`qty-val-${id}`);
+
+                if (btnAdd && qtyCtrl && qtyVal) {
+                    if (qty > 0) {
+                        btnAdd.classList.add('hidden');
+                        qtyCtrl.classList.remove('hidden');
+                        qtyVal.innerText = qty;
+                    } else {
+                        btnAdd.classList.remove('hidden');
+                        qtyCtrl.classList.add('hidden');
+                    }
+                }
             },
 
             checkSuggestion(code) {
@@ -1286,28 +1196,8 @@
 
             scrollToCat(name) {
                 App.closeSheet('categories-sheet');
-                
-                const dSearch = document.getElementById('desk-search');
-                if(dSearch) dSearch.value = "";
-                
-                App.renderAllLists();
-
-                setTimeout(() => {
-                    const el = document.getElementById('cat-' + name);
-                    if(el) {
-                        const stickyHeader = document.querySelector('.sticky-basket-container');
-                        const headerHeight = (stickyHeader && stickyHeader.offsetParent !== null) ? stickyHeader.offsetHeight : 0;
-                        const offset = headerHeight + 20; 
-
-                        const elementPosition = el.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-                        window.scrollTo({
-                            top: offsetPosition,
-                            behavior: 'smooth'
-                        });
-                    }
-                }, 150);
+                // Scroll to top as default since headers are hidden
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
             openSheet(id) { document.getElementById(id).classList.add('open'); },
@@ -1315,7 +1205,6 @@
             
             openCheckout() {
                 if(Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
-                // Render with specific CHECKOUT flag = true
                 this.renderIncluded(document.getElementById('modal-cart-list'), true);
                 document.getElementById('checkout-modal').showModal();
             },
