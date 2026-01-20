@@ -4,13 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 11.0 - Home Redesign & Item Carousel
+        VERSION: 11.1 - Scrollbars & Basket Mini-Cards Redesign
         CHANGELOG:
-        - HOME UI: Cards da página inicial redesenhados com carrossel de itens internos.
-        - HOME UI: Botões "Personalizar" e "Encomendar Direto" na home.
-        - DESKTOP: Sidebar de resumo removida da Home (exclusiva do Customizer).
-        - LOGIC: Função para renderizar mini-itens dentro dos cards da home.
-        - FIX: Ajustes de layout para garantir foco total na grid de cestas na entrada.
+        - UI: Barras de rolagem visíveis e elegantes (Home & Cesta Base).
+        - UI (Cesta Base): Cards simplificados (Foto Maior + Qty + Lixeira). Sem nome/preço.
+        - UI (Mercadinho): Chip "Informações" movido para baixo da validade.
+        - LOGIC: Função removeItem para botão de lixeira.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -48,6 +47,26 @@
         img { display: block; max-width: 100%; height: auto; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
+
+        /* --- SCROLLBAR STYLING (ELEGANT) --- */
+        /* Works on Firefox */
+        * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+
+        /* Works on Chrome, Edge, and Safari */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+
+        /* Specific override for basket sliders to ensure visibility */
+        .hbc-items-slider::-webkit-scrollbar, 
+        #included-list-mob.horizontal-slider::-webkit-scrollbar {
+            height: 6px; display: block; /* Force show */
+        }
+        .hbc-items-slider::-webkit-scrollbar-thumb,
+        #included-list-mob.horizontal-slider::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1; border-radius: 4px;
+        }
 
         /* --- 2. HEADER --- */
         header { 
@@ -100,9 +119,7 @@
             display: flex; gap: 10px; overflow-x: auto; 
             padding: 10px 5px; margin-bottom: 15px;
             background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;
-            scrollbar-width: none;
         }
-        .hbc-items-slider::-webkit-scrollbar { display: none; }
         
         .hbc-item { 
             flex: 0 0 60px; display: flex; flex-direction: column; align-items: center; gap: 4px; 
@@ -198,6 +215,36 @@
             box-shadow: 0 2px 5px rgba(22,163,74,0.3); border: none; cursor: pointer;
         }
 
+        /* Basket Slider (Common) */
+        #included-list-mob.horizontal-slider { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 8px; scroll-snap-type: x mandatory; }
+        
+        /* CARD CESTA (SIMPLIFIED) */
+        .card-inc {
+            background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid var(--primary);
+            border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            padding: 8px 12px; display: flex; gap: 12px; align-items: center;
+            flex-shrink: 0; position: relative;
+        }
+        .horizontal-slider .card-inc { min-width: 200px; max-width: 240px; scroll-snap-align: start; }
+        .vertical-slider .card-inc { width: 100%; margin-bottom: 8px; }
+
+        /* Increased Image Size */
+        .ci-img { width: 60px; height: 60px; object-fit: contain; mix-blend-mode: multiply; cursor: pointer; flex-shrink: 0; }
+        
+        .ci-content { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        /* No title or price in basket cards anymore, just controls */
+        
+        .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 32px; border: 1px solid #e2e8f0; }
+        .qs-btn { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--secondary); cursor: pointer; border: none; background: transparent; }
+        .qs-val { font-size: 0.9rem; font-weight: 700; padding: 0 6px; min-width: 24px; text-align: center; }
+
+        .ci-trash { 
+            width: 32px; height: 32px; border-radius: 50%; background: #fee2e2; 
+            color: #b91c1c; display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; border: 1px solid #fca5a5;
+        }
+        .ci-trash:active { transform: scale(0.95); }
+
         /* --- 6. MERCADINHO GRID & CARDS --- */
         .cat-header { 
             position: static; background: #f1f5f9; color: var(--secondary);
@@ -213,6 +260,7 @@
             padding: 12px; display: flex; flex-direction: column; text-align: center;
             height: 100%; position: relative; transition: border-color 0.2s;
         }
+        .card-prod:active { border-color: #cbd5e1; }
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #dcfce7; color: #166534; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
         .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; }
@@ -223,37 +271,27 @@
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
         
-        .cp-meta { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; min-height: 20px; align-items: center; }
-        .cp-info { font-size: 0.65rem; text-decoration: underline; color: var(--text-light); cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+        /* New Info Chip below Validity */
+        .cp-info-chip { 
+            font-size: 0.65rem; color: var(--text-light); background: #f1f5f9; 
+            padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0; 
+            cursor: pointer; display: inline-block; margin-top: 4px;
+        }
+        .cp-info-chip:active { background: #e2e8f0; }
+
         .cp-price { font-size: 1rem; font-weight: 800; color: var(--text-main); margin-top: auto; margin-bottom: 8px; }
-        .cp-validity-badge { font-size: 0.65rem; color: #15803d; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; margin-top: 6px; display: inline-block; width: 100%; text-align: center; }
+        .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; font-weight: 400; margin-right: 4px; }
+        
+        .cp-validity-badge { 
+            font-size: 0.65rem; color: #15803d; background: #f0fdf4; 
+            padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; 
+            margin-top: 6px; display: inline-block; width: 100%; text-align: center; 
+        }
 
         .btn-add { width: 100%; padding: 8px 0; background: white; border: 1px solid var(--primary); color: var(--primary); border-radius: 50px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; transition: all 0.2s; }
         .qty-ctrl { display: flex; align-items: center; justify-content: space-between; width: 100%; background: var(--primary); border-radius: 50px; height: 32px; color: white; }
         .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; cursor: pointer; }
         .qc-val { font-weight: 700; font-size: 0.9rem; }
-
-        /* Basket Slider (Common) */
-        #included-list-mob.horizontal-slider { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px; scroll-snap-type: x mandatory; scrollbar-width: none; }
-        #included-list-mob.horizontal-slider::-webkit-scrollbar { display: none; }
-        
-        .card-inc {
-            background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid var(--primary);
-            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            padding: 8px; display: flex; gap: 10px; align-items: center;
-            flex-shrink: 0; position: relative;
-        }
-        .horizontal-slider .card-inc { width: 75vw; max-width: 280px; scroll-snap-align: start; }
-        .vertical-slider .card-inc { width: 100%; margin-bottom: 8px; }
-
-        .ci-img { width: 50px; height: 50px; object-fit: contain; mix-blend-mode: multiply; cursor: pointer; flex-shrink: 0; }
-        .ci-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-        .ci-title { font-size: 0.75rem; font-weight: 600; color: var(--secondary); line-height: 1.2; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ci-row-btm { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-        .ci-price { font-weight: 700; color: var(--text-main); font-size: 0.8rem; }
-        .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 24px; border: 1px solid #e2e8f0; }
-        .qs-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--secondary); cursor: pointer; border: none; background: transparent; }
-        .qs-val { font-size: 0.8rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
         /* --- 7. DESKTOP SPECIFIC --- */
         .desktop-sidebar { display: none; }
@@ -265,6 +303,7 @@
                 max-width: 1280px; margin: 0 auto; padding: 40px 20px; align-items: start;
             }
             .mobile-bottom-panel, .fab-faq { display: none; }
+            .mercadinho-header { text-align: left; padding: 0 0 20px 0; }
             
             .desktop-sidebar {
                 display: flex; flex-direction: column;
@@ -274,13 +313,17 @@
                 max-height: calc(100vh - 40px); overflow-y: auto;
             }
             
+            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; transition: all 0.2s; font-size: 0.7rem; }
+            .v-nav-ctrl:hover { background: #e2e8f0; color: var(--secondary); }
+            .v-nav-ctrl.down { margin-top: 5px; }
+            .v-nav-ctrl.up { margin-bottom: 5px; }
+            
             #included-list-desk.vertical-slider {
                 display: flex; flex-direction: column; gap: 0;
                 overflow: hidden; max-height: 330px; transition: scroll-top 0.3s;
                 border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; padding: 5px 0;
             }
-            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.7rem; }
-            
+
             .ds-section-title { font-size: 0.9rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
             .ds-divider { height: 1px; background: #e2e8f0; margin: 15px 0; }
             .ds-total { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-align: center; margin: 20px 0; letter-spacing: -0.5px; }
@@ -292,7 +335,7 @@
             .ds-nav-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: var(--text-light); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
         }
 
-        /* --- 8. SHEETS & MODALS --- */
+        /* --- 8. SHEETS --- */
         .sheet-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
@@ -395,8 +438,15 @@
 
         <!-- LEFT COLUMN (MAIN CONTENT) -->
         <div class="main-content-col">
+            <!-- MERCADINHO HEADER -->
+            <div class="mercadinho-header">
+                <h2 id="cust-title-text" style="font-size:0.9rem; color:var(--text-light); margin-bottom:5px;">Personalizar Cesta</h2>
+                <h3>🏪 Mercadinho</h3>
+                <p style="font-size:0.8rem; color:var(--text-light);">Adicione itens extras à sua cesta</p>
+            </div>
+            
             <!-- PRODUCTS GRID -->
-            <div class="container" style="padding-top:10px;">
+            <div class="container">
                 <div id="extras-container"></div>
             </div>
         </div>
@@ -596,7 +646,6 @@
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 
                 list.innerHTML = baskets.map(p => {
-                    // Logic to find internal items for the carousel
                     let carouselHtml = '';
                     if (p.items && p.items.length > 0) {
                         carouselHtml = `<div class="hbc-items-slider">` + 
@@ -677,8 +726,9 @@
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                const searchValue = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
-                const query = (filter !== null) ? filter : searchValue;
+                // For desktop search
+                const deskInput = document.getElementById('desk-search');
+                const query = (filter !== null) ? filter : (deskInput ? deskInput.value : "");
 
                 if (query && query.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
                 products.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
@@ -709,22 +759,19 @@
                 const html = ids.length ? ids.map(id => {
                     const p = this.data.find(x => x.id === id);
                     if(!p) return '';
-                    const price = p.isOffer ? p.offerPrice : p.valor;
-                    let infoBtn = p.caracteristicas ? `<span class="ci-info-btn" onclick="App.openInfo('${p.id}')">Info</span>` : '';
                     
                     return `
                     <div class="card-inc">
                         <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')">
                         <div class="ci-content">
-                            <div class="ci-title">${p.nome}</div>
-                            <div class="ci-row-btm">
-                                <div class="ci-price">R$ ${price.toFixed(2)} ${infoBtn}</div>
-                                <div class="qty-sm">
-                                    <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
-                                    <div class="qs-val">${this.cart[p.id]}</div>
-                                    <button class="qs-btn" onclick="App.modQty('${p.id}', 1)">+</button>
-                                </div>
+                            <div class="qty-sm">
+                                <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
+                                <div class="qs-val">${this.cart[p.id]}</div>
+                                <button class="qs-btn" onclick="App.modQty('${p.id}', 1)">+</button>
                             </div>
+                            <button class="ci-trash" onclick="App.removeItem('${p.id}')">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
                         </div>
                     </div>`;
                 }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
@@ -745,9 +792,10 @@
                      valHtml = `<div class="cp-validity-badge">Val: ${p.validade}</div>`;
                 }
                 
-                let midSection = '';
+                // Chip "Informações" below validity
+                let infoHtml = '';
                 if (p.caracteristicas) {
-                    midSection = `<div class="cp-meta"><span class="cp-info" onclick="App.openInfo('${p.id}')">Info</span></div>`;
+                    infoHtml = `<div style="text-align:center; margin-top:4px;"><span class="cp-info-chip" onclick="App.openInfo('${p.id}')">Informações</span></div>`;
                 }
 
                 return `
@@ -755,11 +803,17 @@
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
                     <div class="cp-img-box" onclick="App.openInfo('${p.id}')"><img src="${p.imagem}" class="cp-img" loading="lazy"></div>
                     <div class="cp-title">${p.nome}</div>
-                    ${midSection}
                     <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
                     ${btn}
                     ${valHtml}
+                    ${infoHtml}
                 </div>`;
+            },
+
+            removeItem(id) {
+                if (this.cart[id]) {
+                    this.modQty(id, -this.cart[id]); // Remove all qty
+                }
             },
 
             countRemovals() {
