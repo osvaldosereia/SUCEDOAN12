@@ -154,6 +154,14 @@
                 "@type": "Answer",
                 "text": "Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto."
               }
+            },
+            {
+              "@type": "Question",
+              "name": "De onde vocês são?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Somos de Cuiabá - MT, localizados no bairro Jardim Nossa Senhora Aparecida. Atendemos com frota própria."
+              }
             }
           ]
         }
@@ -205,12 +213,24 @@
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         .logo-circle { width: 32px; height: 32px; background: #fecaca; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
 
+        /* Location Pill (New from v9.10) */
+        .location-pill { 
+            font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
+            padding: 6px 14px; border-radius: 50px; border: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 6px;
+        }
+        @media(max-width: 360px) { .location-pill span { display: none; } }
+
         /* --- 3. HERO & HOME STYLES --- */
         #home-view { padding-top: var(--header-height); background: #fff; min-height: 100vh; }
         .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid var(--border-color); background: #f8fafc; }
         .hero h1 { font-size: 1.8rem; line-height: 1.1; color: var(--secondary); margin-bottom: 10px; }
         .hero p { color: var(--text-light); margin-bottom: 0; font-size: 0.95rem; }
         
+        /* Trust Badges (New from v9.10) */
+        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 10px; }
+        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+
         /* HOME GRID (Baskets) */
         .home-grid-container { padding: 40px 0 80px; }
         .baskets-grid { 
@@ -552,12 +572,16 @@
         <header>
             <div class="container header-inner">
                 <a href="#" class="logo" onclick="location.reload()"><div class="logo-circle">DA</div> Dona Antônia</a>
-                <div class="logo-circle" style="background:transparent; font-size:1.5rem;">🏠</div>
+                <div class="location-pill">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Cuiabá & VG
+                </div>
             </div>
         </header>
         
         <section class="hero">
             <div class="container">
+                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em 24h</div></div>
                 <h1>Cestas Básicas<br>Dona Antônia</h1>
                 <p>Qualidade e economia na sua porta.</p>
                 <button class="btn-cta" onclick="document.getElementById('baskets-anchor').scrollIntoView()" aria-label="Ver Cestas Disponíveis" style="margin-top:15px; background:var(--primary); color:white; padding:10px 24px; border-radius:50px; font-weight:700;">Ver Cestas</button>
@@ -569,6 +593,7 @@
                 <div class="loader" style="margin: 20px auto; text-align:center;">Carregando...</div>
             </div>
         </div>
+        <footer style="text-align:center; padding: 40px 20px; color: var(--text-light); font-size:0.9rem;"><p>&copy; 2024 Dona Antônia Alimentos</p></footer>
     </main>
 
     <!-- CUSTOMIZER VIEW -->
@@ -681,6 +706,7 @@
                 <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
                 <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho.</div></details>
                 <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto.</div></details>
+                <details class="faq-box"><summary>De onde vocês são?</summary><div class="faq-text">Somos de Cuiabá - MT, localizados no bairro Jardim Nossa Senhora Aparecida. Atendemos com frota própria.</div></details>
             </div>
         </div>
     </div>
