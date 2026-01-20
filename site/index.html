@@ -3,11 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Final Refined Build
+        ARCHITECT: SEO Code Architect (SCA) - Gold Master Build
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UX: Implementado "Bleeding Effect" nos carrosseis mobile (width: 42vw).
-          Isso força o corte visual do próximo card, indicando rolagem horizontal.
+        - UX: "Bleeding" ajustado para 36vw (Corte visual claro no mobile).
+        - UX: Animação "Hand Swipe" no primeiro acesso (Ensina a rolar).
+        - UI: Respiro do topo reduzido para otimizar área útil.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -92,7 +93,7 @@
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         
         /* LOGO BRAND IMAGE */
-        .logo-brand-img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+        .logo-brand-img { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
@@ -161,10 +162,7 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        /* AJUSTE: Largura da coluna de imagem aumentada para acomodar 145px */
         .hbc-top { display: grid; grid-template-columns: 145px 1fr; gap: 15px; padding: 16px; align-items: center; }
-        
-        /* AJUSTE: Altura aumentada em 30% (110px -> 145px) */
         .hbc-img-wrap { width: 100%; height: 145px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
         .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
@@ -185,7 +183,8 @@
 
         /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { 
-            padding-top: var(--app-header-height); 
+            /* AJUSTE: Reduzi padding top para diminuir respiro */
+            padding-top: calc(var(--app-header-height) - 10px); 
             padding-bottom: 100px; 
             min-height: 100vh; background: #f7f7f7; 
         }
@@ -220,9 +219,9 @@
         .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
-            /* CHANGE: Adjusted to 42vw for mobile bleeding effect */
-            width: 42vw; 
-            min-width: 150px; 
+            /* AJUSTE: Width 36vw cria o 'bleeding' (corte visual) no mobile */
+            width: 36vw; 
+            min-width: 140px; 
             max-width: 170px;
             scroll-snap-align: start; flex-shrink: 0;
         }
@@ -271,20 +270,40 @@
         }
         .qc-val { font-weight: 600; font-size: 0.9rem; }
 
+        /* HAND ANIMATION (Onboarding) */
+        @keyframes swipe-hint {
+            0% { opacity: 0; transform: translateX(50px) rotate(15deg); }
+            20% { opacity: 1; transform: translateX(50px) rotate(15deg); }
+            60% { opacity: 1; transform: translateX(-50px) rotate(-15deg); }
+            80% { opacity: 0; transform: translateX(-50px) rotate(-15deg); }
+            100% { opacity: 0; transform: translateX(-50px) rotate(-15deg); }
+        }
+        .hand-hint-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 50; pointer-events: none; display: none;
+        }
+        .hand-hint-overlay.active { display: block; animation: swipe-hint 1.8s ease-in-out 3 forwards; }
+        .hand-icon {
+            width: 60px; height: 60px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            fill: rgba(255, 255, 255, 0.95);
+            stroke: #333; stroke-width: 1.5px;
+        }
+
         /* --- 7. DESKTOP LAYOUT --- */
         @media(min-width: 1024px) {
             .scroll-btn { display: flex; }
             
             #customizer-view:not(.hidden) { 
-                max-width: 1200px; /* Limite de 1200px solicitado */
+                max-width: 1200px; 
                 margin: 0 auto; 
                 padding: 40px 20px;
                 padding-top: calc(var(--app-header-height) + 20px); 
-                padding-bottom: 100px; /* Espaço para barra flutuante */
+                padding-bottom: 100px; 
             }
         }
 
-        /* --- 8. FLOATING CART BAR (MOBILE & DESKTOP) --- */
+        /* --- 8. FLOATING CART BAR --- */
         .ifood-cart-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #ffffff; border-top: 1px solid #f0f0f0;
@@ -325,7 +344,6 @@
         .st-btn { background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
         
-        /* AJUSTE: Z-Index MAXIMO para ficar sobre o modal */
         .credit-toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, 0); background: rgba(30, 41, 59, 0.98); color: white; padding: 10px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2147483647; text-align: center; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .credit-toast.visible { opacity: 1; }
         
@@ -771,12 +789,21 @@
                             subGroups[p.subCategory].push(p);
                         });
 
+                        let isFirstSection = (html === ""); // Flag for first item
+
                         for (const [subName, subItems] of Object.entries(subGroups)) {
                             const rowId = `row-${mainCat}-${subName}`.replace(/\s+/g, '-').toLowerCase();
+                            
+                            // Inject Hand Hint HTML in the first carousel only
+                            const handHintHtml = isFirstSection 
+                                ? `<div class="hand-hint-overlay active"><svg class="hand-icon" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v10.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V10a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V11a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v4.6l-.2.9a5 5 0 0 1-4.8 3.5h-2.1a5 5 0 0 1-5-5V6a1 1 0 0 1 1-1h1zm-3 5a1 1 0 0 1 1 1v5.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V7a1 1 0 0 1 1-1h.5z"/></svg></div>`
+                                : '';
+                            
                             html += `
                             <div class="subcat-section">
                                 <div class="subcat-title">${subName}</div>
                                 <div class="carousel-wrapper">
+                                    ${handHintHtml}
                                     <div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})">‹</div>
                                     <div class="horizontal-products-row" id="${rowId}">
                                         ${subItems.map(p => this.buildCard(p)).join('')}
@@ -784,13 +811,33 @@
                                     <div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})">›</div>
                                 </div>
                             </div>`;
+                            
+                            isFirstSection = false;
                         }
                     }
                 });
 
                 container.innerHTML = html || '<p style="text-align:center; padding:40px; color:#999;">Nada encontrado.</p>';
                 this.updateTotal();
-                this.renderIncluded(document.getElementById('included-list-desk'));
+                
+                // Trigger animation logic
+                this.showHandHint();
+            },
+
+            showHandHint() {
+                if (localStorage.getItem('seenHandHint')) {
+                    // If seen, remove the element immediately to be safe
+                    const el = document.querySelector('.hand-hint-overlay');
+                    if(el) el.remove();
+                    return;
+                }
+                
+                // If not seen, set timeout to remove it and mark as seen
+                setTimeout(() => {
+                    const el = document.querySelector('.hand-hint-overlay');
+                    if(el) el.remove();
+                    localStorage.setItem('seenHandHint', 'true');
+                }, 6000); // Remove after animation ends (approx 3 loops)
             },
 
             renderIncluded(targetElement, isCheckout = false) {
