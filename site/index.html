@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.41 - Best Sellers & Smart Cross-Sell
+        VERSION: 9.42 - Fix: Toast Cleanup on Navigation
         CHANGELOG:
+        - FIX: Ocultar suggestion-toast ao voltar para a Home (goHome).
         - DATA: Mapeamento de novos campos JSON (Mais_Vendido, Tem_Ligacao, Codigo_Produto_Ligado).
         - UI: Nova seção "Mais Vendidos" posicionada estrategicamente abaixo da cesta.
         - UX: Sistema de sugestão inteligente (Cross-sell) via Toast interativo ao adicionar produtos relacionados.
-        - CSS: Estilos para o novo Toast de sugestão (com imagem e botão de ação).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -620,7 +620,7 @@
     </header>
 
     <button id="btn-scroll-top" class="btn-scroll-top" onclick="window.scrollTo(0,0)" aria-label="Voltar ao topo">
-        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7-7-7v18"></path></svg>
     </button>
 
     <!-- HOME -->
@@ -1105,6 +1105,8 @@
                 document.getElementById('home-view').classList.remove('hidden');
                 document.body.classList.remove('customizer-mode');
                 this.currentBasket = null;
+                // FIX: Ocultar o toast de sugestão ao voltar para a home para evitar que fique visível
+                document.getElementById('suggestion-toast').classList.remove('visible');
             },
 
             showOffers() {
