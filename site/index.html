@@ -4,10 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.36 - Themed Sidebar Headers
+        VERSION: 9.37 - Mobile Vertical Cards
         CHANGELOG:
-        - UI (JS): Títulos da sidebar agora herdam as cores temáticas (CONSTANTS.THEMES).
-        - UI (Visual): Cores de fundo específicas para cada categoria na navegação (Alimentos, Limpeza, etc.).
+        - UI (Mobile): Transformação do layout de lista para cards verticais (estilo desktop).
+        - UI (CSS): Restauradas bordas, sombras e espaçamento (gap) na grade de produtos mobile.
+        - UI (Grid): Configuração responsiva `minmax(130px, 1fr)` para melhor adaptação com a sidebar fixa.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -323,56 +324,53 @@
         .extras-separator-banner h3 { font-size: 1.4rem; font-weight: 300; color: var(--secondary); margin-bottom: 5px; }
         .extras-separator-banner p { color: var(--text-light); font-size: 0.9rem; }
 
-        /* GRID: 1 Column on Mobile - Gap 0 for List View */
-        .grid-products { display: grid; grid-template-columns: 1fr; gap: 0; align-items: stretch; }
+        /* GRID: Adaptive Grid for Vertical Cards */
+        .grid-products { 
+            display: grid; 
+            /* Attempts to fit cards of min 130px. If width < 260px + gap, it collapses to 1 column. */
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+            gap: 10px; 
+            align-items: stretch; 
+            padding: 8px; /* Restored Grid Padding */
+        }
         
         /* DESKTOP GRID RESTORE */
         @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
         @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
 
-        /* PRODUCT MINI CARD (MOBILE LIST LAYOUT) */
+        /* PRODUCT MINI CARD (UNIFIED VERTICAL LAYOUT) */
         .mini-card {
-            display: grid; 
-            grid-template-columns: 110px 1fr; /* Image 110px */
-            grid-template-rows: auto auto;
-            gap: 12px; align-items: center; text-align: center; /* Center Text */
-            padding: 16px 10px; /* Increased vertical padding */
-            border-radius: 0; /* Remove radius */
-            border: none; /* Remove box border */
-            border-bottom: 1px solid #f1f5f9; /* Separator Line */
-            transition: background 0.2s; position: relative; height: auto; min-width: 0;
+            display: flex; 
+            flex-direction: column; 
+            text-align: center; 
+            height: 100%;
             background: #fff;
+            /* Restore Card Visuals on Mobile */
+            border: 1px solid #f1f5f9; 
+            border-radius: 8px; 
+            padding: 10px; 
+            position: relative; 
+            transition: background 0.2s, box-shadow 0.2s;
         }
-        .mini-card:last-child { border-bottom: none; }
+        .mini-card:last-child { border-bottom: 1px solid #f1f5f9; } /* Reset */
         
-        /* DESKTOP LAYOUT (Card Look Restore) */
-        @media (min-width: 600px) {
-            .mini-card { 
-                display: flex; flex-direction: column; text-align: center; height: 100%; 
-                border: 1px solid #f1f5f9; border-radius: 8px; padding: 10px; /* Restore Box/Radius */
-            }
-            .mc-img-box { margin-right: 0; margin-bottom: 8px; width: 100%; height: auto; aspect-ratio: 1/1; }
-            .mc-info-col { align-items: center; text-align: center; } 
-            .mc-action-col { justify-content: center; margin-top: auto; } 
-            .btn-feat-row { justify-content: center; }
-            .mc-title { text-align: center; }
-        }
-
         .mini-card:hover { background: #fff; border-color: var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .tag-offer { position: absolute; top: 0; left: 0; background: #16a34a; color: white; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
         
         .mc-img-box { 
-            width: 110px; height: 110px; 
+            width: 100%; 
+            height: auto; 
+            aspect-ratio: 1/1; /* Keep Square */
             position: relative; display: flex; 
             align-items: center; justify-content: center; 
             cursor: zoom-in; background-color: transparent; border-radius: 8px;
-            grid-row: 1 / 3; 
+            margin-bottom: 8px;
         }
         .mc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
-        /* Mobile Content Layout - CENTERED */
-        .mc-info-col { display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; text-align: center; }
-        .mc-action-col { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 6px; }
+        /* Content Layout - CENTERED Vertical */
+        .mc-info-col { display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; text-align: center; flex: 1; }
+        .mc-action-col { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: auto; padding-top: 8px;}
 
         .btn-feat-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; width: 100%; min-height: 0; justify-content: center; }
         .btn-feat { font-size: 0.65rem; padding: 2px 8px; border-radius: 50px; font-weight: 600; border: 1px solid; cursor: pointer; white-space: nowrap; }
@@ -386,8 +384,8 @@
         .mc-price-old { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; margin-right: 4px; }
         .mc-price-new { color: var(--primary); }
 
-        .btn-add-mini { width: auto; padding: 0 16px; height: 32px; background: var(--primary); color: white; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); }
-        .qty-mini { width: 100px; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 50px; background: white; }
+        .btn-add-mini { width: 100%; padding: 0 16px; height: 32px; background: var(--primary); color: white; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); }
+        .qty-mini { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 50px; background: white; }
         .qm-btn { width: 30px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--secondary); font-size: 1.1rem; }
         .qm-val { font-weight: 700; font-size: 0.9rem; }
         
