@@ -4,12 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.41 - Best Sellers & Smart Cross-Sell
+        VERSION: 9.42 - Suggestion Toast & Basket UI Refine
         CHANGELOG:
-        - DATA: Mapeamento de novos campos JSON (Mais_Vendido, Tem_Ligacao, Codigo_Produto_Ligado).
-        - UI: Nova seção "Mais Vendidos" posicionada estrategicamente abaixo da cesta.
-        - UX: Sistema de sugestão inteligente (Cross-sell) via Toast interativo ao adicionar produtos relacionados.
-        - CSS: Estilos para o novo Toast de sugestão (com imagem e botão de ação).
+        - UI (Mobile): Fundo dos cards "Minha Cesta" alterado para cinza claro (#f8fafc).
+        - UI (Toast): Card de sugestão aumentado (Imagem 70px, mais padding).
+        - UX (Toast): Animação de entrada mais lenta (0.8s) e atraso de 1s para aparecer.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -387,9 +386,9 @@
                 /* FIXED: Changed from 85vw to 100% to fit the parent container (right column) exactly */
                 min-width: 100%; 
                 scroll-snap-align: center;
-                /* Light Red Background */
+                /* Light Grey Background as requested */
                 background-color: #f8fafc; 
-                border-color: #fecaca;
+                border-color: #e2e8f0;
             }
             
             .slider-controls {
@@ -580,15 +579,17 @@
             border: 1px solid #bfdbfe; 
             border-left: 4px solid #3b82f6;
             border-radius: 12px; 
-            padding: 12px; 
+            padding: 16px; /* Increased padding */
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); 
             display: flex; align-items: center; gap: 12px;
             transform: translateY(150%); /* Hidden by default */
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Slower transition */
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 9995;
         }
         .suggestion-toast.visible { transform: translateY(0); }
-        .st-img { width: 50px; height: 50px; border-radius: 6px; object-fit: contain; mix-blend-mode: multiply; }
+        /* Increased image size */
+        .st-img { width: 70px; height: 70px; border-radius: 6px; object-fit: contain; mix-blend-mode: multiply; }
         .st-content { flex: 1; display: flex; flex-direction: column; }
         .st-title { font-size: 0.8rem; font-weight: 700; color: var(--secondary); line-height: 1.2; margin-bottom: 2px; }
         .st-text { font-size: 0.7rem; color: var(--text-light); }
@@ -680,7 +681,7 @@
             </aside>
 
             <div class="products-section">
-                <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Minha Cesta</h3></div>
+                <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Itens Inclusos</h3></div>
                 
                 <!-- Modified for Slider -->
                 <div class="product-box">
@@ -1398,10 +1399,12 @@
                     toast.classList.remove('visible');
                 };
 
-                toast.classList.add('visible');
-                
-                // Auto hide after 8 seconds
-                setTimeout(() => toast.classList.remove('visible'), 8000);
+                // Delay appearance by 1s
+                setTimeout(() => {
+                    toast.classList.add('visible');
+                    // Auto hide after 8 seconds
+                    setTimeout(() => toast.classList.remove('visible'), 8000);
+                }, 1000);
             },
 
             updateTotal() {
