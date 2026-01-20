@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.40 - Responsive Slider Fix
+        VERSION: 9.41 - Best Sellers & Smart Cross-Sell
         CHANGELOG:
-        - CSS (Mobile): Ajuste na largura dos cards do slide (min-width: 100%) para respeitar a sidebar.
-        - JS: Ajuste na rolagem das setas para calcular a largura real do container (offsetWidth).
-        - UI: O slide agora se encaixa perfeitamente na coluna da direita sem ultrapassar a margem.
+        - DATA: Mapeamento de novos campos JSON (Mais_Vendido, Tem_Ligacao, Codigo_Produto_Ligado).
+        - UI: Nova seção "Mais Vendidos" posicionada estrategicamente abaixo da cesta.
+        - UX: Sistema de sugestão inteligente (Cross-sell) via Toast interativo ao adicionar produtos relacionados.
+        - CSS: Estilos para o novo Toast de sugestão (com imagem e botão de ação).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -570,6 +571,37 @@
         .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
         @media(min-width: 1024px) { .toast { bottom: 40px; } }
 
+        /* SUGGESTION TOAST (New Cross-Sell UI) */
+        .suggestion-toast { 
+            position: fixed; 
+            bottom: 90px; /* Above checkout bar (80px) + some margin */
+            left: 20px; right: 20px; 
+            background: white; 
+            border: 1px solid #bfdbfe; 
+            border-left: 4px solid #3b82f6;
+            border-radius: 12px; 
+            padding: 12px; 
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); 
+            display: flex; align-items: center; gap: 12px;
+            transform: translateY(150%); /* Hidden by default */
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9995;
+        }
+        .suggestion-toast.visible { transform: translateY(0); }
+        .st-img { width: 50px; height: 50px; border-radius: 6px; object-fit: contain; mix-blend-mode: multiply; }
+        .st-content { flex: 1; display: flex; flex-direction: column; }
+        .st-title { font-size: 0.8rem; font-weight: 700; color: var(--secondary); line-height: 1.2; margin-bottom: 2px; }
+        .st-text { font-size: 0.7rem; color: var(--text-light); }
+        .st-btn { 
+            background: #3b82f6; color: white; border-radius: 6px; 
+            padding: 8px 12px; font-size: 0.75rem; font-weight: 700; 
+            white-space: nowrap;
+        }
+
+        @media(min-width: 1024px) { 
+            .suggestion-toast { bottom: 40px; max-width: 400px; left: auto; right: 20px; } 
+        }
+
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -671,6 +703,17 @@
     </div>
 
     <div id="toast" class="toast"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span id="toast-msg">Crédito atualizado</span></div>
+
+    <!-- NEW SUGGESTION TOAST -->
+    <div id="suggestion-toast" class="suggestion-toast">
+        <img id="st-img" class="st-img" src="" alt="">
+        <div class="st-content">
+            <div class="st-title">Leve também!</div>
+            <div class="st-text" id="st-text">Sugestão de compra.</div>
+        </div>
+        <button id="st-btn" class="st-btn">Adicionar</button>
+        <button style="font-size:1.2rem; color:#999; padding:0 5px;" onclick="document.getElementById('suggestion-toast').classList.remove('visible')">×</button>
+    </div>
 
     <!-- GALLERY -->
     <div id="gallery" class="gallery-wrap">
@@ -878,11 +921,17 @@
                         return {
                             ...p,
                             id: String(p.id),
+                            code: p.codigo,
                             nome: p.nome.trim(),
                             valor: parseFloat(p.valor || 0),
                             offerPrice: parseFloat(p.Valor_Oferta || 0),
                             isOffer: (p.Oferta && p.Oferta.toLowerCase() === 'sim'),
-                            categoria: rawCat, // Keep original for unique grouping key
+                            // NEW FIELDS MAPPING
+                            isBestSeller: (p.Mais_Vendido && p.Mais_Vendido.toLowerCase() === 'sim'),
+                            hasLink: (p.Tem_Ligacao && p.Tem_Ligacao.toLowerCase() === 'sim'),
+                            linkedCode: p.Codigo_Produto_Ligado || "",
+                            
+                            categoria: rawCat, 
                             mainCategory: mainCat,
                             subCategory: subCat,
                             imagem: this.fixImgPath(p.imagem),
@@ -1069,9 +1118,7 @@
                 this.closeSheet('cat-sheet');
                 if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
                 document.getElementById('main-search').value = "";
-                // Logic: Filter by lower stock implies high sales (Simulation)
-                // In real app, check a specific 'sales_count' or 'is_bestseller' flag
-                // For now, we simulate by showing items with stock < 50 or ID ending in 5
+                // Logic: Filter using the new 'isBestSeller' flag from JSON
                 this.renderAllLists("", false, true); 
             },
 
@@ -1083,10 +1130,43 @@
 
                 // 2. Render Extras (Bottom List) - Main Content
                 const extContainer = document.getElementById('extras-container');
+                // General filter: not a basket
                 let extras = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
                 let titleHtml = '';
 
+                // NEW: Logic to render "Best Sellers" as a special section if we are in Default Mode (not searching/filtering)
+                let bestSellersHtml = '';
+                const isDefaultMode = !searchTerm && !showOffersOnly && !showBestSellers;
+                
+                if (isDefaultMode) {
+                    const bestSellersList = extras.filter(p => p.isBestSeller);
+                    if (bestSellersList.length > 0) {
+                        bestSellersHtml = `
+                        <div class="extras-separator-banner">
+                            <h3 style="color:#2563eb;">🏆 Mais Vendidos</h3>
+                            <p>Os produtos preferidos dos nossos clientes.</p>
+                        </div>
+                        <div class="product-box" style="margin-bottom:30px;">
+                            <div class="grid-products">
+                                ${bestSellersList.map(p => this.buildCard(p)).join('')}
+                            </div>
+                        </div>
+                        <div class="extras-separator-banner">
+                            <h3>Adicionar Extras</h3>
+                            <p>Toque nos produtos abaixo para adicionar mais itens.</p>
+                        </div>`;
+                    } else {
+                        // Fallback title if no best sellers found
+                        titleHtml = `
+                        <div class="extras-separator-banner">
+                            <h3>Adicionar Extras</h3>
+                            <p>Toque nos produtos abaixo para adicionar mais itens.</p>
+                        </div>`;
+                    }
+                }
+
+                // --- EXISTING FILTER LOGIC ---
                 if(showOffersOnly) {
                     extras = extras.filter(p => p.isOffer);
                     const mobSearch = document.getElementById('main-search');
@@ -1097,11 +1177,8 @@
                         <p>Aproveite os descontos exclusivos.</p>
                     </div>`;
                 } else if(showBestSellers) {
-                    // Logic: Simulate Best Sellers by sorting low stock first, or specific heuristic
-                    // Since we don't have real sales data, let's filter purely by random heuristic for demo or sort by 'estoque'
-                    extras.sort((a,b) => a.estoque - b.estoque); 
-                    // Take top 20 low stock items as "best sellers"
-                    extras = extras.slice(0, 20);
+                    // Logic: Now uses the real JSON flag
+                    extras = extras.filter(p => p.isBestSeller);
                     
                     const mobSearch = document.getElementById('main-search');
                     if(mobSearch) mobSearch.value = "";
@@ -1115,12 +1192,6 @@
                     const lower = searchTerm.toLowerCase();
                     extras = extras.filter(p => p.nome.toLowerCase().includes(lower) || p.categoria.toLowerCase().includes(lower));
                     document.getElementById('main-search').value = searchTerm;
-                } else {
-                    titleHtml = `
-                    <div class="extras-separator-banner">
-                        <h3>Adicionar Extras</h3>
-                        <p>Toque nos produtos abaixo para adicionar mais itens.</p>
-                    </div>`;
                 }
 
                 const showClear = searchTerm.length > 0 || showOffersOnly || showBestSellers;
@@ -1131,16 +1202,17 @@
                 // Group by full category key to match sidebar filtering
                 extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
                 
-                const sortedKeys = Object.keys(groups); // Keep parse order essentially
+                const sortedKeys = Object.keys(groups); 
                 
-                let html = titleHtml;
+                // If default mode, inject best sellers HTML first
+                let html = isDefaultMode ? bestSellersHtml + titleHtml : titleHtml;
 
                 if(sortedKeys.length === 0) {
                      html += '<p style="text-align:center; padding:40px;">Nenhum produto encontrado.</p>';
                 } else {
                     sortedKeys.forEach(key => {
                         const sample = groups[key][0];
-                        const title = sample.subCategory; // Show only subcategory in header
+                        const title = sample.subCategory; 
                         const colorKey = Object.keys(CONSTANTS.THEMES).find(k => key.includes(k)) || 'DEFAULT';
                         
                         html += `<div id="cat-${key}" class="section-header" style="background:${CONSTANTS.THEMES[colorKey]}; margin-top:30px;"><h3>${title}</h3></div>
@@ -1290,7 +1362,46 @@
                     if (actionCol) actionCol.innerHTML = newBtnHtml;
                 });
 
+                // --- CROSS-SELL LOGIC (NEW) ---
+                if (delta > 0 && p.hasLink && p.linkedCode) {
+                    this.checkSuggestion(p.linkedCode);
+                }
+
                 this.updateTotal();
+            },
+
+            checkSuggestion(linkedCode) {
+                // Find the linked product object
+                const linkedP = this.data.find(x => x.code === linkedCode);
+                
+                // If it exists AND is NOT in the cart yet
+                if (linkedP && !this.cart[linkedP.id]) {
+                    this.showSuggestion(linkedP);
+                }
+            },
+
+            showSuggestion(p) {
+                const toast = document.getElementById('suggestion-toast');
+                const img = document.getElementById('st-img');
+                const txt = document.getElementById('st-text');
+                const btn = document.getElementById('st-btn');
+
+                img.src = p.imagem;
+                txt.innerText = `Leve ${p.nome} por R$ ${p.valor.toFixed(2)}`;
+                
+                // Remove old listeners to avoid multiple adds
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.onclick = () => {
+                    this.modQty(p.id, 1);
+                    toast.classList.remove('visible');
+                };
+
+                toast.classList.add('visible');
+                
+                // Auto hide after 8 seconds
+                setTimeout(() => toast.classList.remove('visible'), 8000);
             },
 
             updateTotal() {
