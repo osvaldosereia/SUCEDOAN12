@@ -4,12 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.28 - No-Blink & UI Optimization
+        VERSION: 9.44 - Fix: Suggestion Toast Visibility
         CHANGELOG:
-        - PERF: Implementada atualização parcial do DOM (modQty) para evitar piscadas.
-        - UI (Mobile): Header/Logo oculto permanentemente no modo customizer.
-        - UI (Mobile): Título da cesta reduzido e campo de busca aumentado.
-        - UX: Botão "Minha Cesta" rola para o topo absoluto da lista.
+        - FIX: Ocultação robusta do 'suggestion-toast' usando opacity/visibility para evitar que apareça na home devido à nova posição elevada.
+        - UI: Barra de navegação movida para o rodapé (estilo App Tab Bar).
+        - UI: Adicionado botão "Dúvidas" na barra inferior.
+        - LAYOUT: Coluna lateral esquerda aumentada (+20px) e direita ajustada.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -40,6 +40,7 @@
             --header-height: 60px;
             --app-bar-height: 0px; 
             --checkout-bar-height: 80px; 
+            --nav-bar-height: 60px; /* NEW Bottom Nav Height */
             --radius-lg: 16px;
             --shadow-float: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
             --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -115,12 +116,13 @@
         /* --- 4. MOBILE CHECKOUT BAR --- */
         .mobile-checkout-bar {
             position: fixed; 
-            bottom: 0; 
+            /* Sits above the Bottom Nav (60px) */
+            bottom: var(--nav-bar-height); 
             left: 0; right: 0; height: var(--checkout-bar-height);
             background: #ffffff; border-top: 1px solid var(--border-color);
-            z-index: 9998; 
+            z-index: 9990; /* Below Nav but above content */
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 20px; box-shadow: 0 -4px 25px rgba(0,0,0,0.1);
+            padding: 0 20px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
             animation: slideUp 0.3s ease-out;
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -180,7 +182,8 @@
 
         /* --- 7. CUSTOMIZER --- */
         /* Changed: Removed padding-top since we hide header */
-        #customizer-view { background: #f8fafc; min-height: 100vh; padding-bottom: 150px; padding-top: 0; }
+        /* Increased bottom padding to accommodate stacked bars (80+60 + extra) */
+        #customizer-view { background: #f8fafc; min-height: 100vh; padding-bottom: 160px; padding-top: 0; }
         @media(min-width: 1024px) { 
             #customizer-view { padding-bottom: 0; } 
         }
@@ -191,6 +194,52 @@
             z-index: 900; backdrop-filter: blur(10px);
             padding: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
+        
+        /* NEW: Mobile Quick Nav Bar (BOTTOM TAB STYLE) */
+        .mobile-quick-nav {
+            position: fixed;
+            bottom: 0;
+            top: auto; /* Reset top */
+            left: 0; right: 0;
+            height: var(--nav-bar-height);
+            z-index: 10000; /* Highest z-index */
+            background: white;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 Buttons */
+            border-top: 1px solid #e2e8f0;
+            border-bottom: none;
+            align-items: center;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+            padding-bottom: env(safe-area-inset-bottom); /* Safe area for iPhone X+ */
+            height: calc(var(--nav-bar-height) + env(safe-area-inset-bottom));
+        }
+        @media (min-width: 1024px) { .mobile-quick-nav { display: none; } }
+
+        .mqn-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 100%;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-light);
+            background: transparent;
+            border: none;
+            transition: all 0.2s;
+            text-transform: capitalize;
+            padding: 4px 0;
+        }
+        
+        .mqn-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; transition: all 0.2s; }
+
+        .mqn-btn.active {
+            color: var(--primary);
+            background: transparent;
+            border: none;
+        }
+        .mqn-btn.active svg { stroke: var(--primary); transform: translateY(-2px); }
         
         @media(min-width: 1024px) {
             .cust-header-bar { top: 0; z-index: 1050; } 
@@ -228,9 +277,11 @@
         .ch-desktop-cart { display: none; }
 
         /* === SPLIT LAYOUT MOBILE (Products | Nav) === */
+        /* Changed: Column order flipped (135px first) */
         .app-grid { 
             display: grid; 
-            grid-template-columns: 1fr 90px; 
+            /* MODIFIED: Left column increased to 135px (+20px) */
+            grid-template-columns: 135px 1fr; 
             gap: 10px; 
             margin-top: 24px; 
             padding-bottom: 40px; 
@@ -243,10 +294,14 @@
         .mobile-nav-sidebar {
             display: block;
             position: sticky;
-            top: 85px; /* Fixed top position since header is gone */
-            height: calc(100vh - 100px);
+            /* CHANGED: Start below Header (75px approx) */
+            top: 75px; 
+            /* Adjusted height */
+            height: calc(100vh - 75px); 
             overflow-y: auto;
             padding-right: 4px;
+            /* CRITICAL FIX: Increased padding for double bottom bars */
+            padding-bottom: 180px; 
             scrollbar-width: thin;
         }
         
@@ -264,65 +319,155 @@
         .nav-side-btn.nav-cesta.active { background: var(--secondary); color: white; }
         .nav-side-btn:hover { border-color: #cbd5e1; }
 
+        /* New Arrow Indicator at bottom of Sidebar */
+        .nav-arrow-indicator {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            padding: 10px 0;
+            opacity: 0.7;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-5px);}
+            60% {transform: translateY(-3px);}
+        }
+
+        /* --- NEW HIERARCHY STYLES --- */
+        .nav-section-title {
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem; /* Slightly Larger */
+            font-weight: 600; /* Lighter Weight */
+            color: var(--text-light); /* Elegant Grey */
+            margin: 24px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 6px 0;
+            background: #f8fafc; /* Subtle Background */
+            border-radius: 6px; /* Soft Rounded */
+            /* Removed Bottom Border */
+        }
+        .nav-section-title:first-of-type { margin-top: 10px; }
+
         @media (min-width: 1024px) {
-            .app-grid { grid-template-columns: 1fr 340px; gap: 40px; align-items: start; padding-right: 16px; }
+            /* Changed: Sidebar width increased to 380px, Gap adjusted */
+            .app-grid { grid-template-columns: 380px 1fr; gap: 30px; align-items: start; padding-right: 16px; }
             .mobile-nav-sidebar { display: none; }
             .ch-desktop-cart { display: flex; align-items: center; gap: 16px; }
             .desk-price { text-align: right; line-height: 1.2; }
             .desk-price small { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
             .desk-price strong { font-size: 1.2rem; color: var(--primary); }
             .btn-desk-checkout { background: #16a34a; color: white; padding: 0 24px; height: 42px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+            
+            .nav-section-title { font-size: 0.85rem; margin-top: 24px; text-align: left; padding-left: 10px; }
         }
 
         .section-header { background: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; display:flex; justify-content: space-between; align-items: center; scroll-margin-top: 140px; }
         .section-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--secondary); margin: 0; }
-        .product-box { background: #fff; border: 1px solid var(--border-color); border-radius: 0 0 12px 12px; padding: 12px; }
+        
+        /* ADJUSTMENT: Mobile Padding removed to widen column */
+        .product-box { background: #fff; border: 1px solid var(--border-color); border-radius: 0 0 12px 12px; padding: 0; }
+        @media (min-width: 600px) { .product-box { padding: 12px; } }
         
         .extras-separator-banner { text-align: center; padding: 30px 20px 10px; margin-bottom: 10px; }
         .extras-separator-banner h3 { font-size: 1.4rem; font-weight: 300; color: var(--secondary); margin-bottom: 5px; }
         .extras-separator-banner p { color: var(--text-light); font-size: 0.9rem; }
 
-        /* GRID: 1 Column on Mobile */
-        .grid-products { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: stretch; }
-        @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); } }
-        @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
-
-        /* PRODUCT MINI CARD (MOBILE LAYOUT) */
-        .mini-card {
+        /* GRID: Adaptive Grid for Vertical Cards */
+        .grid-products { 
             display: grid; 
-            grid-template-columns: 110px 1fr; /* Image 110px */
-            grid-template-rows: auto auto;
-            gap: 12px; align-items: center; text-align: center; /* Center Text */
-            padding: 10px; border-radius: 8px; border: 1px solid transparent;
-            transition: background 0.2s; position: relative; height: auto; min-width: 0;
-            background: #fff; border: 1px solid #f1f5f9;
+            /* Attempts to fit cards of min 130px. If width < 260px + gap, it collapses to 1 column. */
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+            gap: 10px; 
+            align-items: stretch; 
+            padding: 8px; /* Restored Grid Padding */
         }
         
-        /* DESKTOP LAYOUT */
-        @media (min-width: 600px) {
-            .mini-card { display: flex; flex-direction: column; text-align: center; height: 100%; }
-            .mc-img-box { margin-right: 0; margin-bottom: 8px; width: 100%; height: auto; aspect-ratio: 1/1; }
-            .mc-info-col { align-items: center; text-align: center; } 
-            .mc-action-col { justify-content: center; margin-top: auto; } 
-            .btn-feat-row { justify-content: center; }
-            .mc-title { text-align: center; }
+        /* MOBILE SLIDER MODE (INCLUDED ITEMS) */
+        @media (max-width: 1023px) {
+            #included-list.slider-mode {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                gap: 16px;
+                padding: 10px 16px;
+                scroll-snap-type: x mandatory;
+                scrollbar-width: none; /* Hide Scrollbar FF */
+                scroll-behavior: smooth;
+            }
+            #included-list.slider-mode::-webkit-scrollbar { display: none; } /* Hide Scrollbar Chrome */
+            
+            /* Customized Card for Slider */
+            #included-list.slider-mode .mini-card {
+                /* FIXED: Changed from 85vw to 100% to fit the parent container (right column) exactly */
+                min-width: 100%; 
+                scroll-snap-align: center;
+                /* Light Red Background */
+                background-color: #f8fafc; 
+                border-color: #fecaca;
+            }
+            
+            .slider-controls {
+                display: flex;
+                justify-content: center;
+                gap: 30px;
+                padding: 10px 0 20px;
+                border-bottom: 1px solid #f1f5f9;
+                margin-bottom: 10px;
+            }
+            .sc-btn {
+                background: white; border: 1px solid #e2e8f0;
+                width: 40px; height: 40px; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                font-size: 1.2rem;
+            }
+            .sc-btn:active { background: #f8fafc; transform: scale(0.95); }
+        }
+        
+        @media (min-width: 1024px) {
+            .slider-controls { display: none; }
         }
 
+        /* DESKTOP GRID RESTORE */
+        @media (min-width: 600px) { .grid-products { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
+        @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr) !important; gap: 20px; } }
+
+        /* PRODUCT MINI CARD (UNIFIED VERTICAL LAYOUT) */
+        .mini-card {
+            display: flex; 
+            flex-direction: column; 
+            text-align: center; 
+            height: 100%;
+            background: #fff;
+            /* Restore Card Visuals on Mobile */
+            border: 1px solid #f1f5f9; 
+            border-radius: 8px; 
+            padding: 10px; 
+            position: relative; 
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .mini-card:last-child { border-bottom: 1px solid #f1f5f9; } /* Reset */
+        
         .mini-card:hover { background: #fff; border-color: var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .tag-offer { position: absolute; top: 0; left: 0; background: #16a34a; color: white; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
         
         .mc-img-box { 
-            width: 110px; height: 110px; 
+            width: 100%; 
+            height: auto; 
+            aspect-ratio: 1/1; /* Keep Square */
             position: relative; display: flex; 
             align-items: center; justify-content: center; 
             cursor: zoom-in; background-color: transparent; border-radius: 8px;
-            grid-row: 1 / 3; 
+            margin-bottom: 8px;
         }
         .mc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
-        /* Mobile Content Layout - CENTERED */
-        .mc-info-col { display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; text-align: center; }
-        .mc-action-col { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 6px; }
+        /* Content Layout - CENTERED Vertical */
+        .mc-info-col { display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; text-align: center; flex: 1; }
+        .mc-action-col { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: auto; padding-top: 8px;}
 
         .btn-feat-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; width: 100%; min-height: 0; justify-content: center; }
         .btn-feat { font-size: 0.65rem; padding: 2px 8px; border-radius: 50px; font-weight: 600; border: 1px solid; cursor: pointer; white-space: nowrap; }
@@ -336,8 +481,8 @@
         .mc-price-old { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; margin-right: 4px; }
         .mc-price-new { color: var(--primary); }
 
-        .btn-add-mini { width: auto; padding: 0 16px; height: 32px; background: var(--primary); color: white; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); }
-        .qty-mini { width: 100px; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 50px; background: white; }
+        .btn-add-mini { width: 100%; padding: 0 16px; height: 32px; background: var(--primary); color: white; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.2); }
+        .qty-mini { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--primary); border-radius: 50px; background: white; }
         .qm-btn { width: 30px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--secondary); font-size: 1.1rem; }
         .qm-val { font-weight: 700; font-size: 0.9rem; }
         
@@ -357,7 +502,8 @@
                 align-self: start; 
             }
             .sidebar-title { font-size: 0.9rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 12px; }
-            .sidebar-nav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+            /* Changed: 2 Columns for wider buttons */
+            .sidebar-nav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 24px; }
             .sidebar-chip { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.7rem; font-weight: 600; color: var(--secondary); text-align: center; padding: 8px 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .sidebar-chip:hover { border-color: var(--secondary); background: #e2e8f0; }
         }
@@ -442,6 +588,48 @@
         .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
         @media(min-width: 1024px) { .toast { bottom: 40px; } }
 
+        /* SUGGESTION TOAST (New Cross-Sell UI) */
+        .suggestion-toast { 
+            position: fixed; 
+            bottom: 160px; /* Above double bottom bars */
+            left: 20px; right: 20px; 
+            background: white; 
+            border: 1px solid #bfdbfe; 
+            border-left: 4px solid #3b82f6;
+            border-radius: 12px; 
+            padding: 12px; 
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); 
+            display: flex; align-items: center; gap: 12px;
+            
+            /* FIX: Use opacity/visibility instead of just transform to ensure it hides */
+            transform: translateY(20px); 
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9995;
+        }
+        .suggestion-toast.visible { 
+            transform: translateY(0); 
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .st-img { width: 50px; height: 50px; border-radius: 6px; object-fit: contain; mix-blend-mode: multiply; }
+        .st-content { flex: 1; display: flex; flex-direction: column; }
+        .st-title { font-size: 0.8rem; font-weight: 700; color: var(--secondary); line-height: 1.2; margin-bottom: 2px; }
+        .st-text { font-size: 0.7rem; color: var(--text-light); }
+        .st-btn { 
+            background: #3b82f6; color: white; border-radius: 6px; 
+            padding: 8px 12px; font-size: 0.75rem; font-weight: 700; 
+            white-space: nowrap;
+        }
+
+        @media(min-width: 1024px) { 
+            .suggestion-toast { bottom: 40px; max-width: 400px; left: auto; right: 20px; } 
+        }
+
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -460,7 +648,7 @@
     </header>
 
     <button id="btn-scroll-top" class="btn-scroll-top" onclick="window.scrollTo(0,0)" aria-label="Voltar ao topo">
-        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7-7-7v18"></path></svg>
     </button>
 
     <!-- HOME -->
@@ -500,28 +688,52 @@
                 </div>
             </div>
         </div>
+        
+        <!-- NEW: Mobile Quick Nav Bar (BOTTOM TABS) -->
+        <div class="mobile-quick-nav">
+            <button class="mqn-btn active" onclick="App.clearSearch(); App.setActiveQuick(this)">
+                <svg viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Cesta
+            </button>
+            <button class="mqn-btn" onclick="App.showOffers(); App.setActiveQuick(this)">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>
+                Ofertas
+            </button>
+            <button class="mqn-btn" onclick="App.showBestSellers(); App.setActiveQuick(this)">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                Top
+            </button>
+            <button class="mqn-btn" onclick="App.openSheet('faq-sheet');">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Dúvidas
+            </button>
+        </div>
+
         <div class="container app-grid">
-            <div class="products-section">
-                <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Itens Inclusos</h3></div>
-                <div class="product-box"><div id="included-list" class="grid-products"></div></div>
-                <div id="extras-container"></div>
-            </div>
-            
-            <!-- DESKTOP SIDEBAR -->
+            <!-- DESKTOP SIDEBAR (NOW ON LEFT) -->
             <aside class="sidebar-desktop">
-                <div class="sidebar-title">Categorias</div>
-                <div id="desk-cat-list" class="sidebar-nav-grid"></div>
-                <div style="margin-top:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                    <strong style="color:var(--secondary);">Dúvida?</strong>
-                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:10px;">Fale conosco no WhatsApp ou veja as perguntas frequentes.</p>
-                    <button class="btn-outline" onclick="App.openSheet('faq-sheet')">Perguntas Frequentes</button>
-                </div>
+                <!-- Content Injected via JS -->
             </aside>
             
-            <!-- MOBILE NAV SIDEBAR (Replaces Right Column) -->
+            <!-- MOBILE NAV SIDEBAR (NOW ON LEFT) -->
             <aside id="mobile-nav-sidebar" class="mobile-nav-sidebar">
                 <!-- Injected via JS -->
             </aside>
+
+            <div class="products-section">
+                <div class="section-header" style="border-top: 4px solid var(--secondary);"><h3>📦 Minha Cesta</h3></div>
+                
+                <!-- Modified for Slider -->
+                <div class="product-box">
+                    <div id="included-list" class="grid-products"></div>
+                    <div id="inc-nav-controls" class="slider-controls hidden">
+                        <button class="sc-btn" onclick="App.scrollIncluded(-1)">❮</button>
+                        <button class="sc-btn" onclick="App.scrollIncluded(1)">❯</button>
+                    </div>
+                </div>
+
+                <div id="extras-container"></div>
+            </div>
         </div>
         
         <!-- MOBILE CHECKOUT BAR -->
@@ -532,6 +744,17 @@
     </div>
 
     <div id="toast" class="toast"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span id="toast-msg">Crédito atualizado</span></div>
+
+    <!-- NEW SUGGESTION TOAST -->
+    <div id="suggestion-toast" class="suggestion-toast">
+        <img id="st-img" class="st-img" src="" alt="">
+        <div class="st-content">
+            <div class="st-title">Leve também!</div>
+            <div class="st-text" id="st-text">Sugestão de compra.</div>
+        </div>
+        <button id="st-btn" class="st-btn">Adicionar</button>
+        <button style="font-size:1.2rem; color:#999; padding:0 5px;" onclick="document.getElementById('suggestion-toast').classList.remove('visible')">×</button>
+    </div>
 
     <!-- GALLERY -->
     <div id="gallery" class="gallery-wrap">
@@ -730,20 +953,35 @@
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
                     const raw = await res.json();
                     
-                    this.data = raw.map(p => ({
-                        ...p,
-                        id: String(p.id),
-                        nome: p.nome.trim(),
-                        valor: parseFloat(p.valor || 0),
-                        offerPrice: parseFloat(p.Valor_Oferta || 0),
-                        isOffer: (p.Oferta && p.Oferta.toLowerCase() === 'sim'),
-                        categoria: (p.categoria || 'OUTROS').trim().toUpperCase(),
-                        imagem: this.fixImgPath(p.imagem),
-                        limit: parseInt(p.Limit || p.limit || 0),
-                        estoque: parseInt(p.estoque || 0),
-                        validade: p.Validade || p.validade || "",
-                        caracteristicas: p.Caracteristicas || p.caracteristicas || ""
-                    }));
+                    this.data = raw.map(p => {
+                        const rawCat = (p.categoria || 'OUTROS').trim().toUpperCase();
+                        const parts = rawCat.split('>');
+                        const mainCat = parts[0].trim();
+                        const subCat = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+
+                        return {
+                            ...p,
+                            id: String(p.id),
+                            code: p.codigo,
+                            nome: p.nome.trim(),
+                            valor: parseFloat(p.valor || 0),
+                            offerPrice: parseFloat(p.Valor_Oferta || 0),
+                            isOffer: (p.Oferta && p.Oferta.toLowerCase() === 'sim'),
+                            // NEW FIELDS MAPPING
+                            isBestSeller: (p.Mais_Vendido && p.Mais_Vendido.toLowerCase() === 'sim'),
+                            hasLink: (p.Tem_Ligacao && p.Tem_Ligacao.toLowerCase() === 'sim'),
+                            linkedCode: p.Codigo_Produto_Ligado || "",
+                            
+                            categoria: rawCat, 
+                            mainCategory: mainCat,
+                            subCategory: subCat,
+                            imagem: this.fixImgPath(p.imagem),
+                            limit: parseInt(p.Limit || p.limit || 0),
+                            estoque: parseInt(p.estoque || 0),
+                            validade: p.Validade || p.validade || "",
+                            caracteristicas: p.Caracteristicas || p.caracteristicas || ""
+                        };
+                    });
 
                     this.renderHome();
                     this.renderSidebar();
@@ -786,22 +1024,81 @@
             },
 
             renderSidebar() {
-                const cats = [...new Set(this.data.filter(p => !p.categoria.includes('CESTA')).map(p => p.categoria))].sort();
+                // Filter out Cestas and get structure
+                const relevantProducts = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                // DESKTOP
-                const deskBtns = [
-                    `<button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>`,
-                    `<button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>`
-                ].concat(cats.map(c => `<button class="sidebar-chip" onclick="App.filterCat('${c}')">${c}</button>`));
-                
-                // MOBILE NAV
-                const mobNavBtns = [
-                    `<div class="nav-side-btn nav-cesta active" onclick="App.clearSearch(); App.highlightNav(this);">Minha Cesta</div>`,
-                    `<div class="nav-side-btn nav-ofertas" onclick="App.showOffers(); App.highlightNav(this);">🔥 Ofertas</div>`
-                ].concat(cats.map(c => `<div class="nav-side-btn" onclick="App.filterCat('${c}'); App.highlightNav(this);">${c}</div>`));
+                // Group Subcats by Maincats
+                const structure = {};
+                const mainOrder = []; 
 
-                document.getElementById('desk-cat-list').innerHTML = deskBtns.join('');
-                document.getElementById('mobile-nav-sidebar').innerHTML = mobNavBtns.join('');
+                relevantProducts.forEach(p => {
+                    if (!structure[p.mainCategory]) {
+                        structure[p.mainCategory] = new Set();
+                        mainOrder.push(p.mainCategory); // Preserve approximate JSON order
+                    }
+                    structure[p.mainCategory].add(p.categoria); // Store full key for filtering
+                });
+
+                // --- BUILD HTML ---
+                let deskHTML = `<div class="sidebar-title">Menu Rápido</div>
+                    <div class="sidebar-nav-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <button class="sidebar-chip minha-cesta" onclick="App.clearSearch()">Minha Cesta</button>
+                        <button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>
+                    </div>`;
+                
+                // Note: Top buttons moved to .mobile-quick-nav, removed here
+                let mobHTML = ``;
+
+                // Deduplicate mainOrder
+                const uniqueMain = [...new Set(mainOrder)];
+
+                uniqueMain.forEach(main => {
+                    // Determine Color
+                    const colorKey = Object.keys(CONSTANTS.THEMES).find(k => main.includes(k)) || 'DEFAULT';
+                    const bgColor = CONSTANTS.THEMES[colorKey];
+                    const textColor = 'var(--secondary)'; // Ensure good contrast
+
+                    // DESKTOP
+                    deskHTML += `<div class="nav-section-title" style="background-color: ${bgColor}; color: ${textColor};">${main}</div>`;
+                    deskHTML += `<div class="sidebar-nav-grid" style="margin-bottom:10px;">`;
+                    
+                    // MOBILE
+                    mobHTML += `<div class="nav-section-title" style="background-color: ${bgColor}; color: ${textColor};">${main}</div>`;
+
+                    // Sort subcategories logic? Or keep JSON order?
+                    // Set iteration follows insertion order usually.
+                    const subKeys = Array.from(structure[main]);
+                    
+                    subKeys.forEach(fullKey => {
+                        // Find a representative product to get the nice sub name
+                        const sample = this.data.find(p => p.categoria === fullKey);
+                        const label = sample ? sample.subCategory : fullKey;
+
+                        deskHTML += `<button class="sidebar-chip" onclick="App.filterCat('${fullKey}')">${label}</button>`;
+                        
+                        mobHTML += `<div class="nav-side-btn" onclick="App.filterCat('${fullKey}'); App.highlightNav(this);">${label}</div>`;
+                    });
+
+                    deskHTML += `</div>`; // Close grid
+                });
+
+                // Add footer elements
+                deskHTML += `
+                <div style="margin-top:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <strong style="color:var(--secondary);">Dúvida?</strong>
+                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:10px;">Fale conosco no WhatsApp ou veja as perguntas frequentes.</p>
+                    <button class="btn-outline" onclick="App.openSheet('faq-sheet')">Perguntas Frequentes</button>
+                </div>`;
+
+                mobHTML += `<div class="nav-arrow-indicator">▼</div>`;
+
+                document.querySelector('.sidebar-desktop').innerHTML = deskHTML;
+                document.getElementById('mobile-nav-sidebar').innerHTML = mobHTML;
+            },
+
+            setActiveQuick(el) {
+                document.querySelectorAll('.mqn-btn').forEach(b => b.classList.remove('active'));
+                el.classList.add('active');
             },
 
             highlightNav(el) {
@@ -849,6 +1146,8 @@
                 document.getElementById('home-view').classList.remove('hidden');
                 document.body.classList.remove('customizer-mode');
                 this.currentBasket = null;
+                // FIX: Ocultar o toast de sugestão ao voltar para a home para evitar que fique visível
+                document.getElementById('suggestion-toast').classList.remove('visible');
             },
 
             showOffers() {
@@ -858,7 +1157,15 @@
                 this.renderAllLists("", true); 
             },
 
-            renderAllLists(searchTerm = "", showOffersOnly = false) {
+            showBestSellers() {
+                this.closeSheet('cat-sheet');
+                if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
+                document.getElementById('main-search').value = "";
+                // Logic: Filter using the new 'isBestSeller' flag from JSON
+                this.renderAllLists("", false, true); 
+            },
+
+            renderAllLists(searchTerm = "", showOffersOnly = false, showBestSellers = false) {
                 if(!this.currentBasket) return;
                 
                 // 1. Render Included Items (Top List)
@@ -866,54 +1173,99 @@
 
                 // 2. Render Extras (Bottom List) - Main Content
                 const extContainer = document.getElementById('extras-container');
+                // General filter: not a basket
                 let extras = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
+                let titleHtml = '';
+
+                // NEW: Logic to render "Best Sellers" as a special section if we are in Default Mode (not searching/filtering)
+                let bestSellersHtml = '';
+                const isDefaultMode = !searchTerm && !showOffersOnly && !showBestSellers;
+                
+                if (isDefaultMode) {
+                    const bestSellersList = extras.filter(p => p.isBestSeller);
+                    if (bestSellersList.length > 0) {
+                        bestSellersHtml = `
+                        <div class="extras-separator-banner">
+                            <h3 style="color:#2563eb;">🏆 Mais Vendidos</h3>
+                            <p>Os produtos preferidos dos nossos clientes.</p>
+                        </div>
+                        <div class="product-box" style="margin-bottom:30px;">
+                            <div class="grid-products">
+                                ${bestSellersList.map(p => this.buildCard(p)).join('')}
+                            </div>
+                        </div>
+                        <div class="extras-separator-banner">
+                            <h3>Adicionar Extras</h3>
+                            <p>Toque nos produtos abaixo para adicionar mais itens.</p>
+                        </div>`;
+                    } else {
+                        // Fallback title if no best sellers found
+                        titleHtml = `
+                        <div class="extras-separator-banner">
+                            <h3>Adicionar Extras</h3>
+                            <p>Toque nos produtos abaixo para adicionar mais itens.</p>
+                        </div>`;
+                    }
+                }
+
+                // --- EXISTING FILTER LOGIC ---
                 if(showOffersOnly) {
                     extras = extras.filter(p => p.isOffer);
                     const mobSearch = document.getElementById('main-search');
                     if(mobSearch) mobSearch.value = "";
+                    titleHtml = `
+                    <div class="extras-separator-banner">
+                        <h3 style="color:#b45309;">🔥 Ofertas Especiais</h3>
+                        <p>Aproveite os descontos exclusivos.</p>
+                    </div>`;
+                } else if(showBestSellers) {
+                    // Logic: Now uses the real JSON flag
+                    extras = extras.filter(p => p.isBestSeller);
+                    
+                    const mobSearch = document.getElementById('main-search');
+                    if(mobSearch) mobSearch.value = "";
+                    
+                    titleHtml = `
+                    <div class="extras-separator-banner">
+                        <h3 style="color:#2563eb;">🏆 Mais Vendidos</h3>
+                        <p>Os produtos preferidos dos nossos clientes.</p>
+                    </div>`;
                 } else if(searchTerm) {
                     const lower = searchTerm.toLowerCase();
                     extras = extras.filter(p => p.nome.toLowerCase().includes(lower) || p.categoria.toLowerCase().includes(lower));
                     document.getElementById('main-search').value = searchTerm;
                 }
 
-                const showClear = searchTerm.length > 0 || showOffersOnly;
+                const showClear = searchTerm.length > 0 || showOffersOnly || showBestSellers;
                 const deskBtn = document.getElementById('desk-clear-btn');
                 if(deskBtn) showClear ? deskBtn.classList.remove('hidden') : deskBtn.classList.add('hidden');
 
                 const groups = {};
+                // Group by full category key to match sidebar filtering
                 extras.forEach(p => { if(!groups[p.categoria]) groups[p.categoria] = []; groups[p.categoria].push(p); });
-                const sortedCats = Object.keys(groups).sort();
                 
-                let html = '';
-                if(showOffersOnly) {
-                    html += `
-                    <div class="extras-separator-banner">
-                        <h3 style="color:#b45309;">🔥 Ofertas Especiais</h3>
-                        <p>Aproveite os descontos exclusivos.</p>
-                    </div>`;
-                } else if(sortedCats.length > 0 && !searchTerm) {
-                    html += `
-                    <div class="extras-separator-banner">
-                        <h3>Adicionar Extras</h3>
-                        <p>Toque nos produtos abaixo para adicionar mais itens.</p>
-                    </div>`;
-                }
+                const sortedKeys = Object.keys(groups); 
+                
+                // If default mode, inject best sellers HTML first
+                let html = isDefaultMode ? bestSellersHtml + titleHtml : titleHtml;
 
-                if(sortedCats.length === 0) {
+                if(sortedKeys.length === 0) {
                      html += '<p style="text-align:center; padding:40px;">Nenhum produto encontrado.</p>';
                 } else {
-                    sortedCats.forEach(cat => {
-                        const color = Object.keys(CONSTANTS.THEMES).find(k => cat.includes(k)) || 'DEFAULT';
-                        html += `<div id="cat-${cat}" class="section-header" style="background:${CONSTANTS.THEMES[color]}; margin-top:30px;"><h3>${cat}</h3></div>
-                        <div class="product-box"><div class="grid-products">${groups[cat].map(p => this.buildCard(p)).join('')}</div></div>`;
+                    sortedKeys.forEach(key => {
+                        const sample = groups[key][0];
+                        const title = sample.subCategory; 
+                        const colorKey = Object.keys(CONSTANTS.THEMES).find(k => key.includes(k)) || 'DEFAULT';
+                        
+                        html += `<div id="cat-${key}" class="section-header" style="background:${CONSTANTS.THEMES[colorKey]}; margin-top:30px;"><h3>${title}</h3></div>
+                        <div class="product-box"><div class="grid-products">${groups[key].map(p => this.buildCard(p)).join('')}</div></div>`;
                     });
                 }
                 
                 extContainer.innerHTML = html;
                 
-                if(showOffersOnly && extContainer) extContainer.scrollIntoView({behavior:'smooth'});
+                if((showOffersOnly || showBestSellers) && extContainer) extContainer.scrollIntoView({behavior:'smooth'});
                 
                 this.updateTotal();
             },
@@ -921,9 +1273,31 @@
             // New optimized function for just the top list
             renderIncluded() {
                 const incContainer = document.getElementById('included-list');
+                const incNav = document.getElementById('inc-nav-controls'); // Controls wrapper
                 const incIds = Object.keys(this.cart);
-                incContainer.innerHTML = incIds.length === 0 ? '<p style="padding:10px; color:#999;">Cesta vazia.</p>' : 
+                
+                // Add class for Mobile Slider Mode
+                if(window.innerWidth < 1024) {
+                    incContainer.classList.add('slider-mode');
+                    incNav.classList.remove('hidden'); // Show nav
+                } else {
+                    incContainer.classList.remove('slider-mode');
+                    incNav.classList.add('hidden'); // Hide nav
+                }
+
+                incContainer.innerHTML = incIds.length === 0 ? '<p style="padding:10px; color:#999; width:100%; text-align:center;">Cesta vazia.</p>' : 
                     incIds.map(id => { const p = this.data.find(x => x.id === id); return p ? this.buildCard(p) : ''; }).join('');
+                
+                // Hide nav if empty
+                if(incIds.length === 0 && incNav) incNav.classList.add('hidden');
+            },
+
+            scrollIncluded(direction) {
+                const container = document.getElementById('included-list');
+                if(container) {
+                    const scrollAmount = container.offsetWidth; // Scroll one container width roughly
+                    container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+                }
             },
 
             buildCard(p) {
@@ -1031,7 +1405,46 @@
                     if (actionCol) actionCol.innerHTML = newBtnHtml;
                 });
 
+                // --- CROSS-SELL LOGIC (NEW) ---
+                if (delta > 0 && p.hasLink && p.linkedCode) {
+                    this.checkSuggestion(p.linkedCode);
+                }
+
                 this.updateTotal();
+            },
+
+            checkSuggestion(linkedCode) {
+                // Find the linked product object
+                const linkedP = this.data.find(x => x.code === linkedCode);
+                
+                // If it exists AND is NOT in the cart yet
+                if (linkedP && !this.cart[linkedP.id]) {
+                    this.showSuggestion(linkedP);
+                }
+            },
+
+            showSuggestion(p) {
+                const toast = document.getElementById('suggestion-toast');
+                const img = document.getElementById('st-img');
+                const txt = document.getElementById('st-text');
+                const btn = document.getElementById('st-btn');
+
+                img.src = p.imagem;
+                txt.innerText = `Leve ${p.nome} por R$ ${p.valor.toFixed(2)}`;
+                
+                // Remove old listeners to avoid multiple adds
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.onclick = () => {
+                    this.modQty(p.id, 1);
+                    toast.classList.remove('visible');
+                };
+
+                toast.classList.add('visible');
+                
+                // Auto hide after 8 seconds
+                setTimeout(() => toast.classList.remove('visible'), 8000);
             },
 
             updateTotal() {
@@ -1112,6 +1525,12 @@
                 
                 this.renderAllLists("");
                 
+                // Reset quick nav active state if needed, or keep 'Minha Cesta' active?
+                // Usually clear search resets to full list view (which implies user wants to see everything or basket)
+                // Let's set 'Minha Cesta' as active visually
+                const mcBtn = document.querySelector('.mqn-btn:first-child');
+                if(mcBtn) this.setActiveQuick(mcBtn);
+
                 // Scroll to VERY TOP of the content area (Included List)
                 // Use a small timeout to ensure DOM update
                 setTimeout(() => {
@@ -1129,6 +1548,9 @@
                 this.closeSheet('cat-sheet');
                 if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
                 document.getElementById('main-search').value = "";
+
+                // Reset quick nav active buttons when clicking a specific category
+                document.querySelectorAll('.mqn-btn').forEach(b => b.classList.remove('active'));
 
                 this.renderAllLists("");
                 setTimeout(() => {
