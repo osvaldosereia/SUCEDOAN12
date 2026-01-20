@@ -4,12 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.39 - Mobile Included Slider
+        VERSION: 9.40 - Responsive Slider Fix
         CHANGELOG:
-        - UX (Mobile): "Minha Cesta" agora é um slide horizontal (carrossel).
-        - UI (Mobile): Fundo dos itens da cesta alterado para vermelho claro (#fff1f2) para distinção.
-        - UI (Mobile): Adicionados botões de navegação (Setas) abaixo do slide da cesta.
-        - CSS: Ajustes de scroll-snap para rolagem fluida e centralizada.
+        - CSS (Mobile): Ajuste na largura dos cards do slide (min-width: 100%) para respeitar a sidebar.
+        - JS: Ajuste na rolagem das setas para calcular a largura real do container (offsetWidth).
+        - UI: O slide agora se encaixa perfeitamente na coluna da direita sem ultrapassar a margem.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -384,7 +383,8 @@
             
             /* Customized Card for Slider */
             #included-list.slider-mode .mini-card {
-                min-width: 85vw; /* Almost Full Width */
+                /* FIXED: Changed from 85vw to 100% to fit the parent container (right column) exactly */
+                min-width: 100%; 
                 scroll-snap-align: center;
                 /* Light Red Background */
                 background-color: #fff1f2; 
@@ -1180,7 +1180,7 @@
             scrollIncluded(direction) {
                 const container = document.getElementById('included-list');
                 if(container) {
-                    const scrollAmount = window.innerWidth * 0.85; // Scroll one card width roughly
+                    const scrollAmount = container.offsetWidth; // Scroll one container width roughly
                     container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
                 }
             },
