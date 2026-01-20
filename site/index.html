@@ -4,10 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 10.5 - Scroll Fix
+        VERSION: 10.6 - Validity Fix & Cross-Sell Restore
         CHANGELOG:
-        - FIX: Correção na rolagem de categorias (scrollToCat). Agora calcula a posição absoluta e desconta a altura do cabeçalho fixo dinamicamente.
-        - UX: Garante que a categoria inicie visível no topo da área útil.
+        - FIX: Leitura e formatação correta da data de validade (YYYY-MM-DD -> DD/MM/AAAA).
+        - FEATURE: Restaurado sistema de sugestão de produtos (Cross-Sell) com banner retrátil.
+        - DATA: Mapeamento robusto de campos JSON (validade, Tem_Ligacao, Codigo_Produto_Ligado).
+        - UI: Ajuste visual do Toast de Sugestão para integrar com o novo layout da base.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -198,7 +200,11 @@
         .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; font-weight: 400; margin-right: 4px; }
         
         /* VALIDITY BADGE BELOW BTN */
-        .cp-validity-badge { font-size: 0.65rem; color: #15803d; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; margin-top: 6px; display: inline-block; width: 100%; text-align: center; }
+        .cp-validity-badge { 
+            font-size: 0.65rem; color: #15803d; background: #f0fdf4; 
+            padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; 
+            margin-top: 6px; display: inline-block; width: 100%; text-align: center; 
+        }
 
         .btn-add {
             width: 100%; padding: 8px 0; background: white; border: 1px solid var(--primary);
@@ -253,7 +259,9 @@
             
             .ds-actions-row { display: flex; gap: 10px; margin-bottom: 15px; }
             .ds-btn { flex: 1; padding: 10px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 0.9rem; cursor: pointer; border: none; white-space: nowrap; }
+            .ds-btn:hover { transform: scale(1.02); }
             .ds-btn-outline { flex: 1; padding: 10px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; font-size: 0.9rem; white-space: nowrap; }
+            .ds-btn-outline:hover { background: #f8fafc; }
             
             .ds-nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
             .ds-nav-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: var(--text-light); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
@@ -294,6 +302,10 @@
         .st-content { flex: 1; font-size: 0.8rem; line-height: 1.3; }
         .st-btn { background: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
         
+        .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
+        .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
+        
+        /* Credit Toast (Center Screen) */
         .credit-toast {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(30, 41, 59, 0.95); color: white;
@@ -513,6 +525,17 @@
                         else if (catStr.includes('HIGIENE') || catStr.includes('PESSOAL') || catStr.includes('COSMÉTICOS')) appCat = "CUIDADOS PESSOAIS";
                         else if (catStr.includes('BAZAR') || catStr.includes('UTILIDADES')) appCat = "BAZAR E UTILIDADES";
 
+                        // Normalização robusta da data de validade
+                        let rawVal = p.validade || p.Validade || "";
+                        let fmtVal = "";
+                        if (rawVal && rawVal !== '0' && rawVal !== '00') {
+                            fmtVal = App.formatDateBr(rawVal);
+                        }
+
+                        // Normalização da Ligação (Cross-Sell)
+                        let hasLink = p.Tem_Ligacao || p.tem_ligacao || "Não";
+                        let linkCode = p.Codigo_Produto_Ligado || p.codigo_produto_ligado || "";
+
                         return {
                             ...p,
                             id: String(p.id),
@@ -525,13 +548,24 @@
                             imagem: p.imagem ? (p.imagem.includes('/') ? `img/produtos/${p.imagem.split('/').pop()}` : `img/produtos/${p.imagem}`) : 'img/placeholder.jpg',
                             limit: parseInt(p.Limit || p.limit || 0),
                             caracteristicas: p.Caracteristicas || p.caracteristicas || "",
-                            linkedCode: p.Codigo_Produto_Ligado || "",
-                            validade: p.Validade || "",
+                            linkedCode: linkCode,
+                            hasLink: (hasLink === 'Sim'),
+                            validade: fmtVal,
                             categoria: catStr
                         };
                     });
                     this.renderHome();
                 } catch (e) { console.error(e); }
+            },
+
+            formatDateBr(dateStr) {
+                 if (!dateStr) return '';
+                 // Tenta YYYY-MM-DD
+                 if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                     const [y, m, d] = dateStr.split('-');
+                     return `${d}/${m}/${y}`;
+                 }
+                 return dateStr; // Retorna original se já estiver formatado ou inválido
             },
 
             renderHome() {
@@ -654,17 +688,15 @@
                     : `<div class="qty-ctrl"><div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div><div class="qc-val">${qty}</div><div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div></div>`;
 
                 let valHtml = '';
-                if (p.validade && p.validade !== '0' && p.validade !== '00' && p.validade.length > 2) {
+                if (p.validade && p.validade.length > 2) {
                      valHtml = `<div class="cp-validity-badge">Val: ${p.validade}</div>`;
                 }
                 
-                let infoHtml = '';
-                if(p.caracteristicas) {
-                    infoHtml = `<span class="cp-info" onclick="App.openInfo('${p.id}')">Info</span>`;
-                }
-
                 let midSection = '';
-                if(infoHtml) midSection = `<div class="cp-meta">${infoHtml}</div>`;
+                // Mostrar botão info se tiver características
+                if (p.caracteristicas) {
+                    midSection = `<div class="cp-meta"><span class="cp-info" onclick="App.openInfo('${p.id}')">Info</span></div>`;
+                }
 
                 return `
                 <div class="card-prod">
@@ -709,17 +741,11 @@
                 }
                 
                 this.renderIncluded();
-                if (isNew && delta > 0) {
-                    const mobSlider = document.getElementById('included-list-mob');
-                    if(mobSlider) mobSlider.scrollTo({left:0, behavior:'smooth'});
-                    const deskSlider = document.getElementById('included-list-desk');
-                    if(deskSlider) deskSlider.scrollTop = 0;
-                }
-                
+                // Safe search update
                 const searchVal = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
                 this.renderAllLists(searchVal);
                 
-                if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
+                if(delta > 0 && p.hasLink && p.linkedCode) this.checkSuggestion(p.linkedCode);
             },
 
             checkSuggestion(code) {
@@ -789,9 +815,13 @@
                 document.getElementById('info-title').innerText = p.nome;
                 
                 let desc = p.caracteristicas;
-                desc = desc.replace(/\n/g, '<br>');
-                desc = desc.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                desc = desc.replace(/\* /g, '• ');
+                if (desc) {
+                    desc = desc.replace(/\n/g, '<br>');
+                    desc = desc.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    desc = desc.replace(/\* /g, '• ');
+                } else {
+                    desc = "Sem informações adicionais.";
+                }
                 
                 document.getElementById('info-body').innerHTML = desc;
                 const mediaDiv = document.getElementById('info-media');
@@ -802,21 +832,17 @@
             scrollToCat(name) {
                 App.closeSheet('categories-sheet');
                 
-                // Clear search if any (Desktop or Mobile input)
                 const dSearch = document.getElementById('desk-search');
                 if(dSearch) dSearch.value = "";
                 
-                // Re-render to ensure category headers exist
                 App.renderAllLists();
 
                 setTimeout(() => {
                     const el = document.getElementById('cat-' + name);
                     if(el) {
-                        // Calculate offset based on sticky header height if visible
                         const stickyHeader = document.querySelector('.sticky-basket-container');
-                        // In desktop stickyHeader is display:none, offsetHeight will be 0.
                         const headerHeight = (stickyHeader && stickyHeader.offsetParent !== null) ? stickyHeader.offsetHeight : 0;
-                        const offset = headerHeight + 20; // 20px extra padding
+                        const offset = headerHeight + 20; 
 
                         const elementPosition = el.getBoundingClientRect().top;
                         const offsetPosition = elementPosition + window.pageYOffset - offset;
@@ -837,7 +863,7 @@
                 const list = document.getElementById('checkout-items');
                 list.innerHTML = Object.keys(this.cart).map(id => {
                     const p = this.data.find(x => x.id === id);
-                    return `<li>${this.cart[id]}x ${p.nome}</li>`;
+                    return `<li class="co-item"><span>${this.cart[id]}x ${p.nome}</span></li>`;
                 }).join('');
                 document.getElementById('checkout-modal').showModal();
             },
