@@ -7,9 +7,8 @@
         TARGET: 100/100 Lighthouse Performance & SEO
         TYPE: Single Page Application (SPA) / Local Business
         CHANGELOG:
-        - UX: Implementado Subcategorias com Rolagem Horizontal (Estilo iFood).
-        - CHECKOUT: Novos cards verticais no modal (Foto menor, controles na base).
-        - DATA: Parser de categorias "MÃE > FILHA" implementado.
+        - FIX CRÍTICO: Implementado sistema de "Fallback" para carregar produtos.json da raiz ou pasta.
+        - UX: Mensagem de erro visual amigável caso o JSON falhe.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -57,7 +56,7 @@
     <!-- Performance: Preconnect & Preload -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="produtos/produtos.json" as="fetch" crossorigin="anonymous">
+    <!-- Removido preload estrito do JSON para evitar warnings de 404 antes do JS tratar -->
 
     <!-- STRUCTURED DATA: JSON-LD (Schema.org Graph Architecture) -->
     <script type="application/ld+json">
@@ -850,7 +849,19 @@
 
             async init() {
                 try {
-                    const res = await fetch('produtos/produtos.json?v=' + Date.now());
+                    // Tenta carregar de locais comuns
+                    let res;
+                    const paths = ['produtos/produtos.json', 'produtos.json'];
+                    
+                    for (const path of paths) {
+                        try {
+                            res = await fetch(path + '?v=' + Date.now());
+                            if (res.ok) break;
+                        } catch (e) { continue; }
+                    }
+
+                    if (!res || !res.ok) throw new Error("Arquivo de produtos não encontrado em nenhum local padrão.");
+
                     const raw = await res.json();
                     
                     this.data = raw.map(p => {
@@ -896,7 +907,17 @@
                         };
                     });
                     this.renderHome();
-                } catch (e) { console.error(e); }
+                } catch (e) { 
+                    console.error("Erro Fatal:", e);
+                    document.getElementById('home-list').innerHTML = 
+                        `<div style="text-align:center; padding:40px; color:#666;">
+                            <p style="font-weight:bold; font-size:1.1rem; color:#d32f2f;">Ops! Não foi possível carregar os produtos.</p>
+                            <p>Verifique sua conexão ou tente novamente mais tarde.</p>
+                            <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; background:#ea1d2c; color:white; border-radius:8px; font-weight:600;">Tentar Novamente</button>
+                            <br><br>
+                            <small style="opacity:0.7">Erro: ${e.message}</small>
+                        </div>`;
+                }
             },
 
             formatDateBr(dateStr) {
