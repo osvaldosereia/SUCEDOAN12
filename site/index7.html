@@ -7,8 +7,9 @@
         TARGET: 100/100 Lighthouse Performance & SEO
         TYPE: Single Page Application (SPA) / Local Business
         CHANGELOG:
-        - FIX CRÍTICO: Implementado sistema de "Fallback" para carregar produtos.json da raiz ou pasta.
-        - UX: Mensagem de erro visual amigável caso o JSON falhe.
+        - FIX CRÍTICO: Normalização de 'categoria' para UpperCase (correção do bug de "Conteúdo não encontrado").
+        - LOGIC: Preservação da formatação original apenas para exibição (Subcategorias).
+        - CORE: Revertido método de fetch para padrão robusto compatível com legado.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -849,7 +850,7 @@
 
             async init() {
                 try {
-                    // Tenta carregar de locais comuns
+                    // FALLBACK ROBUSTO: Tenta carregar de múltiplos caminhos
                     let res;
                     const paths = ['produtos/produtos.json', 'produtos.json'];
                     
@@ -865,10 +866,16 @@
                     const raw = await res.json();
                     
                     this.data = raw.map(p => {
-                        // PARSE CATEGORY STRUCTURE "MAIN > SUB"
-                        const catRaw = (p.categoria || "OUTROS").trim();
+                        // === LÓGICA DE CATEGORIA HÍBRIDA ===
+                        // 1. catRaw: Mantém original para Subcategorias bonitas (ex: "Casa e Manutenção")
+                        const catRaw = (p.categoria || p.Categoria || "OUTROS").trim();
+                        
+                        // 2. catUpper: Normaliza para MAIÚSCULO para filtros da Home (ex: "CESTA BÁSICA")
+                        const catUpper = catRaw.toUpperCase();
+
+                        // Parse "MAIN > SUB" usando a string original
                         const parts = catRaw.split('>');
-                        const mainCat = parts[0].trim().toUpperCase();
+                        const mainCat = parts[0].trim().toUpperCase(); // Sempre compara categorias principais em UPPER
                         const subCat = parts.length > 1 ? parts[1].trim() : "Geral";
 
                         let appCat = "BAZAR E UTILIDADES"; 
@@ -896,14 +903,14 @@
                             isOffer: (p.Oferta === 'Sim'),
                             isBest: (p.Mais_Vendido === 'Sim'),
                             appCategory: appCat,
-                            subCategory: subCat, // New Field
+                            subCategory: subCat, // Exibe bonito: "Casa e Manutenção"
                             imagem: p.imagem ? (p.imagem.includes('/') ? `img/produtos/${p.imagem.split('/').pop()}` : `img/produtos/${p.imagem}`) : 'img/placeholder.jpg',
                             limit: parseInt(p.Limit || p.limit || 0),
                             caracteristicas: p.Caracteristicas || p.caracteristicas || "",
                             linkedCode: linkCode,
                             hasLink: (hasLink === 'Sim'),
                             validade: fmtVal,
-                            categoria: catRaw // FIX: was catStr (undefined)
+                            categoria: catUpper // FIX CRÍTICO: Retorna UPPERCASE para o filtro da Home funcionar
                         };
                     });
                     this.renderHome();
