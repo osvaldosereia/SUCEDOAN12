@@ -6,6 +6,9 @@
         ARCHITECT: SEO Code Architect (SCA) - Optimized Build
         TARGET: 100/100 Lighthouse Performance & SEO
         TYPE: Single Page Application (SPA) / Local Business
+        CHANGELOG:
+        - HERO: Copywriting focado em conversão e personalização.
+        - FOOTER: Adicionado Hub de Contato Local (Mapa, Reviews, Social).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -13,7 +16,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
     <!-- SEO: Technical & Canonical -->
-    <!-- [IMPORTANTE] Substitua a URL abaixo pelo domínio real do seu cliente -->
     <link rel="canonical" href="https://www.donaantonia.com.br/">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="author" content="Dona Antônia Mercadinho">
@@ -40,7 +42,6 @@
     <meta property="og:description" content="Personalize sua cesta básica e receba em casa em até 24h. Atendemos Cuiabá e Várzea Grande.">
     <meta property="og:url" content="https://www.donaantonia.com.br/">
     <meta property="og:site_name" content="Dona Antônia">
-    <!-- [IMPORTANTE] Garanta que esta imagem exista para o compartilhamento ficar bonito -->
     <meta property="og:image" content="https://www.donaantonia.com.br/img/og-social-share.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -191,7 +192,7 @@
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
 
-        /* --- SCROLLBAR STYLING (ELEGANT) --- */
+        /* --- SCROLLBAR STYLING --- */
         * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -213,7 +214,7 @@
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         .logo-circle { width: 32px; height: 32px; background: #fecaca; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
 
-        /* Location Pill (New from v9.10) */
+        /* Location Pill */
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
             padding: 6px 14px; border-radius: 50px; border: 1px solid var(--border-color);
@@ -223,16 +224,46 @@
 
         /* --- 3. HERO & HOME STYLES --- */
         #home-view { padding-top: var(--header-height); background: #fff; min-height: 100vh; }
-        .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid var(--border-color); background: #f8fafc; }
-        .hero h1 { font-size: 1.8rem; line-height: 1.1; color: var(--secondary); margin-bottom: 10px; }
-        .hero p { color: var(--text-light); margin-bottom: 0; font-size: 0.95rem; }
+        .hero { padding: 50px 0; text-align: center; border-bottom: 1px solid var(--border-color); background: #f8fafc; }
+        .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--secondary); margin-bottom: 12px; }
+        .hero h1 span { color: var(--primary); }
+        .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
         
-        /* Trust Badges (New from v9.10) */
-        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 10px; }
+        /* Trust Badges */
+        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
         .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 
+        /* FOOTER STYLES (NEW) */
+        .main-footer { background: #fff; border-top: 1px solid var(--border-color); padding: 40px 0 20px; margin-top: 40px; }
+        .footer-info { text-align: center; margin-bottom: 30px; }
+        .footer-info h3 { font-size: 1.4rem; color: var(--secondary); margin-bottom: 10px; font-weight: 800; }
+        .footer-info p { color: var(--text-light); margin-bottom: 6px; font-size: 0.95rem; }
+        .footer-info strong { color: var(--secondary); }
+
+        .footer-actions { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; 
+            max-width: 600px; margin: 0 auto 30px; padding: 0 10px;
+        }
+        @media(min-width: 640px) { .footer-actions { grid-template-columns: repeat(3, 1fr); } }
+
+        .f-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+            padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; 
+            background: #f8fafc; color: var(--secondary); font-weight: 600; font-size: 0.85rem;
+            text-decoration: none; transition: all 0.2s; text-align: center;
+        }
+        .f-btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+        .f-btn icon { font-size: 1.4rem; margin-bottom: 2px; }
+        
+        .f-btn.whatsapp { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .f-btn.group { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+        .f-btn.insta { background: #fdf2f8; color: #db2777; border-color: #fce7f3; }
+        .f-btn.google { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+
+        .copyright { text-align: center; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
+
         /* HOME GRID (Baskets) */
-        .home-grid-container { padding: 40px 0 80px; }
+        .home-grid-container { padding: 0px 0 60px; }
         .baskets-grid { 
             display: grid; grid-template-columns: 1fr; gap: 30px; 
             max-width: 1200px; margin: 0 auto; 
@@ -582,9 +613,9 @@
         <section class="hero">
             <div class="container">
                 <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em 24h</div></div>
-                <h1>Cestas Básicas<br>Dona Antônia</h1>
-                <p>Qualidade e economia na sua porta.</p>
-                <button class="btn-cta" onclick="document.getElementById('baskets-anchor').scrollIntoView()" aria-label="Ver Cestas Disponíveis" style="margin-top:15px; background:var(--primary); color:white; padding:10px 24px; border-radius:50px; font-weight:700;">Ver Cestas</button>
+                <h1>Monte a Cesta Básica <br>Perfeita para sua <span>Família</span></h1>
+                <p>Personalize com suas marcas favoritas (como Arroz Tio Alvino) ou escolha opções prontas. Economia real e entrega garantida.</p>
+                <button class="btn-cta" onclick="document.getElementById('baskets-anchor').scrollIntoView()" aria-label="Ver Cestas Disponíveis" style="margin-top:10px; background:var(--primary); color:white; padding:12px 30px; border-radius:50px; font-weight:800; font-size:1.1rem; box-shadow:0 4px 15px rgba(220,38,38,0.3);">Escolher Minha Cesta</button>
             </div>
         </section>
         
@@ -593,7 +624,42 @@
                 <div class="loader" style="margin: 20px auto; text-align:center;">Carregando...</div>
             </div>
         </div>
-        <footer style="text-align:center; padding: 40px 20px; color: var(--text-light); font-size:0.9rem;"><p>&copy; 2024 Dona Antônia Alimentos</p></footer>
+
+        <!-- NEW FOOTER / CONTACT HUB -->
+        <footer class="main-footer">
+            <div class="container">
+                <div class="footer-info">
+                    <h3>Dona Antônia Alimentos</h3>
+                    <p>📍 Jardim Nossa Senhora Aparecida, Cuiabá - MT</p>
+                    <p>📞 <strong>(65) 99681-3588</strong> | <strong>(65) 99815-0975</strong></p>
+                </div>
+
+                <div class="footer-actions">
+                    <a href="https://api.whatsapp.com/send?phone=5565996813588" target="_blank" class="f-btn whatsapp">
+                        <icon>💬</icon> Chamar no Zap
+                    </a>
+                    <a href="tel:5565996813588" class="f-btn">
+                        <icon>📞</icon> Ligar Agora
+                    </a>
+                    <a href="https://g.page/r/CaIREJtO1L6WEAE/review" target="_blank" class="f-btn google">
+                        <icon>⭐</icon> Avaliar Google
+                    </a>
+                    <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="f-btn insta">
+                        <icon>📸</icon> Instagram
+                    </a>
+                    <a href="https://chat.whatsapp.com/IOI3gSBLRVk4jGK2QMunp1" target="_blank" class="f-btn group">
+                        <icon>🎁</icon> Grupo Ofertas
+                    </a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Dona+Antonia+Cestas+Basicas+Cuiaba" target="_blank" class="f-btn">
+                        <icon>📍</icon> Ver no Mapa
+                    </a>
+                </div>
+                
+                <div class="copyright">
+                    &copy; 2024 Dona Antônia Alimentos. Todos os direitos reservados.
+                </div>
+            </div>
+        </footer>
     </main>
 
     <!-- CUSTOMIZER VIEW -->
