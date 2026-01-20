@@ -3,12 +3,11 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - UX Didactic Refinement
+        ARCHITECT: SEO Code Architect (SCA) - Brand Identity Update
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UX: Alerta de Crédito didático dentro do Modal (com botão "Ver Produtos").
-        - UI: Campo de Cupom reposicionado (abaixo) e tornado retrátil/discreto.
-        - LAYOUT: Ajustes finos de espaçamento e hierarquia visual no Checkout.
+        - BRAND: Substituição do placeholder "DA" pela Logo Oficial Dona Antônia.
+        - UI: Ajuste de CSS para renderização perfeita da imagem da logo no header.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -91,7 +90,9 @@
         
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
-        .logo-circle { width: 32px; height: 32px; background: #fecaca; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
+        
+        /* LOGO BRAND IMAGE */
+        .logo-brand-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
             font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
@@ -170,6 +171,7 @@
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; }
+        /* AJUSTE: Imagens maiores na cesta home (de 50px para 65px) e flex-basis aumentado */
         .hbc-item { flex: 0 0 85px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f9f9f9; border-radius: 8px; padding: 6px; }
         .hbc-item img { width: 65px; height: 65px; object-fit: contain; mix-blend-mode: multiply; } 
         .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #888; }
@@ -389,7 +391,10 @@
     <!-- HOME HEADER -->
     <header id="main-header">
         <div class="container header-inner">
-            <a href="#" class="logo" onclick="location.reload()"><div class="logo-circle">DA</div> Dona Antônia</a>
+            <a href="#" class="logo" onclick="location.reload()">
+                <img src="https://www.donaantonia.com.br/img/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo">
+                Dona Antônia
+            </a>
             <div class="location-pill">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Cuiabá & VG
