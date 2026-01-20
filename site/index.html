@@ -3,14 +3,13 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - UX/UI Refined Build
+        ARCHITECT: SEO Code Architect (SCA) - Final Polish Build
         TARGET: 100/100 Lighthouse Performance
-        UX PATTERN: iFood-Like Navigation & Smart Typography
         CHANGELOG:
-        - TYPOGRAPHY: Algoritmo 'SmartTitleCase' para nomes de produtos (Ex: "Sabão em Pó YPÊ 500g").
-        - HEADER: Novo App-Header (Voltar | Busca | Ajuda) fixo e compacto.
-        - LAYOUT: Desktop contido em 1280px para leitura otimizada.
-        - PERFORMANCE: Search Input com debounce nativo via evento 'input'.
+        - DESKTOP: Adicionadas setas de navegação (Scroll Buttons) nos carrosseis.
+        - MOBILE: Barra inferior (Cart Bar) compactada e refinada.
+        - CONTENT: FAQ restaurado com todas as perguntas originais e visual box.
+        - TYPOGRAPHY: Mantida lógica SmartTitleCase.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -58,7 +57,7 @@
             --bg-body: #f7f7f7; 
             --border-color: #f2f2f2;
             --header-height: 60px; 
-            --app-header-height: 56px; /* Altura compacta estilo App */
+            --app-header-height: 56px; 
             --sidebar-width: 340px;
         }
         
@@ -70,7 +69,6 @@
             background-color: var(--bg-body);
         }
         
-        /* Container Principal: Limita a largura no Desktop */
         .container { max-width: 1280px; margin: 0 auto; padding: 0 16px; width: 100%; }
         
         img { display: block; max-width: 100%; height: auto; }
@@ -89,7 +87,6 @@
             background: #ffffff; border-bottom: 1px solid #f0f0f0; z-index: 1000; 
             display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
         }
-        /* Oculta header principal quando no modo customizador */
         body.customizer-mode #main-header { display: none !important; }
         
         .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
@@ -106,26 +103,22 @@
         .app-header {
             position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
             background: #fff; height: var(--app-header-height);
-            border-bottom: 1px solid #f0f0f0; display: none; /* Hidden by default */
+            border-bottom: 1px solid #f0f0f0; display: none; 
             align-items: center; padding: 0 16px; gap: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         body.customizer-mode .app-header { display: flex; }
 
-        /* Voltar Button */
         .ah-back-btn { 
             color: var(--primary); font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
-            padding: 4px; margin-left: -4px;
+            padding: 4px; margin-left: -4px; cursor: pointer;
         }
 
-        /* Busca Compacta */
-        .ah-search-box {
-            flex: 1; position: relative;
-        }
+        .ah-search-box { flex: 1; position: relative; }
         .ah-search-input {
             width: 100%; background: #f2f2f2; border: none; border-radius: 8px;
             padding: 8px 12px 8px 36px; font-size: 0.9rem; color: #333; outline: none;
-            height: 36px; /* Altura compacta */
+            height: 36px; 
         }
         .ah-search-input::placeholder { color: #888; }
         .ah-search-icon {
@@ -133,11 +126,10 @@
             color: #ea1d2c; font-size: 1rem;
         }
 
-        /* Ajuda Button (Integrado) */
         .ah-help-btn {
             font-size: 0.9rem; font-weight: 600; color: var(--secondary);
             display: flex; align-items: center; justify-content: center;
-            width: 32px; height: 32px; /* border-radius: 50%; background: #f8fafc; */
+            width: 32px; height: 32px; cursor: pointer;
         }
 
         /* --- 4. HERO & HOME CONTENT --- */
@@ -188,24 +180,40 @@
 
         /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { 
-            /* Espaço para o header fixo e footer */
             padding-top: var(--app-header-height); 
             padding-bottom: 100px; 
             min-height: 100vh; background: #f7f7f7; 
         }
 
         /* --- 6. PRODUCTS --- */
-        .subcat-section { margin-bottom: 30px; margin-top: 20px; }
+        .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; } /* Relative for buttons */
         .subcat-title { 
             font-size: 1.1rem; font-weight: 800; color: #3e3e3e; 
             margin: 0 0 12px 16px; letter-spacing: -0.5px;
         }
         
+        /* Wrapper para carrossel e botões */
+        .carousel-wrapper { position: relative; }
+
         .horizontal-products-row { 
             display: flex; gap: 12px; overflow-x: auto; 
             padding: 0 16px 16px; scroll-snap-type: x mandatory; 
+            scroll-behavior: smooth;
         }
         .horizontal-products-row::-webkit-scrollbar { display: none; }
+        
+        /* Botões de Scroll Desktop (Setas) */
+        .scroll-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 40px; height: 40px; border-radius: 50%;
+            background: white; border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 10; color: #333; transition: all 0.2s;
+        }
+        .scroll-btn:hover { background: #f8fafc; transform: translateY(-50%) scale(1.1); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+        .scroll-btn.left { left: -20px; }
+        .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
             min-width: 160px; max-width: 160px;
@@ -260,24 +268,25 @@
         .desktop-sidebar { display: none; }
         
         @media(min-width: 1024px) {
+            /* Mostrar setas no desktop */
+            .scroll-btn { display: flex; }
+            
             #customizer-view:not(.hidden) { 
                 padding-bottom: 0; display: grid !important; 
                 grid-template-columns: 1fr var(--sidebar-width); gap: 40px; 
                 max-width: 1280px; margin: 0 auto; padding: 40px 20px; align-items: start;
-                /* Compensa o header fixo no desktop para não cobrir conteúdo */
                 padding-top: calc(var(--app-header-height) + 20px); 
             }
             .ifood-cart-bar { display: none; }
             
             .desktop-sidebar {
                 display: flex; flex-direction: column;
-                position: sticky; top: 90px; /* Abaixo do header */
+                position: sticky; top: 90px;
                 background: white; border-radius: 16px;
                 padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
                 max-height: calc(100vh - 110px); overflow-y: auto;
             }
             
-            /* Ajustes Sidebar */
             .ds-section-title { font-size: 1rem; font-weight: 700; color: #2e2e2e; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
             .ds-divider { height: 1px; background: #f0f0f0; margin: 20px 0; }
             .ds-total { font-size: 1.4rem; font-weight: 700; color: #2e2e2e; text-align: right; margin: 10px 0 20px; }
@@ -295,19 +304,29 @@
             .ci-trash { color: #b91c1c; padding: 4px; cursor: pointer; }
         }
 
-        /* --- 8. FLOATING CART BAR (MOBILE) --- */
+        /* --- 8. FLOATING CART BAR (MOBILE - COMPACTO REFINADO) --- */
         .ifood-cart-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #ffffff; border-top: 1px solid #f0f0f0;
-            padding: 12px 16px; z-index: 9999;
+            padding: 10px 16px; /* Padding reduzido para compactação */
+            z-index: 9999;
             display: flex; align-items: center; justify-content: space-between;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
             transform: translateY(100%); transition: transform 0.3s ease;
-            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
         }
         .ifood-cart-bar.visible { transform: translateY(0); }
-        .icb-total { font-size: 1.1rem; font-weight: 700; color: #2e2e2e; }
-        .icb-btn { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+        .icb-info { display: flex; flex-direction: column; }
+        .icb-label { font-size: 0.7rem; color: #717171; margin-bottom: 2px; }
+        .icb-total { font-size: 1rem; font-weight: 700; color: #2e2e2e; }
+        
+        .icb-btn { 
+            background: var(--primary); color: white;
+            padding: 8px 16px; /* Botão mais compacto */
+            border-radius: 8px;
+            font-weight: 600; font-size: 0.85rem;
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
 
         /* --- 9. MODALS & OVERLAYS --- */
         .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000; opacity: 0; pointer-events: none; transition: opacity 0.3s; display: flex; flex-direction: column; justify-content: flex-end; }
@@ -321,6 +340,11 @@
         .welcome-card { background: white; padding: 30px 24px; border-radius: 16px; text-align: center; max-width: 90%; width: 360px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.4s ease; }
         .welcome-overlay.visible .welcome-card { transform: translateY(0); }
         .welcome-btn { background: var(--primary); color: white; border-radius: 8px; padding: 12px 30px; font-weight: 600; font-size: 1rem; width: 100%; }
+
+        /* FAQ RESTAURADO */
+        details.faq-box { margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+        details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
+        .faq-text { padding: 15px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
 
         /* Toasts */
         .sug-toast { position: fixed; bottom: 100px; left: 16px; right: 16px; background: white; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 4px solid var(--primary); transform: translateY(20px); opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 9998; }
@@ -435,7 +459,7 @@
     <!-- CUSTOMIZER VIEW -->
     <div id="customizer-view" class="hidden">
         
-        <!-- NEW APP HEADER (IFOOD STYLE) -->
+        <!-- APP HEADER -->
         <div class="app-header">
             <div class="ah-back-btn" onclick="App.goHome()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
@@ -473,7 +497,7 @@
             </div>
         </aside>
 
-        <!-- FLOATING CART BAR -->
+        <!-- FLOATING CART BAR (MOBILE) -->
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
                 <span class="icb-label">Total sem taxa de entrega</span>
@@ -507,6 +531,9 @@
                 <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-text">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação (Alelo, Sodexo, Ticket, etc).</div></details>
                 <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
                 <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
+                <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho.</div></details>
+                <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto.</div></details>
+                <details class="faq-box"><summary>De onde vocês são?</summary><div class="faq-text">Somos de Cuiabá - MT, localizados no bairro Jardim Nossa Senhora Aparecida. Atendemos com frota própria.</div></details>
             </div>
         </div>
     </div>
@@ -722,7 +749,6 @@
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                // Uses the input value or null
                 const query = filter ? filter : "";
 
                 if (query && query.length > 1) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
@@ -741,11 +767,18 @@
                         });
 
                         for (const [subName, subItems] of Object.entries(subGroups)) {
+                            // Unique ID for Scrolling
+                            const rowId = `row-${mainCat}-${subName}`.replace(/\s+/g, '-').toLowerCase();
+                            
                             html += `
                             <div class="subcat-section">
                                 <div class="subcat-title">${subName}</div>
-                                <div class="horizontal-products-row">
-                                    ${subItems.map(p => this.buildCard(p)).join('')}
+                                <div class="carousel-wrapper">
+                                    <div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})">‹</div>
+                                    <div class="horizontal-products-row" id="${rowId}">
+                                        ${subItems.map(p => this.buildCard(p)).join('')}
+                                    </div>
+                                    <div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})">›</div>
                                 </div>
                             </div>`;
                         }
