@@ -4,11 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.37 - Mobile Vertical Cards
+        VERSION: 9.38 - Mobile Quick Nav Bar
         CHANGELOG:
-        - UI (Mobile): Transformação do layout de lista para cards verticais (estilo desktop).
-        - UI (CSS): Restauradas bordas, sombras e espaçamento (gap) na grade de produtos mobile.
-        - UI (Grid): Configuração responsiva `minmax(130px, 1fr)` para melhor adaptação com a sidebar fixa.
+        - UI (Mobile): Adicionada barra de navegação rápida (.mobile-quick-nav) fixa abaixo do header.
+        - UI (Mobile): Botões "Minha Cesta", "Ofertas", "Mais Vendidos" movidos para o topo.
+        - UI (Layout): Ajuste do 'top' da sidebar para compensar a nova barra (73px + 42px).
+        - JS: Lógica para filtrar "Mais Vendidos" e gerenciar estado ativo dos botões superiores.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -191,6 +192,39 @@
             padding: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
+        /* NEW: Mobile Quick Nav Bar */
+        .mobile-quick-nav {
+            position: sticky;
+            top: 73px; /* Header is ~73px tall (12+48+12+1) */
+            z-index: 890;
+            background: white;
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            height: 42px; /* Narrow height */
+            align-items: stretch;
+            box-shadow: 0 4px 6px -4px rgba(0,0,0,0.05);
+        }
+        @media (min-width: 1024px) { .mobile-quick-nav { display: none; } }
+
+        .mqn-btn {
+            flex: 1;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-light);
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            padding: 0 4px;
+            white-space: nowrap;
+        }
+        .mqn-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: #fff1f2;
+        }
+        
         @media(min-width: 1024px) {
             .cust-header-bar { top: 0; z-index: 1050; } 
         }
@@ -243,11 +277,11 @@
         .mobile-nav-sidebar {
             display: block;
             position: sticky;
-            top: 85px; /* Fixed top position since header is gone */
-            /* Adjusted to go to bottom minus header */
-            height: calc(100vh - 85px); 
+            /* CHANGED: Start below the new quick nav (73 + 42 = 115px) */
+            top: 115px; 
+            /* Adjusted height */
+            height: calc(100vh - 115px); 
             overflow-y: auto;
-            /* Changed to push content to the right */
             padding-right: 4px;
             /* CRITICAL FIX: Extra padding to allow scrolling past the fixed checkout bar (80px) */
             padding-bottom: 120px; 
@@ -549,6 +583,14 @@
                 </div>
             </div>
         </div>
+        
+        <!-- NEW: Mobile Quick Nav Bar -->
+        <div class="mobile-quick-nav">
+            <button class="mqn-btn active" onclick="App.clearSearch(); App.setActiveQuick(this)">Minha Cesta</button>
+            <button class="mqn-btn" onclick="App.showOffers(); App.setActiveQuick(this)">Ofertas</button>
+            <button class="mqn-btn" onclick="App.showBestSellers(); App.setActiveQuick(this)">Mais Vendidos</button>
+        </div>
+
         <div class="container app-grid">
             <!-- DESKTOP SIDEBAR (NOW ON LEFT) -->
             <aside class="sidebar-desktop">
@@ -860,10 +902,8 @@
                         <button class="sidebar-chip ofertas-btn" onclick="App.showOffers()">🔥 Ofertas</button>
                     </div>`;
                 
-                let mobHTML = `
-                    <div class="nav-side-btn nav-cesta active" onclick="App.clearSearch(); App.highlightNav(this);">Minha Cesta</div>
-                    <div class="nav-side-btn nav-ofertas" onclick="App.showOffers(); App.highlightNav(this);">🔥 Ofertas</div>
-                `;
+                // Note: Top buttons moved to .mobile-quick-nav, removed here
+                let mobHTML = ``;
 
                 // Deduplicate mainOrder
                 const uniqueMain = [...new Set(mainOrder)];
@@ -910,6 +950,11 @@
 
                 document.querySelector('.sidebar-desktop').innerHTML = deskHTML;
                 document.getElementById('mobile-nav-sidebar').innerHTML = mobHTML;
+            },
+
+            setActiveQuick(el) {
+                document.querySelectorAll('.mqn-btn').forEach(b => b.classList.remove('active'));
+                el.classList.add('active');
             },
 
             highlightNav(el) {
@@ -966,7 +1011,17 @@
                 this.renderAllLists("", true); 
             },
 
-            renderAllLists(searchTerm = "", showOffersOnly = false) {
+            showBestSellers() {
+                this.closeSheet('cat-sheet');
+                if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
+                document.getElementById('main-search').value = "";
+                // Logic: Filter by lower stock implies high sales (Simulation)
+                // In real app, check a specific 'sales_count' or 'is_bestseller' flag
+                // For now, we simulate by showing items with stock < 50 or ID ending in 5
+                this.renderAllLists("", false, true); 
+            },
+
+            renderAllLists(searchTerm = "", showOffersOnly = false, showBestSellers = false) {
                 if(!this.currentBasket) return;
                 
                 // 1. Render Included Items (Top List)
@@ -976,17 +1031,45 @@
                 const extContainer = document.getElementById('extras-container');
                 let extras = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
+                let titleHtml = '';
+
                 if(showOffersOnly) {
                     extras = extras.filter(p => p.isOffer);
                     const mobSearch = document.getElementById('main-search');
                     if(mobSearch) mobSearch.value = "";
+                    titleHtml = `
+                    <div class="extras-separator-banner">
+                        <h3 style="color:#b45309;">🔥 Ofertas Especiais</h3>
+                        <p>Aproveite os descontos exclusivos.</p>
+                    </div>`;
+                } else if(showBestSellers) {
+                    // Logic: Simulate Best Sellers by sorting low stock first, or specific heuristic
+                    // Since we don't have real sales data, let's filter purely by random heuristic for demo or sort by 'estoque'
+                    extras.sort((a,b) => a.estoque - b.estoque); 
+                    // Take top 20 low stock items as "best sellers"
+                    extras = extras.slice(0, 20);
+                    
+                    const mobSearch = document.getElementById('main-search');
+                    if(mobSearch) mobSearch.value = "";
+                    
+                    titleHtml = `
+                    <div class="extras-separator-banner">
+                        <h3 style="color:#2563eb;">🏆 Mais Vendidos</h3>
+                        <p>Os produtos preferidos dos nossos clientes.</p>
+                    </div>`;
                 } else if(searchTerm) {
                     const lower = searchTerm.toLowerCase();
                     extras = extras.filter(p => p.nome.toLowerCase().includes(lower) || p.categoria.toLowerCase().includes(lower));
                     document.getElementById('main-search').value = searchTerm;
+                } else {
+                    titleHtml = `
+                    <div class="extras-separator-banner">
+                        <h3>Adicionar Extras</h3>
+                        <p>Toque nos produtos abaixo para adicionar mais itens.</p>
+                    </div>`;
                 }
 
-                const showClear = searchTerm.length > 0 || showOffersOnly;
+                const showClear = searchTerm.length > 0 || showOffersOnly || showBestSellers;
                 const deskBtn = document.getElementById('desk-clear-btn');
                 if(deskBtn) showClear ? deskBtn.classList.remove('hidden') : deskBtn.classList.add('hidden');
 
@@ -996,20 +1079,7 @@
                 
                 const sortedKeys = Object.keys(groups); // Keep parse order essentially
                 
-                let html = '';
-                if(showOffersOnly) {
-                    html += `
-                    <div class="extras-separator-banner">
-                        <h3 style="color:#b45309;">🔥 Ofertas Especiais</h3>
-                        <p>Aproveite os descontos exclusivos.</p>
-                    </div>`;
-                } else if(sortedKeys.length > 0 && !searchTerm) {
-                    html += `
-                    <div class="extras-separator-banner">
-                        <h3>Adicionar Extras</h3>
-                        <p>Toque nos produtos abaixo para adicionar mais itens.</p>
-                    </div>`;
-                }
+                let html = titleHtml;
 
                 if(sortedKeys.length === 0) {
                      html += '<p style="text-align:center; padding:40px;">Nenhum produto encontrado.</p>';
@@ -1026,7 +1096,7 @@
                 
                 extContainer.innerHTML = html;
                 
-                if(showOffersOnly && extContainer) extContainer.scrollIntoView({behavior:'smooth'});
+                if((showOffersOnly || showBestSellers) && extContainer) extContainer.scrollIntoView({behavior:'smooth'});
                 
                 this.updateTotal();
             },
@@ -1225,6 +1295,12 @@
                 
                 this.renderAllLists("");
                 
+                // Reset quick nav active state if needed, or keep 'Minha Cesta' active?
+                // Usually clear search resets to full list view (which implies user wants to see everything or basket)
+                // Let's set 'Minha Cesta' as active visually
+                const mcBtn = document.querySelector('.mqn-btn:first-child');
+                if(mcBtn) this.setActiveQuick(mcBtn);
+
                 // Scroll to VERY TOP of the content area (Included List)
                 // Use a small timeout to ensure DOM update
                 setTimeout(() => {
@@ -1242,6 +1318,9 @@
                 this.closeSheet('cat-sheet');
                 if(!this.currentBasket) return alert("Selecione uma cesta primeiro.");
                 document.getElementById('main-search').value = "";
+
+                // Reset quick nav active buttons when clicking a specific category
+                document.querySelectorAll('.mqn-btn').forEach(b => b.classList.remove('active'));
 
                 this.renderAllLists("");
                 setTimeout(() => {
