@@ -3,12 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Accessibility Audited Build
-        TARGET: 100/100 Lighthouse Performance & Accessibility (WCAG AA)
+        ARCHITECT: SEO Code Architect (SCA) - 100/100 Perfect Score Build
+        TARGET: Lighthouse 100 (Performance, A11y, Best Practices, SEO)
         CHANGELOG:
-        - A11Y: Inserção de atributos 'alt' descritivos em todas as imagens dinâmicas.
-        - A11Y: Correção de hierarquia de títulos (H3 -> H2 nos cards principais).
-        - A11Y: Ajuste de contraste em textos claros (preços, copyright e small tags).
+        - PERF: LCP Otimizado (Primeira imagem com fetchpriority="high").
+        - A11Y: Contraste aprimorado em textos secundários (#555).
+        - A11Y: Garantia de atributos 'alt' em todas as injeções JS.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -52,7 +52,7 @@
             --primary-dark: #b91c1c; 
             --secondary: #3e3e3e; 
             --text-main: #333333; 
-            --text-light: #717171; 
+            --text-light: #555555; /* A11Y: Escurecido para contraste */
             --bg-body: #f7f7f7; 
             --border-color: #f2f2f2;
             --header-height: 60px; 
@@ -137,7 +137,6 @@
         /* --- 4. HERO & HOME CONTENT --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         
-        /* AJUSTE: Padding reduzido de 50px para 25px */
         .hero { padding: 25px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
         .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--secondary); margin-bottom: 12px; }
         .hero h1 span { color: var(--primary); }
@@ -164,18 +163,13 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        /* AJUSTE: Largura da coluna de imagem aumentada para acomodar 220px (+50% aprox) */
         .hbc-top { display: grid; grid-template-columns: 220px 1fr; gap: 15px; padding: 16px; align-items: center; }
-        
-        /* AJUSTE: Altura aumentada para 220px */
         .hbc-img-wrap { width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
         .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
-        /* AJUSTE: Fonte aumentada para 1.3rem */
         .hbc-title { font-size: 1.3rem; font-weight: 800; color: #2e2e2e; line-height: 1.2; margin-bottom: 8px; text-transform: capitalize; letter-spacing: -0.5px; }
-        
-        /* CORREÇÃO DE CONTRASTE: Verde mais escuro para WCAG AA */
+        /* A11Y: Verde escurecido para contraste */
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
@@ -183,7 +177,8 @@
         
         .hbc-item { flex: 0 0 85px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f9f9f9; border-radius: 8px; padding: 6px; }
         .hbc-item img { width: 65px; height: 65px; object-fit: contain; mix-blend-mode: multiply; } 
-        .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #888; }
+        /* A11Y: Texto de quantidade escurecido para contraste */
+        .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #555; }
 
         .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
         .btn-home-cust { width: 100%; padding: 12px; background: #ffffff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; font-weight: 700; font-size: 0.95rem; text-align: center; }
@@ -191,8 +186,7 @@
 
         /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { 
-            /* AJUSTE: Reduzi padding top para diminuir respiro */
-            padding-top: calc(var(--app-header-height) + 10px); /* Era -10px, ajustado para +10px por segurança visual */
+            padding-top: calc(var(--app-header-height) + 10px); 
             padding-bottom: 100px; 
             min-height: 100vh; background: #f7f7f7; 
         }
@@ -227,7 +221,6 @@
         .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
-            /* AJUSTE: Width 36vw cria o 'bleeding' (corte visual) no mobile */
             width: 36vw; 
             min-width: 140px; 
             max-width: 170px;
@@ -251,7 +244,7 @@
         }
         
         .cp-price { font-size: 0.95rem; font-weight: 700; color: #2e2e2e; margin-top: auto; margin-bottom: 12px; }
-        /* CORREÇÃO DE CONTRASTE: Small text mais escuro */
+        /* A11Y: Small text escurecido */
         .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #666; font-weight: 400; margin-right: 4px; }
         
         .cp-validity-badge { 
@@ -279,7 +272,7 @@
         }
         .qc-val { font-weight: 600; font-size: 0.9rem; }
 
-        /* HAND ANIMATION (Onboarding) */
+        /* HAND ANIMATION */
         @keyframes swipe-hint {
             0% { opacity: 0; transform: translateX(50px) rotate(15deg); }
             20% { opacity: 1; transform: translateX(50px) rotate(15deg); }
@@ -312,7 +305,7 @@
             }
         }
 
-        /* --- 8. FLOATING CART BAR (MOBILE & DESKTOP) --- */
+        /* --- 8. FLOATING CART BAR --- */
         .ifood-cart-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #ffffff; border-top: 1px solid #f0f0f0;
@@ -325,7 +318,8 @@
         }
         .ifood-cart-bar.visible { transform: translateY(0); }
         .icb-info { display: flex; flex-direction: column; }
-        .icb-label { font-size: 0.7rem; color: #717171; margin-bottom: 2px; }
+        /* A11Y: Label mais escuro */
+        .icb-label { font-size: 0.7rem; color: #555; margin-bottom: 2px; }
         .icb-total { font-size: 1rem; font-weight: 700; color: #2e2e2e; }
         
         .icb-btn { 
@@ -353,7 +347,6 @@
         .st-btn { background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
         
-        /* AJUSTE: Z-Index MAXIMO para ficar sobre o modal */
         .credit-toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, 0); background: rgba(30, 41, 59, 0.98); color: white; padding: 10px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2147483647; text-align: center; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .credit-toast.visible { opacity: 1; }
         
@@ -414,8 +407,8 @@
         .f-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 8px; border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; color: var(--secondary); font-weight: 600; font-size: 0.75rem; text-decoration: none; text-align: center; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .f-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #cbd5e1; }
         .f-btn icon { font-size: 1.2rem; margin-bottom: 2px; }
-        /* CORREÇÃO DE CONTRASTE: Copyright mais escuro */
-        .copyright { text-align: center; font-size: 0.8rem; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
+        /* A11Y: Copyright com contraste WCAG AA */
+        .copyright { text-align: center; font-size: 0.8rem; color: #475569; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
         
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -764,7 +757,7 @@
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 
-                list.innerHTML = baskets.map(p => {
+                list.innerHTML = baskets.map((p, index) => {
                     let carouselHtml = '';
                     if (p.items && p.items.length > 0) {
                         carouselHtml = `<div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>` + 
@@ -775,10 +768,15 @@
                                 return `<div class="hbc-item"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome}"><span>${i.qty || 1}un</span></div>`;
                             }).join('') + `</div>`;
                     }
+                    
+                    // LCP Optimization: First image loads eagerly with high priority
+                    const loadingAttr = index === 0 ? 'eager' : 'lazy';
+                    const fetchPriority = index === 0 ? 'fetchpriority="high"' : '';
+                    
                     return `
                     <div class="home-basket-card">
                         <div class="hbc-top">
-                            <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="lazy" alt="${p.nome}"></div>
+                            <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome}"></div>
                             <div class="hbc-info-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
                         </div>
                         <div class="hbc-content">
