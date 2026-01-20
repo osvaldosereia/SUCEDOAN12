@@ -7,10 +7,9 @@
         TARGET: 100/100 Lighthouse Performance & SEO
         TYPE: Single Page Application (SPA) / Local Business
         CHANGELOG:
-        - UX: Implementado fluxo "iFood Style" de carrinho.
-        - UI: Barra inferior flutuante com Total e Botão "Ver Cesta".
-        - UI: Modal de Checkout unificado com slider de produtos e pagamento.
-        - DESIGN: Fundo cinza (#f7f7f7) e cards brancos sem borda (Sombra suave).
+        - UX: Implementado Subcategorias com Rolagem Horizontal (Estilo iFood).
+        - CHECKOUT: Novos cards verticais no modal (Foto menor, controles na base).
+        - DATA: Parser de categorias "MÃE > FILHA" implementado.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -394,22 +393,29 @@
             cursor: pointer; display: flex; align-items: center; gap: 8px;
         }
 
-        /* --- 6. PRODUCTS GRID (APP STYLE) --- */
-        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
-        @media(min-width: 768px) { .products-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
-
-        .cat-header { 
-            position: sticky; top: 0; z-index: 800;
-            background: #f7f7f7; color: #2e2e2e;
-            padding: 16px; font-size: 1rem; font-weight: 700; 
-            margin: 0;
+        /* --- 6. SUBCATEGORY & HORIZONTAL SCROLL (NEW) --- */
+        .subcat-section { margin-bottom: 30px; }
+        .subcat-title { 
+            font-size: 1.1rem; font-weight: 800; color: #3e3e3e; 
+            margin: 0 0 12px 16px; letter-spacing: -0.5px;
+        }
+        
+        .horizontal-products-row { 
+            display: flex; gap: 12px; overflow-x: auto; 
+            padding: 0 16px 16px; scroll-snap-type: x mandatory; 
+        }
+        .horizontal-products-row::-webkit-scrollbar { display: none; } /* Hide scrollbar for cleaner mobile look */
+        
+        .horizontal-products-row .card-prod { 
+            min-width: 160px; max-width: 160px; /* Fixed width for consistent cards */
+            scroll-snap-align: start; flex-shrink: 0;
         }
 
         /* Card Produto Minimalista */
         .card-prod {
             background: #fff; border: none; border-radius: 12px;
             padding: 12px; display: flex; flex-direction: column;
-            position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #eef9f2; color: #2d6c4a; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
@@ -554,7 +560,7 @@
         }
         .credit-sub-toast.visible { opacity: 1; }
 
-        /* CHECKOUT MODAL (FULL SCREEN / SHEET STYLE) */
+        /* CHECKOUT MODAL (FULL EXPERIENCE) */
         dialog.modal-checkout {
             margin: auto; inset: 0; position: fixed; border: none; border-radius: 16px 16px 0 0;
             width: 100%; height: 90vh; max-width: 600px; bottom: 0; top: auto;
@@ -568,22 +574,43 @@
 
         .co-header { padding: 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
         .co-title { font-size: 1.1rem; font-weight: 700; color: #2e2e2e; }
-        .co-close { font-size: 1.5rem; color: #999; padding: 5px; }
+        .co-close { font-size: 1.5rem; color: #999; padding: 5px; cursor: pointer; }
 
         .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #f7f7f7; }
         
         .co-section-title { font-size: 0.9rem; font-weight: 700; color: #717171; margin-bottom: 10px; text-transform: uppercase; }
         
-        /* HORIZONTAL SCROLL IN CHECKOUT (Requested) */
+        /* HORIZONTAL SCROLL IN CHECKOUT (NEW) */
         .co-horizontal-list {
             display: flex; gap: 10px; overflow-x: auto; 
             padding: 5px 0 15px 0; margin-bottom: 20px;
         }
-        /* Reuse card style inside modal but slightly smaller */
-        .co-horizontal-list .card-inc {
-            min-width: 220px; background: white; border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 10px;
-            border-radius: 12px;
+        .co-horizontal-list::-webkit-scrollbar { display: none; }
+
+        /* CHECKOUT CARD (NEW VERTICAL STYLE) */
+        .co-card {
+            min-width: 140px; max-width: 140px;
+            background: white; border-radius: 12px;
+            padding: 10px; display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+        .co-card-img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 8px; mix-blend-mode: multiply; }
+        .co-card-title { font-size: 0.75rem; color: #3e3e3e; text-align: center; font-weight: 500; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; margin-bottom: 6px; width: 100%; }
+        .co-card-price { font-size: 0.85rem; font-weight: 700; color: #2e2e2e; margin-bottom: 8px; }
+        
+        /* Controls Row in Checkout Card */
+        .co-card-controls { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        
+        .qty-mini-co { 
+            display: flex; align-items: center; background: #f5f5f5; border-radius: 6px; height: 28px; border: 1px solid #e0e0e0; flex: 1; margin-right: 6px;
+        }
+        .qm-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #555; cursor: pointer; }
+        .qm-val { font-size: 0.8rem; font-weight: 700; flex: 1; text-align: center; }
+
+        .co-trash-btn { 
+            width: 28px; height: 28px; border-radius: 6px; background: #fee2e2; color: #b91c1c; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; 
         }
 
         .co-total-row { 
@@ -827,13 +854,18 @@
                     const raw = await res.json();
                     
                     this.data = raw.map(p => {
-                        const catStr = (p.categoria || "").toUpperCase();
+                        // PARSE CATEGORY STRUCTURE "MAIN > SUB"
+                        const catRaw = (p.categoria || "OUTROS").trim();
+                        const parts = catRaw.split('>');
+                        const mainCat = parts[0].trim().toUpperCase();
+                        const subCat = parts.length > 1 ? parts[1].trim() : "Geral";
+
                         let appCat = "BAZAR E UTILIDADES"; 
-                        if (catStr.includes('ALIMENTOS') || catStr.includes('MERCEARIA') || catStr.includes('GRÃOS') || catStr.includes('TEMPEROS') || catStr.includes('MOLHOS')) appCat = "MERCEARIA E ALIMENTOS";
-                        else if (catStr.includes('MATINAIS') || catStr.includes('BISCOITOS') || catStr.includes('BEBIDAS') || catStr.includes('LANCHE')) appCat = "CAFÉ DA MANHÃ E LANCHES";
-                        else if (catStr.includes('LIMPEZA') || catStr.includes('LAVANDERIA') || catStr.includes('SABÃO')) appCat = "LIMPEZA E LAVANDERIA";
-                        else if (catStr.includes('HIGIENE') || catStr.includes('PESSOAL') || catStr.includes('COSMÉTICOS')) appCat = "CUIDADOS PESSOAIS";
-                        else if (catStr.includes('BAZAR') || catStr.includes('UTILIDADES')) appCat = "BAZAR E UTILIDADES";
+                        if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
+                        else if (mainCat.includes('CAFÉ') || mainCat.includes('MATINAIS')) appCat = "CAFÉ DA MANHÃ E LANCHES";
+                        else if (mainCat.includes('LIMPEZA') || mainCat.includes('LAVANDERIA')) appCat = "LIMPEZA E LAVANDERIA";
+                        else if (mainCat.includes('HIGIENE') || mainCat.includes('PESSOAL')) appCat = "CUIDADOS PESSOAIS";
+                        else if (mainCat.includes('BAZAR') || mainCat.includes('UTILIDADES')) appCat = "BAZAR E UTILIDADES";
 
                         let rawVal = p.validade || p.Validade || "";
                         let fmtVal = "";
@@ -853,6 +885,7 @@
                             isOffer: (p.Oferta === 'Sim'),
                             isBest: (p.Mais_Vendido === 'Sim'),
                             appCategory: appCat,
+                            subCategory: subCat, // New Field
                             imagem: p.imagem ? (p.imagem.includes('/') ? `img/produtos/${p.imagem.split('/').pop()}` : `img/produtos/${p.imagem}`) : 'img/placeholder.jpg',
                             limit: parseInt(p.Limit || p.limit || 0),
                             caracteristicas: p.Caracteristicas || p.caracteristicas || "",
@@ -960,9 +993,6 @@
             },
 
             renderAllLists(filter = null) {
-                // Now only updates desktop slider and calculation
-                // Mobile cart is hidden until checkout
-                
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
@@ -970,40 +1000,62 @@
                 const query = (filter !== null) ? filter : searchValue;
 
                 if (query && query.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
-                products.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
-
-                const groups = {};
-                products.forEach(p => {
-                    if(!groups[p.appCategory]) groups[p.appCategory] = [];
-                    groups[p.appCategory].push(p);
-                });
-
+                
+                // MAIN CATEGORIES ORDER
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
                 let html = "";
-                order.forEach(catName => {
-                    if(groups[catName] && groups[catName].length > 0) {
-                        html += `<div id="cat-${catName}" class="cat-header">${catName}</div>
-                        <div class="products-grid">
-                            ${groups[catName].map(p => this.buildCard(p)).join('')}
-                        </div>`;
+
+                order.forEach(mainCat => {
+                    // Filter items for this Main Category
+                    const itemsInMain = products.filter(p => p.appCategory === mainCat);
+                    
+                    if(itemsInMain.length > 0) {
+                        html += `<div id="cat-${mainCat}" class="cat-header">${mainCat}</div>`;
+                        
+                        // Group by SubCategory
+                        const subGroups = {};
+                        itemsInMain.forEach(p => {
+                            if(!subGroups[p.subCategory]) subGroups[p.subCategory] = [];
+                            subGroups[p.subCategory].push(p);
+                        });
+
+                        // Render each SubCategory as a Horizontal Row
+                        for (const [subName, subItems] of Object.entries(subGroups)) {
+                            html += `
+                            <div class="subcat-section">
+                                <div class="subcat-title">${subName}</div>
+                                <div class="horizontal-products-row">
+                                    ${subItems.map(p => this.buildCard(p)).join('')}
+                                </div>
+                            </div>`;
+                        }
                     }
                 });
 
                 container.innerHTML = html || '<p style="text-align:center; padding:40px;">Nada encontrado.</p>';
                 this.updateTotal();
                 
-                // Keep desktop sidebar updated just in case
+                // Update Desktop Sidebar
                 this.renderIncluded(document.getElementById('included-list-desk'));
             },
 
-            // Updated to accept a target element (for reusing in modal)
-            renderIncluded(targetElement) {
+            renderIncluded(targetElement, isCheckout = false) {
                 if(!targetElement) return;
                 const ids = this.cartOrder.filter(id => this.cart[id] > 0);
-                const html = ids.length ? ids.map(id => {
+                
+                // If it's Checkout, use the new buildCheckoutCard logic
+                if (isCheckout) {
+                    targetElement.innerHTML = ids.length ? ids.map(id => {
+                        const p = this.data.find(x => x.id === id);
+                        return p ? this.buildCheckoutCard(p) : '';
+                    }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999;">Cesta vazia</p>';
+                    return;
+                }
+
+                // Default logic for Desktop Sidebar (Vertical List)
+                targetElement.innerHTML = ids.length ? ids.map(id => {
                     const p = this.data.find(x => x.id === id);
                     if(!p) return '';
-                    
                     return `
                     <div class="card-inc">
                         <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')">
@@ -1019,8 +1071,6 @@
                         </div>
                     </div>`;
                 }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
-
-                targetElement.innerHTML = html;
             },
 
             buildCard(p) {
@@ -1043,6 +1093,30 @@
                     <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
                     ${btn}
                     ${valHtml}
+                </div>`;
+            },
+
+            // NEW FUNCTION FOR CHECKOUT CARD
+            buildCheckoutCard(p) {
+                const qty = this.cart[p.id] || 0;
+                const price = p.isOffer ? p.offerPrice : p.valor;
+                
+                return `
+                <div class="co-card">
+                    <img src="${p.imagem}" class="co-card-img" onclick="App.openInfo('${p.id}')">
+                    <div class="co-card-title">${p.nome}</div>
+                    <div class="co-card-price">R$ ${price.toFixed(2).replace('.',',')}</div>
+                    
+                    <div class="co-card-controls">
+                        <div class="qty-mini-co">
+                            <div class="qm-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                            <div class="qm-val">${qty}</div>
+                            <div class="qm-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                        </div>
+                        <div class="co-trash-btn" onclick="App.removeItem('${p.id}')">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                    </div>
                 </div>`;
             },
 
@@ -1082,14 +1156,13 @@
                     }
                 }
                 
-                // Just update totals and desktop list, mobile cart renders only on modal open
-                const searchVal = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
-                this.renderAllLists(searchVal);
+                // Update Desktop & Calculations
+                this.renderAllLists(document.getElementById('desk-search') ? document.getElementById('desk-search').value : "");
                 
-                // If modal is open, re-render inside it
+                // If Modal is Open, force re-render checkout specific cards
                 const modal = document.getElementById('checkout-modal');
                 if(modal.open) {
-                    this.renderIncluded(document.getElementById('modal-cart-list'));
+                    this.renderIncluded(document.getElementById('modal-cart-list'), true);
                 }
                 
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
@@ -1153,7 +1226,6 @@
                 const limitTxt = `Alt: ${rem}/${this.currentLimit}`;
                 document.getElementById('limit-alert-desk').innerText = limitTxt;
                 
-                // Show/Hide Floating Bar
                 const bar = document.getElementById('ifood-cart-bar');
                 if(count > 0) bar.classList.add('visible');
                 else bar.classList.remove('visible');
@@ -1215,8 +1287,8 @@
             
             openCheckout() {
                 if(Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
-                // Render items inside the modal's horizontal container
-                this.renderIncluded(document.getElementById('modal-cart-list'));
+                // Render with specific CHECKOUT flag = true
+                this.renderIncluded(document.getElementById('modal-cart-list'), true);
                 document.getElementById('checkout-modal').showModal();
             },
 
