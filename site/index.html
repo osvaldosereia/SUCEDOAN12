@@ -4,13 +4,12 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 9.80 - Vertical Carousel & Streamlined Mobile UI
+        VERSION: 9.95 - Bottom Integrated Basket & Vertical Sidebar
         CHANGELOG:
-        - MOBILE NAV: Nova barra fixa na base unificada (Voltar | Categ | Total | Encomendar).
-        - MOBILE UI: Busca removida. Botão Dúvidas flutuante no topo direito.
-        - DESKTOP UI: "Minha Cesta" transformada em carrossel vertical na sidebar (max 2 itens).
-        - DESKTOP UI: Sidebar totalmente fixa e visível.
-        - LOGIC: Controles de navegação vertical para a cesta no desktop.
+        - MOBILE LAYOUT: Cesta movida para a base, integrada num painel fixo acima dos botões de ação.
+        - MOBILE UI: Painel de base contém: [Slider Cesta] -> [Barra Ações (Voltar, Categ, Total, Encomendar)].
+        - DESKTOP: Sidebar direita mantém Carrossel Vertical no topo.
+        - CSS: Ajuste de padding-bottom para acomodar o painel de base mais alto (~160px).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -31,18 +30,19 @@
         :root { 
             --primary: #dc2626; --primary-dark: #b91c1c; 
             --secondary: #1e293b; --text-main: #334155; --text-light: #64748b; 
-            --bg-body: #ffffff; --border-color: #f1f5f9;
-            --header-height: 60px; --bottom-bar-height: 70px;
+            --bg-body: #f8fafc; --border-color: #e2e8f0;
+            --header-height: 60px; 
+            --bottom-panel-height: 155px; /* Estimated height for Basket + Actions */
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html { scroll-behavior: smooth; background: var(--bg-body); }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            color: var(--text-main); padding-bottom: 0; width: 100%;
+            color: var(--text-main); padding-bottom: 0; width: 100%; margin: 0;
         }
         
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; width: 100%; }
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 16px; width: 100%; }
         img { display: block; max-width: 100%; height: auto; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
         .hidden { display: none !important; }
@@ -60,17 +60,21 @@
         .logo-circle { width: 32px; height: 32px; background: #fecaca; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
 
         /* --- 3. HERO --- */
-        #home-view { padding-top: var(--header-height); }
+        #home-view { padding-top: var(--header-height); background: #fff; }
         .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid var(--border-color); }
         .hero h1 { font-size: 1.8rem; line-height: 1.1; color: var(--secondary); margin-bottom: 10px; }
         .hero p { color: var(--text-light); margin-bottom: 20px; font-size: 0.95rem; }
         .btn-cta { background: var(--primary); color: white; padding: 12px 30px; border-radius: 50px; font-weight: 700; font-size: 1rem; }
 
         /* --- 4. CUSTOMIZER VIEW --- */
-        /* Padding for fixed bottom bar */
-        #customizer-view { padding-bottom: calc(var(--bottom-bar-height) + 20px); min-height: 100vh; background: #fff; padding-top: 10px; }
+        #customizer-view { 
+            /* Large padding bottom so content isn't hidden by the fixed panel */
+            padding-bottom: calc(var(--bottom-panel-height) + 20px); 
+            min-height: 100vh; background: #f8fafc; 
+            padding-top: 20px; 
+        }
         
-        /* Floating FAQ Button (Top Right) */
+        /* Floating FAQ Button */
         .fab-faq {
             position: fixed; top: 20px; right: 20px; z-index: 10000;
             width: 40px; height: 40px; background: #fff; border: 1px solid #e2e8f0;
@@ -80,108 +84,107 @@
         }
         .fab-faq:active { transform: scale(0.95); }
 
-        /* --- 5. MOBILE BOTTOM ACTIONS (FIXED BASE) --- */
-        .mobile-bottom-actions {
-            position: fixed; bottom: 0; left: 0; right: 0; height: var(--bottom-bar-height);
-            background: #fff; border-top: 1px solid #e2e8f0; z-index: 10000;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+        /* --- 5. MOBILE BOTTOM PANEL (UNIFIED) --- */
+        .mobile-bottom-panel {
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: #fff; border-top: 1px solid #e2e8f0; z-index: 9999;
+            display: flex; flex-direction: column;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -4px 25px rgba(0,0,0,0.1);
+        }
+
+        /* Row 1: Basket Carousel */
+        .mbp-basket-row {
+            border-bottom: 1px solid #f1f5f9;
+            background: #ffffff;
+            padding: 8px 0;
+        }
+        .mbp-basket-header { padding: 0 16px 4px; display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
+        
+        /* Row 2: Actions */
+        .mbp-actions-row {
+            display: grid; 
+            grid-template-columns: auto auto 1fr auto; /* Back | Cat | Total | Order */
+            align-items: center; gap: 10px;
+            padding: 10px 12px; height: 70px;
         }
         
-        .mba-left { display: flex; align-items: center; gap: 16px; }
         .mba-btn-icon { 
             display: flex; align-items: center; justify-content: center; 
-            width: 40px; height: 40px; border-radius: 50%; background: #f8fafc; color: var(--secondary); 
+            width: 42px; height: 42px; border-radius: 50%; background: #f1f5f9; color: var(--secondary); 
+            border: 1px solid #e2e8f0; cursor: pointer;
         }
+        .mba-btn-icon:active { background: #e2e8f0; }
         .mba-btn-icon svg { width: 20px; height: 20px; stroke-width: 2.5; }
         
-        .mba-right { display: flex; align-items: center; gap: 12px; }
-        .mba-total { font-size: 1rem; font-weight: 800; color: var(--secondary); white-space: nowrap; }
+        .mba-info { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding-right: 5px; }
+        .mba-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-light); }
+        .mba-total { font-size: 1rem; font-weight: 800; color: var(--secondary); white-space: nowrap; line-height: 1; }
         
         .mba-btn-order {
             background: #16a34a; color: white; border-radius: 50px;
-            padding: 10px 20px; font-weight: 700; font-size: 0.9rem;
+            padding: 0 20px; height: 42px; font-weight: 700; font-size: 0.9rem;
             display: flex; align-items: center; gap: 6px; white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(22,163,74,0.3); border: none; cursor: pointer;
         }
 
-        /* --- 6. MINHA CESTA (Mobile Sticky Top) --- */
-        .sticky-basket-container {
-            position: sticky; top: 0; z-index: 800;
-            background: rgba(255,255,255,0.98); border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 10px; margin-bottom: 10px; backdrop-filter: blur(5px);
-        }
-
-        .section-title-bar { 
-            padding: 10px 16px 5px; display: flex; align-items: center; justify-content: space-between;
-        }
-        .section-title-bar h3 { font-size: 0.95rem; font-weight: 700; color: var(--secondary); margin: 0; text-transform: uppercase; }
-        
-        .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; }
-        .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
-
-        /* Horizontal Slider (Mobile) */
-        #included-list.horizontal-slider {
-            display: flex; gap: 10px; overflow-x: auto; padding: 5px 16px 10px;
+        /* Slider Styles */
+        #included-list-mob.horizontal-slider {
+            display: flex; gap: 10px; overflow-x: auto; padding: 0 16px;
             scroll-snap-type: x mandatory; scrollbar-width: none;
         }
-        #included-list.horizontal-slider::-webkit-scrollbar { display: none; }
+        #included-list-mob.horizontal-slider::-webkit-scrollbar { display: none; }
         
-        /* Vertical Slider (Desktop) */
-        #included-list.vertical-slider {
-            display: flex; flex-direction: column; gap: 10px;
-            overflow-y: hidden; /* Controlled by buttons */
-            max-height: 220px; /* Fits approx 2 cards */
-            scroll-behavior: smooth;
-            padding: 2px;
-        }
-
-        /* Card Styles */
+        /* CARD CESTA */
         .card-inc {
-            background: #fff; border: 1px solid #fee2e2; border-left: 3px solid var(--primary);
-            border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            padding: 8px; display: grid; grid-template-columns: 50px 1fr; gap: 8px;
-            flex-shrink: 0;
+            background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid var(--primary);
+            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            padding: 8px; display: flex; gap: 10px; align-items: center;
+            flex-shrink: 0; position: relative;
         }
-        /* Mobile specific card size */
-        .horizontal-slider .card-inc { min-width: 260px; max-width: 300px; scroll-snap-align: start; }
-        /* Desktop specific card size */
-        .vertical-slider .card-inc { width: 100%; }
-
-        .ci-img { width: 100%; height: 50px; object-fit: contain; mix-blend-mode: multiply; align-self: center; }
-        .ci-content { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-        .ci-title { 
-            font-size: 0.75rem; font-weight: 600; color: var(--text-main); 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
-        }
-        .ci-row-btm { display: flex; align-items: center; justify-content: space-between; }
-        .ci-price { font-weight: 700; color: var(--secondary); font-size: 0.8rem; }
         
-        .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 24px; }
-        .qs-btn { width: 24px; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--secondary); cursor: pointer; }
-        .qs-val { font-size: 0.75rem; font-weight: 700; padding: 0 4px; min-width: 16px; text-align: center; }
+        /* Mobile Sizes */
+        .horizontal-slider .card-inc { width: 75vw; max-width: 280px; scroll-snap-align: start; }
+        /* Desktop Sizes */
+        .vertical-slider .card-inc { width: 100%; margin-bottom: 8px; }
 
-        /* Vertical Nav Controls (Desktop) */
-        .v-nav-ctrl { display: none; width: 100%; text-align: center; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 4px; margin-bottom: 5px; }
-        .v-nav-ctrl:hover { background: #e2e8f0; color: var(--secondary); }
-        .v-nav-ctrl.down { margin-top: 5px; margin-bottom: 0; }
+        .ci-img { width: 50px; height: 50px; object-fit: contain; mix-blend-mode: multiply; cursor: zoom-in; flex-shrink: 0; }
+        
+        .ci-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        
+        /* Name on top line full width */
+        .ci-title { 
+            font-size: 0.75rem; font-weight: 600; color: var(--secondary); 
+            line-height: 1.2; margin: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        
+        /* Controls on bottom line */
+        .ci-row-btm { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .ci-price { font-weight: 700; color: var(--text-main); font-size: 0.8rem; }
+        .ci-info-btn { font-size: 0.65rem; text-decoration: underline; color: var(--text-light); margin-left: 5px; cursor: pointer; }
+        
+        .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 24px; border: 1px solid #e2e8f0; }
+        .qs-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--secondary); cursor: pointer; border: none; background: transparent; }
+        .qs-val { font-size: 0.8rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
-        /* --- 7. MERCADINHO --- */
-        .mercadinho-header { text-align: center; padding: 10px 16px; }
-        .mercadinho-header h3 { color: var(--secondary); font-size: 1.2rem; margin-bottom: 2px; }
+        /* --- 6. MERCADINHO GRID --- */
+        .mercadinho-header { text-align: left; padding: 0 16px 20px; }
+        .mercadinho-header h3 { color: var(--secondary); font-size: 1.2rem; margin: 0; font-weight: 800; }
+        .mercadinho-header p { font-size: 0.85rem; color: var(--text-light); margin: 4px 0 0; }
         
         .cat-header { 
-            position: sticky; top: 120px; z-index: 700; /* Adjust based on mobile header height */
+            position: sticky; top: 10px; z-index: 700;
             background: #f1f5f9; color: var(--secondary);
-            padding: 8px 16px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.5px; margin: 15px 0; border-radius: 4px;
+            padding: 8px 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; margin: 15px 0; border-radius: 4px; border: 1px solid #e2e8f0;
         }
 
         .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
         @media(min-width: 768px) { .products-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
 
         .card-prod {
-            background: #fff; border: 1px solid var(--border-color); border-radius: 12px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
             padding: 12px; display: flex; flex-direction: column; text-align: center;
             height: 100%; position: relative; transition: border-color 0.2s;
         }
@@ -209,41 +212,58 @@
         .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; cursor: pointer; }
         .qc-val { font-weight: 700; font-size: 0.9rem; }
 
-        /* --- 8. DESKTOP LAYOUT --- */
+        /* --- 8. DESKTOP SPECIFIC --- */
         .desktop-sidebar { display: none; }
         
         @media(min-width: 1024px) {
             #customizer-view { 
                 padding-bottom: 0; 
                 display: grid !important; 
-                grid-template-columns: 1fr 320px; /* Main | Sidebar Fixed Width */
+                grid-template-columns: 1fr 350px; /* Main | Sidebar Fixed Width */
                 gap: 40px; 
-                max-width: 1200px; margin: 0 auto; padding: 40px 20px;
+                max-width: 1280px; margin: 0 auto; padding: 40px 20px;
                 align-items: start;
             }
             
             /* Hide Mobile Elements */
-            .mobile-bottom-actions, .sticky-basket-container, .fab-faq { display: none; }
-            .mercadinho-header { text-align: left; padding: 0 0 20px 0; }
+            .mobile-bottom-panel, .fab-faq { display: none; }
+            .cat-header { top: 20px; } /* Adjust sticky top for desktop */
             
             /* Desktop Sidebar (Fixed) */
             .desktop-sidebar {
-                display: block; position: sticky; top: 20px;
-                background: white; border: 1px solid #e2e8f0; border-radius: 12px;
-                padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                display: flex; flex-direction: column;
+                position: sticky; top: 20px;
+                background: white; border: 1px solid #e2e8f0; border-radius: 16px;
+                padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.05);
                 max-height: calc(100vh - 40px); overflow-y: auto;
             }
             
             /* Vertical Carousel Controls */
-            .v-nav-ctrl { display: block; }
+            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 4px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; transition: all 0.2s; font-size: 0.8rem; }
+            .v-nav-ctrl:hover { background: #e2e8f0; color: var(--secondary); }
+            .v-nav-ctrl.down { margin-top: 10px; }
+            .v-nav-ctrl.up { margin-bottom: 10px; }
             
-            .ds-section-title { font-size: 0.9rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; }
-            .ds-divider { height: 1px; background: #e2e8f0; margin: 15px 0; }
+            #included-list-desk.vertical-slider {
+                display: flex; flex-direction: column; gap: 0;
+                overflow: hidden; /* Hidden scroll, buttons control it */
+                max-height: 200px; /* Roughly 2 items (approx 90px each + gap) */
+                transition: scroll-top 0.3s;
+                border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;
+                padding: 10px 0;
+            }
+
+            .ds-section-title { font-size: 1rem; font-weight: 800; color: var(--secondary); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+            .ds-divider { height: 1px; background: #e2e8f0; margin: 20px 0; }
             
-            .ds-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
-            .ds-total { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-align: right; margin: 15px 0; }
-            .ds-btn { width: 100%; padding: 12px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; cursor: pointer; }
-            .ds-btn-outline { width: 100%; padding: 10px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; }
+            .ds-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; color: var(--text-light); }
+            .ds-total { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-align: right; margin: 20px 0; letter-spacing: -0.5px; }
+            
+            .ds-btn { width: 100%; padding: 14px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; cursor: pointer; transition: transform 0.2s; border: none; }
+            .ds-btn:hover { transform: scale(1.02); }
+            .ds-btn-outline { width: 100%; padding: 12px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+            .ds-btn-outline:hover { background: #f8fafc; }
+            .ds-search { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 20px; }
         }
 
         /* --- 9. SHEETS & MODALS --- */
@@ -263,10 +283,9 @@
         .cat-list-btn {
             display: flex; width: 100%; padding: 16px; text-align: left;
             border-bottom: 1px solid #f1f5f9; font-weight: 600; color: var(--secondary);
-            align-items: center; justify-content: space-between; font-size: 0.95rem;
+            align-items: center; justify-content: space-between; font-size: 0.9rem;
         }
         
-        /* FAQ Details */
         details.faq-box { margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
         details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
         .faq-text { padding: 15px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
@@ -281,27 +300,19 @@
         .gallery-img { max-width: 100%; max-height: 90vh; object-fit: contain; }
         .gallery-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 1.5rem; background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        .info-body { line-height: 1.6; color: var(--text-main); font-size: 0.95rem; }
-        .info-media img { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #eee; }
-
         /* Toasts */
-        .toast {
-            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
-            background: var(--secondary); color: white; padding: 10px 20px; border-radius: 50px;
-            font-size: 0.85rem; font-weight: 600; opacity: 0; pointer-events: none;
-            transition: all 0.3s; z-index: 12000; white-space: nowrap;
-        }
-        .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-
         .sug-toast {
-            position: fixed; bottom: 90px; left: 16px; right: 16px; background: white;
+            position: fixed; bottom: 170px; left: 16px; right: 16px; background: white;
             border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 4px solid #3b82f6;
-            transform: translateY(20px); opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 11500;
+            transform: translateY(20px); opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 9998;
         }
         .sug-toast.visible { transform: translateY(0); opacity: 1; visibility: visible; }
         .st-content { flex: 1; font-size: 0.8rem; line-height: 1.3; }
         .st-btn { background: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+        
+        .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
+        .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
 
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -336,68 +347,75 @@
     <!-- CUSTOMIZER VIEW -->
     <div id="customizer-view" class="hidden">
         
-        <!-- FLOATING FAQ BTN -->
+        <!-- FLOATING FAQ BTN (MOBILE & DESKTOP) -->
         <button class="fab-faq" onclick="App.openSheet('faq-sheet')">?</button>
 
         <!-- LEFT COLUMN (MAIN CONTENT) -->
         <div class="main-content-col">
             
-            <!-- MOBILE: STICKY BASKET -->
-            <div class="sticky-basket-container">
-                <div class="section-title-bar">
-                    <h3>📦 Minha Cesta</h3>
-                    <div id="limit-alert" class="limit-alert">Alt: 0/0</div>
-                </div>
-                <div id="included-list-mob" class="horizontal-slider"></div>
-            </div>
-
-            <!-- MERCADINHO TITLE -->
+            <!-- MERCADINHO HEADER -->
             <div class="mercadinho-header">
                 <h2 id="cust-title-text" style="font-size:0.9rem; color:var(--text-light); margin-bottom:5px;">Personalizar Cesta</h2>
                 <h3>🏪 Mercadinho</h3>
                 <p style="font-size:0.8rem; color:var(--text-light);">Adicione itens extras à sua cesta</p>
             </div>
             
+            <!-- PRODUCTS GRID -->
             <div class="container">
                 <div id="extras-container"></div>
             </div>
         </div>
 
-        <!-- RIGHT COLUMN (DESKTOP SIDEBAR) -->
+        <!-- RIGHT COLUMN (DESKTOP SIDEBAR FIXED) -->
         <aside class="desktop-sidebar">
             <div class="ds-section-title">
                 Minha Cesta
                 <span id="limit-alert-desk" class="limit-alert">Alt: 0/0</span>
             </div>
             
-            <!-- Vertical Carousel -->
-            <div class="v-nav-ctrl" onclick="App.scrollVertical(-1)">▲</div>
+            <!-- DESKTOP VERTICAL CAROUSEL -->
+            <div class="v-nav-ctrl up" onclick="App.scrollVertical(-1)">▲</div>
             <div id="included-list-desk" class="vertical-slider"></div>
             <div class="v-nav-ctrl down" onclick="App.scrollVertical(1)">▼</div>
             
             <div class="ds-divider"></div>
             
-            <div class="ds-title">Resumo</div>
+            <div class="ds-section-title">Resumo do Pedido</div>
             <div class="ds-row"><span>Cesta Base</span><span id="ds-base">R$ 0,00</span></div>
             <div class="ds-row"><span>Extras</span><span id="ds-extras">R$ 0,00</span></div>
             <div class="ds-total" id="ds-total">R$ 0,00</div>
             
             <button class="ds-btn" onclick="App.openCheckout()">Concluir Pedido</button>
             <button class="ds-btn-outline" onclick="App.goHome()">Voltar / Trocar Cesta</button>
+            
+            <input type="text" id="desk-search" class="ds-search" placeholder="Buscar no mercadinho..." oninput="App.renderAllLists(this.value)">
         </aside>
 
-        <!-- MOBILE BOTTOM ACTIONS (FIXED BASE) -->
-        <div class="mobile-bottom-actions">
-            <div class="mba-left">
-                <button class="mba-btn-icon" onclick="App.goHome()">
+        <!-- MOBILE BOTTOM PANEL (UNIFIED FIXED) -->
+        <div class="mobile-bottom-panel">
+            <!-- Row 1: Basket Slider -->
+            <div class="mbp-basket-row">
+                <div class="mbp-basket-header">
+                    <span>Minha Cesta</span>
+                    <span id="limit-alert">Alt: 0/0</span>
+                </div>
+                <div id="included-list-mob" class="horizontal-slider"></div>
+            </div>
+            
+            <!-- Row 2: Actions Bar -->
+            <div class="mbp-actions-row">
+                <button class="mba-btn-icon" onclick="App.goHome()" aria-label="Voltar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                 </button>
-                <button class="mba-btn-icon" onclick="App.openSheet('categories-sheet')">
+                <button class="mba-btn-icon" onclick="App.openSheet('categories-sheet')" aria-label="Categorias">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-            </div>
-            <div class="mba-right">
-                <div class="mba-total" id="mba-total">R$ 0,00</div>
+                
+                <div class="mba-info">
+                    <div class="mba-label">Total Estimado</div>
+                    <div class="mba-total" id="mba-total">R$ 0,00</div>
+                </div>
+                
                 <button class="mba-btn-order" onclick="App.openCheckout()">
                     Encomendar <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
@@ -424,8 +442,8 @@
             <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
                 <span id="info-title">Detalhes</span><span onclick="App.closeSheet('info-sheet')">✕</span>
             </div>
-            <div id="info-body" class="info-body"></div>
-            <div id="info-media" class="info-media"></div>
+            <div id="info-body" style="font-size:0.95rem; line-height:1.6; color:var(--text-main);"></div>
+            <div id="info-media" style="margin-top:15px;"></div>
         </div>
     </div>
 
@@ -452,8 +470,6 @@
             <video id="gallery-video" class="gallery-img hidden" controls></video>
         </div>
     </div>
-
-    <div id="toast" class="toast">Crédito atualizado</div>
     
     <div id="suggestion-toast" class="sug-toast">
         <img id="st-img" style="width:40px; height:40px; border-radius:6px;" src="">
@@ -490,27 +506,15 @@
                 const el = document.getElementById('gallery');
                 const img = document.getElementById('gallery-img');
                 const vid = document.getElementById('gallery-video');
-                
-                if (src.includes('.mp4')) {
-                    img.classList.add('hidden');
-                    vid.classList.remove('hidden');
-                    vid.src = src;
-                } else {
-                    vid.classList.add('hidden');
-                    img.classList.remove('hidden');
-                    img.src = src;
-                }
+                if (src.includes('.mp4')) { img.classList.add('hidden'); vid.classList.remove('hidden'); vid.src = src; } 
+                else { vid.classList.add('hidden'); img.classList.remove('hidden'); img.src = src; }
                 el.classList.add('active');
             },
-            close() { 
-                document.getElementById('gallery').classList.remove('active'); 
-                document.getElementById('gallery-video').pause();
-            }
+            close() { document.getElementById('gallery').classList.remove('active'); document.getElementById('gallery-video').pause(); }
         };
         
         const App = {
-            data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, 
-            cartOrder: [],
+            data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [],
 
             async init() {
                 try {
@@ -539,10 +543,10 @@
                             limit: parseInt(p.Limit || p.limit || 0),
                             caracteristicas: p.Caracteristicas || p.caracteristicas || "",
                             linkedCode: p.Codigo_Produto_Ligado || "",
-                            validade: p.Validade || ""
+                            validade: p.Validade || "",
+                            categoria: catStr
                         };
                     });
-
                     this.renderHome();
                 } catch (e) { console.error(e); }
             },
@@ -551,13 +555,11 @@
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 list.innerHTML = baskets.map(p => `
-                    <div class="home-card" style="border:1px solid #eee; border-radius:12px; overflow:hidden;">
-                        <div style="padding:20px; background:#fff; text-align:center;">
-                            <img src="${p.imagem}" onclick="Gallery.open('${p.imagem}')" style="width:100%; height:150px; object-fit:contain; margin-bottom:10px; cursor:zoom-in;">
-                            <h3 style="font-size:1.1rem; color:var(--secondary); margin-bottom:5px;">${p.nome}</h3>
-                            <div style="font-weight:800; font-size:1.3rem; color:var(--primary); margin-bottom:15px;">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
-                            <button onclick="App.openCustomizer('${p.id}')" style="width:100%; padding:12px; background:var(--secondary); color:white; border-radius:50px; font-weight:700;">Personalizar</button>
-                        </div>
+                    <div class="card-prod" style="padding:20px;">
+                        <img src="${p.imagem}" onclick="Gallery.open('${p.imagem}')" style="width:100%; height:150px; object-fit:contain; margin-bottom:10px; cursor:zoom-in;">
+                        <h3 style="font-size:1.1rem; color:var(--secondary); margin-bottom:5px; font-weight:700;">${p.nome}</h3>
+                        <div style="font-weight:800; font-size:1.3rem; color:var(--primary); margin-bottom:15px;">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
+                        <button onclick="App.openCustomizer('${p.id}')" class="btn-add" style="width:100%;">Personalizar</button>
                     </div>
                 `).join('');
             },
@@ -602,14 +604,10 @@
 
             renderAllLists(filter = null) {
                 this.renderIncluded();
-                
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 
-                if (filter && filter.length > 2) {
-                    products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
-                }
-
+                if (filter && filter.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
                 products.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
 
                 const groups = {};
@@ -620,7 +618,6 @@
 
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
                 let html = "";
-                
                 order.forEach(catName => {
                     if(groups[catName] && groups[catName].length > 0) {
                         html += `<div id="cat-${catName}" class="cat-header">${catName}</div>
@@ -630,48 +627,42 @@
                     }
                 });
 
-                if(!html) html = '<p style="text-align:center; padding:40px;">Nada encontrado.</p>';
-                container.innerHTML = html;
+                container.innerHTML = html || '<p style="text-align:center; padding:40px;">Nada encontrado.</p>';
                 this.updateTotal();
             },
 
             renderIncluded() {
-                // Two targets: Mobile (Horizontal) and Desktop (Vertical)
-                const listMob = document.getElementById('included-list-mob');
-                const listDesk = document.getElementById('included-list-desk');
                 const ids = this.cartOrder.filter(id => this.cart[id] > 0);
-                
                 const html = ids.length ? ids.map(id => {
                     const p = this.data.find(x => x.id === id);
                     if(!p) return '';
                     const price = p.isOffer ? p.offerPrice : p.valor;
-                    let infoBtn = p.caracteristicas ? `<span style="font-size:0.65rem; text-decoration:underline; cursor:pointer;" onclick="App.openInfo('${p.id}')">Info</span>` : '';
+                    let infoBtn = p.caracteristicas ? `<span class="ci-info-btn" onclick="App.openInfo('${p.id}')">Info</span>` : '';
                     
                     return `
                     <div class="card-inc">
-                        <div class="ci-img-wrap"><img src="${p.imagem}" class="ci-img" onclick="Gallery.open('${p.imagem}')"></div>
+                        <img src="${p.imagem}" class="ci-img" onclick="Gallery.open('${p.imagem}')">
                         <div class="ci-content">
                             <div class="ci-title">${p.nome}</div>
                             <div class="ci-row-btm">
                                 <div class="ci-price">R$ ${price.toFixed(2)} ${infoBtn}</div>
                                 <div class="qty-sm">
-                                    <div class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                                    <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
                                     <div class="qs-val">${this.cart[p.id]}</div>
-                                    <div class="qs-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                                    <button class="qs-btn" onclick="App.modQty('${p.id}', 1)">+</button>
                                 </div>
                             </div>
                         </div>
                     </div>`;
                 }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
 
-                if(listMob) listMob.innerHTML = html;
-                if(listDesk) listDesk.innerHTML = html;
+                document.getElementById('included-list-mob').innerHTML = html;
+                document.getElementById('included-list-desk').innerHTML = html;
             },
 
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
-                
                 let btn = qty === 0 
                     ? `<button class="btn-add" onclick="App.modQty('${p.id}', 1)">Adicionar</button>` 
                     : `<div class="qty-ctrl"><div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div><div class="qc-val">${qty}</div><div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div></div>`;
@@ -697,38 +688,26 @@
             modQty(id, delta) {
                 const p = this.data.find(x => x.id === id);
                 if(!this.cart[id]) this.cart[id] = 0;
+                
                 const newQty = this.cart[id] + delta;
-                
                 if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
-                
-                if (this.originalCart[id] && delta < 0 && newQty === 0) {
-                    if (this.countRemovals() >= this.currentLimit) {
-                        return alert(`Limite de ${this.currentLimit} trocas atingido.`);
-                    }
-                }
+                if (this.originalCart[id] && delta < 0 && newQty === 0 && this.countRemovals() >= this.currentLimit) return alert(`Limite de ${this.currentLimit} trocas atingido.`);
 
                 this.cart[id] = newQty;
-                if(this.cart[id] <= 0) {
-                    delete this.cart[id];
-                } else {
+                if(this.cart[id] <= 0) delete this.cart[id];
+                else {
                     this.cartOrder = this.cartOrder.filter(x => x !== id);
                     this.cartOrder.unshift(id);
                 }
                 
                 this.renderIncluded();
-                
-                // Scroll Logic
                 if (delta > 0 && this.cart[id] === 1) {
                     const mobSlider = document.getElementById('included-list-mob');
                     if(mobSlider) mobSlider.scrollTo({left:0, behavior:'smooth'});
                     const deskSlider = document.getElementById('included-list-desk');
                     if(deskSlider) deskSlider.scrollTop = 0;
                 }
-
-                // Update cards in grid
-                const cards = document.querySelectorAll('.card-prod'); // Simple re-render for consistency
                 this.renderAllLists(document.getElementById('desk-search') ? document.getElementById('desk-search').value : "");
-                
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
             },
 
@@ -763,10 +742,8 @@
                 const total = Math.max(sum + this.baseFee, this.currentBasket.valor);
                 const txt = 'R$ ' + total.toFixed(2).replace('.', ',');
                 
-                // Update Displays
-                if(document.getElementById('mba-total')) document.getElementById('mba-total').innerText = txt;
+                document.getElementById('mba-total').innerText = txt;
                 document.getElementById('co-total').innerText = txt;
-                
                 if(document.getElementById('ds-total')) {
                     document.getElementById('ds-total').innerText = txt;
                     document.getElementById('ds-base').innerText = 'R$ ' + this.currentBasket.valor.toFixed(2).replace('.',',');
@@ -777,7 +754,11 @@
                 const rem = this.countRemovals();
                 const limitTxt = `Alt: ${rem}/${this.currentLimit}`;
                 document.getElementById('limit-alert').innerText = limitTxt;
-                if(document.getElementById('limit-alert-desk')) document.getElementById('limit-alert-desk').innerText = limitTxt;
+                document.getElementById('limit-alert-desk').innerText = limitTxt;
+                
+                const badgeClass = rem >= this.currentLimit ? 'limit-alert error' : 'limit-alert';
+                document.getElementById('limit-alert').className = badgeClass;
+                document.getElementById('limit-alert-desk').className = badgeClass;
             },
 
             scrollVertical(dir) {
@@ -791,7 +772,7 @@
                 document.getElementById('info-title').innerText = p.nome;
                 document.getElementById('info-body').innerHTML = p.caracteristicas.replace(/\n/g, '<br>');
                 const mediaDiv = document.getElementById('info-media');
-                mediaDiv.innerHTML = p.imagem ? `<img src="${p.imagem}">` : '';
+                mediaDiv.innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%; border-radius:8px;">` : '';
                 App.openSheet('info-sheet');
             },
 
@@ -800,7 +781,7 @@
                 setTimeout(() => {
                     const el = document.getElementById('cat-' + name);
                     if(el) {
-                        const y = el.getBoundingClientRect().top + window.scrollY - 130;
+                        const y = el.getBoundingClientRect().top + window.scrollY - 140;
                         window.scrollTo({top: y, behavior: 'smooth'});
                     }
                 }, 100);
