@@ -903,7 +903,7 @@
                             linkedCode: linkCode,
                             hasLink: (hasLink === 'Sim'),
                             validade: fmtVal,
-                            categoria: catStr
+                            categoria: catRaw // FIX: was catStr (undefined)
                         };
                     });
                     this.renderHome();
