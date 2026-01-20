@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMAS | Studio 300 Pro v5</title>
-    <meta name="description" content="Editor Híbrido: Fotos, Vídeos e Botões com Presets.">
+    <title>SISTEMAS | Studio 300 Pro v6.1</title>
+    <meta name="description" content="Editor Híbrido: Fotos, Vídeos, Botões e Fundos.">
     <meta name="theme-color" content="#2563eb">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pica/9.0.1/pica.min.js"></script>
@@ -227,7 +227,7 @@
         .overlay-controls.visible { display: block; animation: slideDown 0.2s ease; }
         @keyframes slideDown { from {opacity: 0; transform: translateY(-5px);} to {opacity: 1; transform: translateY(0);} }
 
-        /* PRESETS STYLES (NEW) */
+        /* PRESETS STYLES */
         .presets-section { margin-top:12px; padding-top:12px; border-top:1px dashed #bfdbfe; }
         .chips-container { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
         .chips-container::-webkit-scrollbar { display: none; }
@@ -252,6 +252,17 @@
             color: var(--text-muted); cursor: pointer;
         }
         .btn-mini:hover { background: #f1f5f9; color: var(--brand); border-color: var(--brand); }
+
+        /* BG Controls */
+        .bg-controls-panel {
+            display: none;
+            margin-top: 1rem;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .bg-controls-panel.visible { display: block; }
 
         /* --- CONTROLS --- */
         fieldset { border: 0; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
@@ -353,7 +364,7 @@
         <!-- CARD CONTROLS -->
         <div class="card" id="controlsCard">
             
-            <!-- Botões Info (Novo) -->
+            <!-- Botões Info -->
             <fieldset>
                 <label>Botões de Informação</label>
                 <button id="btnAddOverlay" class="btn btn-add-overlay">
@@ -370,27 +381,23 @@
                     <textarea id="overlayText" rows="2" placeholder="Digite seu texto aqui (Use Enter para quebrar linha)..." style="margin-bottom:8px;"></textarea>
                     
                     <div class="color-picker-row">
-                        <span style="font-size:0.85rem; color:var(--text-muted);">Cor do Fundo:</span>
+                        <span style="font-size:0.85rem; color:var(--text-muted);">Fundo:</span>
                         <input type="color" id="overlayColor" value="#ef4444">
-                        <span style="font-size:0.85rem; color:var(--text-muted); margin-left:10px;">Cor do Texto:</span>
+                        <span style="font-size:0.85rem; color:var(--text-muted); margin-left:10px;">Texto:</span>
                         <input type="color" id="overlayTextColor" value="#ffffff">
                     </div>
 
                     <!-- PRESETS AREA -->
                     <div class="presets-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-size:0.75rem; font-weight:bold; color:var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Meus Presets</span>
+                            <span style="font-size:0.75rem; font-weight:bold; color:var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Presets de Botão</span>
                             <div>
-                                <button id="btnSavePreset" class="btn-mini" style="color:var(--brand); border-color:var(--brand); font-weight:600; margin-right:4px;">+ Salvar Atual</button>
-                                <button id="btnClearPresets" class="btn-mini" style="color:var(--text-muted);">Limpar</button>
+                                <button id="btnSavePreset" class="btn-mini" style="color:var(--brand); border-color:var(--brand); font-weight:600; margin-right:4px;">+ Salvar</button>
+                                <button id="btnClearPresets" class="btn-mini" style="color:var(--text-muted);">X</button>
                             </div>
                         </div>
                         <div id="textPresets" class="chips-container"></div>
                         <div id="colorPresets" class="chips-container" style="margin-top:6px;"></div>
-                    </div>
-
-                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
-                        Arraste o botão para mover. Puxe a borda branca (canto inferior direito) para aumentar o tamanho da letra.
                     </div>
                 </div>
             </fieldset>
@@ -422,6 +429,27 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.5 9.5l-2.5-2.5"/><path d="M21 11l-9 9-5-5 9-9z"/><path d="M3 3l6 6"/><path d="M15 4l-4 4"/><path d="M4 15l4-4"/><path d="M9 19l2 2"/></svg>
                     🪄 Remover Fundo
                 </button>
+
+                <!-- NEW BACKGROUND CONTROLS (FULL WIDTH) -->
+                <div id="bgControlsPanel" class="bg-controls-panel">
+                    <label style="margin-bottom:8px;">🎨 Cor do Fundo (Novo)</label>
+                    
+                    <input type="color" id="newBgColor" value="#ffffff" style="width: 100%; height: 52px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); padding: 2px; margin-bottom: 8px;">
+                    
+                    <button id="btnSaveBgPreset" class="btn btn-mini" style="width: 100%; height: 40px; font-size: 0.95rem; font-weight: 600; color:var(--brand); border-color:var(--brand); background: #eff6ff; justify-content: center;">
+                        + Salvar Cor como Padrão
+                    </button>
+                    
+                    <div style="margin-top:12px; padding-top:12px; border-top: 1px dashed #bfdbfe;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:0.75rem; font-weight:bold; color:var(--text-muted); text-transform: uppercase;">Meus Padrões Salvos</span>
+                            <button id="btnClearBgPresets" class="btn-mini" style="font-size:0.65rem;">Limpar</button>
+                        </div>
+                        <div id="bgPresetsContainer" class="chips-container">
+                            <!-- Chips inseridos via JS -->
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Controles de Restauração -->
                 <button id="btnRestore" class="btn btn-restore">
@@ -475,6 +503,9 @@
             img: null, 
             noBgCanvas: null, 
             useNoBg: false,
+            // NOVA VARIAVEL DE ESTADO: COR DE FUNDO
+            bgColor: '#ffffff',
+            
             video: null,
             ctx: null, width: 300, height: 300,
             scale: 0.85, vScale: 1.0, x: 0, y: 0,
@@ -493,6 +524,7 @@
         };
 
         const PRESET_KEY = 'studio300_presets_v1';
+        const BG_PRESET_KEY = 'studio300_bg_presets_v1';
 
         const els = {
             canvas: document.getElementById('canvas'),
@@ -538,11 +570,17 @@
             overlayColor: document.getElementById('overlayColor'),
             overlayTextColor: document.getElementById('overlayTextColor'),
             btnDeleteOverlay: document.getElementById('btnDeleteOverlay'),
-            // Presets
+            // Text Presets
             textPresets: document.getElementById('textPresets'),
             colorPresets: document.getElementById('colorPresets'),
             btnSavePreset: document.getElementById('btnSavePreset'),
-            btnClearPresets: document.getElementById('btnClearPresets')
+            btnClearPresets: document.getElementById('btnClearPresets'),
+            // NEW BG UI
+            bgControlsPanel: document.getElementById('bgControlsPanel'),
+            newBgColor: document.getElementById('newBgColor'),
+            btnSaveBgPreset: document.getElementById('btnSaveBgPreset'),
+            bgPresetsContainer: document.getElementById('bgPresetsContainer'),
+            btnClearBgPresets: document.getElementById('btnClearBgPresets')
         };
 
         function init() {
@@ -585,10 +623,19 @@
             els.overlayColor.oninput = (e) => updateActiveOverlay('bg', e.target.value);
             els.overlayTextColor.oninput = (e) => updateActiveOverlay('color', e.target.value);
 
-            // Presets Actions
+            // Presets Actions (Overlay)
             loadPresets();
             els.btnSavePreset.onclick = saveCurrentPreset;
             els.btnClearPresets.onclick = clearPresets;
+
+            // NEW: Background Actions
+            loadBgPresets();
+            els.newBgColor.addEventListener('input', (e) => {
+                state.bgColor = e.target.value;
+                requestRender();
+            });
+            els.btnSaveBgPreset.onclick = saveBgPreset;
+            els.btnClearBgPresets.onclick = clearBgPresets;
 
             // Touch/Mouse Gestures
             els.canvas.addEventListener('mousedown', handlePointerDown);
@@ -608,14 +655,53 @@
             window.setFormat = setFormat; 
         }
 
-        // --- PRESETS LOGIC ---
+        // --- BG PRESETS LOGIC (NEW) ---
+        function getBgPresets() {
+            return JSON.parse(localStorage.getItem(BG_PRESET_KEY)) || [];
+        }
+        function loadBgPresets() {
+            const list = getBgPresets();
+            els.bgPresetsContainer.innerHTML = '';
+            if (list.length === 0) {
+                els.bgPresetsContainer.innerHTML = '<span style="font-size:0.7rem; color:var(--text-muted);">Sem cores salvas.</span>';
+            } else {
+                list.forEach(col => {
+                    const chip = document.createElement('div');
+                    chip.className = 'color-chip';
+                    chip.style.backgroundColor = col;
+                    chip.onclick = () => {
+                        state.bgColor = col;
+                        els.newBgColor.value = col;
+                        requestRender();
+                    };
+                    els.bgPresetsContainer.appendChild(chip);
+                });
+            }
+        }
+        function saveBgPreset() {
+            const cur = els.newBgColor.value;
+            const list = getBgPresets();
+            if(!list.includes(cur)) {
+                list.unshift(cur);
+                if(list.length > 10) list.pop();
+                localStorage.setItem(BG_PRESET_KEY, JSON.stringify(list));
+                loadBgPresets();
+            }
+        }
+        function clearBgPresets() {
+            if(confirm("Apagar cores de fundo salvas?")) {
+                localStorage.removeItem(BG_PRESET_KEY);
+                loadBgPresets();
+            }
+        }
+
+        // --- OVERLAY PRESETS LOGIC ---
         function getPresets() {
             return JSON.parse(localStorage.getItem(PRESET_KEY)) || { texts: [], colors: [] };
         }
 
         function loadPresets() {
             const data = getPresets();
-            
             // Render Texts
             els.textPresets.innerHTML = '';
             if (data.texts.length === 0) {
@@ -632,7 +718,6 @@
                     els.textPresets.appendChild(chip);
                 });
             }
-
             // Render Colors
             els.colorPresets.innerHTML = '';
             if (data.colors.length === 0) {
@@ -653,24 +738,21 @@
 
         function saveCurrentPreset() {
             if (!state.activeOverlayId && !els.overlayText.value) return;
-            
             const currentText = els.overlayText.value.trim();
             const currentColor = els.overlayColor.value;
             const data = getPresets();
             let changed = false;
 
             if (currentText && !data.texts.includes(currentText)) {
-                data.texts.unshift(currentText); // Add to beginning
-                if (data.texts.length > 10) data.texts.pop(); // Max 10
+                data.texts.unshift(currentText);
+                if (data.texts.length > 10) data.texts.pop();
                 changed = true;
             }
-
             if (currentColor && !data.colors.includes(currentColor)) {
                 data.colors.unshift(currentColor);
                 if (data.colors.length > 10) data.colors.pop();
                 changed = true;
             }
-
             if (changed) {
                 localStorage.setItem(PRESET_KEY, JSON.stringify(data));
                 loadPresets();
@@ -691,16 +773,15 @@
             const source = (state.mode === 'photo' && state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : (state.img || state.video);
             if (!source) return;
 
-            // Define um tamanho de fonte base inicial (proporcional à imagem)
             const baseFontSize = (source.height || source.videoHeight) * 0.05;
             
             const newOverlay = {
                 id: Date.now(),
                 x: (source.width || source.videoWidth) / 2, 
                 y: (source.height || source.videoHeight) / 2,
-                fontSize: baseFontSize, // Tamanho da letra controla tudo
-                w: 100, // Será calculado
-                h: 50,  // Será calculado
+                fontSize: baseFontSize,
+                w: 100,
+                h: 50,
                 text: "INFO",
                 bg: "#ef4444",
                 color: "#ffffff"
@@ -784,7 +865,7 @@
 
             if (!geo) return;
 
-            // 1. Verificar Resize Handle (Prioridade)
+            // 1. Resize Handle
             if (state.activeOverlayId) {
                 const ov = state.overlays.find(o => o.id === state.activeOverlayId);
                 const scaleX = geo.dw / geo.sw;
@@ -799,13 +880,12 @@
                     my >= oy + oh - handleSize && my <= oy + oh + handleSize) {
                     state.isResizingOverlay = true;
                     state.dragStartY = my;
-                    // Agora usamos o fontSize inicial para calcular o delta
                     state.initialFontSize = ov.fontSize;
                     return;
                 }
             }
 
-            // 2. Verificar Hit em Overlays
+            // 2. Hit Overlays
             const mouseImg = screenToImage(mx, my, geo);
             for (let i = state.overlays.length - 1; i >= 0; i--) {
                 const ov = state.overlays[i];
@@ -875,20 +955,12 @@
                 const rect = els.canvas.getBoundingClientRect();
                 const my = (e.clientY || e.pageY) - rect.top;
                 const geo = getRenderGeometry();
-                
-                // Arrastar para baixo aumenta o fontSize
                 const deltaScreenY = my - state.dragStartY;
                 const scaleY = geo.dh / geo.sh;
-                
-                // Converte movimento da tela em "unidades de imagem" para ajuste de fonte
                 const deltaFontSize = deltaScreenY / scaleY;
-                
                 const ov = state.overlays.find(o => o.id === state.activeOverlayId);
-                const newSize = state.initialFontSize + (deltaFontSize * 0.5); // 0.5 para suavizar
-                
-                if (newSize > 10) { 
-                    ov.fontSize = newSize;
-                }
+                const newSize = state.initialFontSize + (deltaFontSize * 0.5);
+                if (newSize > 10) { ov.fontSize = newSize; }
                 requestRender();
                 return;
             }
@@ -944,7 +1016,11 @@
         function renderPhoto() {
             if(!state.img) return;
             const ctx = els.ctx; const w = state.width; const h = state.height;
-            ctx.filter = 'none'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+            
+            // 1. FUNDO DO CANVAS (AQUI MUDAMOS A COR SE ESTIVER NO MODO SEM FUNDO)
+            ctx.filter = 'none'; 
+            ctx.fillStyle = (state.useNoBg) ? state.bgColor : '#ffffff'; 
+            ctx.fillRect(0, 0, w, h);
             
             const source = (state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : state.img;
             
@@ -996,68 +1072,51 @@
             const scaleY = dh / sh;
 
             state.overlays.forEach(ov => {
-                // Configurar Fonte Baseada no ov.fontSize (que é em pixels da imagem original)
-                // Precisamos escalar para o canvas atual
-                const scaledFontSize = ov.fontSize * scaleY; // Usa escala Y para manter proporção
+                const scaledFontSize = ov.fontSize * scaleY; 
                 ctx.font = `bold ${scaledFontSize}px system-ui, sans-serif`;
                 
-                // Quebrar linhas
                 const lines = ov.text.split('\n');
                 const lineHeight = scaledFontSize * 1.2;
                 const paddingH = scaledFontSize * 0.8; 
                 const paddingV = scaledFontSize * 0.4;
                 
-                // Medir largura máxima
                 let maxLineWidth = 0;
                 lines.forEach(line => {
                     const m = ctx.measureText(line);
                     if (m.width > maxLineWidth) maxLineWidth = m.width;
                 });
 
-                // Calcular dimensão visual (renderizada)
                 const renderW = maxLineWidth + (paddingH * 2);
                 const renderH = (lines.length * lineHeight) + (paddingV * 2);
 
-                // Atualizar dimensão lógica na Imagem Original (para hit test e persistência)
                 ov.w = renderW / scaleX; 
                 ov.h = renderH / scaleY;
 
-                // Coordenadas de desenho
                 const ox = dx + (ov.x * scaleX);
                 const oy = dy + (ov.y * scaleY);
 
                 ctx.save();
-                
-                // Sombra
                 ctx.shadowColor = "rgba(0,0,0,0.3)";
                 ctx.shadowBlur = 6;
                 ctx.shadowOffsetY = 3;
 
-                // Fundo do Botão
                 ctx.beginPath();
                 const radius = Math.min(16, renderH / 3); 
                 ctx.roundRect(ox, oy, renderW, renderH, radius); 
                 ctx.fillStyle = ov.bg;
                 ctx.fill();
                 
-                // Texto
                 ctx.shadowColor = "transparent";
                 ctx.fillStyle = ov.color;
                 ctx.textAlign = "center";
-                ctx.textBaseline = "middle"; // Vamos calcular manualmente o Y
+                ctx.textBaseline = "middle"; 
                 
-                // Desenhar cada linha
-                const startY = oy + paddingV + (lineHeight / 2); // Primeiro meio de linha
-                
+                const startY = oy + paddingV + (lineHeight / 2); 
                 lines.forEach((line, i) => {
-                    // Ajuste fino vertical para centralizar visualmente
-                    // offset para o meio da linha atual
                     const lineY = startY + (i * lineHeight); 
-                    // Correção para centralizar bloco de texto no botão se sobrar espaço (opcional, mas aqui o botão abraça o texto)
                     ctx.fillText(line, ox + (renderW/2), lineY);
                 });
 
-                // Selection Outline
                 if (state.activeOverlayId === ov.id) {
                     ctx.strokeStyle = "#fff";
                     ctx.lineWidth = 2;
@@ -1067,7 +1126,6 @@
                     ctx.lineWidth = 1;
                     ctx.strokeRect(ox - 2, oy - 2, renderW + 4, renderH + 4);
 
-                    // Resize Handle (Controla ov.fontSize)
                     ctx.fillStyle = "#fff";
                     ctx.fillRect(ox + renderW - 6, oy + renderH - 6, 12, 12);
                     ctx.strokeRect(ox + renderW - 6, oy + renderH - 6, 12, 12);
@@ -1090,7 +1148,10 @@
                 const superCanvas = document.createElement('canvas');
                 superCanvas.width = superW; superCanvas.height = superH;
                 const sCtx = superCanvas.getContext('2d');
-                sCtx.fillStyle = '#ffffff'; sCtx.fillRect(0, 0, superW, superH);
+                
+                // USE SELECTED BG COLOR FOR EXPORT
+                sCtx.fillStyle = (state.useNoBg) ? state.bgColor : '#ffffff'; 
+                sCtx.fillRect(0, 0, superW, superH);
 
                 const sw = source.width; const sh = source.height;
                 const aspect = sw / sh;
@@ -1138,15 +1199,29 @@
         function toggleMagicBackground() {
             if (!state.img) return;
             if (state.useNoBg) {
-                state.useNoBg = false; els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
-                els.btnRestore.style.display = 'none'; requestRender();
+                state.useNoBg = false; 
+                els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
+                els.btnRestore.style.display = 'none'; 
+                els.bgControlsPanel.classList.remove('visible'); // Hide BG Controls
+                requestRender();
             } else {
                 if (state.noBgCanvas) {
-                    state.useNoBg = true; els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido';
-                    els.btnRestore.style.display = 'flex'; requestRender();
+                    state.useNoBg = true; 
+                    els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido';
+                    els.btnRestore.style.display = 'flex'; 
+                    els.bgControlsPanel.classList.add('visible'); // Show BG Controls
+                    requestRender();
                 } else {
                     els.btnMagic.innerHTML = '⏳ Processando...'; els.btnMagic.classList.add('processing');
-                    setTimeout(() => { processRemoveBackground(); state.useNoBg = true; els.btnMagic.classList.remove('processing'); els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido'; els.btnRestore.style.display = 'flex'; requestRender(); }, 50);
+                    setTimeout(() => { 
+                        processRemoveBackground(); 
+                        state.useNoBg = true; 
+                        els.btnMagic.classList.remove('processing'); 
+                        els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido'; 
+                        els.btnRestore.style.display = 'flex'; 
+                        els.bgControlsPanel.classList.add('visible'); // Show BG Controls
+                        requestRender(); 
+                    }, 50);
                 }
             }
         }
@@ -1189,7 +1264,7 @@
                 state.isRecording = false; els.recBadge.classList.add('hidden');
                 els.btnRec.innerText = "Gravar e Baixar (MP4)"; els.btnRec.disabled = false;
                 els.videoEl.loop = true; els.videoEl.play(); loopVideoPreview();
-                setActiveOverlay(savedActive); // Restore selection if any
+                setActiveOverlay(savedActive); 
             };
             recorder.start();
             try {
@@ -1252,7 +1327,9 @@
             img.onload = () => {
                 state.img = img; state.noBgCanvas = null; state.useNoBg = false; state.x = 0; state.y = 0; state.overlays = [];
                 els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
-                els.btnRestore.style.display = 'none'; state.isRestoring = false; els.btnRestore.classList.remove('active'); els.brushControls.classList.remove('visible');
+                els.btnRestore.style.display = 'none'; state.isRestoring = false; 
+                els.bgControlsPanel.classList.remove('visible'); // Hide BG Controls
+                els.btnRestore.classList.remove('active'); els.brushControls.classList.remove('visible');
                 els.empty.classList.add('hidden'); els.canvas.classList.remove('hidden'); els.btnSave.disabled = false; requestRender(); URL.revokeObjectURL(url);
             };
             img.src = url;
