@@ -51,101 +51,153 @@ details .details-content{padding:1rem;border:1px solid var(--slate-100);border-t
 .item-list{max-height:150px;overflow-y:auto;border:1px solid var(--slate-200);border-radius:6px;padding:.5rem}
 .item-row{display:flex;justify-content:space-between;align-items:center;padding:.25rem;border-bottom:1px solid var(--slate-100);font-size:.8rem}.item-row:last-child{border-bottom:none}
 
-/* ESTILOS DO CARD COMPLETO DE PRODUTO */
+/* --- NOVOS ESTILOS DO CARD PROFISSIONAL --- */
 .catalog-container-expanded {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
     padding: 10px;
 }
-.catalog-card {
+.pro-card {
     background: #fff;
     border: 1px solid var(--slate-200);
     border-radius: 8px;
-    padding: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     display: flex;
-    flex-direction: column;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    flex-direction: row; /* Layout horizontal para desktop */
     overflow: hidden;
+    transition: all 0.2s ease;
 }
-.catalog-card:hover {
+.pro-card:hover {
     border-color: var(--primary);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1);
 }
-.card-top-section {
-    padding: 1rem;
-    display: flex;
-    gap: 1.5rem;
-    border-bottom: 1px solid var(--slate-100);
-}
-.card-img-area {
-    width: 100px;
+/* Coluna Esquerda: Imagem */
+.pro-card-left {
+    width: 140px;
+    background: var(--slate-50);
+    border-right: 1px solid var(--slate-200);
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
 }
-.card-img-box {
-    width: 100px;
-    height: 100px;
-    background: var(--slate-50);
+.pro-img-box {
+    width: 120px;
+    height: 120px;
+    background: #fff;
+    border: 1px solid var(--slate-200);
     border-radius: 6px;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    border: 1px solid var(--slate-200);
 }
-.card-main-info {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-.card-section-title {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--slate-400);
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px dashed var(--slate-200);
-    padding-bottom: 2px;
-}
-.card-grid-row {
-    display: grid;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-}
-.card-grid-4 { grid-template-columns: repeat(4, 1fr); }
-.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
-.card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.pro-img-box img { width: 100%; height: 100%; object-fit: contain; }
 
-.card-details-section {
-    padding: 1rem;
-    background: #f8fafc;
-    border-top: 1px solid var(--slate-100);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+/* Coluna Direita: Conteúdo */
+.pro-card-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
-.card-footer {
-    padding: 0.75rem 1rem;
+.pro-card-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--slate-100);
+    background: #fff;
+    display: grid;
+    grid-template-columns: 80px 1fr 200px 180px; /* Codigo, Nome, Categoria, Fornecedor */
+    gap: 15px;
+    align-items: end;
+}
+.pro-card-body {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1.2fr; /* Comercial, Logistica, Fiscal */
+    gap: 20px;
+    background: #fdfdfd;
+}
+.pro-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pro-section-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--slate-400);
+    border-bottom: 1px dashed var(--slate-200);
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+}
+.pro-row-grid {
+    display: grid;
+    gap: 10px;
+    align-items: center;
+}
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+/* Inputs e Labels Profissionais */
+.p-field { display: flex; flex-direction: column; gap: 2px; }
+.p-label { font-size: 0.65rem; font-weight: 600; color: var(--slate-500); text-transform: uppercase; }
+.p-input { 
+    width: 100%; 
+    padding: 4px 8px; 
+    font-size: 0.8rem; 
+    border: 1px solid var(--slate-300); 
+    border-radius: 4px; 
+    height: 28px;
+    background: #fff;
+    transition: border-color 0.15s;
+}
+.p-input:focus { border-color: var(--primary); outline: none; }
+.p-input[readonly] { background: var(--slate-50); color: var(--slate-500); border-color: var(--slate-200); }
+
+/* Rodapé do Card */
+.pro-card-footer {
+    padding: 8px 15px;
     background: var(--slate-50);
     border-top: 1px solid var(--slate-200);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-.q-input {
-    width: 100%;
-    padding: 0.4rem 0.5rem;
-    font-size: 0.8rem;
-    border: 1px solid var(--slate-300);
-    border-radius: 4px;
-    background: #fff;
+
+/* Switches e Checkboxes estilizados */
+.p-check-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
 }
-.q-input:focus { border-color: var(--primary); outline: none; }
-.q-label { font-size: 0.65rem; color: var(--slate-500); margin-bottom: 2px; display: block; font-weight: 600; }
-.batch-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 4px; margin-bottom: 4px; }
+.p-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--slate-600);
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+}
+.p-check:hover { background: #fff; border-color: var(--slate-200); }
+.p-check input { margin: 0; }
+.p-check.active { background: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+/* Tabela Mini Lotes */
+.mini-batch-table {
+    width: 100%;
+    font-size: 0.7rem;
+    border-collapse: collapse;
+}
+.mini-batch-table td { padding: 2px; }
 </style>
 </head>
 <body>
@@ -594,6 +646,14 @@ const CatalogQuick = {
         } else {
             marginEl.innerText = '-';
         }
+    },
+    toggleLink: (id, checked) => {
+        const box = document.getElementById(`link-search-box-${id}`);
+        if(box) box.style.display = checked ? 'flex' : 'none';
+        if(!checked) {
+            document.getElementById(`qp-link-id-${id}`).value = '';
+            document.getElementById(`qp-link-name-${id}`).value = '';
+        }
     }
 };
 
@@ -625,151 +685,183 @@ const Views={
                 let marginTxt = '-';
                 if(p.custo > 0 && p.valor > 0) marginTxt = (((p.valor - p.custo)/p.custo)*100).toFixed(1) + '%';
                 
-                // Prepara lotes (3 linhas fixas para edição rápida)
+                // Prepara lotes
                 let batchRows = '';
                 let batches = p.batches || [];
-                // Ordena e pega até 3
                 batches.sort((a,b) => new Date(a.date) - new Date(b.date));
                 for(let i=1; i<=3; i++) {
                     let b = batches[i-1] || {date:'', qty:''};
-                    batchRows += `
-                    <div class="batch-row">
-                        <input type="date" id="qp-b-date-${p.id}-${i}" value="${b.date}" class="q-input" style="padding:2px; font-size:0.7rem;">
-                        <input type="number" id="qp-b-qty-${p.id}-${i}" value="${b.qty}" placeholder="Qtd" class="q-input text-center" style="padding:2px; font-size:0.7rem;">
-                    </div>`;
+                    batchRows += `<tr>
+                        <td><input type="date" id="qp-b-date-${p.id}-${i}" value="${b.date}" style="border:none; background:transparent; width:100%; font-size:0.7rem;"></td>
+                        <td><input type="number" id="qp-b-qty-${p.id}-${i}" value="${b.qty}" placeholder="-" style="border:none; background:transparent; width:100%; text-align:right; font-size:0.7rem;"></td>
+                    </tr>`;
                 }
 
                 const isLinked = !!(p.linkedProdId);
 
                 return `
-                <div class="catalog-card">
-                    <!-- LINHA 1: IMAGEM E DADOS PRINCIPAIS -->
-                    <div class="card-top-section">
-                        <div class="card-img-area">
-                            <div class="card-img-box">
-                                ${hasImg ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">` : `<i class="fa-solid fa-box-open" style="color:var(--slate-300);font-size:2rem"></i>`}
-                            </div>
-                            <input type="text" id="qp-img-slug-${p.id}" value="${p.imageName || ''}" class="q-input" placeholder="Nome img" style="font-size:0.65rem;">
+                <div class="pro-card">
+                    <!-- COLUNA ESQUERDA: IMAGEM -->
+                    <div class="pro-card-left">
+                        <div class="pro-img-box">
+                            ${hasImg ? `<img src="${p.imagem}" onerror="this.style.display='none'">` : `<i class="fa-solid fa-box-open" style="color:var(--slate-300);font-size:2rem"></i>`}
                         </div>
+                        <div class="p-field" style="width:100%">
+                            <input type="text" id="qp-img-slug-${p.id}" value="${p.imageName || ''}" class="p-input" placeholder="Nome Imagem" style="font-size:0.65rem; text-align:center;">
+                        </div>
+                    </div>
+
+                    <!-- COLUNA DIREITA: CONTEÚDO COMPLETO -->
+                    <div class="pro-card-right">
                         
-                        <div class="card-main-info">
-                            <div>
-                                <div class="card-grid-row card-grid-2">
-                                    <div><span class="q-label">CÓDIGO</span><input type="text" value="${p.codigo}" readonly class="q-input" style="background:var(--slate-50); font-weight:700;"></div>
-                                    <div><span class="q-label">CATEGORIA</span><select id="qp-cat-${p.id}" class="q-input">${catOptions.replace(`value="${p.categoria}"`, `value="${p.categoria}" selected`)}</select></div>
-                                </div>
-                                <div><span class="q-label">NOME DO PRODUTO</span><input type="text" id="qp-nome-${p.id}" value="${p.nome}" class="q-input" style="font-weight:600;"></div>
+                        <!-- CABEÇALHO: IDENTIFICAÇÃO BÁSICA -->
+                        <div class="pro-card-header">
+                            <div class="p-field">
+                                <span class="p-label">Cód.</span>
+                                <input type="text" value="${p.codigo}" readonly class="p-input" style="font-weight:700; text-align:center;">
                             </div>
-                            <div>
-                                <div><span class="q-label">FORNECEDOR</span><input type="text" id="qp-forn-${p.id}" value="${p.fornecedor || ''}" class="q-input"></div>
-                                <div class="card-grid-row card-grid-2" style="margin-top:0.75rem;">
-                                    <label style="display:flex;align-items:center;gap:5px;font-size:0.7rem;cursor:pointer;"><input type="checkbox" id="qp-pers-${p.id}" ${p.personalized?'checked':''}> Personalizado?</label>
-                                    <label style="display:flex;align-items:center;gap:5px;font-size:0.7rem;cursor:pointer;"><input type="checkbox" id="qp-combo-${p.id}" ${p.isCombo?'checked':''}> É Combo?</label>
-                                </div>
+                            <div class="p-field">
+                                <span class="p-label">Nome do Produto</span>
+                                <input type="text" id="qp-nome-${p.id}" value="${p.nome}" class="p-input" style="font-weight:600;">
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="card-details-section" style="background:#fff;">
-                        <!-- COLUNA PREÇOS -->
-                        <div>
-                            <div class="card-section-title">FINANCEIRO</div>
-                            <div class="card-grid-row card-grid-3">
-                                <div><span class="q-label">CUSTO (R$)</span><input type="number" step="0.01" id="qp-custo-${p.id}" value="${p.custo}" oninput="CatalogQuick.calcMargin('${p.id}')" class="q-input"></div>
-                                <div><span class="q-label">MARGEM</span><div id="qp-margem-display-${p.id}" style="font-size:0.9rem; font-weight:bold; padding:5px; text-align:center;">${marginTxt}</div></div>
-                                <div><span class="q-label" style="color:var(--primary)">VENDA (R$)</span><input type="number" step="0.01" id="qp-valor-${p.id}" value="${p.valor}" oninput="CatalogQuick.calcMargin('${p.id}')" class="q-input" style="font-weight:700; color:var(--primary); border-color:#bfdbfe;"></div>
+                            <div class="p-field">
+                                <span class="p-label">Categoria</span>
+                                <select id="qp-cat-${p.id}" class="p-input">${catOptions.replace(`value="${p.categoria}"`, `value="${p.categoria}" selected`)}</select>
                             </div>
-                            <div class="card-grid-row card-grid-2" style="background:#fff7ed; padding:5px; border-radius:4px; border:1px solid #ffedd5;">
-                                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.7rem;font-weight:bold;color:var(--warning);"><input type="checkbox" id="qp-is-offer-${p.id}" ${p.isOffer?'checked':''}> EM OFERTA?</label>
-                                <input type="number" step="0.01" id="qp-offer-price-${p.id}" value="${p.offerPrice||''}" placeholder="R$ Oferta" class="q-input" style="border-color:var(--warning);">
+                            <div class="p-field">
+                                <span class="p-label">Fornecedor</span>
+                                <input type="text" id="qp-forn-${p.id}" value="${p.fornecedor || ''}" class="p-input">
                             </div>
                         </div>
 
-                        <!-- COLUNA ESTOQUE -->
-                        <div>
-                            <div class="card-section-title">ESTOQUE</div>
-                            <div class="card-grid-row card-grid-2">
-                                <div>
-                                    <span class="q-label">FÍSICO TOTAL</span>
-                                    <input type="number" id="qp-est-fis-${p.id}" value="${p.estoque}" class="q-input" style="font-weight:700;">
-                                    <div style="margin-top:5px; border-top:1px dashed var(--slate-200); padding-top:2px;">
-                                        <span class="q-label" style="margin-bottom:2px;">Lotes (Validade/Qtd)</span>
+                        <!-- CORPO: GRELHA DE INFORMAÇÕES -->
+                        <div class="pro-card-body">
+                            
+                            <!-- BLOCO 1: COMERCIAL / FINANCEIRO -->
+                            <div class="pro-section">
+                                <div class="pro-section-title">Comercial & Venda</div>
+                                <div class="pro-row-grid grid-3">
+                                    <div class="p-field">
+                                        <span class="p-label">Custo (R$)</span>
+                                        <input type="number" step="0.01" id="qp-custo-${p.id}" value="${p.custo}" oninput="CatalogQuick.calcMargin('${p.id}')" class="p-input">
+                                    </div>
+                                    <div class="p-field">
+                                        <span class="p-label">Margem</span>
+                                        <div id="qp-margem-display-${p.id}" style="font-size:0.8rem; font-weight:bold; padding:4px; color:var(--slate-600); text-align:center; background:var(--slate-100); border-radius:4px;">${marginTxt}</div>
+                                    </div>
+                                    <div class="p-field">
+                                        <span class="p-label" style="color:var(--primary)">Venda (R$)</span>
+                                        <input type="number" step="0.01" id="qp-valor-${p.id}" value="${p.valor}" oninput="CatalogQuick.calcMargin('${p.id}')" class="p-input" style="border-color:var(--primary); font-weight:700;">
+                                    </div>
+                                </div>
+                                <div style="background:#fff7ed; padding:8px; border-radius:4px; border:1px solid #ffedd5; margin-top:5px;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                                        <label class="p-check" style="color:var(--warning); padding:0;">
+                                            <input type="checkbox" id="qp-is-offer-${p.id}" ${p.isOffer?'checked':''}> Em Oferta?
+                                        </label>
+                                        <input type="number" step="0.01" id="qp-offer-price-${p.id}" value="${p.offerPrice||''}" placeholder="R$" class="p-input" style="width:80px; height:24px; border-color:var(--warning);">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BLOCO 2: LOGÍSTICA / ESTOQUE -->
+                            <div class="pro-section" style="border-left:1px solid var(--slate-100); border-right:1px solid var(--slate-100); padding:0 15px;">
+                                <div class="pro-section-title">Logística & Estoque</div>
+                                <div class="pro-row-grid grid-2">
+                                    <div class="p-field">
+                                        <span class="p-label">Físico Total</span>
+                                        <input type="number" id="qp-est-fis-${p.id}" value="${p.estoque}" class="p-input" style="font-weight:700;">
+                                    </div>
+                                    <div class="p-field">
+                                        <span class="p-label">Fiscal (NFe)</span>
+                                        <input type="number" id="qp-est-fisc-${p.id}" value="${p.estoqueFiscal||0}" class="p-input" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;">
+                                    </div>
+                                </div>
+                                <div class="pro-row-grid grid-2" style="margin-top:5px;">
+                                    <div class="p-field">
+                                        <span class="p-label">Peso (kg)</span>
+                                        <input type="number" step="0.001" id="qp-peso-${p.id}" value="${p.peso||''}" class="p-input">
+                                    </div>
+                                    <div class="p-field">
+                                        <span class="p-label">Limite Min.</span>
+                                        <input type="number" id="qp-limit-${p.id}" value="${p.limit||''}" class="p-input">
+                                    </div>
+                                </div>
+                                <div style="margin-top:8px; background:var(--slate-50); border:1px solid var(--slate-200); border-radius:4px; padding:4px;">
+                                    <span class="p-label" style="display:block; margin-bottom:2px; font-size:0.6rem;">Controle de Lotes</span>
+                                    <table class="mini-batch-table">
                                         ${batchRows}
-                                    </div>
+                                    </table>
                                 </div>
-                                <div>
-                                    <span class="q-label" style="color:#7c3aed">FISCAL</span>
-                                    <input type="number" id="qp-est-fisc-${p.id}" value="${p.estoqueFiscal||0}" class="q-input" style="background:#f5f3ff; color:#7c3aed; border-color:#ddd6fe; font-weight:700;">
-                                    <div style="margin-top:10px;">
-                                        <span class="q-label">PESO (KG)</span><input type="number" step="0.001" id="qp-peso-${p.id}" value="${p.peso||''}" class="q-input">
-                                    </div>
-                                    <div style="margin-top:5px;">
-                                        <span class="q-label">LIMITE QTD</span><input type="number" id="qp-limit-${p.id}" value="${p.limit||''}" class="q-input">
-                                    </div>
+                            </div>
+
+                            <!-- BLOCO 3: DADOS FISCAIS E DETALHES -->
+                            <div class="pro-section">
+                                <div class="pro-section-title">Fiscal & Classificação</div>
+                                <div class="pro-row-grid grid-3">
+                                    <div class="p-field"><span class="p-label">NCM</span><input type="text" id="qp-ncm-${p.id}" value="${p.ncm||''}" class="p-input"></div>
+                                    <div class="p-field"><span class="p-label">CEST</span><input type="text" id="qp-cest-${p.id}" value="${p.cest||''}" class="p-input"></div>
+                                    <div class="p-field"><span class="p-label">Und.</span><input type="text" id="qp-unidade-${p.id}" value="${p.unidade||''}" class="p-input"></div>
+                                </div>
+                                <div class="pro-row-grid grid-3">
+                                    <div class="p-field"><span class="p-label">CFOP</span><input type="text" id="qp-cfop-${p.id}" value="${p.cfop||''}" class="p-input"></div>
+                                    <div class="p-field"><span class="p-label">CSOSN</span><input type="text" id="qp-csosn-${p.id}" value="${p.csosn||''}" class="p-input"></div>
+                                    <div class="p-field"><span class="p-label">Ref.</span><input type="text" id="qp-refid-${p.id}" value="${p.refId||''}" class="p-input"></div>
+                                </div>
+                                <div class="p-field" style="margin-top:5px;">
+                                    <span class="p-label">EAN / Código de Barras</span>
+                                    <input type="text" id="qp-ean-${p.id}" value="${p.ean||''}" class="p-input font-mono">
+                                </div>
+                                <div class="p-field" style="margin-top:5px;">
+                                    <span class="p-label">Nota de Entrada (Última)</span>
+                                    <input type="text" id="qp-nota-${p.id}" value="${p.nota||''}" class="p-input">
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card-details-section">
-                        <div>
-                            <div class="card-section-title">MARKETING & VENDAS</div>
-                            <div style="margin-bottom: 10px; background: #eff6ff; padding: 8px; border-radius: 4px; border: 1px solid #dbeafe;">
-                                <label style="display:flex;align-items:center;gap:5px;font-size:0.75rem;font-weight:700;color:var(--primary);cursor:pointer;">
-                                    <input type="checkbox" id="qp-is-bestseller-${p.id}" ${p.isBestSeller?'checked':''}> PRODUTO "MAIS VENDIDO"
-                                </label>
-                            </div>
-                            <div style="background: #f0fdf4; padding: 8px; border-radius: 4px; border: 1px solid #dcfce7;">
-                                <label style="display:flex;align-items:center;gap:5px;font-size:0.75rem;font-weight:700;color:var(--success);cursor:pointer;margin-bottom:5px;">
-                                    <input type="checkbox" id="qp-link-toggle-${p.id}" ${isLinked?'checked':''} onchange="document.getElementById('link-box-${p.id}').style.display = this.checked ? 'block' : 'none'"> LIGAR A OUTRO PRODUTO
-                                </label>
-                                <div id="link-box-${p.id}" style="display:${isLinked?'block':'none'};">
-                                    <span class="q-label">OFERECER JUNTO COM:</span>
-                                    <div style="display:flex; gap:5px;">
+                        <!-- RODAPÉ: CONFIGURAÇÕES E BOTÕES -->
+                        <div class="pro-card-footer">
+                            <div style="display:flex; gap:20px; align-items:center;">
+                                <!-- Flags -->
+                                <div class="p-check-group">
+                                    <label class="p-check ${p.isBestSeller?'active':''}"><input type="checkbox" id="qp-is-bestseller-${p.id}" ${p.isBestSeller?'checked':''}> Mais Vendido</label>
+                                    <label class="p-check ${p.personalized?'active':''}"><input type="checkbox" id="qp-pers-${p.id}" ${p.personalized?'checked':''}> Personalizado</label>
+                                    <label class="p-check ${p.isCombo?'active':''}"><input type="checkbox" id="qp-combo-${p.id}" ${p.isCombo?'checked':''}> É Combo</label>
+                                </div>
+                                
+                                <!-- Divisor Vertical -->
+                                <div style="width:1px; height:24px; background:var(--slate-200);"></div>
+
+                                <!-- Cross-sell -->
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <label class="p-check" style="padding:0;">
+                                        <input type="checkbox" id="qp-link-toggle-${p.id}" ${isLinked?'checked':''} onchange="CatalogQuick.toggleLink('${p.id}', this.checked)"> Ligar Produto
+                                    </label>
+                                    <div id="link-search-box-${p.id}" style="display:${isLinked?'flex':'none'}; gap:5px; align-items:center;">
                                         <input type="hidden" id="qp-link-id-${p.id}" value="${p.linkedProdId||''}">
-                                        <input type="text" id="qp-link-name-${p.id}" value="${p.linkedProdCode||''}" class="q-input" readonly placeholder="Clique na lupa para buscar..." style="font-size:0.7rem;">
-                                        <button onclick="ProductLinker.open('${p.id}')" class="btn-ghost" style="border:1px solid var(--slate-300);"><i class="fa-solid fa-magnifying-glass"></i></button>
+                                        <input type="text" id="qp-link-name-${p.id}" value="${p.linkedProdCode||''}" class="p-input" readonly placeholder="Buscar..." style="width:100px; height:26px; font-size:0.7rem;">
+                                        <button onclick="ProductLinker.open('${p.id}')" class="btn-ghost" style="padding:2px 6px; border:1px solid var(--slate-300); border-radius:4px;"><i class="fa-solid fa-magnifying-glass"></i></button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div>
-                            <div class="card-section-title">DETALHES & VARIAÇÕES</div>
-                            <div style="display:flex; flex-direction:column; gap:5px;">
-                                <div><span class="q-label">VARIAÇÕES NOME (Separar por |)</span><input type="text" id="qp-var-nome-${p.id}" value="${(p.variacoesNome||[]).join(' | ')}" class="q-input"></div>
-                                <div><span class="q-label">VARIAÇÕES EAN (Separar por |)</span><input type="text" id="qp-var-ean-${p.id}" value="${(p.variacoesEan||[]).join(' | ')}" class="q-input"></div>
-                                <div><span class="q-label">CARACTERÍSTICAS</span><textarea id="qp-carac-${p.id}" rows="1" class="q-input" style="resize:none;">${p.caracteristicas||''}</textarea></div>
-                                <div><span class="q-label">OBSERVAÇÕES INTERNAS</span><textarea id="qp-obs-${p.id}" rows="1" class="q-input" style="resize:none;">${p.obs||''}</textarea></div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- DADOS FISCAIS -->
-                    <div class="card-details-section" style="border-top:none; padding-top:0;">
-                        <div>
-                            <div class="card-section-title">FISCAL & CÓDIGOS</div>
-                            <div class="card-grid-row card-grid-3">
-                                <div><span class="q-label">NCM</span><input type="text" id="qp-ncm-${p.id}" value="${p.ncm||''}" class="q-input"></div>
-                                <div><span class="q-label">CEST</span><input type="text" id="qp-cest-${p.id}" value="${p.cest||''}" class="q-input"></div>
-                                <div><span class="q-label">UNIDADE</span><input type="text" id="qp-unidade-${p.id}" value="${p.unidade||''}" class="q-input"></div>
-                            </div>
-                            <div class="card-grid-row card-grid-3">
-                                <div><span class="q-label">CFOP</span><input type="text" id="qp-cfop-${p.id}" value="${p.cfop||''}" class="q-input"></div>
-                                <div><span class="q-label">CSOSN</span><input type="text" id="qp-csosn-${p.id}" value="${p.csosn||''}" class="q-input"></div>
-                                <div><span class="q-label">REF ID</span><input type="text" id="qp-refid-${p.id}" value="${p.refId||''}" class="q-input"></div>
-                            </div>
-                            <div class="card-grid-row card-grid-2">
-                                <div><span class="q-label">EAN PRINCIPAL</span><input type="text" id="qp-ean-${p.id}" value="${p.ean||''}" class="q-input font-mono"></div>
-                                <div><span class="q-label">NOTA ENTRADA</span><input type="text" id="qp-nota-${p.id}" value="${p.nota||''}" class="q-input"></div>
+                            <!-- Botões de Ação -->
+                            <div style="display:flex; gap:10px;">
+                                <button onclick="CatalogQuick.delete('${p.id}')" class="btn btn-ghost" style="color:var(--danger); font-size:0.75rem;">Excluir</button>
+                                <button id="btn-save-${p.id}" onclick="CatalogQuick.update('${p.id}')" class="btn btn-primary" style="padding:0.4rem 1.5rem; font-size:0.8rem;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Salvar
+                                </button>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card-footer">
-                        <button onclick="CatalogQuick.delete('${p.id}')" class="btn btn-ghost" style="color:var(--danger);"><i class="fa-solid fa-trash"></i> Excluir Produto</button>
-                        <button id="btn-save-${p.id}" onclick="CatalogQuick.update('${p.id}')" class="btn-quick-save" style="width:auto; padding:0 1.5rem; height:36px; gap:0.5rem; font-weight:700;">
-                            <i class="fa-solid fa-floppy-disk"></i> SALVAR ALTERAÇÕES
-                        </button>
+                        <!-- CAMPOS OCULTOS PARA MANTER COMPATIBILIDADE COM UPDATE() -->
+                        <div style="display:none;">
+                            <input type="text" id="qp-var-nome-${p.id}" value="${(p.variacoesNome||[]).join(' | ')}">
+                            <input type="text" id="qp-var-ean-${p.id}" value="${(p.variacoesEan||[]).join(' | ')}">
+                            <textarea id="qp-carac-${p.id}">${p.caracteristicas||''}</textarea>
+                            <textarea id="qp-obs-${p.id}">${p.obs||''}</textarea>
+                        </div>
+
                     </div>
                 </div>
                 `;
