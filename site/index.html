@@ -57,60 +57,107 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="produtos/produtos.json" as="fetch" crossorigin="anonymous">
 
-    <!-- STRUCTURED DATA: JSON-LD (Schema.org) -->
+    <!-- STRUCTURED DATA: JSON-LD (Schema.org Graph Architecture) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "GroceryStore",
-      "name": "Dona Antônia Cestas Básicas",
-      "image": "https://www.donaantonia.com.br/img/logo.png",
-      "@id": "https://www.donaantonia.com.br/#website",
-      "url": "https://www.donaantonia.com.br/",
-      "telephone": "+5565996813588",
-      "priceRange": "$$",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Jardim Nossa Senhora Aparecida",
-        "addressLocality": "Cuiabá",
-        "addressRegion": "MT",
-        "postalCode": "78000-000",
-        "addressCountry": "BR"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": -15.6014,
-        "longitude": -56.0979
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday"
-        ],
-        "opens": "08:00",
-        "closes": "18:00"
-      },
-      "sameAs": [
-        "https://instagram.com/donaantonia",
-        "https://facebook.com/donaantonia"
-      ],
-      "potentialAction": {
-        "@type": "OrderAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": "https://www.donaantonia.com.br/",
-          "inLanguage": "pt-BR",
-          "actionPlatform": [
-            "http://schema.org/DesktopWebPlatform",
-            "http://schema.org/MobileWebPlatform"
+      "@graph": [
+        {
+          "@type": "GroceryStore",
+          "@id": "https://www.donaantonia.com.br/#store",
+          "name": "Dona Antônia Cestas Básicas",
+          "image": "https://www.donaantonia.com.br/img/logo.png",
+          "url": "https://www.donaantonia.com.br/",
+          "telephone": "+5565996813588",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Jardim Nossa Senhora Aparecida",
+            "addressLocality": "Cuiabá",
+            "addressRegion": "MT",
+            "postalCode": "78000-000",
+            "addressCountry": "BR"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -15.6014,
+            "longitude": -56.0979
+          },
+          "areaServed": [
+            {
+              "@type": "City",
+              "name": "Cuiabá"
+            },
+            {
+              "@type": "City",
+              "name": "Várzea Grande"
+            }
+          ],
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday"
+            ],
+            "opens": "08:00",
+            "closes": "18:00"
+          },
+          "sameAs": [
+            "https://instagram.com/donaantonia",
+            "https://facebook.com/donaantonia"
           ]
         },
-        "deliveryMethod": "http://schema.org/OnSitePickup"
-      }
+        {
+          "@type": "FAQPage",
+          "@id": "https://www.donaantonia.com.br/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Quais as formas de pagamento?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação (Alelo, Sodexo, Ticket, etc)."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Qual o prazo de entrega?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "A entrega é grátis?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Posso alterar os itens da cesta?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Vocês têm loja física?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto."
+              }
+            }
+          ]
+        }
+      ]
     }
     </script>
 
@@ -1071,7 +1118,7 @@
                 const list = document.getElementById('checkout-items');
                 list.innerHTML = Object.keys(this.cart).map(id => {
                     const p = this.data.find(x => x.id === id);
-                    return `<li class="co-item"><span>${this.cart[id]}x ${p.nome}</span></li>`;
+                    return `<li class=\"co-item\"><span>${this.cart[id]}x ${p.nome}</span></li>`;
                 }).join('');
                 document.getElementById('checkout-modal').showModal();
             },
