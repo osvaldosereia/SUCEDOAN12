@@ -4,11 +4,13 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 10.7 - Welcome Overlay & Header Cleanup
+        VERSION: 11.0 - Home Redesign & Item Carousel
         CHANGELOG:
-        - UI: Adicionado Overlay de Boas-Vindas (Blur + Mensagem) ao abrir o personalizador.
-        - CLEANUP: Removido cabeçalho redundante ("Mercadinho", "Adicione itens...") do topo da coluna principal.
-        - UX: Foco total na experiência de personalização desde o início.
+        - HOME UI: Cards da página inicial redesenhados com carrossel de itens internos.
+        - HOME UI: Botões "Personalizar" e "Encomendar Direto" na home.
+        - DESKTOP: Sidebar de resumo removida da Home (exclusiva do Customizer).
+        - LOGIC: Função para renderizar mini-itens dentro dos cards da home.
+        - FIX: Ajustes de layout para garantir foco total na grid de cestas na entrada.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -19,6 +21,7 @@
     <meta name="theme-color" content="#ffffff">
     
     <title>Cestas Básicas & Mercadinho | Dona Antônia</title>
+    <meta name="description" content="Compre Cesta Básica em Cuiabá e Várzea Grande com entrega grátis*. Personalize sua cesta com Arroz Tio Alvino. Pagamento na entrega.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,12 +61,67 @@
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
         .logo-circle { width: 32px; height: 32px; background: #fecaca; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
 
-        /* --- 3. HERO --- */
-        #home-view { padding-top: var(--header-height); background: #fff; }
-        .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid var(--border-color); }
+        /* --- 3. HERO & HOME STYLES --- */
+        #home-view { padding-top: var(--header-height); background: #fff; min-height: 100vh; }
+        .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid var(--border-color); background: #f8fafc; }
         .hero h1 { font-size: 1.8rem; line-height: 1.1; color: var(--secondary); margin-bottom: 10px; }
-        .hero p { color: var(--text-light); margin-bottom: 20px; font-size: 0.95rem; }
-        .btn-cta { background: var(--primary); color: white; padding: 12px 30px; border-radius: 50px; font-weight: 700; font-size: 1rem; }
+        .hero p { color: var(--text-light); margin-bottom: 0; font-size: 0.95rem; }
+        
+        /* HOME GRID (Baskets) */
+        .home-grid-container { padding: 40px 0 80px; }
+        .baskets-grid { 
+            display: grid; grid-template-columns: 1fr; gap: 30px; 
+            max-width: 1200px; margin: 0 auto; 
+        }
+        @media(min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media(min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); gap: 40px; } }
+
+        /* HOME CARD DESIGN */
+        .home-basket-card {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+            overflow: hidden; display: flex; flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .home-basket-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+
+        .hbc-img-wrap { 
+            width: 100%; aspect-ratio: 1; padding: 20px; 
+            display: flex; align-items: center; justify-content: center; 
+            background: #fff; border-bottom: 1px solid #f8fafc;
+        }
+        .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        
+        .hbc-content { padding: 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .hbc-title { font-size: 1.2rem; font-weight: 800; color: var(--secondary); line-height: 1.2; text-align: center; }
+        .hbc-price { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-align: center; margin-bottom: 10px; }
+        
+        /* Mini Item Carousel inside Card */
+        .hbc-items-slider {
+            display: flex; gap: 10px; overflow-x: auto; 
+            padding: 10px 5px; margin-bottom: 15px;
+            background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;
+            scrollbar-width: none;
+        }
+        .hbc-items-slider::-webkit-scrollbar { display: none; }
+        
+        .hbc-item { 
+            flex: 0 0 60px; display: flex; flex-direction: column; align-items: center; gap: 4px; 
+            background: #fff; border-radius: 6px; padding: 4px; border: 1px solid #eee;
+        }
+        .hbc-item img { width: 40px; height: 40px; object-fit: contain; }
+        .hbc-item span { font-size: 0.65rem; font-weight: 700; color: var(--text-light); background: #e2e8f0; padding: 1px 6px; border-radius: 4px; }
+
+        /* Action Buttons */
+        .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
+        .btn-home-cust { 
+            width: 100%; padding: 12px; background: var(--secondary); color: white; 
+            border-radius: 50px; font-weight: 700; font-size: 0.95rem; text-align: center;
+        }
+        .btn-home-order { 
+            width: 100%; padding: 10px; background: white; color: var(--secondary); 
+            border: 1px solid #e2e8f0; border-radius: 50px; font-weight: 600; font-size: 0.9rem; text-align: center;
+        }
+        .btn-home-order:hover { background: #f8fafc; border-color: #cbd5e1; }
 
         /* --- 4. CUSTOMIZER VIEW --- */
         #customizer-view { 
@@ -72,7 +130,17 @@
             padding-top: 20px; 
         }
         
-        /* Welcome Overlay (Blur) */
+        /* Floating FAQ Button */
+        .fab-faq {
+            position: fixed; top: 20px; right: 20px; z-index: 10000;
+            width: 40px; height: 40px; background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--secondary); font-weight: 700;
+            font-size: 1.2rem; transition: transform 0.2s;
+        }
+        .fab-faq:active { transform: scale(0.95); }
+
+        /* Welcome Overlay */
         .welcome-overlay {
             position: fixed; inset: 0; z-index: 12000;
             background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px);
@@ -96,17 +164,6 @@
             padding: 14px 40px; font-weight: 700; font-size: 1rem;
             box-shadow: 0 5px 20px rgba(220, 38, 38, 0.3); transition: transform 0.2s;
         }
-        .welcome-btn:active { transform: scale(0.95); }
-
-        /* Floating FAQ Button */
-        .fab-faq {
-            position: fixed; top: 20px; right: 20px; z-index: 10000;
-            width: 40px; height: 40px; background: #fff; border: 1px solid #e2e8f0;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--secondary); font-weight: 700;
-            font-size: 1.2rem; transition: transform 0.2s;
-        }
-        .fab-faq:active { transform: scale(0.95); }
 
         /* --- 5. MOBILE BOTTOM PANEL --- */
         .mobile-bottom-panel {
@@ -118,34 +175,22 @@
         }
 
         .mbp-actions-row {
-            display: grid; 
-            grid-template-columns: auto auto 1fr auto; 
-            align-items: center; gap: 10px;
-            padding: 8px 12px; height: 60px;
+            display: grid; grid-template-columns: auto auto 1fr auto; 
+            align-items: center; gap: 10px; padding: 8px 12px; height: 60px;
             background: #fff; border-bottom: 1px solid #f1f5f9;
         }
         
-        .mbp-basket-row {
-            background: #f8fafc;
-            padding: 10px 0;
-        }
-        .mbp-basket-header { 
-            padding: 0 16px 4px; display: flex; justify-content: space-between; 
-            font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; font-weight: 700; 
-        }
+        .mbp-basket-row { background: #f8fafc; padding: 10px 0; }
+        .mbp-basket-header { padding: 0 16px 4px; display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
         
         .mba-btn-icon { 
             display: flex; align-items: center; justify-content: center; 
             width: 40px; height: 40px; border-radius: 50%; background: #f1f5f9; color: var(--secondary); 
             border: 1px solid #e2e8f0; cursor: pointer;
         }
-        .mba-btn-icon:active { background: #e2e8f0; }
-        .mba-btn-icon svg { width: 20px; height: 20px; stroke-width: 2.5; }
-        
         .mba-info { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding-right: 5px; }
         .mba-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-light); }
         .mba-total { font-size: 1rem; font-weight: 800; color: var(--secondary); white-space: nowrap; line-height: 1; }
-        
         .mba-btn-order {
             background: #16a34a; color: white; border-radius: 50px;
             padding: 0 18px; height: 40px; font-weight: 700; font-size: 0.9rem;
@@ -153,10 +198,43 @@
             box-shadow: 0 2px 5px rgba(22,163,74,0.3); border: none; cursor: pointer;
         }
 
-        #included-list-mob.horizontal-slider {
-            display: flex; gap: 10px; overflow-x: auto; padding: 0 16px;
-            scroll-snap-type: x mandatory; scrollbar-width: none;
+        /* --- 6. MERCADINHO GRID & CARDS --- */
+        .cat-header { 
+            position: static; background: #f1f5f9; color: var(--secondary);
+            padding: 8px 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; margin: 15px 0; border-radius: 4px; border: 1px solid #e2e8f0;
         }
+
+        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
+        @media(min-width: 768px) { .products-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+
+        .card-prod {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 12px; display: flex; flex-direction: column; text-align: center;
+            height: 100%; position: relative; transition: border-color 0.2s;
+        }
+        
+        .cp-tag { position: absolute; top: 8px; left: 8px; background: #dcfce7; color: #166534; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
+        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; }
+        .cp-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .cp-title { 
+            font-size: 0.8rem; font-weight: 600; color: var(--secondary); 
+            margin-bottom: 4px; line-height: 1.3; min-height: 2.6em;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        
+        .cp-meta { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; min-height: 20px; align-items: center; }
+        .cp-info { font-size: 0.65rem; text-decoration: underline; color: var(--text-light); cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+        .cp-price { font-size: 1rem; font-weight: 800; color: var(--text-main); margin-top: auto; margin-bottom: 8px; }
+        .cp-validity-badge { font-size: 0.65rem; color: #15803d; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; margin-top: 6px; display: inline-block; width: 100%; text-align: center; }
+
+        .btn-add { width: 100%; padding: 8px 0; background: white; border: 1px solid var(--primary); color: var(--primary); border-radius: 50px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; transition: all 0.2s; }
+        .qty-ctrl { display: flex; align-items: center; justify-content: space-between; width: 100%; background: var(--primary); border-radius: 50px; height: 32px; color: white; }
+        .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; cursor: pointer; }
+        .qc-val { font-weight: 700; font-size: 0.9rem; }
+
+        /* Basket Slider (Common) */
+        #included-list-mob.horizontal-slider { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px; scroll-snap-type: x mandatory; scrollbar-width: none; }
         #included-list-mob.horizontal-slider::-webkit-scrollbar { display: none; }
         
         .card-inc {
@@ -170,79 +248,21 @@
 
         .ci-img { width: 50px; height: 50px; object-fit: contain; mix-blend-mode: multiply; cursor: pointer; flex-shrink: 0; }
         .ci-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-        .ci-title { 
-            font-size: 0.75rem; font-weight: 600; color: var(--secondary); 
-            line-height: 1.2; margin: 0;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
+        .ci-title { font-size: 0.75rem; font-weight: 600; color: var(--secondary); line-height: 1.2; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ci-row-btm { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         .ci-price { font-weight: 700; color: var(--text-main); font-size: 0.8rem; }
-        .ci-info-btn { font-size: 0.65rem; text-decoration: underline; color: var(--text-light); margin-left: 5px; cursor: pointer; }
-        
         .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 24px; border: 1px solid #e2e8f0; }
         .qs-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--secondary); cursor: pointer; border: none; background: transparent; }
         .qs-val { font-size: 0.8rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
-        /* --- 6. MERCADINHO GRID --- */
-        .cat-header { 
-            position: static; 
-            background: #f1f5f9; color: var(--secondary);
-            padding: 8px 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.5px; margin: 15px 0; border-radius: 4px; border: 1px solid #e2e8f0;
-        }
-
-        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
-        @media(min-width: 768px) { .products-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
-
-        .card-prod {
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-            padding: 12px; display: flex; flex-direction: column; text-align: center;
-            height: 100%; position: relative; transition: border-color 0.2s;
-        }
-        .card-prod:active { border-color: #cbd5e1; }
-        
-        .cp-tag { position: absolute; top: 8px; left: 8px; background: #dcfce7; color: #166534; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
-        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; }
-        .cp-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .cp-title { 
-            font-size: 0.8rem; font-weight: 600; color: var(--secondary); 
-            margin-bottom: 4px; line-height: 1.3; min-height: 2.6em;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-        }
-        
-        .cp-meta { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; min-height: 20px; align-items: center; }
-        .cp-info { font-size: 0.65rem; text-decoration: underline; color: var(--text-light); cursor: pointer; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
-
-        .cp-price { font-size: 1rem; font-weight: 800; color: var(--text-main); margin-top: auto; margin-bottom: 8px; }
-        .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; font-weight: 400; margin-right: 4px; }
-        
-        .cp-validity-badge { 
-            font-size: 0.65rem; color: #15803d; background: #f0fdf4; 
-            padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; 
-            margin-top: 6px; display: inline-block; width: 100%; text-align: center; 
-        }
-
-        .btn-add {
-            width: 100%; padding: 8px 0; background: white; border: 1px solid var(--primary);
-            color: var(--primary); border-radius: 50px; font-weight: 700; font-size: 0.8rem;
-            text-transform: uppercase; transition: all 0.2s;
-        }
-        .btn-add:active { background: var(--primary); color: white; }
-
-        .qty-ctrl { display: flex; align-items: center; justify-content: space-between; width: 100%; background: var(--primary); border-radius: 50px; height: 32px; color: white; }
-        .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; cursor: pointer; }
-        .qc-val { font-weight: 700; font-size: 0.9rem; }
-
-        /* --- 8. DESKTOP SPECIFIC --- */
+        /* --- 7. DESKTOP SPECIFIC --- */
         .desktop-sidebar { display: none; }
         
         @media(min-width: 1024px) {
             #customizer-view { 
-                padding-bottom: 0; 
-                display: grid !important; 
-                grid-template-columns: 1fr 350px; 
-                gap: 40px; max-width: 1280px; margin: 0 auto; padding: 40px 20px;
-                align-items: start;
+                padding-bottom: 0; display: grid !important; 
+                grid-template-columns: 1fr 350px; gap: 40px; 
+                max-width: 1280px; margin: 0 auto; padding: 40px 20px; align-items: start;
             }
             .mobile-bottom-panel, .fab-faq { display: none; }
             
@@ -254,35 +274,25 @@
                 max-height: calc(100vh - 40px); overflow-y: auto;
             }
             
-            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; transition: all 0.2s; font-size: 0.7rem; }
-            .v-nav-ctrl:hover { background: #e2e8f0; color: var(--secondary); }
-            .v-nav-ctrl.down { margin-top: 5px; }
-            .v-nav-ctrl.up { margin-bottom: 5px; }
-            
             #included-list-desk.vertical-slider {
                 display: flex; flex-direction: column; gap: 0;
-                overflow: hidden; max-height: 330px; 
-                transition: scroll-top 0.3s;
-                border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;
-                padding: 5px 0;
+                overflow: hidden; max-height: 330px; transition: scroll-top 0.3s;
+                border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; padding: 5px 0;
             }
-
+            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.7rem; }
+            
             .ds-section-title { font-size: 0.9rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
             .ds-divider { height: 1px; background: #e2e8f0; margin: 15px 0; }
-            
             .ds-total { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-align: center; margin: 20px 0; letter-spacing: -0.5px; }
             
             .ds-actions-row { display: flex; gap: 10px; margin-bottom: 15px; }
             .ds-btn { flex: 1; padding: 10px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 0.9rem; cursor: pointer; border: none; white-space: nowrap; }
-            .ds-btn:hover { transform: scale(1.02); }
             .ds-btn-outline { flex: 1; padding: 10px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; font-size: 0.9rem; white-space: nowrap; }
-            .ds-btn-outline:hover { background: #f8fafc; }
-            
             .ds-nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
             .ds-nav-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: var(--text-light); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
         }
 
-        /* --- 9. SHEETS --- */
+        /* --- 8. SHEETS & MODALS --- */
         .sheet-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
@@ -370,8 +380,8 @@
             </div>
         </section>
         
-        <div class="container" id="baskets-anchor" style="padding-bottom: 80px;">
-            <div id="home-list" class="products-grid" style="grid-template-columns: 1fr;">
+        <div class="container home-grid-container" id="baskets-anchor">
+            <div id="home-list" class="baskets-grid">
                 <div class="loader" style="margin: 20px auto; text-align:center;">Carregando...</div>
             </div>
         </div>
@@ -584,14 +594,40 @@
             renderHome() {
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
-                list.innerHTML = baskets.map(p => `
-                    <div class="card-prod" style="padding:20px;">
-                        <img src="${p.imagem}" onclick="App.openInfo('${p.id}')" style="width:100%; height:150px; object-fit:contain; margin-bottom:10px; cursor:zoom-in;">
-                        <h3 style="font-size:1.1rem; color:var(--secondary); margin-bottom:5px; font-weight:700;">${p.nome}</h3>
-                        <div style="font-weight:800; font-size:1.3rem; color:var(--primary); margin-bottom:15px;">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
-                        <button onclick="App.openCustomizer('${p.id}')" class="btn-add" style="width:100%;">Personalizar</button>
-                    </div>
-                `).join('');
+                
+                list.innerHTML = baskets.map(p => {
+                    // Logic to find internal items for the carousel
+                    let carouselHtml = '';
+                    if (p.items && p.items.length > 0) {
+                        carouselHtml = `<div class="hbc-items-slider">` + 
+                            p.items.map(i => {
+                                const itemData = this.data.find(d => d.id === String(i.id));
+                                if(!itemData) return '';
+                                return `
+                                <div class="hbc-item">
+                                    <img src="${itemData.imagem}" loading="lazy">
+                                    <span>${i.qtd}un</span>
+                                </div>`;
+                            }).join('') + 
+                        `</div>`;
+                    }
+
+                    return `
+                    <div class="home-basket-card">
+                        <div class="hbc-img-wrap">
+                            <img src="${p.imagem}" class="hbc-img" loading="lazy">
+                        </div>
+                        <div class="hbc-content">
+                            <h3 class="hbc-title">${p.nome}</h3>
+                            <div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
+                            ${carouselHtml}
+                            <div class="hbc-actions">
+                                <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button>
+                                <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar Agora</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
             },
 
             openCustomizer(id) {
@@ -757,11 +793,17 @@
                 }
                 
                 this.renderIncluded();
+                if (isNew && delta > 0) {
+                    const mobSlider = document.getElementById('included-list-mob');
+                    if(mobSlider) mobSlider.scrollTo({left:0, behavior:'smooth'});
+                    const deskSlider = document.getElementById('included-list-desk');
+                    if(deskSlider) deskSlider.scrollTop = 0;
+                }
                 
                 const searchVal = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
                 this.renderAllLists(searchVal);
                 
-                if(delta > 0 && p.hasLink && p.linkedCode) this.checkSuggestion(p.linkedCode);
+                if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
             },
 
             checkSuggestion(code) {
