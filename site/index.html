@@ -4,12 +4,11 @@
     <!-- 
         ================================================================
         ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 10.6 - Validity Fix & Cross-Sell Restore
+        VERSION: 10.7 - Welcome Overlay & Header Cleanup
         CHANGELOG:
-        - FIX: Leitura e formatação correta da data de validade (YYYY-MM-DD -> DD/MM/AAAA).
-        - FEATURE: Restaurado sistema de sugestão de produtos (Cross-Sell) com banner retrátil.
-        - DATA: Mapeamento robusto de campos JSON (validade, Tem_Ligacao, Codigo_Produto_Ligado).
-        - UI: Ajuste visual do Toast de Sugestão para integrar com o novo layout da base.
+        - UI: Adicionado Overlay de Boas-Vindas (Blur + Mensagem) ao abrir o personalizador.
+        - CLEANUP: Removido cabeçalho redundante ("Mercadinho", "Adicione itens...") do topo da coluna principal.
+        - UX: Foco total na experiência de personalização desde o início.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -73,6 +72,32 @@
             padding-top: 20px; 
         }
         
+        /* Welcome Overlay (Blur) */
+        .welcome-overlay {
+            position: fixed; inset: 0; z-index: 12000;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+        }
+        .welcome-overlay.visible { opacity: 1; pointer-events: auto; }
+        
+        .welcome-card {
+            background: white; padding: 40px 30px; border-radius: 20px;
+            text-align: center; max-width: 90%; width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0; transform: translateY(20px); transition: transform 0.4s ease;
+        }
+        .welcome-overlay.visible .welcome-card { transform: translateY(0); }
+        
+        .welcome-title { font-size: 1.4rem; font-weight: 800; color: var(--secondary); margin-bottom: 15px; line-height: 1.2; }
+        .welcome-sub { font-size: 1rem; color: var(--text-light); margin-bottom: 30px; line-height: 1.5; }
+        .welcome-btn {
+            background: var(--primary); color: white; border-radius: 50px;
+            padding: 14px 40px; font-weight: 700; font-size: 1rem;
+            box-shadow: 0 5px 20px rgba(220, 38, 38, 0.3); transition: transform 0.2s;
+        }
+        .welcome-btn:active { transform: scale(0.95); }
+
         /* Floating FAQ Button */
         .fab-faq {
             position: fixed; top: 20px; right: 20px; z-index: 10000;
@@ -92,7 +117,6 @@
             box-shadow: 0 -4px 30px rgba(0,0,0,0.12);
         }
 
-        /* Row 1: Actions */
         .mbp-actions-row {
             display: grid; 
             grid-template-columns: auto auto 1fr auto; 
@@ -101,7 +125,6 @@
             background: #fff; border-bottom: 1px solid #f1f5f9;
         }
         
-        /* Row 2: Basket Carousel */
         .mbp-basket-row {
             background: #f8fafc;
             padding: 10px 0;
@@ -130,14 +153,12 @@
             box-shadow: 0 2px 5px rgba(22,163,74,0.3); border: none; cursor: pointer;
         }
 
-        /* Slider Styles */
         #included-list-mob.horizontal-slider {
             display: flex; gap: 10px; overflow-x: auto; padding: 0 16px;
             scroll-snap-type: x mandatory; scrollbar-width: none;
         }
         #included-list-mob.horizontal-slider::-webkit-scrollbar { display: none; }
         
-        /* CARD CESTA */
         .card-inc {
             background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid var(--primary);
             border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
@@ -163,10 +184,6 @@
         .qs-val { font-size: 0.8rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
         /* --- 6. MERCADINHO GRID --- */
-        .mercadinho-header { text-align: left; padding: 0 16px 20px; }
-        .mercadinho-header h3 { color: var(--secondary); font-size: 1.2rem; margin: 0; font-weight: 800; }
-        .mercadinho-header p { font-size: 0.85rem; color: var(--text-light); margin: 4px 0 0; }
-        
         .cat-header { 
             position: static; 
             background: #f1f5f9; color: var(--secondary);
@@ -199,7 +216,6 @@
         .cp-price { font-size: 1rem; font-weight: 800; color: var(--text-main); margin-top: auto; margin-bottom: 8px; }
         .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; font-weight: 400; margin-right: 4px; }
         
-        /* VALIDITY BADGE BELOW BTN */
         .cp-validity-badge { 
             font-size: 0.65rem; color: #15803d; background: #f0fdf4; 
             padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; 
@@ -229,7 +245,6 @@
                 align-items: start;
             }
             .mobile-bottom-panel, .fab-faq { display: none; }
-            .mercadinho-header { text-align: left; padding: 0 0 20px 0; }
             
             .desktop-sidebar {
                 display: flex; flex-direction: column;
@@ -305,7 +320,6 @@
         .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
         .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
         
-        /* Credit Toast (Center Screen) */
         .credit-toast {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(30, 41, 59, 0.95); color: white;
@@ -329,6 +343,15 @@
     </style>
 </head>
 <body>
+
+    <!-- WELCOME OVERLAY -->
+    <div id="welcome-overlay" class="welcome-overlay">
+        <div class="welcome-card">
+            <h2 class="welcome-title">Agora você pode deixar a cesta básica do seu jeito.</h2>
+            <p class="welcome-sub">Temos mais de 100 produtos para você economizar. O básico com o melhor preço de Cuiabá e VG.</p>
+            <button class="welcome-btn" onclick="App.closeWelcome()">Começar</button>
+        </div>
+    </div>
 
     <!-- HOME VIEW -->
     <main id="home-view">
@@ -362,15 +385,8 @@
 
         <!-- LEFT COLUMN (MAIN CONTENT) -->
         <div class="main-content-col">
-            <!-- MERCADINHO HEADER -->
-            <div class="mercadinho-header">
-                <h2 id="cust-title-text" style="font-size:0.9rem; color:var(--text-light); margin-bottom:5px;">Personalizar Cesta</h2>
-                <h3>🏪 Mercadinho</h3>
-                <p style="font-size:0.8rem; color:var(--text-light);">Adicione itens extras à sua cesta</p>
-            </div>
-            
             <!-- PRODUCTS GRID -->
-            <div class="container">
+            <div class="container" style="padding-top:10px;">
                 <div id="extras-container"></div>
             </div>
         </div>
@@ -525,14 +541,12 @@
                         else if (catStr.includes('HIGIENE') || catStr.includes('PESSOAL') || catStr.includes('COSMÉTICOS')) appCat = "CUIDADOS PESSOAIS";
                         else if (catStr.includes('BAZAR') || catStr.includes('UTILIDADES')) appCat = "BAZAR E UTILIDADES";
 
-                        // Normalização robusta da data de validade
                         let rawVal = p.validade || p.Validade || "";
                         let fmtVal = "";
                         if (rawVal && rawVal !== '0' && rawVal !== '00') {
                             fmtVal = App.formatDateBr(rawVal);
                         }
 
-                        // Normalização da Ligação (Cross-Sell)
                         let hasLink = p.Tem_Ligacao || p.tem_ligacao || "Não";
                         let linkCode = p.Codigo_Produto_Ligado || p.codigo_produto_ligado || "";
 
@@ -560,12 +574,11 @@
 
             formatDateBr(dateStr) {
                  if (!dateStr) return '';
-                 // Tenta YYYY-MM-DD
                  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
                      const [y, m, d] = dateStr.split('-');
                      return `${d}/${m}/${y}`;
                  }
-                 return dateStr; // Retorna original se já estiver formatado ou inválido
+                 return dateStr; 
             },
 
             renderHome() {
@@ -588,8 +601,6 @@
                 this.cart = {};
                 this.cartOrder = [];
                 
-                if(document.getElementById('cust-title-text')) document.getElementById('cust-title-text').innerText = basket.nome;
-                
                 if(basket.items) {
                     basket.items.forEach(i => {
                         let match = this.data.find(p => p.id === String(i.id));
@@ -608,8 +619,14 @@
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
+                document.getElementById('welcome-overlay').classList.add('visible'); // Show welcome
+                
                 window.scrollTo(0,0);
                 this.renderAllLists();
+            },
+            
+            closeWelcome() {
+                document.getElementById('welcome-overlay').classList.remove('visible');
             },
 
             goHome() {
@@ -693,7 +710,6 @@
                 }
                 
                 let midSection = '';
-                // Mostrar botão info se tiver características
                 if (p.caracteristicas) {
                     midSection = `<div class="cp-meta"><span class="cp-info" onclick="App.openInfo('${p.id}')">Info</span></div>`;
                 }
@@ -741,7 +757,7 @@
                 }
                 
                 this.renderIncluded();
-                // Safe search update
+                
                 const searchVal = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
                 this.renderAllLists(searchVal);
                 
