@@ -3,12 +3,13 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Special Categories Feature
+        ARCHITECT: SEO Code Architect (SCA) - Visual Boost & Messaging
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - FEATURE: Novas categorias virtuais "OFERTAS" e "MAIS VENDIDOS".
-        - LOGIC: Produtos destacados aparecem no topo E na categoria original.
-        - UI: Mantido todo o design clean e otimizado anterior.
+        - HOME UI: Imagens dos itens da cesta aumentadas em 20% (90px).
+        - HOME UI: Espaçamento entre itens reduzido e fonte de quantidade aumentada.
+        - CUSTOMIZER UI: Novos textos de título e subtítulo adicionados.
+        - CHECKOUT UI: Textos da barra flutuante simplificados e clarificados.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -177,22 +178,31 @@
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
         
+        /* AJUSTE: Scroll fluido sem snap (livre) + GAP REDUZIDO */
+        .hbc-items-slider { display: flex; gap: 4px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
+        
+        /* AJUSTE: Itens da cesta na home estilo "Clean" + LARGURA AUMENTADA */
         .hbc-item { 
-            flex: 0 0 100px; 
+            flex: 0 0 110px; /* Mais largo para caber imagem maior */
             display: flex; flex-direction: column; align-items: center; gap: 4px; 
             background: transparent; 
             padding: 0;
         }
+        
         .hbc-item-img-box {
-             width: 85px; height: 85px; 
+             width: 100px; height: 100px; /* Aumentado de 85px */
              background: #f3f4f6; 
              border-radius: 12px;
              display: flex; align-items: center; justify-content: center;
         }
-        .hbc-item img { width: 75px; height: 75px; object-fit: contain; } 
-        .hbc-item span { font-size: 0.65rem; font-weight: 600; color: #555; }
+        
+        .hbc-item img { 
+            width: 90px; height: 90px; /* Aumentado de 75px (+20%) */
+            object-fit: contain; 
+        } 
+        /* AJUSTE: Fonte aumentada */
+        .hbc-item span { font-size: 0.8rem; font-weight: 700; color: #555; }
 
         .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
         .btn-home-cust { width: 100%; padding: 12px; background: #ffffff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; font-weight: 700; font-size: 0.95rem; text-align: center; }
@@ -217,7 +227,8 @@
         .horizontal-products-row { 
             display: flex; gap: 20px; overflow-x: auto; 
             padding: 0 16px 16px 16px; 
-            margin-left: -16px; margin-right: -16px; 
+            margin-left: -16px;
+            margin-right: -16px;
             scroll-snap-type: none; 
             scroll-behavior: smooth;
         }
@@ -438,7 +449,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
-                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
+                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
                 <div class="logo-text-col">
                     <span class="logo-name">Dona Antônia</span>
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
@@ -663,6 +674,10 @@
 
         <div class="main-content-col">
             <div class="container">
+                <div class="market-header" style="margin-bottom: 20px; margin-top: 10px;">
+                    <h2 style="font-size: 1.5rem; color: var(--secondary); margin-bottom: 4px; line-height: 1.2;">Esse é o nosso Mercadinho.</h2>
+                    <p style="color: var(--text-light); font-size: 0.95rem;">Monte a sua cesta do seu jeito.</p>
+                </div>
                 <div id="extras-container"></div>
             </div>
         </div>
@@ -670,11 +685,11 @@
         <!-- FLOATING CART BAR (MOBILE & DESKTOP) -->
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
-                <span class="icb-label">Total sem taxa de entrega</span>
+                <span class="icb-label">Valor Total</span>
                 <span class="icb-total" id="icb-total-val">R$ 0,00</span>
             </div>
             <div class="icb-btn" onclick="App.openCheckout()">
-                Ver Cesta
+                Produtos da Minha Cesta
                 <span id="cart-count-badge" style="background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; font-size:0.8rem;">0</span>
             </div>
         </div>
