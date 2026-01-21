@@ -3,11 +3,10 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Visual Spacing Tuning
+        ARCHITECT: SEO Code Architect (SCA) - Final Refined Build
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UI: Cards reduzidos (max-width: 150px / width: 30vw).
-        - UI: Espaçamento entre cards aumentado para 20px (mais respiro).
+        - CSS: Forçado arredondamento de imagem (border-radius: 18px + overflow: hidden).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -203,7 +202,6 @@
         .carousel-wrapper { position: relative; }
 
         .horizontal-products-row { 
-            /* AJUSTE: gap aumentado para 20px */
             display: flex; gap: 20px; overflow-x: auto; 
             padding: 0 16px 16px; scroll-snap-type: x mandatory; 
             scroll-behavior: smooth;
@@ -223,7 +221,6 @@
         .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
-            /* AJUSTE: Tamanho do card reduzido para evidenciar espaço */
             width: 30vw; 
             min-width: 125px; 
             max-width: 150px;
@@ -239,15 +236,18 @@
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #eef9f2; color: #2d6c4a; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
+        /* Container da imagem com fundo cinza claro */
         .cp-img-box { 
             width: 100%; aspect-ratio: 1; 
             display: flex; align-items: center; justify-content: center; 
             margin-bottom: 8px; cursor: pointer; position: relative;
             background: #f3f4f6;
-            border-radius: 18px; 
+            border-radius: 18px; /* Borda bem arredondada no container */
+            overflow: hidden; /* Força o corte da imagem nas bordas */
         }
         .cp-img { 
             width: 100%; height: 100%; object-fit: contain; 
+            border-radius: 18px; /* Borda bem arredondada na imagem */
         }
         
         .btn-circle-add {
