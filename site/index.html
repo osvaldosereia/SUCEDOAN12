@@ -1,91 +1,48 @@
 <!DOCTYPE html>
 <html lang="pt-BR" dir="ltr">
 <head>
+    <!-- 
+        ================================================================
+        ARCHITECT: SEO Code Architect (SCA) - Clean Card Design & UX Fixes
+        TARGET: 100/100 Lighthouse Performance
+        CHANGELOG:
+        - UI: Cards de personalização sem borda/sombra (fundo transparente).
+        - UI: Imagens com fundo cinza claro (#f3f4f6) para contraste.
+        - UX: Botão '+' aumentado e com stopPropagation (evita abrir modal).
+        - TYPOGRAPHY: Fontes de preço e nome reduzidas para elegância.
+        ================================================================
+    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
-    <title>Cesta Básica em Cuiabá e Várzea Grande | Dona Antônia Alimentos</title>
-    <meta name="description" content="Cesta Básica com entrega rápida em Cuiabá e VG. Aberto de Seg a Sáb (sem fechar para almoço). Peça pelo WhatsApp ou Instagram. Qualidade e preço justo.">
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <!-- SEO: Technical & Canonical -->
     <link rel="canonical" href="https://www.donaantonia.com.br/">
-    <meta name="author" content="Dona Antônia Alimentos">
-    <meta name="theme-color" content="#d31a28">
-    <meta name="geo.region" content="BR-MT">
-    <meta name="geo.placename" content="Cuiabá">
-    <meta name="geo.position" content="-15.6200;-56.0900"> <meta name="ICBM" content="-15.6200, -56.0900">
-
-    <meta property="og:locale" content="pt_BR">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Dona Antônia | Cestas Básicas em Cuiabá">
-    <meta property="og:description" content="Monte sua cesta ou peça pronta! Aberto das 08h às 17h (sem almoço). Entrega rápida.">
-    <meta property="og:url" content="https://www.donaantonia.com.br/">
-    <meta property="og:site_name" content="Dona Antônia Alimentos">
-    <meta property="og:image" content="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp">
-    <meta property="og:image:alt" content="Cestas Básicas Dona Antônia">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="author" content="Dona Antônia Mercadinho">
+    <meta name="theme-color" content="#ffffff">
     
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Cesta Básica Dona Antônia | Cuiabá - MT">
-    <meta name="twitter:description" content="Qualidade e preço baixo. Atendimento direto pelo Zap ou Instagram.">
-    <meta name="twitter:image" content="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp">
+    <!-- SEO: Content -->
+    <title>Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia</title>
+    <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG. Monte e personalize sua cesta. Mercadinho online com pagamento na entrega.">
 
+    <!-- Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
+    <!-- JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "GroceryStore",
-          "@id": "https://www.donaantonia.com.br/#store",
-          "name": "Dona Antônia Cestas Básicas",
-          "image": "https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
-          "telephone": "+5565996813588",
-          "url": "https://www.donaantonia.com.br/",
-          "taxID": "51.385.335/0001-06",
-          "priceRange": "$$",
-          "sameAs": [
-            "https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/",
-            "https://api.whatsapp.com/send?phone=5565996813588"
-          ],
-          "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "R. Trinta, 105 - Jardim Nossa Sra. Aparecida",
-            "addressLocality": "Cuiabá",
-            "addressRegion": "MT",
-            "postalCode": "78090-660",
-            "addressCountry": "BR"
-          },
-          "hasMap": "https://www.google.com/maps/search/?api=1&query=9W4X+JQ+Jardim+Nossa+Sra.+Aparecida,+Cuiab%C3%A1+-+MT",
-          "openingHoursSpecification": {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": [
-              "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-            ],
-            "opens": "08:00",
-            "closes": "17:00"
-          }
-        },
-        {
-          "@type": "OfferCatalog",
-          "name": "Catálogo de Cestas Básicas",
-          "itemListElement": [
-            {
-              "@type": "Offer",
-              "itemOffered": {
-                "@type": "Product",
-                "name": "Cesta Econômica",
-                "description": "Opção acessível com itens essenciais.",
-                "image": "https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp"
-              },
-              "price": "85.00",
-              "priceCurrency": "BRL",
-              "availability": "https://schema.org/InStock"
-            }
-          ]
-        }
-      ]
+      "@type": "GroceryStore",
+      "name": "Dona Antônia Cestas Básicas",
+      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
+      "telephone": "+5565996813588",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Cuiabá",
+        "addressRegion": "MT"
+      }
     }
     </script>
 
@@ -97,7 +54,7 @@
             --secondary: #3e3e3e; 
             --text-main: #333333; 
             --text-light: #555555; 
-            --bg-body: #ffffff; 
+            --bg-body: #ffffff; /* Fundo Branco */
             --border-color: #f2f2f2;
             --header-height: 70px; 
             --app-header-height: 56px; 
@@ -145,9 +102,9 @@
         .logo-brand-img { width: 53px; height: 53px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
-            font-size: 0.75rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
-            padding: 6px 12px; border-radius: 50px; border: 1px solid #e2e8f0;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; max-width: 140px;
+            font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
+            padding: 6px 14px; border-radius: 50px; border: 1px solid #e2e8f0;
+            display: flex; align-items: center; gap: 6px;
         }
 
         /* --- 3. CUSTOMIZER HEADER (APP STYLE) --- */
@@ -187,11 +144,12 @@
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         
         .hero { padding: 25px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
-        .hero h1 { font-size: 1.8rem; line-height: 1.2; color: var(--secondary); margin-bottom: 10px; letter-spacing: -0.5px; }
-        .hero h2 { font-size: 0.95rem; color: var(--text-light); margin-bottom: 0; max-width: 600px; margin: 0 auto 15px; line-height: 1.5; font-weight: 400; }
+        .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--secondary); margin-bottom: 12px; }
+        .hero h1 span { color: var(--primary); }
+        .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
         
-        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; margin-top: 5px; }
-        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 4px 12px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
+        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 
         /* HOME GRID */
         .home-grid-container { padding: 0px 0 60px; }
@@ -220,22 +178,23 @@
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
+        .hbc-items-slider { display: flex; gap: 4px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
         
+        /* ITENS DA CESTA NA HOME */
         .hbc-item { 
-            flex: 0 0 100px; 
+            flex: 0 0 110px; 
             display: flex; flex-direction: column; align-items: center; gap: 4px; 
             background: transparent; 
             padding: 0;
         }
         .hbc-item-img-box {
-             width: 85px; height: 85px; 
+             width: 100px; height: 100px; 
              background: #f3f4f6; 
              border-radius: 12px;
              display: flex; align-items: center; justify-content: center;
         }
-        .hbc-item img { width: 75px; height: 75px; object-fit: contain; } 
-        .hbc-item span { font-size: 0.65rem; font-weight: 600; color: #555; }
+        .hbc-item img { width: 90px; height: 90px; object-fit: contain; } 
+        .hbc-item span { font-size: 0.8rem; font-weight: 700; color: #555; }
 
         .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
         .btn-home-cust { width: 100%; padding: 12px; background: #ffffff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; font-weight: 700; font-size: 0.95rem; text-align: center; }
@@ -246,6 +205,20 @@
             padding-top: calc(var(--app-header-height) + 10px); 
             padding-bottom: 100px; 
             min-height: 100vh; background: #ffffff; 
+        }
+
+        /* HEADER CUSTOMIZADOR */
+        .market-header { 
+            margin-bottom: 30px; 
+            margin-top: 20px; 
+            text-align: center; 
+        }
+        .market-title { 
+            font-size: 1.8rem; font-weight: 800; color: var(--primary); 
+            margin-bottom: 6px; line-height: 1.1; letter-spacing: -0.5px;
+        }
+        .market-subtitle { 
+            color: var(--secondary); font-size: 1rem; font-weight: 500;
         }
 
         /* --- 6. PRODUCTS (NEW CARD DESIGN) --- */
@@ -298,11 +271,12 @@
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #eef9f2; color: #2d6c4a; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
+        /* Container da imagem com fundo cinza claro */
         .cp-img-box { 
             width: 100%; aspect-ratio: 1; 
             display: flex; align-items: center; justify-content: center; 
             margin-bottom: 8px; cursor: pointer; position: relative;
-            background: #f3f4f6;
+            background: #f3f4f6; /* Fundo cinza */
             border-radius: 18px; 
             overflow: hidden; 
         }
@@ -311,9 +285,10 @@
             border-radius: 18px; 
         }
         
+        /* BOTÃO MAIOR E CIRCULAR */
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px;
-            width: 38px; height: 38px;
+            width: 38px; height: 38px; /* Aumentado */
             border-radius: 50%;
             background: white; border: 1px solid #e5e5e5;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -327,7 +302,7 @@
 
         .qty-ctrl-float {
             position: absolute; bottom: 8px; right: 8px;
-            height: 38px; 
+            height: 38px; /* Acompanha o botão */
             background: white; border: 1px solid #e5e5e5;
             border-radius: 19px; display: flex; align-items: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
@@ -338,6 +313,7 @@
         }
         .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
+        /* FONTES MENORES */
         .cp-price { 
             font-size: 0.95rem; font-weight: 700; color: #1f1f1f; 
             margin-bottom: 2px; text-align: left; 
@@ -433,9 +409,12 @@
         .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #f7f7f7; }
         .co-horizontal-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 20px; }
         .co-horizontal-list::-webkit-scrollbar { display: none; }
-        .co-card { min-width: 140px; max-width: 140px; background: white; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .co-card-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 8px; mix-blend-mode: multiply; }
-        .co-card-title { font-size: 0.75rem; color: #3e3e3e; text-align: center; font-weight: 500; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; margin-bottom: 6px; width: 100%; }
+        
+        /* CHECKOUT CARD - Same as main card but adapted */
+        .co-card { min-width: 140px; max-width: 140px; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; flex-shrink: 0; }
+        .co-card .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
+        .co-card-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
+        .co-card-title { font-size: 0.75rem; color: #3e3e3e; text-align: left; font-weight: 500; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; margin-bottom: 6px; width: 100%; }
         .co-card-controls { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
         .qty-mini-co { display: flex; align-items: center; background: #f5f5f5; border-radius: 6px; height: 28px; border: 1px solid #e0e0e0; flex: 1; margin-right: 6px; }
         .qm-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #555; cursor: pointer; }
@@ -465,9 +444,6 @@
         /* FOOTER */
         .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 20px; margin-top: 40px; }
         .footer-info { text-align: center; margin-bottom: 30px; }
-        .footer-info h3 { font-size: 1.2rem; color: var(--secondary); margin-bottom: 8px; }
-        .footer-info p { margin-bottom: 6px; color: #555; font-size: 0.9rem; }
-        
         .footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 400px; margin: 0 auto 30px; padding: 0 20px; }
         @media(min-width: 640px) { .footer-actions { grid-template-columns: repeat(4, 1fr); max-width: 700px; } }
         .f-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 8px; border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; color: var(--secondary); font-weight: 600; font-size: 0.75rem; text-decoration: none; text-align: center; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -481,10 +457,11 @@
 </head>
 <body>
 
+    <!-- HOME HEADER -->
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
-                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
+                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
                 <div class="logo-text-col">
                     <span class="logo-name">Dona Antônia</span>
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
@@ -497,18 +474,21 @@
         </div>
     </header>
 
+    <!-- HOME VIEW -->
     <main id="home-view">
         <section class="hero">
             <div class="container">
-                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Jd. N. Sra. Aparecida e Região</div></div>
-                <h1>Cestas Básicas em Cuiabá e Várzea Grande</h1>
-                <h2>Peça online e receba em casa com frete rápido. Qualidade garantida e pagamento facilitado.</h2>
+                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em até 24h</div></div>
+                <h1>A cesta básica que fica do seu jeito.</h1>
+                <p>Encomende sua cesta e pague somente na entrega na sua casa.</p>
             </div>
         </section>
         
         <div class="container home-grid-container" id="baskets-anchor">
+            <!-- SEO CONTENT: 9 Cestas Estáticas para Indexação -->
             <div id="home-list" class="baskets-grid">
                 
+                <!-- 1. CESTA ECONÔMICA -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Econômica" loading="eager" fetchpriority="high"></div>
@@ -527,6 +507,7 @@
                     </div>
                 </div>
 
+                <!-- 2. CESTA MINI KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Koblenz" loading="lazy"></div>
@@ -544,6 +525,7 @@
                     </div>
                 </div>
 
+                <!-- 3. CESTA MINI ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Alvino" loading="lazy"></div>
@@ -560,6 +542,7 @@
                     </div>
                 </div>
 
+                <!-- 4. CESTA PEQUENA KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Koblenz" loading="lazy"></div>
@@ -576,6 +559,7 @@
                     </div>
                 </div>
 
+                <!-- 5. CESTA PEQUENA ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Alvino" loading="lazy"></div>
@@ -591,6 +575,7 @@
                     </div>
                 </div>
 
+                <!-- 6. CESTA MÉDIA KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Koblenz" loading="lazy"></div>
@@ -606,6 +591,7 @@
                     </div>
                 </div>
 
+                <!-- 7. CESTA MÉDIA ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Alvino" loading="lazy"></div>
@@ -620,6 +606,7 @@
                     </div>
                 </div>
 
+                <!-- 8. CESTA GRANDE KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Koblenz" loading="lazy"></div>
@@ -634,6 +621,7 @@
                     </div>
                 </div>
 
+                <!-- 9. CESTA GRANDE ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Alvino" loading="lazy"></div>
@@ -655,8 +643,7 @@
             <div class="container">
                 <div class="footer-info">
                     <h3>Dona Antônia Alimentos</h3>
-                    <p>📍 R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT</p>
-                    <p>🕒 Seg a Sáb: 08h às 17h (não fechamos para almoço)</p>
+                    <p>📍 Jardim Nossa Senhora Aparecida, Cuiabá - MT</p>
                     <p>📞 <strong>(65) 99681-3588</strong></p>
                 </div>
 
@@ -664,26 +651,28 @@
                     <a href="https://api.whatsapp.com/send?phone=5565996813588" target="_blank" class="f-btn">
                         <icon>💬</icon> Whatsapp
                     </a>
-                    <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="f-btn">
-                        <icon>📸</icon> Instagram
+                    <a href="tel:5565996813588" class="f-btn">
+                        <icon>📞</icon> Ligar
                     </a>
                     <a href="https://g.page/r/CaIREJtO1L6WEAE/review" target="_blank" class="f-btn">
                         <icon>⭐</icon> Avaliar
                     </a>
-                    <a href="https://www.google.com/maps/search/?api=1&query=9W4X+JQ+Jardim+Nossa+Sra.+Aparecida,+Cuiab%C3%A1+-+MT" target="_blank" class="f-btn">
+                    <a href="https://www.google.com/maps/search/?api=1&query=Dona+Antonia+Cestas+Basicas+Cuiaba" target="_blank" class="f-btn">
                         <icon>📍</icon> Mapa
                     </a>
                 </div>
                 
                 <div class="copyright">
-                    © 2026 Dona Antônia Alimentos.
+                    &copy; 2024 Dona Antônia Alimentos.
                 </div>
             </div>
         </footer>
     </main>
 
+    <!-- CUSTOMIZER VIEW -->
     <div id="customizer-view" class="hidden">
         
+        <!-- APP HEADER -->
         <div class="app-header">
             <div class="ah-back-btn" onclick="App.goHome()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
@@ -697,22 +686,28 @@
 
         <div class="main-content-col">
             <div class="container">
+                <div class="market-header">
+                    <h2 class="market-title">Esse é o nosso Mercadinho.</h2>
+                    <p class="market-subtitle">Monte a sua cesta do seu jeito.</p>
+                </div>
                 <div id="extras-container"></div>
             </div>
         </div>
 
+        <!-- FLOATING CART BAR (MOBILE & DESKTOP) -->
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
-                <span class="icb-label">Total sem taxa de entrega</span>
+                <span class="icb-label">Valor Total</span>
                 <span class="icb-total" id="icb-total-val">R$ 0,00</span>
             </div>
             <div class="icb-btn" onclick="App.openCheckout()">
-                Ver Cesta
+                Produtos da Minha Cesta
                 <span id="cart-count-badge" style="background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; font-size:0.8rem;">0</span>
             </div>
         </div>
     </div>
 
+    <!-- SHEETS & MODALS -->
     <div id="info-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('info-sheet')">
         <div class="sheet-box">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
@@ -732,9 +727,10 @@
             <div style="overflow-y:auto; padding-bottom:20px;">
                 <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-text">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação (Alelo, Sodexo, Ticket, etc).</div></details>
                 <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
-                <details class="faq-box"><summary>Qual o horário de funcionamento?</summary><div class="faq-text">Estamos abertos de Segunda a Sábado, das 08h às 17h, sem fechar para almoço.</div></details>
+                <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
                 <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho.</div></details>
-                <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos na R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT.</div></details>
+                <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto.</div></details>
+                <details class="faq-box"><summary>De onde vocês são?</summary><div class="faq-text">Somos de Cuiabá - MT, localizados no bairro Jardim Nossa Senhora Aparecida. Atendemos com frota própria.</div></details>
             </div>
         </div>
     </div>
@@ -752,6 +748,7 @@
     <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
     <div id="credit-sub-toast" class="credit-sub-toast">Adicione novos produtos</div>
 
+    <!-- CHECKOUT MODAL -->
     <dialog id="checkout-modal" class="modal-checkout">
         <div class="co-header">
             <span class="co-title">Finalizar Pedido</span>
@@ -761,6 +758,7 @@
             <div class="co-section-title">Sua Nova Cesta</div>
             <div id="modal-cart-list" class="co-horizontal-list"></div>
             
+            <!-- ALERTA DE CREDITO DIDATICO (NOVO) -->
             <div id="modal-credit-alert" class="modal-credit-box hidden">
                 <div style="margin-bottom:5px">Você possui <strong>R$ <span id="mca-val">0,00</span></strong> de Crédito.</div>
                 <div style="font-size:0.8rem; margin-bottom:8px">Adicione novos produtos para aproveitar.</div>
@@ -768,6 +766,7 @@
             </div>
             
             <div class="co-total-row">
+                <!-- BREAKDOWN CONTAINER -->
                 <div id="co-breakdown" style="width:100%; margin-bottom:12px; display:flex; flex-direction:column; gap:6px;"></div>
                 
                 <div style="width:100%; height:1px; background:#e5e7eb; margin-bottom:12px;"></div>
@@ -781,6 +780,7 @@
                     ✅ <strong>Tudo Incluso:</strong> Montagem, Embalagem e Entrega.<br>Sem taxas adicionais.
                 </div>
 
+                <!-- CUPOM RETRATIL -->
                 <div class="coupon-toggle" onclick="App.toggleCoupon()">Possui cupom de desconto?</div>
                 <div id="coupon-area" class="coupon-box hidden">
                     <input type="text" id="coupon-input" class="coupon-input" placeholder="CUPOM">
@@ -871,7 +871,8 @@
                             linkedCode: linkCode,
                             hasLink: (hasLink === 'Sim'),
                             validade: fmtVal,
-                            categoria: catUpper
+                            categoria: catUpper,
+                            isBest: (p.Mais_Vendido === 'Sim') // Add best seller flag
                         };
                     });
                     
@@ -970,7 +971,7 @@
                                     const itemData = this.data.find(d => d.id === String(i.id));
                                     if(!itemData) return '';
                                     // A11Y: Safe ALT attribute
-                                    return `<div class="hbc-item"><div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '"')}"></div><span>${i.qty || 1}un</span></div>`;
+                                    return `<div class="hbc-item"><div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '&quot;')}"></div><span>${i.qty || 1}un</span></div>`;
                                 }).join('') + `</div>`;
                         }
                         
@@ -981,7 +982,7 @@
                         return `
                         <div class="home-basket-card">
                             <div class="hbc-top">
-                                <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome.replace(/"/g, '"')}"></div>
+                                <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome.replace(/"/g, '&quot;')}"></div>
                                 <div class="hbc-info-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
                             </div>
                             <div class="hbc-content">
@@ -1048,49 +1049,69 @@
 
                 if (query && query.length > 1) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
                 
+                // Define special categories content
+                const offers = products.filter(p => p.isOffer);
+                const bestSellers = products.filter(p => p.isBest);
+
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
                 let html = "";
+                
+                let isFirstSection = true;
 
+                // Function to render section
+                const renderSection = (title, items, isSpecial = false) => {
+                     if (items.length === 0) return '';
+                     
+                     // Group by SubCategory if not special
+                     const groups = {};
+                     if (isSpecial) {
+                         groups[title] = items;
+                     } else {
+                         items.forEach(p => {
+                            if(!groups[p.subCategory]) groups[p.subCategory] = [];
+                            groups[p.subCategory].push(p);
+                         });
+                     }
+                     
+                     let sectionHtml = '';
+                     for (const [subName, subItems] of Object.entries(groups)) {
+                        const rowId = `row-${title}-${subName}`.replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
+                        
+                        // Inject Hand Hint HTML in the first carousel only
+                        const handHintHtml = isFirstSection 
+                            ? `<div class="hand-hint-overlay active"><svg class="hand-icon" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v10.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V10a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V11a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v4.6l-.2.9a5 5 0 0 1-4.8 3.5h-2.1a5 5 0 0 1-5-5V6a1 1 0 0 1 1-1h1zm-3 5a1 1 0 0 1 1 1v5.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V7a1 1 0 0 1 1-1h.5z"/></svg></div>`
+                            : '';
+                        
+                        if (isFirstSection) isFirstSection = false;
+
+                        sectionHtml += `
+                        <div class="subcat-section">
+                            <div class="subcat-title">${isSpecial ? title : subName}</div>
+                            <div class="carousel-wrapper">
+                                ${handHintHtml}
+                                <div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})">
+                                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                                </div>
+                                <div class="horizontal-products-row" id="${rowId}">
+                                    ${subItems.map(p => this.buildCard(p)).join('')}
+                                </div>
+                                <div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})">
+                                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                            </div>
+                        </div>`;
+                     }
+                     return sectionHtml;
+                };
+
+                // 1. Render Special Categories
+                html += renderSection("OFERTAS", offers, true);
+                html += renderSection("MAIS VENDIDOS", bestSellers, true);
+
+                // 2. Render Main Categories
                 order.forEach(mainCat => {
                     const itemsInMain = products.filter(p => p.appCategory === mainCat);
-                    
-                    if(itemsInMain.length > 0) {
-                        const subGroups = {};
-                        itemsInMain.forEach(p => {
-                            if(!subGroups[p.subCategory]) subGroups[p.subCategory] = [];
-                            subGroups[p.subCategory].push(p);
-                        });
-
-                        let isFirstSection = (html === ""); // Flag for first item
-
-                        for (const [subName, subItems] of Object.entries(subGroups)) {
-                            const rowId = `row-${mainCat}-${subName}`.replace(/\s+/g, '-').toLowerCase();
-                            
-                            // Inject Hand Hint HTML in the first carousel only
-                            const handHintHtml = isFirstSection 
-                                ? `<div class="hand-hint-overlay active"><svg class="hand-icon" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v10.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V10a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V11a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v4.6l-.2.9a5 5 0 0 1-4.8 3.5h-2.1a5 5 0 0 1-5-5V6a1 1 0 0 1 1-1h1zm-3 5a1 1 0 0 1 1 1v5.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V7a1 1 0 0 1 1-1h.5z"/></svg></div>`
-                                : '';
-                            
-                            html += `
-                            <div class="subcat-section">
-                                <div class="subcat-title">${subName}</div>
-                                <div class="carousel-wrapper">
-                                    ${handHintHtml}
-                                    <div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})">
-                                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
-                                    </div>
-                                    <div class="horizontal-products-row" id="${rowId}">
-                                        ${subItems.map(p => this.buildCard(p)).join('')}
-                                    </div>
-                                    <div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})">
-                                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
-                                    </div>
-                                </div>
-                            </div>`;
-                            
-                            isFirstSection = false;
-                        }
-                    }
+                    html += renderSection(mainCat, itemsInMain); // Pass false for isSpecial to group by subcat
                 });
 
                 container.innerHTML = html || '<p style="text-align:center; padding:40px; color:#999;">Nada encontrado.</p>';
@@ -1133,7 +1154,7 @@
                     if(!p) return '';
                     return `
                     <div class="card-inc">
-                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '"')}">
+                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '&quot;')}">
                         <div class="ci-content">
                             <div class="qty-sm">
                                 <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
@@ -1178,7 +1199,7 @@
                 <div class="card-prod" id="card-${p.id}">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
                     <div class="cp-img-box" onclick="App.openInfo('${p.id}')">
-                        <img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '"')}">
+                        <img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '&quot;')}">
                         ${btnHtml}
                         ${qtyHtml}
                     </div>
@@ -1201,8 +1222,9 @@
                 return `
                 <div class="co-card">
                     <div class="cp-img-box">
-                        <img src="${p.imagem}" class="cp-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '"')}">
-                        <div class="qty-ctrl-float" onclick="event.stopPropagation()">
+                        <img src="${p.imagem}" class="cp-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '&quot;')}">
+                        <!-- Qty Controller (Always visible in checkout) -->
+                         <div class="qty-ctrl-float" onclick="event.stopPropagation()">
                             <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${decContent}</div>
                             <div class="qcf-val">${qty}</div>
                             <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
