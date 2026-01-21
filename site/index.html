@@ -465,6 +465,36 @@
 
         .modal-credit-box { background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center; color: #14532d; }
         .mca-btn { background: #16a34a; color: white; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; margin-top: 5px; }
+
+        /* FOOTER RESTORED */
+        .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 80px; margin-top: 40px; }
+        .footer-info { text-align: center; margin-bottom: 30px; }
+        .footer-info h3 { font-size: 1.2rem; margin-bottom: 10px; color: var(--secondary); }
+        .footer-info p { margin-bottom: 5px; color: #666; font-size: 0.9rem; }
+        
+        .footer-actions { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; 
+            max-width: 400px; margin: 0 auto 30px; padding: 0 10px; 
+        }
+        @media(min-width: 640px) { 
+            .footer-actions { grid-template-columns: repeat(4, 1fr); max-width: 700px; } 
+        }
+        
+        .f-btn { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            gap: 6px; padding: 12px; 
+            border-radius: 12px; border: 1px solid #e2e8f0; 
+            background: #ffffff; color: var(--secondary); 
+            font-weight: 600; font-size: 0.8rem; text-decoration: none; 
+            text-align: center; transition: all 0.2s; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        .f-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+        
+        /* Ensure icons in footer display correctly */
+        .f-btn icon { display: block; font-size: 1.4rem; margin-bottom: 2px; font-style: normal; }
+        
+        .copyright { text-align: center; font-size: 0.8rem; color: #475569; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
     </style>
 </head>
 <body>
