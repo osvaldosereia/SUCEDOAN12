@@ -850,9 +850,12 @@
                         let rawVal = p.validade || p.Validade || "";
                         let fmtVal = (rawVal && rawVal !== '0' && rawVal !== '00') ? App.formatDateBr(rawVal) : "";
 
-                        let hasLink = p.Tem_Ligacao || p.tem_ligacao || "Não";
+                        // CORREÇÃO: Converter linkCode para String e remover espaços para evitar erros
                         let linkCode = p.Codigo_Produto_Ligado || p.codigo_produto_ligado || "";
+                        if(linkCode) linkCode = String(linkCode).trim();
 
+                        let hasLink = p.Tem_Ligacao || p.tem_ligacao || "Não";
+                        
                         let smartName = this.toSmartTitleCase(p.nome.trim());
 
                         // FIX: Caminho de imagem absoluto
@@ -865,6 +868,7 @@
                         return {
                             ...p,
                             id: String(p.id),
+                            codigo: String(p.codigo || ""), // Garante que o código interno esteja disponível
                             nome: smartName, 
                             valor: parseFloat(p.valor || 0),
                             offerPrice: parseFloat(p.Valor_Oferta || 0),
@@ -1361,21 +1365,25 @@
             },
 
             checkSuggestion(code) {
-                // Acha o produto ligado
-                // NOTA: O código assume que o 'code' é equivalente ao 'id' ou que existe um campo 'code' no JSON.
-                // Como o JSON pode usar 'Codigo' ou 'id', vamos buscar por ambos para garantir.
-                const p = this.data.find(x => x.id === code || x.code === code || x.Codigo === code);
+                // CORREÇÃO CRÍTICA: Garantir que o ID buscado seja String e sem espaços
+                if(!code) return;
+                const targetCode = String(code).trim().toUpperCase(); // Normaliza para evitar erros
                 
-                // Se existe o produto E ele ainda não está no carrinho (para não ser chato)
+                // Busca se o 'targetCode' bate com o ID OU com o Código curto (ex: P099)
+                const p = this.data.find(x => 
+                    x.id === targetCode || 
+                    (x.codigo && String(x.codigo).trim().toUpperCase() === targetCode)
+                );
+                
+                // Se existe o produto E ele ainda não está no carrinho
                 if(p && !this.cart[p.id]) {
                     setTimeout(() => {
                         const drawer = document.getElementById('suggestion-drawer');
                         const overlay = document.getElementById('suggestion-overlay');
                         const content = document.getElementById('sd-content');
                         
-                        // Injeta o HTML do Card (reutilizando a função buildCard para ficar idêntico)
-                        // Ajustamos a largura para 100% dentro do drawer
-                        content.innerHTML = `<div style="width:100%; pointer-events:auto;">${this.buildCard(p)}</div>`;
+                        // Injeta o HTML com um container que limita a largura do card para ficar bonito (igual ao carousel)
+                        content.innerHTML = `<div style="width: 180px; margin: 0 auto; pointer-events:auto;">${this.buildCard(p)}</div>`;
                         
                         overlay.classList.add('active');
                         drawer.classList.add('open');
