@@ -3,11 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Fluid Scroll & Unified Design
+        ARCHITECT: SEO Code Architect (SCA) - Full Bleed Scroll & Size Up
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UX: Rolagem livre (removido scroll-snap) para sensação natural.
-        - UI: Itens da cesta na Home redesenhados (estilo clean, fundo cinza na img).
+        - UI: Cards de produto aumentados (35vw / min 145px).
+        - UX: Efeito "Full Bleed" no mobile (rolagem vai até a borda da tela).
+        - CSS: Ajuste de margens negativas para compensar padding do container.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -176,30 +177,21 @@
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        
-        /* AJUSTE: Scroll fluido sem snap (livre) */
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
         
-        /* AJUSTE: Itens da cesta na home estilo "Clean" */
         .hbc-item { 
             flex: 0 0 100px; 
             display: flex; flex-direction: column; align-items: center; gap: 4px; 
-            background: transparent; /* Fundo transparente */
-            /* Sem borda externa */
+            background: transparent; 
             padding: 0;
         }
-        
         .hbc-item-img-box {
              width: 85px; height: 85px; 
-             background: #f3f4f6; /* Fundo cinza claro atrás da foto */
+             background: #f3f4f6; 
              border-radius: 12px;
              display: flex; align-items: center; justify-content: center;
         }
-        
-        .hbc-item img { 
-            width: 75px; height: 75px; 
-            object-fit: contain; 
-        } 
+        .hbc-item img { width: 75px; height: 75px; object-fit: contain; } 
         .hbc-item span { font-size: 0.65rem; font-weight: 600; color: #555; }
 
         .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
@@ -224,8 +216,11 @@
 
         .horizontal-products-row { 
             display: flex; gap: 20px; overflow-x: auto; 
-            padding: 0 16px 16px; 
-            /* AJUSTE: Scroll fluido sem snap (livre) */
+            /* AJUSTE MOBILE FULL BLEED: Margens negativas para encostar na borda da tela */
+            padding: 0 16px 16px 16px; 
+            margin-left: -16px;
+            margin-right: -16px;
+            scroll-snap-type: none; /* Rolagem livre */
             scroll-behavior: smooth;
         }
         .horizontal-products-row::-webkit-scrollbar { display: none; }
@@ -243,10 +238,10 @@
         .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
-            width: 30vw; 
-            min-width: 125px; 
-            max-width: 150px;
-            /* Scroll snap align removido para rolagem livre, mas mantido flex-shrink 0 */
+            /* AJUSTE: Tamanho aumentado (35vw / 145px min) para mais destaque */
+            width: 35vw; 
+            min-width: 145px; 
+            max-width: 190px;
             flex-shrink: 0;
         }
 
@@ -338,6 +333,12 @@
             #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 40px 20px; padding-top: calc(var(--app-header-height) + 20px); padding-bottom: 100px; }
             .cp-title { -webkit-line-clamp: 2; min-height: 2.6em; }
             
+            /* RESET MARGINS ON DESKTOP TO CONTAIN SCROLL INSIDE 1200PX */
+            .horizontal-products-row {
+                margin-left: 0;
+                margin-right: 0;
+            }
+
             .horizontal-products-row .card-prod { 
                 min-width: 155px; 
                 max-width: 195px;
@@ -798,17 +799,15 @@
                             p.items.map(i => {
                                 const itemData = this.data.find(d => d.id === String(i.id));
                                 if(!itemData) return '';
-                                
-                                return `<div class="hbc-item">
-                                    <div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '&quot;')}"></div>
-                                    <span>${i.qty || 1}un</span>
-                                </div>`;
+                                // A11Y: Safe ALT attribute
+                                return `<div class="hbc-item"><div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '&quot;')}"></div><span>${i.qty || 1}un</span></div>`;
                             }).join('') + `</div>`;
                     }
                     
                     const loadingAttr = index === 0 ? 'eager' : 'lazy';
                     const fetchPriority = index === 0 ? 'fetchpriority="high"' : '';
                     
+                    // A11Y: Safe ALT attribute
                     return `
                     <div class="home-basket-card">
                         <div class="hbc-top">
