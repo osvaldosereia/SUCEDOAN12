@@ -3,13 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - SEO Hybrid Rendering
+        ARCHITECT: SEO Code Architect (SCA) - SEO Content Injection
         TARGET: 100/100 Lighthouse Performance & SEO
         CHANGELOG:
-        - SEO: Inserção de 9 Cestas Estáticas no HTML (Pré-renderização).
-        - O Google agora indexa "Cesta Básica" imediatamente sem depender de JS.
-        - LCP: Otimizado (Conteúdo visível instantaneamente).
-        - UI: Cards da Home padronizados com o design "Clean" aprovado.
+        - SEO: Inserção das 9 Cestas Reais no HTML Estático.
+        - CONTENT: Preços e Itens atualizados conforme catálogo.
+        - LCP: Imagens com carregamento otimizado (eager/lazy).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -36,7 +35,7 @@
       "@context": "https://schema.org",
       "@type": "GroceryStore",
       "name": "Dona Antônia Cestas Básicas",
-      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
+      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
       "telephone": "+5565996813588",
       "address": {
         "@type": "PostalAddress",
@@ -169,44 +168,30 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        /* AJUSTE: Largura da coluna de imagem aumentada para acomodar 220px (+50% aprox) */
         .hbc-top { display: grid; grid-template-columns: 220px 1fr; gap: 15px; padding: 16px; align-items: center; }
-        
-        /* AJUSTE: Altura aumentada para 220px */
         .hbc-img-wrap { width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
         .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
-        /* AJUSTE: Fonte aumentada para 1.3rem */
         .hbc-title { font-size: 1.3rem; font-weight: 800; color: #2e2e2e; line-height: 1.2; margin-bottom: 8px; text-transform: capitalize; letter-spacing: -0.5px; }
-        /* CORREÇÃO DE CONTRASTE: Verde mais escuro para WCAG AA */
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        
-        /* AJUSTE: Scroll fluido sem snap (livre) */
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
         
-        /* AJUSTE: Itens da cesta na home estilo "Clean" */
         .hbc-item { 
             flex: 0 0 100px; 
             display: flex; flex-direction: column; align-items: center; gap: 4px; 
-            background: transparent; /* Fundo transparente */
-            /* Sem borda externa */
+            background: transparent; 
             padding: 0;
         }
-        
         .hbc-item-img-box {
              width: 85px; height: 85px; 
-             background: #f3f4f6; /* Fundo cinza claro atrás da foto */
+             background: #f3f4f6; 
              border-radius: 12px;
              display: flex; align-items: center; justify-content: center;
         }
-        
-        .hbc-item img { 
-            width: 75px; height: 75px; 
-            object-fit: contain; 
-        } 
+        .hbc-item img { width: 75px; height: 75px; object-fit: contain; } 
         .hbc-item span { font-size: 0.65rem; font-weight: 600; color: #555; }
 
         .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
@@ -454,7 +439,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
-                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
+                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
                 <div class="logo-text-col">
                     <span class="logo-name">Dona Antônia</span>
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
@@ -478,200 +463,157 @@
         </section>
         
         <div class="container home-grid-container" id="baskets-anchor">
-            <!-- SEO CONTENT: Placeholders para indexação imediata (serão substituídos pelo JS) -->
+            <!-- SEO CONTENT: 9 Cestas Estáticas para Indexação -->
             <div id="home-list" class="baskets-grid">
                 
-                <!-- PLACEHOLDER 1: Cesta Econômica -->
+                <!-- 1. CESTA ECONÔMICA -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                            <!-- Using logo as placeholder if specific basket image URL unknown at hardcode time, OR use a known one if available -->
-                            <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Básica Econômica" loading="eager" fetchpriority="high">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta Econômica</h2>
-                            <div class="hbc-price">A partir de R$ 85,00</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Econômica" loading="eager" fetchpriority="high"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Econômica</h2><div class="hbc-price">R$ 85,00</div></div>
                     </div>
                     <div class="hbc-content">
                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
                         <div class="hbc-items-slider">
-                           <!-- Placeholder items -->
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz"></div><span>1un</span></div>
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão"></div><span>1un</span></div>
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>1un</span></div>
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar"></div><span>1un</span></div>
+                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>1un</span></div>
+                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
+                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo 900ml"></div><span>1un</span></div>
+                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão 1kg"></div><span>1un</span></div>
+                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Café 250g"></div><span>1un</span></div>
                         </div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
 
-                <!-- PLACEHOLDER 2: Cesta Pequena -->
+                <!-- 2. CESTA MINI KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                            <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Básica Pequena" loading="lazy">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta Pequena</h2>
-                            <div class="hbc-price">Consulte Valor</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Koblenz" loading="lazy"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Mini Koblenz</h2><div class="hbc-price">R$ 170,00</div></div>
                     </div>
                     <div class="hbc-content">
                          <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
                          <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Item"></div><span>1un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Item"></div><span>1un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>1un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>2un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão"></div><span>2un</span></div>
                          </div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
 
-                <!-- PLACEHOLDER 3: Cesta Média -->
+                <!-- 3. CESTA MINI ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                            <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Básica Média" loading="lazy">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta Média</h2>
-                            <div class="hbc-price">Consulte Valor</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Alvino" loading="lazy"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Mini Alvino</h2><div class="hbc-price">R$ 165,00</div></div>
                     </div>
                     <div class="hbc-content">
-                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                        <div class="hbc-items-slider">
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>1un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>2un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão"></div><span>2un</span></div>
+                         </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
 
-                 <!-- PLACEHOLDER 4: Cesta Grande -->
+                <!-- 4. CESTA PEQUENA KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                             <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Básica Grande" loading="lazy">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta Grande</h2>
-                            <div class="hbc-price">Consulte Valor</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Koblenz" loading="lazy"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Pequena Koblenz</h2><div class="hbc-price">R$ 220,00</div></div>
                     </div>
                     <div class="hbc-content">
-                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                        <div class="hbc-items-slider">
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>2un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>2un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão"></div><span>2un</span></div>
+                         </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
 
-                 <!-- PLACEHOLDER 5: Cesta Família -->
+                <!-- 5. CESTA PEQUENA ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                             <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Básica Família" loading="lazy">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta Família</h2>
-                            <div class="hbc-price">Consulte Valor</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Alvino" loading="lazy"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Pequena Alvino</h2><div class="hbc-price">R$ 215,00</div></div>
                     </div>
                     <div class="hbc-content">
-                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                         <div class="hbc-items-slider">
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>2un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>2un</span></div>
+                         </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
 
-                 <!-- PLACEHOLDER 6: Cesta Super -->
+                <!-- 6. CESTA MÉDIA KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                             <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Básica Super" loading="lazy">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta Super</h2>
-                            <div class="hbc-price">Consulte Valor</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Koblenz" loading="lazy"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Média Koblenz</h2><div class="hbc-price">R$ 325,00</div></div>
                     </div>
                     <div class="hbc-content">
-                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                         <div class="hbc-items-slider">
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>3un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>2un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>3un</span></div>
+                         </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
 
-                 <!-- PLACEHOLDER 7: Cesta Master -->
+                <!-- 7. CESTA MÉDIA ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                             <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Básica Master" loading="lazy">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta Master</h2>
-                            <div class="hbc-price">Consulte Valor</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Alvino" loading="lazy"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Média Alvino</h2><div class="hbc-price">R$ 320,00</div></div>
                     </div>
                     <div class="hbc-content">
-                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                        <div class="hbc-items-slider">
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>3un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>2un</span></div>
+                         </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
 
-                 <!-- PLACEHOLDER 8: Cesta Premium -->
+                <!-- 8. CESTA GRANDE KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                             <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Básica Premium" loading="lazy">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta Premium</h2>
-                            <div class="hbc-price">Consulte Valor</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Koblenz" loading="lazy"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Grande Koblenz</h2><div class="hbc-price">R$ 390,00</div></div>
                     </div>
                     <div class="hbc-content">
-                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                        <div class="hbc-items-slider">
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>4un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>3un</span></div>
+                         </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
 
-                 <!-- PLACEHOLDER 9: Cesta Limpeza -->
+                <!-- 9. CESTA GRANDE ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
-                        <div class="hbc-img-wrap">
-                             <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta de Limpeza" loading="lazy">
-                        </div>
-                        <div class="hbc-info-col">
-                            <h2 class="hbc-title">Cesta de Limpeza</h2>
-                            <div class="hbc-price">Consulte Valor</div>
-                        </div>
+                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Alvino" loading="lazy"></div>
+                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Grande Alvino</h2><div class="hbc-price">R$ 380,00</div></div>
                     </div>
                     <div class="hbc-content">
-                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                        <div class="hbc-actions">
-                            <button class="btn-home-cust">Personalizar</button>
-                            <button class="btn-home-order">Encomendar Agora</button>
-                        </div>
+                        <div class="hbc-items-slider">
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>4un</span></div>
+                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>3un</span></div>
+                         </div>
+                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
                     </div>
                 </div>
+
             </div>
         </div>
 
