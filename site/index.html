@@ -3,13 +3,11 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Clean UI Polish
+        ARCHITECT: SEO Code Architect (SCA) - Visual Spacing Tuning
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UI: Cards de produto sem bordas/sombras (estilo clean).
-        - UI: Fundo da imagem cinza claro (#f3f4f6) e fundo do site branco.
-        - UX: Botão de ação (+) aumentado e com stopPropagation (não abre detalhes).
-        - TYPOGRAPHY: Fontes de nome e preço reduzidas para elegância.
+        - UI: Cards reduzidos (max-width: 150px / width: 30vw).
+        - UI: Espaçamento entre cards aumentado para 20px (mais respiro).
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -192,7 +190,6 @@
         #customizer-view { 
             padding-top: calc(var(--app-header-height) + 10px); 
             padding-bottom: 100px; 
-            /* BACKGROUND BRANCO NO MODO CUSTOMIZAR */
             min-height: 100vh; background: #ffffff; 
         }
 
@@ -206,7 +203,8 @@
         .carousel-wrapper { position: relative; }
 
         .horizontal-products-row { 
-            display: flex; gap: 12px; overflow-x: auto; 
+            /* AJUSTE: gap aumentado para 20px */
+            display: flex; gap: 20px; overflow-x: auto; 
             padding: 0 16px 16px; scroll-snap-type: x mandatory; 
             scroll-behavior: smooth;
         }
@@ -225,15 +223,15 @@
         .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
-            width: 36vw; 
-            min-width: 140px; 
-            max-width: 170px;
+            /* AJUSTE: Tamanho do card reduzido para evidenciar espaço */
+            width: 30vw; 
+            min-width: 125px; 
+            max-width: 150px;
             scroll-snap-align: start; flex-shrink: 0;
         }
 
         /* CARD REDESIGN - APP STYLE (CLEAN & NO BOX) */
         .card-prod {
-            /* Fundo transparente, sem sombra e sem padding externo */
             background: transparent; border: none; padding: 0; 
             display: flex; flex-direction: column;
             position: relative; box-shadow: none;
@@ -241,22 +239,20 @@
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #eef9f2; color: #2d6c4a; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
-        /* Container da imagem com fundo cinza claro */
         .cp-img-box { 
             width: 100%; aspect-ratio: 1; 
             display: flex; align-items: center; justify-content: center; 
             margin-bottom: 8px; cursor: pointer; position: relative;
-            background: #f3f4f6; /* Fundo cinza suave */
-            border-radius: 12px; /* Cantos arredondados */
+            background: #f3f4f6;
+            border-radius: 18px; 
         }
         .cp-img { 
             width: 100%; height: 100%; object-fit: contain; 
         }
         
-        /* BOTÃO FLUTUANTE CIRCULAR (MAIOR) */
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px;
-            width: 38px; height: 38px; /* Aumentado */
+            width: 38px; height: 38px;
             border-radius: 50%;
             background: white; border: 1px solid #e5e5e5;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -266,10 +262,9 @@
         }
         .btn-circle-add:active { transform: scale(0.9); }
 
-        /* QTY CONTROLLER FLUTUANTE */
         .qty-ctrl-float {
             position: absolute; bottom: 8px; right: 8px;
-            height: 38px; /* Acompanha altura do botão */
+            height: 38px; 
             background: white; border: 1px solid #e5e5e5;
             border-radius: 19px; display: flex; align-items: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
@@ -280,7 +275,6 @@
         }
         .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
-        /* INFORMAÇÕES - FONTES REDUZIDAS */
         .cp-price { 
             font-size: 0.95rem; font-weight: 700; color: #1f1f1f; 
             margin-bottom: 2px; text-align: left; 
