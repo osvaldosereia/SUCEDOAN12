@@ -136,14 +136,14 @@
             cursor: pointer;
             transition: background 0.2s;
             text-decoration: none;
-            width: 100%; /* Mobile First default */
+            width: 100%;
         }
 
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); }
-        .btn-ghost { background: transparent; color: var(--text-muted); width: auto; padding: 4px; }
-        .btn-ghost:hover { color: var(--text-main); background: var(--bg); }
-        .btn-icon { width: 32px; height: 32px; padding: 0; border-radius: 4px; }
+        .btn-ghost { background: transparent; color: var(--text-muted); width: auto; padding: 4px 8px; border: 1px solid transparent;}
+        .btn-ghost:hover { color: var(--text-main); background: var(--bg); border-color: var(--border); }
+        .btn-icon { width: 32px; height: 32px; padding: 0; border-radius: 4px; border: none; }
         
         /* Table */
         .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -170,16 +170,6 @@
         .search-wrapper svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; width: 16px; height: 16px; }
         .search-wrapper input { padding-left: 2.2rem; }
 
-        /* Dialog/Modal */
-        dialog {
-            margin: auto; padding: 0; border: none; border-radius: var(--radius);
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-            width: 90vw; max-width: 500px;
-            animation: fadeIn 0.2s ease-out;
-        }
-        dialog::backdrop { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         /* Icons SVG */
         svg { fill: currentColor; }
     </style>
@@ -192,7 +182,10 @@
         CLIENTES <span style="font-weight:400; color:var(--text-muted); font-size:0.8em; margin-left:5px;">| SISTEMA V3</span>
     </h1>
     <div style="display:flex; align-items:center; gap:10px;">
-        <span class="badge badge-gray" id="total-count">0 REGISTROS</span>
+        <button onclick="App.exportData()" class="btn-ghost" style="display:flex; align-items:center; gap:5px; font-size:0.75rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            BACKUP JSON
+        </button>
     </div>
 </header>
 
@@ -255,13 +248,10 @@
                     <textarea id="c-endereco" rows="3"></textarea>
                 </div>
 
-                <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+                <div style="margin-top:0.5rem;">
                     <button type="submit" class="btn btn-primary">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         SALVAR CLIENTE
-                    </button>
-                    <button type="button" id="btn-history" onclick="App.showHistory()" class="btn" style="background:#f1f5f9; color:var(--text-muted); display:none;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     </button>
                 </div>
             </form>
@@ -274,6 +264,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="search-input" oninput="App.filter(this.value)" placeholder="Buscar por nome, código ou rota...">
             </div>
+            <div style="margin-left:10px;"><span class="badge badge-gray" id="total-count">0 REGISTROS</span></div>
         </div>
         <div class="table-container">
             <table>
@@ -295,42 +286,25 @@
     </section>
 </main>
 
-<dialog id="history-modal">
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border-bottom:1px solid var(--border);">
-        <h3 style="font-size:0.9rem; font-weight:700;">Histórico de Pedidos</h3>
-        <button onclick="document.getElementById('history-modal').close()" class="btn-ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-    </div>
-    <div id="history-content" style="padding:0; max-height:60vh; overflow-y:auto;">
-        </div>
-    <div style="padding:1rem; text-align:right; border-top:1px solid var(--border); background:#f8fafc;">
-        <span style="font-size:0.75rem; color:var(--text-muted);">Dados apenas para conferência</span>
-    </div>
-</dialog>
-
 <script>
 /**
- * SISTEMA V3 - Módulo de Clientes (Minimalist Core)
- * Single Object Architecture
+ * SISTEMA V3 - Módulo de Clientes
+ * Minimalist Core - No Dependencies
  */
 const App = {
     key: 'sys_v3_minimal_db',
-    state: { clients: [], sales: [] }, // Sales mockados para o histórico funcionar
+    state: { clients: [] },
 
     init: () => {
-        // Load data or mock if empty
+        // Carrega dados ou inicia array vazio
         const saved = localStorage.getItem(App.key);
         if (saved) {
             App.state = JSON.parse(saved);
         } else {
-            // Seed Mock Data se estiver vazio
+            // Seed Mock Data apenas se vazio para teste
             App.state.clients = [
                 { id: '1', codigo: 'C001', nome: 'Mercado Central', rota: 'CBA', tel: '6599999999', cidade: 'Cuiabá', bairro: 'Centro', endereco: 'Rua 10' },
                 { id: '2', codigo: 'C002', nome: 'Padaria do João', rota: 'VG', tel: '6588888888', cidade: 'Várzea Grande', bairro: 'Cristo Rei', endereco: 'Av Principal' }
-            ];
-            // Mock sales
-            App.state.sales = [
-                { id: 's1', cliId: '1', code: 'V100', date: Date.now(), total: 450.50, items: 12 },
-                { id: 's2', cliId: '1', code: 'V098', date: Date.now() - 86400000, total: 120.00, items: 3 }
             ];
             App.saveToStorage();
         }
@@ -387,7 +361,6 @@ const App = {
         document.getElementById('c-endereco').value = client.endereco;
         
         document.getElementById('form-title').innerText = `Editando: ${client.codigo}`;
-        document.getElementById('btn-history').style.display = 'inline-flex';
         
         // Scroll to form on mobile
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -406,7 +379,6 @@ const App = {
         document.getElementById('c-id').value = '';
         document.getElementById('c-codigo').value = '';
         document.getElementById('form-title').innerText = 'Novo Cadastro';
-        document.getElementById('btn-history').style.display = 'none';
     },
 
     filter: (val) => {
@@ -422,6 +394,7 @@ const App = {
     renderTable: (list) => {
         const tbody = document.getElementById('client-list');
         const empty = document.getElementById('empty-state');
+        document.getElementById('total-count').innerText = `${list.length} REGISTROS`;
         
         if (list.length === 0) {
             tbody.innerHTML = '';
@@ -462,25 +435,17 @@ const App = {
         return `C${String(max + 1).padStart(3, '0')}`;
     },
 
-    showHistory: () => {
-        const id = document.getElementById('c-id').value;
-        const sales = App.state.sales.filter(s => s.cliId === id).sort((a,b) => b.date - a.date);
-        const container = document.getElementById('history-content');
-        
-        if (sales.length === 0) {
-            container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--text-muted);">Nenhum pedido encontrado.</div>';
-        } else {
-            container.innerHTML = sales.map(s => `
-                <div style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <div style="font-weight:700; font-size:0.85rem;">Pedido #${s.code}</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">${new Date(s.date).toLocaleDateString()} &bull; ${s.items} itens</div>
-                    </div>
-                    <div style="font-weight:700; color:var(--success);">R$ ${s.total.toFixed(2)}</div>
-                </div>
-            `).join('');
-        }
-        document.getElementById('history-modal').showModal();
+    exportData: () => {
+        const dataStr = JSON.stringify(App.state.clients, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `clientes_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 };
 
