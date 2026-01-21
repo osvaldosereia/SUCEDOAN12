@@ -3,12 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Layout Fix & Stabilization
+        ARCHITECT: SEO Code Architect (SCA) - LCP Boost & Brand Update
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - FIX: Carrossel quebrado corrigido (Flex-basis fixo e seguro).
-        - CSS: Larguras definidas explicitamente para Mobile (150px) e Desktop (200px).
-        - UI: Mantida toda a estética Clean, Fundo Branco e Imagens com Fundo Cinza.
+        - PERF: Preload do 'produtos.json' para acelerar descoberta de conteúdo (LCP).
+        - BRAND: URL da logo atualizada ("logo-super-cesta...").
+        - PERF: fetchpriority="high" adicionado à logo.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -25,9 +25,11 @@
     <title>Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia</title>
     <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG. Monte e personalize sua cesta. Mercadinho online com pagamento na entrega.">
 
-    <!-- Preconnect -->
+    <!-- Preconnect & Preload (LCP OPTIMIZATION) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- PRELOAD CRÍTICO: Carrega os dados antes do JS executar -->
+    <link rel="preload" href="produtos/produtos.json?v=1" as="fetch" crossorigin>
 
     <!-- JSON-LD -->
     <script type="application/ld+json">
@@ -35,7 +37,7 @@
       "@context": "https://schema.org",
       "@type": "GroceryStore",
       "name": "Dona Antônia Cestas Básicas",
-      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
+      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
       "telephone": "+5565996813588",
       "address": {
         "@type": "PostalAddress",
@@ -177,8 +179,6 @@
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        
-        /* HOME BASKET ITEMS */
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
         
         .hbc-item { 
@@ -207,7 +207,7 @@
             min-height: 100vh; background: #ffffff; 
         }
 
-        /* --- 6. PRODUCTS --- */
+        /* --- 6. PRODUCTS (NEW CARD DESIGN) --- */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
         .subcat-title { 
             font-size: 1.1rem; font-weight: 800; color: #3e3e3e; 
@@ -219,7 +219,8 @@
         .horizontal-products-row { 
             display: flex; gap: 20px; overflow-x: auto; 
             padding: 0 16px 16px 16px; 
-            margin-left: -16px; margin-right: -16px; /* Bleeding mobile */
+            margin-left: -16px; margin-right: -16px; 
+            scroll-snap-type: none; 
             scroll-behavior: smooth;
         }
         .horizontal-products-row::-webkit-scrollbar { display: none; }
@@ -239,11 +240,11 @@
         .scroll-btn.right { right: -24px; }
         .scroll-btn svg { width: 24px; height: 24px; stroke-width: 2.5; }
 
-        /* CARD FIX: Definindo tamanhos fixos para estabilidade */
         .horizontal-products-row .card-prod { 
-            /* Mobile Default */
-            width: 150px; 
-            flex: 0 0 auto; /* NÃO ENCOLHER, NÃO CRESCER - MANTÉM LARGURA FIXA */
+            width: 35vw; 
+            min-width: 145px; 
+            max-width: 190px;
+            flex-shrink: 0;
         }
 
         .card-prod {
@@ -333,13 +334,8 @@
             #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 40px 20px; padding-top: calc(var(--app-header-height) + 20px); padding-bottom: 100px; }
             .cp-title { -webkit-line-clamp: 2; min-height: 2.6em; }
             
-            /* RESET MARGINS ON DESKTOP */
             .horizontal-products-row { margin-left: 0; margin-right: 0; }
-
-            /* CARD DESKTOP FIXED WIDTH */
-            .horizontal-products-row .card-prod { 
-                width: 200px; /* Largura Fixa e Segura */
-            }
+            .horizontal-products-row .card-prod { min-width: 155px; max-width: 195px; }
         }
 
         /* --- 8. FLOATING CART BAR --- */
@@ -394,42 +390,16 @@
         .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #f7f7f7; }
         .co-horizontal-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 20px; }
         .co-horizontal-list::-webkit-scrollbar { display: none; }
-        /* CHECKOUT CARD: Reusing main card style base but optimized for modal */
-        .co-card { 
-            min-width: 140px; max-width: 140px; 
-            background: transparent; border: none; padding: 0;
-            display: flex; flex-direction: column; 
-            flex-shrink: 0;
-        }
-        /* Reuse image box style */
-        .co-card .cp-img-box {
-            width: 100%; aspect-ratio: 1;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 8px; position: relative;
-            background: #f3f4f6;
-            border-radius: 18px;
-            overflow: hidden;
-        }
-        /* Reuse image style */
-        .co-card-img { 
-             width: 105%; height: 105%; object-fit: contain; 
-             border-radius: 18px;
-        }
-        
+        .co-card { min-width: 140px; max-width: 140px; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; flex-shrink: 0; }
+        .co-card .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
+        .co-card-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
         .co-card-title { font-size: 0.75rem; color: #3e3e3e; text-align: left; font-weight: 500; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; margin-bottom: 6px; width: 100%; }
-        
         .co-card-controls { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
         .qty-mini-co { display: flex; align-items: center; background: #f5f5f5; border-radius: 6px; height: 28px; border: 1px solid #e0e0e0; flex: 1; margin-right: 6px; }
         .qm-btn { width: 24px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #555; cursor: pointer; }
         .qm-val { font-size: 0.8rem; font-weight: 700; flex: 1; text-align: center; }
         .co-trash-btn { width: 28px; height: 28px; border-radius: 6px; background: #fee2e2; color: #b91c1c; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        
-        .co-total-row { 
-            background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; 
-            display: flex; flex-direction: column; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-        }
-        
+        .co-total-row { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .co-payment-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .co-payment-box select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; margin-top: 10px; background: white; }
         .co-footer { padding: 16px; border-top: 1px solid #f0f0f0; background: white; }
@@ -464,7 +434,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
-                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
+                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia" fetchpriority="high">
                 <div class="logo-text-col">
                     <span class="logo-name">Dona Antônia</span>
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
