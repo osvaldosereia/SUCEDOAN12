@@ -3,12 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Visual Refinement 11.5
+        ARCHITECT: SEO Code Architect (SCA) - Final Visual Polish
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UI: Itens da cesta na home com fundo branco, borda e imagens +10px.
-        - UI: Cards de produto aumentados no desktop.
-        - FIX: Centralização óptica do ícone '+' no botão de adicionar.
+        - UI: Fundo do site branco (#ffffff).
+        - UI: Fundo das imagens cinza claro (#f3f4f6).
+        - UI: Imagens aumentadas em +5px para maior destaque.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -53,7 +53,7 @@
             --secondary: #3e3e3e; 
             --text-main: #333333; 
             --text-light: #555555; 
-            --bg-body: #f3f4f6; /* AJUSTE: Cinza claro perceptível */
+            --bg-body: #ffffff; /* AJUSTE: Fundo branco geral */
             --border-color: #f2f2f2;
             --header-height: 70px; 
             --app-header-height: 56px; 
@@ -179,18 +179,17 @@
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; }
         
-        /* AJUSTE: Itens da cesta na home com fundo branco, borda e imagem maior (75px) */
         .hbc-item { 
-            flex: 0 0 100px; /* Aumentado para caber imagem maior */
+            flex: 0 0 100px; 
             display: flex; flex-direction: column; align-items: center; gap: 2px; 
-            background: #ffffff; /* Fundo branco solicitado */
-            border: 1px solid #f0f0f0; /* Borda para contraste */
-            border-radius: 12px; /* Borda arredondada */
+            background: #ffffff; 
+            border: 1px solid #f0f0f0; 
+            border-radius: 12px; 
             padding: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03); 
         }
         .hbc-item img { 
-            width: 75px; height: 75px; /* Aumentado 10px */
+            width: 75px; height: 75px; 
             object-fit: contain; mix-blend-mode: multiply; 
         } 
         .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #555; }
@@ -203,7 +202,7 @@
         #customizer-view { 
             padding-top: calc(var(--app-header-height) + 10px); 
             padding-bottom: 100px; 
-            min-height: 100vh; background: #f3f4f6; /* AJUSTE: Cinza claro aqui também */
+            min-height: 100vh; background: #ffffff; /* AJUSTE: Fundo branco */
         }
 
         /* --- 6. PRODUCTS (NEW CARD DESIGN) --- */
@@ -235,13 +234,14 @@
         .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
-            width: 30vw; 
-            min-width: 125px; 
-            max-width: 150px;
+            /* AJUSTE: Largura ligeiramente maior para acomodar +5px */
+            width: 32vw; 
+            min-width: 130px; 
+            max-width: 155px;
             scroll-snap-align: start; flex-shrink: 0;
         }
 
-        /* CARD REDESIGN - APP STYLE (CLEAN & NO BOX) */
+        /* CARD REDESIGN */
         .card-prod {
             background: transparent; border: none; padding: 0; 
             display: flex; flex-direction: column;
@@ -254,16 +254,16 @@
             width: 100%; aspect-ratio: 1; 
             display: flex; align-items: center; justify-content: center; 
             margin-bottom: 8px; cursor: pointer; position: relative;
-            background: #ffffff; /* AJUSTE: Fundo branco na imagem para contrastar com o fundo cinza do site */
+            background: #f3f4f6; /* AJUSTE: Fundo cinza claro */
             border-radius: 18px; 
             overflow: hidden; 
         }
         .cp-img { 
-            width: 100%; height: 100%; object-fit: contain; 
+            /* AJUSTE: Aumentado em +5px visualmente (100% + scale) ou padding menor */
+            width: 105%; height: 105%; object-fit: contain; 
             border-radius: 18px; 
         }
         
-        /* BOTÃO CIRCULAR: Centralização Óptica */
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px;
             width: 38px; height: 38px;
@@ -273,7 +273,6 @@
             display: flex; align-items: center; justify-content: center;
             color: var(--primary); font-size: 1.6rem; font-weight: 300;
             cursor: pointer; transition: transform 0.1s;
-            /* AJUSTE: Levantando o + para centro visual */
             padding-bottom: 3px; 
             line-height: 1;
         }
@@ -328,20 +327,13 @@
         /* --- 7. DESKTOP LAYOUT --- */
         @media(min-width: 1024px) {
             .scroll-btn { display: flex; }
-            
-            #customizer-view:not(.hidden) { 
-                max-width: 1200px; 
-                margin: 0 auto; 
-                padding: 40px 20px; 
-                padding-top: calc(var(--app-header-height) + 20px); 
-                padding-bottom: 100px; 
-            }
+            #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 40px 20px; padding-top: calc(var(--app-header-height) + 20px); padding-bottom: 100px; }
             .cp-title { -webkit-line-clamp: 2; min-height: 2.6em; }
             
             /* AJUSTE DESKTOP: Cards maiores para imagem maior */
             .horizontal-products-row .card-prod { 
-                min-width: 150px; 
-                max-width: 190px;
+                min-width: 155px; 
+                max-width: 195px;
             }
         }
 
