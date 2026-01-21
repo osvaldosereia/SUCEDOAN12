@@ -3,528 +3,321 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS V3.1 | Catálogo Pro</title>
+    <title>SISTEMAS V4 | Definitivo</title>
     
     <style>
-        /* --- 1. CORE & RESET --- */
+        /* --- CSS OTIMIZADO --- */
         :root {
-            --bg: #f8fafc;
+            --bg: #f1f5f9;
             --surface: #ffffff;
-            --border: #e2e8f0;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
+            --border: #cbd5e1;
+            --text: #0f172a;
             --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --danger: #ef4444;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --radius: 8px;
-            --shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
-            --font-sys: system-ui, -apple-system, sans-serif;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --warning: #ca8a04;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
         
-        body {
-            font-family: var(--font-sys);
-            background-color: var(--bg);
-            color: var(--text-main);
-            line-height: 1.5;
-            padding-bottom: 80px;
-        }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
 
-        /* --- 2. LAYOUT --- */
-        header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 0.8rem 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 30;
-            height: 60px;
-        }
+        /* Layout */
+        header { background: var(--surface); padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h1 { font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
 
-        h1 { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        main { max-width: 1400px; margin: 1rem auto; padding: 0 1rem; display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
+        @media (min-width: 1024px) { main { grid-template-columns: 400px 1fr; align-items: start; } }
+
+        /* Cards */
+        .card { background: var(--surface); border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
+        .card-header { background: #f8fafc; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; display: flex; justify-content: space-between; align-items: center; }
+        .card-body { padding: 15px; }
+
+        /* Inputs & Buttons */
+        input, select, button { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 10px; font-size: 0.9rem; }
+        input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
         
-        main {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 1rem;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
+        .btn { cursor: pointer; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; border: none; }
+        .btn-ghost { background: transparent; border: 1px solid transparent; color: #64748b; margin: 0; width: auto; }
+        .btn-ghost:hover { background: #e2e8f0; color: var(--text); }
+        .btn-icon { width: 32px; padding: 0; }
 
-        @media (min-width: 1100px) {
-            main { grid-template-columns: 450px 1fr; align-items: start; }
-        }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        label { font-size: 0.7rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 3px; }
 
-        /* --- 3. COMPONENTS --- */
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
-        .card-header { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; min-height: 50px; }
-        .card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
-        .card-body { padding: 1rem; }
-
-        /* Forms */
-        .form-group { margin-bottom: 0.8rem; }
-        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
-
-        label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.25rem; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 0.6rem; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--surface); transition: all 0.15s; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        textarea { resize: vertical; min-height: 60px; }
-
-        /* Filters Area */
-        .filters-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            padding: 10px;
-            background: #f1f5f9;
-            border-bottom: 1px solid var(--border);
-        }
-        @media (min-width: 768px) {
-            .filters-grid { grid-template-columns: 2fr 1.5fr 1.5fr 1fr; }
-        }
-
-        .section-header {
-            font-size: 0.7rem; font-weight: 800; color: var(--primary);
-            margin: 1.2rem 0 0.5rem 0; padding-bottom: 4px; border-bottom: 1px dashed var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        /* Buttons & Badges */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1rem; font-weight: 600; font-size: 0.75rem; border-radius: 6px; border: none; cursor: pointer; text-transform: uppercase; transition: 0.2s; min-height: 38px; }
-        .btn-block { width: 100%; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-success { background: var(--success); color: white; }
-        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid transparent; }
-        .btn-ghost:hover { background: var(--bg); color: var(--text-main); border-color: #cbd5e1; }
-        .btn-icon { padding: 8px; width: 36px; height: 36px; }
-
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
-        .badge-green { background: #dcfce7; color: #15803d; }
-        .badge-red { background: #fee2e2; color: #b91c1c; }
-        .badge-purple { background: #f3e8ff; color: #7e22ce; }
-        .badge-gray { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
+        /* Filter Bar */
+        .filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; padding: 10px; background: #e2e8f0; border-bottom: 1px solid var(--border); }
+        .filter-bar input, .filter-bar select { margin: 0; border: 1px solid #cbd5e1; }
 
         /* Table */
-        .table-wrapper { overflow-x: auto; max-height: 70vh; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; white-space: nowrap; }
-        th { text-align: left; padding: 0.75rem; background: #f8fafc; color: var(--text-muted); font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-        td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-        tr:hover { background-color: #f1f5f9; }
+        .table-wrap { overflow-x: auto; max-height: 70vh; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
+        th { text-align: left; background: #f1f5f9; padding: 10px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--border); }
+        td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        tr:hover { background: #f8fafc; }
 
-        /* Advanced Components */
-        .combo-box { background: #eff6ff; border: 1px dashed #bfdbfe; padding: 10px; border-radius: 6px; margin-top: 5px; }
-        .combo-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 4px 8px; border: 1px solid #dbeafe; border-radius: 4px; margin-bottom: 4px; font-size: 0.8rem; }
-        
-        .search-dropdown { position: absolute; background: white; border: 1px solid var(--border); width: 100%; max-height: 200px; overflow-y: auto; z-index: 50; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px; display: none; }
-        .search-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
-        .search-item:hover { background: #f8fafc; color: var(--primary); }
+        /* Badges */
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+        .bg-red { background: #fee2e2; color: #991b1b; }
+        .bg-green { background: #dcfce7; color: #166534; }
+        .bg-gray { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-        /* Modals (Native <dialog>) */
-        dialog { border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 95vw; max-width: 800px; padding: 0; animation: fadeUp 0.2s ease; margin: auto; }
-        dialog::backdrop { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
-        .modal-body { padding: 1.5rem; max-height: 70vh; overflow-y: auto; }
-        .modal-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; }
+        /* Modal */
+        dialog { margin: auto; border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 90%; max-width: 600px; padding: 0; }
+        dialog::backdrop { background: rgba(0,0,0,0.5); }
+        .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
 
-        /* Category Tree Specifics */
-        .cat-item { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
-        .cat-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; }
-        .cat-actions { display: flex; gap: 4px; }
-        .cat-subs { padding: 0 12px 8px 24px; border-top: 1px dashed var(--border); background: #fff; }
-        .sub-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+        /* Tree View */
+        .tree-node { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 5px; overflow: hidden; }
+        .tree-header { padding: 8px 10px; background: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .tree-subs { background: #f8fafc; padding: 5px 10px 10px 20px; border-top: 1px solid var(--border); }
+        .sub-node { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px dashed #e2e8f0; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        CATÁLOGO PRO V3.1
-    </h1>
-    <div style="display:flex; gap:8px;">
-        <button onclick="CatManager.open()" class="btn-ghost" title="Gerenciar Categorias">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M3 12h18"></path><path d="M3 18h18"></path></svg>
-            <span style="display:none; @media(min-width:600px){display:inline;}"> Categorias</span>
-        </button>
-        <button onclick="Importer.open()" class="btn-ghost" title="Importar">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-        </button>
-        <button onclick="App.exportAll()" class="btn-ghost" title="Backup com Data">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        </button>
+    <h1>CATÁLOGO V4</h1>
+    <div style="display:flex; gap:5px;">
+        <button onclick="CatManager.open()" class="btn btn-ghost" style="border:1px solid #cbd5e1;">📂 Categorias</button>
+        <button onclick="App.exportData()" class="btn btn-ghost" style="border:1px solid #cbd5e1;">💾 Backup</button>
+        <button onclick="Importer.open()" class="btn btn-ghost" style="border:1px solid #cbd5e1;">📥 Importar</button>
     </div>
 </header>
 
 <main>
     <section class="card">
         <div class="card-header">
-            <span class="card-title" id="form-title">Novo Produto</span>
-            <button onclick="App.resetForm()" class="btn-ghost btn-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button>
+            <span>Cadastro / Edição</span>
+            <button onclick="App.reset()" class="btn btn-ghost btn-icon">↻</button>
         </div>
         <div class="card-body">
-            <form id="form-prod" onsubmit="App.save(event)">
-                <input type="hidden" id="p-id">
+            <form id="form" onsubmit="App.save(event)">
+                <input type="hidden" id="id">
                 
                 <div class="row-3">
-                    <div><label>Código</label><input type="text" id="p-codigo" readonly placeholder="Auto" style="font-weight:700;"></div>
-                    <div style="grid-column: span 2;"><label>EAN (Principal)</label><input type="text" id="p-ean"></div>
+                    <div><label>Código</label><input type="text" id="codigo" readonly style="background:#f1f5f9; font-weight:700;"></div>
+                    <div style="grid-column: span 2"><label>EAN (Código de Barras)</label><input type="text" id="ean"></div>
                 </div>
 
-                <div class="form-group"><label>Nome Principal</label><input type="text" id="p-nome" required style="font-weight:600;"></div>
-                <div class="form-group"><label>Fornecedor</label><input type="text" id="p-fornecedor" list="list-fornecedores">
-                <datalist id="list-fornecedores"></datalist></div>
+                <label>Nome do Produto</label>
+                <input type="text" id="nome" required style="font-weight:700;">
 
                 <div class="row-2">
-                    <div><label>Categoria</label><select id="p-categoria"><option value="">Sem Categoria</option></select></div>
-                    <div><label>Unidade</label><input type="text" id="p-unidade" placeholder="UN, CX, KG"></div>
+                    <div>
+                        <label>Categoria</label>
+                        <select id="categoria"><option value="">Sem Categoria</option></select>
+                    </div>
+                    <div>
+                        <label>Fornecedor</label>
+                        <input type="text" id="fornecedor" list="dl-fornecedor">
+                        <datalist id="dl-fornecedor"></datalist>
+                    </div>
                 </div>
 
-                <div class="section-header"><span>COMERCIAL & PREÇO</span></div>
-                <div class="row-3">
-                    <div><label>Custo (R$)</label><input type="number" id="p-custo" step="0.01" oninput="App.calcMargin()"></div>
-                    <div><label>Margem (%)</label><input type="text" id="p-margem" readonly style="background:#f1f5f9; text-align:center;"></div>
-                    <div><label style="color:var(--primary)">Venda (R$)</label><input type="number" id="p-valor" step="0.01" oninput="App.calcMargin()" style="font-weight:700; border-color:var(--primary);"></div>
-                </div>
-                
-                <div style="background:#fff7ed; padding:8px; border:1px solid #ffedd5; border-radius:6px; margin-top:8px; display:flex; gap:10px; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-isOffer" style="width:auto;"><label for="p-isOffer" style="margin:0; color:var(--warning); cursor:pointer;">OFERTA</label></div>
-                    <div style="flex:1"><input type="number" id="p-offerPrice" placeholder="Preço Oferta (R$)" step="0.01"></div>
+                <div class="row-3" style="margin-top:10px; border-top:1px dashed var(--border); padding-top:10px;">
+                    <div><label>Custo (R$)</label><input type="number" id="custo" step="0.01"></div>
+                    <div><label>Venda (R$)</label><input type="number" id="valor" step="0.01" required></div>
+                    <div><label>Estoque</label><input type="number" id="estoque" required></div>
                 </div>
 
-                <div class="section-header"><span>LOGÍSTICA & ESTOQUE</span></div>
-                <div class="row-2">
-                    <div><label>Estoque Físico</label><input type="number" id="p-estoque" required style="font-weight:700;"></div>
-                    <div><label>Estoque Fiscal</label><input type="number" id="p-estoqueFiscal"></div>
-                </div>
-                
-                <div class="section-header"><span>EXTRAS</span></div>
-                <div style="display:flex; align-items:center; gap:5px; margin-bottom:10px;"><input type="checkbox" id="p-isCombo" style="width:auto;" onchange="ComboManager.toggle(this.checked)"><label for="p-isCombo" style="margin:0; cursor:pointer;">É Kit/Combo?</label></div>
-                <div id="combo-area" class="combo-box" style="display:none;">
-                    <input type="text" id="combo-search" placeholder="Buscar produto para o kit..." oninput="ComboManager.search(this.value)">
-                    <div id="combo-results" class="search-dropdown"></div>
-                    <div id="combo-list" style="margin-top:8px;"></div>
-                </div>
-
-                <div style="margin-top:1.5rem;">
-                    <button type="submit" class="btn btn-primary btn-block">SALVAR DADOS</button>
-                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:15px; padding:12px;">SALVAR PRODUTO</button>
             </form>
         </div>
     </section>
 
-    <section class="card" style="height:fit-content; min-height:600px;">
+    <section class="card" style="height:fit-content;">
         <div class="card-header">
-            <span class="card-title">Listagem</span>
-            <span class="badge badge-gray" id="total-count">0 REGISTROS</span>
+            <span>Produtos (<span id="count">0</span>)</span>
         </div>
         
-        <div class="filters-grid">
-            <input type="text" id="f-search" oninput="App.applyFilters()" placeholder="Buscar Nome/EAN/Cód...">
-            <select id="f-cat" onchange="App.applyFilters()">
-                <option value="">Todas Categorias</option>
-            </select>
-            <select id="f-forn" onchange="App.applyFilters()">
-                <option value="">Todos Fornecedores</option>
-            </select>
-            <input type="number" id="f-stock" oninput="App.applyFilters()" placeholder="Estoque Máx (ex: 5)">
+        <div class="filter-bar">
+            <input type="text" id="f-busca" placeholder="Buscar Nome/EAN..." onkeyup="App.renderList()">
+            <select id="f-cat" onchange="App.renderList()"><option value="">Todas Categorias</option></select>
+            <select id="f-forn" onchange="App.renderList()"><option value="">Todos Fornecedores</option></select>
+            <input type="number" id="f-est" placeholder="Estoque Máx (ex: 5)" onkeyup="App.renderList()" title="Mostra produtos com estoque IGUAL ou MENOR que este valor">
         </div>
 
-        <div class="table-wrapper">
-            <table>
+        <div class="table-wrap">
+            <table id="table">
                 <thead>
                     <tr>
                         <th>Produto</th>
-                        <th>Categ.</th>
+                        <th>Categoria</th>
                         <th>Preço</th>
                         <th>Estoque</th>
-                        <th style="text-align:right;">Ações</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody id="prod-list"></tbody>
+                <tbody id="tbody"></tbody>
             </table>
         </div>
     </section>
 </main>
 
 <dialog id="modal-cat">
-    <div class="modal-header">
-        <span class="card-title">Gerenciar Categorias</span>
-        <button onclick="document.getElementById('modal-cat').close()" class="btn-ghost btn-icon">✕</button>
+    <div style="padding:15px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between;">
+        <b>Gerenciar Categorias</b>
+        <button onclick="document.getElementById('modal-cat').close()" class="btn btn-ghost btn-icon">✕</button>
     </div>
     <div class="modal-body">
-        <div style="display:flex; gap:10px; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
-            <input type="text" id="new-cat-root" placeholder="Nova Categoria Principal..." onkeypress="if(event.key==='Enter') CatManager.addRoot()">
-            <button onclick="CatManager.addRoot()" class="btn btn-primary" style="white-space:nowrap;">+ Criar</button>
+        <div style="display:flex; gap:5px; margin-bottom:15px;">
+            <input type="text" id="new-cat" placeholder="Nova Categoria Principal...">
+            <button onclick="CatManager.addRoot()" class="btn btn-primary" style="width:auto;">Adicionar</button>
         </div>
-        <div id="cat-tree" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <div id="cat-list"></div>
     </div>
 </dialog>
 
-<dialog id="modal-import">
-    <div class="modal-header">
-        <span class="card-title">Importar Backup</span>
-        <button onclick="document.getElementById('modal-import').close()" class="btn-ghost btn-icon">✕</button>
-    </div>
-    <div class="modal-body">
-        <p style="font-size:0.8rem; margin-bottom:10px;">Importação inteligente: Atualiza existentes (por EAN/Nome) e cria novos.</p>
-        <table style="font-size:0.75rem;">
-            <tbody id="import-preview-list"></tbody>
-        </table>
-    </div>
-    <div class="modal-footer">
-        <button onclick="Importer.confirm()" class="btn btn-success">Confirmar Importação</button>
-    </div>
-</dialog>
-
-<input type="file" id="file-input" accept=".json" style="display:none;" onchange="Importer.process(this)">
+<input type="file" id="import-file" style="display:none" onchange="Importer.run(this)">
 
 <script>
-/**
- * SISTEMA V3.1 - STANDALONE
- */
-
+/* --- SISTEMA CENTRAL --- */
 const DB = {
-    key: 'sys_v3_standalone_db',
-    get: () => {
-        const raw = localStorage.getItem(DB.key);
-        const data = raw ? JSON.parse(raw) : {};
-        if (!data.produto) data.produto = [];
-        if (!data.categorias) data.categorias = [];
+    key: 'db_v4_final',
+    load: () => {
+        const data = JSON.parse(localStorage.getItem(DB.key) || '{"produtos":[], "categorias":[]}');
+        // GARANTIA DE INTEGRIDADE: Se categorias não tiverem array de subs, cria agora.
+        data.categorias.forEach(c => { if(!c.subs) c.subs = []; });
         return data;
     },
-    save: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
-    nextCode: () => {
-        const db = DB.get();
-        let max = 0;
-        db.produto.forEach(p => {
-            const n = parseInt((p.codigo || '').replace(/\D/g, '') || 0);
-            if(n > max) max = n;
-        });
-        return `P${String(max + 1).padStart(4, '0')}`;
-    }
+    save: (data) => localStorage.setItem(DB.key, JSON.stringify(data))
 };
 
 const App = {
     init: () => {
-        App.applyFilters(); // Carrega a lista
-        CatManager.refreshAll(); // Carrega selects
-        App.populateSuppliers();
-    },
-
-    // --- FILTRAGEM AVANÇADA ---
-    applyFilters: () => {
-        const db = DB.get();
-        const term = document.getElementById('f-search').value.toLowerCase();
-        const cat = document.getElementById('f-cat').value;
-        const forn = document.getElementById('f-forn').value;
-        const stockMax = document.getElementById('f-stock').value;
-
-        let list = db.produto.filter(p => {
-            // 1. Texto
-            const matchesText = !term || [p.nome, p.codigo, p.ean].join(' ').toLowerCase().includes(term);
-            if(!matchesText) return false;
-
-            // 2. Categoria
-            if(cat && p.categoria !== cat) return false;
-
-            // 3. Fornecedor
-            if(forn && p.fornecedor !== forn) return false;
-
-            // 4. Estoque Teto (Menor ou igual)
-            if(stockMax !== '' && p.estoque > Number(stockMax)) return false;
-
-            return true;
-        });
-
-        App.renderTable(list);
-    },
-
-    renderTable: (list) => {
-        const tbody = document.getElementById('prod-list');
-        document.getElementById('total-count').innerText = `${list.length} REGS`;
-        
-        // Paginação simples (primeiros 50 para performance)
-        const displayList = list.slice(0, 50);
-
-        tbody.innerHTML = displayList.map(p => {
-            const stockClass = p.estoque <= 0 ? 'badge-red' : (p.estoque <= 5 ? 'badge-gray' : 'badge-green');
-            return `
-            <tr>
-                <td>
-                    <div style="font-weight:700; color:var(--text-main);">${p.nome}</div>
-                    <div style="font-size:0.7rem; color:var(--text-muted);">${p.codigo}</div>
-                </td>
-                <td><span class="badge badge-gray">${p.categoria ? p.categoria.split('>').pop().trim() : '-'}</span></td>
-                <td>
-                    ${p.isOffer ? `<span style="color:var(--danger); font-weight:bold;">R$ ${p.offerPrice.toFixed(2)}</span>` : `R$ ${p.valor.toFixed(2)}`}
-                </td>
-                <td><span class="badge ${stockClass}">${p.estoque}</span></td>
-                <td style="text-align:right;">
-                    <button onclick="App.edit('${p.id}')" class="btn-ghost btn-icon" title="Editar">✎</button>
-                    <button onclick="App.delete('${p.id}')" class="btn-ghost btn-icon" style="color:var(--danger)" title="Excluir">✕</button>
-                </td>
-            </tr>
-            `;
-        }).join('');
-    },
-
-    populateSuppliers: () => {
-        const db = DB.get();
-        const forns = [...new Set(db.produto.map(p => p.fornecedor).filter(Boolean))].sort();
-        const html = '<option value="">Todos Fornecedores</option>' + forns.map(f => `<option value="${f}">${f}</option>`).join('');
-        
-        document.getElementById('f-forn').innerHTML = html;
-        document.getElementById('list-fornecedores').innerHTML = forns.map(f => `<option value="${f}">`).join('');
+        App.renderList();
+        CatManager.refresh();
     },
 
     save: (e) => {
         e.preventDefault();
-        const db = DB.get();
-        const id = document.getElementById('p-id').value;
-        const codigo = id ? document.getElementById('p-codigo').value : DB.nextCode();
+        const db = DB.load();
+        const id = document.getElementById('id').value;
+        
+        // Gerar código sequencial se for novo
+        let codigo = document.getElementById('codigo').value;
+        if(!id) {
+            const max = db.produtos.reduce((acc, p) => Math.max(acc, parseInt(p.codigo.replace(/\D/g,'')||0)), 0);
+            codigo = `P${String(max+1).padStart(4,'0')}`;
+        }
 
-        const prod = {
+        const produto = {
             id: id || Date.now().toString(),
-            codigo: codigo,
-            nome: document.getElementById('p-nome').value.trim(),
-            ean: document.getElementById('p-ean').value,
-            fornecedor: document.getElementById('p-fornecedor').value,
-            categoria: document.getElementById('p-categoria').value,
-            unidade: document.getElementById('p-unidade').value,
-            custo: Number(document.getElementById('p-custo').value)||0,
-            valor: Number(document.getElementById('p-valor').value)||0,
-            isOffer: document.getElementById('p-isOffer').checked,
-            offerPrice: Number(document.getElementById('p-offerPrice').value)||0,
-            estoque: Number(document.getElementById('p-estoque').value)||0,
-            estoqueFiscal: Number(document.getElementById('p-estoqueFiscal').value)||0,
-            isCombo: document.getElementById('p-isCombo').checked,
-            items: ComboManager.currentItems
+            codigo,
+            ean: document.getElementById('ean').value,
+            nome: document.getElementById('nome').value.toUpperCase(),
+            categoria: document.getElementById('categoria').value,
+            fornecedor: document.getElementById('fornecedor').value.toUpperCase(),
+            custo: Number(document.getElementById('custo').value),
+            valor: Number(document.getElementById('valor').value),
+            estoque: Number(document.getElementById('estoque').value)
         };
 
         if(id) {
-            const idx = db.produto.findIndex(p => p.id === id);
-            if(idx > -1) db.produto[idx] = prod;
+            const idx = db.produtos.findIndex(p => p.id === id);
+            if(idx > -1) db.produtos[idx] = produto;
         } else {
-            db.produto.unshift(prod);
+            db.produtos.unshift(produto);
         }
 
         DB.save(db);
-        App.resetForm();
-        App.applyFilters();
-        App.populateSuppliers();
+        App.reset();
+        App.renderList();
         alert('Salvo!');
     },
 
     edit: (id) => {
-        const db = DB.get();
-        const p = db.produto.find(x => x.id === id);
+        const p = DB.load().produtos.find(x => x.id === id);
         if(!p) return;
-
-        document.getElementById('p-id').value = p.id;
-        document.getElementById('p-codigo').value = p.codigo;
-        document.getElementById('p-ean').value = p.ean || '';
-        document.getElementById('p-nome').value = p.nome;
-        document.getElementById('p-fornecedor').value = p.fornecedor || '';
-        document.getElementById('p-categoria').value = p.categoria || '';
-        document.getElementById('p-unidade').value = p.unidade || '';
-        document.getElementById('p-custo').value = p.custo;
-        document.getElementById('p-valor').value = p.valor;
-        document.getElementById('p-isOffer').checked = p.isOffer || false;
-        document.getElementById('p-offerPrice').value = p.offerPrice || '';
-        document.getElementById('p-estoque').value = p.estoque;
-        document.getElementById('p-estoqueFiscal').value = p.estoqueFiscal || '';
-        
-        ComboManager.currentItems = p.items || [];
-        document.getElementById('p-isCombo').checked = p.isCombo || false;
-        ComboManager.toggle(p.isCombo || false);
-        
-        App.calcMargin();
-        window.scrollTo({top:0, behavior:'smooth'});
+        document.getElementById('id').value = p.id;
+        document.getElementById('codigo').value = p.codigo;
+        document.getElementById('ean').value = p.ean;
+        document.getElementById('nome').value = p.nome;
+        document.getElementById('categoria').value = p.categoria;
+        document.getElementById('fornecedor').value = p.fornecedor;
+        document.getElementById('custo').value = p.custo;
+        document.getElementById('valor').value = p.valor;
+        document.getElementById('estoque').value = p.estoque;
+        document.getElementById('nome').focus();
     },
 
     delete: (id) => {
-        if(!confirm('Excluir?')) return;
-        const db = DB.get();
-        db.produto = db.produto.filter(p => p.id !== id);
+        if(!confirm('Excluir este produto?')) return;
+        const db = DB.load();
+        db.produtos = db.produtos.filter(p => p.id !== id);
         DB.save(db);
-        App.applyFilters();
-        App.populateSuppliers();
+        App.renderList();
     },
 
-    resetForm: () => {
-        document.getElementById('form-prod').reset();
-        document.getElementById('p-id').value = '';
-        document.getElementById('p-codigo').value = '';
-        ComboManager.currentItems = [];
-        ComboManager.toggle(false);
+    reset: () => {
+        document.getElementById('form').reset();
+        document.getElementById('id').value = '';
+        document.getElementById('codigo').value = '';
     },
 
-    calcMargin: () => {
-        const c = Number(document.getElementById('p-custo').value);
-        const v = Number(document.getElementById('p-valor').value);
-        if(c>0 && v>0) document.getElementById('p-margem').value = (((v-c)/c)*100).toFixed(1)+'%';
-    },
-
-    exportAll: () => {
-        const db = DB.get();
-        const now = new Date();
-        const day = String(now.getDate()).padStart(2,'0');
-        const month = String(now.getMonth()+1).padStart(2,'0');
-        const year = now.getFullYear();
+    renderList: () => {
+        const db = DB.load();
         
-        const filename = `produtos-${day}-${month}-${year}.json`;
-        
-        const blob = new Blob([JSON.stringify(db.produto, null, 2)], {type:'application/json'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-    }
-};
+        // Filtros
+        const termo = document.getElementById('f-busca').value.toLowerCase();
+        const cat = document.getElementById('f-cat').value;
+        const forn = document.getElementById('f-forn').value;
+        const estTeto = document.getElementById('f-est').value;
 
-const ComboManager = {
-    currentItems: [],
-    toggle: (checked) => {
-        document.getElementById('combo-area').style.display = checked ? 'block' : 'none';
-        if(checked) ComboManager.render();
-    },
-    search: (val) => {
-        const res = document.getElementById('combo-results');
-        if(val.length < 2) { res.style.display='none'; return; }
-        const db = DB.get();
-        const matches = db.produto.filter(p => p.nome.toLowerCase().includes(val.toLowerCase())).slice(0,5);
-        res.innerHTML = matches.map(p => `<div class="search-item" onclick="ComboManager.add('${p.id}', '${p.codigo}', '${p.nome}')">${p.nome}</div>`).join('');
-        res.style.display = 'block';
-    },
-    add: (id, code, name) => {
-        if(ComboManager.currentItems.some(i => i.id === id)) return;
-        ComboManager.currentItems.push({id, code, nome: name, qty: 1});
-        ComboManager.render();
-        document.getElementById('combo-search').value = '';
-        document.getElementById('combo-results').style.display = 'none';
-    },
-    remove: (idx) => {
-        ComboManager.currentItems.splice(idx, 1);
-        ComboManager.render();
-    },
-    render: () => {
-        document.getElementById('combo-list').innerHTML = ComboManager.currentItems.map((item, i) => `
-            <div class="combo-item">
-                <span style="flex:1">${item.nome}</span>
-                <button onclick="ComboManager.remove(${i})" class="btn-ghost" style="color:red;">✕</button>
-            </div>
+        // Atualiza selects de filtro
+        const forns = [...new Set(db.produtos.map(p => p.fornecedor).filter(Boolean))].sort();
+        const selForn = document.getElementById('f-forn');
+        if(selForn.options.length === 1) { // Só preenche se estiver vazio para não resetar seleção
+            forns.forEach(f => selForn.innerHTML += `<option value="${f}">${f}</option>`);
+            // Atualiza datalist do form também
+            document.getElementById('dl-fornecedor').innerHTML = forns.map(f => `<option value="${f}">`).join('');
+        }
+
+        const lista = db.produtos.filter(p => {
+            if(termo && !p.nome.toLowerCase().includes(termo) && !p.ean.includes(termo)) return false;
+            if(cat && p.categoria !== cat) return false;
+            if(forn && p.fornecedor !== forn) return false;
+            if(estTeto !== '' && p.estoque > Number(estTeto)) return false; // Lógica: Estoque <= Filtro
+            return true;
+        });
+
+        document.getElementById('count').innerText = lista.length;
+        
+        document.getElementById('tbody').innerHTML = lista.slice(0, 100).map(p => `
+            <tr>
+                <td>
+                    <b>${p.nome}</b><br>
+                    <span style="font-size:0.75rem; color:#64748b;">${p.codigo} | ${p.ean}</span>
+                </td>
+                <td><span class="badge bg-gray">${p.categoria || '-'}</span></td>
+                <td>R$ ${p.valor.toFixed(2)}</td>
+                <td><span class="badge ${p.estoque <= 0 ? 'bg-red' : 'bg-green'}">${p.estoque}</span></td>
+                <td>
+                    <button onclick="App.edit('${p.id}')" class="btn btn-ghost btn-icon">✎</button>
+                    <button onclick="App.delete('${p.id}')" class="btn btn-ghost btn-icon" style="color:var(--danger)">✕</button>
+                </td>
+            </tr>
         `).join('');
+    },
+
+    exportData: () => {
+        const now = new Date();
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        const fileName = `produtos-${d}-${m}-${y}.json`;
+
+        const dataStr = JSON.stringify(DB.load(), null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
     }
 };
 
@@ -534,226 +327,204 @@ const CatManager = {
         CatManager.render();
         document.getElementById('modal-cat').showModal();
     },
-    
-    // Create Root
-    addRoot: () => {
-        const input = document.getElementById('new-cat-root');
-        const name = input.value.trim();
-        if(!name) return;
+
+    refresh: () => {
+        const db = DB.load();
+        const sel = document.getElementById('categoria');
+        const selFiltro = document.getElementById('f-cat');
         
-        const db = DB.get();
-        if(db.categorias.some(c => c.nome.toLowerCase() === name.toLowerCase())) {
-            alert('Já existe!'); return;
-        }
-        
-        db.categorias.push({id: Date.now().toString(), nome, subs: []});
-        DB.save(db);
-        input.value = '';
-        CatManager.refreshAll();
-    },
-    
-    // Create Sub (Prompt simples para manter leveza)
-    addSub: (parentId) => {
-        const name = prompt("Nome da Subcategoria:");
-        if(!name || !name.trim()) return;
-        
-        const db = DB.get();
-        const parent = db.categorias.find(c => c.id === parentId);
-        
-        if(parent) {
-            if(parent.subs.some(s => s.nome.toLowerCase() === name.toLowerCase())) {
-                alert('Já existe!'); return;
-            }
-            parent.subs.push({id: Date.now().toString(), nome: name.trim()});
-            DB.save(db);
-            CatManager.refreshAll();
-        }
-    },
+        // Guarda seleção atual
+        const currentVal = sel.value;
+        const currentFiltro = selFiltro.value;
 
-    // Edit Name (Smart Update)
-    rename: (id, oldName, parentId = null) => {
-        const newName = prompt("Novo nome:", oldName);
-        if(!newName || newName.trim() === '' || newName === oldName) return;
-
-        const db = DB.get();
-        let oldCatString = '';
-        let newCatString = '';
-
-        if(parentId) {
-            // Renaming Sub
-            const parent = db.categorias.find(c => c.id === parentId);
-            const sub = parent.subs.find(s => s.id === id);
-            oldCatString = `${parent.nome} > ${sub.nome}`;
-            sub.nome = newName.trim();
-            newCatString = `${parent.nome} > ${sub.nome}`;
-        } else {
-            // Renaming Root
-            const cat = db.categorias.find(c => c.id === id);
-            oldCatString = cat.nome;
-            cat.nome = newName.trim();
-            newCatString = cat.nome;
-        }
-
-        // Update Products Linked to this Category
-        db.produto.forEach(p => {
-            if(p.categoria === oldCatString) {
-                p.categoria = newCatString;
-            } else if(p.categoria.startsWith(oldCatString + ' >')) {
-                // Handle root rename affecting subcategories strings
-                p.categoria = p.categoria.replace(oldCatString, newCatString);
-            }
-        });
-
-        DB.save(db);
-        CatManager.refreshAll();
-        App.applyFilters(); // Update list visual
-    },
-
-    delete: (id, parentId = null) => {
-        const db = DB.get();
-        let nameToCheck = '';
-
-        if(parentId) {
-            const parent = db.categorias.find(c => c.id === parentId);
-            const sub = parent.subs.find(s => s.id === id);
-            nameToCheck = sub ? sub.nome : '';
-        } else {
-            const cat = db.categorias.find(c => c.id === id);
-            if(cat && cat.subs.length > 0) {
-                alert("Apague as subcategorias primeiro."); return;
-            }
-            nameToCheck = cat ? cat.nome : '';
-        }
-
-        // Safety Check
-        const isUsed = db.produto.some(p => p.categoria && p.categoria.includes(nameToCheck));
-        if(isUsed) {
-            alert(`Impossível: Existem produtos nesta categoria.`);
-            return;
-        }
-
-        if(!confirm(`Apagar "${nameToCheck}"?`)) return;
-
-        if(parentId) {
-            const parent = db.categorias.find(c => c.id === parentId);
-            parent.subs = parent.subs.filter(s => s.id !== id);
-        } else {
-            db.categorias = db.categorias.filter(c => c.id !== id);
-        }
-        
-        DB.save(db);
-        CatManager.refreshAll();
-    },
-
-    refreshAll: () => {
-        CatManager.render();
-        CatManager.populateSelects();
-    },
-
-    render: () => {
-        const db = DB.get();
-        const el = document.getElementById('cat-tree');
-        
-        if(db.categorias.length === 0) {
-            el.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">Nenhuma categoria.</div>';
-            return;
-        }
-
-        el.innerHTML = db.categorias.map(c => `
-            <div class="cat-item">
-                <div class="cat-header">
-                    <span style="font-weight:700;">${c.nome}</span>
-                    <div class="cat-actions">
-                        <button onclick="CatManager.addSub('${c.id}')" class="btn-ghost" title="Nova Sub" style="color:var(--success);">＋</button>
-                        <button onclick="CatManager.rename('${c.id}', '${c.nome}')" class="btn-ghost" title="Renomear">✎</button>
-                        <button onclick="CatManager.delete('${c.id}')" class="btn-ghost" title="Excluir" style="color:var(--danger);">✕</button>
-                    </div>
-                </div>
-                ${(c.subs.length > 0) ? `
-                <div class="cat-subs">
-                    ${c.subs.map(s => `
-                        <div class="sub-item">
-                            <span>${s.nome}</span>
-                            <div class="cat-actions">
-                                <button onclick="CatManager.rename('${s.id}', '${s.nome}', '${c.id}')" class="btn-ghost" style="padding:4px;">✎</button>
-                                <button onclick="CatManager.delete('${s.id}', '${c.id}')" class="btn-ghost" style="padding:4px; color:var(--danger);">✕</button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>` : ''}
-            </div>
-        `).join('');
-    },
-
-    populateSelects: () => {
-        const db = DB.get();
         let html = '<option value="">Sem Categoria</option>';
-        let filterHtml = '<option value="">Todas Categorias</option>';
+        let htmlFiltro = '<option value="">Todas Categorias</option>';
 
         db.categorias.forEach(c => {
             html += `<option value="${c.nome}">${c.nome}</option>`;
-            filterHtml += `<option value="${c.nome}">${c.nome}</option>`;
-            
-            c.subs.forEach(s => {
+            htmlFiltro += `<option value="${c.nome}">${c.nome}</option>`;
+            (c.subs || []).forEach(s => {
                 const val = `${c.nome} > ${s.nome}`;
-                html += `<option value="${val}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
-                filterHtml += `<option value="${val}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
+                html += `<option value="${val}"> -- ${s.nome}</option>`;
+                htmlFiltro += `<option value="${val}"> -- ${s.nome}</option>`;
             });
         });
 
-        const selForm = document.getElementById('p-categoria');
-        const selFilter = document.getElementById('f-cat');
+        sel.innerHTML = html;
+        sel.value = currentVal; // Restaura
         
-        if(selForm) selForm.innerHTML = html;
-        if(selFilter) selFilter.innerHTML = filterHtml;
+        selFiltro.innerHTML = htmlFiltro;
+        selFiltro.value = currentFiltro;
+    },
+
+    addRoot: () => {
+        const input = document.getElementById('new-cat');
+        const nome = input.value.trim().toUpperCase();
+        if(!nome) return;
+
+        const db = DB.load();
+        if(db.categorias.some(c => c.nome === nome)) return alert('Já existe!');
+
+        db.categorias.push({ id: Date.now(), nome, subs: [] }); // CRIA ARRAY DE SUBS VAZIO SEMPRE
+        DB.save(db);
+        
+        input.value = '';
+        CatManager.render();
+        CatManager.refresh();
+    },
+
+    addSub: (parentId) => {
+        const nome = prompt("Nome da Subcategoria:")?.trim().toUpperCase();
+        if(!nome) return;
+
+        const db = DB.load();
+        const parent = db.categorias.find(c => c.id == parentId);
+        
+        if(parent) {
+            if(!parent.subs) parent.subs = []; // GARANTIA EXTRA
+            if(parent.subs.some(s => s.nome === nome)) return alert('Já existe!');
+            
+            parent.subs.push({ id: Date.now(), nome });
+            DB.save(db);
+            CatManager.render();
+            CatManager.refresh();
+        }
+    },
+
+    delete: (id, parentId = null) => {
+        const db = DB.load();
+        
+        // Verifica se tem produtos usando antes de apagar
+        let nomeParaChecar = '';
+        if(parentId) {
+            const p = db.categorias.find(c => c.id == parentId);
+            const s = p.subs.find(sub => sub.id == id);
+            nomeParaChecar = `${p.nome} > ${s.nome}`;
+        } else {
+            const c = db.categorias.find(c => c.id == id);
+            nomeParaChecar = c.nome;
+            if(c.subs && c.subs.length > 0) return alert('Delete as subcategorias primeiro!');
+        }
+
+        const emUso = db.produtos.some(p => p.categoria && p.categoria.includes(nomeParaChecar));
+        if(emUso) return alert(`Erro: Existem produtos na categoria "${nomeParaChecar}".`);
+
+        if(!confirm('Tem certeza?')) return;
+
+        if(parentId) {
+            const p = db.categorias.find(c => c.id == parentId);
+            p.subs = p.subs.filter(s => s.id != id);
+        } else {
+            db.categorias = db.categorias.filter(c => c.id != id);
+        }
+
+        DB.save(db);
+        CatManager.render();
+        CatManager.refresh();
+    },
+
+    rename: (id, currentName, parentId = null) => {
+        const newName = prompt("Novo nome:", currentName)?.trim().toUpperCase();
+        if(!newName || newName === currentName) return;
+
+        const db = DB.load();
+        let oldString = "";
+        let newString = "";
+
+        if(parentId) {
+            const p = db.categorias.find(c => c.id == parentId);
+            const s = p.subs.find(sub => sub.id == id);
+            oldString = `${p.nome} > ${s.nome}`;
+            s.nome = newName;
+            newString = `${p.nome} > ${newName}`;
+        } else {
+            const c = db.categorias.find(c => c.id == id);
+            oldString = c.nome;
+            c.nome = newName;
+            newString = newName;
+        }
+
+        // ATUALIZAÇÃO EM CASCATA NOS PRODUTOS
+        let count = 0;
+        db.produtos.forEach(prod => {
+            if(prod.categoria === oldString) {
+                prod.categoria = newString;
+                count++;
+            } else if (prod.categoria.startsWith(oldString + " >")) {
+                prod.categoria = prod.categoria.replace(oldString, newString);
+                count++;
+            }
+        });
+
+        DB.save(db);
+        CatManager.render();
+        CatManager.refresh();
+        App.renderList(); // Atualiza tabela de fundo
+        alert(`Categoria renomeada. ${count} produtos atualizados.`);
+    },
+
+    render: () => {
+        const db = DB.load();
+        const div = document.getElementById('cat-list');
+        
+        if(db.categorias.length === 0) {
+            div.innerHTML = '<p style="color:#94a3b8; text-align:center;">Nenhuma categoria.</p>';
+            return;
+        }
+
+        div.innerHTML = db.categorias.map(c => `
+            <div class="tree-node">
+                <div class="tree-header">
+                    <span>${c.nome}</span>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="CatManager.addSub(${c.id})" class="btn btn-ghost btn-icon" title="Adicionar Sub" style="color:var(--success)">＋</button>
+                        <button onclick="CatManager.rename(${c.id}, '${c.nome}')" class="btn btn-ghost btn-icon">✎</button>
+                        <button onclick="CatManager.delete(${c.id})" class="btn btn-ghost btn-icon" style="color:var(--danger)">✕</button>
+                    </div>
+                </div>
+                ${(c.subs && c.subs.length > 0) ? `
+                    <div class="tree-subs">
+                        ${c.subs.map(s => `
+                            <div class="sub-node">
+                                <span>↳ ${s.nome}</span>
+                                <div>
+                                    <button onclick="CatManager.rename(${s.id}, '${s.nome}', ${c.id})" class="btn btn-ghost btn-icon">✎</button>
+                                    <button onclick="CatManager.delete(${s.id}, ${c.id})" class="btn btn-ghost btn-icon" style="color:var(--danger)">✕</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
     }
 };
 
 const Importer = {
-    staged: [],
-    open: () => document.getElementById('file-input').click(),
-    process: (input) => {
+    open: () => document.getElementById('import-file').click(),
+    run: (input) => {
         const file = input.files[0];
         if(!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const json = JSON.parse(e.target.result);
-                Importer.staged = Array.isArray(json) ? json : [];
-                Importer.render();
-                document.getElementById('modal-import').showModal();
-            } catch(err) { alert("JSON Inválido"); }
+                // Validação básica
+                if(!json.produtos) throw new Error("Formato inválido");
+                
+                if(confirm(`Importar ${json.produtos.length} produtos e ${json.categorias.length} categorias? Isso substituirá o banco atual.`)) {
+                    DB.save(json);
+                    location.reload();
+                }
+            } catch(err) { alert('Erro ao ler arquivo: ' + err.message); }
         };
         reader.readAsText(file);
         input.value = '';
-    },
-    render: () => {
-        const tbody = document.getElementById('import-preview-list');
-        tbody.innerHTML = Importer.staged.slice(0,10).map(i => `
-            <tr>
-                <td><span class="badge badge-green">OK</span></td>
-                <td>${i.nome || i.xProd}</td>
-                <td>${i.estoque || i.Quantidade || 0}</td>
-            </tr>
-        `).join('') + (Importer.staged.length > 10 ? `<tr><td colspan="3">...e mais ${Importer.staged.length - 10} itens</td></tr>` : '');
-    },
-    confirm: () => {
-        const db = DB.get();
-        // Lógica simplificada de merge
-        Importer.staged.forEach(imp => {
-            // Evitar duplicados por ID
-            if(!db.produto.find(p => p.id === imp.id)) {
-                db.produto.push(imp);
-            }
-        });
-        DB.save(db);
-        alert('Importado!');
-        document.getElementById('modal-import').close();
-        App.applyFilters();
     }
 };
 
-document.addEventListener('DOMContentLoaded', App.init);
+// Iniciar
+App.init();
 </script>
 </body>
 </html>
