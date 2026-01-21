@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS V3 | Catálogo de Produtos</title>
+    <title>SISTEMAS V3 | Catálogo Master</title>
     
     <style>
-        /* --- 1. CORE & RESET (Minimalist) --- */
+        /* --- 1. CORE & RESET --- */
         :root {
             --bg: #f8fafc;
             --surface: #ffffff;
@@ -18,9 +18,9 @@
             --danger: #ef4444;
             --success: #10b981;
             --warning: #f59e0b;
-            --focus-ring: rgba(37, 99, 235, 0.2);
+            --purple: #7c3aed;
             --radius: 8px;
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            --shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
             --font-sys: system-ui, -apple-system, sans-serif;
         }
 
@@ -31,7 +31,6 @@
             background-color: var(--bg);
             color: var(--text-main);
             line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
             padding-bottom: 60px;
         }
 
@@ -39,118 +38,66 @@
         header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 1rem 1.5rem;
+            padding: 0.8rem 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             position: sticky;
             top: 0;
-            z-index: 20;
+            z-index: 30;
         }
 
-        h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+        h1 { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         
         main {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 1.5rem;
+            padding: 1rem;
             display: grid;
             grid-template-columns: 1fr;
             gap: 1.5rem;
         }
 
-        @media (min-width: 1024px) {
-            main { grid-template-columns: 400px 1fr; align-items: start; }
+        @media (min-width: 1100px) {
+            main { grid-template-columns: 450px 1fr; align-items: start; }
         }
 
         /* --- 3. COMPONENTS --- */
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        .card-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f8fafc;
-        }
-
-        .card-body { padding: 1.25rem; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
+        .card-header { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+        .card-body { padding: 1rem; overflow-y: auto; }
 
         /* Forms */
-        .form-grid { display: grid; gap: 0.8rem; }
+        .form-group { margin-bottom: 0.8rem; }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
         .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
 
-        label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            margin-bottom: 0.25rem;
-            text-transform: uppercase;
-        }
+        label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.25rem; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--surface); transition: all 0.15s; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        textarea { resize: vertical; min-height: 60px; }
 
-        input, select, textarea {
-            width: 100%;
-            padding: 0.5rem 0.6rem;
-            font-family: inherit;
-            font-size: 0.85rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            background: var(--surface);
-            color: var(--text-main);
-            transition: all 0.15s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--focus-ring);
-        }
-
-        .section-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            border-bottom: 1px dashed var(--border);
-            padding-bottom: 4px;
+        .section-header {
+            font-size: 0.7rem; font-weight: 800; color: var(--primary);
+            margin: 1.2rem 0 0.5rem 0; padding-bottom: 4px; border-bottom: 1px dashed var(--border);
+            display: flex; justify-content: space-between; align-items: center;
         }
 
         /* Buttons */
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-            padding: 0.6rem 1rem; font-weight: 600; font-size: 0.8rem;
-            border-radius: 6px; border: none; cursor: pointer; transition: background 0.2s; width: 100%;
-            text-transform: uppercase;
-        }
-
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.75rem; border-radius: 6px; border: none; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .btn-block { width: 100%; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); }
         .btn-success { background: var(--success); color: white; }
-        .btn-ghost { background: transparent; color: var(--text-muted); width: auto; padding: 4px 8px; border: 1px solid var(--border); text-transform: none;}
-        .btn-ghost:hover { color: var(--text-main); background: var(--bg); border-color: #cbd5e1; }
-        
+        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--bg); color: var(--text-main); border-color: #cbd5e1; }
+        .btn-icon { padding: 4px 8px; font-size: 0.9rem; }
+
         /* Table */
-        .table-container { overflow-x: auto; max-height: 80vh; }
+        .table-wrapper { overflow-x: auto; max-height: 75vh; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; white-space: nowrap; }
-        th { 
-            text-align: left; padding: 0.75rem; position: sticky; top: 0; z-index: 10;
-            background: #f8fafc; color: var(--text-muted); font-weight: 700; text-transform: uppercase;
-            border-bottom: 1px solid var(--border);
-        }
+        th { text-align: left; padding: 0.75rem; background: #f8fafc; color: var(--text-muted); font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
         td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:hover { background-color: #f1f5f9; }
 
@@ -158,155 +105,157 @@
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
         .badge-green { background: #dcfce7; color: #15803d; }
         .badge-red { background: #fee2e2; color: #b91c1c; }
+        .badge-purple { background: #f3e8ff; color: #7e22ce; }
         .badge-gray { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
 
-        .search-wrapper { position: relative; margin-bottom: 0; flex: 1; }
-        .search-wrapper svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; }
-        .search-wrapper input { padding-left: 2rem; }
-
-        /* Lotes/Validade Mini Table */
-        .batch-list { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-top: 5px; }
-        .batch-row { display: flex; border-bottom: 1px solid var(--border); }
-        .batch-row:last-child { border-bottom: none; }
-        .batch-row input { border: none; border-radius: 0; background: transparent; }
-        .batch-row input:focus { box-shadow: none; background: #eff6ff; }
+        /* Specific Areas */
+        .combo-box { background: #eff6ff; border: 1px dashed #bfdbfe; padding: 10px; border-radius: 6px; margin-top: 5px; }
+        .combo-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 4px 8px; border: 1px solid #dbeafe; border-radius: 4px; margin-bottom: 4px; font-size: 0.8rem; }
         
-        /* File Input Hidden */
-        input[type="file"] { display: none; }
+        .search-dropdown { position: absolute; background: white; border: 1px solid var(--border); width: 100%; max-height: 200px; overflow-y: auto; z-index: 50; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px; display: none; }
+        .search-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
+        .search-item:hover { background: #f8fafc; color: var(--primary); }
+
+        /* Modals */
+        dialog { border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 90vw; max-width: 900px; padding: 0; animation: fadeUp 0.2s ease; }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .modal-body { padding: 1.5rem; max-height: 70vh; overflow-y: auto; }
+        .modal-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; }
+
+        .file-drop { border: 2px dashed var(--border); padding: 2rem; text-align: center; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .file-drop:hover { background: #f8fafc; border-color: var(--primary); }
     </style>
 </head>
 <body>
 
 <header>
     <h1>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        CATÁLOGO <span style="font-weight:400; color:var(--text-muted); font-size:0.8em; margin-left:5px;">| V3 PRO</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        CATÁLOGO PRO
     </h1>
-    <div style="display:flex; align-items:center; gap:8px;">
-        <label class="btn-ghost" style="cursor: pointer; display:flex; align-items:center; gap:5px; font-size:0.75rem;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            IMPORTAR (JSON)
-            <input type="file" id="import-file" accept=".json" onchange="App.importData(this)">
-        </label>
-        <button onclick="App.exportData()" class="btn-ghost" style="display:flex; align-items:center; gap:5px; font-size:0.75rem;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            BACKUP
-        </button>
+    <div style="display:flex; gap:10px;">
+        <button onclick="CatManager.open()" class="btn-ghost" title="Gerenciar Categorias"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M3 12h18"></path><path d="M3 18h18"></path></svg> Categorias</button>
+        <button onclick="Importer.open()" class="btn-ghost" title="Importar JSON"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Importar</button>
+        <button onclick="App.exportAll()" class="btn-ghost" title="Backup"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Backup</button>
     </div>
 </header>
 
 <main>
     <section class="card">
         <div class="card-header">
-            <span id="form-title">Editar Produto</span>
-            <button onclick="App.resetForm()" class="btn-ghost" style="border:none; padding:0;" title="Novo Produto">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-            </button>
+            <span class="card-title" id="form-title">Novo Produto</span>
+            <button onclick="App.resetForm()" class="btn-ghost btn-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button>
         </div>
         <div class="card-body">
-            <form id="prod-form" onsubmit="App.save(event)" class="form-grid">
+            <form id="form-prod" onsubmit="App.save(event)">
                 <input type="hidden" id="p-id">
                 
                 <div class="row-3">
-                    <div style="grid-column: span 1;">
-                        <label>Código</label>
-                        <input type="text" id="p-codigo" readonly placeholder="Auto" style="font-weight:700;">
-                    </div>
-                    <div style="grid-column: span 2;">
-                        <label>EAN (Barras)</label>
-                        <input type="text" id="p-ean" class="font-mono" placeholder="Ex: 789...">
-                    </div>
+                    <div><label>Código</label><input type="text" id="p-codigo" readonly placeholder="Auto" style="font-weight:700;"></div>
+                    <div style="grid-column: span 2;"><label>EAN (Principal)</label><input type="text" id="p-ean"></div>
                 </div>
 
-                <div>
-                    <label>Nome do Produto</label>
-                    <input type="text" id="p-nome" required autocomplete="off" style="font-weight:600;">
-                </div>
+                <div class="form-group"><label>Nome Principal</label><input type="text" id="p-nome" required style="font-weight:600;"></div>
                 
                 <div class="row-2">
-                    <div>
-                        <label>Categoria</label>
-                        <input type="text" id="p-categoria" list="cat-list" placeholder="Selecione...">
-                        <datalist id="cat-list"></datalist>
-                    </div>
-                    <div>
-                        <label>Fornecedor</label>
-                        <input type="text" id="p-fornecedor">
-                    </div>
+                    <div><label>Categoria</label><select id="p-categoria"><option value="">Sem Categoria</option></select></div>
+                    <div><label>Unidade</label><input type="text" id="p-unidade" placeholder="UN, CX, KG"></div>
                 </div>
 
-                <div class="section-title">PRECIFICAÇÃO</div>
+                <div class="section-header"><span>COMERCIAL & PREÇO</span></div>
                 <div class="row-3">
-                    <div>
-                        <label>Custo (R$)</label>
-                        <input type="number" id="p-custo" step="0.01" oninput="App.calcMargin()">
-                    </div>
-                    <div>
-                        <label>Margem (%)</label>
-                        <input type="text" id="p-margem" readonly style="background:#f1f5f9; text-align:center;">
-                    </div>
-                    <div>
-                        <label style="color:var(--primary)">Venda (R$)</label>
-                        <input type="number" id="p-valor" step="0.01" oninput="App.calcMargin()" style="font-weight:700; border-color:var(--primary);">
-                    </div>
-                </div>
-                <div style="background:#fff7ed; padding:8px; border-radius:6px; border:1px solid #ffedd5; display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="p-isOffer" style="width:auto;">
-                    <label for="p-isOffer" style="margin:0; color:var(--warning); cursor:pointer;">Produto em Oferta?</label>
-                    <input type="number" id="p-offerPrice" placeholder="Preço Oferta" step="0.01" style="flex:1;">
-                </div>
-
-                <div class="section-title">ESTOQUE & LOTES</div>
-                <div class="row-2">
-                    <div>
-                        <label>Estoque Físico</label>
-                        <input type="number" id="p-estoque" required style="font-weight:700;">
-                    </div>
-                    <div>
-                        <label>Estoque Fiscal</label>
-                        <input type="number" id="p-estoqueFiscal">
-                    </div>
+                    <div><label>Custo (R$)</label><input type="number" id="p-custo" step="0.01" oninput="App.calcMargin()"></div>
+                    <div><label>Margem (%)</label><input type="text" id="p-margem" readonly style="background:#f1f5f9; text-align:center;"></div>
+                    <div><label style="color:var(--primary)">Venda (R$)</label><input type="number" id="p-valor" step="0.01" oninput="App.calcMargin()" style="font-weight:700; border-color:var(--primary);"></div>
                 </div>
                 
-                <div>
-                    <label>Validades (Data | Qtd)</label>
-                    <div class="batch-list" id="batch-container">
-                        </div>
+                <div style="background:#fff7ed; padding:8px; border:1px solid #ffedd5; border-radius:6px; margin-top:8px; display:flex; gap:10px; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-isOffer" style="width:auto;"><label for="p-isOffer" style="margin:0; color:var(--warning); cursor:pointer;">OFERTA</label></div>
+                    <div style="flex:1"><input type="number" id="p-offerPrice" placeholder="Preço Oferta (R$)" step="0.01"></div>
                 </div>
 
-                <div class="section-title">FISCAL</div>
+                <div class="section-header"><span>LOGÍSTICA & ESTOQUE</span></div>
+                <div class="row-2">
+                    <div><label>Estoque Físico</label><input type="number" id="p-estoque" required style="font-weight:700;"></div>
+                    <div><label>Estoque Fiscal</label><input type="number" id="p-estoqueFiscal"></div>
+                </div>
+                <div class="row-3">
+                    <div><label>Peso (kg)</label><input type="number" id="p-peso" step="0.001"></div>
+                    <div><label>Lim. Mín.</label><input type="number" id="p-limit"></div>
+                    <div><label>Imagem</label><input type="text" id="p-imageName" placeholder="Nome arq."></div>
+                </div>
+                
+                <div style="margin-top:5px; border:1px solid var(--border); border-radius:6px; padding:5px;">
+                    <label style="font-size:0.65rem;">Lotes (Validade | Qtd)</label>
+                    <div id="batch-container"></div>
+                </div>
+
+                <div class="section-header">
+                    <span>KIT / COMBO</span>
+                    <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-isCombo" style="width:auto;" onchange="ComboManager.toggle(this.checked)"><label for="p-isCombo" style="margin:0; cursor:pointer;">É Combo?</label></div>
+                </div>
+                <div id="combo-area" class="combo-box" style="display:none;">
+                    <div style="position:relative;">
+                        <input type="text" id="combo-search" placeholder="Buscar produto para adicionar..." oninput="ComboManager.search(this.value)">
+                        <div id="combo-results" class="search-dropdown"></div>
+                    </div>
+                    <div id="combo-list" style="margin-top:8px;"></div>
+                </div>
+
+                <div class="section-header"><span>VARIAÇÕES & ALIAS</span></div>
+                <div class="form-group">
+                    <label>EANs Adicionais (Separar por | )</label>
+                    <textarea id="p-variacoesEan" placeholder="789... | 789..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Nomes Alternativos (Busca)</label>
+                    <textarea id="p-variacoesNome" placeholder="Nome 1 | Nome 2"></textarea>
+                </div>
+
+                <div class="row-2" style="align-items:end;">
+                    <div style="position:relative;">
+                        <label>Vincular a Produto (Pai)</label>
+                        <input type="hidden" id="p-linkedId">
+                        <input type="text" id="p-linkedName" placeholder="Buscar pai..." oninput="LinkedManager.search(this.value)">
+                        <div id="linked-results" class="search-dropdown"></div>
+                    </div>
+                    <button type="button" onclick="LinkedManager.clear()" class="btn-ghost">Limpar Vínculo</button>
+                </div>
+
+                <div class="section-header"><span>FISCAL</span></div>
                 <div class="row-3">
                     <div><label>NCM</label><input type="text" id="p-ncm"></div>
                     <div><label>CEST</label><input type="text" id="p-cest"></div>
                     <div><label>CFOP</label><input type="text" id="p-cfop"></div>
                 </div>
 
-                <div style="margin-top:1rem;">
-                    <button type="submit" class="btn btn-primary">SALVAR PRODUTO</button>
+                <div style="margin-top:1.5rem;">
+                    <button type="submit" class="btn btn-primary btn-block">SALVAR DADOS</button>
                 </div>
             </form>
         </div>
     </section>
 
-    <section class="card" style="height:fit-content; min-height:600px; display:flex; flex-direction:column;">
-        <div class="card-header" style="background:var(--surface); border-bottom:none; padding-bottom:0.5rem;">
-            <div class="search-wrapper">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" oninput="App.filter(this.value)" placeholder="Buscar por Nome, EAN ou Código...">
+    <section class="card" style="height:fit-content; min-height:600px;">
+        <div class="card-header">
+            <div style="flex:1; max-width:300px; position:relative;">
+                <input type="text" oninput="App.filter(this.value)" placeholder="Buscar..." style="padding-left:2rem;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
-            <div style="margin-left:10px;">
-                <span class="badge badge-gray" id="total-count">0 ITENS</span>
-            </div>
+            <span class="badge badge-gray" id="total-count">0 REGISTROS</span>
         </div>
-        <div class="table-container">
+        <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
                         <th>Produto</th>
                         <th>Categ.</th>
-                        <th>Estoque</th>
                         <th>Preço</th>
-                        <th style="text-align:right">Ações</th>
+                        <th>Estoque</th>
+                        <th style="text-align:right;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="prod-list"></tbody>
@@ -315,298 +264,536 @@
     </section>
 </main>
 
+<dialog id="modal-cat">
+    <div class="modal-header">
+        <span class="card-title">Gerenciar Categorias</span>
+        <button onclick="document.getElementById('modal-cat').close()" class="btn-ghost btn-icon">✕</button>
+    </div>
+    <div class="modal-body">
+        <div style="display:flex; gap:10px; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
+            <input type="text" id="new-cat-root" placeholder="Nova Categoria Principal...">
+            <button onclick="CatManager.addRoot()" class="btn btn-primary">Adicionar</button>
+        </div>
+        <div id="cat-tree"></div>
+    </div>
+</dialog>
+
+<dialog id="modal-import">
+    <div class="modal-header">
+        <span class="card-title">Conferência de Importação</span>
+        <button onclick="document.getElementById('modal-import').close()" class="btn-ghost btn-icon">✕</button>
+    </div>
+    <div class="modal-body">
+        <div style="background:#fff7ed; border:1px solid #ffedd5; padding:10px; border-radius:6px; margin-bottom:1rem; font-size:0.8rem; color:#9a3412;">
+            <b>Atenção:</b> Os itens marcados em <span class="badge badge-purple">ROXO</span> já existem no sistema e terão o estoque somado e preços atualizados. Os itens em <span class="badge badge-green">VERDE</span> são novos.
+        </div>
+        <table style="font-size:0.75rem;">
+            <thead>
+                <tr>
+                    <th style="width:30px;"><input type="checkbox" checked onchange="Importer.toggleAll(this.checked)"></th>
+                    <th>Status</th>
+                    <th>Produto (JSON)</th>
+                    <th>Ref. Sistema</th>
+                    <th>Entrada</th>
+                </tr>
+            </thead>
+            <tbody id="import-preview-list"></tbody>
+        </table>
+    </div>
+    <div class="modal-footer">
+        <button onclick="document.getElementById('modal-import').close()" class="btn-ghost">Cancelar</button>
+        <button onclick="Importer.confirm()" class="btn btn-success">Confirmar Importação</button>
+    </div>
+</dialog>
+
+<input type="file" id="file-input" accept=".json" style="display:none;" onchange="Importer.process(this)">
+
 <script>
 /**
- * SISTEMAS V3 - PRODUTOS
- * Arquitetura Single File | Zero Dependências | Mobile First
+ * SISTEMA V3 - CATALOG MASTER
+ * Chave DB: sys_v3_standalone_db (Compatibilidade Retroativa)
  */
+
+const DB = {
+    key: 'sys_v3_standalone_db',
+    get: () => {
+        const raw = localStorage.getItem(DB.key);
+        const data = raw ? JSON.parse(raw) : {};
+        if (!data.produto) data.produto = [];
+        if (!data.categorias) data.categorias = [];
+        return data;
+    },
+    save: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
+    nextCode: () => {
+        const db = DB.get();
+        let max = 0;
+        db.produto.forEach(p => {
+            const n = parseInt((p.codigo || '').replace(/\D/g, '') || 0);
+            if(n > max) max = n;
+        });
+        return `P${String(max + 1).padStart(4, '0')}`;
+    }
+};
+
 const App = {
-    key: 'sys_v3_products_db',
-    state: { products: [] },
-
     init: () => {
-        const data = localStorage.getItem(App.key);
-        if (data) {
-            App.state.products = JSON.parse(data);
-        } else {
-            // Seed Inicial Vazio ou Dados de Exemplo se preferir
-            App.state.products = [];
-        }
-        App.renderList(App.state.products);
-        App.updateCatList();
-        App.renderBatches(); // Renderiza slots vazios iniciais
-    },
-
-    saveStorage: () => {
-        localStorage.setItem(App.key, JSON.stringify(App.state.products));
-        App.renderList(App.state.products);
-        App.updateCatList();
-    },
-
-    // --- FORM LOGIC ---
-    save: (e) => {
-        e.preventDefault();
-        const id = document.getElementById('p-id').value;
-        
-        // Coletar Lotes
-        const batches = [];
-        for(let i=0; i<3; i++) {
-            const d = document.getElementById(`batch-date-${i}`).value;
-            const q = document.getElementById(`batch-qty-${i}`).value;
-            if(d && q) batches.push({ date: d, qty: Number(q) });
-        }
-
-        const product = {
-            id: id || Date.now().toString(),
-            codigo: document.getElementById('p-codigo').value || App.nextCode(),
-            nome: document.getElementById('p-nome').value.trim(),
-            ean: document.getElementById('p-ean').value,
-            categoria: document.getElementById('p-categoria').value,
-            fornecedor: document.getElementById('p-fornecedor').value,
-            custo: Number(document.getElementById('p-custo').value) || 0,
-            valor: Number(document.getElementById('p-valor').value) || 0,
-            isOffer: document.getElementById('p-isOffer').checked,
-            offerPrice: Number(document.getElementById('p-offerPrice').value) || 0,
-            estoque: Number(document.getElementById('p-estoque').value) || 0,
-            estoqueFiscal: Number(document.getElementById('p-estoqueFiscal').value) || 0,
-            ncm: document.getElementById('p-ncm').value,
-            cest: document.getElementById('p-cest').value,
-            cfop: document.getElementById('p-cfop').value,
-            batches: batches,
-            updatedAt: Date.now()
-        };
-
-        if (id) {
-            const idx = App.state.products.findIndex(p => p.id === id);
-            if(idx > -1) App.state.products[idx] = product;
-        } else {
-            App.state.products.unshift(product);
-        }
-
-        App.saveStorage();
-        App.resetForm();
-        alert('Produto Salvo!');
-    },
-
-    edit: (id) => {
-        const p = App.state.products.find(x => x.id === id);
-        if(!p) return;
-
-        document.getElementById('p-id').value = p.id;
-        document.getElementById('p-codigo').value = p.codigo;
-        document.getElementById('p-nome').value = p.nome;
-        document.getElementById('p-ean').value = p.ean || '';
-        document.getElementById('p-categoria').value = p.categoria || '';
-        document.getElementById('p-fornecedor').value = p.fornecedor || '';
-        document.getElementById('p-custo').value = p.custo;
-        document.getElementById('p-valor').value = p.valor;
-        document.getElementById('p-isOffer').checked = p.isOffer || false;
-        document.getElementById('p-offerPrice').value = p.offerPrice || '';
-        document.getElementById('p-estoque').value = p.estoque;
-        document.getElementById('p-estoqueFiscal').value = p.estoqueFiscal || '';
-        document.getElementById('p-ncm').value = p.ncm || '';
-        document.getElementById('p-cest').value = p.cest || '';
-        document.getElementById('p-cfop').value = p.cfop || '';
-
-        App.renderBatches(p.batches || []);
-        App.calcMargin();
-        document.getElementById('form-title').innerText = 'Editando: ' + p.codigo;
-        window.scrollTo({top:0, behavior:'smooth'});
-    },
-
-    delete: (id) => {
-        if(confirm('Excluir este produto?')) {
-            App.state.products = App.state.products.filter(p => p.id !== id);
-            App.saveStorage();
-            App.resetForm();
-        }
-    },
-
-    resetForm: () => {
-        document.getElementById('prod-form').reset();
-        document.getElementById('p-id').value = '';
-        document.getElementById('p-codigo').value = '';
-        document.getElementById('p-margem').value = '';
-        document.getElementById('form-title').innerText = 'Novo Produto';
+        App.renderList();
+        CatManager.populateSelect();
         App.renderBatches();
     },
 
-    calcMargin: () => {
-        const custo = Number(document.getElementById('p-custo').value);
-        const venda = Number(document.getElementById('p-valor').value);
-        const el = document.getElementById('p-margem');
-        if(custo > 0 && venda > 0) {
-            const m = ((venda - custo) / custo) * 100;
-            el.value = m.toFixed(1) + '%';
-            el.style.color = m < 0 ? 'var(--danger)' : 'var(--success)';
-        } else {
-            el.value = '-';
-        }
-    },
-
-    renderBatches: (existing = []) => {
-        const container = document.getElementById('batch-container');
-        let html = '';
-        // Mostra sempre 3 slots para edição
-        for(let i=0; i<3; i++) {
-            const b = existing[i] || {date:'', qty:''};
-            html += `
-            <div class="batch-row">
-                <input type="date" id="batch-date-${i}" value="${b.date}" style="flex:2;">
-                <input type="number" id="batch-qty-${i}" value="${b.qty}" placeholder="Qtd" style="flex:1; border-left:1px solid var(--border); text-align:center;">
-            </div>`;
-        }
-        container.innerHTML = html;
-    },
-
-    // --- LIST & FILTER ---
-    renderList: (list) => {
+    renderList: (filter = '') => {
+        const db = DB.get();
         const tbody = document.getElementById('prod-list');
-        document.getElementById('total-count').innerText = list.length + ' ITENS';
+        const term = filter.toLowerCase();
         
-        if(list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted)">Nenhum produto cadastrado.</td></tr>';
-            return;
-        }
+        let list = db.produto.filter(p => {
+            if(!term) return true;
+            const names = [p.nome, ...(p.variacoesNome || [])].join(' ').toLowerCase();
+            const eans = [p.ean, ...(p.variacoesEan || [])].join(' ');
+            return names.includes(term) || eans.includes(term) || p.codigo.toLowerCase().includes(term);
+        });
 
-        tbody.innerHTML = list.slice(0, 100).map(p => { // Render limit for performance
-            const stockClass = p.estoque <= 0 ? 'badge-red' : (p.estoque < 10 ? 'badge-gray' : 'badge-green');
+        // Paginação simples (primeiros 50) para performance
+        document.getElementById('total-count').innerText = `${list.length} REGS`;
+        list = list.slice(0, 50);
+
+        tbody.innerHTML = list.map(p => {
+            const stockClass = p.estoque <= 0 ? 'badge-red' : (p.estoque < (p.limit||0) ? 'badge-gray' : 'badge-green');
             return `
             <tr>
                 <td>
-                    <div style="font-weight:600; font-size:0.85rem; color:var(--text-main);">${p.nome}</div>
-                    <div style="font-size:0.7rem; color:var(--text-muted);">
-                        <span style="font-family:monospace; font-weight:700;">${p.codigo}</span> 
-                        ${p.ean ? `| EAN: ${p.ean}` : ''}
-                    </div>
+                    <div style="font-weight:700; color:var(--text-main);">${p.nome}</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">${p.codigo} ${p.ean ? '| '+p.ean : ''}</div>
+                    ${p.isCombo ? '<span class="badge badge-purple">COMBO</span>' : ''}
+                    ${p.isOffer ? '<span class="badge badge-red">OFERTA</span>' : ''}
                 </td>
-                <td><span style="font-size:0.75rem; color:var(--text-muted);">${p.categoria || '-'}</span></td>
-                <td><span class="badge ${stockClass}">${p.estoque} UN</span></td>
+                <td>${p.categoria ? p.categoria.split('>').pop().trim() : '-'}</td>
                 <td>
-                    <div style="font-weight:700;">R$ ${p.valor.toFixed(2)}</div>
-                    ${p.custo > 0 ? `<div style="font-size:0.65rem; color:var(--text-muted);">C: ${p.custo.toFixed(2)}</div>` : ''}
+                    ${p.isOffer ? `<div style="text-decoration:line-through; font-size:0.7rem; color:var(--text-muted);">R$ ${p.valor.toFixed(2)}</div><div style="font-weight:700; color:var(--danger);">R$ ${p.offerPrice.toFixed(2)}</div>` : `<div style="font-weight:700;">R$ ${p.valor.toFixed(2)}</div>`}
                 </td>
+                <td><span class="badge ${stockClass}">${p.estoque} ${p.unidade||'UN'}</span></td>
                 <td style="text-align:right;">
-                    <button onclick="App.edit('${p.id}')" class="btn-ghost" style="color:var(--primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-                    <button onclick="App.delete('${p.id}')" class="btn-ghost" style="color:var(--danger)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                    <button onclick="App.edit('${p.id}')" class="btn-ghost btn-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                    <button onclick="App.delete('${p.id}')" class="btn-ghost btn-icon" style="color:var(--danger)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                 </td>
             </tr>
             `;
         }).join('');
     },
 
-    filter: (val) => {
-        const term = val.toLowerCase();
-        const filtered = App.state.products.filter(p => 
-            p.nome.toLowerCase().includes(term) || 
-            p.codigo.toLowerCase().includes(term) ||
-            (p.ean && p.ean.includes(term))
-        );
-        App.renderList(filtered);
+    save: (e) => {
+        e.preventDefault();
+        const db = DB.get();
+        const id = document.getElementById('p-id').value;
+        
+        // Coletar Batches
+        let batches = [];
+        for(let i=0; i<3; i++){
+            let d = document.getElementById(`batch-d-${i}`).value;
+            let q = Number(document.getElementById(`batch-q-${i}`).value);
+            if(d && q > 0) batches.push({date: d, qty: q});
+        }
+
+        const prod = {
+            id: id || Date.now().toString(),
+            codigo: document.getElementById('p-codigo').value || DB.nextCode(),
+            nome: document.getElementById('p-nome').value.trim(),
+            ean: document.getElementById('p-ean').value,
+            categoria: document.getElementById('p-categoria').value,
+            unidade: document.getElementById('p-unidade').value,
+            
+            custo: Number(document.getElementById('p-custo').value)||0,
+            valor: Number(document.getElementById('p-valor').value)||0,
+            
+            isOffer: document.getElementById('p-isOffer').checked,
+            offerPrice: Number(document.getElementById('p-offerPrice').value)||0,
+            
+            estoque: Number(document.getElementById('p-estoque').value)||0,
+            estoqueFiscal: Number(document.getElementById('p-estoqueFiscal').value)||0,
+            peso: Number(document.getElementById('p-peso').value)||0,
+            limit: Number(document.getElementById('p-limit').value)||0,
+            imageName: document.getElementById('p-imageName').value,
+            
+            batches: batches,
+            
+            isCombo: document.getElementById('p-isCombo').checked,
+            items: ComboManager.currentItems, // Array do combo
+
+            variacoesEan: document.getElementById('p-variacoesEan').value.split('|').map(s=>s.trim()).filter(Boolean),
+            variacoesNome: document.getElementById('p-variacoesNome').value.split('|').map(s=>s.trim()).filter(Boolean),
+            
+            linkedProdId: document.getElementById('p-linkedId').value,
+            linkedProdCode: document.getElementById('p-linkedName').value,
+
+            ncm: document.getElementById('p-ncm').value,
+            cest: document.getElementById('p-cest').value,
+            cfop: document.getElementById('p-cfop').value
+        };
+
+        if(id) {
+            const idx = db.produto.findIndex(p => p.id === id);
+            if(idx > -1) db.produto[idx] = prod;
+        } else {
+            db.produto.unshift(prod);
+        }
+
+        DB.save(db);
+        App.resetForm();
+        App.renderList();
+        alert('Produto Salvo!');
     },
 
-    nextCode: () => {
-        let max = 0;
-        App.state.products.forEach(p => {
-            const n = parseInt(p.codigo.replace(/\D/g,'') || 0);
-            if(n > max) max = n;
-        });
-        return `P${String(max+1).padStart(4,'0')}`;
+    edit: (id) => {
+        const db = DB.get();
+        const p = db.produto.find(x => x.id === id);
+        if(!p) return;
+
+        document.getElementById('p-id').value = p.id;
+        document.getElementById('p-codigo').value = p.codigo;
+        document.getElementById('p-ean').value = p.ean || '';
+        document.getElementById('p-nome').value = p.nome;
+        document.getElementById('p-categoria').value = p.categoria || '';
+        document.getElementById('p-unidade').value = p.unidade || '';
+        document.getElementById('p-custo').value = p.custo;
+        document.getElementById('p-valor').value = p.valor;
+        document.getElementById('p-isOffer').checked = p.isOffer || false;
+        document.getElementById('p-offerPrice').value = p.offerPrice || '';
+        document.getElementById('p-estoque').value = p.estoque;
+        document.getElementById('p-estoqueFiscal').value = p.estoqueFiscal || '';
+        document.getElementById('p-peso').value = p.peso || '';
+        document.getElementById('p-limit').value = p.limit || '';
+        document.getElementById('p-imageName').value = p.imageName || '';
+        
+        document.getElementById('p-isCombo').checked = p.isCombo || false;
+        ComboManager.currentItems = p.items || [];
+        ComboManager.toggle(p.isCombo || false);
+        ComboManager.render();
+
+        document.getElementById('p-variacoesEan').value = (p.variacoesEan || []).join(' | ');
+        document.getElementById('p-variacoesNome').value = (p.variacoesNome || []).join(' | ');
+
+        document.getElementById('p-linkedId').value = p.linkedProdId || '';
+        document.getElementById('p-linkedName').value = p.linkedProdCode || '';
+
+        document.getElementById('p-ncm').value = p.ncm || '';
+        document.getElementById('p-cest').value = p.cest || '';
+        document.getElementById('p-cfop').value = p.cfop || '';
+
+        App.renderBatches(p.batches || []);
+        App.calcMargin();
+        document.getElementById('form-title').innerText = `Editando: ${p.codigo}`;
+        window.scrollTo({top:0, behavior:'smooth'});
     },
 
-    updateCatList: () => {
-        const cats = [...new Set(App.state.products.map(p => p.categoria).filter(Boolean))].sort();
-        document.getElementById('cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+    delete: (id) => {
+        if(!confirm('Excluir permanentemente?')) return;
+        const db = DB.get();
+        db.produto = db.produto.filter(p => p.id !== id);
+        DB.save(db);
+        App.renderList();
     },
 
-    // --- IMPORT & EXPORT ENGINE ---
-    
-    exportData: () => {
-        const str = JSON.stringify(App.state.products, null, 2);
-        const blob = new Blob([str], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
+    resetForm: () => {
+        document.getElementById('form-prod').reset();
+        document.getElementById('p-id').value = '';
+        document.getElementById('p-codigo').value = '';
+        document.getElementById('p-margem').value = '';
+        document.getElementById('p-linkedId').value = '';
+        document.getElementById('form-title').innerText = 'Novo Produto';
+        ComboManager.currentItems = [];
+        ComboManager.toggle(false);
+        App.renderBatches();
+    },
+
+    renderBatches: (existing = []) => {
+        let html = '';
+        for(let i=0; i<3; i++){
+            let b = existing[i] || {date:'', qty:''};
+            html += `<div style="display:flex; gap:5px; margin-bottom:4px;"><input type="date" id="batch-d-${i}" value="${b.date}" style="flex:2"><input type="number" id="batch-q-${i}" value="${b.qty}" placeholder="Qtd" style="flex:1"></div>`;
+        }
+        document.getElementById('batch-container').innerHTML = html;
+    },
+
+    calcMargin: () => {
+        const c = Number(document.getElementById('p-custo').value);
+        const v = Number(document.getElementById('p-valor').value);
+        const el = document.getElementById('p-margem');
+        if(c>0 && v>0) {
+            const m = ((v-c)/c)*100;
+            el.value = m.toFixed(1)+'%';
+            el.style.color = m<0 ? 'red' : 'green';
+        } else el.value = '-';
+    },
+
+    filter: (v) => App.renderList(v),
+
+    exportAll: () => {
+        const db = DB.get();
+        const blob = new Blob([JSON.stringify(db.produto, null, 2)], {type:'application/json'});
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `catalogo_completo_${new Date().toISOString().slice(0,10)}.json`;
-        document.body.appendChild(a);
+        a.href = URL.createObjectURL(blob);
+        a.download = `backup_produtos_${Date.now()}.json`;
         a.click();
-        document.body.removeChild(a);
-    },
+    }
+};
 
-    importData: (input) => {
+const ComboManager = {
+    currentItems: [],
+    toggle: (checked) => {
+        document.getElementById('combo-area').style.display = checked ? 'block' : 'none';
+        if(checked) ComboManager.render();
+    },
+    search: (val) => {
+        const res = document.getElementById('combo-results');
+        if(val.length < 2) { res.style.display='none'; return; }
+        const db = DB.get();
+        const matches = db.produto.filter(p => p.nome.toLowerCase().includes(val.toLowerCase())).slice(0,10);
+        res.innerHTML = matches.map(p => `<div class="search-item" onclick="ComboManager.add('${p.id}', '${p.codigo}', '${p.nome}')">${p.nome}</div>`).join('');
+        res.style.display = 'block';
+    },
+    add: (id, code, name) => {
+        if(ComboManager.currentItems.some(i => i.id === id)) return;
+        ComboManager.currentItems.push({id, code, nome: name, qty: 1});
+        ComboManager.render();
+        document.getElementById('combo-search').value = '';
+        document.getElementById('combo-results').style.display = 'none';
+    },
+    remove: (idx) => {
+        ComboManager.currentItems.splice(idx, 1);
+        ComboManager.render();
+    },
+    updateQty: (idx, val) => {
+        ComboManager.currentItems[idx].qty = Number(val);
+    },
+    render: () => {
+        const el = document.getElementById('combo-list');
+        el.innerHTML = ComboManager.currentItems.map((item, i) => `
+            <div class="combo-item">
+                <span style="flex:1"><b>${item.code}</b> ${item.nome}</span>
+                <input type="number" value="${item.qty}" min="1" onchange="ComboManager.updateQty(${i}, this.value)" style="width:60px; height:24px; text-align:center;">
+                <button onclick="ComboManager.remove(${i})" class="btn-ghost" style="color:red; border:none;">✕</button>
+            </div>
+        `).join('');
+    }
+};
+
+const LinkedManager = {
+    search: (val) => {
+        const res = document.getElementById('linked-results');
+        if(val.length < 2) { res.style.display='none'; return; }
+        const db = DB.get();
+        const matches = db.produto.filter(p => p.nome.toLowerCase().includes(val.toLowerCase()) && p.id !== document.getElementById('p-id').value).slice(0,10);
+        res.innerHTML = matches.map(p => `<div class="search-item" onclick="LinkedManager.select('${p.id}', '${p.codigo} - ${p.nome}')">${p.codigo} - ${p.nome}</div>`).join('');
+        res.style.display = 'block';
+    },
+    select: (id, name) => {
+        document.getElementById('p-linkedId').value = id;
+        document.getElementById('p-linkedName').value = name;
+        document.getElementById('linked-results').style.display = 'none';
+    },
+    clear: () => {
+        document.getElementById('p-linkedId').value = '';
+        document.getElementById('p-linkedName').value = '';
+    }
+};
+
+const CatManager = {
+    open: () => {
+        CatManager.render();
+        document.getElementById('modal-cat').showModal();
+    },
+    addRoot: () => {
+        const name = document.getElementById('new-cat-root').value.trim();
+        if(!name) return;
+        const db = DB.get();
+        db.categorias.push({id: Date.now().toString(), nome, subs: []});
+        DB.save(db);
+        document.getElementById('new-cat-root').value = '';
+        CatManager.render();
+        CatManager.populateSelect();
+    },
+    addSub: (parentId) => {
+        const name = prompt("Nome da Subcategoria:");
+        if(!name) return;
+        const db = DB.get();
+        const parent = db.categorias.find(c => c.id === parentId);
+        if(parent) {
+            parent.subs.push({id: Date.now().toString(), nome});
+            DB.save(db);
+            CatManager.render();
+            CatManager.populateSelect();
+        }
+    },
+    delete: (id, parentId = null) => {
+        if(!confirm("Excluir?")) return;
+        const db = DB.get();
+        if(parentId) {
+            const parent = db.categorias.find(c => c.id === parentId);
+            if(parent) parent.subs = parent.subs.filter(s => s.id !== id);
+        } else {
+            db.categorias = db.categorias.filter(c => c.id !== id);
+        }
+        DB.save(db);
+        CatManager.render();
+        CatManager.populateSelect();
+    },
+    render: () => {
+        const db = DB.get();
+        const el = document.getElementById('cat-tree');
+        el.innerHTML = db.categorias.map(c => `
+            <div style="background:#f1f5f9; padding:8px; border-radius:6px; margin-bottom:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b>${c.nome}</b>
+                    <div>
+                        <button onclick="CatManager.addSub('${c.id}')" class="btn-ghost" style="color:green; padding:2px 6px;">+</button>
+                        <button onclick="CatManager.delete('${c.id}')" class="btn-ghost" style="color:red; padding:2px 6px;">✕</button>
+                    </div>
+                </div>
+                <div style="margin-left:20px; border-left:2px solid #cbd5e1; padding-left:10px; margin-top:5px;">
+                    ${(c.subs||[]).map(s => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; margin-top:2px;">
+                            <span>${s.nome}</span>
+                            <button onclick="CatManager.delete('${s.id}', '${c.id}')" class="btn-ghost" style="color:red; padding:1px 5px; font-size:0.6rem;">✕</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    },
+    populateSelect: () => {
+        const db = DB.get();
+        let html = '<option value="">Sem Categoria</option>';
+        db.categorias.forEach(c => {
+            html += `<option value="${c.nome}">${c.nome}</option>`;
+            (c.subs||[]).forEach(s => {
+                html += `<option value="${c.nome} > ${s.nome}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
+            });
+        });
+        const sel = document.getElementById('p-categoria');
+        if(sel) sel.innerHTML = html;
+    }
+};
+
+const Importer = {
+    staged: [],
+    open: () => document.getElementById('file-input').click(),
+    process: (input) => {
         const file = input.files[0];
         if(!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const json = JSON.parse(e.target.result);
-                if(!Array.isArray(json)) throw new Error("O arquivo deve conter uma lista []");
-                
-                let novos = 0;
-                let atualizados = 0;
-
-                json.forEach(item => {
-                    // Mapeamento Inteligente baseado no arquivo 'exportacao_varejo' e 'produtos_completo'
-                    const nome = item.xProd || item.nome || 'Produto Sem Nome';
-                    const ean = (item.cEAN && item.cEAN !== "SEM GTIN") ? item.cEAN : (item.ean || '');
-                    
-                    // Tenta encontrar produto existente por EAN ou Código
-                    let match = null;
-                    if(ean) match = App.state.products.find(p => p.ean === ean);
-                    if(!match && item.codigo) match = App.state.products.find(p => p.codigo === item.codigo);
-
-                    // Extrair dados numéricos
-                    const qtdEntrada = Number(item.Quantidade_Total_Unidades) || Number(item.estoque) || 0;
-                    const custoEntrada = Number(item.Custo_Unitario) || Number(item.custo) || 0;
-                    const valorVenda = Number(item.Venda) || Number(item.valor) || 0;
-
-                    if(match) {
-                        // ATUALIZA
-                        match.estoque += qtdEntrada;
-                        if(custoEntrada > 0) match.custo = custoEntrada;
-                        if(valorVenda > 0) match.valor = valorVenda;
-                        match.updatedAt = Date.now();
-                        atualizados++;
-                    } else {
-                        // CRIA NOVO
-                        const novoProd = {
-                            id: Date.now().toString() + Math.random().toString().slice(2,5),
-                            codigo: App.nextCode(), // Gera novo código sequencial
-                            nome: nome.toUpperCase(),
-                            ean: ean,
-                            categoria: item.categoria || 'Geral',
-                            fornecedor: '',
-                            custo: custoEntrada,
-                            valor: valorVenda,
-                            estoque: qtdEntrada,
-                            estoqueFiscal: qtdEntrada, // Assume entrada fiscal também
-                            ncm: item.NCM || item.ncm || '',
-                            cest: item.CEST || item.cest || '',
-                            cfop: item.CFOP_SAIDA || item.cfop || '',
-                            batches: [], // Novos produtos entram sem data de validade definida inicialmente
-                            isOffer: false
-                        };
-                        App.state.products.push(novoProd);
-                        novos++;
-                    }
-                });
-
-                App.saveStorage();
-                alert(`Importação Concluída!\n\n🆕 Novos: ${novos}\n🔄 Atualizados: ${atualizados}`);
-                input.value = ''; // Reset input
-
-            } catch (err) {
-                alert("Erro ao ler arquivo: " + err.message);
-            }
+                if(!Array.isArray(json)) throw new Error("JSON Inválido");
+                Importer.analyze(json);
+            } catch(err) { alert("Erro: " + err.message); }
         };
         reader.readAsText(file);
+        input.value = '';
+    },
+    analyze: (json) => {
+        const db = DB.get();
+        Importer.staged = json.map((item, idx) => {
+            // Lógica de Match do JSON de exportação
+            const ean = item.cEAN || item.ean || '';
+            const code = item.codigo || '';
+            const nome = item.xProd || item.nome || '';
+            
+            // Busca match
+            let match = null;
+            if(ean && ean !== 'SEM GTIN') match = db.produto.find(p => p.ean === ean || (p.variacoesEan||[]).includes(ean));
+            if(!match && code) match = db.produto.find(p => p.codigo === code);
+            if(!match) match = db.produto.find(p => p.nome.toUpperCase() === nome.toUpperCase() || (p.variacoesNome||[]).includes(nome));
+
+            return {
+                _id: idx,
+                importData: item,
+                match: match,
+                selected: true
+            };
+        });
+        Importer.renderPreview();
+        document.getElementById('modal-import').showModal();
+    },
+    renderPreview: () => {
+        const tbody = document.getElementById('import-preview-list');
+        tbody.innerHTML = Importer.staged.map(i => {
+            const nome = i.importData.xProd || i.importData.nome || '???';
+            const status = i.match 
+                ? `<span class="badge badge-purple">ATUALIZAR</span>` 
+                : `<span class="badge badge-green">NOVO</span>`;
+            const ref = i.match ? `${i.match.codigo} - ${i.match.nome}` : '-';
+            const qtd = i.importData.Quantidade_Total_Unidades || i.importData.estoque || 0;
+
+            return `
+            <tr>
+                <td><input type="checkbox" ${i.selected?'checked':''} onchange="Importer.toggleItem(${i._id}, this.checked)"></td>
+                <td>${status}</td>
+                <td title="${nome}"><div style="width:200px; overflow:hidden; text-overflow:ellipsis;">${nome}</div></td>
+                <td><div style="width:150px; overflow:hidden; text-overflow:ellipsis; font-size:0.7rem; color:var(--text-muted);">${ref}</div></td>
+                <td><b>${qtd}</b></td>
+            </tr>`;
+        }).join('');
+    },
+    toggleItem: (id, val) => {
+        const item = Importer.staged.find(x => x._id === id);
+        if(item) item.selected = val;
+    },
+    toggleAll: (val) => {
+        Importer.staged.forEach(i => i.selected = val);
+        Importer.renderPreview();
+    },
+    confirm: () => {
+        const db = DB.get();
+        let countNew = 0, countUpd = 0;
+        
+        Importer.staged.filter(i => i.selected).forEach(i => {
+            const data = i.importData;
+            const qtd = Number(data.Quantidade_Total_Unidades || data.estoque || 0);
+            const custo = Number(data.Custo_Unitario || data.custo || 0);
+            const venda = Number(data.Venda || data.valor || 0);
+            
+            if(i.match) {
+                // Atualizar Existente
+                const p = db.produto.find(x => x.id === i.match.id);
+                p.estoque += qtd;
+                if(custo > 0) p.custo = custo;
+                if(venda > 0) p.valor = venda;
+                if(data.NCM) p.ncm = data.NCM;
+                if(data.CEST) p.cest = data.CEST;
+                countUpd++;
+            } else {
+                // Criar Novo
+                const novo = {
+                    id: Date.now().toString() + Math.random(),
+                    codigo: DB.nextCode(),
+                    nome: (data.xProd || data.nome || 'NOVO').toUpperCase(),
+                    ean: (data.cEAN !== 'SEM GTIN' ? data.cEAN : '') || data.ean || '',
+                    categoria: data.categoria || '',
+                    estoque: qtd,
+                    estoqueFiscal: qtd,
+                    custo: custo,
+                    valor: venda,
+                    ncm: data.NCM || '',
+                    cest: data.CEST || '',
+                    cfop: data.CFOP_SAIDA || '',
+                    unidade: data.uCom || data.unidade || 'UN',
+                    variacoesEan: [], variacoesNome: [], batches: [], items: [], isCombo: false, isOffer: false
+                };
+                db.produto.push(novo);
+                countNew++;
+            }
+        });
+
+        DB.save(db);
+        document.getElementById('modal-import').close();
+        App.renderList();
+        alert(`Sucesso!\nNovos: ${countNew}\nAtualizados: ${countUpd}`);
     }
 };
 
-// Start
 document.addEventListener('DOMContentLoaded', App.init);
 </script>
-
 </body>
 </html>
