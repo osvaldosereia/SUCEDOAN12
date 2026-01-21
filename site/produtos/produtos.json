@@ -4921,7 +4921,7 @@
     "valor": 10.9,
     "batches": [
       {
-        "date": "",
+        "date": "2026-10-01",
         "qty": 648
       }
     ],
@@ -4964,7 +4964,8 @@
     "Subcategoria": "Roupas e Lavanderia",
     "Mais_Vendido": "Sim",
     "Tem_Ligacao": "Sim",
-    "Codigo_Produto_Ligado": "P107"
+    "Codigo_Produto_Ligado": "P107",
+    "validade": "2026-10-01"
   },
   {
     "id": "1767965879278742",
@@ -9417,80 +9418,72 @@
     "items": [
       {
         "id": "1767965736886738",
-        "codigo": "P004",
         "nome": "ACUCAR DOCE DIA 2KG (UN)",
         "qty": 1
       },
       {
         "id": "1768088776290036",
-        "codigo": "P073",
         "nome": "ARROZ TIO ALVINO FT 6X5",
         "qty": 1
       },
       {
         "id": "1767967765190617",
-        "codigo": "P011",
         "nome": "BISC MYBIT 110G - CHOCOLATE",
         "qty": 1
       },
       {
         "id": "1767995341587629",
-        "codigo": "P026",
         "nome": "FAR TRIGO VITORIOSA 1KG (UN)",
         "qty": 1
       },
       {
         "id": "1767995536751991",
-        "codigo": "P029",
         "nome": "FEIJAO CARIOCA DACASA TP (UN)",
         "qty": 1
       },
       {
         "id": "1767996301404728",
-        "codigo": "P035",
         "nome": "MAC BADOTTI SEMOLA 400G ESPAGUETE (UN)",
         "qty": 1
       },
       {
         "id": "1767996433420002",
-        "codigo": "P036",
         "nome": "MAC INST APTI 70G GALINHA (UN)",
         "qty": 1
       },
       {
-        "id": "1767997067942921",
-        "codigo": "P043",
-        "nome": "MILHO VD PREDILECTA 170G (AGRUPADO)",
-        "qty": 1
-      },
-      {
         "id": "1767997372171002",
-        "codigo": "P049",
         "nome": "MOLHO TOM.TRAD.FUGINI SC.36X300GR 36SC X 300GR",
         "qty": 1
       },
       {
         "id": "1768169552725639",
-        "codigo": "P076",
         "nome": "SUCO PÓ FRISCO 85G - LARANJA",
         "qty": 1
       },
       {
         "id": "1767997510556640",
-        "codigo": "P052",
         "nome": "OLEO SOJA LIZA 900ML",
         "qty": 1
       },
       {
         "id": "1767970066063971",
-        "codigo": "P017",
         "nome": "CAFE CABOCLO VACUO 250G - TRADICIONAL",
         "qty": 1
       },
       {
         "id": "1768011018049449",
-        "codigo": "P068",
         "nome": "SAL REF CRISTAL OURO 1KG",
+        "qty": 1
+      },
+      {
+        "id": "1768169294366535",
+        "nome": "FARINHA DE MANDIOCA DONA DÊ DE 1KG",
+        "qty": 1
+      },
+      {
+        "id": "1767997103533871",
+        "nome": "MILHO VERDE FUGINI SACHE 170GR",
         "qty": 1
       }
     ],
@@ -9509,7 +9502,169 @@
     "refId": "",
     "fator": "",
     "unidade": "",
+    "isBestSeller": false,
+    "isCombo": true,
+    "linkedProdId": "",
+    "linkedProdCode": "",
     "Limit": 12,
+    "Oferta": "Não",
+    "Valor_Oferta": 0,
+    "Categoria": "CESTA BÁSICA",
+    "Subcategoria": "",
+    "Mais_Vendido": "Não",
+    "Tem_Ligacao": "Não",
+    "Codigo_Produto_Ligado": ""
+  },
+  {
+    "id": "1768968480645",
+    "codigo": "P202",
+    "nome": "CESTA MINI KOBLENZ",
+    "valor": 170,
+    "custo": 120,
+    "estoque": 100,
+    "estoqueFiscal": 0,
+    "categoria": "CESTA BÁSICA",
+    "fornecedor": "",
+    "isOffer": false,
+    "offerPrice": 0,
+    "ean": "",
+    "peso": 26,
+    "unidade": "",
+    "limit": 100,
+    "ncm": "",
+    "cest": "",
+    "cfop": "",
+    "csosn": "",
+    "nota": "",
+    "refId": "",
+    "variacoesNome": [],
+    "variacoesEan": [],
+    "caracteristicas": "",
+    "obs": "",
+    "personalized": false,
+    "isBestSeller": false,
+    "isCombo": true,
+    "items": [
+      {
+        "id": "1767966045566494",
+        "nome": "ARROZ KOBLENZ 5KG",
+        "qty": 1
+      },
+      {
+        "id": "1767965736886738",
+        "nome": "AÇÚCAR CRISTAL DOCE DIA 2KG",
+        "qty": 1
+      },
+      {
+        "id": "1767995536751991",
+        "nome": "FEIJÃO DACASA 1KG",
+        "qty": 2
+      },
+      {
+        "id": "1767997510556640",
+        "nome": "ÓLEO SOJA LIZA 900ML",
+        "qty": 2
+      },
+      {
+        "id": "1768011018049449",
+        "nome": "SAL REF CRISTAL OURO 1KG",
+        "qty": 1
+      },
+      {
+        "id": "1767970066063971",
+        "nome": "CAFÉ CABOCLO VACUO 250G",
+        "qty": 1
+      },
+      {
+        "id": "1767996301404728",
+        "nome": "MACARRÃO ESPAGUETE BADOTTI 400G",
+        "qty": 1
+      },
+      {
+        "id": "1767997372171002",
+        "nome": "MOLHO TOMATE FUGINI 300gr",
+        "qty": 1
+      },
+      {
+        "id": "1767997103533871",
+        "nome": "MILHO VERDE FUGINI SACHE 170GR",
+        "qty": 1
+      },
+      {
+        "id": "1767996433420002",
+        "nome": "MACARRÃO INSTANTÂNEO APTI 70G",
+        "qty": 1
+      },
+      {
+        "id": "1767967907734419",
+        "nome": "BISCOITO WAFER MY BIT 80G",
+        "qty": 1
+      },
+      {
+        "id": "1767997715324620",
+        "nome": "SUCO PÓ FRISCO 18G",
+        "qty": 2
+      },
+      {
+        "id": "1768237475942162",
+        "nome": "PAPEL HIGIÊNICO SOBERANO",
+        "qty": 1
+      },
+      {
+        "id": "1767994950374116",
+        "nome": "LAVA ROUPA PÓ OMO 800G",
+        "qty": 1
+      },
+      {
+        "id": "1767965406326887",
+        "nome": "AMACIANTE YPE ACONCHEGO 2L",
+        "qty": 1
+      },
+      {
+        "id": "1767995008683820",
+        "nome": "DESINFETANTE REMMUS 2L",
+        "qty": 1
+      },
+      {
+        "id": "1767965806748192",
+        "nome": "ÁGUA SANITÁRIA QBOA",
+        "qty": 1
+      },
+      {
+        "id": "1767996115267315",
+        "nome": "LAVA LOUÇA YPE 500ml",
+        "qty": 1
+      },
+      {
+        "id": "1767995058021476",
+        "nome": "ESPONJA AÇO ASSOLAN ",
+        "qty": 1
+      },
+      {
+        "id": "1767995283173989",
+        "nome": "BUCHA ASSOLAN DUPLA FACE ",
+        "qty": 1
+      },
+      {
+        "id": "1768010583043608",
+        "nome": "SABONETE PALMOLIVE 85g",
+        "qty": 2
+      },
+      {
+        "id": "1767998027146858",
+        "nome": "SABÃO BARRA YPE 900g",
+        "qty": 1
+      },
+      {
+        "id": "1767994584501037",
+        "nome": "CREME DENTAL SORRISO 70G",
+        "qty": 1
+      }
+    ],
+    "linkedProdId": "",
+    "linkedProdCode": "",
+    "imagem": "../site/img/produtos/cesta-mini-koblenz-cesta-basica-cuiaba-varzea-grande.webp",
+    "Limit": 100,
     "Oferta": "Não",
     "Valor_Oferta": 0,
     "Categoria": "CESTA BÁSICA",
