@@ -6,7 +6,7 @@
     <title>SISTEMAS V3 | Catálogo Pro V5</title>
     
     <style>
-        /* --- 1. CORE & RESET --- */
+        /* --- 1. CORE & RESET (Classless Approach) --- */
         :root {
             --bg: #f8fafc;
             --surface: #ffffff;
@@ -31,7 +31,7 @@
             background-color: var(--bg);
             color: var(--text-main);
             line-height: 1.5;
-            padding-bottom: 60px;
+            padding-bottom: 80px; /* Space for mobile scroll */
         }
 
         /* --- 2. LAYOUT --- */
@@ -45,6 +45,7 @@
             position: sticky;
             top: 0;
             z-index: 30;
+            height: 60px;
         }
 
         h1 { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
@@ -64,9 +65,9 @@
 
         /* --- 3. COMPONENTS --- */
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
-        .card-header { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
-        .card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
-        .card-body { padding: 1rem; overflow-y: auto; }
+        .card-header { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; min-height: 50px; }
+        .card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
+        .card-body { padding: 1rem; }
 
         /* Forms */
         .form-group { margin-bottom: 0.8rem; }
@@ -74,7 +75,7 @@
         .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
 
         label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.25rem; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--surface); transition: all 0.15s; }
+        input, select, textarea { width: 100%; padding: 0.6rem; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--surface); transition: all 0.15s; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
         textarea { resize: vertical; min-height: 60px; }
 
@@ -84,15 +85,21 @@
             display: flex; justify-content: space-between; align-items: center;
         }
 
-        /* Buttons */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.75rem; border-radius: 6px; border: none; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        /* Buttons & Badges */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1rem; font-weight: 600; font-size: 0.75rem; border-radius: 6px; border: none; cursor: pointer; text-transform: uppercase; transition: 0.2s; min-height: 38px; }
         .btn-block { width: 100%; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); }
         .btn-success { background: var(--success); color: white; }
-        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid transparent; }
         .btn-ghost:hover { background: var(--bg); color: var(--text-main); border-color: #cbd5e1; }
-        .btn-icon { padding: 4px 8px; font-size: 0.9rem; }
+        .btn-icon { padding: 8px; width: 36px; height: 36px; }
+
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .badge-green { background: #dcfce7; color: #15803d; }
+        .badge-red { background: #fee2e2; color: #b91c1c; }
+        .badge-purple { background: #f3e8ff; color: #7e22ce; }
+        .badge-gray { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
 
         /* Table */
         .table-wrapper { overflow-x: auto; max-height: 75vh; }
@@ -101,32 +108,30 @@
         td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:hover { background-color: #f1f5f9; }
 
-        /* Utilities */
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
-        .badge-green { background: #dcfce7; color: #15803d; }
-        .badge-red { background: #fee2e2; color: #b91c1c; }
-        .badge-purple { background: #f3e8ff; color: #7e22ce; }
-        .badge-gray { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
-
-        /* Specific Areas */
+        /* Advanced Components */
         .combo-box { background: #eff6ff; border: 1px dashed #bfdbfe; padding: 10px; border-radius: 6px; margin-top: 5px; }
         .combo-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 4px 8px; border: 1px solid #dbeafe; border-radius: 4px; margin-bottom: 4px; font-size: 0.8rem; }
         
         .search-dropdown { position: absolute; background: white; border: 1px solid var(--border); width: 100%; max-height: 200px; overflow-y: auto; z-index: 50; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px; display: none; }
-        .search-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
+        .search-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
         .search-item:hover { background: #f8fafc; color: var(--primary); }
 
-        /* Modals */
-        dialog { border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 90vw; max-width: 900px; padding: 0; animation: fadeUp 0.2s ease; }
-        dialog::backdrop { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px); }
+        /* Modals (Native <dialog>) */
+        dialog { border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 95vw; max-width: 800px; padding: 0; animation: fadeUp 0.2s ease; margin: auto; }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
         .modal-body { padding: 1.5rem; max-height: 70vh; overflow-y: auto; }
         .modal-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; }
 
-        .file-drop { border: 2px dashed var(--border); padding: 2rem; text-align: center; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .file-drop:hover { background: #f8fafc; border-color: var(--primary); }
+        /* Category Tree Specifics */
+        .cat-item { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+        .cat-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; }
+        .cat-actions { display: flex; gap: 4px; }
+        .cat-subs { padding: 0 12px 8px 24px; border-top: 1px dashed var(--border); background: #fff; }
+        .sub-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+        .sub-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -136,10 +141,17 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
         CATÁLOGO PRO V5
     </h1>
-    <div style="display:flex; gap:10px;">
-        <button onclick="CatManager.open()" class="btn-ghost" title="Gerenciar Categorias"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M3 12h18"></path><path d="M3 18h18"></path></svg> Categorias</button>
-        <button onclick="Importer.open()" class="btn-ghost" title="Importar JSON"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Importar</button>
-        <button onclick="App.exportAll()" class="btn-ghost" title="Backup"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Backup</button>
+    <div style="display:flex; gap:8px;">
+        <button onclick="CatManager.open()" class="btn-ghost" title="Gerenciar Categorias">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M3 12h18"></path><path d="M3 18h18"></path></svg>
+            <span style="display:none; @media(min-width:600px){display:inline;}"> Categorias</span>
+        </button>
+        <button onclick="Importer.open()" class="btn-ghost" title="Importar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </button>
+        <button onclick="App.exportAll()" class="btn-ghost" title="Backup">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        </button>
     </div>
 </header>
 
@@ -147,7 +159,7 @@
     <section class="card">
         <div class="card-header">
             <span class="card-title" id="form-title">Novo Produto</span>
-            <button onclick="App.resetForm()" class="btn-ghost btn-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button>
+            <button onclick="App.resetForm()" class="btn-ghost btn-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button>
         </div>
         <div class="card-body">
             <form id="form-prod" onsubmit="App.save(event)">
@@ -200,7 +212,7 @@
                 </div>
                 <div id="combo-area" class="combo-box" style="display:none;">
                     <div style="position:relative;">
-                        <input type="text" id="combo-search" placeholder="Buscar produto para adicionar..." oninput="ComboManager.search(this.value)">
+                        <input type="text" id="combo-search" placeholder="Buscar produto..." oninput="ComboManager.search(this.value)">
                         <div id="combo-results" class="search-dropdown"></div>
                     </div>
                     <div id="combo-list" style="margin-top:8px;"></div>
@@ -243,7 +255,7 @@
     <section class="card" style="height:fit-content; min-height:600px;">
         <div class="card-header">
             <div style="flex:1; max-width:300px; position:relative;">
-                <input type="text" oninput="App.filter(this.value)" placeholder="Buscar..." style="padding-left:2rem;">
+                <input type="text" oninput="App.filter(this.value)" placeholder="Buscar produtos..." style="padding-left:2rem;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
             <span class="badge badge-gray" id="total-count">0 REGISTROS</span>
@@ -271,11 +283,11 @@
         <button onclick="document.getElementById('modal-cat').close()" class="btn-ghost btn-icon">✕</button>
     </div>
     <div class="modal-body">
-        <div style="display:flex; gap:10px; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
-            <input type="text" id="new-cat-root" placeholder="Nova Categoria Principal...">
-            <button onclick="CatManager.addRoot()" class="btn btn-primary">Adicionar</button>
+        <div style="display:flex; gap:10px; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
+            <input type="text" id="new-cat-root" placeholder="Nova Categoria Principal..." onkeypress="if(event.key==='Enter') CatManager.addRoot()">
+            <button onclick="CatManager.addRoot()" class="btn btn-primary" style="white-space:nowrap;">+ Adicionar</button>
         </div>
-        <div id="cat-tree"></div>
+        <div id="cat-tree" style="display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 </dialog>
 
@@ -286,16 +298,16 @@
     </div>
     <div class="modal-body">
         <div style="background:#fff7ed; border:1px solid #ffedd5; padding:10px; border-radius:6px; margin-bottom:1rem; font-size:0.8rem; color:#9a3412;">
-            <b>Regra Anti-Conflito:</b> O sistema busca correspondência SOMENTE por <b>EAN Exato</b> ou <b>Nome Exato</b>. Novos códigos sequenciais serão gerados automaticamente para evitar duplicidade.
+            <b>Regra Anti-Conflito:</b> Busca por <b>EAN Exato</b> ou <b>Nome Exato</b>. Novos códigos serão sequenciais.
         </div>
         <table style="font-size:0.75rem;">
             <thead>
                 <tr>
                     <th style="width:30px;"><input type="checkbox" checked onchange="Importer.toggleAll(this.checked)"></th>
                     <th>Status</th>
-                    <th>Produto (JSON)</th>
+                    <th>Produto</th>
                     <th>Ref. Sistema</th>
-                    <th>Entrada</th>
+                    <th>Qtd</th>
                 </tr>
             </thead>
             <tbody id="import-preview-list"></tbody>
@@ -311,8 +323,8 @@
 
 <script>
 /**
- * SISTEMA V3 - CATALOG MASTER V5 (Final Stable)
- * Chave DB: sys_v3_standalone_db
+ * SISTEMA V3 - CATALOG MASTER V5 (Refactored)
+ * Architecture: Vanilla JS, LocalStorage, Single Object State
  */
 
 const DB = {
@@ -325,7 +337,6 @@ const DB = {
         return data;
     },
     save: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
-    // Função auxiliar para pegar o maior número inteiro de uma lista de produtos
     getMaxIdValue: (list) => {
         let max = 0;
         list.forEach(p => {
@@ -334,7 +345,6 @@ const DB = {
         });
         return max;
     },
-    // Gera próximo código isolado (uso individual)
     nextCode: () => {
         const db = DB.get();
         const max = DB.getMaxIdValue(db.produto);
@@ -371,11 +381,8 @@ const App = {
                 <td>
                     <div style="font-weight:700; color:var(--text-main);">${p.nome}</div>
                     <div style="font-size:0.7rem; color:var(--text-muted);">${p.codigo} ${p.ean ? '| '+p.ean : ''}</div>
-                    ${p.fornecedor ? `<div style="font-size:0.65rem; color:var(--primary);">Forn: ${p.fornecedor}</div>` : ''}
-                    ${p.isCombo ? '<span class="badge badge-purple">COMBO</span>' : ''}
-                    ${p.isOffer ? '<span class="badge badge-red">OFERTA</span>' : ''}
                 </td>
-                <td>${p.categoria ? p.categoria.split('>').pop().trim() : '-'}</td>
+                <td><span class="badge badge-gray">${p.categoria ? p.categoria.split('>').pop().trim() : '-'}</span></td>
                 <td>
                     ${p.isOffer ? `<div style="text-decoration:line-through; font-size:0.7rem; color:var(--text-muted);">R$ ${p.valor.toFixed(2)}</div><div style="font-weight:700; color:var(--danger);">R$ ${p.offerPrice.toFixed(2)}</div>` : `<div style="font-weight:700;">R$ ${p.valor.toFixed(2)}</div>`}
                 </td>
@@ -401,7 +408,6 @@ const App = {
             if(d && q > 0) batches.push({date: d, qty: q});
         }
 
-        // Se for novo, gera código. Se for edição, mantém.
         const codigo = id ? document.getElementById('p-codigo').value : DB.nextCode();
 
         const prod = {
@@ -601,66 +607,162 @@ const LinkedManager = {
     }
 };
 
+/**
+ * CATEGORY MANAGER REVISED (CRUD COMPLETION + SAFETY)
+ */
 const CatManager = {
     open: () => {
         CatManager.render();
         document.getElementById('modal-cat').showModal();
     },
+    
+    // --- 1. CREATE ---
     addRoot: () => {
-        const name = document.getElementById('new-cat-root').value.trim();
+        const input = document.getElementById('new-cat-root');
+        const name = input.value.trim();
         if(!name) return;
         const db = DB.get();
+        if(db.categorias.some(c => c.nome.toLowerCase() === name.toLowerCase())) {
+            alert('Categoria já existe!'); return;
+        }
         db.categorias.push({id: Date.now().toString(), nome, subs: []});
         DB.save(db);
-        document.getElementById('new-cat-root').value = '';
-        CatManager.render();
-        CatManager.populateSelect();
+        input.value = '';
+        CatManager.refreshAll();
     },
+    
     addSub: (parentId) => {
         const name = prompt("Nome da Subcategoria:");
-        if(!name) return;
+        if(!name || !name.trim()) return;
         const db = DB.get();
         const parent = db.categorias.find(c => c.id === parentId);
         if(parent) {
-            parent.subs.push({id: Date.now().toString(), nome});
+            if(parent.subs.some(s => s.nome.toLowerCase() === name.toLowerCase())) {
+                alert('Subcategoria já existe!'); return;
+            }
+            parent.subs.push({id: Date.now().toString(), nome: name.trim()});
             DB.save(db);
-            CatManager.render();
-            CatManager.populateSelect();
+            CatManager.refreshAll();
         }
     },
-    delete: (id, parentId = null) => {
-        if(!confirm("Excluir?")) return;
+
+    // --- 2. UPDATE (New Feature) ---
+    rename: (id, oldName, parentId = null) => {
+        const newName = prompt("Renomear para:", oldName);
+        if(!newName || newName.trim() === '' || newName === oldName) return;
+
         const db = DB.get();
+        let changed = false;
+
+        if(parentId) {
+            // Rename Sub
+            const parent = db.categorias.find(c => c.id === parentId);
+            if(parent) {
+                const sub = parent.subs.find(s => s.id === id);
+                if(sub) { sub.nome = newName.trim(); changed = true; }
+            }
+        } else {
+            // Rename Root
+            const cat = db.categorias.find(c => c.id === id);
+            if(cat) { cat.nome = newName.trim(); changed = true; }
+        }
+
+        if(changed) {
+            DB.save(db);
+            CatManager.refreshAll();
+            // Optional: Update products using this category string? 
+            // Currently products store the string "Root > Sub". 
+            // If strict normalization is needed, we would update all products here.
+            // For this simpler version, we assume user manages products manually or re-selects.
+        }
+    },
+
+    // --- 3. DELETE (With Integrity Check) ---
+    delete: (id, parentId = null) => {
+        const db = DB.get();
+        let nameToCheck = '';
+
+        // Integrity Check
+        if(parentId) {
+            const parent = db.categorias.find(c => c.id === parentId);
+            const sub = parent.subs.find(s => s.id === id);
+            nameToCheck = sub ? sub.nome : '';
+        } else {
+            const cat = db.categorias.find(c => c.id === id);
+            if(cat && cat.subs.length > 0) {
+                alert("Não é possível excluir categoria que possui subcategorias. Exclua as filhas primeiro.");
+                return;
+            }
+            nameToCheck = cat ? cat.nome : '';
+        }
+
+        // Check if any product uses this string
+        const isUsed = db.produto.some(p => p.categoria && p.categoria.includes(nameToCheck));
+        if(isUsed) {
+            alert(`Impossível excluir: Existem produtos vinculados à categoria "${nameToCheck}".`);
+            return;
+        }
+
+        if(!confirm(`Excluir "${nameToCheck}"?`)) return;
+
         if(parentId) {
             const parent = db.categorias.find(c => c.id === parentId);
             if(parent) parent.subs = parent.subs.filter(s => s.id !== id);
         } else {
             db.categorias = db.categorias.filter(c => c.id !== id);
         }
+        
         DB.save(db);
+        CatManager.refreshAll();
+    },
+
+    // --- UTILS ---
+    refreshAll: () => {
         CatManager.render();
         CatManager.populateSelect();
     },
+
     render: () => {
         const db = DB.get();
         const el = document.getElementById('cat-tree');
+        
+        if(db.categorias.length === 0) {
+            el.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">Nenhuma categoria cadastrada.</div>';
+            return;
+        }
+
         el.innerHTML = db.categorias.map(c => `
-            <div style="background:#f1f5f9; padding:8px; border-radius:6px; margin-bottom:5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <b>${c.nome}</b>
-                    <div>
-                        <button onclick="CatManager.addSub('${c.id}')" class="btn-ghost" style="color:green; padding:2px 6px;">+</button>
-                        <button onclick="CatManager.delete('${c.id}')" class="btn-ghost" style="color:red; padding:2px 6px;">✕</button>
+            <div class="cat-item">
+                <div class="cat-header">
+                    <span style="font-weight:700; color:var(--text-main); font-size:0.9rem;">${c.nome}</span>
+                    <div class="cat-actions">
+                        <button onclick="CatManager.addSub('${c.id}')" class="btn-ghost" title="Nova Sub" style="color:var(--success);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                        </button>
+                        <button onclick="CatManager.rename('${c.id}', '${c.nome}')" class="btn-ghost" title="Editar" style="color:var(--primary);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button onclick="CatManager.delete('${c.id}')" class="btn-ghost" title="Excluir" style="color:var(--danger);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
                     </div>
                 </div>
-                <div style="margin-left:20px; border-left:2px solid #cbd5e1; padding-left:10px; margin-top:5px;">
-                    ${(c.subs||[]).map(s => `
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; margin-top:2px;">
+                ${(c.subs && c.subs.length > 0) ? `
+                <div class="cat-subs">
+                    ${c.subs.map(s => `
+                        <div class="sub-item">
                             <span>${s.nome}</span>
-                            <button onclick="CatManager.delete('${s.id}', '${c.id}')" class="btn-ghost" style="color:red; padding:1px 5px; font-size:0.6rem;">✕</button>
+                            <div class="cat-actions">
+                                <button onclick="CatManager.rename('${s.id}', '${s.nome}', '${c.id}')" class="btn-ghost" style="padding:4px; color:var(--primary);">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                </button>
+                                <button onclick="CatManager.delete('${s.id}', '${c.id}')" class="btn-ghost" style="padding:4px; color:var(--danger);">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
                         </div>
                     `).join('')}
-                </div>
+                </div>` : ''}
             </div>
         `).join('');
     },
@@ -698,13 +800,11 @@ const Importer = {
     analyze: (json) => {
         const db = DB.get();
         Importer.staged = json.map((item, idx) => {
-            // LÓGICA RÍGIDA DE IMPORTAÇÃO (EAN ou NOME apenas)
             const ean = (item.cEAN || item.ean || '').trim();
             const nome = (item.xProd || item.nome || '').trim().toUpperCase();
             
             let match = null;
 
-            // 1. Check EAN (Ignore SEM GTIN e vazio)
             if(ean && ean !== 'SEM GTIN' && ean !== '') {
                 match = db.produto.find(p => {
                     const mainEan = (p.ean||'').trim();
@@ -713,7 +813,6 @@ const Importer = {
                 });
             }
 
-            // 2. Check EXACT Name
             if(!match && nome) {
                 match = db.produto.find(p => {
                     const mainName = (p.nome||'').toUpperCase().trim();
@@ -746,8 +845,8 @@ const Importer = {
             <tr>
                 <td><input type="checkbox" ${i.selected?'checked':''} onchange="Importer.toggleItem(${i._id}, this.checked)"></td>
                 <td>${status}</td>
-                <td title="${nome}"><div style="width:200px; overflow:hidden; text-overflow:ellipsis;">${nome}</div></td>
-                <td><div style="width:150px; overflow:hidden; text-overflow:ellipsis; font-size:0.7rem; color:var(--text-muted);">${ref}</div></td>
+                <td title="${nome}"><div style="width:160px; overflow:hidden; text-overflow:ellipsis;">${nome}</div></td>
+                <td><div style="width:120px; overflow:hidden; text-overflow:ellipsis; font-size:0.7rem; color:var(--text-muted);">${ref}</div></td>
                 <td><b>${qtd}</b></td>
             </tr>`;
         }).join('');
@@ -763,8 +862,6 @@ const Importer = {
     confirm: () => {
         const db = DB.get();
         let countNew = 0, countUpd = 0;
-        
-        // 1. Encontrar o MAIOR ID existente para iniciar a sequência corretamente
         let currentMaxCode = DB.getMaxIdValue(db.produto);
 
         Importer.staged.filter(i => i.selected).forEach(i => {
@@ -774,7 +871,6 @@ const Importer = {
             const venda = Number(data.Venda || data.valor || 0);
             
             if(i.match) {
-                // Atualizar Existente
                 const p = db.produto.find(x => x.id === i.match.id);
                 p.estoque += qtd;
                 if(custo > 0) p.custo = custo;
@@ -783,14 +879,12 @@ const Importer = {
                 if(data.CEST) p.cest = data.CEST;
                 countUpd++;
             } else {
-                // Criar Novo
-                // AQUI GARANTIMOS O PRÓXIMO CÓDIGO SEQUENCIAL CORRETO
                 currentMaxCode++; 
                 const nextCode = `P${String(currentMaxCode).padStart(4, '0')}`;
 
                 const novo = {
                     id: Date.now().toString() + Math.random(),
-                    codigo: nextCode, // Usa o código gerado em memória
+                    codigo: nextCode,
                     nome: (data.xProd || data.nome || 'NOVO').toUpperCase(),
                     ean: (data.cEAN !== 'SEM GTIN' ? data.cEAN : '') || data.ean || '',
                     fornecedor: '',
