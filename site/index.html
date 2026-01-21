@@ -1,36 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR" dir="ltr">
 <head>
-    <!-- 
-        ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Clean Card Design & UX Fixes
-        TARGET: 100/100 Lighthouse Performance
-        CHANGELOG:
-        - UI: Cards de personalização sem borda/sombra (fundo transparente).
-        - UI: Imagens com fundo cinza claro (#f3f4f6) para contraste.
-        - UX: Botão '+' aumentado e com stopPropagation (evita abrir modal).
-        - TYPOGRAPHY: Fontes de preço e nome reduzidas para elegância.
-        ================================================================
-    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
-    <!-- SEO: Technical & Canonical -->
     <link rel="canonical" href="https://www.donaantonia.com.br/">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="author" content="Dona Antônia Mercadinho">
     <meta name="theme-color" content="#ffffff">
     
-    <!-- SEO: Content -->
     <title>Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia</title>
     <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG. Monte e personalize sua cesta. Mercadinho online com pagamento na entrega.">
 
-    <!-- Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -453,11 +438,26 @@
         
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* INTRO OVERLAY (PRESENTATION) */
+        .intro-overlay {
+            position: fixed; inset: 0; z-index: 12000;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s;
+        }
+        .intro-overlay.active { opacity: 1; pointer-events: auto; }
+        .intro-text {
+            color: white; font-size: 1.4rem; font-weight: 700;
+            text-align: center; max-width: 80%; line-height: 1.4;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        .intro-text.show { opacity: 1; transform: translateY(0); }
     </style>
 </head>
 <body>
 
-    <!-- HOME HEADER -->
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
@@ -474,7 +474,6 @@
         </div>
     </header>
 
-    <!-- HOME VIEW -->
     <main id="home-view">
         <section class="hero">
             <div class="container">
@@ -485,10 +484,8 @@
         </section>
         
         <div class="container home-grid-container" id="baskets-anchor">
-            <!-- SEO CONTENT: 9 Cestas Estáticas para Indexação -->
             <div id="home-list" class="baskets-grid">
                 
-                <!-- 1. CESTA ECONÔMICA -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Econômica" loading="eager" fetchpriority="high"></div>
@@ -507,7 +504,6 @@
                     </div>
                 </div>
 
-                <!-- 2. CESTA MINI KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Koblenz" loading="lazy"></div>
@@ -525,7 +521,6 @@
                     </div>
                 </div>
 
-                <!-- 3. CESTA MINI ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Alvino" loading="lazy"></div>
@@ -542,7 +537,6 @@
                     </div>
                 </div>
 
-                <!-- 4. CESTA PEQUENA KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Koblenz" loading="lazy"></div>
@@ -559,7 +553,6 @@
                     </div>
                 </div>
 
-                <!-- 5. CESTA PEQUENA ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Alvino" loading="lazy"></div>
@@ -575,7 +568,6 @@
                     </div>
                 </div>
 
-                <!-- 6. CESTA MÉDIA KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Koblenz" loading="lazy"></div>
@@ -591,7 +583,6 @@
                     </div>
                 </div>
 
-                <!-- 7. CESTA MÉDIA ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Alvino" loading="lazy"></div>
@@ -606,7 +597,6 @@
                     </div>
                 </div>
 
-                <!-- 8. CESTA GRANDE KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Koblenz" loading="lazy"></div>
@@ -621,7 +611,6 @@
                     </div>
                 </div>
 
-                <!-- 9. CESTA GRANDE ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Alvino" loading="lazy"></div>
@@ -663,16 +652,14 @@
                 </div>
                 
                 <div class="copyright">
-                    &copy; 2024 Dona Antônia Alimentos.
+                    © 2024 Dona Antônia Alimentos.
                 </div>
             </div>
         </footer>
     </main>
 
-    <!-- CUSTOMIZER VIEW -->
     <div id="customizer-view" class="hidden">
         
-        <!-- APP HEADER -->
         <div class="app-header">
             <div class="ah-back-btn" onclick="App.goHome()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
@@ -694,7 +681,6 @@
             </div>
         </div>
 
-        <!-- FLOATING CART BAR (MOBILE & DESKTOP) -->
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
                 <span class="icb-label">Valor Total</span>
@@ -707,7 +693,6 @@
         </div>
     </div>
 
-    <!-- SHEETS & MODALS -->
     <div id="info-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('info-sheet')">
         <div class="sheet-box">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
@@ -748,7 +733,10 @@
     <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
     <div id="credit-sub-toast" class="credit-sub-toast">Adicione novos produtos</div>
 
-    <!-- CHECKOUT MODAL -->
+    <div id="intro-overlay" class="intro-overlay hidden">
+        <div id="intro-text" class="intro-text"></div>
+    </div>
+
     <dialog id="checkout-modal" class="modal-checkout">
         <div class="co-header">
             <span class="co-title">Finalizar Pedido</span>
@@ -758,7 +746,6 @@
             <div class="co-section-title">Sua Nova Cesta</div>
             <div id="modal-cart-list" class="co-horizontal-list"></div>
             
-            <!-- ALERTA DE CREDITO DIDATICO (NOVO) -->
             <div id="modal-credit-alert" class="modal-credit-box hidden">
                 <div style="margin-bottom:5px">Você possui <strong>R$ <span id="mca-val">0,00</span></strong> de Crédito.</div>
                 <div style="font-size:0.8rem; margin-bottom:8px">Adicione novos produtos para aproveitar.</div>
@@ -766,7 +753,6 @@
             </div>
             
             <div class="co-total-row">
-                <!-- BREAKDOWN CONTAINER -->
                 <div id="co-breakdown" style="width:100%; margin-bottom:12px; display:flex; flex-direction:column; gap:6px;"></div>
                 
                 <div style="width:100%; height:1px; background:#e5e7eb; margin-bottom:12px;"></div>
@@ -780,7 +766,6 @@
                     ✅ <strong>Tudo Incluso:</strong> Montagem, Embalagem e Entrega.<br>Sem taxas adicionais.
                 </div>
 
-                <!-- CUPOM RETRATIL -->
                 <div class="coupon-toggle" onclick="App.toggleCoupon()">Possui cupom de desconto?</div>
                 <div id="coupon-area" class="coupon-box hidden">
                     <input type="text" id="coupon-input" class="coupon-input" placeholder="CUPOM">
@@ -971,7 +956,7 @@
                                     const itemData = this.data.find(d => d.id === String(i.id));
                                     if(!itemData) return '';
                                     // A11Y: Safe ALT attribute
-                                    return `<div class="hbc-item"><div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '&quot;')}"></div><span>${i.qty || 1}un</span></div>`;
+                                    return `<div class="hbc-item"><div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '"')}"></div><span>${i.qty || 1}un</span></div>`;
                                 }).join('') + `</div>`;
                         }
                         
@@ -982,7 +967,7 @@
                         return `
                         <div class="home-basket-card">
                             <div class="hbc-top">
-                                <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome.replace(/"/g, '&quot;')}"></div>
+                                <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome.replace(/"/g, '"')}"></div>
                                 <div class="hbc-info-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
                             </div>
                             <div class="hbc-content">
@@ -1027,6 +1012,50 @@
                 window.scrollTo(0,0);
                 this.renderAllLists();
                 this.saveState(); // SAVE STATE
+                
+                // PLAY INTRO ANIMATION
+                this.playIntro();
+            },
+            
+            playIntro() {
+                const overlay = document.getElementById('intro-overlay');
+                const textBox = document.getElementById('intro-text');
+                const slides = [
+                    "Olá, aqui você vai personalizar a sua cesta.",
+                    "Você pode retirar produtos e adicionar novos.",
+                    "Monte a sua compra do seu jeito.",
+                    "Boas Compras."
+                ];
+                
+                overlay.classList.remove('hidden');
+                // Small delay to allow transition
+                requestAnimationFrame(() => overlay.classList.add('active'));
+                
+                let index = 0;
+                
+                const nextSlide = () => {
+                    if(index >= slides.length) {
+                        // End
+                        overlay.classList.remove('active');
+                        setTimeout(() => overlay.classList.add('hidden'), 500);
+                        return;
+                    }
+                    
+                    // Update Text
+                    textBox.innerText = slides[index];
+                    textBox.classList.add('show');
+                    
+                    // Wait reading time then hide text
+                    setTimeout(() => {
+                        textBox.classList.remove('show');
+                        index++;
+                        // Wait for fade out then next slide
+                        setTimeout(nextSlide, 500);
+                    }, 1500); // 1.5s reading time
+                };
+                
+                // Start first slide after overlay appears
+                setTimeout(nextSlide, 500);
             },
             
             goHome() {
@@ -1154,7 +1183,7 @@
                     if(!p) return '';
                     return `
                     <div class="card-inc">
-                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '&quot;')}">
+                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '"')}">
                         <div class="ci-content">
                             <div class="qty-sm">
                                 <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
@@ -1199,7 +1228,7 @@
                 <div class="card-prod" id="card-${p.id}">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
                     <div class="cp-img-box" onclick="App.openInfo('${p.id}')">
-                        <img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '&quot;')}">
+                        <img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '"')}">
                         ${btnHtml}
                         ${qtyHtml}
                     </div>
@@ -1222,9 +1251,8 @@
                 return `
                 <div class="co-card">
                     <div class="cp-img-box">
-                        <img src="${p.imagem}" class="cp-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '&quot;')}">
-                        <!-- Qty Controller (Always visible in checkout) -->
-                         <div class="qty-ctrl-float" onclick="event.stopPropagation()">
+                        <img src="${p.imagem}" class="cp-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '"')}">
+                        <div class="qty-ctrl-float" onclick="event.stopPropagation()">
                             <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${decContent}</div>
                             <div class="qcf-val">${qty}</div>
                             <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
