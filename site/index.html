@@ -1,47 +1,91 @@
 <!DOCTYPE html>
 <html lang="pt-BR" dir="ltr">
 <head>
-    <!-- 
-        ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - SEO Content Injection
-        TARGET: 100/100 Lighthouse Performance & SEO
-        CHANGELOG:
-        - SEO: Inserção das 9 Cestas Reais no HTML Estático.
-        - CONTENT: Preços e Itens atualizados conforme catálogo.
-        - LCP: Imagens com carregamento otimizado (eager/lazy).
-        ================================================================
-    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
-    <!-- SEO: Technical & Canonical -->
+    <title>Cesta Básica em Cuiabá e Várzea Grande | Dona Antônia Alimentos</title>
+    <meta name="description" content="Cesta Básica com entrega rápida em Cuiabá e VG. Aberto de Seg a Sáb (sem fechar para almoço). Peça pelo WhatsApp ou Instagram. Qualidade e preço justo.">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <link rel="canonical" href="https://www.donaantonia.com.br/">
-    <meta name="robots" content="index, follow, max-image-preview:large">
-    <meta name="author" content="Dona Antônia Mercadinho">
-    <meta name="theme-color" content="#ffffff">
-    
-    <!-- SEO: Content -->
-    <title>Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia</title>
-    <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG. Monte e personalize sua cesta. Mercadinho online com pagamento na entrega.">
+    <meta name="author" content="Dona Antônia Alimentos">
+    <meta name="theme-color" content="#d31a28">
+    <meta name="geo.region" content="BR-MT">
+    <meta name="geo.placename" content="Cuiabá">
+    <meta name="geo.position" content="-15.6200;-56.0900"> <meta name="ICBM" content="-15.6200, -56.0900">
 
-    <!-- Preconnect -->
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Dona Antônia | Cestas Básicas em Cuiabá">
+    <meta property="og:description" content="Monte sua cesta ou peça pronta! Aberto das 08h às 17h (sem almoço). Entrega rápida.">
+    <meta property="og:url" content="https://www.donaantonia.com.br/">
+    <meta property="og:site_name" content="Dona Antônia Alimentos">
+    <meta property="og:image" content="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp">
+    <meta property="og:image:alt" content="Cestas Básicas Dona Antônia">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cesta Básica Dona Antônia | Cuiabá - MT">
+    <meta name="twitter:description" content="Qualidade e preço baixo. Atendimento direto pelo Zap ou Instagram.">
+    <meta name="twitter:image" content="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "GroceryStore",
-      "name": "Dona Antônia Cestas Básicas",
-      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
-      "telephone": "+5565996813588",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Cuiabá",
-        "addressRegion": "MT"
-      }
+      "@graph": [
+        {
+          "@type": "GroceryStore",
+          "@id": "https://www.donaantonia.com.br/#store",
+          "name": "Dona Antônia Cestas Básicas",
+          "image": "https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
+          "telephone": "+5565996813588",
+          "url": "https://www.donaantonia.com.br/",
+          "taxID": "51.385.335/0001-06",
+          "priceRange": "$$",
+          "sameAs": [
+            "https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/",
+            "https://api.whatsapp.com/send?phone=5565996813588"
+          ],
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "R. Trinta, 105 - Jardim Nossa Sra. Aparecida",
+            "addressLocality": "Cuiabá",
+            "addressRegion": "MT",
+            "postalCode": "78090-660",
+            "addressCountry": "BR"
+          },
+          "hasMap": "https://www.google.com/maps/search/?api=1&query=9W4X+JQ+Jardim+Nossa+Sra.+Aparecida,+Cuiab%C3%A1+-+MT",
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+            ],
+            "opens": "08:00",
+            "closes": "17:00"
+          }
+        },
+        {
+          "@type": "OfferCatalog",
+          "name": "Catálogo de Cestas Básicas",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Product",
+                "name": "Cesta Econômica",
+                "description": "Opção acessível com itens essenciais.",
+                "image": "https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp"
+              },
+              "price": "85.00",
+              "priceCurrency": "BRL",
+              "availability": "https://schema.org/InStock"
+            }
+          ]
+        }
+      ]
     }
     </script>
 
@@ -101,9 +145,9 @@
         .logo-brand-img { width: 53px; height: 53px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
-            font-size: 0.8rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
-            padding: 6px 14px; border-radius: 50px; border: 1px solid #e2e8f0;
-            display: flex; align-items: center; gap: 6px;
+            font-size: 0.75rem; font-weight: 600; color: var(--secondary); background: #f8fafc; 
+            padding: 6px 12px; border-radius: 50px; border: 1px solid #e2e8f0;
+            display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; max-width: 140px;
         }
 
         /* --- 3. CUSTOMIZER HEADER (APP STYLE) --- */
@@ -143,12 +187,11 @@
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         
         .hero { padding: 25px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
-        .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--secondary); margin-bottom: 12px; }
-        .hero h1 span { color: var(--primary); }
-        .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
+        .hero h1 { font-size: 1.8rem; line-height: 1.2; color: var(--secondary); margin-bottom: 10px; letter-spacing: -0.5px; }
+        .hero h2 { font-size: 0.95rem; color: var(--text-light); margin-bottom: 0; max-width: 600px; margin: 0 auto 15px; line-height: 1.5; font-weight: 400; }
         
-        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
-        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; margin-top: 5px; }
+        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 4px 12px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 
         /* HOME GRID */
         .home-grid-container { padding: 0px 0 60px; }
@@ -422,6 +465,9 @@
         /* FOOTER */
         .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 20px; margin-top: 40px; }
         .footer-info { text-align: center; margin-bottom: 30px; }
+        .footer-info h3 { font-size: 1.2rem; color: var(--secondary); margin-bottom: 8px; }
+        .footer-info p { margin-bottom: 6px; color: #555; font-size: 0.9rem; }
+        
         .footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 400px; margin: 0 auto 30px; padding: 0 20px; }
         @media(min-width: 640px) { .footer-actions { grid-template-columns: repeat(4, 1fr); max-width: 700px; } }
         .f-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 8px; border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; color: var(--secondary); font-weight: 600; font-size: 0.75rem; text-decoration: none; text-align: center; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -435,7 +481,6 @@
 </head>
 <body>
 
-    <!-- HOME HEADER -->
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
@@ -452,21 +497,18 @@
         </div>
     </header>
 
-    <!-- HOME VIEW -->
     <main id="home-view">
         <section class="hero">
             <div class="container">
-                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em até 24h</div></div>
-                <h1>A cesta básica que fica do seu jeito.</h1>
-                <p>Encomende sua cesta e pague somente na entrega na sua casa.</p>
+                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Jd. N. Sra. Aparecida e Região</div></div>
+                <h1>Cestas Básicas em Cuiabá e Várzea Grande</h1>
+                <h2>Peça online e receba em casa com frete rápido. Qualidade garantida e pagamento facilitado.</h2>
             </div>
         </section>
         
         <div class="container home-grid-container" id="baskets-anchor">
-            <!-- SEO CONTENT: 9 Cestas Estáticas para Indexação -->
             <div id="home-list" class="baskets-grid">
                 
-                <!-- 1. CESTA ECONÔMICA -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Econômica" loading="eager" fetchpriority="high"></div>
@@ -485,7 +527,6 @@
                     </div>
                 </div>
 
-                <!-- 2. CESTA MINI KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Koblenz" loading="lazy"></div>
@@ -503,7 +544,6 @@
                     </div>
                 </div>
 
-                <!-- 3. CESTA MINI ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Alvino" loading="lazy"></div>
@@ -520,7 +560,6 @@
                     </div>
                 </div>
 
-                <!-- 4. CESTA PEQUENA KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Koblenz" loading="lazy"></div>
@@ -537,7 +576,6 @@
                     </div>
                 </div>
 
-                <!-- 5. CESTA PEQUENA ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Alvino" loading="lazy"></div>
@@ -553,7 +591,6 @@
                     </div>
                 </div>
 
-                <!-- 6. CESTA MÉDIA KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Koblenz" loading="lazy"></div>
@@ -569,7 +606,6 @@
                     </div>
                 </div>
 
-                <!-- 7. CESTA MÉDIA ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Alvino" loading="lazy"></div>
@@ -584,7 +620,6 @@
                     </div>
                 </div>
 
-                <!-- 8. CESTA GRANDE KOBLENZ -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Koblenz" loading="lazy"></div>
@@ -599,7 +634,6 @@
                     </div>
                 </div>
 
-                <!-- 9. CESTA GRANDE ALVINO -->
                 <div class="home-basket-card">
                     <div class="hbc-top">
                         <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Alvino" loading="lazy"></div>
@@ -621,7 +655,8 @@
             <div class="container">
                 <div class="footer-info">
                     <h3>Dona Antônia Alimentos</h3>
-                    <p>📍 Jardim Nossa Senhora Aparecida, Cuiabá - MT</p>
+                    <p>📍 R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT</p>
+                    <p>🕒 Seg a Sáb: 08h às 17h (não fechamos para almoço)</p>
                     <p>📞 <strong>(65) 99681-3588</strong></p>
                 </div>
 
@@ -629,28 +664,26 @@
                     <a href="https://api.whatsapp.com/send?phone=5565996813588" target="_blank" class="f-btn">
                         <icon>💬</icon> Whatsapp
                     </a>
-                    <a href="tel:5565996813588" class="f-btn">
-                        <icon>📞</icon> Ligar
+                    <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="f-btn">
+                        <icon>📸</icon> Instagram
                     </a>
                     <a href="https://g.page/r/CaIREJtO1L6WEAE/review" target="_blank" class="f-btn">
                         <icon>⭐</icon> Avaliar
                     </a>
-                    <a href="https://www.google.com/maps/search/?api=1&query=Dona+Antonia+Cestas+Basicas+Cuiaba" target="_blank" class="f-btn">
+                    <a href="https://www.google.com/maps/search/?api=1&query=9W4X+JQ+Jardim+Nossa+Sra.+Aparecida,+Cuiab%C3%A1+-+MT" target="_blank" class="f-btn">
                         <icon>📍</icon> Mapa
                     </a>
                 </div>
                 
                 <div class="copyright">
-                    &copy; 2024 Dona Antônia Alimentos.
+                    © 2026 Dona Antônia Alimentos.
                 </div>
             </div>
         </footer>
     </main>
 
-    <!-- CUSTOMIZER VIEW -->
     <div id="customizer-view" class="hidden">
         
-        <!-- APP HEADER -->
         <div class="app-header">
             <div class="ah-back-btn" onclick="App.goHome()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
@@ -668,7 +701,6 @@
             </div>
         </div>
 
-        <!-- FLOATING CART BAR (MOBILE & DESKTOP) -->
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
                 <span class="icb-label">Total sem taxa de entrega</span>
@@ -681,7 +713,6 @@
         </div>
     </div>
 
-    <!-- SHEETS & MODALS -->
     <div id="info-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('info-sheet')">
         <div class="sheet-box">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
@@ -701,10 +732,9 @@
             <div style="overflow-y:auto; padding-bottom:20px;">
                 <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-text">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação (Alelo, Sodexo, Ticket, etc).</div></details>
                 <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
-                <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
+                <details class="faq-box"><summary>Qual o horário de funcionamento?</summary><div class="faq-text">Estamos abertos de Segunda a Sábado, das 08h às 17h, sem fechar para almoço.</div></details>
                 <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho.</div></details>
-                <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto.</div></details>
-                <details class="faq-box"><summary>De onde vocês são?</summary><div class="faq-text">Somos de Cuiabá - MT, localizados no bairro Jardim Nossa Senhora Aparecida. Atendemos com frota própria.</div></details>
+                <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos na R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT.</div></details>
             </div>
         </div>
     </div>
@@ -722,7 +752,6 @@
     <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
     <div id="credit-sub-toast" class="credit-sub-toast">Adicione novos produtos</div>
 
-    <!-- CHECKOUT MODAL -->
     <dialog id="checkout-modal" class="modal-checkout">
         <div class="co-header">
             <span class="co-title">Finalizar Pedido</span>
@@ -732,7 +761,6 @@
             <div class="co-section-title">Sua Nova Cesta</div>
             <div id="modal-cart-list" class="co-horizontal-list"></div>
             
-            <!-- ALERTA DE CREDITO DIDATICO (NOVO) -->
             <div id="modal-credit-alert" class="modal-credit-box hidden">
                 <div style="margin-bottom:5px">Você possui <strong>R$ <span id="mca-val">0,00</span></strong> de Crédito.</div>
                 <div style="font-size:0.8rem; margin-bottom:8px">Adicione novos produtos para aproveitar.</div>
@@ -740,7 +768,6 @@
             </div>
             
             <div class="co-total-row">
-                <!-- BREAKDOWN CONTAINER -->
                 <div id="co-breakdown" style="width:100%; margin-bottom:12px; display:flex; flex-direction:column; gap:6px;"></div>
                 
                 <div style="width:100%; height:1px; background:#e5e7eb; margin-bottom:12px;"></div>
@@ -754,7 +781,6 @@
                     ✅ <strong>Tudo Incluso:</strong> Montagem, Embalagem e Entrega.<br>Sem taxas adicionais.
                 </div>
 
-                <!-- CUPOM RETRATIL -->
                 <div class="coupon-toggle" onclick="App.toggleCoupon()">Possui cupom de desconto?</div>
                 <div id="coupon-area" class="coupon-box hidden">
                     <input type="text" id="coupon-input" class="coupon-input" placeholder="CUPOM">
@@ -944,7 +970,7 @@
                                     const itemData = this.data.find(d => d.id === String(i.id));
                                     if(!itemData) return '';
                                     // A11Y: Safe ALT attribute
-                                    return `<div class="hbc-item"><div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '&quot;')}"></div><span>${i.qty || 1}un</span></div>`;
+                                    return `<div class="hbc-item"><div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '"')}"></div><span>${i.qty || 1}un</span></div>`;
                                 }).join('') + `</div>`;
                         }
                         
@@ -955,7 +981,7 @@
                         return `
                         <div class="home-basket-card">
                             <div class="hbc-top">
-                                <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome.replace(/"/g, '&quot;')}"></div>
+                                <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome.replace(/"/g, '"')}"></div>
                                 <div class="hbc-info-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
                             </div>
                             <div class="hbc-content">
@@ -1107,7 +1133,7 @@
                     if(!p) return '';
                     return `
                     <div class="card-inc">
-                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '&quot;')}">
+                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '"')}">
                         <div class="ci-content">
                             <div class="qty-sm">
                                 <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
@@ -1152,7 +1178,7 @@
                 <div class="card-prod" id="card-${p.id}">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
                     <div class="cp-img-box" onclick="App.openInfo('${p.id}')">
-                        <img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '&quot;')}">
+                        <img src="${p.imagem}" class="cp-img" loading="lazy" alt="${p.nome.replace(/"/g, '"')}">
                         ${btnHtml}
                         ${qtyHtml}
                     </div>
@@ -1175,9 +1201,8 @@
                 return `
                 <div class="co-card">
                     <div class="cp-img-box">
-                        <img src="${p.imagem}" class="cp-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '&quot;')}">
-                        <!-- Qty Controller (Always visible in checkout) -->
-                         <div class="qty-ctrl-float" onclick="event.stopPropagation()">
+                        <img src="${p.imagem}" class="cp-img" onclick="App.openInfo('${p.id}')" alt="${p.nome.replace(/"/g, '"')}">
+                        <div class="qty-ctrl-float" onclick="event.stopPropagation()">
                             <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${decContent}</div>
                             <div class="qcf-val">${qty}</div>
                             <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
