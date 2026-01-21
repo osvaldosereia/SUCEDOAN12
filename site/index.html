@@ -3,10 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Final Refined Build
+        ARCHITECT: SEO Code Architect (SCA) - Visual Refinement 11.5
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - CSS: Forçado arredondamento de imagem (border-radius: 18px + overflow: hidden).
+        - UI: Itens da cesta na home com fundo branco, borda e imagens +10px.
+        - UI: Cards de produto aumentados no desktop.
+        - FIX: Centralização óptica do ícone '+' no botão de adicionar.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -177,8 +179,20 @@
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; }
         
-        .hbc-item { flex: 0 0 85px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f9f9f9; border-radius: 8px; padding: 6px; }
-        .hbc-item img { width: 65px; height: 65px; object-fit: contain; mix-blend-mode: multiply; } 
+        /* AJUSTE: Itens da cesta na home com fundo branco, borda e imagem maior (75px) */
+        .hbc-item { 
+            flex: 0 0 100px; /* Aumentado para caber imagem maior */
+            display: flex; flex-direction: column; align-items: center; gap: 2px; 
+            background: #ffffff; /* Fundo branco solicitado */
+            border: 1px solid #f0f0f0; /* Borda para contraste */
+            border-radius: 12px; /* Borda arredondada */
+            padding: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03); 
+        }
+        .hbc-item img { 
+            width: 75px; height: 75px; /* Aumentado 10px */
+            object-fit: contain; mix-blend-mode: multiply; 
+        } 
         .hbc-item span { font-size: 0.6rem; font-weight: 600; color: #555; }
 
         .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
@@ -236,20 +250,20 @@
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #eef9f2; color: #2d6c4a; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
-        /* Container da imagem com fundo cinza claro */
         .cp-img-box { 
             width: 100%; aspect-ratio: 1; 
             display: flex; align-items: center; justify-content: center; 
             margin-bottom: 8px; cursor: pointer; position: relative;
             background: #f3f4f6;
-            border-radius: 18px; /* Borda bem arredondada no container */
-            overflow: hidden; /* Força o corte da imagem nas bordas */
+            border-radius: 18px; 
+            overflow: hidden; 
         }
         .cp-img { 
             width: 100%; height: 100%; object-fit: contain; 
-            border-radius: 18px; /* Borda bem arredondada na imagem */
+            border-radius: 18px; 
         }
         
+        /* BOTÃO CIRCULAR: Centralização Óptica */
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px;
             width: 38px; height: 38px;
@@ -259,6 +273,9 @@
             display: flex; align-items: center; justify-content: center;
             color: var(--primary); font-size: 1.6rem; font-weight: 300;
             cursor: pointer; transition: transform 0.1s;
+            /* AJUSTE: Levantando o + para centro visual */
+            padding-bottom: 3px; 
+            line-height: 1;
         }
         .btn-circle-add:active { transform: scale(0.9); }
 
@@ -311,8 +328,21 @@
         /* --- 7. DESKTOP LAYOUT --- */
         @media(min-width: 1024px) {
             .scroll-btn { display: flex; }
-            #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 40px 20px; padding-top: calc(var(--app-header-height) + 20px); padding-bottom: 100px; }
+            
+            #customizer-view:not(.hidden) { 
+                max-width: 1200px; 
+                margin: 0 auto; 
+                padding: 40px 20px; 
+                padding-top: calc(var(--app-header-height) + 20px); 
+                padding-bottom: 100px; 
+            }
             .cp-title { -webkit-line-clamp: 2; min-height: 2.6em; }
+            
+            /* AJUSTE DESKTOP: Cards maiores para imagem maior */
+            .horizontal-products-row .card-prod { 
+                min-width: 150px; 
+                max-width: 190px;
+            }
         }
 
         /* --- 8. FLOATING CART BAR --- */
