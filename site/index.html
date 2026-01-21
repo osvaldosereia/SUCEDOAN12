@@ -3,12 +3,11 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Full Bleed Scroll & Size Up
+        ARCHITECT: SEO Code Architect (SCA) - Smart Trash Icon Logic
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UI: Cards de produto aumentados (35vw / min 145px).
-        - UX: Efeito "Full Bleed" no mobile (rolagem vai até a borda da tela).
-        - CSS: Ajuste de margens negativas para compensar padding do container.
+        - UX: Botão de diminuir vira "Lixeira" quando qty = 1.
+        - JS: Lógica dinâmica de troca de ícone (Trash/Minus) no updateCardUI.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -168,8 +167,8 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        .hbc-top { display: grid; grid-template-columns: 220px 1fr; gap: 15px; padding: 16px; align-items: center; }
-        .hbc-img-wrap { width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
+        .hbc-top { display: grid; grid-template-columns: 145px 1fr; gap: 15px; padding: 16px; align-items: center; }
+        .hbc-img-wrap { width: 100%; height: 145px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
         .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
         .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
@@ -216,11 +215,10 @@
 
         .horizontal-products-row { 
             display: flex; gap: 20px; overflow-x: auto; 
-            /* AJUSTE MOBILE FULL BLEED: Margens negativas para encostar na borda da tela */
             padding: 0 16px 16px 16px; 
             margin-left: -16px;
             margin-right: -16px;
-            scroll-snap-type: none; /* Rolagem livre */
+            scroll-snap-type: none; 
             scroll-behavior: smooth;
         }
         .horizontal-products-row::-webkit-scrollbar { display: none; }
@@ -238,14 +236,12 @@
         .scroll-btn.right { right: -20px; }
         
         .horizontal-products-row .card-prod { 
-            /* AJUSTE: Tamanho aumentado (35vw / 145px min) para mais destaque */
             width: 35vw; 
             min-width: 145px; 
             max-width: 190px;
             flex-shrink: 0;
         }
 
-        /* CARD REDESIGN - APP STYLE (CLEAN & NO BOX) */
         .card-prod {
             background: transparent; border: none; padding: 0; 
             display: flex; flex-direction: column;
@@ -333,7 +329,6 @@
             #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 40px 20px; padding-top: calc(var(--app-header-height) + 20px); padding-bottom: 100px; }
             .cp-title { -webkit-line-clamp: 2; min-height: 2.6em; }
             
-            /* RESET MARGINS ON DESKTOP TO CONTAIN SCROLL INSIDE 1200PX */
             .horizontal-products-row {
                 margin-left: 0;
                 margin-right: 0;
@@ -981,9 +976,14 @@
                 // Button logic (Circular +) with STOP PROPAGATION to prevent opening details modal
                 const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1)">+</div>`;
                 
+                // Trash Icon
+                const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+                const decContent = qty === 1 ? trashIcon : '-';
+
                 // Qty logic with STOP PROPAGATION
                 const qtyHtml = `<div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()">
-                                    <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                                    <div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${decContent}</div>
                                     <div class="qcf-val" id="qty-val-${p.id}">${qty}</div>
                                     <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
                                  </div>`;
@@ -1075,12 +1075,24 @@
                 const btnAdd = document.getElementById(`btn-add-${id}`);
                 const qtyCtrl = document.getElementById(`qty-ctrl-${id}`);
                 const qtyVal = document.getElementById(`qty-val-${id}`);
+                const btnDec = document.getElementById(`btn-dec-${id}`); // New selection
                 
+                const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
                 if (btnAdd && qtyCtrl && qtyVal) {
                     if (qty > 0) {
                         btnAdd.classList.add('hidden');
                         qtyCtrl.classList.remove('hidden');
                         qtyVal.innerText = qty;
+                        
+                        // Update Icon logic
+                        if (btnDec) {
+                            if (qty === 1) {
+                                btnDec.innerHTML = trashIcon;
+                            } else {
+                                btnDec.innerHTML = '-';
+                            }
+                        }
                     } else {
                         btnAdd.classList.remove('hidden');
                         qtyCtrl.classList.add('hidden');
