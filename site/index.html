@@ -133,6 +133,20 @@
         .hero h1 span { color: var(--primary); }
         .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
         
+        /* NOVO BOTÃO MONTE SUA CESTA - REMOVIDO TEMPORARIAMENTE MAS CSS MANTIDO CASO PRECISE */
+        .hero-actions { margin-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 8px; display: none; } 
+        .btn-hero-custom { 
+            background: var(--primary); color: white; padding: 14px 28px; 
+            border-radius: 50px; font-weight: 700; font-size: 1rem; 
+            box-shadow: 0 4px 15px rgba(211, 26, 40, 0.3); transition: transform 0.2s; 
+            border: none; cursor: pointer;
+        }
+        .btn-hero-custom:active { transform: scale(0.96); }
+        .min-order-badge { 
+            font-size: 0.8rem; color: #666; font-weight: 600; 
+            background: #f3f4f6; padding: 4px 12px; border-radius: 20px; border: 1px solid #e5e7eb;
+        }
+
         .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
         .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 
@@ -163,7 +177,7 @@
 
         .hbc-carousel-wrapper { 
             overflow-x: auto; display: flex; gap: 12px; padding-bottom: 5px; scroll-behavior: smooth; 
-            scroll-snap-type: x mandatory;
+            /* ROLAGEM LIVRE AGORA */
         }
         .hbc-carousel-wrapper::-webkit-scrollbar { height: 4px; }
         .hbc-carousel-wrapper::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
@@ -173,7 +187,7 @@
             min-width: 135px; max-width: 135px; /* AUMENTADO 20% */
             display: flex; flex-direction: column;
             flex-shrink: 0;
-            scroll-snap-align: start;
+            /* ROLAGEM LIVRE AGORA - REMOVIDO SNAP ALIGN */
         }
         .cps-img-box {
             width: 100%; aspect-ratio: 1;
@@ -553,6 +567,11 @@
                 <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em até 24h</div></div>
                 <h1>A cesta básica que fica do seu jeito.</h1>
                 <p>Encomende sua cesta e pague somente na entrega na sua casa.</p>
+                
+                <div class="hero-actions">
+                    <button class="btn-hero-custom" onclick="App.openEmptyCustomizer()">Monte sua Cesta</button>
+                    <div class="min-order-badge">Pedido mínimo: R$ 200,00</div>
+                </div>
             </div>
         </section>
         
@@ -826,6 +845,21 @@
                                     this.renderAllLists();
                                     document.body.classList.add('loaded'); // Show UI
                                     return; 
+                                } else if (state.basketId === 'custom_create') {
+                                    // RESTORE CUSTOM CREATE MODE
+                                    this.cart = state.cart || {};
+                                    this.cartOrder = state.cartOrder || [];
+                                    this.currentBasket = { id: 'custom_create', nome: 'Minha Cesta Personalizada', valor: 0, items: [], limit: 999 };
+                                    this.originalCart = {};
+                                    this.currentLimit = 999;
+                                    
+                                    document.getElementById('home-view').classList.add('hidden');
+                                    document.getElementById('customizer-view').classList.remove('hidden');
+                                    document.body.classList.add('customizer-mode');
+                                    
+                                    this.renderAllLists();
+                                    document.body.classList.add('loaded');
+                                    return;
                                 }
                             }
                         } catch (e) { console.error("Restore error", e); localStorage.removeItem('da_state'); }
@@ -934,6 +968,32 @@
                         </div>`;
                     }).join('');
                 }
+            },
+
+            openEmptyCustomizer() {
+                // Configura uma cesta "virtual" vazia
+                this.currentBasket = { 
+                    id: 'custom_create', 
+                    nome: 'Minha Cesta Personalizada', 
+                    valor: 0, 
+                    items: [],
+                    limit: 999 
+                };
+                
+                this.cart = {};
+                this.cartOrder = [];
+                this.originalCart = {}; // Sem itens originais
+                this.currentLimit = 999; // Sem limite de troca
+                this.appliedCoupon = false;
+
+                document.getElementById('home-view').classList.add('hidden');
+                document.getElementById('customizer-view').classList.remove('hidden');
+                document.body.classList.add('customizer-mode');
+                
+                window.scrollTo(0,0);
+                this.renderAllLists();
+                this.saveState();
+                this.playIntro();
             },
 
             openCustomizer(id) {
@@ -1370,82 +1430,126 @@
                 const toast = document.getElementById('credit-toast');
                 const subToast = document.getElementById('credit-sub-toast');
 
-                // LÓGICA PADRÃO (CESTAS PRONTAS COM BASE FEE)
-                if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
-                     let startSum = 0;
-                     for(let i in this.originalCart) {
-                         let p = this.data.find(x => x.id === i);
-                         if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i];
-                     }
-                     this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
-                }
+                // LÓGICA DE MONTAGEM DO ZERO (MÍNIMO R$ 200)
+                if (this.currentBasket.id === 'custom_create') {
+                    const minOrder = 200.00;
+                    
+                    // Breakdown Simples para Cesta Personalizada
+                    let breakdownHtml = `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Itens Selecionados</span><span>R$ ${sum.toFixed(2).replace('.', ',')}</span></div>`;
+                    
+                    let displayTotal = sum;
 
-                const basketPrice = this.currentBasket.valor;
-                const effectiveTotal = sum + this.baseFee;
-                let displayTotal = 0;
-                let breakdownHtml = '';
+                    if(this.appliedCoupon) {
+                        displayTotal -= CONSTANTS.COUPON_VAL;
+                        if(displayTotal < 0) displayTotal = 0;
+                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`;
+                    }
 
-                // 1. Linha Valor Base
-                breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Valor da Cesta</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div>`;
-
-                if (effectiveTotal > basketPrice) {
-                    const exceeded = effectiveTotal - basketPrice;
-                    const threshold = basketPrice * 0.02; 
-
-                    // 2. Linha Adicionais
-                    breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#ea1d2c;"><span>Itens Adicionais</span><span>+ R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
-
-                    if (exceeded < threshold) {
-                        displayTotal = basketPrice;
-                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Desconto (Cortesia)</span><span>- R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
+                    document.getElementById('co-breakdown').innerHTML = breakdownHtml;
+                    
+                    // Bloqueio por Mínimo
+                    if (sum < minOrder) {
+                        const remaining = minOrder - sum;
+                        if (finalBtn) {
+                            finalBtn.disabled = true;
+                            finalBtn.innerText = `Mínimo de R$ 200,00 (Faltam R$ ${remaining.toFixed(2).replace('.', ',')})`;
+                            finalBtn.style.background = "#ccc";
+                        }
+                        // Oculta alertas de crédito de troca
+                        if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
+                        toast.classList.remove('visible');
+                        subToast.classList.remove('visible');
                     } else {
-                        displayTotal = effectiveTotal;
+                        if (finalBtn) {
+                            finalBtn.disabled = false;
+                            finalBtn.innerText = "Fazer Pedido no WhatsApp";
+                            finalBtn.style.background = "var(--primary)";
+                        }
                     }
+
+                    const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
+                    document.getElementById('co-total').innerText = txtTotal;
+                    document.getElementById('icb-total-val').innerText = txtTotal;
+                    document.getElementById('cart-count-badge').innerText = count;
+
                 } else {
-                    displayTotal = basketPrice;
-                }
-
-                if(this.appliedCoupon) {
-                    displayTotal -= CONSTANTS.COUPON_VAL;
-                    if(displayTotal < 0) displayTotal = 0;
-                    breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`;
-                }
-
-                document.getElementById('co-breakdown').innerHTML = breakdownHtml;
-
-                const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
-                document.getElementById('co-total').innerText = txtTotal;
-                document.getElementById('icb-total-val').innerText = txtTotal;
-                document.getElementById('cart-count-badge').innerText = count;
-                
-                if (basketPrice > effectiveTotal) {
-                    const diff = basketPrice - effectiveTotal;
-                    const diffTxt = diff.toFixed(2).replace('.',',');
-                    
-                    toast.innerText = `Você tem R$ ${diffTxt} em crédito!`;
-                    toast.classList.add('visible');
-                    subToast.classList.add('visible');
-                    
-                    if (modalCreditAlert) {
-                        document.getElementById('mca-val').innerText = diffTxt;
-                        modalCreditAlert.classList.remove('hidden');
+                    // LÓGICA PADRÃO (CESTAS PRONTAS COM BASE FEE)
+                    if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
+                         let startSum = 0;
+                         for(let i in this.originalCart) {
+                             let p = this.data.find(x => x.id === i);
+                             if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i];
+                         }
+                         this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
                     }
-                    
-                    if(finalBtn) {
-                        finalBtn.disabled = true;
-                        finalBtn.innerText = "Complete sua cesta para finalizar";
-                        finalBtn.style.background = "#ccc";
+
+                    const basketPrice = this.currentBasket.valor;
+                    const effectiveTotal = sum + this.baseFee;
+                    let displayTotal = 0;
+                    let breakdownHtml = '';
+
+                    // 1. Linha Valor Base
+                    breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Valor da Cesta</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div>`;
+
+                    if (effectiveTotal > basketPrice) {
+                        const exceeded = effectiveTotal - basketPrice;
+                        const threshold = basketPrice * 0.02; 
+
+                        // 2. Linha Adicionais
+                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#ea1d2c;"><span>Itens Adicionais</span><span>+ R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
+
+                        if (exceeded < threshold) {
+                            displayTotal = basketPrice;
+                            breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Desconto (Cortesia)</span><span>- R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
+                        } else {
+                            displayTotal = effectiveTotal;
+                        }
+                    } else {
+                        displayTotal = basketPrice;
                     }
-                } else {
-                    toast.classList.remove('visible');
-                    subToast.classList.remove('visible');
+
+                    if(this.appliedCoupon) {
+                        displayTotal -= CONSTANTS.COUPON_VAL;
+                        if(displayTotal < 0) displayTotal = 0;
+                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`;
+                    }
+
+                    document.getElementById('co-breakdown').innerHTML = breakdownHtml;
+
+                    const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
+                    document.getElementById('co-total').innerText = txtTotal;
+                    document.getElementById('icb-total-val').innerText = txtTotal;
+                    document.getElementById('cart-count-badge').innerText = count;
                     
-                    if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
-                    
-                    if(finalBtn) {
-                        finalBtn.disabled = false;
-                        finalBtn.innerText = "Fazer Pedido no WhatsApp";
-                        finalBtn.style.background = "var(--primary)";
+                    if (basketPrice > effectiveTotal) {
+                        const diff = basketPrice - effectiveTotal;
+                        const diffTxt = diff.toFixed(2).replace('.',',');
+                        
+                        toast.innerText = `Você tem R$ ${diffTxt} em crédito!`;
+                        toast.classList.add('visible');
+                        subToast.classList.add('visible');
+                        
+                        if (modalCreditAlert) {
+                            document.getElementById('mca-val').innerText = diffTxt;
+                            modalCreditAlert.classList.remove('hidden');
+                        }
+                        
+                        if(finalBtn) {
+                            finalBtn.disabled = true;
+                            finalBtn.innerText = "Complete sua cesta para finalizar";
+                            finalBtn.style.background = "#ccc";
+                        }
+                    } else {
+                        toast.classList.remove('visible');
+                        subToast.classList.remove('visible');
+                        
+                        if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
+                        
+                        if(finalBtn) {
+                            finalBtn.disabled = false;
+                            finalBtn.innerText = "Fazer Pedido no WhatsApp";
+                            finalBtn.style.background = "var(--primary)";
+                        }
                     }
                 }
 
