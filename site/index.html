@@ -133,6 +133,20 @@
         .hero h1 span { color: var(--primary); }
         .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
         
+        /* NOVO BOTÃO MONTE SUA CESTA */
+        .hero-actions { margin-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .btn-hero-custom { 
+            background: var(--primary); color: white; padding: 14px 28px; 
+            border-radius: 50px; font-weight: 700; font-size: 1rem; 
+            box-shadow: 0 4px 15px rgba(211, 26, 40, 0.3); transition: transform 0.2s; 
+            border: none; cursor: pointer;
+        }
+        .btn-hero-custom:active { transform: scale(0.96); }
+        .min-order-badge { 
+            font-size: 0.8rem; color: #666; font-weight: 600; 
+            background: #f3f4f6; padding: 4px 12px; border-radius: 20px; border: 1px solid #e5e7eb;
+        }
+
         .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
         .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 
@@ -145,45 +159,76 @@
         @media(min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
         @media(min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); gap: 30px; } }
 
-        /* HOME CARD */
+        /* --- NEW HOME CARD STYLE --- */
         .home-basket-card {
             background: #fff; border: none; border-radius: 12px;
             overflow: hidden; display: flex; flex-direction: column;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             transition: transform 0.2s, box-shadow 0.2s;
+            padding: 20px;
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        .hbc-top { display: grid; grid-template-columns: 220px 1fr; gap: 15px; padding: 16px; align-items: center; }
-        .hbc-img-wrap { width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; }
-        .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .hbc-header { margin-bottom: 15px; text-align: left; }
+        .hbc-title { font-size: 1.4rem; font-weight: 800; color: #2e2e2e; text-transform: capitalize; line-height: 1.1; letter-spacing: -0.5px; margin: 0; }
         
-        .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
-        .hbc-title { font-size: 1.3rem; font-weight: 800; color: #2e2e2e; line-height: 1.2; margin-bottom: 8px; text-transform: capitalize; letter-spacing: -0.5px; }
-        .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
-        
-        .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        .hbc-items-slider { display: flex; gap: 4px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
-        
-        /* ITENS DA CESTA NA HOME */
-        .hbc-item { 
-            flex: 0 0 110px; 
-            display: flex; flex-direction: column; align-items: center; gap: 4px; 
-            background: transparent; 
-            padding: 0;
-        }
-        .hbc-item-img-box {
-             width: 100px; height: 100px; 
-             background: #f3f4f6; 
-             border-radius: 12px;
-             display: flex; align-items: center; justify-content: center;
-        }
-        .hbc-item img { width: 90px; height: 90px; object-fit: contain; } 
-        .hbc-item span { font-size: 0.8rem; font-weight: 700; color: #555; }
+        /* Carousel Container within Card */
+        .hbc-carousel-wrapper { margin-bottom: 15px; overflow-x: auto; display: flex; gap: 12px; padding-bottom: 5px; scroll-behavior: smooth; }
+        .hbc-carousel-wrapper::-webkit-scrollbar { height: 4px; }
+        .hbc-carousel-wrapper::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
 
-        .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
-        .btn-home-cust { width: 100%; padding: 12px; background: #ffffff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; font-weight: 700; font-size: 0.95rem; text-align: center; }
-        .btn-home-order { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; text-align: center; }
+        /* STATIC PRODUCT CARD (HOME ONLY) */
+        .card-prod-static {
+            min-width: 110px; max-width: 110px;
+            display: flex; flex-direction: column;
+            flex-shrink: 0;
+        }
+        .cps-img-box {
+            width: 100%; aspect-ratio: 1;
+            background: #f3f4f6; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 6px; position: relative; overflow: hidden;
+        }
+        .cps-img { width: 95%; height: 95%; object-fit: contain; }
+        
+        .cps-qty-badge {
+            position: absolute; top: 6px; right: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary); font-weight: 800;
+            font-size: 0.75rem; padding: 2px 6px;
+            border-radius: 4px; border: 1px solid #eee;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .cps-name {
+            font-size: 0.75rem; color: #444; line-height: 1.25;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+            font-weight: 500;
+        }
+
+        /* CARD FOOTER */
+        .hbc-footer {
+            margin-top: auto; border-top: 1px solid #f0f0f0;
+            padding-top: 15px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .hbc-price-row {
+            font-size: 1.3rem; font-weight: 800; color: #15803d; 
+            margin-bottom: 5px; display: block;
+        }
+        .hbc-price-label { font-size: 0.75rem; color: #888; font-weight: 600; display: block; margin-bottom: -2px; }
+
+        .btn-home-cust { 
+            width: 100%; padding: 12px; 
+            background: #ffffff; color: var(--primary); 
+            border: 1px solid var(--primary); border-radius: 8px; 
+            font-weight: 700; font-size: 0.9rem; text-align: center; 
+        }
+        .btn-home-order { 
+            width: 100%; padding: 12px; 
+            background: var(--secondary); color: white; /* Cor diferente para diferenciar */
+            border: none; border-radius: 8px; 
+            font-weight: 600; font-size: 0.9rem; text-align: center; 
+        }
 
         /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { 
@@ -521,152 +566,17 @@
                 <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em até 24h</div></div>
                 <h1>A cesta básica que fica do seu jeito.</h1>
                 <p>Encomende sua cesta e pague somente na entrega na sua casa.</p>
+                
+                <div class="hero-actions">
+                    <button class="btn-hero-custom" onclick="App.openEmptyCustomizer()">Monte sua Cesta</button>
+                    <div class="min-order-badge">Pedido mínimo: R$ 200,00</div>
+                </div>
             </div>
         </section>
         
         <div class="container home-grid-container" id="baskets-anchor">
             <div id="home-list" class="baskets-grid">
-                
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Econômica" loading="eager" fetchpriority="high"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Econômica</h2><div class="hbc-price">R$ 85,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                        <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                        <div class="hbc-items-slider">
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>1un</span></div>
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo 900ml"></div><span>1un</span></div>
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão 1kg"></div><span>1un</span></div>
-                           <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Café 250g"></div><span>1un</span></div>
-                        </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
                 </div>
-
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Koblenz" loading="lazy"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Mini Koblenz</h2><div class="hbc-price">R$ 170,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                         <div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>
-                         <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>1un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>2un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão"></div><span>2un</span></div>
-                         </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
-                </div>
-
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Mini Alvino" loading="lazy"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Mini Alvino</h2><div class="hbc-price">R$ 165,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                        <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>1un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>2un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão"></div><span>2un</span></div>
-                         </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
-                </div>
-
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Koblenz" loading="lazy"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Pequena Koblenz</h2><div class="hbc-price">R$ 220,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                        <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>2un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>2un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Feijão"></div><span>2un</span></div>
-                         </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
-                </div>
-
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Pequena Alvino" loading="lazy"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Pequena Alvino</h2><div class="hbc-price">R$ 215,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                         <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>2un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>1un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>2un</span></div>
-                         </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
-                </div>
-
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Koblenz" loading="lazy"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Média Koblenz</h2><div class="hbc-price">R$ 325,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                         <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>3un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>2un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Óleo"></div><span>3un</span></div>
-                         </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
-                </div>
-
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Média Alvino" loading="lazy"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Média Alvino</h2><div class="hbc-price">R$ 320,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                        <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>3un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>2un</span></div>
-                         </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
-                </div>
-
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Koblenz" loading="lazy"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Grande Koblenz</h2><div class="hbc-price">R$ 390,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                        <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>4un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>3un</span></div>
-                         </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
-                </div>
-
-                <div class="home-basket-card">
-                    <div class="hbc-top">
-                        <div class="hbc-img-wrap"><img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="hbc-img" alt="Cesta Grande Alvino" loading="lazy"></div>
-                        <div class="hbc-info-col"><h2 class="hbc-title">Cesta Grande Alvino</h2><div class="hbc-price">R$ 380,00</div></div>
-                    </div>
-                    <div class="hbc-content">
-                        <div class="hbc-items-slider">
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Arroz 5kg"></div><span>4un</span></div>
-                            <div class="hbc-item"><div class="hbc-item-img-box"><img src="img/placeholder.jpg" alt="Açúcar 2kg"></div><span>3un</span></div>
-                         </div>
-                        <div class="hbc-actions"><button class="btn-home-cust">Personalizar</button><button class="btn-home-order">Encomendar Agora</button></div>
-                    </div>
-                </div>
-
-            </div>
         </div>
 
         <footer class="main-footer">
@@ -934,6 +844,21 @@
                                     this.renderAllLists();
                                     document.body.classList.add('loaded'); // Show UI
                                     return; 
+                                } else if (state.basketId === 'custom_create') {
+                                    // RESTORE CUSTOM CREATE MODE
+                                    this.cart = state.cart || {};
+                                    this.cartOrder = state.cartOrder || [];
+                                    this.currentBasket = { id: 'custom_create', nome: 'Minha Cesta Personalizada', valor: 0, items: [], limit: 999 };
+                                    this.originalCart = {};
+                                    this.currentLimit = 999;
+                                    
+                                    document.getElementById('home-view').classList.add('hidden');
+                                    document.getElementById('customizer-view').classList.remove('hidden');
+                                    document.body.classList.add('customizer-mode');
+                                    
+                                    this.renderAllLists();
+                                    document.body.classList.add('loaded');
+                                    return;
                                 }
                             }
                         } catch (e) { console.error("Restore error", e); localStorage.removeItem('da_state'); }
@@ -987,41 +912,70 @@
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 
-                // If real data is loaded, overwrite placeholders
                 if (baskets.length > 0) {
                     list.innerHTML = baskets.map((p, index) => {
                         let carouselHtml = '';
                         if (p.items && p.items.length > 0) {
-                            carouselHtml = `<div style="font-size:0.75rem; color:#666; margin-bottom:4px; font-weight:600;">Produtos da Cesta:</div>` + 
-                            `<div class="hbc-items-slider">` + 
+                            carouselHtml = `<div class="hbc-carousel-wrapper">` + 
                                 p.items.map(i => {
                                     const itemData = this.data.find(d => d.id === String(i.id));
                                     if(!itemData) return '';
-                                    // A11Y: Safe ALT attribute
-                                    return `<div class="hbc-item"><div class="hbc-item-img-box"><img src="${itemData.imagem}" loading="lazy" alt="${itemData.nome.replace(/"/g, '"')}"></div><span>${i.qty || 1}un</span></div>`;
+                                    return `
+                                    <div class="card-prod-static">
+                                        <div class="cps-img-box">
+                                            <span class="cps-qty-badge">${i.qty || 1}x</span>
+                                            <img src="${itemData.imagem}" class="cps-img" loading="lazy" alt="${itemData.nome.replace(/"/g, '"')}">
+                                        </div>
+                                        <div class="cps-name">${itemData.nome}</div>
+                                    </div>`;
                                 }).join('') + `</div>`;
                         }
                         
-                        const loadingAttr = index === 0 ? 'eager' : 'lazy';
-                        const fetchPriority = index === 0 ? 'fetchpriority="high"' : '';
-                        
-                        // A11Y: Safe ALT attribute
                         return `
                         <div class="home-basket-card">
-                            <div class="hbc-top">
-                                <div class="hbc-img-wrap"><img src="${p.imagem}" class="hbc-img" loading="${loadingAttr}" ${fetchPriority} alt="${p.nome.replace(/"/g, '"')}"></div>
-                                <div class="hbc-info-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div></div>
+                            <div class="hbc-header">
+                                <h2 class="hbc-title">${p.nome}</h2>
                             </div>
-                            <div class="hbc-content">
-                                ${carouselHtml}
-                                <div class="hbc-actions">
-                                    <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button>
-                                    <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar Agora</button>
+                            
+                            ${carouselHtml}
+                            
+                            <div class="hbc-footer">
+                                <div class="hbc-price-row">
+                                    <span class="hbc-price-label">Valor da Cesta</span>
+                                    R$ ${p.valor.toFixed(2).replace('.',',')}
                                 </div>
+                                <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Trocar e Adicionar produtos</button>
+                                <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar esta cesta padrão</button>
                             </div>
                         </div>`;
                     }).join('');
                 }
+            },
+
+            openEmptyCustomizer() {
+                // Configura uma cesta "virtual" vazia
+                this.currentBasket = { 
+                    id: 'custom_create', 
+                    nome: 'Minha Cesta Personalizada', 
+                    valor: 0, 
+                    items: [],
+                    limit: 999 
+                };
+                
+                this.cart = {};
+                this.cartOrder = [];
+                this.originalCart = {}; // Sem itens originais
+                this.currentLimit = 999; // Sem limite de troca
+                this.appliedCoupon = false;
+
+                document.getElementById('home-view').classList.add('hidden');
+                document.getElementById('customizer-view').classList.remove('hidden');
+                document.body.classList.add('customizer-mode');
+                
+                window.scrollTo(0,0);
+                this.renderAllLists();
+                this.saveState();
+                this.playIntro();
             },
 
             openCustomizer(id) {
@@ -1453,99 +1407,131 @@
                     }
                 }
                 
-                if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
-                     let startSum = 0;
-                     for(let i in this.originalCart) {
-                         let p = this.data.find(x => x.id === i);
-                         if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i];
-                     }
-                     this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
-                }
-
-                // Cálculo Financeiro Detalhado
-                const basketPrice = this.currentBasket.valor;
-                const effectiveTotal = sum + this.baseFee;
-                let displayTotal = 0;
-                let breakdownHtml = '';
-
-                // 1. Linha Valor Base
-                breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Valor da Cesta</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div>`;
-
-                if (effectiveTotal > basketPrice) {
-                    const exceeded = effectiveTotal - basketPrice;
-                    const threshold = basketPrice * 0.02; // 2% do valor da cesta
-
-                    // 2. Linha Adicionais
-                    breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#ea1d2c;"><span>Itens Adicionais</span><span>+ R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
-
-                    if (exceeded < threshold) {
-                        // 3. Linha Desconto (Cortesia)
-                        displayTotal = basketPrice;
-                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Desconto (Cortesia)</span><span>- R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
-                    } else {
-                        displayTotal = effectiveTotal;
-                    }
-                } else {
-                    // Se não excedeu, paga o valor da cesta
-                    displayTotal = basketPrice;
-                }
-
-                // APLICAR CUPOM
-                if(this.appliedCoupon) {
-                    displayTotal -= CONSTANTS.COUPON_VAL;
-                    if(displayTotal < 0) displayTotal = 0;
-                    breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`;
-                }
-
-                // Atualiza breakdown no Modal
-                const bdEl = document.getElementById('co-breakdown');
-                if(bdEl) bdEl.innerHTML = breakdownHtml;
-
-                // Atualiza Totais
-                const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
-                document.getElementById('co-total').innerText = txtTotal;
-                document.getElementById('icb-total-val').innerText = txtTotal;
-                document.getElementById('cart-count-badge').innerText = count;
-                if(document.getElementById('ds-total')) document.getElementById('ds-total').innerText = txtTotal;
-                
-                // Toasts & Bloqueio Checkout
-                const toast = document.getElementById('credit-toast');
-                const subToast = document.getElementById('credit-sub-toast');
                 const finalBtn = document.getElementById('final-btn');
                 const modalCreditAlert = document.getElementById('modal-credit-alert');
-                
-                if (basketPrice > effectiveTotal) {
-                    const diff = basketPrice - effectiveTotal;
-                    const diffTxt = diff.toFixed(2).replace('.',',');
+                const toast = document.getElementById('credit-toast');
+                const subToast = document.getElementById('credit-sub-toast');
+
+                // LÓGICA DE MONTAGEM DO ZERO (MÍNIMO R$ 200)
+                if (this.currentBasket.id === 'custom_create') {
+                    const minOrder = 200.00;
                     
-                    // TOASTS
-                    toast.innerText = `Você tem R$ ${diffTxt} em crédito!`;
-                    toast.classList.add('visible');
-                    subToast.classList.add('visible');
+                    // Breakdown Simples para Cesta Personalizada
+                    let breakdownHtml = `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Itens Selecionados</span><span>R$ ${sum.toFixed(2).replace('.', ',')}</span></div>`;
                     
-                    // MODAL INTERNAL ALERT
-                    if (modalCreditAlert) {
-                        document.getElementById('mca-val').innerText = diffTxt;
-                        modalCreditAlert.classList.remove('hidden');
+                    let displayTotal = sum;
+
+                    if(this.appliedCoupon) {
+                        displayTotal -= CONSTANTS.COUPON_VAL;
+                        if(displayTotal < 0) displayTotal = 0;
+                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`;
                     }
+
+                    document.getElementById('co-breakdown').innerHTML = breakdownHtml;
                     
-                    // BLOQUEIA BOTAO
-                    if(finalBtn) {
-                        finalBtn.disabled = true;
-                        finalBtn.innerText = "Complete sua cesta para finalizar";
+                    // Bloqueio por Mínimo
+                    if (sum < minOrder) {
+                        const remaining = minOrder - sum;
+                        if (finalBtn) {
+                            finalBtn.disabled = true;
+                            finalBtn.innerText = `Mínimo de R$ 200,00 (Faltam R$ ${remaining.toFixed(2).replace('.', ',')})`;
+                            finalBtn.style.background = "#ccc";
+                        }
+                        // Oculta alertas de crédito de troca
+                        if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
+                        toast.classList.remove('visible');
+                        subToast.classList.remove('visible');
+                    } else {
+                        if (finalBtn) {
+                            finalBtn.disabled = false;
+                            finalBtn.innerText = "Fazer Pedido no WhatsApp";
+                            finalBtn.style.background = "var(--primary)";
+                        }
                     }
+
+                    const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
+                    document.getElementById('co-total').innerText = txtTotal;
+                    document.getElementById('icb-total-val').innerText = txtTotal;
+                    document.getElementById('cart-count-badge').innerText = count;
+
                 } else {
-                    // Hide Toasts
-                    toast.classList.remove('visible');
-                    subToast.classList.remove('visible');
+                    // LÓGICA PADRÃO (CESTAS PRONTAS COM BASE FEE)
+                    if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
+                         let startSum = 0;
+                         for(let i in this.originalCart) {
+                             let p = this.data.find(x => x.id === i);
+                             if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i];
+                         }
+                         this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
+                    }
+
+                    const basketPrice = this.currentBasket.valor;
+                    const effectiveTotal = sum + this.baseFee;
+                    let displayTotal = 0;
+                    let breakdownHtml = '';
+
+                    // 1. Linha Valor Base
+                    breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Valor da Cesta</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div>`;
+
+                    if (effectiveTotal > basketPrice) {
+                        const exceeded = effectiveTotal - basketPrice;
+                        const threshold = basketPrice * 0.02; 
+
+                        // 2. Linha Adicionais
+                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#ea1d2c;"><span>Itens Adicionais</span><span>+ R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
+
+                        if (exceeded < threshold) {
+                            displayTotal = basketPrice;
+                            breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Desconto (Cortesia)</span><span>- R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
+                        } else {
+                            displayTotal = effectiveTotal;
+                        }
+                    } else {
+                        displayTotal = basketPrice;
+                    }
+
+                    if(this.appliedCoupon) {
+                        displayTotal -= CONSTANTS.COUPON_VAL;
+                        if(displayTotal < 0) displayTotal = 0;
+                        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`;
+                    }
+
+                    document.getElementById('co-breakdown').innerHTML = breakdownHtml;
+
+                    const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
+                    document.getElementById('co-total').innerText = txtTotal;
+                    document.getElementById('icb-total-val').innerText = txtTotal;
+                    document.getElementById('cart-count-badge').innerText = count;
                     
-                    // Hide Modal Alert
-                    if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
-                    
-                    // Unlock Button
-                    if(finalBtn) {
-                        finalBtn.disabled = false;
-                        finalBtn.innerText = "Fazer Pedido no WhatsApp";
+                    if (basketPrice > effectiveTotal) {
+                        const diff = basketPrice - effectiveTotal;
+                        const diffTxt = diff.toFixed(2).replace('.',',');
+                        
+                        toast.innerText = `Você tem R$ ${diffTxt} em crédito!`;
+                        toast.classList.add('visible');
+                        subToast.classList.add('visible');
+                        
+                        if (modalCreditAlert) {
+                            document.getElementById('mca-val').innerText = diffTxt;
+                            modalCreditAlert.classList.remove('hidden');
+                        }
+                        
+                        if(finalBtn) {
+                            finalBtn.disabled = true;
+                            finalBtn.innerText = "Complete sua cesta para finalizar";
+                            finalBtn.style.background = "#ccc";
+                        }
+                    } else {
+                        toast.classList.remove('visible');
+                        subToast.classList.remove('visible');
+                        
+                        if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
+                        
+                        if(finalBtn) {
+                            finalBtn.disabled = false;
+                            finalBtn.innerText = "Fazer Pedido no WhatsApp";
+                            finalBtn.style.background = "var(--primary)";
+                        }
                     }
                 }
 
