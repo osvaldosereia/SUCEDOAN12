@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V8 | Importador Robusto</title>
+    <title>SISTEMA V9 | Auditoria de Importação</title>
     
     <style>
         /* --- 1. CORE STYLES --- */
@@ -106,29 +106,25 @@
         th { text-align: left; padding: 10px; background: #f8fafc; color: var(--text-muted); border-bottom: 2px solid var(--border); font-weight: 700; position: sticky; top: 0; z-index: 10; }
         td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:hover { background: #f1f5f9; }
+        tr.selected { background: #eff6ff; }
 
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; }
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-red { background: #fee2e2; color: #991b1b; }
         .bg-gray { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-        /* Combo Specifics */
+        /* Specific Modules */
         .combo-box { background: #eff6ff; padding: 10px; border: 1px dashed #bfdbfe; border-radius: 6px; margin-top: 5px; display: none; }
         .search-results { position: absolute; background: white; width: 100%; max-height: 180px; overflow-y: auto; border: 1px solid var(--border); z-index: 50; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px; display: none; }
         .search-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
         .search-item:hover { background: #f8fafc; color: var(--primary); }
-        
-        .paste-area {
-            width: 100%; height: 100px; 
-            border: 1px solid #cbd5e1; border-radius: 4px; 
-            padding: 8px; font-family: monospace; font-size: 0.8rem;
-            margin-bottom: 5px;
-        }
+        .paste-area { width: 100%; height: 100px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 5px; }
 
         /* Modal */
-        dialog { margin: auto; border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 90%; max-width: 700px; padding: 0; }
+        dialog { margin: auto; border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 90%; max-width: 900px; padding: 0; }
         dialog::backdrop { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px); }
-        .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+        .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+        .modal-footer { padding: 15px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
 
         /* Category Tree */
         .tree-node { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 5px; overflow: hidden; background: white; }
@@ -144,11 +140,11 @@
 <body>
 
 <header>
-    <h1>📋 CATÁLOGO PRO V8</h1>
+    <h1>📋 CATÁLOGO PRO V9</h1>
     <div style="display:flex; gap:8px;">
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 Categorias</button>
-        <button onclick="Importer.open()" class="btn btn-ghost">📥 Importar JSON</button>
-        <button onclick="App.exportData()" class="btn btn-primary">💾 Exportar JSON</button>
+        <button onclick="Importer.open()" class="btn btn-primary">📥 Importar (Auditoria)</button>
+        <button onclick="App.exportData()" class="btn btn-ghost">💾 Exportar</button>
     </div>
 </header>
 
@@ -168,10 +164,12 @@
                     <div style="grid-column: span 2;"><label>EAN / GTIN</label><input type="text" id="p-ean"></div>
                 </div>
                 <div class="form-group"><label>Nome do Produto</label><input type="text" id="p-nome" required style="font-weight:600;"></div>
+                
                 <div class="form-grid-2">
                     <div><label>Fornecedor</label><input type="text" id="p-fornecedor" list="dl-fornecedores"><datalist id="dl-fornecedores"></datalist></div>
                     <div><label>Categoria</label><select id="p-categoria"><option value="">Sem Categoria</option></select></div>
                 </div>
+                
                 <div class="form-grid-2">
                     <div><label>Unidade</label><input type="text" id="p-unidade" placeholder="UN, CX, KG"></div>
                     <div><label>Imagem</label><input type="text" id="p-imageName" placeholder="foto.jpg"></div>
@@ -194,7 +192,7 @@
                     <div><label>Estoque Fiscal</label><input type="number" id="p-estoqueFiscal"></div>
                 </div>
                 <div class="form-grid-3">
-                    <div><label>Estoque Mín.</label><input type="number" id="p-limit"></div>
+                    <div><label>Minímo</label><input type="number" id="p-limit"></div>
                     <div><label>Peso Bruto</label><input type="number" id="p-peso" step="0.001"></div>
                     <div><label>Peso Líq.</label><input type="number" id="p-pesoLiq" step="0.001"></div>
                 </div>
@@ -220,20 +218,18 @@
                 
                 <div id="combo-area" class="combo-box">
                     <div style="margin-bottom:15px; border-bottom:1px dashed #bfdbfe; padding-bottom:10px;">
-                        <label style="color:var(--primary);">📋 Colar Lista (Formato: 1x Nome)</label>
-                        <textarea id="combo-paste" class="paste-area" placeholder="Exemplo:&#10;1x Arroz 5kg&#10;2x Feijão 1kg"></textarea>
+                        <label style="color:var(--primary);">📋 Colar Lista (1x Nome)</label>
+                        <textarea id="combo-paste" class="paste-area" placeholder="Ex:&#10;1x Arroz 5kg"></textarea>
                         <button type="button" onclick="ComboManager.processPaste()" class="btn btn-primary btn-block">Processar Lista</button>
                     </div>
-
                     <div style="position:relative;">
-                        <input type="text" id="combo-search" placeholder="Busca manual..." oninput="ComboManager.search(this.value)">
+                        <input type="text" id="combo-search" placeholder="Buscar manual..." oninput="ComboManager.search(this.value)">
                         <div id="combo-results" class="search-results"></div>
                     </div>
-                    
                     <div id="combo-list" style="margin-top:10px;"></div>
                 </div>
 
-                <div class="section-divider"><span>🔀 Variações & Vínculos</span></div>
+                <div class="section-divider"><span>🔀 Variações</span></div>
                 <div class="form-group"><label>EANs Extras ( | )</label><textarea id="p-variacoesEan" style="height:40px;"></textarea></div>
                 <div class="form-group"><label>Nomes Alternativos ( | )</label><textarea id="p-variacoesNome" style="height:40px;"></textarea></div>
 
@@ -296,22 +292,53 @@
     </div>
 </dialog>
 
+<dialog id="modal-import-preview">
+    <div style="padding:15px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+        <span style="font-weight:700; color:var(--primary);">📥 Auditoria de Importação</span>
+        <button onclick="document.getElementById('modal-import-preview').close()" class="btn btn-ghost btn-icon">✕</button>
+    </div>
+    <div class="modal-body">
+        <p style="margin-bottom:10px; font-size:0.9rem; color:var(--text-muted);">
+            Verifique os produtos encontrados antes de confirmar. Use as caixas de seleção.
+        </p>
+        <div style="margin-bottom:10px; display:flex; gap:10px;">
+            <button onclick="Importer.toggleAll(true)" class="btn btn-ghost">Marcar Todos</button>
+            <button onclick="Importer.toggleAll(false)" class="btn btn-ghost">Desmarcar Todos</button>
+        </div>
+        <table style="font-size:0.8rem;">
+            <thead>
+                <tr>
+                    <th style="width:30px;">#</th>
+                    <th>Cód.</th>
+                    <th>Nome Detectado</th>
+                    <th>Estoque</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="import-preview-list"></tbody>
+        </table>
+    </div>
+    <div class="modal-footer">
+        <span id="import-stats" style="margin-right:auto; font-size:0.8rem; font-weight:bold;"></span>
+        <button onclick="document.getElementById('modal-import-preview').close()" class="btn btn-ghost">Cancelar</button>
+        <button onclick="Importer.commit()" class="btn btn-success">✅ Confirmar e Lançar</button>
+    </div>
+</dialog>
+
 <input type="file" id="file-input" accept=".json" style="display:none;" onchange="Importer.run(this)">
 
 <script>
 /**
- * SISTEMA V8 - ROBUST
+ * SISTEMA V9 - AUDITORIA DE IMPORTAÇÃO
  */
 
 const DB = {
-    key: 'sys_v8_db',
+    key: 'sys_master_v9',
     get: () => {
         const raw = localStorage.getItem(DB.key);
-        // Garante estrutura mínima
         const data = raw ? JSON.parse(raw) : { produto: [], categorias: [] };
         if(!Array.isArray(data.produto)) data.produto = [];
         if(!Array.isArray(data.categorias)) data.categorias = [];
-        // Garante subs nas categorias
         data.categorias.forEach(c => { if(!Array.isArray(c.subs)) c.subs = []; });
         return data;
     },
@@ -325,9 +352,11 @@ const DB = {
 
 const App = {
     init: () => {
+        // Inicialização robusta
         App.renderBatches();
         CatManager.refreshSelects();
         App.renderList();
+        console.log("Sistema V9 Iniciado. Produtos carregados:", DB.get().produto.length);
     },
 
     save: (e) => {
@@ -335,9 +364,7 @@ const App = {
         const db = DB.get();
         const id = document.getElementById('p-id').value;
         const now = new Date().toISOString();
-
-        let codigo = document.getElementById('p-codigo').value;
-        if(!id && !codigo) codigo = DB.nextCode();
+        let codigo = document.getElementById('p-codigo').value || (id ? '' : DB.nextCode());
 
         let batches = [];
         for(let i=0; i<3; i++){
@@ -350,7 +377,7 @@ const App = {
             id: id || Date.now().toString(),
             dataCadastro: document.getElementById('p-dataCadastro').value || now,
             ultimaAtualizacao: now,
-            codigo: codigo,
+            codigo,
             ean: document.getElementById('p-ean').value.trim(),
             nome: document.getElementById('p-nome').value.trim().toUpperCase(),
             fornecedor: document.getElementById('p-fornecedor').value.toUpperCase(),
@@ -366,7 +393,7 @@ const App = {
             limit: Number(document.getElementById('p-limit').value)||0,
             peso: Number(document.getElementById('p-peso').value)||0,
             pesoLiq: Number(document.getElementById('p-pesoLiq').value)||0,
-            batches: batches,
+            batches,
             isCombo: document.getElementById('p-isCombo').checked,
             items: ComboManager.currentItems,
             variacoesEan: document.getElementById('p-variacoesEan').value.split('|').map(s=>s.trim()).filter(Boolean),
@@ -388,7 +415,7 @@ const App = {
         DB.save(db);
         App.resetForm();
         App.renderList();
-        alert('Salvo!');
+        alert('Produto Salvo!');
     },
 
     edit: (id) => {
@@ -405,18 +432,15 @@ const App = {
         document.getElementById('p-categoria').value = p.categoria || '';
         document.getElementById('p-unidade').value = p.unidade || '';
         document.getElementById('p-imageName').value = p.imageName || '';
-        
         document.getElementById('p-custo').value = p.custo;
         document.getElementById('p-valor').value = p.valor;
         document.getElementById('p-isOffer').checked = p.isOffer || false;
         document.getElementById('p-offerPrice').value = p.offerPrice || '';
-        
         document.getElementById('p-estoque').value = p.estoque;
         document.getElementById('p-estoqueFiscal').value = p.estoqueFiscal || '';
         document.getElementById('p-limit').value = p.limit || '';
         document.getElementById('p-peso').value = p.peso || '';
         document.getElementById('p-pesoLiq').value = p.pesoLiq || '';
-        
         document.getElementById('p-ncm').value = p.ncm || '';
         document.getElementById('p-cest').value = p.cest || '';
         document.getElementById('p-cfop').value = p.cfop || '';
@@ -427,7 +451,6 @@ const App = {
         document.getElementById('p-linkedName').value = p.linkedProdCode || '';
 
         App.renderBatches(p.batches || []);
-        
         document.getElementById('p-isCombo').checked = p.isCombo || false;
         ComboManager.currentItems = p.items || [];
         ComboManager.toggle(p.isCombo || false);
@@ -449,7 +472,6 @@ const App = {
         document.getElementById('form-prod').reset();
         document.getElementById('p-id').value = '';
         document.getElementById('p-codigo').value = '';
-        document.getElementById('p-dataCadastro').value = '';
         document.getElementById('p-margem').value = '';
         document.getElementById('form-title').innerText = 'Novo Produto';
         ComboManager.currentItems = [];
@@ -469,11 +491,11 @@ const App = {
     calcMargin: () => {
         const c = Number(document.getElementById('p-custo').value);
         const v = Number(document.getElementById('p-valor').value);
-        if(c > 0 && v > 0) {
-            const m = ((v - c) / c) * 100;
+        if(c>0 && v>0) {
+            const m = ((v-c)/c)*100;
             const el = document.getElementById('p-margem');
-            el.value = m.toFixed(1) + '%';
-            el.style.color = m < 0 ? 'red' : 'green';
+            el.value = m.toFixed(1)+'%';
+            el.style.color = m<0?'red':'green';
             el.style.fontWeight = 'bold';
         } else {
             document.getElementById('p-margem').value = '-';
@@ -482,8 +504,9 @@ const App = {
 
     renderList: () => {
         const db = DB.get();
-        
         const selForn = document.getElementById('f-forn');
+        
+        // Populate Suppliers if empty
         if(selForn.options.length === 1) {
             const forns = [...new Set(db.produto.map(p => p.fornecedor).filter(Boolean))].sort();
             forns.forEach(f => {
@@ -532,16 +555,143 @@ const App = {
         const now = new Date();
         const day = String(now.getDate()).padStart(2,'0');
         const month = String(now.getMonth()+1).padStart(2,'0');
-        const year = now.getFullYear();
-        const fileName = `produtos-${day}-${month}-${year}.json`;
-        const blobFull = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
+        const fileName = `produtos-${day}-${month}-${now.getFullYear()}.json`;
+        const blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blobFull);
+        a.href = URL.createObjectURL(blob);
         a.download = fileName;
         a.click();
     }
 };
 
+/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA (V9) --- */
+const Importer = {
+    stagedProducts: [],
+    stagedCats: [],
+    
+    open: () => document.getElementById('file-input').click(),
+    
+    run: (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const json = JSON.parse(e.target.result);
+                // NORMALIZAÇÃO DE DADOS
+                let rawList = [];
+                if(Array.isArray(json)) rawList = json;
+                else if(json.produto) rawList = json.produto;
+                else if(json.produtos) rawList = json.produtos;
+                
+                if(json.categorias) Importer.stagedCats = json.categorias;
+
+                // PREPARA LISTA PARA AUDITORIA (Detecta campos comuns mesmo se chave mudar)
+                Importer.stagedProducts = rawList.map(item => {
+                    const nome = item.nome || item.xProd || item.description || "SEM NOME DETECTADO";
+                    const estoque = item.estoque || item.qCom || item.quantity || 0;
+                    return {
+                        ...item,
+                        _tempName: nome,
+                        _tempStock: estoque,
+                        _selected: true // Padrão: marcado
+                    };
+                });
+
+                Importer.renderPreview();
+                document.getElementById('modal-import-preview').showModal();
+
+            } catch(err) { alert("Erro ao ler JSON: " + err.message); }
+        };
+        reader.readAsText(file);
+        input.value = '';
+    },
+
+    renderPreview: () => {
+        const tbody = document.getElementById('import-preview-list');
+        const db = DB.get();
+        
+        tbody.innerHTML = Importer.stagedProducts.map((p, idx) => {
+            const exists = db.produto.some(ex => ex.id === p.id || (ex.codigo && ex.codigo === p.codigo));
+            const status = exists 
+                ? '<span class="badge bg-gray">Atualizar</span>' 
+                : '<span class="badge bg-green">Novo</span>';
+            
+            return `
+            <tr class="${p._selected ? 'selected' : ''}" onclick="Importer.toggle(${idx})">
+                <td><input type="checkbox" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); Importer.toggle(${idx})"></td>
+                <td>${p.codigo || '-'}</td>
+                <td>${p._tempName}</td>
+                <td>${p._tempStock}</td>
+                <td>${status}</td>
+            </tr>`;
+        }).join('');
+
+        const selectedCount = Importer.stagedProducts.filter(p => p._selected).length;
+        document.getElementById('import-stats').innerText = `${selectedCount} produtos selecionados de ${Importer.stagedProducts.length}.`;
+    },
+
+    toggle: (idx) => {
+        Importer.stagedProducts[idx]._selected = !Importer.stagedProducts[idx]._selected;
+        Importer.renderPreview();
+    },
+
+    toggleAll: (val) => {
+        Importer.stagedProducts.forEach(p => p._selected = val);
+        Importer.renderPreview();
+    },
+
+    commit: () => {
+        const toImport = Importer.stagedProducts.filter(p => p._selected);
+        if(toImport.length === 0) return alert("Nenhum item selecionado.");
+
+        const db = DB.get();
+        let added = 0, updated = 0;
+
+        toImport.forEach(raw => {
+            // Garante campos mínimos usando a normalização feita na leitura
+            const cleanProd = {
+                ...raw,
+                nome: raw.nome || raw._tempName,
+                estoque: Number(raw.estoque || raw._tempStock),
+                id: raw.id || Date.now() + Math.random().toString()
+            };
+            
+            // Remove as chaves temporárias
+            delete cleanProd._tempName;
+            delete cleanProd._tempStock;
+            delete cleanProd._selected;
+
+            const idx = db.produto.findIndex(ex => ex.id === cleanProd.id || (ex.codigo && ex.codigo === cleanProd.codigo));
+            
+            if(idx > -1) {
+                db.produto[idx] = { ...db.produto[idx], ...cleanProd };
+                updated++;
+            } else {
+                db.produto.push(cleanProd);
+                added++;
+            }
+        });
+
+        // Importa Categorias se existirem
+        let catsAdded = 0;
+        Importer.stagedCats.forEach(c => {
+            if(!db.categorias.some(ex => ex.id === c.id || ex.nome === c.nome)) {
+                db.categorias.push(c);
+                catsAdded++;
+            }
+        });
+
+        DB.save(db);
+        document.getElementById('modal-import-preview').close();
+        App.renderList(); // Atualiza a lista principal IMEDIATAMENTE
+        CatManager.refreshSelects();
+        
+        alert(`Processo Concluído!\n\n+ ${added} Novos\n~ ${updated} Atualizados\n+ ${catsAdded} Categorias`);
+    }
+};
+
+/* --- MÓDULOS AUXILIARES --- */
 const ComboManager = {
     currentItems: [],
     toggle: (checked) => {
@@ -550,31 +700,19 @@ const ComboManager = {
     },
     processPaste: () => {
         const text = document.getElementById('combo-paste').value;
-        if(!text.trim()) return;
         const db = DB.get();
         const lines = text.split('\n');
-        let addedCount = 0;
-        let notFound = [];
-        lines.forEach(line => {
-            line = line.trim();
-            if(!line) return;
-            const match = line.match(/^(\d+)[xX]\s+(.+)$/);
-            if(match) {
-                const qty = parseInt(match[1]);
-                const name = match[2].trim().toUpperCase();
-                const product = db.produto.find(p => p.nome === name);
-                if(product) {
-                    ComboManager.add(product.id, product.codigo, product.nome, qty);
-                    addedCount++;
-                } else {
-                    notFound.push(name);
-                }
+        let count=0;
+        lines.forEach(l => {
+            const m = l.trim().match(/^(\d+)[xX]\s+(.+)$/);
+            if(m) {
+                const p = db.produto.find(x => x.nome === m[2].trim().toUpperCase());
+                if(p) { ComboManager.add(p.id, p.codigo, p.nome, parseInt(m[1])); count++; }
             }
         });
         document.getElementById('combo-paste').value = '';
-        let msg = `Processado! ${addedCount} itens.`;
-        if(notFound.length > 0) msg += `\n\nNão achados:\n- ${notFound.join('\n- ')}`;
-        alert(msg);
+        ComboManager.render();
+        alert(`${count} itens processados.`);
     },
     search: (val) => {
         const res = document.getElementById('combo-results');
@@ -587,23 +725,17 @@ const ComboManager = {
     add: (id, code, name, qty) => {
         const idx = ComboManager.currentItems.findIndex(i => i.id === id);
         if(idx > -1) ComboManager.currentItems[idx].qty += qty;
-        else ComboManager.currentItems.push({id, code, nome: name, qty: qty});
+        else ComboManager.currentItems.push({id, code, nome: name, qty});
         ComboManager.render();
         document.getElementById('combo-search').value = '';
         document.getElementById('combo-results').style.display = 'none';
     },
-    remove: (idx) => {
-        ComboManager.currentItems.splice(idx, 1);
-        ComboManager.render();
-    },
+    remove: (idx) => { ComboManager.currentItems.splice(idx,1); ComboManager.render(); },
     render: () => {
         document.getElementById('combo-list').innerHTML = ComboManager.currentItems.map((item, i) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:6px; border:1px solid #e2e8f0; border-radius:4px; margin-bottom:4px; font-size:0.8rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px; padding:5px; background:white; border:1px solid #ddd;">
                 <span>${item.nome}</span>
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <input type="number" value="${item.qty}" min="1" style="width:50px; padding:2px; height:24px;" onchange="ComboManager.currentItems[${i}].qty=Number(this.value)">
-                    <button onclick="ComboManager.remove(${i})" class="btn btn-danger btn-icon" style="width:24px; height:24px; padding:0;">✕</button>
-                </div>
+                <span>Qtd: ${item.qty} <button onclick="ComboManager.remove(${i})" class="btn-danger btn-icon" style="height:20px; width:20px;">x</button></span>
             </div>
         `).join('');
     }
@@ -623,10 +755,7 @@ const LinkedManager = {
         document.getElementById('p-linkedName').value = name;
         document.getElementById('linked-results').style.display = 'none';
     },
-    clear: () => {
-        document.getElementById('p-linkedId').value = '';
-        document.getElementById('p-linkedName').value = '';
-    }
+    clear: () => { document.getElementById('p-linkedId').value=''; document.getElementById('p-linkedName').value=''; }
 };
 
 const CatManager = {
@@ -634,187 +763,44 @@ const CatManager = {
     refreshSelects: () => {
         const db = DB.get();
         let html = '<option value="">Sem Categoria</option>';
-        let filterHtml = '<option value="">Todas Categorias</option>';
+        let filter = '<option value="">Todas Categorias</option>';
         db.categorias.forEach(c => {
             html += `<option value="${c.nome}">${c.nome}</option>`;
-            filterHtml += `<option value="${c.nome}">${c.nome}</option>`;
-            (c.subs || []).forEach(s => {
-                const val = `${c.nome} > ${s.nome}`;
-                html += `<option value="${val}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
-                filterHtml += `<option value="${val}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
+            filter += `<option value="${c.nome}">${c.nome}</option>`;
+            (c.subs||[]).forEach(s => {
+                html += `<option value="${c.nome} > ${s.nome}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
+                filter += `<option value="${c.nome} > ${s.nome}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
             });
         });
-        const sel = document.getElementById('p-categoria');
-        const selFiltro = document.getElementById('f-cat');
-        if(sel) { const old = sel.value; sel.innerHTML = html; sel.value = old; }
-        if(selFiltro) { const old = selFiltro.value; selFiltro.innerHTML = filterHtml; selFiltro.value = old; }
+        const s1 = document.getElementById('p-categoria'); if(s1) s1.innerHTML = html;
+        const s2 = document.getElementById('f-cat'); if(s2) s2.innerHTML = filter;
     },
     addRoot: () => {
-        const input = document.getElementById('new-cat-root');
-        const name = input.value.trim().toUpperCase();
-        if(!name) return;
+        const val = document.getElementById('new-cat-root').value.trim().toUpperCase();
+        if(!val) return;
         const db = DB.get();
-        if(db.categorias.some(c => c.nome === name)) return alert('Existe!');
-        db.categorias.push({ id: Date.now(), nome: name, subs: [] });
-        DB.save(db);
-        input.value = '';
-        CatManager.refreshAll();
+        if(db.categorias.some(c=>c.nome===val)) return alert('Existe');
+        db.categorias.push({id:Date.now(), nome:val, subs:[]});
+        DB.save(db); document.getElementById('new-cat-root').value=''; CatManager.refreshAll();
     },
-    addSub: (parentId) => {
-        const name = prompt("Nome:"); if(!name) return;
-        const db = DB.get();
-        const parent = db.categorias.find(c => c.id == parentId);
-        if(parent) {
-            if(!Array.isArray(parent.subs)) parent.subs = [];
-            parent.subs.push({ id: Date.now(), nome: name.trim().toUpperCase() });
-            DB.save(db);
-            CatManager.refreshAll();
-        }
-    },
-    delete: (id, parentId) => {
-        const db = DB.get();
-        let checkName = '';
-        if(parentId) {
-            const p = db.categorias.find(c => c.id == parentId);
-            const s = p.subs.find(x => x.id == id);
-            if(s) checkName = `${p.nome} > ${s.nome}`;
-        } else {
-            const c = db.categorias.find(c => c.id == id);
-            if(c) { if(c.subs.length > 0) return alert('Exclua subs primeiro.'); checkName = c.nome; }
-        }
-        if(db.produto.some(p => p.categoria && p.categoria.includes(checkName))) return alert('Categoria em uso.');
+    delete: (id, pid) => {
         if(!confirm('Excluir?')) return;
-        if(parentId) {
-            const p = db.categorias.find(c => c.id == parentId);
-            p.subs = p.subs.filter(x => x.id != id);
-        } else {
-            db.categorias = db.categorias.filter(x => x.id != id);
-        }
-        DB.save(db);
-        CatManager.refreshAll();
-    },
-    rename: (id, oldName, parentId) => {
-        const newName = prompt("Novo nome:", oldName); if(!newName) return;
-        const upper = newName.trim().toUpperCase();
         const db = DB.get();
-        let oldStr = '', newStr = '';
-        if(parentId) {
-            const p = db.categorias.find(c => c.id == parentId);
-            const s = p.subs.find(x => x.id == id);
-            oldStr = `${p.nome} > ${s.nome}`;
-            s.nome = upper;
-            newStr = `${p.nome} > ${upper}`;
+        if(pid) {
+            const p = db.categorias.find(c=>c.id==pid);
+            p.subs = p.subs.filter(s=>s.id!=id);
         } else {
-            const c = db.categorias.find(c => c.id == id);
-            oldStr = c.nome;
-            c.nome = upper;
-            newStr = upper;
+            db.categorias = db.categorias.filter(c=>c.id!=id);
         }
-        db.produto.forEach(p => {
-            if(p.categoria === oldStr) p.categoria = newStr;
-            else if(p.categoria.startsWith(oldStr + ' >')) p.categoria = p.categoria.replace(oldStr, newStr);
-        });
-        DB.save(db);
-        CatManager.refreshAll();
-        App.renderList();
+        DB.save(db); CatManager.refreshAll();
     },
     refreshAll: () => { CatManager.render(); CatManager.refreshSelects(); },
     render: () => {
         const db = DB.get();
-        const div = document.getElementById('cat-tree');
-        if(!db.categorias.length) { div.innerHTML='<div style="text-align:center;color:#ccc">Vazio</div>'; return; }
-        div.innerHTML = db.categorias.map(c => `
+        document.getElementById('cat-tree').innerHTML = db.categorias.map(c => `
             <div class="tree-node">
-                <div class="tree-head">
-                    <b>${c.nome}</b>
-                    <div style="display:flex;gap:5px;">
-                        <button onclick="CatManager.addSub(${c.id})" class="btn btn-ghost btn-icon" style="color:green;">＋</button>
-                        <button onclick="CatManager.rename(${c.id}, '${c.nome}')" class="btn btn-ghost btn-icon">✎</button>
-                        <button onclick="CatManager.delete(${c.id})" class="btn btn-ghost btn-icon" style="color:red;">✕</button>
-                    </div>
-                </div>
-                <div class="tree-subs ${(c.subs&&c.subs.length>0)?'open':''}">
-                    ${(c.subs||[]).map(s => `
-                        <div class="sub-node">
-                            <span>↳ ${s.nome}</span>
-                            <div style="display:flex;gap:5px;">
-                                <button onclick="CatManager.rename(${s.id}, '${s.nome}', ${c.id})" class="btn btn-ghost btn-icon">✎</button>
-                                <button onclick="CatManager.delete(${s.id}, ${c.id})" class="btn btn-ghost btn-icon" style="color:red;">✕</button>
-                            </div>
-                        </div>`).join('')}
-                </div>
+                <div class="tree-head"><b>${c.nome}</b> <button onclick="CatManager.delete(${c.id})" style="color:red; border:none; background:none; cursor:pointer;">✕</button></div>
             </div>`).join('');
-    }
-};
-
-/* --- IMPORTADOR ROBUSTO V8 --- */
-const Importer = {
-    open: () => document.getElementById('file-input').click(),
-    run: (input) => {
-        const file = input.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const json = JSON.parse(e.target.result);
-                const currentDB = DB.get();
-
-                // 1. Detecta produtos em várias estruturas possíveis
-                let incomingProducts = [];
-                if (Array.isArray(json)) {
-                    incomingProducts = json;
-                } else if (json.produto || json.produtos || json.products) {
-                    incomingProducts = json.produto || json.produtos || json.products;
-                }
-
-                // 2. Detecta categorias
-                let incomingCats = [];
-                if (json.categorias || json.categories) {
-                    incomingCats = json.categorias || json.categories;
-                }
-
-                if (incomingProducts.length === 0 && incomingCats.length === 0) {
-                    throw new Error("Nenhum dado reconhecível.");
-                }
-
-                if (!confirm(`IMPORTADOR V8\nLocalizei:\n- ${incomingProducts.length} Produtos\n- ${incomingCats.length} Categorias\n\nDeseja MESCLAR com os dados atuais?`)) {
-                    return;
-                }
-
-                // 3. Mescla Produtos (Atualiza existente ou Adiciona novo)
-                let added = 0, updated = 0;
-                incomingProducts.forEach(p => {
-                    const idx = currentDB.produto.findIndex(ex => ex.id === p.id || (ex.codigo && ex.codigo === p.codigo));
-                    if (idx > -1) {
-                        currentDB.produto[idx] = { ...currentDB.produto[idx], ...p };
-                        updated++;
-                    } else {
-                        // Garante ID se não tiver
-                        if(!p.id) p.id = Date.now() + Math.random();
-                        currentDB.produto.push(p);
-                        added++;
-                    }
-                });
-
-                // 4. Adiciona Categorias Faltantes
-                let catAdded = 0;
-                incomingCats.forEach(c => {
-                    if (!currentDB.categorias.find(ex => ex.id === c.id || ex.nome === c.nome)) {
-                        currentDB.categorias.push(c);
-                        catAdded++;
-                    }
-                });
-
-                DB.save(currentDB);
-                alert(`Sucesso!\n+ ${added} Produtos Novos\n~ ${updated} Produtos Atualizados\n+ ${catAdded} Categorias Novas`);
-                location.reload();
-
-            } catch (err) {
-                alert("Erro Fatal na Importação: " + err.message);
-            }
-        };
-        reader.readAsText(file);
-        input.value = '';
     }
 };
 
