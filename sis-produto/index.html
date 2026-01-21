@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V9 | Auditoria de Importação</title>
+    <title>SISTEMA V10 | Blindado</title>
     
     <style>
         /* --- 1. CORE STYLES --- */
@@ -126,21 +126,21 @@
         .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
         .modal-footer { padding: 15px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
 
+        /* Filters */
+        .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; padding: 10px; background: #f1f5f9; border-bottom: 1px solid var(--border); }
+        
         /* Category Tree */
         .tree-node { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 5px; overflow: hidden; background: white; }
         .tree-head { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; cursor: default; }
         .tree-subs { padding: 5px 0 5px 20px; border-top: 1px solid var(--border); display: none; }
         .tree-subs.open { display: block; }
         .sub-node { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px dashed #e2e8f0; font-size: 0.85rem; }
-
-        /* Filters */
-        .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; padding: 10px; background: #f1f5f9; border-bottom: 1px solid var(--border); }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>📋 CATÁLOGO PRO V9</h1>
+    <h1>📋 CATÁLOGO PRO V10</h1>
     <div style="display:flex; gap:8px;">
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 Categorias</button>
         <button onclick="Importer.open()" class="btn btn-primary">📥 Importar (Auditoria)</button>
@@ -256,7 +256,10 @@
             <span class="badge bg-gray" id="total-count">0 PRODUTOS</span>
         </div>
         <div class="filters">
-            <input type="text" id="f-search" oninput="App.renderList()" placeholder="🔍 Buscar...">
+            <div style="display:flex; gap:5px; grid-column: 1 / -1;">
+                <input type="text" id="f-search" oninput="App.renderList()" placeholder="🔍 Buscar Nome/EAN..." style="flex:1;">
+                <button onclick="App.clearFilters()" class="btn btn-ghost" title="Limpar Filtros">❌</button>
+            </div>
             <select id="f-cat" onchange="App.renderList()"><option value="">Todas Categorias</option></select>
             <select id="f-forn" onchange="App.renderList()"><option value="">Todos Fornecedores</option></select>
             <input type="number" id="f-stock" oninput="App.renderList()" placeholder="📉 Estoque Teto">
@@ -299,7 +302,7 @@
     </div>
     <div class="modal-body">
         <p style="margin-bottom:10px; font-size:0.9rem; color:var(--text-muted);">
-            Verifique os produtos encontrados antes de confirmar. Use as caixas de seleção.
+            Verifique os produtos encontrados antes de confirmar.
         </p>
         <div style="margin-bottom:10px; display:flex; gap:10px;">
             <button onclick="Importer.toggleAll(true)" class="btn btn-ghost">Marcar Todos</button>
@@ -329,16 +332,17 @@
 
 <script>
 /**
- * SISTEMA V9 - AUDITORIA DE IMPORTAÇÃO
+ * SISTEMA V10 - CORRETIVA E BLINDADA
  */
 
 const DB = {
-    key: 'sys_master_v9',
+    key: 'sys_master_v10',
     get: () => {
         const raw = localStorage.getItem(DB.key);
         const data = raw ? JSON.parse(raw) : { produto: [], categorias: [] };
         if(!Array.isArray(data.produto)) data.produto = [];
         if(!Array.isArray(data.categorias)) data.categorias = [];
+        // Garantia de integridade categorias
         data.categorias.forEach(c => { if(!Array.isArray(c.subs)) c.subs = []; });
         return data;
     },
@@ -352,11 +356,36 @@ const DB = {
 
 const App = {
     init: () => {
-        // Inicialização robusta
+        App.sanitizeDB(); // AUTO-CORREÇÃO DE DADOS
         App.renderBatches();
         CatManager.refreshSelects();
         App.renderList();
-        console.log("Sistema V9 Iniciado. Produtos carregados:", DB.get().produto.length);
+        console.log("Sistema V10 Iniciado.");
+    },
+
+    // --- CORREÇÃO AUTOMÁTICA DE DADOS ---
+    sanitizeDB: () => {
+        const db = DB.get();
+        let changed = false;
+        db.produto.forEach(p => {
+            // Garante campos mínimos que impedem a listagem de quebrar
+            if(!p.nome) { p.nome = p.xProd || p.description || "PRODUTO SEM NOME"; changed=true; }
+            if(p.categoria === undefined || p.categoria === null) { p.categoria = ""; changed=true; }
+            if(p.fornecedor === undefined || p.fornecedor === null) { p.fornecedor = ""; changed=true; }
+            if(!p.codigo) { p.codigo = DB.nextCode(); changed=true; }
+        });
+        if(changed) {
+            DB.save(db);
+            console.log("Base de dados corrigida automaticamente.");
+        }
+    },
+
+    clearFilters: () => {
+        document.getElementById('f-search').value = '';
+        document.getElementById('f-cat').value = '';
+        document.getElementById('f-forn').value = '';
+        document.getElementById('f-stock').value = '';
+        App.renderList();
     },
 
     save: (e) => {
@@ -378,12 +407,12 @@ const App = {
             dataCadastro: document.getElementById('p-dataCadastro').value || now,
             ultimaAtualizacao: now,
             codigo,
-            ean: document.getElementById('p-ean').value.trim(),
-            nome: document.getElementById('p-nome').value.trim().toUpperCase(),
-            fornecedor: document.getElementById('p-fornecedor').value.toUpperCase(),
-            categoria: document.getElementById('p-categoria').value,
-            unidade: document.getElementById('p-unidade').value,
-            imageName: document.getElementById('p-imageName').value,
+            ean: (document.getElementById('p-ean').value || '').trim(),
+            nome: (document.getElementById('p-nome').value || 'SEM NOME').trim().toUpperCase(),
+            fornecedor: (document.getElementById('p-fornecedor').value || '').toUpperCase(),
+            categoria: document.getElementById('p-categoria').value || '',
+            unidade: document.getElementById('p-unidade').value || '',
+            imageName: document.getElementById('p-imageName').value || '',
             custo: Number(document.getElementById('p-custo').value)||0,
             valor: Number(document.getElementById('p-valor').value)||0,
             isOffer: document.getElementById('p-isOffer').checked,
@@ -396,8 +425,8 @@ const App = {
             batches,
             isCombo: document.getElementById('p-isCombo').checked,
             items: ComboManager.currentItems,
-            variacoesEan: document.getElementById('p-variacoesEan').value.split('|').map(s=>s.trim()).filter(Boolean),
-            variacoesNome: document.getElementById('p-variacoesNome').value.split('|').map(s=>s.trim()).filter(Boolean),
+            variacoesEan: (document.getElementById('p-variacoesEan').value || '').split('|').map(s=>s.trim()).filter(Boolean),
+            variacoesNome: (document.getElementById('p-variacoesNome').value || '').split('|').map(s=>s.trim()).filter(Boolean),
             linkedProdId: document.getElementById('p-linkedId').value,
             linkedProdCode: document.getElementById('p-linkedName').value,
             ncm: document.getElementById('p-ncm').value,
@@ -415,7 +444,7 @@ const App = {
         DB.save(db);
         App.resetForm();
         App.renderList();
-        alert('Produto Salvo!');
+        alert('Salvo!');
     },
 
     edit: (id) => {
@@ -423,37 +452,40 @@ const App = {
         const p = db.produto.find(x => x.id === id);
         if(!p) return;
 
-        document.getElementById('p-id').value = p.id;
-        document.getElementById('p-dataCadastro').value = p.dataCadastro || '';
-        document.getElementById('p-codigo').value = p.codigo;
-        document.getElementById('p-ean').value = p.ean || '';
-        document.getElementById('p-nome').value = p.nome;
-        document.getElementById('p-fornecedor').value = p.fornecedor || '';
-        document.getElementById('p-categoria').value = p.categoria || '';
-        document.getElementById('p-unidade').value = p.unidade || '';
-        document.getElementById('p-imageName').value = p.imageName || '';
-        document.getElementById('p-custo').value = p.custo;
-        document.getElementById('p-valor').value = p.valor;
-        document.getElementById('p-isOffer').checked = p.isOffer || false;
-        document.getElementById('p-offerPrice').value = p.offerPrice || '';
-        document.getElementById('p-estoque').value = p.estoque;
-        document.getElementById('p-estoqueFiscal').value = p.estoqueFiscal || '';
-        document.getElementById('p-limit').value = p.limit || '';
-        document.getElementById('p-peso').value = p.peso || '';
-        document.getElementById('p-pesoLiq').value = p.pesoLiq || '';
-        document.getElementById('p-ncm').value = p.ncm || '';
-        document.getElementById('p-cest').value = p.cest || '';
-        document.getElementById('p-cfop').value = p.cfop || '';
+        // Populate safely
+        const setVal = (eid, val) => document.getElementById(eid).value = val || '';
         
-        document.getElementById('p-variacoesEan').value = (p.variacoesEan || []).join(' | ');
-        document.getElementById('p-variacoesNome').value = (p.variacoesNome || []).join(' | ');
-        document.getElementById('p-linkedId').value = p.linkedProdId || '';
-        document.getElementById('p-linkedName').value = p.linkedProdCode || '';
+        setVal('p-id', p.id);
+        setVal('p-dataCadastro', p.dataCadastro);
+        setVal('p-codigo', p.codigo);
+        setVal('p-ean', p.ean);
+        setVal('p-nome', p.nome);
+        setVal('p-fornecedor', p.fornecedor);
+        setVal('p-categoria', p.categoria);
+        setVal('p-unidade', p.unidade);
+        setVal('p-imageName', p.imageName);
+        setVal('p-custo', p.custo);
+        setVal('p-valor', p.valor);
+        setVal('p-offerPrice', p.offerPrice);
+        setVal('p-estoque', p.estoque);
+        setVal('p-estoqueFiscal', p.estoqueFiscal);
+        setVal('p-limit', p.limit);
+        setVal('p-peso', p.peso);
+        setVal('p-pesoLiq', p.pesoLiq);
+        setVal('p-ncm', p.ncm);
+        setVal('p-cest', p.cest);
+        setVal('p-cfop', p.cfop);
+        setVal('p-variacoesEan', (p.variacoesEan||[]).join(' | '));
+        setVal('p-variacoesNome', (p.variacoesNome||[]).join(' | '));
+        setVal('p-linkedId', p.linkedProdId);
+        setVal('p-linkedName', p.linkedProdCode);
 
+        document.getElementById('p-isOffer').checked = !!p.isOffer;
+        
         App.renderBatches(p.batches || []);
-        document.getElementById('p-isCombo').checked = p.isCombo || false;
+        document.getElementById('p-isCombo').checked = !!p.isCombo;
         ComboManager.currentItems = p.items || [];
-        ComboManager.toggle(p.isCombo || false);
+        ComboManager.toggle(p.isCombo);
 
         App.calcMargin();
         document.getElementById('form-title').innerText = `Editando: ${p.codigo}`;
@@ -504,26 +536,38 @@ const App = {
 
     renderList: () => {
         const db = DB.get();
-        const selForn = document.getElementById('f-forn');
         
-        // Populate Suppliers if empty
-        if(selForn.options.length === 1) {
+        // Refresh Suppliers
+        const selForn = document.getElementById('f-forn');
+        const currentForn = selForn.value;
+        if(selForn.options.length <= 1) {
             const forns = [...new Set(db.produto.map(p => p.fornecedor).filter(Boolean))].sort();
-            forns.forEach(f => {
-                selForn.innerHTML += `<option value="${f}">${f}</option>`;
-                document.getElementById('dl-fornecedores').innerHTML += `<option value="${f}">`;
-            });
+            selForn.innerHTML = '<option value="">Todos Fornecedores</option>' + forns.map(f => `<option value="${f}">${f}</option>`).join('');
+            selForn.value = currentForn;
+            document.getElementById('dl-fornecedores').innerHTML = forns.map(f => `<option value="${f}">`).join('');
         }
 
-        const term = document.getElementById('f-search').value.toLowerCase();
+        const term = (document.getElementById('f-search').value || '').toLowerCase();
         const cat = document.getElementById('f-cat').value;
         const forn = document.getElementById('f-forn').value;
         const stockTeto = document.getElementById('f-stock').value;
 
         let list = db.produto.filter(p => {
-            const txt = [p.nome, p.codigo, p.ean].join(' ').toLowerCase();
+            // NAVEGAÇÃO SEGURA: Impede crash se campo for null
+            const txt = [
+                (p.nome || ''), 
+                (p.codigo || ''), 
+                (p.ean || '')
+            ].join(' ').toLowerCase();
+            
             if(term && !txt.includes(term)) return false;
-            if(cat && p.categoria !== cat) return false;
+            
+            // Categoria: Comparação segura
+            if(cat) {
+                if(!p.categoria) return false;
+                if(p.categoria !== cat) return false;
+            }
+            
             if(forn && p.fornecedor !== forn) return false;
             if(stockTeto !== '' && p.estoque > Number(stockTeto)) return false;
             return true;
@@ -531,16 +575,25 @@ const App = {
 
         document.getElementById('total-count').innerText = `${list.length} PRODUTOS`;
 
+        if(list.length === 0) {
+            document.getElementById('prod-list').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Nenhum produto encontrado. Verifique os filtros.</td></tr>`;
+            return;
+        }
+
         document.getElementById('prod-list').innerHTML = list.slice(0, 50).map(p => {
             const stockClass = p.estoque <= 0 ? 'bg-red' : (p.estoque <= (p.limit||5) ? 'bg-gray' : 'bg-green');
+            const safeName = p.nome || 'SEM NOME';
+            const safeCat = p.categoria ? p.categoria.split('>').pop().trim() : '-';
+            const safeVal = (p.valor || 0).toFixed(2);
+            
             return `
             <tr>
                 <td>
-                    <div style="font-weight:700;">${p.nome}</div>
+                    <div style="font-weight:700;">${safeName}</div>
                     <div style="font-size:0.75rem; color:var(--text-muted);">${p.codigo} ${p.ean ? '| '+p.ean : ''}</div>
                 </td>
-                <td><span class="badge bg-gray">${p.categoria ? p.categoria.split('>').pop().trim() : '-'}</span></td>
-                <td>${p.isOffer ? `<span style="color:red; font-weight:bold;">R$ ${p.offerPrice.toFixed(2)}</span>` : `R$ ${p.valor.toFixed(2)}`}</td>
+                <td><span class="badge bg-gray">${safeCat}</span></td>
+                <td>${p.isOffer ? `<span style="color:red; font-weight:bold;">R$ ${(p.offerPrice||0).toFixed(2)}</span>` : `R$ ${safeVal}`}</td>
                 <td><span class="badge ${stockClass}">${p.estoque}</span></td>
                 <td style="text-align:right;">
                     <button onclick="App.edit('${p.id}')" class="btn btn-ghost btn-icon">✎</button>
@@ -553,9 +606,7 @@ const App = {
     exportData: () => {
         const db = DB.get();
         const now = new Date();
-        const day = String(now.getDate()).padStart(2,'0');
-        const month = String(now.getMonth()+1).padStart(2,'0');
-        const fileName = `produtos-${day}-${month}-${now.getFullYear()}.json`;
+        const fileName = `produtos-${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}.json`;
         const blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -564,7 +615,7 @@ const App = {
     }
 };
 
-/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA (V9) --- */
+/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA --- */
 const Importer = {
     stagedProducts: [],
     stagedCats: [],
@@ -578,7 +629,6 @@ const Importer = {
         reader.onload = (e) => {
             try {
                 const json = JSON.parse(e.target.result);
-                // NORMALIZAÇÃO DE DADOS
                 let rawList = [];
                 if(Array.isArray(json)) rawList = json;
                 else if(json.produto) rawList = json.produto;
@@ -586,7 +636,7 @@ const Importer = {
                 
                 if(json.categorias) Importer.stagedCats = json.categorias;
 
-                // PREPARA LISTA PARA AUDITORIA (Detecta campos comuns mesmo se chave mudar)
+                // PREPARA LISTA PARA AUDITORIA E NORMALIZA CAMPOS NA ENTRADA
                 Importer.stagedProducts = rawList.map(item => {
                     const nome = item.nome || item.xProd || item.description || "SEM NOME DETECTADO";
                     const estoque = item.estoque || item.qCom || item.quantity || 0;
@@ -594,9 +644,11 @@ const Importer = {
                         ...item,
                         _tempName: nome,
                         _tempStock: estoque,
-                        _selected: true // Padrão: marcado
+                        _selected: true
                     };
                 });
+
+                if(Importer.stagedProducts.length === 0) throw new Error("JSON sem produtos reconhecíveis");
 
                 Importer.renderPreview();
                 document.getElementById('modal-import-preview').showModal();
@@ -649,15 +701,12 @@ const Importer = {
         let added = 0, updated = 0;
 
         toImport.forEach(raw => {
-            // Garante campos mínimos usando a normalização feita na leitura
             const cleanProd = {
                 ...raw,
-                nome: raw.nome || raw._tempName,
+                nome: (raw.nome || raw._tempName || 'SEM NOME').toUpperCase(),
                 estoque: Number(raw.estoque || raw._tempStock),
                 id: raw.id || Date.now() + Math.random().toString()
             };
-            
-            // Remove as chaves temporárias
             delete cleanProd._tempName;
             delete cleanProd._tempStock;
             delete cleanProd._selected;
@@ -684,7 +733,11 @@ const Importer = {
 
         DB.save(db);
         document.getElementById('modal-import-preview').close();
-        App.renderList(); // Atualiza a lista principal IMEDIATAMENTE
+        
+        // FORÇA RECARREGAMENTO SEGURO
+        App.sanitizeDB(); 
+        App.clearFilters();
+        App.renderList(); 
         CatManager.refreshSelects();
         
         alert(`Processo Concluído!\n\n+ ${added} Novos\n~ ${updated} Atualizados\n+ ${catsAdded} Categorias`);
@@ -800,6 +853,11 @@ const CatManager = {
         document.getElementById('cat-tree').innerHTML = db.categorias.map(c => `
             <div class="tree-node">
                 <div class="tree-head"><b>${c.nome}</b> <button onclick="CatManager.delete(${c.id})" style="color:red; border:none; background:none; cursor:pointer;">✕</button></div>
+                <div class="tree-subs ${(c.subs&&c.subs.length>0)?'open':''}">
+                    ${(c.subs||[]).map(s => `
+                        <div class="sub-node"><span>↳ ${s.nome}</span> <button onclick="CatManager.delete(${s.id}, ${c.id})" style="color:red;border:none;background:none;cursor:pointer;">x</button></div>
+                    `).join('')}
+                </div>
             </div>`).join('');
     }
 };
