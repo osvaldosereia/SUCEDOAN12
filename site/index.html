@@ -35,7 +35,7 @@
       "@context": "https://schema.org",
       "@type": "GroceryStore",
       "name": "Dona Antônia Cestas Básicas",
-      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
+      "image": "https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp",
       "telephone": "+5565996813588",
       "address": {
         "@type": "PostalAddress",
@@ -213,29 +213,30 @@
         }
         
         .carousel-wrapper { position: relative; }
-
-        .horizontal-products-row { 
-            display: flex; gap: 20px; overflow-x: auto; 
-            padding: 0 16px 16px 16px; 
-            margin-left: -16px;
-            margin-right: -16px;
-            scroll-snap-type: none; 
-            scroll-behavior: smooth;
-        }
-        .horizontal-products-row::-webkit-scrollbar { display: none; }
-        
+        /* BOTÕES DE SCROLL MODERNIZADOS */
         .scroll-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
-            width: 40px; height: 40px; border-radius: 50%;
-            background: white; border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 48px; height: 48px; /* Aumentado */
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95); /* Leve transparência */
+            backdrop-filter: blur(4px); /* Efeito Blur */
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12); /* Sombra mais difusa */
             display: none; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 10; color: #333; transition: all 0.2s;
+            cursor: pointer; z-index: 20; color: #333; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        .scroll-btn:hover { background: #f8fafc; transform: translateY(-50%) scale(1.1); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
-        .scroll-btn.left { left: -20px; }
-        .scroll-btn.right { right: -20px; }
+        .scroll-btn:hover { 
+            background: #ffffff; 
+            transform: translateY(-50%) scale(1.15); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15); 
+            color: var(--primary);
+        }
+        .scroll-btn.left { left: -24px; }
+        .scroll-btn.right { right: -24px; }
         
+        .scroll-btn svg { width: 24px; height: 24px; stroke-width: 2.5; } /* SVG Icon */
+
         .horizontal-products-row .card-prod { 
             width: 35vw; 
             min-width: 145px; 
@@ -464,7 +465,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
-                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-super-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
+                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
                 <div class="logo-text-col">
                     <span class="logo-name">Dona Antônia</span>
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
@@ -923,11 +924,15 @@
                                 <div class="subcat-title">${subName}</div>
                                 <div class="carousel-wrapper">
                                     ${handHintHtml}
-                                    <div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})">‹</div>
+                                    <div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})">
+                                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                                    </div>
                                     <div class="horizontal-products-row" id="${rowId}">
                                         ${subItems.map(p => this.buildCard(p)).join('')}
                                     </div>
-                                    <div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})">›</div>
+                                    <div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})">
+                                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                                    </div>
                                 </div>
                             </div>`;
                             
