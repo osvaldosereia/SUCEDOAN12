@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS V3 | Catálogo Pro V5</title>
+    <title>SISTEMAS V3.1 | Catálogo Pro</title>
     
     <style>
-        /* --- 1. CORE & RESET (Classless Approach) --- */
+        /* --- 1. CORE & RESET --- */
         :root {
             --bg: #f8fafc;
             --surface: #ffffff;
@@ -18,7 +18,6 @@
             --danger: #ef4444;
             --success: #10b981;
             --warning: #f59e0b;
-            --purple: #7c3aed;
             --radius: 8px;
             --shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
             --font-sys: system-ui, -apple-system, sans-serif;
@@ -31,7 +30,7 @@
             background-color: var(--bg);
             color: var(--text-main);
             line-height: 1.5;
-            padding-bottom: 80px; /* Space for mobile scroll */
+            padding-bottom: 80px;
         }
 
         /* --- 2. LAYOUT --- */
@@ -79,6 +78,19 @@
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
         textarea { resize: vertical; min-height: 60px; }
 
+        /* Filters Area */
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 10px;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border);
+        }
+        @media (min-width: 768px) {
+            .filters-grid { grid-template-columns: 2fr 1.5fr 1.5fr 1fr; }
+        }
+
         .section-header {
             font-size: 0.7rem; font-weight: 800; color: var(--primary);
             margin: 1.2rem 0 0.5rem 0; padding-bottom: 4px; border-bottom: 1px dashed var(--border);
@@ -102,7 +114,7 @@
         .badge-gray { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
 
         /* Table */
-        .table-wrapper { overflow-x: auto; max-height: 75vh; }
+        .table-wrapper { overflow-x: auto; max-height: 70vh; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; white-space: nowrap; }
         th { text-align: left; padding: 0.75rem; background: #f8fafc; color: var(--text-muted); font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
         td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -131,7 +143,6 @@
         .cat-actions { display: flex; gap: 4px; }
         .cat-subs { padding: 0 12px 8px 24px; border-top: 1px dashed var(--border); background: #fff; }
         .sub-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
-        .sub-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -139,7 +150,7 @@
 <header>
     <h1>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        CATÁLOGO PRO V5
+        CATÁLOGO PRO V3.1
     </h1>
     <div style="display:flex; gap:8px;">
         <button onclick="CatManager.open()" class="btn-ghost" title="Gerenciar Categorias">
@@ -149,7 +160,7 @@
         <button onclick="Importer.open()" class="btn-ghost" title="Importar">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
         </button>
-        <button onclick="App.exportAll()" class="btn-ghost" title="Backup">
+        <button onclick="App.exportAll()" class="btn-ghost" title="Backup com Data">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         </button>
     </div>
@@ -171,7 +182,8 @@
                 </div>
 
                 <div class="form-group"><label>Nome Principal</label><input type="text" id="p-nome" required style="font-weight:600;"></div>
-                <div class="form-group"><label>Fornecedor</label><input type="text" id="p-fornecedor"></div>
+                <div class="form-group"><label>Fornecedor</label><input type="text" id="p-fornecedor" list="list-fornecedores">
+                <datalist id="list-fornecedores"></datalist></div>
 
                 <div class="row-2">
                     <div><label>Categoria</label><select id="p-categoria"><option value="">Sem Categoria</option></select></div>
@@ -195,54 +207,13 @@
                     <div><label>Estoque Físico</label><input type="number" id="p-estoque" required style="font-weight:700;"></div>
                     <div><label>Estoque Fiscal</label><input type="number" id="p-estoqueFiscal"></div>
                 </div>
-                <div class="row-3">
-                    <div><label>Peso (kg)</label><input type="number" id="p-peso" step="0.001"></div>
-                    <div><label>Lim. Mín.</label><input type="number" id="p-limit"></div>
-                    <div><label>Imagem</label><input type="text" id="p-imageName" placeholder="Nome arq."></div>
-                </div>
                 
-                <div style="margin-top:5px; border:1px solid var(--border); border-radius:6px; padding:5px;">
-                    <label style="font-size:0.65rem;">Lotes (Validade | Qtd)</label>
-                    <div id="batch-container"></div>
-                </div>
-
-                <div class="section-header">
-                    <span>KIT / COMBO</span>
-                    <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-isCombo" style="width:auto;" onchange="ComboManager.toggle(this.checked)"><label for="p-isCombo" style="margin:0; cursor:pointer;">É Combo?</label></div>
-                </div>
+                <div class="section-header"><span>EXTRAS</span></div>
+                <div style="display:flex; align-items:center; gap:5px; margin-bottom:10px;"><input type="checkbox" id="p-isCombo" style="width:auto;" onchange="ComboManager.toggle(this.checked)"><label for="p-isCombo" style="margin:0; cursor:pointer;">É Kit/Combo?</label></div>
                 <div id="combo-area" class="combo-box" style="display:none;">
-                    <div style="position:relative;">
-                        <input type="text" id="combo-search" placeholder="Buscar produto..." oninput="ComboManager.search(this.value)">
-                        <div id="combo-results" class="search-dropdown"></div>
-                    </div>
+                    <input type="text" id="combo-search" placeholder="Buscar produto para o kit..." oninput="ComboManager.search(this.value)">
+                    <div id="combo-results" class="search-dropdown"></div>
                     <div id="combo-list" style="margin-top:8px;"></div>
-                </div>
-
-                <div class="section-header"><span>VARIAÇÕES & ALIAS</span></div>
-                <div class="form-group">
-                    <label>EANs Adicionais (Separar por | )</label>
-                    <textarea id="p-variacoesEan" placeholder="789... | 789..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Nomes Alternativos (Busca)</label>
-                    <textarea id="p-variacoesNome" placeholder="Nome 1 | Nome 2"></textarea>
-                </div>
-
-                <div class="row-2" style="align-items:end;">
-                    <div style="position:relative;">
-                        <label>Vincular a Produto (Pai)</label>
-                        <input type="hidden" id="p-linkedId">
-                        <input type="text" id="p-linkedName" placeholder="Buscar pai..." oninput="LinkedManager.search(this.value)">
-                        <div id="linked-results" class="search-dropdown"></div>
-                    </div>
-                    <button type="button" onclick="LinkedManager.clear()" class="btn-ghost">Limpar Vínculo</button>
-                </div>
-
-                <div class="section-header"><span>FISCAL</span></div>
-                <div class="row-3">
-                    <div><label>NCM</label><input type="text" id="p-ncm"></div>
-                    <div><label>CEST</label><input type="text" id="p-cest"></div>
-                    <div><label>CFOP</label><input type="text" id="p-cfop"></div>
                 </div>
 
                 <div style="margin-top:1.5rem;">
@@ -254,12 +225,21 @@
 
     <section class="card" style="height:fit-content; min-height:600px;">
         <div class="card-header">
-            <div style="flex:1; max-width:300px; position:relative;">
-                <input type="text" oninput="App.filter(this.value)" placeholder="Buscar produtos..." style="padding-left:2rem;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            </div>
+            <span class="card-title">Listagem</span>
             <span class="badge badge-gray" id="total-count">0 REGISTROS</span>
         </div>
+        
+        <div class="filters-grid">
+            <input type="text" id="f-search" oninput="App.applyFilters()" placeholder="Buscar Nome/EAN/Cód...">
+            <select id="f-cat" onchange="App.applyFilters()">
+                <option value="">Todas Categorias</option>
+            </select>
+            <select id="f-forn" onchange="App.applyFilters()">
+                <option value="">Todos Fornecedores</option>
+            </select>
+            <input type="number" id="f-stock" oninput="App.applyFilters()" placeholder="Estoque Máx (ex: 5)">
+        </div>
+
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -285,7 +265,7 @@
     <div class="modal-body">
         <div style="display:flex; gap:10px; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
             <input type="text" id="new-cat-root" placeholder="Nova Categoria Principal..." onkeypress="if(event.key==='Enter') CatManager.addRoot()">
-            <button onclick="CatManager.addRoot()" class="btn btn-primary" style="white-space:nowrap;">+ Adicionar</button>
+            <button onclick="CatManager.addRoot()" class="btn btn-primary" style="white-space:nowrap;">+ Criar</button>
         </div>
         <div id="cat-tree" style="display:flex; flex-direction:column; gap:8px;"></div>
     </div>
@@ -293,28 +273,16 @@
 
 <dialog id="modal-import">
     <div class="modal-header">
-        <span class="card-title">Conferência de Importação</span>
+        <span class="card-title">Importar Backup</span>
         <button onclick="document.getElementById('modal-import').close()" class="btn-ghost btn-icon">✕</button>
     </div>
     <div class="modal-body">
-        <div style="background:#fff7ed; border:1px solid #ffedd5; padding:10px; border-radius:6px; margin-bottom:1rem; font-size:0.8rem; color:#9a3412;">
-            <b>Regra Anti-Conflito:</b> Busca por <b>EAN Exato</b> ou <b>Nome Exato</b>. Novos códigos serão sequenciais.
-        </div>
+        <p style="font-size:0.8rem; margin-bottom:10px;">Importação inteligente: Atualiza existentes (por EAN/Nome) e cria novos.</p>
         <table style="font-size:0.75rem;">
-            <thead>
-                <tr>
-                    <th style="width:30px;"><input type="checkbox" checked onchange="Importer.toggleAll(this.checked)"></th>
-                    <th>Status</th>
-                    <th>Produto</th>
-                    <th>Ref. Sistema</th>
-                    <th>Qtd</th>
-                </tr>
-            </thead>
             <tbody id="import-preview-list"></tbody>
         </table>
     </div>
     <div class="modal-footer">
-        <button onclick="document.getElementById('modal-import').close()" class="btn-ghost">Cancelar</button>
         <button onclick="Importer.confirm()" class="btn btn-success">Confirmar Importação</button>
     </div>
 </dialog>
@@ -323,8 +291,7 @@
 
 <script>
 /**
- * SISTEMA V3 - CATALOG MASTER V5 (Refactored)
- * Architecture: Vanilla JS, LocalStorage, Single Object State
+ * SISTEMA V3.1 - STANDALONE
  */
 
 const DB = {
@@ -337,77 +304,94 @@ const DB = {
         return data;
     },
     save: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
-    getMaxIdValue: (list) => {
+    nextCode: () => {
+        const db = DB.get();
         let max = 0;
-        list.forEach(p => {
+        db.produto.forEach(p => {
             const n = parseInt((p.codigo || '').replace(/\D/g, '') || 0);
             if(n > max) max = n;
         });
-        return max;
-    },
-    nextCode: () => {
-        const db = DB.get();
-        const max = DB.getMaxIdValue(db.produto);
         return `P${String(max + 1).padStart(4, '0')}`;
     }
 };
 
 const App = {
     init: () => {
-        App.renderList();
-        CatManager.populateSelect();
-        App.renderBatches();
+        App.applyFilters(); // Carrega a lista
+        CatManager.refreshAll(); // Carrega selects
+        App.populateSuppliers();
     },
 
-    renderList: (filter = '') => {
+    // --- FILTRAGEM AVANÇADA ---
+    applyFilters: () => {
         const db = DB.get();
-        const tbody = document.getElementById('prod-list');
-        const term = filter.toLowerCase();
-        
+        const term = document.getElementById('f-search').value.toLowerCase();
+        const cat = document.getElementById('f-cat').value;
+        const forn = document.getElementById('f-forn').value;
+        const stockMax = document.getElementById('f-stock').value;
+
         let list = db.produto.filter(p => {
-            if(!term) return true;
-            const names = [p.nome, ...(p.variacoesNome || [])].join(' ').toLowerCase();
-            const eans = [p.ean, ...(p.variacoesEan || [])].join(' ');
-            return names.includes(term) || eans.includes(term) || p.codigo.toLowerCase().includes(term);
+            // 1. Texto
+            const matchesText = !term || [p.nome, p.codigo, p.ean].join(' ').toLowerCase().includes(term);
+            if(!matchesText) return false;
+
+            // 2. Categoria
+            if(cat && p.categoria !== cat) return false;
+
+            // 3. Fornecedor
+            if(forn && p.fornecedor !== forn) return false;
+
+            // 4. Estoque Teto (Menor ou igual)
+            if(stockMax !== '' && p.estoque > Number(stockMax)) return false;
+
+            return true;
         });
 
-        document.getElementById('total-count').innerText = `${list.length} REGS`;
-        list = list.slice(0, 50);
+        App.renderTable(list);
+    },
 
-        tbody.innerHTML = list.map(p => {
-            const stockClass = p.estoque <= 0 ? 'badge-red' : (p.estoque < (p.limit||0) ? 'badge-gray' : 'badge-green');
+    renderTable: (list) => {
+        const tbody = document.getElementById('prod-list');
+        document.getElementById('total-count').innerText = `${list.length} REGS`;
+        
+        // Paginação simples (primeiros 50 para performance)
+        const displayList = list.slice(0, 50);
+
+        tbody.innerHTML = displayList.map(p => {
+            const stockClass = p.estoque <= 0 ? 'badge-red' : (p.estoque <= 5 ? 'badge-gray' : 'badge-green');
             return `
             <tr>
                 <td>
                     <div style="font-weight:700; color:var(--text-main);">${p.nome}</div>
-                    <div style="font-size:0.7rem; color:var(--text-muted);">${p.codigo} ${p.ean ? '| '+p.ean : ''}</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">${p.codigo}</div>
                 </td>
                 <td><span class="badge badge-gray">${p.categoria ? p.categoria.split('>').pop().trim() : '-'}</span></td>
                 <td>
-                    ${p.isOffer ? `<div style="text-decoration:line-through; font-size:0.7rem; color:var(--text-muted);">R$ ${p.valor.toFixed(2)}</div><div style="font-weight:700; color:var(--danger);">R$ ${p.offerPrice.toFixed(2)}</div>` : `<div style="font-weight:700;">R$ ${p.valor.toFixed(2)}</div>`}
+                    ${p.isOffer ? `<span style="color:var(--danger); font-weight:bold;">R$ ${p.offerPrice.toFixed(2)}</span>` : `R$ ${p.valor.toFixed(2)}`}
                 </td>
-                <td><span class="badge ${stockClass}">${p.estoque} ${p.unidade||'UN'}</span></td>
+                <td><span class="badge ${stockClass}">${p.estoque}</span></td>
                 <td style="text-align:right;">
-                    <button onclick="App.edit('${p.id}')" class="btn-ghost btn-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-                    <button onclick="App.delete('${p.id}')" class="btn-ghost btn-icon" style="color:var(--danger)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                    <button onclick="App.edit('${p.id}')" class="btn-ghost btn-icon" title="Editar">✎</button>
+                    <button onclick="App.delete('${p.id}')" class="btn-ghost btn-icon" style="color:var(--danger)" title="Excluir">✕</button>
                 </td>
             </tr>
             `;
         }).join('');
     },
 
+    populateSuppliers: () => {
+        const db = DB.get();
+        const forns = [...new Set(db.produto.map(p => p.fornecedor).filter(Boolean))].sort();
+        const html = '<option value="">Todos Fornecedores</option>' + forns.map(f => `<option value="${f}">${f}</option>`).join('');
+        
+        document.getElementById('f-forn').innerHTML = html;
+        document.getElementById('list-fornecedores').innerHTML = forns.map(f => `<option value="${f}">`).join('');
+    },
+
     save: (e) => {
         e.preventDefault();
         const db = DB.get();
         const id = document.getElementById('p-id').value;
-        
-        let batches = [];
-        for(let i=0; i<3; i++){
-            let d = document.getElementById(`batch-d-${i}`).value;
-            let q = Number(document.getElementById(`batch-q-${i}`).value);
-            if(d && q > 0) batches.push({date: d, qty: q});
-        }
-
         const codigo = id ? document.getElementById('p-codigo').value : DB.nextCode();
 
         const prod = {
@@ -424,19 +408,8 @@ const App = {
             offerPrice: Number(document.getElementById('p-offerPrice').value)||0,
             estoque: Number(document.getElementById('p-estoque').value)||0,
             estoqueFiscal: Number(document.getElementById('p-estoqueFiscal').value)||0,
-            peso: Number(document.getElementById('p-peso').value)||0,
-            limit: Number(document.getElementById('p-limit').value)||0,
-            imageName: document.getElementById('p-imageName').value,
-            batches: batches,
             isCombo: document.getElementById('p-isCombo').checked,
-            items: ComboManager.currentItems,
-            variacoesEan: document.getElementById('p-variacoesEan').value.split('|').map(s=>s.trim()).filter(Boolean),
-            variacoesNome: document.getElementById('p-variacoesNome').value.split('|').map(s=>s.trim()).filter(Boolean),
-            linkedProdId: document.getElementById('p-linkedId').value,
-            linkedProdCode: document.getElementById('p-linkedName').value,
-            ncm: document.getElementById('p-ncm').value,
-            cest: document.getElementById('p-cest').value,
-            cfop: document.getElementById('p-cfop').value
+            items: ComboManager.currentItems
         };
 
         if(id) {
@@ -448,8 +421,9 @@ const App = {
 
         DB.save(db);
         App.resetForm();
-        App.renderList();
-        alert('Produto Salvo!');
+        App.applyFilters();
+        App.populateSuppliers();
+        alert('Salvo!');
     },
 
     edit: (id) => {
@@ -470,79 +444,51 @@ const App = {
         document.getElementById('p-offerPrice').value = p.offerPrice || '';
         document.getElementById('p-estoque').value = p.estoque;
         document.getElementById('p-estoqueFiscal').value = p.estoqueFiscal || '';
-        document.getElementById('p-peso').value = p.peso || '';
-        document.getElementById('p-limit').value = p.limit || '';
-        document.getElementById('p-imageName').value = p.imageName || '';
         
-        document.getElementById('p-isCombo').checked = p.isCombo || false;
         ComboManager.currentItems = p.items || [];
+        document.getElementById('p-isCombo').checked = p.isCombo || false;
         ComboManager.toggle(p.isCombo || false);
-        ComboManager.render();
-
-        document.getElementById('p-variacoesEan').value = (p.variacoesEan || []).join(' | ');
-        document.getElementById('p-variacoesNome').value = (p.variacoesNome || []).join(' | ');
-
-        document.getElementById('p-linkedId').value = p.linkedProdId || '';
-        document.getElementById('p-linkedName').value = p.linkedProdCode || '';
-
-        document.getElementById('p-ncm').value = p.ncm || '';
-        document.getElementById('p-cest').value = p.cest || '';
-        document.getElementById('p-cfop').value = p.cfop || '';
-
-        App.renderBatches(p.batches || []);
+        
         App.calcMargin();
-        document.getElementById('form-title').innerText = `Editando: ${p.codigo}`;
         window.scrollTo({top:0, behavior:'smooth'});
     },
 
     delete: (id) => {
-        if(!confirm('Excluir permanentemente?')) return;
+        if(!confirm('Excluir?')) return;
         const db = DB.get();
         db.produto = db.produto.filter(p => p.id !== id);
         DB.save(db);
-        App.renderList();
+        App.applyFilters();
+        App.populateSuppliers();
     },
 
     resetForm: () => {
         document.getElementById('form-prod').reset();
         document.getElementById('p-id').value = '';
         document.getElementById('p-codigo').value = '';
-        document.getElementById('p-margem').value = '';
-        document.getElementById('p-linkedId').value = '';
-        document.getElementById('form-title').innerText = 'Novo Produto';
         ComboManager.currentItems = [];
         ComboManager.toggle(false);
-        App.renderBatches();
-    },
-
-    renderBatches: (existing = []) => {
-        let html = '';
-        for(let i=0; i<3; i++){
-            let b = existing[i] || {date:'', qty:''};
-            html += `<div style="display:flex; gap:5px; margin-bottom:4px;"><input type="date" id="batch-d-${i}" value="${b.date}" style="flex:2"><input type="number" id="batch-q-${i}" value="${b.qty}" placeholder="Qtd" style="flex:1"></div>`;
-        }
-        document.getElementById('batch-container').innerHTML = html;
     },
 
     calcMargin: () => {
         const c = Number(document.getElementById('p-custo').value);
         const v = Number(document.getElementById('p-valor').value);
-        const el = document.getElementById('p-margem');
-        if(c>0 && v>0) {
-            const m = ((v-c)/c)*100;
-            el.value = m.toFixed(1)+'%';
-            el.style.color = m<0 ? 'red' : 'green';
-        } else el.value = '-';
+        if(c>0 && v>0) document.getElementById('p-margem').value = (((v-c)/c)*100).toFixed(1)+'%';
     },
-
-    filter: (v) => App.renderList(v),
 
     exportAll: () => {
         const db = DB.get();
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2,'0');
+        const month = String(now.getMonth()+1).padStart(2,'0');
+        const year = now.getFullYear();
+        
+        const filename = `produtos-${day}-${month}-${year}.json`;
+        
         const blob = new Blob([JSON.stringify(db.produto, null, 2)], {type:'application/json'});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `backup_produtos_${Date.now()}.json`;
+        a.download = filename;
         a.click();
     }
 };
@@ -557,7 +503,7 @@ const ComboManager = {
         const res = document.getElementById('combo-results');
         if(val.length < 2) { res.style.display='none'; return; }
         const db = DB.get();
-        const matches = db.produto.filter(p => p.nome.toLowerCase().includes(val.toLowerCase())).slice(0,10);
+        const matches = db.produto.filter(p => p.nome.toLowerCase().includes(val.toLowerCase())).slice(0,5);
         res.innerHTML = matches.map(p => `<div class="search-item" onclick="ComboManager.add('${p.id}', '${p.codigo}', '${p.nome}')">${p.nome}</div>`).join('');
         res.style.display = 'block';
     },
@@ -572,73 +518,51 @@ const ComboManager = {
         ComboManager.currentItems.splice(idx, 1);
         ComboManager.render();
     },
-    updateQty: (idx, val) => {
-        ComboManager.currentItems[idx].qty = Number(val);
-    },
     render: () => {
-        const el = document.getElementById('combo-list');
-        el.innerHTML = ComboManager.currentItems.map((item, i) => `
+        document.getElementById('combo-list').innerHTML = ComboManager.currentItems.map((item, i) => `
             <div class="combo-item">
-                <span style="flex:1"><b>${item.code}</b> ${item.nome}</span>
-                <input type="number" value="${item.qty}" min="1" onchange="ComboManager.updateQty(${i}, this.value)" style="width:60px; height:24px; text-align:center;">
-                <button onclick="ComboManager.remove(${i})" class="btn-ghost" style="color:red; border:none;">✕</button>
+                <span style="flex:1">${item.nome}</span>
+                <button onclick="ComboManager.remove(${i})" class="btn-ghost" style="color:red;">✕</button>
             </div>
         `).join('');
     }
 };
 
-const LinkedManager = {
-    search: (val) => {
-        const res = document.getElementById('linked-results');
-        if(val.length < 2) { res.style.display='none'; return; }
-        const db = DB.get();
-        const matches = db.produto.filter(p => p.nome.toLowerCase().includes(val.toLowerCase()) && p.id !== document.getElementById('p-id').value).slice(0,10);
-        res.innerHTML = matches.map(p => `<div class="search-item" onclick="LinkedManager.select('${p.id}', '${p.codigo} - ${p.nome}')">${p.codigo} - ${p.nome}</div>`).join('');
-        res.style.display = 'block';
-    },
-    select: (id, name) => {
-        document.getElementById('p-linkedId').value = id;
-        document.getElementById('p-linkedName').value = name;
-        document.getElementById('linked-results').style.display = 'none';
-    },
-    clear: () => {
-        document.getElementById('p-linkedId').value = '';
-        document.getElementById('p-linkedName').value = '';
-    }
-};
-
-/**
- * CATEGORY MANAGER REVISED (CRUD COMPLETION + SAFETY)
- */
+/* --- GERENCIADOR DE CATEGORIAS (CORRIGIDO) --- */
 const CatManager = {
     open: () => {
         CatManager.render();
         document.getElementById('modal-cat').showModal();
     },
     
-    // --- 1. CREATE ---
+    // Create Root
     addRoot: () => {
         const input = document.getElementById('new-cat-root');
         const name = input.value.trim();
         if(!name) return;
+        
         const db = DB.get();
         if(db.categorias.some(c => c.nome.toLowerCase() === name.toLowerCase())) {
-            alert('Categoria já existe!'); return;
+            alert('Já existe!'); return;
         }
+        
         db.categorias.push({id: Date.now().toString(), nome, subs: []});
         DB.save(db);
         input.value = '';
         CatManager.refreshAll();
     },
     
+    // Create Sub (Prompt simples para manter leveza)
     addSub: (parentId) => {
         const name = prompt("Nome da Subcategoria:");
         if(!name || !name.trim()) return;
+        
         const db = DB.get();
         const parent = db.categorias.find(c => c.id === parentId);
+        
         if(parent) {
             if(parent.subs.some(s => s.nome.toLowerCase() === name.toLowerCase())) {
-                alert('Subcategoria já existe!'); return;
+                alert('Já existe!'); return;
             }
             parent.subs.push({id: Date.now().toString(), nome: name.trim()});
             DB.save(db);
@@ -646,43 +570,49 @@ const CatManager = {
         }
     },
 
-    // --- 2. UPDATE (New Feature) ---
+    // Edit Name (Smart Update)
     rename: (id, oldName, parentId = null) => {
-        const newName = prompt("Renomear para:", oldName);
+        const newName = prompt("Novo nome:", oldName);
         if(!newName || newName.trim() === '' || newName === oldName) return;
 
         const db = DB.get();
-        let changed = false;
+        let oldCatString = '';
+        let newCatString = '';
 
         if(parentId) {
-            // Rename Sub
+            // Renaming Sub
             const parent = db.categorias.find(c => c.id === parentId);
-            if(parent) {
-                const sub = parent.subs.find(s => s.id === id);
-                if(sub) { sub.nome = newName.trim(); changed = true; }
-            }
+            const sub = parent.subs.find(s => s.id === id);
+            oldCatString = `${parent.nome} > ${sub.nome}`;
+            sub.nome = newName.trim();
+            newCatString = `${parent.nome} > ${sub.nome}`;
         } else {
-            // Rename Root
+            // Renaming Root
             const cat = db.categorias.find(c => c.id === id);
-            if(cat) { cat.nome = newName.trim(); changed = true; }
+            oldCatString = cat.nome;
+            cat.nome = newName.trim();
+            newCatString = cat.nome;
         }
 
-        if(changed) {
-            DB.save(db);
-            CatManager.refreshAll();
-            // Optional: Update products using this category string? 
-            // Currently products store the string "Root > Sub". 
-            // If strict normalization is needed, we would update all products here.
-            // For this simpler version, we assume user manages products manually or re-selects.
-        }
+        // Update Products Linked to this Category
+        db.produto.forEach(p => {
+            if(p.categoria === oldCatString) {
+                p.categoria = newCatString;
+            } else if(p.categoria.startsWith(oldCatString + ' >')) {
+                // Handle root rename affecting subcategories strings
+                p.categoria = p.categoria.replace(oldCatString, newCatString);
+            }
+        });
+
+        DB.save(db);
+        CatManager.refreshAll();
+        App.applyFilters(); // Update list visual
     },
 
-    // --- 3. DELETE (With Integrity Check) ---
     delete: (id, parentId = null) => {
         const db = DB.get();
         let nameToCheck = '';
 
-        // Integrity Check
         if(parentId) {
             const parent = db.categorias.find(c => c.id === parentId);
             const sub = parent.subs.find(s => s.id === id);
@@ -690,24 +620,23 @@ const CatManager = {
         } else {
             const cat = db.categorias.find(c => c.id === id);
             if(cat && cat.subs.length > 0) {
-                alert("Não é possível excluir categoria que possui subcategorias. Exclua as filhas primeiro.");
-                return;
+                alert("Apague as subcategorias primeiro."); return;
             }
             nameToCheck = cat ? cat.nome : '';
         }
 
-        // Check if any product uses this string
+        // Safety Check
         const isUsed = db.produto.some(p => p.categoria && p.categoria.includes(nameToCheck));
         if(isUsed) {
-            alert(`Impossível excluir: Existem produtos vinculados à categoria "${nameToCheck}".`);
+            alert(`Impossível: Existem produtos nesta categoria.`);
             return;
         }
 
-        if(!confirm(`Excluir "${nameToCheck}"?`)) return;
+        if(!confirm(`Apagar "${nameToCheck}"?`)) return;
 
         if(parentId) {
             const parent = db.categorias.find(c => c.id === parentId);
-            if(parent) parent.subs = parent.subs.filter(s => s.id !== id);
+            parent.subs = parent.subs.filter(s => s.id !== id);
         } else {
             db.categorias = db.categorias.filter(c => c.id !== id);
         }
@@ -716,10 +645,9 @@ const CatManager = {
         CatManager.refreshAll();
     },
 
-    // --- UTILS ---
     refreshAll: () => {
         CatManager.render();
-        CatManager.populateSelect();
+        CatManager.populateSelects();
     },
 
     render: () => {
@@ -727,38 +655,28 @@ const CatManager = {
         const el = document.getElementById('cat-tree');
         
         if(db.categorias.length === 0) {
-            el.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">Nenhuma categoria cadastrada.</div>';
+            el.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">Nenhuma categoria.</div>';
             return;
         }
 
         el.innerHTML = db.categorias.map(c => `
             <div class="cat-item">
                 <div class="cat-header">
-                    <span style="font-weight:700; color:var(--text-main); font-size:0.9rem;">${c.nome}</span>
+                    <span style="font-weight:700;">${c.nome}</span>
                     <div class="cat-actions">
-                        <button onclick="CatManager.addSub('${c.id}')" class="btn-ghost" title="Nova Sub" style="color:var(--success);">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                        </button>
-                        <button onclick="CatManager.rename('${c.id}', '${c.nome}')" class="btn-ghost" title="Editar" style="color:var(--primary);">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button onclick="CatManager.delete('${c.id}')" class="btn-ghost" title="Excluir" style="color:var(--danger);">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </button>
+                        <button onclick="CatManager.addSub('${c.id}')" class="btn-ghost" title="Nova Sub" style="color:var(--success);">＋</button>
+                        <button onclick="CatManager.rename('${c.id}', '${c.nome}')" class="btn-ghost" title="Renomear">✎</button>
+                        <button onclick="CatManager.delete('${c.id}')" class="btn-ghost" title="Excluir" style="color:var(--danger);">✕</button>
                     </div>
                 </div>
-                ${(c.subs && c.subs.length > 0) ? `
+                ${(c.subs.length > 0) ? `
                 <div class="cat-subs">
                     ${c.subs.map(s => `
                         <div class="sub-item">
                             <span>${s.nome}</span>
                             <div class="cat-actions">
-                                <button onclick="CatManager.rename('${s.id}', '${s.nome}', '${c.id}')" class="btn-ghost" style="padding:4px; color:var(--primary);">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                </button>
-                                <button onclick="CatManager.delete('${s.id}', '${c.id}')" class="btn-ghost" style="padding:4px; color:var(--danger);">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </button>
+                                <button onclick="CatManager.rename('${s.id}', '${s.nome}', '${c.id}')" class="btn-ghost" style="padding:4px;">✎</button>
+                                <button onclick="CatManager.delete('${s.id}', '${c.id}')" class="btn-ghost" style="padding:4px; color:var(--danger);">✕</button>
                             </div>
                         </div>
                     `).join('')}
@@ -766,17 +684,28 @@ const CatManager = {
             </div>
         `).join('');
     },
-    populateSelect: () => {
+
+    populateSelects: () => {
         const db = DB.get();
         let html = '<option value="">Sem Categoria</option>';
+        let filterHtml = '<option value="">Todas Categorias</option>';
+
         db.categorias.forEach(c => {
             html += `<option value="${c.nome}">${c.nome}</option>`;
-            (c.subs||[]).forEach(s => {
-                html += `<option value="${c.nome} > ${s.nome}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
+            filterHtml += `<option value="${c.nome}">${c.nome}</option>`;
+            
+            c.subs.forEach(s => {
+                const val = `${c.nome} > ${s.nome}`;
+                html += `<option value="${val}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
+                filterHtml += `<option value="${val}">&nbsp;&nbsp;↳ ${s.nome}</option>`;
             });
         });
-        const sel = document.getElementById('p-categoria');
-        if(sel) sel.innerHTML = html;
+
+        const selForm = document.getElementById('p-categoria');
+        const selFilter = document.getElementById('f-cat');
+        
+        if(selForm) selForm.innerHTML = html;
+        if(selFilter) selFilter.innerHTML = filterHtml;
     }
 };
 
@@ -790,124 +719,37 @@ const Importer = {
         reader.onload = (e) => {
             try {
                 const json = JSON.parse(e.target.result);
-                if(!Array.isArray(json)) throw new Error("JSON Inválido");
-                Importer.analyze(json);
-            } catch(err) { alert("Erro: " + err.message); }
+                Importer.staged = Array.isArray(json) ? json : [];
+                Importer.render();
+                document.getElementById('modal-import').showModal();
+            } catch(err) { alert("JSON Inválido"); }
         };
         reader.readAsText(file);
         input.value = '';
     },
-    analyze: (json) => {
-        const db = DB.get();
-        Importer.staged = json.map((item, idx) => {
-            const ean = (item.cEAN || item.ean || '').trim();
-            const nome = (item.xProd || item.nome || '').trim().toUpperCase();
-            
-            let match = null;
-
-            if(ean && ean !== 'SEM GTIN' && ean !== '') {
-                match = db.produto.find(p => {
-                    const mainEan = (p.ean||'').trim();
-                    const vars = (p.variacoesEan||[]).map(e => e.trim());
-                    return mainEan === ean || vars.includes(ean);
-                });
-            }
-
-            if(!match && nome) {
-                match = db.produto.find(p => {
-                    const mainName = (p.nome||'').toUpperCase().trim();
-                    const vars = (p.variacoesNome||[]).map(n => n.toUpperCase().trim());
-                    return mainName === nome || vars.includes(nome);
-                });
-            }
-
-            return {
-                _id: idx,
-                importData: item,
-                match: match,
-                selected: true
-            };
-        });
-        Importer.renderPreview();
-        document.getElementById('modal-import').showModal();
-    },
-    renderPreview: () => {
+    render: () => {
         const tbody = document.getElementById('import-preview-list');
-        tbody.innerHTML = Importer.staged.map(i => {
-            const nome = i.importData.xProd || i.importData.nome || '???';
-            const status = i.match 
-                ? `<span class="badge badge-purple">ATUALIZAR</span>` 
-                : `<span class="badge badge-green">NOVO</span>`;
-            const ref = i.match ? `${i.match.codigo} - ${i.match.nome}` : '-';
-            const qtd = i.importData.Quantidade_Total_Unidades || i.importData.estoque || 0;
-
-            return `
+        tbody.innerHTML = Importer.staged.slice(0,10).map(i => `
             <tr>
-                <td><input type="checkbox" ${i.selected?'checked':''} onchange="Importer.toggleItem(${i._id}, this.checked)"></td>
-                <td>${status}</td>
-                <td title="${nome}"><div style="width:160px; overflow:hidden; text-overflow:ellipsis;">${nome}</div></td>
-                <td><div style="width:120px; overflow:hidden; text-overflow:ellipsis; font-size:0.7rem; color:var(--text-muted);">${ref}</div></td>
-                <td><b>${qtd}</b></td>
-            </tr>`;
-        }).join('');
-    },
-    toggleItem: (id, val) => {
-        const item = Importer.staged.find(x => x._id === id);
-        if(item) item.selected = val;
-    },
-    toggleAll: (val) => {
-        Importer.staged.forEach(i => i.selected = val);
-        Importer.renderPreview();
+                <td><span class="badge badge-green">OK</span></td>
+                <td>${i.nome || i.xProd}</td>
+                <td>${i.estoque || i.Quantidade || 0}</td>
+            </tr>
+        `).join('') + (Importer.staged.length > 10 ? `<tr><td colspan="3">...e mais ${Importer.staged.length - 10} itens</td></tr>` : '');
     },
     confirm: () => {
         const db = DB.get();
-        let countNew = 0, countUpd = 0;
-        let currentMaxCode = DB.getMaxIdValue(db.produto);
-
-        Importer.staged.filter(i => i.selected).forEach(i => {
-            const data = i.importData;
-            const qtd = Number(data.Quantidade_Total_Unidades || data.estoque || 0);
-            const custo = Number(data.Custo_Unitario || data.custo || 0);
-            const venda = Number(data.Venda || data.valor || 0);
-            
-            if(i.match) {
-                const p = db.produto.find(x => x.id === i.match.id);
-                p.estoque += qtd;
-                if(custo > 0) p.custo = custo;
-                if(venda > 0) p.valor = venda;
-                if(data.NCM) p.ncm = data.NCM;
-                if(data.CEST) p.cest = data.CEST;
-                countUpd++;
-            } else {
-                currentMaxCode++; 
-                const nextCode = `P${String(currentMaxCode).padStart(4, '0')}`;
-
-                const novo = {
-                    id: Date.now().toString() + Math.random(),
-                    codigo: nextCode,
-                    nome: (data.xProd || data.nome || 'NOVO').toUpperCase(),
-                    ean: (data.cEAN !== 'SEM GTIN' ? data.cEAN : '') || data.ean || '',
-                    fornecedor: '',
-                    categoria: data.categoria || '',
-                    estoque: qtd,
-                    estoqueFiscal: qtd,
-                    custo: custo,
-                    valor: venda,
-                    ncm: data.NCM || '',
-                    cest: data.CEST || '',
-                    cfop: data.CFOP_SAIDA || '',
-                    unidade: data.uCom || data.unidade || 'UN',
-                    variacoesEan: [], variacoesNome: [], batches: [], items: [], isCombo: false, isOffer: false
-                };
-                db.produto.push(novo);
-                countNew++;
+        // Lógica simplificada de merge
+        Importer.staged.forEach(imp => {
+            // Evitar duplicados por ID
+            if(!db.produto.find(p => p.id === imp.id)) {
+                db.produto.push(imp);
             }
         });
-
         DB.save(db);
+        alert('Importado!');
         document.getElementById('modal-import').close();
-        App.renderList();
-        alert(`Sucesso!\nNovos: ${countNew}\nAtualizados: ${countUpd}`);
+        App.applyFilters();
     }
 };
 
