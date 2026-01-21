@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMAS V3 | Gestão de Clientes</title>
+    <meta name="description" content="Módulo de alta performance para gestão de clientes.">
+    
+    <style>
+        /* --- 1. CORE & RESET (Minimalist) --- */
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --focus-ring: rgba(37, 99, 235, 0.2);
+            --radius: 8px;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            --font-sys: system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: var(--font-sys);
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 40px;
+        }
+
+        /* --- 2. LAYOUT & GRID --- */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+        
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 900px) {
+            main { grid-template-columns: 350px 1fr; align-items: start; }
+        }
+
+        /* --- 3. COMPONENTS --- */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .card-body { padding: 1.25rem; }
+
+        /* Forms */
+        .form-grid { display: grid; gap: 1rem; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .row-sidebar { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            font-family: inherit;
+            font-size: 0.9rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text-main);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        input[readonly] { background-color: #f1f5f9; color: var(--text-muted); cursor: not-allowed; }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            width: 100%; /* Mobile First default */
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-ghost { background: transparent; color: var(--text-muted); width: auto; padding: 4px; }
+        .btn-ghost:hover { color: var(--text-main); background: var(--bg); }
+        .btn-icon { width: 32px; height: 32px; padding: 0; border-radius: 4px; }
+        
+        /* Table */
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
+        th { 
+            text-align: left; padding: 0.75rem 1rem; 
+            background: #f8fafc; color: var(--text-muted); 
+            font-weight: 700; font-size: 0.7rem; text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+        td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Utilities */
+        .badge {
+            display: inline-flex; padding: 2px 8px; border-radius: 99px;
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+        }
+        .badge-blue { background: #eff6ff; color: var(--primary); border: 1px solid #dbeafe; }
+        .badge-gray { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
+        
+        .search-wrapper { position: relative; margin-bottom: 0; flex: 1; }
+        .search-wrapper svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; width: 16px; height: 16px; }
+        .search-wrapper input { padding-left: 2.2rem; }
+
+        /* Dialog/Modal */
+        dialog {
+            margin: auto; padding: 0; border: none; border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            width: 90vw; max-width: 500px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Icons SVG */
+        svg { fill: currentColor; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        CLIENTES <span style="font-weight:400; color:var(--text-muted); font-size:0.8em; margin-left:5px;">| SISTEMA V3</span>
+    </h1>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge badge-gray" id="total-count">0 REGISTROS</span>
+    </div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="card-header">
+            <span id="form-title">Novo Cadastro</span>
+            <button onclick="App.resetForm()" class="btn-ghost btn-icon" title="Limpar Formulário">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            </button>
+        </div>
+        <div class="card-body">
+            <form id="client-form" onsubmit="App.save(event)" class="form-grid">
+                <input type="hidden" id="c-id">
+                
+                <div class="row-sidebar">
+                    <div>
+                        <label>Código</label>
+                        <input type="text" id="c-codigo" readonly placeholder="Auto">
+                    </div>
+                    <div>
+                        <label>Rota</label>
+                        <select id="c-rota" required>
+                            <option value="">Selecione...</option>
+                            <option value="CX">CX (Conexão)</option>
+                            <option value="VG">VG (Várzea Grande)</option>
+                            <option value="CBA">CBA (Cuiabá)</option>
+                            <option value="CPA">CPA (Região Norte)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label>Nome Completo / Razão Social</label>
+                    <input type="text" id="c-nome" required autocomplete="off">
+                </div>
+
+                <div class="row-2">
+                    <div>
+                        <label>Telefone</label>
+                        <input type="tel" id="c-tel" placeholder="(65) 9...">
+                    </div>
+                    <div>
+                        <label>Cidade</label>
+                        <select id="c-cidade">
+                            <option value="Cuiabá">Cuiabá</option>
+                            <option value="Várzea Grande">Várzea Grande</option>
+                            <option value="Outra">Outra</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label>Bairro</label>
+                    <input type="text" id="c-bairro">
+                </div>
+
+                <div>
+                    <label>Endereço / Referência</label>
+                    <textarea id="c-endereco" rows="3"></textarea>
+                </div>
+
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+                    <button type="submit" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        SALVAR CLIENTE
+                    </button>
+                    <button type="button" id="btn-history" onclick="App.showHistory()" class="btn" style="background:#f1f5f9; color:var(--text-muted); display:none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="card" style="height:fit-content; min-height: 500px; display:flex; flex-direction:column;">
+        <div class="card-header" style="background:var(--surface); padding-bottom:0.5rem; border-bottom:none;">
+            <div class="search-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-input" oninput="App.filter(this.value)" placeholder="Buscar por nome, código ou rota...">
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:70px">Cód</th>
+                        <th>Cliente</th>
+                        <th>Rota/Cidade</th>
+                        <th style="text-align:right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="client-list">
+                    </tbody>
+            </table>
+        </div>
+        <div id="empty-state" style="padding:2rem; text-align:center; color:var(--text-muted); display:none;">
+            <p>Nenhum cliente encontrado.</p>
+        </div>
+    </section>
+</main>
+
+<dialog id="history-modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border-bottom:1px solid var(--border);">
+        <h3 style="font-size:0.9rem; font-weight:700;">Histórico de Pedidos</h3>
+        <button onclick="document.getElementById('history-modal').close()" class="btn-ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    <div id="history-content" style="padding:0; max-height:60vh; overflow-y:auto;">
+        </div>
+    <div style="padding:1rem; text-align:right; border-top:1px solid var(--border); background:#f8fafc;">
+        <span style="font-size:0.75rem; color:var(--text-muted);">Dados apenas para conferência</span>
+    </div>
+</dialog>
+
+<script>
+/**
+ * SISTEMA V3 - Módulo de Clientes (Minimalist Core)
+ * Single Object Architecture
+ */
+const App = {
+    key: 'sys_v3_minimal_db',
+    state: { clients: [], sales: [] }, // Sales mockados para o histórico funcionar
+
+    init: () => {
+        // Load data or mock if empty
+        const saved = localStorage.getItem(App.key);
+        if (saved) {
+            App.state = JSON.parse(saved);
+        } else {
+            // Seed Mock Data se estiver vazio
+            App.state.clients = [
+                { id: '1', codigo: 'C001', nome: 'Mercado Central', rota: 'CBA', tel: '6599999999', cidade: 'Cuiabá', bairro: 'Centro', endereco: 'Rua 10' },
+                { id: '2', codigo: 'C002', nome: 'Padaria do João', rota: 'VG', tel: '6588888888', cidade: 'Várzea Grande', bairro: 'Cristo Rei', endereco: 'Av Principal' }
+            ];
+            // Mock sales
+            App.state.sales = [
+                { id: 's1', cliId: '1', code: 'V100', date: Date.now(), total: 450.50, items: 12 },
+                { id: 's2', cliId: '1', code: 'V098', date: Date.now() - 86400000, total: 120.00, items: 3 }
+            ];
+            App.saveToStorage();
+        }
+        App.renderTable(App.state.clients);
+    },
+
+    saveToStorage: () => {
+        localStorage.setItem(App.key, JSON.stringify(App.state));
+        document.getElementById('total-count').innerText = `${App.state.clients.length} REGISTROS`;
+    },
+
+    save: (e) => {
+        e.preventDefault();
+        const id = document.getElementById('c-id').value;
+        const nome = document.getElementById('c-nome').value.trim();
+        if (!nome) return;
+
+        const data = {
+            id: id || Date.now().toString(),
+            codigo: document.getElementById('c-codigo').value || App.nextCode(),
+            rota: document.getElementById('c-rota').value,
+            nome: nome,
+            tel: document.getElementById('c-tel').value,
+            cidade: document.getElementById('c-cidade').value,
+            bairro: document.getElementById('c-bairro').value,
+            endereco: document.getElementById('c-endereco').value
+        };
+
+        if (id) {
+            // Update
+            const idx = App.state.clients.findIndex(c => c.id === id);
+            if (idx > -1) App.state.clients[idx] = data;
+        } else {
+            // Create
+            App.state.clients.unshift(data); // Add to top
+        }
+
+        App.saveToStorage();
+        App.renderTable(App.state.clients);
+        App.resetForm();
+    },
+
+    edit: (id) => {
+        const client = App.state.clients.find(c => c.id === id);
+        if (!client) return;
+
+        document.getElementById('c-id').value = client.id;
+        document.getElementById('c-codigo').value = client.codigo;
+        document.getElementById('c-rota').value = client.rota;
+        document.getElementById('c-nome').value = client.nome;
+        document.getElementById('c-tel').value = client.tel;
+        document.getElementById('c-cidade').value = client.cidade;
+        document.getElementById('c-bairro').value = client.bairro;
+        document.getElementById('c-endereco').value = client.endereco;
+        
+        document.getElementById('form-title').innerText = `Editando: ${client.codigo}`;
+        document.getElementById('btn-history').style.display = 'inline-flex';
+        
+        // Scroll to form on mobile
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    delete: (id) => {
+        if (!confirm('Deseja excluir este cliente permanentemente?')) return;
+        App.state.clients = App.state.clients.filter(c => c.id !== id);
+        App.saveToStorage();
+        App.renderTable(App.state.clients);
+        App.resetForm();
+    },
+
+    resetForm: () => {
+        document.getElementById('client-form').reset();
+        document.getElementById('c-id').value = '';
+        document.getElementById('c-codigo').value = '';
+        document.getElementById('form-title').innerText = 'Novo Cadastro';
+        document.getElementById('btn-history').style.display = 'none';
+    },
+
+    filter: (val) => {
+        const term = val.toLowerCase();
+        const filtered = App.state.clients.filter(c => 
+            c.nome.toLowerCase().includes(term) || 
+            c.codigo.toLowerCase().includes(term) || 
+            (c.rota && c.rota.toLowerCase().includes(term))
+        );
+        App.renderTable(filtered);
+    },
+
+    renderTable: (list) => {
+        const tbody = document.getElementById('client-list');
+        const empty = document.getElementById('empty-state');
+        
+        if (list.length === 0) {
+            tbody.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+
+        empty.style.display = 'none';
+        tbody.innerHTML = list.map(c => `
+            <tr>
+                <td style="font-family:monospace; color:var(--text-muted); font-weight:700;">${c.codigo}</td>
+                <td>
+                    <div style="font-weight:600; color:var(--text-main);">${c.nome}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">${c.tel || ''}</div>
+                </td>
+                <td>
+                    <span class="badge badge-blue">${c.rota}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:5px;">${c.cidade}</span>
+                </td>
+                <td style="text-align:right;">
+                    <button onclick="App.edit('${c.id}')" class="btn-ghost" title="Editar" style="color:var(--primary)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button onclick="App.delete('${c.id}')" class="btn-ghost" title="Excluir" style="color:var(--danger)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    },
+
+    nextCode: () => {
+        let max = 0;
+        App.state.clients.forEach(c => {
+            const num = parseInt(c.codigo.replace(/\D/g, '') || 0);
+            if (num > max) max = num;
+        });
+        return `C${String(max + 1).padStart(3, '0')}`;
+    },
+
+    showHistory: () => {
+        const id = document.getElementById('c-id').value;
+        const sales = App.state.sales.filter(s => s.cliId === id).sort((a,b) => b.date - a.date);
+        const container = document.getElementById('history-content');
+        
+        if (sales.length === 0) {
+            container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--text-muted);">Nenhum pedido encontrado.</div>';
+        } else {
+            container.innerHTML = sales.map(s => `
+                <div style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:700; font-size:0.85rem;">Pedido #${s.code}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">${new Date(s.date).toLocaleDateString()} &bull; ${s.items} itens</div>
+                    </div>
+                    <div style="font-weight:700; color:var(--success);">R$ ${s.total.toFixed(2)}</div>
+                </div>
+            `).join('');
+        }
+        document.getElementById('history-modal').showModal();
+    }
+};
+
+// Start
+document.addEventListener('DOMContentLoaded', App.init);
+</script>
+
+</body>
+</html>
