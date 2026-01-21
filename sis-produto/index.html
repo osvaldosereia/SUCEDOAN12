@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V7 | Smart Combo</title>
+    <title>SISTEMA V8 | Importador Robusto</title>
     
     <style>
         /* --- 1. CORE STYLES --- */
@@ -144,7 +144,7 @@
 <body>
 
 <header>
-    <h1>📋 CATÁLOGO PRO V7</h1>
+    <h1>📋 CATÁLOGO PRO V8</h1>
     <div style="display:flex; gap:8px;">
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 Categorias</button>
         <button onclick="Importer.open()" class="btn btn-ghost">📥 Importar JSON</button>
@@ -220,13 +220,13 @@
                 
                 <div id="combo-area" class="combo-box">
                     <div style="margin-bottom:15px; border-bottom:1px dashed #bfdbfe; padding-bottom:10px;">
-                        <label style="color:var(--primary);">📋 Colar Lista (Formato: 1x Nome do Produto)</label>
-                        <textarea id="combo-paste" class="paste-area" placeholder="Exemplo:&#10;1x Arroz Tio João 5kg&#10;2x Feijão Carioca 1kg"></textarea>
+                        <label style="color:var(--primary);">📋 Colar Lista (Formato: 1x Nome)</label>
+                        <textarea id="combo-paste" class="paste-area" placeholder="Exemplo:&#10;1x Arroz 5kg&#10;2x Feijão 1kg"></textarea>
                         <button type="button" onclick="ComboManager.processPaste()" class="btn btn-primary btn-block">Processar Lista</button>
                     </div>
 
                     <div style="position:relative;">
-                        <input type="text" id="combo-search" placeholder="Ou busque manualmente..." oninput="ComboManager.search(this.value)">
+                        <input type="text" id="combo-search" placeholder="Busca manual..." oninput="ComboManager.search(this.value)">
                         <div id="combo-results" class="search-results"></div>
                     </div>
                     
@@ -300,15 +300,19 @@
 
 <script>
 /**
- * SISTEMA V7 - SMART COMBO
+ * SISTEMA V8 - ROBUST
  */
 
 const DB = {
-    key: 'sys_v7_combo',
+    key: 'sys_v8_db',
     get: () => {
         const raw = localStorage.getItem(DB.key);
+        // Garante estrutura mínima
         const data = raw ? JSON.parse(raw) : { produto: [], categorias: [] };
-        if(data.categorias) data.categorias.forEach(c => { if(!Array.isArray(c.subs)) c.subs = []; });
+        if(!Array.isArray(data.produto)) data.produto = [];
+        if(!Array.isArray(data.categorias)) data.categorias = [];
+        // Garante subs nas categorias
+        data.categorias.forEach(c => { if(!Array.isArray(c.subs)) c.subs = []; });
         return data;
     },
     save: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
@@ -538,39 +542,27 @@ const App = {
     }
 };
 
-/* --- COMBO INTELIGENTE --- */
 const ComboManager = {
     currentItems: [],
     toggle: (checked) => {
         document.getElementById('combo-area').style.display = checked ? 'block' : 'none';
         if(checked) ComboManager.render();
     },
-    // LOGICA DE PROCESSAMENTO DE LISTA COLADA
     processPaste: () => {
         const text = document.getElementById('combo-paste').value;
         if(!text.trim()) return;
-
         const db = DB.get();
         const lines = text.split('\n');
         let addedCount = 0;
         let notFound = [];
-
         lines.forEach(line => {
             line = line.trim();
             if(!line) return;
-
-            // Regex para capturar "1x Nome do Produto" ou "1X Nome"
-            // Grupo 1: Quantidade (digitos)
-            // Grupo 2: Nome (resto da linha)
             const match = line.match(/^(\d+)[xX]\s+(.+)$/);
-
             if(match) {
                 const qty = parseInt(match[1]);
                 const name = match[2].trim().toUpperCase();
-
-                // Busca exata pelo nome
                 const product = db.produto.find(p => p.nome === name);
-
                 if(product) {
                     ComboManager.add(product.id, product.codigo, product.nome, qty);
                     addedCount++;
@@ -579,13 +571,9 @@ const ComboManager = {
                 }
             }
         });
-
-        document.getElementById('combo-paste').value = ''; // Limpa
-        
-        let msg = `Processado! ${addedCount} itens adicionados.`;
-        if(notFound.length > 0) {
-            msg += `\n\nNÃO ENCONTRADOS:\n- ${notFound.join('\n- ')}`;
-        }
+        document.getElementById('combo-paste').value = '';
+        let msg = `Processado! ${addedCount} itens.`;
+        if(notFound.length > 0) msg += `\n\nNão achados:\n- ${notFound.join('\n- ')}`;
         alert(msg);
     },
     search: (val) => {
@@ -598,11 +586,8 @@ const ComboManager = {
     },
     add: (id, code, name, qty) => {
         const idx = ComboManager.currentItems.findIndex(i => i.id === id);
-        if(idx > -1) {
-            ComboManager.currentItems[idx].qty += qty;
-        } else {
-            ComboManager.currentItems.push({id, code, nome: name, qty: qty});
-        }
+        if(idx > -1) ComboManager.currentItems[idx].qty += qty;
+        else ComboManager.currentItems.push({id, code, nome: name, qty: qty});
         ComboManager.render();
         document.getElementById('combo-search').value = '';
         document.getElementById('combo-results').style.display = 'none';
@@ -644,12 +629,8 @@ const LinkedManager = {
     }
 };
 
-/* --- CATEGORIAS --- */
 const CatManager = {
-    open: () => {
-        CatManager.render();
-        document.getElementById('modal-cat').showModal();
-    },
+    open: () => { CatManager.render(); document.getElementById('modal-cat').showModal(); },
     refreshSelects: () => {
         const db = DB.get();
         let html = '<option value="">Sem Categoria</option>';
@@ -680,8 +661,7 @@ const CatManager = {
         CatManager.refreshAll();
     },
     addSub: (parentId) => {
-        const name = prompt("Nome da Subcategoria:");
-        if(!name) return;
+        const name = prompt("Nome:"); if(!name) return;
         const db = DB.get();
         const parent = db.categorias.find(c => c.id == parentId);
         if(parent) {
@@ -700,10 +680,7 @@ const CatManager = {
             if(s) checkName = `${p.nome} > ${s.nome}`;
         } else {
             const c = db.categorias.find(c => c.id == id);
-            if(c) {
-                if(c.subs.length > 0) return alert('Exclua subs primeiro.');
-                checkName = c.nome;
-            }
+            if(c) { if(c.subs.length > 0) return alert('Exclua subs primeiro.'); checkName = c.nome; }
         }
         if(db.produto.some(p => p.categoria && p.categoria.includes(checkName))) return alert('Categoria em uso.');
         if(!confirm('Excluir?')) return;
@@ -717,8 +694,7 @@ const CatManager = {
         CatManager.refreshAll();
     },
     rename: (id, oldName, parentId) => {
-        const newName = prompt("Novo nome:", oldName);
-        if(!newName || newName === oldName) return;
+        const newName = prompt("Novo nome:", oldName); if(!newName) return;
         const upper = newName.trim().toUpperCase();
         const db = DB.get();
         let oldStr = '', newStr = '';
@@ -771,6 +747,7 @@ const CatManager = {
     }
 };
 
+/* --- IMPORTADOR ROBUSTO V8 --- */
 const Importer = {
     open: () => document.getElementById('file-input').click(),
     run: (input) => {
@@ -780,13 +757,61 @@ const Importer = {
         reader.onload = (e) => {
             try {
                 const json = JSON.parse(e.target.result);
-                let newData = { produto: [], categorias: [] };
-                if(Array.isArray(json)) { newData.produto = json; newData.categorias = DB.get().categorias; }
-                else if (json.produto || json.categorias) { newData = json; if(!newData.produto) newData.produto=[]; if(!newData.categorias) newData.categorias=[]; }
-                if(confirm(`Importar ${newData.produto.length} produtos? Substituirá dados atuais.`)) {
-                    DB.save(newData); location.reload();
+                const currentDB = DB.get();
+
+                // 1. Detecta produtos em várias estruturas possíveis
+                let incomingProducts = [];
+                if (Array.isArray(json)) {
+                    incomingProducts = json;
+                } else if (json.produto || json.produtos || json.products) {
+                    incomingProducts = json.produto || json.produtos || json.products;
                 }
-            } catch(err) { alert("Erro JSON: " + err.message); }
+
+                // 2. Detecta categorias
+                let incomingCats = [];
+                if (json.categorias || json.categories) {
+                    incomingCats = json.categorias || json.categories;
+                }
+
+                if (incomingProducts.length === 0 && incomingCats.length === 0) {
+                    throw new Error("Nenhum dado reconhecível.");
+                }
+
+                if (!confirm(`IMPORTADOR V8\nLocalizei:\n- ${incomingProducts.length} Produtos\n- ${incomingCats.length} Categorias\n\nDeseja MESCLAR com os dados atuais?`)) {
+                    return;
+                }
+
+                // 3. Mescla Produtos (Atualiza existente ou Adiciona novo)
+                let added = 0, updated = 0;
+                incomingProducts.forEach(p => {
+                    const idx = currentDB.produto.findIndex(ex => ex.id === p.id || (ex.codigo && ex.codigo === p.codigo));
+                    if (idx > -1) {
+                        currentDB.produto[idx] = { ...currentDB.produto[idx], ...p };
+                        updated++;
+                    } else {
+                        // Garante ID se não tiver
+                        if(!p.id) p.id = Date.now() + Math.random();
+                        currentDB.produto.push(p);
+                        added++;
+                    }
+                });
+
+                // 4. Adiciona Categorias Faltantes
+                let catAdded = 0;
+                incomingCats.forEach(c => {
+                    if (!currentDB.categorias.find(ex => ex.id === c.id || ex.nome === c.nome)) {
+                        currentDB.categorias.push(c);
+                        catAdded++;
+                    }
+                });
+
+                DB.save(currentDB);
+                alert(`Sucesso!\n+ ${added} Produtos Novos\n~ ${updated} Produtos Atualizados\n+ ${catAdded} Categorias Novas`);
+                location.reload();
+
+            } catch (err) {
+                alert("Erro Fatal na Importação: " + err.message);
+            }
         };
         reader.readAsText(file);
         input.value = '';
