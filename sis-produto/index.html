@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS V3 | Catálogo Master V4</title>
+    <title>SISTEMAS V3 | Catálogo Pro V5</title>
     
     <style>
         /* --- 1. CORE & RESET --- */
@@ -134,7 +134,7 @@
 <header>
     <h1>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        CATÁLOGO PRO V4
+        CATÁLOGO PRO V5
     </h1>
     <div style="display:flex; gap:10px;">
         <button onclick="CatManager.open()" class="btn-ghost" title="Gerenciar Categorias"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M3 12h18"></path><path d="M3 18h18"></path></svg> Categorias</button>
@@ -159,7 +159,6 @@
                 </div>
 
                 <div class="form-group"><label>Nome Principal</label><input type="text" id="p-nome" required style="font-weight:600;"></div>
-                
                 <div class="form-group"><label>Fornecedor</label><input type="text" id="p-fornecedor"></div>
 
                 <div class="row-2">
@@ -287,7 +286,7 @@
     </div>
     <div class="modal-body">
         <div style="background:#fff7ed; border:1px solid #ffedd5; padding:10px; border-radius:6px; margin-bottom:1rem; font-size:0.8rem; color:#9a3412;">
-            <b>Regra de Coincidência:</b> O sistema agora busca SOMENTE por <b>EAN Exato</b> ou <b>Nome Exato</b> (incluindo variações). Não há mais verificação por código interno para evitar conflitos.
+            <b>Regra Anti-Conflito:</b> O sistema busca correspondência SOMENTE por <b>EAN Exato</b> ou <b>Nome Exato</b>. Novos códigos sequenciais serão gerados automaticamente para evitar duplicidade.
         </div>
         <table style="font-size:0.75rem;">
             <thead>
@@ -312,7 +311,7 @@
 
 <script>
 /**
- * SISTEMA V3 - CATALOG MASTER V4
+ * SISTEMA V3 - CATALOG MASTER V5 (Final Stable)
  * Chave DB: sys_v3_standalone_db
  */
 
@@ -326,13 +325,19 @@ const DB = {
         return data;
     },
     save: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
-    nextCode: () => {
-        const db = DB.get();
+    // Função auxiliar para pegar o maior número inteiro de uma lista de produtos
+    getMaxIdValue: (list) => {
         let max = 0;
-        db.produto.forEach(p => {
+        list.forEach(p => {
             const n = parseInt((p.codigo || '').replace(/\D/g, '') || 0);
             if(n > max) max = n;
         });
+        return max;
+    },
+    // Gera próximo código isolado (uso individual)
+    nextCode: () => {
+        const db = DB.get();
+        const max = DB.getMaxIdValue(db.produto);
         return `P${String(max + 1).padStart(4, '0')}`;
     }
 };
@@ -396,38 +401,33 @@ const App = {
             if(d && q > 0) batches.push({date: d, qty: q});
         }
 
+        // Se for novo, gera código. Se for edição, mantém.
+        const codigo = id ? document.getElementById('p-codigo').value : DB.nextCode();
+
         const prod = {
             id: id || Date.now().toString(),
-            codigo: document.getElementById('p-codigo').value || DB.nextCode(),
+            codigo: codigo,
             nome: document.getElementById('p-nome').value.trim(),
             ean: document.getElementById('p-ean').value,
-            fornecedor: document.getElementById('p-fornecedor').value, // NOVO
+            fornecedor: document.getElementById('p-fornecedor').value,
             categoria: document.getElementById('p-categoria').value,
             unidade: document.getElementById('p-unidade').value,
-            
             custo: Number(document.getElementById('p-custo').value)||0,
             valor: Number(document.getElementById('p-valor').value)||0,
-            
             isOffer: document.getElementById('p-isOffer').checked,
             offerPrice: Number(document.getElementById('p-offerPrice').value)||0,
-            
             estoque: Number(document.getElementById('p-estoque').value)||0,
             estoqueFiscal: Number(document.getElementById('p-estoqueFiscal').value)||0,
             peso: Number(document.getElementById('p-peso').value)||0,
             limit: Number(document.getElementById('p-limit').value)||0,
             imageName: document.getElementById('p-imageName').value,
-            
             batches: batches,
-            
             isCombo: document.getElementById('p-isCombo').checked,
             items: ComboManager.currentItems,
-
             variacoesEan: document.getElementById('p-variacoesEan').value.split('|').map(s=>s.trim()).filter(Boolean),
             variacoesNome: document.getElementById('p-variacoesNome').value.split('|').map(s=>s.trim()).filter(Boolean),
-            
             linkedProdId: document.getElementById('p-linkedId').value,
             linkedProdCode: document.getElementById('p-linkedName').value,
-
             ncm: document.getElementById('p-ncm').value,
             cest: document.getElementById('p-cest').value,
             cfop: document.getElementById('p-cfop').value
@@ -455,7 +455,7 @@ const App = {
         document.getElementById('p-codigo').value = p.codigo;
         document.getElementById('p-ean').value = p.ean || '';
         document.getElementById('p-nome').value = p.nome;
-        document.getElementById('p-fornecedor').value = p.fornecedor || ''; // NOVO
+        document.getElementById('p-fornecedor').value = p.fornecedor || '';
         document.getElementById('p-categoria').value = p.categoria || '';
         document.getElementById('p-unidade').value = p.unidade || '';
         document.getElementById('p-custo').value = p.custo;
@@ -698,13 +698,13 @@ const Importer = {
     analyze: (json) => {
         const db = DB.get();
         Importer.staged = json.map((item, idx) => {
-            // LÓGICA RÍGIDA DE IMPORTAÇÃO
+            // LÓGICA RÍGIDA DE IMPORTAÇÃO (EAN ou NOME apenas)
             const ean = (item.cEAN || item.ean || '').trim();
             const nome = (item.xProd || item.nome || '').trim().toUpperCase();
             
             let match = null;
 
-            // 1. Check EAN (Ignore SEM GTIN)
+            // 1. Check EAN (Ignore SEM GTIN e vazio)
             if(ean && ean !== 'SEM GTIN' && ean !== '') {
                 match = db.produto.find(p => {
                     const mainEan = (p.ean||'').trim();
@@ -721,8 +721,6 @@ const Importer = {
                     return mainName === nome || vars.includes(nome);
                 });
             }
-
-            // NOTE: REMOVIDA verificação por código interno para evitar conflitos
 
             return {
                 _id: idx,
@@ -766,6 +764,9 @@ const Importer = {
         const db = DB.get();
         let countNew = 0, countUpd = 0;
         
+        // 1. Encontrar o MAIOR ID existente para iniciar a sequência corretamente
+        let currentMaxCode = DB.getMaxIdValue(db.produto);
+
         Importer.staged.filter(i => i.selected).forEach(i => {
             const data = i.importData;
             const qtd = Number(data.Quantidade_Total_Unidades || data.estoque || 0);
@@ -783,11 +784,16 @@ const Importer = {
                 countUpd++;
             } else {
                 // Criar Novo
+                // AQUI GARANTIMOS O PRÓXIMO CÓDIGO SEQUENCIAL CORRETO
+                currentMaxCode++; 
+                const nextCode = `P${String(currentMaxCode).padStart(4, '0')}`;
+
                 const novo = {
                     id: Date.now().toString() + Math.random(),
-                    codigo: DB.nextCode(),
+                    codigo: nextCode, // Usa o código gerado em memória
                     nome: (data.xProd || data.nome || 'NOVO').toUpperCase(),
                     ean: (data.cEAN !== 'SEM GTIN' ? data.cEAN : '') || data.ean || '',
+                    fornecedor: '',
                     categoria: data.categoria || '',
                     estoque: qtd,
                     estoqueFiscal: qtd,
