@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMAS V3 | Catálogo de Produtos</title>
+    
+    <style>
+        /* --- 1. CORE & RESET (Minimalist) --- */
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --focus-ring: rgba(37, 99, 235, 0.2);
+            --radius: 8px;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            --font-sys: system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: var(--font-sys);
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 60px;
+        }
+
+        /* --- 2. LAYOUT --- */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+        
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 1024px) {
+            main { grid-template-columns: 400px 1fr; align-items: start; }
+        }
+
+        /* --- 3. COMPONENTS --- */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .card-body { padding: 1.25rem; }
+
+        /* Forms */
+        .form-grid { display: grid; gap: 0.8rem; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5rem 0.6rem;
+            font-family: inherit;
+            font-size: 0.85rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text-main);
+            transition: all 0.15s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px dashed var(--border);
+            padding-bottom: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            padding: 0.6rem 1rem; font-weight: 600; font-size: 0.8rem;
+            border-radius: 6px; border: none; cursor: pointer; transition: background 0.2s; width: 100%;
+            text-transform: uppercase;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-ghost { background: transparent; color: var(--text-muted); width: auto; padding: 4px 8px; border: 1px solid var(--border); text-transform: none;}
+        .btn-ghost:hover { color: var(--text-main); background: var(--bg); border-color: #cbd5e1; }
+        
+        /* Table */
+        .table-container { overflow-x: auto; max-height: 80vh; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; white-space: nowrap; }
+        th { 
+            text-align: left; padding: 0.75rem; position: sticky; top: 0; z-index: 10;
+            background: #f8fafc; color: var(--text-muted); font-weight: 700; text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+        td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover { background-color: #f1f5f9; }
+
+        /* Utilities */
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
+        .badge-green { background: #dcfce7; color: #15803d; }
+        .badge-red { background: #fee2e2; color: #b91c1c; }
+        .badge-gray { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
+
+        .search-wrapper { position: relative; margin-bottom: 0; flex: 1; }
+        .search-wrapper svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; }
+        .search-wrapper input { padding-left: 2rem; }
+
+        /* Lotes/Validade Mini Table */
+        .batch-list { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-top: 5px; }
+        .batch-row { display: flex; border-bottom: 1px solid var(--border); }
+        .batch-row:last-child { border-bottom: none; }
+        .batch-row input { border: none; border-radius: 0; background: transparent; }
+        .batch-row input:focus { box-shadow: none; background: #eff6ff; }
+        
+        /* File Input Hidden */
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        CATÁLOGO <span style="font-weight:400; color:var(--text-muted); font-size:0.8em; margin-left:5px;">| V3 PRO</span>
+    </h1>
+    <div style="display:flex; align-items:center; gap:8px;">
+        <label class="btn-ghost" style="cursor: pointer; display:flex; align-items:center; gap:5px; font-size:0.75rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            IMPORTAR (JSON)
+            <input type="file" id="import-file" accept=".json" onchange="App.importData(this)">
+        </label>
+        <button onclick="App.exportData()" class="btn-ghost" style="display:flex; align-items:center; gap:5px; font-size:0.75rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            BACKUP
+        </button>
+    </div>
+</header>
+
+<main>
+    <section class="card">
+        <div class="card-header">
+            <span id="form-title">Editar Produto</span>
+            <button onclick="App.resetForm()" class="btn-ghost" style="border:none; padding:0;" title="Novo Produto">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            </button>
+        </div>
+        <div class="card-body">
+            <form id="prod-form" onsubmit="App.save(event)" class="form-grid">
+                <input type="hidden" id="p-id">
+                
+                <div class="row-3">
+                    <div style="grid-column: span 1;">
+                        <label>Código</label>
+                        <input type="text" id="p-codigo" readonly placeholder="Auto" style="font-weight:700;">
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label>EAN (Barras)</label>
+                        <input type="text" id="p-ean" class="font-mono" placeholder="Ex: 789...">
+                    </div>
+                </div>
+
+                <div>
+                    <label>Nome do Produto</label>
+                    <input type="text" id="p-nome" required autocomplete="off" style="font-weight:600;">
+                </div>
+                
+                <div class="row-2">
+                    <div>
+                        <label>Categoria</label>
+                        <input type="text" id="p-categoria" list="cat-list" placeholder="Selecione...">
+                        <datalist id="cat-list"></datalist>
+                    </div>
+                    <div>
+                        <label>Fornecedor</label>
+                        <input type="text" id="p-fornecedor">
+                    </div>
+                </div>
+
+                <div class="section-title">PRECIFICAÇÃO</div>
+                <div class="row-3">
+                    <div>
+                        <label>Custo (R$)</label>
+                        <input type="number" id="p-custo" step="0.01" oninput="App.calcMargin()">
+                    </div>
+                    <div>
+                        <label>Margem (%)</label>
+                        <input type="text" id="p-margem" readonly style="background:#f1f5f9; text-align:center;">
+                    </div>
+                    <div>
+                        <label style="color:var(--primary)">Venda (R$)</label>
+                        <input type="number" id="p-valor" step="0.01" oninput="App.calcMargin()" style="font-weight:700; border-color:var(--primary);">
+                    </div>
+                </div>
+                <div style="background:#fff7ed; padding:8px; border-radius:6px; border:1px solid #ffedd5; display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="p-isOffer" style="width:auto;">
+                    <label for="p-isOffer" style="margin:0; color:var(--warning); cursor:pointer;">Produto em Oferta?</label>
+                    <input type="number" id="p-offerPrice" placeholder="Preço Oferta" step="0.01" style="flex:1;">
+                </div>
+
+                <div class="section-title">ESTOQUE & LOTES</div>
+                <div class="row-2">
+                    <div>
+                        <label>Estoque Físico</label>
+                        <input type="number" id="p-estoque" required style="font-weight:700;">
+                    </div>
+                    <div>
+                        <label>Estoque Fiscal</label>
+                        <input type="number" id="p-estoqueFiscal">
+                    </div>
+                </div>
+                
+                <div>
+                    <label>Validades (Data | Qtd)</label>
+                    <div class="batch-list" id="batch-container">
+                        </div>
+                </div>
+
+                <div class="section-title">FISCAL</div>
+                <div class="row-3">
+                    <div><label>NCM</label><input type="text" id="p-ncm"></div>
+                    <div><label>CEST</label><input type="text" id="p-cest"></div>
+                    <div><label>CFOP</label><input type="text" id="p-cfop"></div>
+                </div>
+
+                <div style="margin-top:1rem;">
+                    <button type="submit" class="btn btn-primary">SALVAR PRODUTO</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="card" style="height:fit-content; min-height:600px; display:flex; flex-direction:column;">
+        <div class="card-header" style="background:var(--surface); border-bottom:none; padding-bottom:0.5rem;">
+            <div class="search-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" oninput="App.filter(this.value)" placeholder="Buscar por Nome, EAN ou Código...">
+            </div>
+            <div style="margin-left:10px;">
+                <span class="badge badge-gray" id="total-count">0 ITENS</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Categ.</th>
+                        <th>Estoque</th>
+                        <th>Preço</th>
+                        <th style="text-align:right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="prod-list"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script>
+/**
+ * SISTEMAS V3 - PRODUTOS
+ * Arquitetura Single File | Zero Dependências | Mobile First
+ */
+const App = {
+    key: 'sys_v3_products_db',
+    state: { products: [] },
+
+    init: () => {
+        const data = localStorage.getItem(App.key);
+        if (data) {
+            App.state.products = JSON.parse(data);
+        } else {
+            // Seed Inicial Vazio ou Dados de Exemplo se preferir
+            App.state.products = [];
+        }
+        App.renderList(App.state.products);
+        App.updateCatList();
+        App.renderBatches(); // Renderiza slots vazios iniciais
+    },
+
+    saveStorage: () => {
+        localStorage.setItem(App.key, JSON.stringify(App.state.products));
+        App.renderList(App.state.products);
+        App.updateCatList();
+    },
+
+    // --- FORM LOGIC ---
+    save: (e) => {
+        e.preventDefault();
+        const id = document.getElementById('p-id').value;
+        
+        // Coletar Lotes
+        const batches = [];
+        for(let i=0; i<3; i++) {
+            const d = document.getElementById(`batch-date-${i}`).value;
+            const q = document.getElementById(`batch-qty-${i}`).value;
+            if(d && q) batches.push({ date: d, qty: Number(q) });
+        }
+
+        const product = {
+            id: id || Date.now().toString(),
+            codigo: document.getElementById('p-codigo').value || App.nextCode(),
+            nome: document.getElementById('p-nome').value.trim(),
+            ean: document.getElementById('p-ean').value,
+            categoria: document.getElementById('p-categoria').value,
+            fornecedor: document.getElementById('p-fornecedor').value,
+            custo: Number(document.getElementById('p-custo').value) || 0,
+            valor: Number(document.getElementById('p-valor').value) || 0,
+            isOffer: document.getElementById('p-isOffer').checked,
+            offerPrice: Number(document.getElementById('p-offerPrice').value) || 0,
+            estoque: Number(document.getElementById('p-estoque').value) || 0,
+            estoqueFiscal: Number(document.getElementById('p-estoqueFiscal').value) || 0,
+            ncm: document.getElementById('p-ncm').value,
+            cest: document.getElementById('p-cest').value,
+            cfop: document.getElementById('p-cfop').value,
+            batches: batches,
+            updatedAt: Date.now()
+        };
+
+        if (id) {
+            const idx = App.state.products.findIndex(p => p.id === id);
+            if(idx > -1) App.state.products[idx] = product;
+        } else {
+            App.state.products.unshift(product);
+        }
+
+        App.saveStorage();
+        App.resetForm();
+        alert('Produto Salvo!');
+    },
+
+    edit: (id) => {
+        const p = App.state.products.find(x => x.id === id);
+        if(!p) return;
+
+        document.getElementById('p-id').value = p.id;
+        document.getElementById('p-codigo').value = p.codigo;
+        document.getElementById('p-nome').value = p.nome;
+        document.getElementById('p-ean').value = p.ean || '';
+        document.getElementById('p-categoria').value = p.categoria || '';
+        document.getElementById('p-fornecedor').value = p.fornecedor || '';
+        document.getElementById('p-custo').value = p.custo;
+        document.getElementById('p-valor').value = p.valor;
+        document.getElementById('p-isOffer').checked = p.isOffer || false;
+        document.getElementById('p-offerPrice').value = p.offerPrice || '';
+        document.getElementById('p-estoque').value = p.estoque;
+        document.getElementById('p-estoqueFiscal').value = p.estoqueFiscal || '';
+        document.getElementById('p-ncm').value = p.ncm || '';
+        document.getElementById('p-cest').value = p.cest || '';
+        document.getElementById('p-cfop').value = p.cfop || '';
+
+        App.renderBatches(p.batches || []);
+        App.calcMargin();
+        document.getElementById('form-title').innerText = 'Editando: ' + p.codigo;
+        window.scrollTo({top:0, behavior:'smooth'});
+    },
+
+    delete: (id) => {
+        if(confirm('Excluir este produto?')) {
+            App.state.products = App.state.products.filter(p => p.id !== id);
+            App.saveStorage();
+            App.resetForm();
+        }
+    },
+
+    resetForm: () => {
+        document.getElementById('prod-form').reset();
+        document.getElementById('p-id').value = '';
+        document.getElementById('p-codigo').value = '';
+        document.getElementById('p-margem').value = '';
+        document.getElementById('form-title').innerText = 'Novo Produto';
+        App.renderBatches();
+    },
+
+    calcMargin: () => {
+        const custo = Number(document.getElementById('p-custo').value);
+        const venda = Number(document.getElementById('p-valor').value);
+        const el = document.getElementById('p-margem');
+        if(custo > 0 && venda > 0) {
+            const m = ((venda - custo) / custo) * 100;
+            el.value = m.toFixed(1) + '%';
+            el.style.color = m < 0 ? 'var(--danger)' : 'var(--success)';
+        } else {
+            el.value = '-';
+        }
+    },
+
+    renderBatches: (existing = []) => {
+        const container = document.getElementById('batch-container');
+        let html = '';
+        // Mostra sempre 3 slots para edição
+        for(let i=0; i<3; i++) {
+            const b = existing[i] || {date:'', qty:''};
+            html += `
+            <div class="batch-row">
+                <input type="date" id="batch-date-${i}" value="${b.date}" style="flex:2;">
+                <input type="number" id="batch-qty-${i}" value="${b.qty}" placeholder="Qtd" style="flex:1; border-left:1px solid var(--border); text-align:center;">
+            </div>`;
+        }
+        container.innerHTML = html;
+    },
+
+    // --- LIST & FILTER ---
+    renderList: (list) => {
+        const tbody = document.getElementById('prod-list');
+        document.getElementById('total-count').innerText = list.length + ' ITENS';
+        
+        if(list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted)">Nenhum produto cadastrado.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = list.slice(0, 100).map(p => { // Render limit for performance
+            const stockClass = p.estoque <= 0 ? 'badge-red' : (p.estoque < 10 ? 'badge-gray' : 'badge-green');
+            return `
+            <tr>
+                <td>
+                    <div style="font-weight:600; font-size:0.85rem; color:var(--text-main);">${p.nome}</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">
+                        <span style="font-family:monospace; font-weight:700;">${p.codigo}</span> 
+                        ${p.ean ? `| EAN: ${p.ean}` : ''}
+                    </div>
+                </td>
+                <td><span style="font-size:0.75rem; color:var(--text-muted);">${p.categoria || '-'}</span></td>
+                <td><span class="badge ${stockClass}">${p.estoque} UN</span></td>
+                <td>
+                    <div style="font-weight:700;">R$ ${p.valor.toFixed(2)}</div>
+                    ${p.custo > 0 ? `<div style="font-size:0.65rem; color:var(--text-muted);">C: ${p.custo.toFixed(2)}</div>` : ''}
+                </td>
+                <td style="text-align:right;">
+                    <button onclick="App.edit('${p.id}')" class="btn-ghost" style="color:var(--primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                    <button onclick="App.delete('${p.id}')" class="btn-ghost" style="color:var(--danger)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    },
+
+    filter: (val) => {
+        const term = val.toLowerCase();
+        const filtered = App.state.products.filter(p => 
+            p.nome.toLowerCase().includes(term) || 
+            p.codigo.toLowerCase().includes(term) ||
+            (p.ean && p.ean.includes(term))
+        );
+        App.renderList(filtered);
+    },
+
+    nextCode: () => {
+        let max = 0;
+        App.state.products.forEach(p => {
+            const n = parseInt(p.codigo.replace(/\D/g,'') || 0);
+            if(n > max) max = n;
+        });
+        return `P${String(max+1).padStart(4,'0')}`;
+    },
+
+    updateCatList: () => {
+        const cats = [...new Set(App.state.products.map(p => p.categoria).filter(Boolean))].sort();
+        document.getElementById('cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+    },
+
+    // --- IMPORT & EXPORT ENGINE ---
+    
+    exportData: () => {
+        const str = JSON.stringify(App.state.products, null, 2);
+        const blob = new Blob([str], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `catalogo_completo_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    },
+
+    importData: (input) => {
+        const file = input.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const json = JSON.parse(e.target.result);
+                if(!Array.isArray(json)) throw new Error("O arquivo deve conter uma lista []");
+                
+                let novos = 0;
+                let atualizados = 0;
+
+                json.forEach(item => {
+                    // Mapeamento Inteligente baseado no arquivo 'exportacao_varejo' e 'produtos_completo'
+                    const nome = item.xProd || item.nome || 'Produto Sem Nome';
+                    const ean = (item.cEAN && item.cEAN !== "SEM GTIN") ? item.cEAN : (item.ean || '');
+                    
+                    // Tenta encontrar produto existente por EAN ou Código
+                    let match = null;
+                    if(ean) match = App.state.products.find(p => p.ean === ean);
+                    if(!match && item.codigo) match = App.state.products.find(p => p.codigo === item.codigo);
+
+                    // Extrair dados numéricos
+                    const qtdEntrada = Number(item.Quantidade_Total_Unidades) || Number(item.estoque) || 0;
+                    const custoEntrada = Number(item.Custo_Unitario) || Number(item.custo) || 0;
+                    const valorVenda = Number(item.Venda) || Number(item.valor) || 0;
+
+                    if(match) {
+                        // ATUALIZA
+                        match.estoque += qtdEntrada;
+                        if(custoEntrada > 0) match.custo = custoEntrada;
+                        if(valorVenda > 0) match.valor = valorVenda;
+                        match.updatedAt = Date.now();
+                        atualizados++;
+                    } else {
+                        // CRIA NOVO
+                        const novoProd = {
+                            id: Date.now().toString() + Math.random().toString().slice(2,5),
+                            codigo: App.nextCode(), // Gera novo código sequencial
+                            nome: nome.toUpperCase(),
+                            ean: ean,
+                            categoria: item.categoria || 'Geral',
+                            fornecedor: '',
+                            custo: custoEntrada,
+                            valor: valorVenda,
+                            estoque: qtdEntrada,
+                            estoqueFiscal: qtdEntrada, // Assume entrada fiscal também
+                            ncm: item.NCM || item.ncm || '',
+                            cest: item.CEST || item.cest || '',
+                            cfop: item.CFOP_SAIDA || item.cfop || '',
+                            batches: [], // Novos produtos entram sem data de validade definida inicialmente
+                            isOffer: false
+                        };
+                        App.state.products.push(novoProd);
+                        novos++;
+                    }
+                });
+
+                App.saveStorage();
+                alert(`Importação Concluída!\n\n🆕 Novos: ${novos}\n🔄 Atualizados: ${atualizados}`);
+                input.value = ''; // Reset input
+
+            } catch (err) {
+                alert("Erro ao ler arquivo: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+};
+
+// Start
+document.addEventListener('DOMContentLoaded', App.init);
+</script>
+
+</body>
+</html>
