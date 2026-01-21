@@ -19,6 +19,8 @@
             --success-text: #15803d;
             --danger-bg: #fee2e2;
             --danger-text: #b91c1c;
+            --warning-bg: #fef3c7;
+            --warning-text: #92400e;
             --border: #e2e8f0;
             --text-main: #1e293b;
             --text-muted: #64748b;
@@ -222,6 +224,28 @@
         }
         .btn-expand:hover { background-color: #f1f5f9; }
 
+        /* ALERTA FISCAL */
+        .tax-alert-box {
+            margin: 0 1rem 1rem 1rem;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .tax-alert-st {
+            background-color: var(--warning-bg);
+            border: 1px solid #fcd34d;
+            color: var(--warning-text);
+        }
+        .tax-alert-normal {
+            background-color: var(--success-bg);
+            border: 1px solid #bbf7d0;
+            color: var(--success-text);
+        }
+        .alert-icon { width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; }
+
         /* Detalhes (Campos Bling) */
         .details-panel {
             background-color: #f8fafc;
@@ -259,6 +283,12 @@
         .field-value span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 5px; }
         .field-value svg { width: 14px; height: 14px; color: #cbd5e1; flex-shrink: 0; }
         .field-value:hover svg { color: var(--primary); }
+        
+        .field-value.highlight-field {
+            border-color: #f59e0b;
+            background-color: #fffbeb;
+            font-weight: bold;
+        }
 
         /* Toast Notification */
         .toast {
@@ -383,7 +413,9 @@
         const ICONS = {
             copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
             chevron: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
-            tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94 .94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>`
+            tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94 .94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>`,
+            alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+            check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
         };
 
         // --- Mapeamento de Origem ---
@@ -403,10 +435,25 @@
         function getTaxRules(cfopEntrada) {
             const stCfops = ['5403', '5405', '6403', '6404', '1403', '2403'];
             const isST = stCfops.includes(cfopEntrada);
+            
             if (isST) {
-                return { cfopSaida: '5.405', desc: 'ST (Subst.)', badgeClass: 'badge-st' };
+                return { 
+                    cfopSaida: '5.405', 
+                    csosn: '500', 
+                    desc: 'SUBST. TRIBUTÁRIA (ST)', 
+                    badgeClass: 'badge-st',
+                    isSt: true,
+                    message: 'ATENÇÃO: Este produto já teve imposto pago na fonte (ST). Para não pagar novamente, cadastre no Bling com <strong>CSOSN 500</strong> e <strong>CFOP 5.405</strong>.'
+                };
             }
-            return { cfopSaida: '5.102', desc: 'Normal', badgeClass: 'badge-normal' };
+            return { 
+                cfopSaida: '5.102', 
+                csosn: '102', 
+                desc: 'TRIBUTAÇÃO NORMAL', 
+                badgeClass: 'badge-normal',
+                isSt: false,
+                message: 'Produto com tributação normal. Cadastre com CSOSN 102 (Simples Nacional).'
+            };
         }
 
         // --- Lógica de Quantidade ---
@@ -498,13 +545,14 @@
         }
 
         // --- Gerador de HTML ---
-        function createField(label, value) {
+        function createField(label, value, highlight = false) {
             if (!value) value = '';
             const copyVal = String(value).replace(/'/g, "\\'");
+            const highlightClass = highlight ? 'highlight-field' : '';
             return `
                 <div class="field-group">
                     <span class="field-label">${label}</span>
-                    <div class="field-value" onclick="copyToClipboard('${copyVal}')" title="Copiar: ${value}">
+                    <div class="field-value ${highlightClass}" onclick="copyToClipboard('${copyVal}')" title="Copiar: ${value}">
                         <span>${value || '-'}</span>
                         <div style="width:14px; height:14px;">${ICONS.copy}</div>
                     </div>
@@ -555,6 +603,10 @@
                 const suggestedQty = guessQuantity(xProd);
                 const cleanName = cleanProductName(xProd);
                 const rowId = index;
+
+                // Classe para o box de alerta
+                const alertClass = rules.isSt ? 'tax-alert-st' : 'tax-alert-normal';
+                const alertIcon = rules.isSt ? ICONS.alert : ICONS.check;
 
                 // Template do Card
                 const card = document.createElement('div');
@@ -614,6 +666,12 @@
                             <div id="chevron-icon-${rowId}" style="width:20px; height:20px; transition: transform 0.3s;">${ICONS.chevron}</div>
                         </button>
                     </div>
+                    
+                    <!-- Alerta Fiscal -->
+                    <div class="tax-alert-box ${alertClass}">
+                        <div class="alert-icon">${alertIcon}</div>
+                        <div>${rules.message}</div>
+                    </div>
 
                     <!-- Detalhes Ocultos -->
                     <div id="details-${rowId}" class="details-panel">
@@ -621,15 +679,14 @@
                             ${createField('Formato', 'Simples')}
                             ${createField('Tipo', 'Produto')}
                             ${createField('Unidade', 'UN')}
+                            ${createField('CSOSN (Simples)', rules.csosn, true)}
+                            ${createField('CFOP Saída', rules.cfopSaida, true)}
+                            ${createField('NCM', ncm)}
+                            ${createField('CEST', cest)}
+                            ${createField('Origem', origFull)}
                             ${createField('GTIN/EAN', cEAN)}
                             ${createField('GTIN/EAN Trib', cEANTrib)}
                             ${createField('SKU', cProd)}
-                            ${createField('NCM', ncm)}
-                            ${createField('CEST', cest)}
-                            ${createField('CFOP Saída', rules.cfopSaida)}
-                            ${createField('Origem', origFull)}
-                            ${createField('Marca', '')}
-                            ${createField('Peso Liq.', '')}
                         </div>
                     </div>
                 `;
