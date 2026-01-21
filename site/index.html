@@ -1018,6 +1018,19 @@
             },
             
             playIntro() {
+                // 1. Configuração de 7 dias (em milissegundos)
+                const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+                const now = Date.now();
+                const lastSeen = localStorage.getItem('da_intro_seen');
+
+                // 2. Verifica se deve mostrar (se nunca viu OU se passou 7 dias)
+                if (lastSeen && (now - parseInt(lastSeen) < SEVEN_DAYS_MS)) {
+                    return; // Sai da função, não mostra a intro
+                }
+
+                // 3. Se chegou aqui, vai mostrar. Salva a nova data.
+                localStorage.setItem('da_intro_seen', now.toString());
+
                 const overlay = document.getElementById('intro-overlay');
                 const textBox = document.getElementById('intro-text');
                 const slides = [
@@ -1028,33 +1041,28 @@
                 ];
                 
                 overlay.classList.remove('hidden');
-                // Small delay to allow transition
                 requestAnimationFrame(() => overlay.classList.add('active'));
                 
                 let index = 0;
                 
                 const nextSlide = () => {
                     if(index >= slides.length) {
-                        // End
                         overlay.classList.remove('active');
                         setTimeout(() => overlay.classList.add('hidden'), 500);
                         return;
                     }
                     
-                    // Update Text
                     textBox.innerText = slides[index];
                     textBox.classList.add('show');
                     
-                    // Wait reading time then hide text
+                    // 4. Tempo ajustado para 3.5 segundos (3500ms)
                     setTimeout(() => {
                         textBox.classList.remove('show');
                         index++;
-                        // Wait for fade out then next slide
                         setTimeout(nextSlide, 500);
-                    }, 5500); // 5.5s reading time
+                    }, 3500);
                 };
                 
-                // Start first slide after overlay appears
                 setTimeout(nextSlide, 500);
             },
             
