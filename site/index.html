@@ -3,12 +3,12 @@
 <head>
     <!-- 
         ================================================================
-        ARCHITECT: SEO Code Architect (SCA) - Unified Card Design
+        ARCHITECT: SEO Code Architect (SCA) - Layout Fix & Stabilization
         TARGET: 100/100 Lighthouse Performance
         CHANGELOG:
-        - UI: Cards do Checkout unificados com o design da Personalização (Clean Style).
-        - UI: Preço removido dos cards no Checkout conforme solicitado.
-        - CSS: Ajustes de layout para suportar o novo card dentro do modal.
+        - FIX: Carrossel quebrado corrigido (Flex-basis fixo e seguro).
+        - CSS: Larguras definidas explicitamente para Mobile (150px) e Desktop (200px).
+        - UI: Mantida toda a estética Clean, Fundo Branco e Imagens com Fundo Cinza.
         ================================================================
     -->
     <meta charset="UTF-8">
@@ -177,6 +177,8 @@
         .hbc-price { font-size: 1.1rem; font-weight: 700; color: #15803d; }
         
         .hbc-content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        
+        /* HOME BASKET ITEMS */
         .hbc-items-slider { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; margin-bottom: 5px; scroll-behavior: smooth; }
         
         .hbc-item { 
@@ -205,7 +207,7 @@
             min-height: 100vh; background: #ffffff; 
         }
 
-        /* --- 6. PRODUCTS (NEW CARD DESIGN) --- */
+        /* --- 6. PRODUCTS --- */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
         .subcat-title { 
             font-size: 1.1rem; font-weight: 800; color: #3e3e3e; 
@@ -213,38 +215,37 @@
         }
         
         .carousel-wrapper { position: relative; }
-        /* BOTÕES DE SCROLL MODERNIZADOS */
+
+        .horizontal-products-row { 
+            display: flex; gap: 20px; overflow-x: auto; 
+            padding: 0 16px 16px 16px; 
+            margin-left: -16px; margin-right: -16px; /* Bleeding mobile */
+            scroll-behavior: smooth;
+        }
+        .horizontal-products-row::-webkit-scrollbar { display: none; }
+        
         .scroll-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
-            width: 48px; height: 48px; /* Aumentado */
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.95); /* Leve transparência */
-            backdrop-filter: blur(4px); /* Efeito Blur */
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px);
             border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.12); /* Sombra mais difusa */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
             display: none; align-items: center; justify-content: center;
             cursor: pointer; z-index: 20; color: #333; 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        .scroll-btn:hover { 
-            background: #ffffff; 
-            transform: translateY(-50%) scale(1.15); 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15); 
-            color: var(--primary);
-        }
+        .scroll-btn:hover { background: #ffffff; transform: translateY(-50%) scale(1.15); box-shadow: 0 8px 25px rgba(0,0,0,0.15); color: var(--primary); }
         .scroll-btn.left { left: -24px; }
         .scroll-btn.right { right: -24px; }
-        
-        .scroll-btn svg { width: 24px; height: 24px; stroke-width: 2.5; } /* SVG Icon */
+        .scroll-btn svg { width: 24px; height: 24px; stroke-width: 2.5; }
 
+        /* CARD FIX: Definindo tamanhos fixos para estabilidade */
         .horizontal-products-row .card-prod { 
-            width: 35vw; 
-            min-width: 145px; 
-            max-width: 190px;
-            flex-shrink: 0;
+            /* Mobile Default */
+            width: 150px; 
+            flex: 0 0 auto; /* NÃO ENCOLHER, NÃO CRESCER - MANTÉM LARGURA FIXA */
         }
 
-        /* CARD REDESIGN - APP STYLE (CLEAN & NO BOX) */
         .card-prod {
             background: transparent; border: none; padding: 0; 
             display: flex; flex-direction: column;
@@ -332,14 +333,12 @@
             #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 40px 20px; padding-top: calc(var(--app-header-height) + 20px); padding-bottom: 100px; }
             .cp-title { -webkit-line-clamp: 2; min-height: 2.6em; }
             
-            .horizontal-products-row {
-                margin-left: 0;
-                margin-right: 0;
-            }
+            /* RESET MARGINS ON DESKTOP */
+            .horizontal-products-row { margin-left: 0; margin-right: 0; }
 
+            /* CARD DESKTOP FIXED WIDTH */
             .horizontal-products-row .card-prod { 
-                min-width: 155px; 
-                max-width: 195px;
+                width: 200px; /* Largura Fixa e Segura */
             }
         }
 
