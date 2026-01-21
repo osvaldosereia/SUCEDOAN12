@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMAS | Studio 300 Pro v6.1</title>
-    <meta name="description" content="Editor Híbrido: Fotos, Vídeos, Botões e Fundos.">
+    <title>SISTEMAS | Studio 300 Pro v6.3 (Auto Name)</title>
+    <meta name="description" content="Editor Híbrido: Fotos, Vídeos, Botões e Fundos Transparentes.">
     <meta name="theme-color" content="#2563eb">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pica/9.0.1/pica.min.js"></script>
@@ -120,6 +120,7 @@
         /* --- VIEWPORT --- */
         .viewport {
             width: 100%;
+            /* Fundo xadrez para visualizar transparência */
             background: #e5e5e5 radial-gradient(#cbd5e1 1px, transparent 1px);
             background-size: 20px 20px;
             border-radius: 8px;
@@ -263,6 +264,12 @@
             border: 1px solid var(--border);
         }
         .bg-controls-panel.visible { display: block; }
+        
+        .bg-status-indicator {
+            font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+        }
+        .bg-status-indicator.transparent { color: var(--text-muted); }
+        .bg-status-indicator.color { color: var(--brand); font-weight: bold; }
 
         /* --- CONTROLS --- */
         fieldset { border: 0; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
@@ -432,12 +439,23 @@
 
                 <!-- NEW BACKGROUND CONTROLS (FULL WIDTH) -->
                 <div id="bgControlsPanel" class="bg-controls-panel">
-                    <label style="margin-bottom:8px;">🎨 Cor do Fundo (Novo)</label>
+                    <div id="bgStatus" class="bg-status-indicator transparent">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="3" x2="21" y2="21"/><line x1="21" y1="3" x2="3" y2="21"/></svg>
+                        Fundo Transparente Ativo
+                    </div>
                     
-                    <input type="color" id="newBgColor" value="#ffffff" style="width: 100%; height: 52px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); padding: 2px; margin-bottom: 8px;">
+                    <label style="margin-bottom:8px;">🎨 Adicionar Cor de Fundo</label>
                     
-                    <button id="btnSaveBgPreset" class="btn btn-mini" style="width: 100%; height: 40px; font-size: 0.95rem; font-weight: 600; color:var(--brand); border-color:var(--brand); background: #eff6ff; justify-content: center;">
-                        + Salvar Cor como Padrão
+                    <div style="display:flex; gap: 8px; margin-bottom: 8px;">
+                        <input type="color" id="newBgColor" value="#ffffff" style="flex:1; height: 42px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); padding: 2px;">
+                        <button id="btnTransparent" class="btn-mini" style="width: auto; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            Remover Cor
+                        </button>
+                    </div>
+                    
+                    <button id="btnSaveBgPreset" class="btn btn-mini" style="width: 100%; height: 36px; font-size: 0.85rem; font-weight: 600; color:var(--brand); border-color:var(--brand); background: #eff6ff; justify-content: center;">
+                        + Salvar Cor Atual
                     </button>
                     
                     <div style="margin-top:12px; padding-top:12px; border-top: 1px dashed #bfdbfe;">
@@ -464,7 +482,7 @@
                 </div>
 
                 <button id="saveBtn" class="btn btn-save" disabled>
-                    Baixar WebP Otimizado (30KB)
+                    Baixar WebP (Max 15KB)
                 </button>
             </div>
 
@@ -503,8 +521,10 @@
             img: null, 
             noBgCanvas: null, 
             useNoBg: false,
-            // NOVA VARIAVEL DE ESTADO: COR DE FUNDO
+            
+            // ATUALIZADO: Controle de cor/transparência
             bgColor: '#ffffff',
+            bgIsTransparent: true, // Padrão agora é transparente
             
             video: null,
             ctx: null, width: 300, height: 300,
@@ -577,7 +597,9 @@
             btnClearPresets: document.getElementById('btnClearPresets'),
             // NEW BG UI
             bgControlsPanel: document.getElementById('bgControlsPanel'),
+            bgStatus: document.getElementById('bgStatus'),
             newBgColor: document.getElementById('newBgColor'),
+            btnTransparent: document.getElementById('btnTransparent'),
             btnSaveBgPreset: document.getElementById('btnSaveBgPreset'),
             bgPresetsContainer: document.getElementById('bgPresetsContainer'),
             btnClearBgPresets: document.getElementById('btnClearBgPresets')
@@ -632,8 +654,15 @@
             loadBgPresets();
             els.newBgColor.addEventListener('input', (e) => {
                 state.bgColor = e.target.value;
+                state.bgIsTransparent = false; // Se tocou na cor, tira transparencia
+                updateBgStatus();
                 requestRender();
             });
+            els.btnTransparent.onclick = () => {
+                state.bgIsTransparent = true; // Volta para transparente
+                updateBgStatus();
+                requestRender();
+            };
             els.btnSaveBgPreset.onclick = saveBgPreset;
             els.btnClearBgPresets.onclick = clearBgPresets;
 
@@ -655,6 +684,18 @@
             window.setFormat = setFormat; 
         }
 
+        // --- BG HELPER ---
+        function updateBgStatus() {
+            if (state.bgIsTransparent) {
+                els.bgStatus.className = 'bg-status-indicator transparent';
+                els.bgStatus.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="3" x2="21" y2="21"/><line x1="21" y1="3" x2="3" y2="21"/></svg> Fundo Transparente Ativo';
+                els.newBgColor.value = '#ffffff'; // visual reset
+            } else {
+                els.bgStatus.className = 'bg-status-indicator color';
+                els.bgStatus.innerHTML = '<span style="width:14px; height:14px; border-radius:50%; background:'+state.bgColor+'; border:1px solid #ccc; display:inline-block;"></span> Cor Ativa';
+            }
+        }
+
         // --- BG PRESETS LOGIC (NEW) ---
         function getBgPresets() {
             return JSON.parse(localStorage.getItem(BG_PRESET_KEY)) || [];
@@ -671,7 +712,9 @@
                     chip.style.backgroundColor = col;
                     chip.onclick = () => {
                         state.bgColor = col;
+                        state.bgIsTransparent = false;
                         els.newBgColor.value = col;
+                        updateBgStatus();
                         requestRender();
                     };
                     els.bgPresetsContainer.appendChild(chip);
@@ -679,6 +722,7 @@
             }
         }
         function saveBgPreset() {
+            if(state.bgIsTransparent) return; // Nao salva transparente
             const cur = els.newBgColor.value;
             const list = getBgPresets();
             if(!list.includes(cur)) {
@@ -1017,10 +1061,22 @@
             if(!state.img) return;
             const ctx = els.ctx; const w = state.width; const h = state.height;
             
-            // 1. FUNDO DO CANVAS (AQUI MUDAMOS A COR SE ESTIVER NO MODO SEM FUNDO)
+            // LIMPAR CANVAS PARA GARANTIR TRANSPARENCIA
+            ctx.clearRect(0, 0, w, h);
             ctx.filter = 'none'; 
-            ctx.fillStyle = (state.useNoBg) ? state.bgColor : '#ffffff'; 
-            ctx.fillRect(0, 0, w, h);
+
+            // LOGICA DE COR DE FUNDO OU TRANSPARENCIA
+            if (state.useNoBg) {
+                // Se removeu o fundo, só pinta se NÃO for transparente
+                if (!state.bgIsTransparent) {
+                    ctx.fillStyle = state.bgColor; 
+                    ctx.fillRect(0, 0, w, h);
+                }
+            } else {
+                // Se NÃO removeu o fundo (modo normal), pinta de branco padrão
+                ctx.fillStyle = '#ffffff'; 
+                ctx.fillRect(0, 0, w, h);
+            }
             
             const source = (state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : state.img;
             
@@ -1135,11 +1191,11 @@
             });
         }
 
-        // --- EXPORT LOGIC ---
+        // --- EXPORT LOGIC WITH SIZE LIMIT ---
         async function savePhotoHighQuality() {
             if (!state.img) return;
             const originalText = els.btnSave.innerText;
-            els.btnSave.disabled = true; els.btnSave.innerHTML = "Gerando...";
+            els.btnSave.disabled = true; els.btnSave.innerHTML = "Gerando HQ...";
 
             try {
                 const source = (state.useNoBg && state.noBgCanvas) ? state.noBgCanvas : state.img;
@@ -1149,9 +1205,19 @@
                 superCanvas.width = superW; superCanvas.height = superH;
                 const sCtx = superCanvas.getContext('2d');
                 
-                // USE SELECTED BG COLOR FOR EXPORT
-                sCtx.fillStyle = (state.useNoBg) ? state.bgColor : '#ffffff'; 
-                sCtx.fillRect(0, 0, superW, superH);
+                // IMPORTANT: Clears for transparency
+                sCtx.clearRect(0, 0, superW, superH);
+
+                // Decide se pinta o fundo ou deixa transparente
+                if (state.useNoBg) {
+                    if (!state.bgIsTransparent) {
+                        sCtx.fillStyle = state.bgColor; 
+                        sCtx.fillRect(0, 0, superW, superH);
+                    }
+                } else {
+                    sCtx.fillStyle = '#ffffff'; 
+                    sCtx.fillRect(0, 0, superW, superH);
+                }
 
                 const sw = source.width; const sh = source.height;
                 const aspect = sw / sh;
@@ -1168,13 +1234,30 @@
                 const finalCanvas = document.createElement('canvas');
                 finalCanvas.width = state.width; finalCanvas.height = state.height;
                 
+                // Pica para resize de alta qualidade
                 if (window.pica) await window.pica().resize(superCanvas, finalCanvas, { unsharpAmount: 0, quality: 3 });
                 else finalCanvas.getContext('2d').drawImage(superCanvas, 0, 0, state.width, state.height);
 
                 if (state.sharpness > 0) applySharpen(finalCanvas.getContext('2d'), state.width, state.height, state.sharpness);
 
-                els.btnSave.innerHTML = "Otimizando...";
-                const blob = await new Promise(r => finalCanvas.toBlob(r, 'image/webp', 0.85));
+                els.btnSave.innerHTML = "Comprimindo < 15KB...";
+                
+                // --- LOGICA DE COMPRESSÃO PARA 15KB ---
+                let quality = 0.95; // Começa alto
+                let blob = null;
+                const maxBytes = 15 * 1024; // 15KB em bytes
+
+                // Loop para encontrar a melhor qualidade que cabe em 15KB
+                do {
+                    blob = await new Promise(r => finalCanvas.toBlob(r, 'image/webp', quality));
+                    if (blob.size > maxBytes) {
+                        quality -= 0.05; // Reduz a qualidade em 5%
+                    }
+                } while (blob.size > maxBytes && quality > 0.1);
+
+                // Se mesmo com qualidade baixa ainda for grande (muito detalhe), avisa ou baixa assim mesmo
+                console.log(`Final Blob: ${(blob.size/1024).toFixed(2)}KB at Q=${quality.toFixed(2)}`);
+
                 download(URL.createObjectURL(blob), '.webp');
 
             } catch (err) { console.error(err); alert("Erro ao salvar."); }
@@ -1199,27 +1282,34 @@
         function toggleMagicBackground() {
             if (!state.img) return;
             if (state.useNoBg) {
+                // DESATIVAR REMOÇÃO DE FUNDO
                 state.useNoBg = false; 
                 els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
                 els.btnRestore.style.display = 'none'; 
-                els.bgControlsPanel.classList.remove('visible'); // Hide BG Controls
+                els.bgControlsPanel.classList.remove('visible'); 
                 requestRender();
             } else {
+                // ATIVAR REMOÇÃO DE FUNDO
                 if (state.noBgCanvas) {
-                    state.useNoBg = true; 
+                    state.useNoBg = true;
+                    // Reseta para transparente ao ativar novamente, ou mantem estado anterior?
+                    // Mantendo estado anterior para melhor UX, mas garantindo UI correta:
                     els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido';
                     els.btnRestore.style.display = 'flex'; 
-                    els.bgControlsPanel.classList.add('visible'); // Show BG Controls
+                    els.bgControlsPanel.classList.add('visible'); 
+                    updateBgStatus(); // Atualiza UI da cor
                     requestRender();
                 } else {
                     els.btnMagic.innerHTML = '⏳ Processando...'; els.btnMagic.classList.add('processing');
                     setTimeout(() => { 
                         processRemoveBackground(); 
                         state.useNoBg = true; 
+                        state.bgIsTransparent = true; // Padrão: Transparente na primeira vez
                         els.btnMagic.classList.remove('processing'); 
                         els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido'; 
                         els.btnRestore.style.display = 'flex'; 
-                        els.bgControlsPanel.classList.add('visible'); // Show BG Controls
+                        els.bgControlsPanel.classList.add('visible'); 
+                        updateBgStatus(); // Atualiza UI
                         requestRender(); 
                     }, 50);
                 }
@@ -1312,6 +1402,26 @@
         }
         function handleFile(e) {
             const f = e.target.files[0]; if(!f) return;
+            
+            // Lógica de Extração de Nome (SEO)
+            let rawName = f.name;
+            // 1. Remove extensão
+            const lastDot = rawName.lastIndexOf('.');
+            if (lastDot !== -1) rawName = rawName.substring(0, lastDot);
+            
+            // 2. Procura por "cesta"
+            const regex = /cesta/i; // case insensitive
+            const match = rawName.match(regex);
+            
+            if (match) {
+                // Pega tudo antes do match
+                rawName = rawName.substring(0, match.index);
+                // Remove separadores sobrando no final (-, _, espaço)
+                rawName = rawName.replace(/[-_\s]+$/, '');
+            }
+            
+            els.nameInput.value = rawName || 'produto'; // fallback se ficar vazio
+            
             if(f.type.startsWith('video/')) { if(state.mode !== 'video') setMode('video'); loadVideo(f); } 
             else { if(state.mode !== 'photo') setMode('photo'); loadImage(f); }
         }
