@@ -52,152 +52,42 @@ details .details-content{padding:1rem;border:1px solid var(--slate-100);border-t
 .item-row{display:flex;justify-content:space-between;align-items:center;padding:.25rem;border-bottom:1px solid var(--slate-100);font-size:.8rem}.item-row:last-child{border-bottom:none}
 
 /* --- NOVOS ESTILOS DO CARD PROFISSIONAL --- */
-.catalog-container-expanded {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 10px;
-}
-.pro-card {
-    background: #fff;
-    border: 1px solid var(--slate-200);
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: row; /* Layout horizontal para desktop */
-    overflow: hidden;
-    transition: all 0.2s ease;
-}
-.pro-card:hover {
-    border-color: var(--primary);
-    box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1);
-}
-/* Coluna Esquerda: Imagem */
-.pro-card-left {
-    width: 140px;
-    background: var(--slate-50);
-    border-right: 1px solid var(--slate-200);
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-}
-.pro-img-box {
-    width: 120px;
-    height: 120px;
-    background: #fff;
-    border: 1px solid var(--slate-200);
-    border-radius: 6px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+.catalog-container-expanded { display: flex; flex-direction: column; gap: 1rem; padding: 10px; }
+.pro-card { background: #fff; border: 1px solid var(--slate-200); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: row; overflow: visible; transition: all 0.2s ease; position: relative; }
+.pro-card:hover { border-color: var(--primary); box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1); }
+.pro-card-left { width: 140px; background: var(--slate-50); border-right: 1px solid var(--slate-200); padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
+.pro-img-box { width: 120px; height: 120px; background: #fff; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .pro-img-box img { width: 100%; height: 100%; object-fit: contain; }
-
-/* Coluna Direita: Conteúdo */
-.pro-card-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-.pro-card-header {
-    padding: 10px 15px;
-    border-bottom: 1px solid var(--slate-100);
-    background: #fff;
-    display: grid;
-    grid-template-columns: 80px 1fr 200px 180px; /* Codigo, Nome, Categoria, Fornecedor */
-    gap: 15px;
-    align-items: end;
-}
-.pro-card-body {
-    padding: 15px;
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 1.2fr; /* Comercial, Logistica, Fiscal */
-    gap: 20px;
-    background: #fdfdfd;
-}
-.pro-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.pro-section-title {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--slate-400);
-    border-bottom: 1px dashed var(--slate-200);
-    padding-bottom: 4px;
-    margin-bottom: 4px;
-}
-.pro-row-grid {
-    display: grid;
-    gap: 10px;
-    align-items: center;
-}
+.pro-card-right { flex: 1; display: flex; flex-direction: column; }
+.pro-card-header { padding: 10px 15px; border-bottom: 1px solid var(--slate-100); background: #fff; display: grid; grid-template-columns: 80px 1fr 200px 180px; gap: 15px; align-items: end; }
+.pro-card-body { padding: 15px; display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 20px; background: #fdfdfd; }
+.pro-section { display: flex; flex-direction: column; gap: 8px; }
+.pro-section-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--slate-400); border-bottom: 1px dashed var(--slate-200); padding-bottom: 4px; margin-bottom: 4px; }
+.pro-row-grid { display: grid; gap: 10px; align-items: center; }
 .grid-2 { grid-template-columns: 1fr 1fr; }
 .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
-
-/* Inputs e Labels Profissionais */
 .p-field { display: flex; flex-direction: column; gap: 2px; }
 .p-label { font-size: 0.65rem; font-weight: 600; color: var(--slate-500); text-transform: uppercase; }
-.p-input { 
-    width: 100%; 
-    padding: 4px 8px; 
-    font-size: 0.8rem; 
-    border: 1px solid var(--slate-300); 
-    border-radius: 4px; 
-    height: 28px;
-    background: #fff;
-    transition: border-color 0.15s;
-}
+.p-input { width: 100%; padding: 4px 8px; font-size: 0.8rem; border: 1px solid var(--slate-300); border-radius: 4px; height: 28px; background: #fff; transition: border-color 0.15s; }
 .p-input:focus { border-color: var(--primary); outline: none; }
 .p-input[readonly] { background: var(--slate-50); color: var(--slate-500); border-color: var(--slate-200); }
-
-/* Rodapé do Card */
-.pro-card-footer {
-    padding: 8px 15px;
-    background: var(--slate-50);
-    border-top: 1px solid var(--slate-200);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Switches e Checkboxes estilizados */
-.p-check-group {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-.p-check {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--slate-600);
-    cursor: pointer;
-    user-select: none;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid transparent;
-}
+.pro-card-footer { padding: 8px 15px; background: var(--slate-50); border-top: 1px solid var(--slate-200); display: flex; justify-content: space-between; align-items: center; }
+.p-check-group { display: flex; gap: 15px; align-items: center; }
+.p-check { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--slate-600); cursor: pointer; user-select: none; padding: 4px 8px; border-radius: 4px; border: 1px solid transparent; }
 .p-check:hover { background: #fff; border-color: var(--slate-200); }
 .p-check input { margin: 0; }
 .p-check.active { background: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
-
-/* Tabela Mini Lotes */
-.mini-batch-table {
-    width: 100%;
-    font-size: 0.7rem;
-    border-collapse: collapse;
-}
+.mini-batch-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; }
 .mini-batch-table td { padding: 2px; }
+
+/* ESTILOS DO COMBO MANAGER */
+.combo-box { background: #f0f9ff; border: 1px dashed #bae6fd; padding: 10px; border-radius: 6px; margin-top: 10px; position: relative; }
+.combo-search-dropdown { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #cbd5e1; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 100; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+.combo-search-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.75rem; display: flex; justify-content: space-between; align-items: center; }
+.combo-search-item:hover { background: #f8fafc; color: var(--primary); }
+.combo-added-item { display: flex; align-items: center; justify-content: space-between; background: white; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 4px; font-size: 0.75rem; transition: all 0.2s; }
+.combo-added-item:hover { border-color: var(--primary); }
 </style>
 </head>
 <body>
@@ -266,15 +156,9 @@ details .details-content{padding:1rem;border:1px solid var(--slate-100);border-t
 </div>
 </div>
 
-<!-- ABA CATALOGO MODIFICADA - VISUALIZAÇÃO EM LISTA EXPANDIDA -->
 <div id="view-catalogo" class="view-section">
 <div class="split-view">
-<!-- LADO ESQUERDO OCULTO PARA DAR ESPAÇO -->
-<div class="panel-left" style="display:none;">
-    <form id="form-produto"><input type="hidden" id="p-id"></form> <!-- Mantido apenas para não quebrar referências de ID -->
-</div>
-
-<!-- LADO DIREITO FULL WIDTH -->
+<div class="panel-left" style="display:none;"><form id="form-produto"><input type="hidden" id="p-id"></form></div>
 <div class="panel-right" style="width: 100%; flex: 1;">
 <div class="card full-h">
 <div class="card-header" style="flex-direction:column;align-items:stretch;gap:10px">
@@ -290,11 +174,8 @@ details .details-content{padding:1rem;border:1px solid var(--slate-100);border-t
 <select id="filter-stock" onchange="Views.catalogo.filter()" style="font-size:.8rem;padding:.4rem"><option value="">Todos Estoques</option><option value="<=0">Estoque Baixo (<= 0)</option><option value="1-10">Entre 1 e 10</option><option value="11-50">Entre 11 e 50</option><option value="51-100">Entre 51 e 100</option><option value=">100">Acima de 100</option></select>
 <button class="btn btn-primary" onclick="CatalogQuick.addNew()" style="margin-left: auto;"><i class="fa-solid fa-plus"></i> Novo Produto Rápido</button>
 </div></div>
-<!-- SUBSTITUIÇÃO DA TABELA POR DIV DE CARDS -->
 <div class="table-wrapper" style="background: #f8fafc;">
-    <div id="catalog-expanded-list" class="catalog-container-expanded">
-        <!-- Itens Renderizados Aqui -->
-    </div>
+    <div id="catalog-expanded-list" class="catalog-container-expanded"></div>
 </div>
 </div>
 </div>
@@ -398,7 +279,6 @@ details .details-content{padding:1rem;border:1px solid var(--slate-100);border-t
 <div class="search-bar" style="margin-bottom:1rem"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="product-link-search" oninput="ImportEngine.searchLinkProduct(this.value)" placeholder="Buscar produto no sistema..." style="width:100%"></div>
 <div id="product-link-list" style="border:1px solid var(--slate-200);border-radius:6px;max-height:300px;overflow-y:auto"></div>
 </div></dialog>
-<!-- NOVO MODAL GENÉRICO DE SELEÇÃO -->
 <dialog id="generic-selection-modal" style="width:500px">
 <div style="padding:1.5rem"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3 style="font-weight:700;color:var(--slate-700);font-size:.9rem;text-transform:uppercase">Selecionar Produto</h3><button onclick="document.getElementById('generic-selection-modal').close()" style="background:0 0;border:none;cursor:pointer;color:var(--slate-400)"><i class="fa-solid fa-times"></i></button></div>
 <div class="search-bar" style="margin-bottom:1rem"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="generic-link-search" oninput="ProductLinker.search(this.value)" placeholder="Buscar produto..." style="width:100%"></div>
@@ -419,31 +299,22 @@ const ExportEngine={exportAll:()=>{const data=DB.load();const blob=new Blob([JSO
 exportProducts:()=>{
     const db = DB.load();
     let data = db.produto.filter(p=>!p.personalized&&p.estoque>0);
-    
-    // ORDENAR POR CATEGORIA (Campo Order)
     data.sort((a,b) => {
         const catNameA = (a.categoria || '').split(' > ')[0];
         const catNameB = (b.categoria || '').split(' > ')[0];
         const catA = db.categorias.find(c => c.nome === catNameA);
         const catB = db.categorias.find(c => c.nome === catNameB);
-        
         const orderA = catA && catA.order !== undefined ? Number(catA.order) : 9999;
         const orderB = catB && catB.order !== undefined ? Number(catB.order) : 9999;
-        
-        // Primeiro ordem da categoria, depois nome da categoria, depois nome do produto
         if(orderA !== orderB) return orderA - orderB;
         if(catNameA !== catNameB) return catNameA.localeCompare(catNameB);
         return a.nome.localeCompare(b.nome);
     });
-
     const exportData = data.map(p=>{
         let imgName=p.codigo.toLowerCase();
         if(p.nome){imgName=p.nome.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,'-').replace(/[^\w\-]+/g,'').replace(/\-\-+/g,'-').replace(/^-+/,'').replace(/-+$/,'')}
-        
         let validade=undefined;
         if(p.batches&&p.batches.length>0){const datedBatches=p.batches.filter(b=>b.date);if(datedBatches.length>0){datedBatches.sort((a,b)=>new Date(a.date)-new Date(b.date));validade=datedBatches[0].date}}
-        
-        // LOGICA PARA SEPARAR CATEGORIA E SUBCATEGORIA
         let catPrincipal = '';
         let subCat = '';
         if(p.categoria) {
@@ -451,25 +322,10 @@ exportProducts:()=>{
             catPrincipal = parts[0] || '';
             subCat = parts[1] || '';
         }
-
-        const obj={
-            ...p,
-            imageName:undefined,
-            caracteristicas:p.caracteristicas||'',
-            imagem:`../site/img/produtos/${imgName}-cesta-basica-cuiaba-varzea-grande.webp`,
-            Limit:p.limit||0,
-            Oferta:p.isOffer?'Sim':'Não',
-            Valor_Oferta:p.isOffer?Number(p.offerPrice||0):0,
-            Categoria: catPrincipal,       
-            Subcategoria: subCat,
-            Mais_Vendido: p.isBestSeller ? 'Sim' : 'Não',
-            Tem_Ligacao: (p.linkedProdId && p.linkedProdId !== '') ? 'Sim' : 'Não',
-            Codigo_Produto_Ligado: p.linkedProdCode || ''
-        };
+        const obj={...p,imageName:undefined,caracteristicas:p.caracteristicas||'',imagem:`../site/img/produtos/${imgName}-cesta-basica-cuiaba-varzea-grande.webp`,Limit:p.limit||0,Oferta:p.isOffer?'Sim':'Não',Valor_Oferta:p.isOffer?Number(p.offerPrice||0):0,Categoria: catPrincipal,Subcategoria: subCat,Mais_Vendido: p.isBestSeller ? 'Sim' : 'Não',Tem_Ligacao: (p.linkedProdId && p.linkedProdId !== '') ? 'Sim' : 'Não',Codigo_Produto_Ligado: p.linkedProdCode || ''};
         if(validade){obj.validade=validade}
         return obj
     });
-    
     const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -478,7 +334,6 @@ exportProducts:()=>{
     a.click()},exportStock:()=>{const list=DB.load().produto.map(p=>({codigo:p.codigo,estoque:p.estoque}));const blob=new Blob([JSON.stringify(list,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`estoque_simples_${Date.now()}.json`;a.click()},restoreAll:(input)=>{const file=input.files[0];if(!file)return;if(!confirm("ATENÇÃO: Isso irá substituir todos os dados atuais pelos do backup. Deseja continuar?")){input.value='';return}const reader=new FileReader();reader.onload=(e)=>{try{const data=JSON.parse(e.target.result);if(data.cliente&&data.produto&&Array.isArray(data.cliente)){localStorage.setItem(DB.key,JSON.stringify(data));alert("Dados restaurados com sucesso! A página será recarregada.");location.reload()}else{alert("Arquivo de backup inválido.")}}catch(err){alert("Erro ao ler arquivo: "+err.message)}};reader.readAsText(file)},exportRoute:(route)=>{const db=DB.load();const sales=db.venda.filter(v=>v.rota===route);const exportData=sales.map(sale=>{const client=db.cliente.find(c=>c.id===sale.cliId);const enrichedItems=sale.items.map(item=>{const prod=db.produto.find(p=>p.id===item.id);return{...item,isCombo:!!(prod&&prod.items&&prod.items.length>0),comboContents:(prod&&prod.items&&prod.items.length>0)?prod.items:[]}});return{pedido:sale,cliente:client||{nome:'Cliente Removido'},itensDetalhados:enrichedItems}});const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`rota_${route}_${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a)}};
 const QuotationApp={toggleAll:(c)=>{document.querySelectorAll('.cat-chk').forEach(el=>el.checked=c);QuotationApp.check()},check:()=>{const n=document.querySelectorAll('.cat-chk:checked').length;const btn=document.getElementById('btn-quote');if(btn){btn.style.opacity=n>0?'1':'0.5';btn.disabled=n===0}},send:()=>{const db=DB.load();const ids=Array.from(document.querySelectorAll('.cat-chk:checked')).map(e=>e.value);if(ids.length===0)return alert('Selecione itens para cotação.');let msg="*SOLICITAÇÃO DE COTAÇÃO*\n\n";ids.forEach(id=>{const p=db.produto.find(x=>x.id===id);if(p){msg+=`📦 *${p.nome}*\n   EAN: ${p.ean||'N/A'}\n\n`}});const url=`https://wa.me/?text=${encodeURIComponent(msg)}`;window.open(url,'_blank')}};
 const ImportEngine={stagedData:[],processFile:()=>{const file=document.getElementById('json-import-file').files[0];if(!file)return alert('Selecione um arquivo .json');const reader=new FileReader();reader.onload=(e)=>{try{const items=JSON.parse(e.target.result);if(!Array.isArray(items))throw new Error('JSON deve ser uma lista []');const db=DB.load();const groupedItems={};items.forEach((item,idx)=>{let eans=[];if(item.cEAN&&item.cEAN!=="PREENCHER_COM_LEITOR"){eans=item.cEAN.split('|').map(s=>s.trim()).filter(Boolean)}if(item.EAN_Unidade&&item.EAN_Unidade!=="PREENCHER_COM_LEITOR")eans.push(item.EAN_Unidade);if(item.EAN_Caixa&&item.EAN_Caixa!=="PREENCHER_COM_LEITOR")eans.push(item.EAN_Caixa);eans=[...new Set(eans)];let names=[];if(item.xProd){names=item.xProd.split('|').map(s=>s.trim()).filter(Boolean)}const key=eans.length>0?eans[0]:(names.length>0?names[0].toUpperCase():'UNKNOWN');if(!groupedItems[key]){groupedItems[key]={items:[],totalQty:0,firstItem:item,allEans:eans,allNames:names}}else{groupedItems[key].allEans=[...new Set([...groupedItems[key].allEans,...eans])];groupedItems[key].allNames=[...new Set([...groupedItems[key].allNames,...names])]}let qty=Number(item.Quantidade_Total_Unidades);const factor=Number(item.Fator_Conversao_Entrada)||Number(item.Fator_Conversao)||1;if(!qty)qty=(Number(item.Quantidade_NFe)||0)*factor;groupedItems[key].totalQty+=qty;groupedItems[key].items.push(item)});ImportEngine.stagedData=Object.keys(groupedItems).map((key,idx)=>{const group=groupedItems[key];const item=group.firstItem;let match=null;if(group.allEans.length>0){match=db.produto.find(p=>{const pEans=[p.ean,...(p.variacoesEan||[])].filter(Boolean);return group.allEans.some(newEan=>pEans.includes(newEan))})}if(!match&&group.allNames.length>0){match=db.produto.find(p=>{const pNames=[p.nome,...(p.variacoesNome||[])].map(n=>n.toUpperCase());return group.allNames.some(newName=>pNames.includes(newName.toUpperCase()))})}let cost=Number(item.Custo_Unitario)||0;if(cost<0)cost=0;return{_id:idx,json:item,allEans:group.allEans,allNames:group.allNames,qty:group.totalQty,cost:cost,match:match}}).sort((a,b)=>a.json.xProd.localeCompare(b.json.xProd));ImportEngine.renderPreview();document.getElementById('import-modal').showModal()}catch(err){alert('Erro: '+err.message)}};reader.readAsText(file)},filterPreview:(val)=>{const term=val.toLowerCase();const filteredData=ImportEngine.stagedData.filter(d=>d.allNames.some(n=>n.toLowerCase().includes(term))||d.allEans.some(e=>e.includes(term)));ImportEngine.renderPreview(filteredData)},renderPreview:(data=null)=>{const listToRender=data||ImportEngine.stagedData;const tbody=document.getElementById('import-preview-list');tbody.innerHTML=listToRender.map((d)=>{const status=d.match?`<span class="badge badge-purple">Atualizar: ${d.match.codigo}</span>`:`<span class="badge badge-blue">Novo</span>`;const eanDisplay=d.allEans.length>0?`<div style="display:flex; flex-direction:column; gap:2px;">${d.allEans.map(e=>`<span style="font-size:0.65rem; font-family:monospace; color:var(--slate-600);">${e}</span>`).join('')}</div>`:'<span style="font-size: 0.65rem; color: var(--slate-400); font-style: italic;">--</span>';return`<tr style="border-bottom: 1px solid var(--slate-100);"><td style="padding: 0.75rem; text-align: center;"><input type="checkbox" class="import-chk" value="${d._id}" checked onchange="ImportEngine.updateBatchBtn()"></td><td style="padding: 0.75rem;"><div style="font-weight: 700; color: var(--slate-700); font-size: 0.8rem;">${d.allNames[0]||'Sem Nome'}</div>${d.allNames.length>1?`<div style="font-size:0.65rem; color:var(--slate-400);">+ ${d.allNames.length-1} variações</div>`:''}</td><td style="padding: 0.75rem;">${eanDisplay}</td><td style="padding: 0.75rem;"><div style="margin-bottom: 2px;">${status}</div><div style="font-size: 0.65rem; color: var(--slate-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">${d.match?d.match.nome:''}</div></td><td style="padding: 0.75rem; text-align: right; font-weight: 700; color: var(--slate-700);">${d.qty}</td></tr>`}).join('');ImportEngine.updateBatchBtn()},toggleAll:(v)=>{document.querySelectorAll('.import-chk').forEach(c=>c.checked=v);ImportEngine.updateBatchBtn()},updateBatchBtn:()=>{const checked=Array.from(document.querySelectorAll('.import-chk:checked'));const btn=document.getElementById('btn-batch-link');if(checked.length>0){btn.disabled=false;btn.style.opacity=1}else{btn.disabled=true;btn.style.opacity=0.5}},openBatchLinkModal:()=>{const checked=Array.from(document.querySelectorAll('.import-chk:checked'));if(checked.length===0)return;document.getElementById('product-link-search').value='';ImportEngine.searchLinkProduct('');document.getElementById('product-select-modal').showModal()},searchLinkProduct:(val)=>{const db=DB.load();const term=val.toLowerCase();const filtered=db.produto.filter(p=>p.nome.toLowerCase().includes(term)||p.codigo.toLowerCase().includes(term));const container=document.getElementById('product-link-list');container.innerHTML=filtered.map(p=>`<div style="padding: 0.75rem; border-bottom: 1px solid var(--slate-100); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="ImportEngine.applyBatchLink('${p.id}')" onmouseover="this.style.background='var(--slate-50)'" onmouseout="this.style.background='transparent'"><div><div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-700);">${p.nome}</div><div style="font-size: 0.7rem; color: var(--slate-400);">${p.codigo} | EAN: ${p.ean||'-'}</div></div><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.65rem;">Selecionar</button></div>`).join('');if(filtered.length===0)container.innerHTML='<div style="padding: 1rem; text-align: center; color: var(--slate-400);">Nenhum produto encontrado</div>'},applyBatchLink:(prodId)=>{const db=DB.load();const prod=db.produto.find(p=>p.id===prodId);const checked=Array.from(document.querySelectorAll('.import-chk:checked')).map(c=>Number(c.value));if(prod&&checked.length>0){checked.forEach(idx=>{const item=ImportEngine.stagedData.find(d=>d._id===idx);if(item){item.match=prod}});ImportEngine.renderPreview();document.getElementById('product-select-modal').close()}},confirmImport:()=>{const dest=document.querySelector('input[name="import-dest"]:checked').value;const checkboxes=Array.from(document.querySelectorAll('.import-chk:checked'));if(checkboxes.length===0)return alert('Nada selecionado');const selectedIds=new Set(checkboxes.map(c=>Number(c.value)));const db=DB.load();let count=0;ImportEngine.stagedData.forEach(d=>{if(!selectedIds.has(d._id))return;let prod=d.match?db.produto.find(p=>p.id===d.match.id):null;if(!prod&&d.allEans.length>0){prod=db.produto.find(p=>{const pEans=[p.ean,...(p.variacoesEan||[])].filter(Boolean);return d.allEans.some(newEan=>pEans.includes(newEan))})}if(!prod&&d.allNames.length>0){prod=db.produto.find(p=>{const pNames=[p.nome,...(p.variacoesNome||[])].map(n=>n.toUpperCase());return d.allNames.some(newName=>pNames.includes(newName.toUpperCase()))})}const jsonItem=d.json;if(prod){if(dest!=='fiscal'){if(!prod.batches)prod.batches=[];let defaultBatch=prod.batches.find(b=>!b.date);if(defaultBatch){defaultBatch.qty+=d.qty}else{prod.batches.push({date:'',qty:d.qty})}prod.estoque=prod.batches.reduce((acc,b)=>acc+b.qty,0)}if(dest!=='fisico')prod.estoqueFiscal=(prod.estoqueFiscal||0)+d.qty;if(d.cost>0)prod.custo=d.cost;const cleanNewEans=d.allEans.map(e=>e.trim()).filter(Boolean);const existingEans=[prod.ean,...(prod.variacoesEan||[])].filter(Boolean);const newEansList=[...new Set([...existingEans,...cleanNewEans])];if(newEansList.length>0){if(!prod.ean)prod.ean=newEansList[0];prod.variacoesEan=newEansList}const cleanNewNames=d.allNames.map(n=>n.trim()).filter(Boolean);const existingNames=[prod.nome,...(prod.variacoesNome||[])].filter(Boolean);const newNamesList=[...new Set([...existingNames,...cleanNewNames])];if(newNamesList.length>0)prod.variacoesNome=newNamesList;if(jsonItem.NCM)prod.ncm=jsonItem.NCM;if(jsonItem.CEST)prod.cest=jsonItem.CEST;if(jsonItem.CFOP_SAIDA)prod.cfop=jsonItem.CFOP_SAIDA;if(jsonItem.CSOSN_SAIDA)prod.csosn=jsonItem.CSOSN_SAIDA;if(jsonItem.Unidade_Venda)prod.unidade=jsonItem.Unidade_Venda;prod.jsonData=jsonItem;prod.nota=jsonItem.Numero_Nota}else{const cleanEans=d.allEans.map(e=>e.trim()).filter(Boolean);const cleanNames=d.allNames.map(n=>n.trim()).filter(Boolean);prod={id:Date.now().toString()+Math.random().toString().slice(2,5),codigo:DB.nextCode('P'),nome:cleanNames[0]||jsonItem.xProd.toUpperCase(),variacoesNome:cleanNames,ean:cleanEans[0]||'',variacoesEan:cleanEans,custo:d.cost,valor:0,batches:dest!=='fiscal'?[{date:'',qty:d.qty}]:[],estoque:dest!=='fiscal'?d.qty:0,estoqueFiscal:dest!=='fisico'?d.qty:0,tipo:'normal',nota:jsonItem.Numero_Nota,ncm:jsonItem.NCM,cest:jsonItem.CEST,cfop:jsonItem.CFOP_SAIDA,csosn:jsonItem.CSOSN_SAIDA,unidade:jsonItem.Unidade_Venda,fator:jsonItem.Fator_Conversao||jsonItem.Fator_Conversao_Entrada,refId:jsonItem.id_referencia,jsonData:jsonItem};db.produto.push(prod)}db.entrada.push({id:Date.now().toString()+Math.random(),date:Date.now(),prodId:prod.id,qty:d.qty,custo:d.cost,dest:dest,fornecedor:`Imp. Nota ${jsonItem.Numero_Nota||'JSON'}`});count++});DB.saveAll(db);alert(`${count} itens processados. Verifique as validades no cadastro.`);document.getElementById('import-modal').close();document.getElementById('import-filter').value='';Views.catalogo.render()}};
-const ComboApp={comboItems:[],processBulk:()=>{const text=document.getElementById('p-combo-bulk');if(!text)return;const lines=text.value.split('\n');const db=DB.load();lines.forEach(line=>{const match=line.match(/^\[(\d+)\]\s*(.*)$/);let qty=1;let identifier=line.trim();if(match){qty=parseInt(match[1],10);identifier=match[2].trim()}else{const parts=line.split('|').map(s=>s.trim());identifier=parts[0];if(parts[1])qty=parseInt(parts[1],10)||1}if(!identifier)return;const idUpper=identifier.toUpperCase();const prod=db.produto.find(p=>{const pEans=[p.ean,...(p.variacoesEan||[])].filter(Boolean);const pNames=[p.nome,...(p.variacoesNome||[])].map(n=>n.toUpperCase());return p.codigo.toUpperCase()===idUpper||pEans.includes(identifier)||pNames.includes(idUpper)});if(prod){ComboApp.comboItems.push({id:prod.id,codigo:prod.codigo,nome:prod.nome,qty:qty})}});ComboApp.renderList();text.value=''},addFromSelector:()=>{const prodId=document.getElementById('p-combo-select')?.value;const qty=Number(document.getElementById('p-combo-qty')?.value);if(!prodId||qty<=0)return;const db=DB.load();const prod=db.produto.find(p=>p.id===prodId);if(prod){ComboApp.comboItems.push({id:prod.id,codigo:prod.codigo,nome:prod.nome,qty:qty});ComboApp.renderList()}},populateSelect:(filterText='')=>{const db=DB.load();const select=document.getElementById('p-combo-select');if(!select)return;let items=db.produto.filter(p=>p.estoque>0).sort((a,b)=>a.nome.localeCompare(b.nome));if(filterText){const t=filterText.toLowerCase();items=items.filter(p=>p.nome.toLowerCase().includes(t)||p.codigo.toLowerCase().includes(t))}select.innerHTML='<option value="">Selecione...</option>'+items.map(p=>`<option value="${p.id}">${p.codigo} - ${p.nome} (Q: ${p.estoque})</option>`).join('')},filterSelector:(val)=>{ComboApp.populateSelect(val)},renderList:()=>{const el=document.getElementById('p-combo-list');if(el)el.innerHTML=ComboApp.comboItems.map((i,idx)=>`<div class="item-row"><span><b>${i.codigo}</b> ${i.nome}</span><span>x${i.qty} <button type="button" onclick="ComboApp.remove(${idx})" style="color:red; margin-left:5px;">&times;</button></span></div>`).join('')},remove:(idx)=>{ComboApp.comboItems.splice(idx,1);ComboApp.renderList()}};
 const Cart={items:[],add:()=>{const prodId=document.getElementById('v-produto').value;const qty=Number(document.getElementById('v-qty').value);if(!prodId||qty<=0)return;const db=DB.load();const prod=db.produto.find(p=>p.id===prodId);if(prod){Cart.items.push({id:prod.id,codigo:prod.codigo,nome:prod.nome,qty:qty,price:prod.valor});Cart.render();Cart.calcTotal()}},processBulk:()=>{const text=document.getElementById('v-bulk-list').value;if(!text)return;const db=DB.load();const lines=text.split('\n');lines.forEach(line=>{const match=line.match(/^\[(\d+)\]\s*(.*)$/);let qty=1;let identifier=line.trim();if(match){qty=parseInt(match[1],10);identifier=match[2].trim()}else{const parts=line.split('|').map(s=>s.trim());identifier=parts[0];if(parts[1])qty=parseInt(parts[1],10)||1}if(!identifier)return;const idUpper=identifier.toUpperCase();const prod=db.produto.find(p=>{const pEans=[p.ean,...(p.variacoesEan||[])].filter(Boolean);const pNames=[p.nome,...(p.variacoesNome||[])].map(n=>n.toUpperCase());return p.codigo.toUpperCase()===idUpper||pEans.includes(identifier)||pNames.includes(idUpper)});if(prod)Cart.items.push({id:prod.id,codigo:prod.codigo,nome:prod.nome,qty:qty,price:prod.valor})});Cart.render();Cart.calcTotal();document.getElementById('v-bulk-list').value=''},render:()=>{const el=document.getElementById('v-cart-list');if(Cart.items.length===0){el.innerHTML='<div style="text-align: center; color: var(--slate-400); padding: 1rem; font-size: 0.8rem;">Carrinho vazio</div>';return}el.innerHTML=Cart.items.map((i,idx)=>`<div class="item-row"><span>${i.nome}</span><span>${i.qty} x ${i.price.toFixed(2)} <button type="button" onclick="Cart.remove(${idx})" style="color:red;">&times;</button></span></div>`).join('')},remove:(idx)=>{Cart.items.splice(idx,1);Cart.render();Cart.calcTotal()},calcTotal:()=>{const sub=Cart.items.reduce((acc,i)=>acc+(i.qty*i.price),0);const desc=Number(document.getElementById('v-desconto').value)||0;document.getElementById('v-total').innerText=`R$ ${(sub-desc).toFixed(2)}`},confirmSale:(e)=>{e.preventDefault();if(Cart.items.length===0)return alert('Carrinho vazio!');document.getElementById('sale-confirm-modal').showModal()},finalize:(e)=>{e.preventDefault();const stockType=document.querySelector('input[name="sale-stock-type"]:checked').value;const db=DB.load();const cliId=document.getElementById('v-cliente').value;const pag=document.getElementById('v-pagamento').value;const rota=document.getElementById('v-rota').value;const desc=Number(document.getElementById('v-desconto').value)||0;const total=Cart.items.reduce((acc,i)=>acc+(i.qty*i.price),0)-desc;const venda={id:Date.now().toString(),codigo:DB.nextCode('V'),cliId:cliId,pag:pag,rota:rota,desc:desc,total:total,date:Date.now(),items:Cart.items};Cart.items.forEach(cartItem=>{const prod=db.produto.find(p=>p.id===cartItem.id);if(prod){if(stockType==='fisico'){StockManager.deduct(prod,cartItem.qty)}else{prod.estoqueFiscal=(prod.estoqueFiscal||0)-cartItem.qty}if(prod.items&&prod.items.length>0){prod.items.forEach(childItem=>{const childProd=db.produto.find(cp=>cp.id===childItem.id);if(childProd){const totalChildQty=childItem.qty*cartItem.qty;if(stockType==='fisico'){StockManager.deduct(childProd,totalChildQty)}else{childProd.estoqueFiscal=(childProd.estoqueFiscal||0)-totalChildQty}}})}}});db.venda.push(venda);DB.saveAll(db);alert('Venda Finalizada!');document.getElementById('sale-confirm-modal').close();Cart.items=[];Cart.render();document.getElementById('form-venda').reset();document.getElementById('v-total').innerText='R$ 0,00';Views.venda.render()}};
 
 const ProductLinker = {
@@ -492,28 +347,10 @@ const ProductLinker = {
     search: (val) => {
         const db = DB.load();
         const term = val.toLowerCase();
-        // Filtra e limita a 50 itens para não pesar
-        const filtered = db.produto
-            .filter(p => p.nome.toLowerCase().includes(term) || p.codigo.toLowerCase().includes(term))
-            .slice(0, 50);
-            
+        const filtered = db.produto.filter(p => p.nome.toLowerCase().includes(term) || p.codigo.toLowerCase().includes(term)).slice(0, 50);
         const container = document.getElementById('generic-link-list');
-        container.innerHTML = filtered.map(p => 
-            `<div style="padding: 0.75rem; border-bottom: 1px solid var(--slate-100); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" 
-                  onclick="ProductLinker.select('${p.id}', '${p.codigo}')" 
-                  onmouseover="this.style.background='var(--slate-50)'" 
-                  onmouseout="this.style.background='transparent'">
-                <div>
-                    <div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-700);">${p.nome}</div>
-                    <div style="font-size: 0.7rem; color: var(--slate-400);">${p.codigo}</div>
-                </div>
-                <button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.65rem;">Selecionar</button>
-            </div>`
-        ).join('');
-        
-        if (filtered.length === 0) {
-            container.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--slate-400);">Nenhum produto encontrado</div>';
-        }
+        container.innerHTML = filtered.map(p => `<div style="padding: 0.75rem; border-bottom: 1px solid var(--slate-100); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="ProductLinker.select('${p.id}', '${p.codigo}')" onmouseover="this.style.background='var(--slate-50)'" onmouseout="this.style.background='transparent'"><div><div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-700);">${p.nome}</div><div style="font-size: 0.7rem; color: var(--slate-400);">${p.codigo}</div></div><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.65rem;">Selecionar</button></div>`).join('');
+        if (filtered.length === 0) {container.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--slate-400);">Nenhum produto encontrado</div>';}
     },
     select: (id, code) => {
         const targetId = ProductLinker.currentEditId;
@@ -521,55 +358,97 @@ const ProductLinker = {
             const hiddenInput = document.getElementById(`qp-link-id-${targetId}`);
             const textInput = document.getElementById(`qp-link-name-${targetId}`);
             if(hiddenInput) hiddenInput.value = id;
-            if(textInput) textInput.value = code; // Mostra o código no input visível
+            if(textInput) textInput.value = code;
         }
         document.getElementById('generic-selection-modal').close();
     }
 };
 
-// CLASSE DE EDIÇÃO COMPLETA NO CARD
+/* --- NOVO GERENCIADOR DE COMBOS NO CARD --- */
+const ComboQuick = {
+    toggle: (id, checked) => {
+        const box = document.getElementById(`combo-manager-${id}`);
+        if(box) box.style.display = checked ? 'block' : 'none';
+    },
+    search: (id, term) => {
+        const resultsId = `combo-results-${id}`;
+        const container = document.getElementById(resultsId);
+        if(!term || term.length < 2) { container.style.display='none'; return; }
+        
+        const db = DB.load();
+        const matches = db.produto.filter(p => p.id !== id && (p.nome.toLowerCase().includes(term.toLowerCase()) || p.codigo.toLowerCase().includes(term.toLowerCase()))).slice(0, 10);
+
+        container.innerHTML = matches.map(p => `
+            <div class="combo-search-item" onclick="ComboQuick.select('${id}', '${p.id}', '${p.codigo}', '${p.nome}')">
+                <span><b>${p.codigo}</b> - ${p.nome}</span>
+                <span style="color:#64748b; font-size:0.65rem;">Est: ${p.estoque}</span>
+            </div>
+        `).join('');
+        container.style.display = matches.length ? 'block' : 'none';
+    },
+    select: (parentId, prodId, code, name) => {
+        document.getElementById(`combo-sel-id-${parentId}`).value = prodId;
+        document.getElementById(`combo-search-${parentId}`).value = `${code} - ${name}`;
+        document.getElementById(`combo-results-${parentId}`).style.display = 'none';
+        document.getElementById(`combo-qty-${parentId}`).focus();
+    },
+    add: (parentId) => {
+        const prodId = document.getElementById(`combo-sel-id-${parentId}`).value;
+        const nameVal = document.getElementById(`combo-search-${parentId}`).value;
+        const qty = document.getElementById(`combo-qty-${parentId}`).value;
+        
+        if(!prodId || !nameVal) return;
+        const list = document.getElementById(`combo-list-${parentId}`);
+        if(list.querySelector(`[data-id="${prodId}"]`)) { alert('Produto já no combo.'); return; }
+
+        const div = document.createElement('div');
+        div.className = 'combo-added-item combo-item-row';
+        div.dataset.id = prodId;
+        const displayName = nameVal.includes(' - ') ? nameVal.split(' - ')[1] : nameVal;
+        div.dataset.name = displayName;
+        
+        div.innerHTML = `<span style="flex:1"><b>${nameVal.split(' - ')[0]}</b> ${displayName}</span><div style="display:flex; align-items:center; gap:5px;"><span style="font-size:0.65rem; color:#64748b;">Qtd:</span><input type="number" value="${qty}" min="1" class="p-input combo-qty-input" style="width:40px; height:22px; text-align:center;"><button onclick="this.parentElement.parentElement.remove()" class="btn-ghost" style="color:red; padding:2px;"><i class="fa-solid fa-times"></i></button></div>`;
+        list.appendChild(div);
+
+        document.getElementById(`combo-sel-id-${parentId}`).value = '';
+        document.getElementById(`combo-search-${parentId}`).value = '';
+        document.getElementById(`combo-qty-${parentId}`).value = '1';
+    },
+    renderRows: (items) => {
+        if(!items || !items.length) return '';
+        return items.map(i => `<div class="combo-added-item combo-item-row" data-id="${i.id}" data-name="${i.nome}"><span style="flex:1"><b>${i.codigo||''}</b> ${i.nome}</span><div style="display:flex; align-items:center; gap:5px;"><span style="font-size:0.65rem; color:#64748b;">Qtd:</span><input type="number" value="${i.qty}" min="1" class="p-input combo-qty-input" style="width:40px; height:22px; text-align:center;"><button onclick="this.parentElement.parentElement.remove()" class="btn-ghost" style="color:red; padding:2px;"><i class="fa-solid fa-times"></i></button></div></div>`).join('');
+    }
+};
+
 const CatalogQuick = {
     update: (id) => {
         const db = DB.load();
         const prod = db.produto.find(p => p.id === id);
         if (!prod) return;
 
-        // BÁSICOS
         prod.nome = document.getElementById(`qp-nome-${id}`).value;
         prod.categoria = document.getElementById(`qp-cat-${id}`).value;
         prod.fornecedor = document.getElementById(`qp-forn-${id}`).value;
-
-        // FINANCEIRO
         prod.valor = Number(document.getElementById(`qp-valor-${id}`).value);
         prod.custo = Number(document.getElementById(`qp-custo-${id}`).value);
         prod.isOffer = document.getElementById(`qp-is-offer-${id}`).checked;
         prod.offerPrice = Number(document.getElementById(`qp-offer-price-${id}`).value);
-
-        // ESTOQUE
         prod.estoque = Number(document.getElementById(`qp-est-fis-${id}`).value);
         prod.estoqueFiscal = Number(document.getElementById(`qp-est-fisc-${id}`).value);
         
-        // LOTES
         let newBatches = [];
         for(let i=1; i<=3; i++){
             let d = document.getElementById(`qp-b-date-${id}-${i}`).value;
             let q = Number(document.getElementById(`qp-b-qty-${id}-${i}`).value);
-            if(q > 0) {
-                newBatches.push({date: d, qty: q});
-            }
+            if(q > 0) newBatches.push({date: d, qty: q});
         }
-        if(newBatches.length > 0) {
-            prod.batches = newBatches;
-        } 
+        if(newBatches.length > 0) prod.batches = newBatches;
 
-        // DETALHES
         prod.ean = document.getElementById(`qp-ean-${id}`).value;
         prod.peso = Number(document.getElementById(`qp-peso-${id}`).value);
         prod.unidade = document.getElementById(`qp-unidade-${id}`).value;
         prod.limit = Number(document.getElementById(`qp-limit-${id}`).value);
         prod.imageName = document.getElementById(`qp-img-slug-${id}`).value;
-
-        // FISCAL
         prod.ncm = document.getElementById(`qp-ncm-${id}`).value;
         prod.cest = document.getElementById(`qp-cest-${id}`).value;
         prod.cfop = document.getElementById(`qp-cfop-${id}`).value;
@@ -577,7 +456,6 @@ const CatalogQuick = {
         prod.nota = document.getElementById(`qp-nota-${id}`).value;
         prod.refId = document.getElementById(`qp-refid-${id}`).value;
 
-        // VARIAÇÕES E OUTROS
         const vNomes = document.getElementById(`qp-var-nome-${id}`).value;
         prod.variacoesNome = vNomes ? vNomes.split('|').map(s=>s.trim()).filter(Boolean) : [];
         const vEans = document.getElementById(`qp-var-ean-${id}`).value;
@@ -586,41 +464,40 @@ const CatalogQuick = {
         prod.obs = document.getElementById(`qp-obs-${id}`).value;
         
         prod.personalized = document.getElementById(`qp-pers-${id}`).checked;
-        prod.isCombo = document.getElementById(`qp-combo-${id}`).checked;
-
-        // MARKETING
         prod.isBestSeller = document.getElementById(`qp-is-bestseller-${id}`).checked;
         
-        // LINK PRODUCT
+        // COMBO SAVE LOGIC
+        prod.isCombo = document.getElementById(`qp-combo-${id}`).checked;
+        if(prod.isCombo) {
+            const comboListEl = document.getElementById(`combo-list-${id}`);
+            let comboItems = [];
+            if(comboListEl) {
+                comboListEl.querySelectorAll('.combo-item-row').forEach(row => {
+                    comboItems.push({id: row.dataset.id, nome: row.dataset.name, qty: Number(row.querySelector('.combo-qty-input').value)});
+                });
+            }
+            prod.items = comboItems;
+        } else {
+            prod.items = [];
+        }
+        
         const isLinked = document.getElementById(`qp-link-toggle-${id}`).checked;
         if (isLinked) {
             const linkId = document.getElementById(`qp-link-id-${id}`).value;
             if (linkId) {
                 prod.linkedProdId = linkId;
-                // Busca o código atualizado caso tenha mudado
                 const linkedProd = db.produto.find(p => p.id === linkId);
                 prod.linkedProdCode = linkedProd ? linkedProd.codigo : '';
-            } else {
-                prod.linkedProdId = '';
-                prod.linkedProdCode = '';
-            }
-        } else {
-            prod.linkedProdId = '';
-            prod.linkedProdCode = '';
-        }
+            } else { prod.linkedProdId = ''; prod.linkedProdCode = ''; }
+        } else { prod.linkedProdId = ''; prod.linkedProdCode = ''; }
 
         DB.saveAll(db);
-        
         const btn = document.getElementById(`btn-save-${id}`);
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-check"></i> SALVO';
         btn.style.background = 'var(--primary)';
         btn.style.color = 'white';
-        setTimeout(() => {
-            btn.innerHTML = originalHtml;
-            btn.style.background = '#dcfce7';
-            btn.style.color = 'var(--success)';
-        }, 1500);
+        setTimeout(() => { btn.innerHTML = originalHtml; btn.style.background = '#dcfce7'; btn.style.color = 'var(--success)'; }, 1500);
     },
     addNew: () => {
         const codigo = DB.nextCode('P');
@@ -631,9 +508,7 @@ const CatalogQuick = {
         Views.catalogo.render();
     },
     delete: (id) => {
-        if(confirm("Deseja realmente excluir este produto?")) {
-            App.delete('produto', id);
-        }
+        if(confirm("Deseja realmente excluir este produto?")) App.delete('produto', id);
     },
     calcMargin: (id) => {
         const cost = parseFloat(document.getElementById(`qp-custo-${id}`).value) || 0;
@@ -643,21 +518,15 @@ const CatalogQuick = {
             const margin = ((sale - cost) / cost) * 100;
             marginEl.innerText = margin.toFixed(1) + '%';
             marginEl.style.color = margin < 0 ? 'var(--danger)' : 'var(--success)';
-        } else {
-            marginEl.innerText = '-';
-        }
+        } else { marginEl.innerText = '-'; }
     },
     toggleLink: (id, checked) => {
         const box = document.getElementById(`link-search-box-${id}`);
         if(box) box.style.display = checked ? 'flex' : 'none';
-        if(!checked) {
-            document.getElementById(`qp-link-id-${id}`).value = '';
-            document.getElementById(`qp-link-name-${id}`).value = '';
-        }
+        if(!checked) { document.getElementById(`qp-link-id-${id}`).value = ''; document.getElementById(`qp-link-name-${id}`).value = ''; }
     }
 };
 
-// --- CORRIGIDO: VIEWS RESTAURADAS E CATEGORYAPP MOVIDO PARA FORA ---
 const Views={
     cliente:{
         render:(data=null)=>{const list=data||DB.load().cliente;document.getElementById('count-cliente').innerText=list.length;document.getElementById('table-cliente').innerHTML=list.map(c=>`<tr><td><div style="font-weight: 700; color: var(--slate-700);">${c.codigo}</div><div style="font-size: 0.75rem; color: var(--slate-500);">${c.nome}</div></td><td><span class="badge badge-blue" style="margin-bottom: 2px;">${c.rota||'-'}</span><div style="font-size: 0.7rem; color: var(--slate-400);">${c.cidade}</div></td><td class="text-right"><button onclick="App.edit('cliente', '${c.id}')" class="btn btn-ghost" style="color: var(--primary);"><i class="fa-solid fa-pen"></i></button><button onclick="App.delete('cliente', '${c.id}')" class="btn btn-ghost" style="color: var(--danger);"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')},
@@ -669,133 +538,65 @@ const Views={
             const list = data || db.produto;
             document.getElementById('count-produto').innerText = list.length;
             const container = document.getElementById('catalog-expanded-list');
-            
-            // Gerar opções de categoria uma vez
             let catOptions = '<option value="">Sem Categoria</option>';
             db.categorias.forEach(c => {
                 catOptions += `<option value="${c.nome}">${c.nome}</option>`;
-                if(c.subs && c.subs.length > 0) {
-                    c.subs.forEach(s => { catOptions += `<option value="${c.nome} > ${s.nome}">&nbsp;&nbsp;↳ ${s.nome}</option>`; });
-                }
+                if(c.subs && c.subs.length > 0) { c.subs.forEach(s => { catOptions += `<option value="${c.nome} > ${s.nome}">&nbsp;&nbsp;↳ ${s.nome}</option>`; }); }
             });
 
             container.innerHTML = list.map(p => {
                 const hasImg = p.imageName ? true : false;
-                // Cálculo margem inicial
                 let marginTxt = '-';
                 if(p.custo > 0 && p.valor > 0) marginTxt = (((p.valor - p.custo)/p.custo)*100).toFixed(1) + '%';
-                
-                // Prepara lotes
                 let batchRows = '';
                 let batches = p.batches || [];
                 batches.sort((a,b) => new Date(a.date) - new Date(b.date));
                 for(let i=1; i<=3; i++) {
                     let b = batches[i-1] || {date:'', qty:''};
-                    batchRows += `<tr>
-                        <td><input type="date" id="qp-b-date-${p.id}-${i}" value="${b.date}" style="border:none; background:transparent; width:100%; font-size:0.7rem;"></td>
-                        <td><input type="number" id="qp-b-qty-${p.id}-${i}" value="${b.qty}" placeholder="-" style="border:none; background:transparent; width:100%; text-align:right; font-size:0.7rem;"></td>
-                    </tr>`;
+                    batchRows += `<tr><td><input type="date" id="qp-b-date-${p.id}-${i}" value="${b.date}" style="border:none; background:transparent; width:100%; font-size:0.7rem;"></td><td><input type="number" id="qp-b-qty-${p.id}-${i}" value="${b.qty}" placeholder="-" style="border:none; background:transparent; width:100%; text-align:right; font-size:0.7rem;"></td></tr>`;
                 }
-
                 const isLinked = !!(p.linkedProdId);
+                const comboRows = ComboQuick.renderRows(p.items);
 
                 return `
                 <div class="pro-card">
-                    <!-- COLUNA ESQUERDA: IMAGEM -->
                     <div class="pro-card-left">
-                        <div class="pro-img-box">
-                            ${hasImg ? `<img src="${p.imagem}" onerror="this.style.display='none'">` : `<i class="fa-solid fa-box-open" style="color:var(--slate-300);font-size:2rem"></i>`}
-                        </div>
-                        <div class="p-field" style="width:100%">
-                            <input type="text" id="qp-img-slug-${p.id}" value="${p.imageName || ''}" class="p-input" placeholder="Nome Imagem" style="font-size:0.65rem; text-align:center;">
-                        </div>
+                        <div class="pro-img-box">${hasImg ? `<img src="${p.imagem}" onerror="this.style.display='none'">` : `<i class="fa-solid fa-box-open" style="color:var(--slate-300);font-size:2rem"></i>`}</div>
+                        <div class="p-field" style="width:100%"><input type="text" id="qp-img-slug-${p.id}" value="${p.imageName || ''}" class="p-input" placeholder="Nome Imagem" style="font-size:0.65rem; text-align:center;"></div>
                     </div>
-
-                    <!-- COLUNA DIREITA: CONTEÚDO COMPLETO -->
                     <div class="pro-card-right">
-                        
-                        <!-- CABEÇALHO: IDENTIFICAÇÃO BÁSICA -->
                         <div class="pro-card-header">
-                            <div class="p-field">
-                                <span class="p-label">Cód.</span>
-                                <input type="text" value="${p.codigo}" readonly class="p-input" style="font-weight:700; text-align:center;">
-                            </div>
-                            <div class="p-field">
-                                <span class="p-label">Nome do Produto</span>
-                                <input type="text" id="qp-nome-${p.id}" value="${p.nome}" class="p-input" style="font-weight:600;">
-                            </div>
-                            <div class="p-field">
-                                <span class="p-label">Categoria</span>
-                                <select id="qp-cat-${p.id}" class="p-input">${catOptions.replace(`value="${p.categoria}"`, `value="${p.categoria}" selected`)}</select>
-                            </div>
-                            <div class="p-field">
-                                <span class="p-label">Fornecedor</span>
-                                <input type="text" id="qp-forn-${p.id}" value="${p.fornecedor || ''}" class="p-input">
-                            </div>
+                            <div class="p-field"><span class="p-label">Cód.</span><input type="text" value="${p.codigo}" readonly class="p-input" style="font-weight:700; text-align:center;"></div>
+                            <div class="p-field"><span class="p-label">Nome do Produto</span><input type="text" id="qp-nome-${p.id}" value="${p.nome}" class="p-input" style="font-weight:600;"></div>
+                            <div class="p-field"><span class="p-label">Categoria</span><select id="qp-cat-${p.id}" class="p-input">${catOptions.replace(`value="${p.categoria}"`, `value="${p.categoria}" selected`)}</select></div>
+                            <div class="p-field"><span class="p-label">Fornecedor</span><input type="text" id="qp-forn-${p.id}" value="${p.fornecedor || ''}" class="p-input"></div>
                         </div>
-
-                        <!-- CORPO: GRELHA DE INFORMAÇÕES -->
                         <div class="pro-card-body">
-                            
-                            <!-- BLOCO 1: COMERCIAL / FINANCEIRO -->
                             <div class="pro-section">
                                 <div class="pro-section-title">Comercial & Venda</div>
                                 <div class="pro-row-grid grid-3">
-                                    <div class="p-field">
-                                        <span class="p-label">Custo (R$)</span>
-                                        <input type="number" step="0.01" id="qp-custo-${p.id}" value="${p.custo}" oninput="CatalogQuick.calcMargin('${p.id}')" class="p-input">
-                                    </div>
-                                    <div class="p-field">
-                                        <span class="p-label">Margem</span>
-                                        <div id="qp-margem-display-${p.id}" style="font-size:0.8rem; font-weight:bold; padding:4px; color:var(--slate-600); text-align:center; background:var(--slate-100); border-radius:4px;">${marginTxt}</div>
-                                    </div>
-                                    <div class="p-field">
-                                        <span class="p-label" style="color:var(--primary)">Venda (R$)</span>
-                                        <input type="number" step="0.01" id="qp-valor-${p.id}" value="${p.valor}" oninput="CatalogQuick.calcMargin('${p.id}')" class="p-input" style="border-color:var(--primary); font-weight:700;">
-                                    </div>
+                                    <div class="p-field"><span class="p-label">Custo (R$)</span><input type="number" step="0.01" id="qp-custo-${p.id}" value="${p.custo}" oninput="CatalogQuick.calcMargin('${p.id}')" class="p-input"></div>
+                                    <div class="p-field"><span class="p-label">Margem</span><div id="qp-margem-display-${p.id}" style="font-size:0.8rem; font-weight:bold; padding:4px; color:var(--slate-600); text-align:center; background:var(--slate-100); border-radius:4px;">${marginTxt}</div></div>
+                                    <div class="p-field"><span class="p-label" style="color:var(--primary)">Venda (R$)</span><input type="number" step="0.01" id="qp-valor-${p.id}" value="${p.valor}" oninput="CatalogQuick.calcMargin('${p.id}')" class="p-input" style="border-color:var(--primary); font-weight:700;"></div>
                                 </div>
                                 <div style="background:#fff7ed; padding:8px; border-radius:4px; border:1px solid #ffedd5; margin-top:5px;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between;">
-                                        <label class="p-check" style="color:var(--warning); padding:0;">
-                                            <input type="checkbox" id="qp-is-offer-${p.id}" ${p.isOffer?'checked':''}> Em Oferta?
-                                        </label>
-                                        <input type="number" step="0.01" id="qp-offer-price-${p.id}" value="${p.offerPrice||''}" placeholder="R$" class="p-input" style="width:80px; height:24px; border-color:var(--warning);">
-                                    </div>
+                                    <div style="display:flex; align-items:center; justify-content:space-between;"><label class="p-check" style="color:var(--warning); padding:0;"><input type="checkbox" id="qp-is-offer-${p.id}" ${p.isOffer?'checked':''}> Em Oferta?</label><input type="number" step="0.01" id="qp-offer-price-${p.id}" value="${p.offerPrice||''}" placeholder="R$" class="p-input" style="width:80px; height:24px; border-color:var(--warning);"></div>
                                 </div>
                             </div>
-
-                            <!-- BLOCO 2: LOGÍSTICA / ESTOQUE -->
                             <div class="pro-section" style="border-left:1px solid var(--slate-100); border-right:1px solid var(--slate-100); padding:0 15px;">
                                 <div class="pro-section-title">Logística & Estoque</div>
                                 <div class="pro-row-grid grid-2">
-                                    <div class="p-field">
-                                        <span class="p-label">Físico Total</span>
-                                        <input type="number" id="qp-est-fis-${p.id}" value="${p.estoque}" class="p-input" style="font-weight:700;">
-                                    </div>
-                                    <div class="p-field">
-                                        <span class="p-label">Fiscal (NFe)</span>
-                                        <input type="number" id="qp-est-fisc-${p.id}" value="${p.estoqueFiscal||0}" class="p-input" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;">
-                                    </div>
+                                    <div class="p-field"><span class="p-label">Físico Total</span><input type="number" id="qp-est-fis-${p.id}" value="${p.estoque}" class="p-input" style="font-weight:700;"></div>
+                                    <div class="p-field"><span class="p-label">Fiscal (NFe)</span><input type="number" id="qp-est-fisc-${p.id}" value="${p.estoqueFiscal||0}" class="p-input" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;"></div>
                                 </div>
                                 <div class="pro-row-grid grid-2" style="margin-top:5px;">
-                                    <div class="p-field">
-                                        <span class="p-label">Peso (kg)</span>
-                                        <input type="number" step="0.001" id="qp-peso-${p.id}" value="${p.peso||''}" class="p-input">
-                                    </div>
-                                    <div class="p-field">
-                                        <span class="p-label">Limite Min.</span>
-                                        <input type="number" id="qp-limit-${p.id}" value="${p.limit||''}" class="p-input">
-                                    </div>
+                                    <div class="p-field"><span class="p-label">Peso (kg)</span><input type="number" step="0.001" id="qp-peso-${p.id}" value="${p.peso||''}" class="p-input"></div>
+                                    <div class="p-field"><span class="p-label">Limite Min.</span><input type="number" id="qp-limit-${p.id}" value="${p.limit||''}" class="p-input"></div>
                                 </div>
                                 <div style="margin-top:8px; background:var(--slate-50); border:1px solid var(--slate-200); border-radius:4px; padding:4px;">
-                                    <span class="p-label" style="display:block; margin-bottom:2px; font-size:0.6rem;">Controle de Lotes</span>
-                                    <table class="mini-batch-table">
-                                        ${batchRows}
-                                    </table>
+                                    <span class="p-label" style="display:block; margin-bottom:2px; font-size:0.6rem;">Controle de Lotes</span><table class="mini-batch-table">${batchRows}</table>
                                 </div>
                             </div>
-
-                            <!-- BLOCO 3: DADOS FISCAIS E DETALHES -->
                             <div class="pro-section">
                                 <div class="pro-section-title">Fiscal & Classificação</div>
                                 <div class="pro-row-grid grid-3">
@@ -808,35 +609,20 @@ const Views={
                                     <div class="p-field"><span class="p-label">CSOSN</span><input type="text" id="qp-csosn-${p.id}" value="${p.csosn||''}" class="p-input"></div>
                                     <div class="p-field"><span class="p-label">Ref.</span><input type="text" id="qp-refid-${p.id}" value="${p.refId||''}" class="p-input"></div>
                                 </div>
-                                <div class="p-field" style="margin-top:5px;">
-                                    <span class="p-label">EAN / Código de Barras</span>
-                                    <input type="text" id="qp-ean-${p.id}" value="${p.ean||''}" class="p-input font-mono">
-                                </div>
-                                <div class="p-field" style="margin-top:5px;">
-                                    <span class="p-label">Nota de Entrada (Última)</span>
-                                    <input type="text" id="qp-nota-${p.id}" value="${p.nota||''}" class="p-input">
-                                </div>
+                                <div class="p-field" style="margin-top:5px;"><span class="p-label">EAN / Código de Barras</span><input type="text" id="qp-ean-${p.id}" value="${p.ean||''}" class="p-input font-mono"></div>
+                                <div class="p-field" style="margin-top:5px;"><span class="p-label">Nota de Entrada (Última)</span><input type="text" id="qp-nota-${p.id}" value="${p.nota||''}" class="p-input"></div>
                             </div>
                         </div>
-
-                        <!-- RODAPÉ: CONFIGURAÇÕES E BOTÕES -->
                         <div class="pro-card-footer">
                             <div style="display:flex; gap:20px; align-items:center;">
-                                <!-- Flags -->
                                 <div class="p-check-group">
                                     <label class="p-check ${p.isBestSeller?'active':''}"><input type="checkbox" id="qp-is-bestseller-${p.id}" ${p.isBestSeller?'checked':''}> Mais Vendido</label>
                                     <label class="p-check ${p.personalized?'active':''}"><input type="checkbox" id="qp-pers-${p.id}" ${p.personalized?'checked':''}> Personalizado</label>
-                                    <label class="p-check ${p.isCombo?'active':''}"><input type="checkbox" id="qp-combo-${p.id}" ${p.isCombo?'checked':''}> É Combo</label>
+                                    <label class="p-check ${p.isCombo?'active':''}"><input type="checkbox" id="qp-combo-${p.id}" ${p.isCombo?'checked':''} onchange="ComboQuick.toggle('${p.id}', this.checked)"> É Combo</label>
                                 </div>
-                                
-                                <!-- Divisor Vertical -->
                                 <div style="width:1px; height:24px; background:var(--slate-200);"></div>
-
-                                <!-- Cross-sell -->
                                 <div style="display:flex; align-items:center; gap:8px;">
-                                    <label class="p-check" style="padding:0;">
-                                        <input type="checkbox" id="qp-link-toggle-${p.id}" ${isLinked?'checked':''} onchange="CatalogQuick.toggleLink('${p.id}', this.checked)"> Ligar Produto
-                                    </label>
+                                    <label class="p-check" style="padding:0;"><input type="checkbox" id="qp-link-toggle-${p.id}" ${isLinked?'checked':''} onchange="CatalogQuick.toggleLink('${p.id}', this.checked)"> Ligar Produto</label>
                                     <div id="link-search-box-${p.id}" style="display:${isLinked?'flex':'none'}; gap:5px; align-items:center;">
                                         <input type="hidden" id="qp-link-id-${p.id}" value="${p.linkedProdId||''}">
                                         <input type="text" id="qp-link-name-${p.id}" value="${p.linkedProdCode||''}" class="p-input" readonly placeholder="Buscar..." style="width:100px; height:26px; font-size:0.7rem;">
@@ -844,24 +630,28 @@ const Views={
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Botões de Ação -->
                             <div style="display:flex; gap:10px;">
                                 <button onclick="CatalogQuick.delete('${p.id}')" class="btn btn-ghost" style="color:var(--danger); font-size:0.75rem;">Excluir</button>
-                                <button id="btn-save-${p.id}" onclick="CatalogQuick.update('${p.id}')" class="btn btn-primary" style="padding:0.4rem 1.5rem; font-size:0.8rem;">
-                                    <i class="fa-solid fa-floppy-disk"></i> Salvar
-                                </button>
+                                <button id="btn-save-${p.id}" onclick="CatalogQuick.update('${p.id}')" class="btn btn-primary" style="padding:0.4rem 1.5rem; font-size:0.8rem;"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
                             </div>
                         </div>
-
-                        <!-- CAMPOS OCULTOS PARA MANTER COMPATIBILIDADE COM UPDATE() -->
-                        <div style="display:none;">
-                            <input type="text" id="qp-var-nome-${p.id}" value="${(p.variacoesNome||[]).join(' | ')}">
-                            <input type="text" id="qp-var-ean-${p.id}" value="${(p.variacoesEan||[]).join(' | ')}">
-                            <textarea id="qp-carac-${p.id}">${p.caracteristicas||''}</textarea>
-                            <textarea id="qp-obs-${p.id}">${p.obs||''}</textarea>
+                        
+                        <!-- ÁREA DE GESTÃO DE COMBO -->
+                        <div id="combo-manager-${p.id}" class="combo-box" style="display:${p.isCombo?'block':'none'};">
+                            <div style="font-weight:700; color:#0369a1; font-size:0.75rem; margin-bottom:5px;">GERENCIAR ITENS DO COMBO</div>
+                            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                                <div style="position:relative; flex:1;">
+                                    <input type="hidden" id="combo-sel-id-${p.id}">
+                                    <input type="text" id="combo-search-${p.id}" placeholder="Buscar produto para adicionar..." oninput="ComboQuick.search('${p.id}', this.value)" class="p-input" style="width:100%;">
+                                    <div id="combo-results-${p.id}" class="combo-search-dropdown"></div>
+                                </div>
+                                <input type="number" id="combo-qty-${p.id}" value="1" min="1" class="p-input" style="width:50px; text-align:center;">
+                                <button onclick="ComboQuick.add('${p.id}')" class="btn btn-primary" style="padding:0 10px;">+</button>
+                            </div>
+                            <div id="combo-list-${p.id}" style="display:flex; flex-direction:column; gap:4px;">${comboRows}</div>
                         </div>
 
+                        <div style="display:none;"><input type="text" id="qp-var-nome-${p.id}" value="${(p.variacoesNome||[]).join(' | ')}"><input type="text" id="qp-var-ean-${p.id}" value="${(p.variacoesEan||[]).join(' | ')}"><textarea id="qp-carac-${p.id}">${p.caracteristicas||''}</textarea><textarea id="qp-obs-${p.id}">${p.obs||''}</textarea></div>
                     </div>
                 </div>
                 `;
@@ -901,19 +691,12 @@ const CategoryApp={
     addSub:(parentId)=>{const name=prompt("Nome da Subcategoria:");if(!name)return;const db=DB.load();const parent=db.categorias.find(c=>c.id===String(parentId));if(parent){if(!parent.subs)parent.subs=[];parent.subs.push({id:Date.now().toString(),nome:name});DB.saveAll(db);CategoryApp.renderList();UI.populateCategories()}},
     edit:(id,parentId=null)=>{const db=DB.load();let target;if(parentId&&parentId!=='null'){const parent=db.categorias.find(c=>c.id===parentId);if(parent&&parent.subs){target=parent.subs.find(s=>s.id===id)}}else{target=db.categorias.find(c=>c.id===id)}if(target){const newName=prompt("Novo nome:",target.nome);if(newName&&newName.trim()){target.nome=newName.trim();DB.saveAll(db);CategoryApp.renderList();UI.populateCategories()}}},
     delete:(id,parentId=null)=>{if(!confirm("Tem a certeza que deseja excluir?"))return;const db=DB.load();if(parentId&&parentId!=='null'){const parent=db.categorias.find(c=>c.id===parentId);if(parent&&parent.subs){parent.subs=parent.subs.filter(s=>s.id!==id)}}else{db.categorias=db.categorias.filter(c=>c.id!==id)}DB.saveAll(db);CategoryApp.renderList();UI.populateCategories()},
-    updateOrder: (id, val) => {
-        const db = DB.load();
-        const cat = db.categorias.find(c => c.id === id);
-        if(cat) {
-            cat.order = Number(val);
-            DB.saveAll(db);
-        }
-    },
+    updateOrder: (id, val) => { const db = DB.load(); const cat = db.categorias.find(c => c.id === id); if(cat) { cat.order = Number(val); DB.saveAll(db); } },
     renderList:()=>{const db=DB.load();const container=document.getElementById('cat-list-container');if(db.categorias.length===0){container.innerHTML='<div style="color:#94a3b8; text-align:center; padding:1rem; font-size:0.8rem;">Nenhuma categoria cadastrada.</div>';return}container.innerHTML=db.categorias.sort((a,b)=>(a.order||999)-(b.order||999)).map(cat=>{const subsHtml=(cat.subs||[]).map(sub=>`<div style="display:flex; justify-content:space-between; align-items:center; padding: 6px 10px; border-left: 2px solid var(--slate-200); margin-left: 15px; margin-top: 4px; background: #fff; border-radius: 4px;"><span style="font-size:0.75rem; color: var(--slate-600);"><i class="fa-solid fa-turn-up fa-rotate-90" style="margin-right:6px; color:var(--slate-300);"></i> ${sub.nome}</span><div style="display:flex; gap: 5px;"><button onclick="CategoryApp.edit('${sub.id}', '${cat.id}')" class="btn-ghost" style="padding:2px 6px; color:var(--primary); font-size:0.7rem;" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="CategoryApp.delete('${sub.id}', '${cat.id}')" class="btn-ghost" style="padding:2px 6px; color:var(--danger); font-size:0.7rem;" title="Excluir"><i class="fa-solid fa-times"></i></button></div></div>`).join('');return`<div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 6px; margin-bottom: 8px; overflow:hidden; flex-shrink: 0;"><div style="padding: 10px; display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; border-bottom: 1px solid var(--slate-200);"><div style="display:flex;align-items:center;gap:10px;"><input type="number" value="${cat.order !== undefined ? cat.order : 999}" onchange="CategoryApp.updateOrder('${cat.id}', this.value)" style="width:45px; padding:2px 4px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.75rem;" title="Ordem de Exportação"><span style="font-weight: 700; color: var(--slate-800); font-size: 0.85rem;">${cat.nome}</span></div><div style="display:flex; gap: 5px;"><button onclick="CategoryApp.addSub('${cat.id}')" class="btn-ghost" style="padding:4px 8px; color:var(--success); background: #dcfce7; border-radius: 4px;" title="Adicionar Subcategoria"><i class="fa-solid fa-plus"></i></button><button onclick="CategoryApp.edit('${cat.id}')" class="btn-ghost" style="padding:4px 8px; color:var(--primary);" title="Editar Nome"><i class="fa-solid fa-pen"></i></button><button onclick="CategoryApp.delete('${cat.id}')" class="btn-ghost" style="padding:4px 8px; color:var(--danger);" title="Excluir Categoria"><i class="fa-solid fa-trash"></i></button></div></div><div style="padding: 4px 8px 8px 8px; background: var(--slate-50);">${subsHtml}</div></div>`}).join('')}
 };
 
-const App={handleSave:(type,e)=>{e.preventDefault();const form=document.getElementById(`form-${type}`);let data={};if(type==='produto'){data.id=document.getElementById('p-id').value;if(!data.id){data.id=Date.now().toString()+Math.random().toString().slice(2,5);data.codigo=DB.nextCode('P')}else{data.codigo=document.getElementById('p-codigo').value}data.nome=document.getElementById('p-nome').value;data.ean=document.getElementById('p-ean').value;data.categoria=document.getElementById('p-categoria').value;data.fornecedor=document.getElementById('p-fornecedor').value;data.caracteristicas=document.getElementById('p-caracteristicas').value;data.custo=Number(document.getElementById('p-custo').value)||0;data.valor=Number(document.getElementById('p-valor').value)||0;data.batches=[];for(let i=1;i<=3;i++){const d=document.getElementById(`p-batch-date-${i}`).value;const q=Number(document.getElementById(`p-batch-qty-${i}`).value);if(q>0){data.batches.push({date:d,qty:q})}}data.estoque=data.batches.reduce((acc,b)=>acc+b.qty,0);data.estoqueFiscal=Number(document.getElementById('p-estoqueFiscal').value)||0;data.peso=Number(document.getElementById('p-peso').value)||0;data.limit=Number(document.getElementById('p-limit').value)||0;let prefixo=document.getElementById('p-image-slug').value.trim();if(!prefixo){prefixo=data.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,'-').replace(/[^\w\-]+/g,'').replace(/\-\-+/g,'-').replace(/^-+/,'').replace(/-+$/,'')}data.imageName=prefixo;data.imagem=`../site/img/produtos/${prefixo}-cesta-basica-cuiaba-varzea-grande.webp`;if(document.getElementById('p-is-combo').checked){data.items=ComboApp.comboItems}else{data.items=[]}data.personalized=document.getElementById('p-personalized').checked;data.isOffer=document.getElementById('p-is-offer').checked;data.offerPrice=data.isOffer?(Number(document.getElementById('p-offer-price').value)||0):0;const vNomes=document.getElementById('p-variacoesNome').value;data.variacoesNome=vNomes?vNomes.split('|').map(s=>s.trim()).filter(Boolean):[];const vEans=document.getElementById('p-variacoesEan').value;data.variacoesEan=vEans?vEans.split('|').map(s=>s.trim()).filter(Boolean):[];data.ncm=document.getElementById('p-ncm').value;data.cest=document.getElementById('p-cest').value;data.cfop=document.getElementById('p-cfop').value;data.csosn=document.getElementById('p-csosn').value;data.obs=document.getElementById('p-obs-produto').value;data.subcategoria=document.getElementById('p-subcategoria').value;data.nota=document.getElementById('p-nota').value;data.refId=document.getElementById('p-refId').value;data.fator=document.getElementById('p-fator').value;data.unidade=document.getElementById('p-unidade').value}else{Array.from(form.elements).forEach(el=>{if(el.id){const key=el.id.split('-')[1];if(key)data[key]=el.type==='checkbox'?el.checked:el.value}})}if(type==='produto'||type==='cliente'){const db=DB.load();const conflict=db[type].find(x=>x.codigo===data.codigo&&x.id!==data.id);if(conflict){const prefix=type==='produto'?'P':'C';const next=DB.nextCode(prefix);alert(`Código duplicado detectado! O sistema alterou automaticamente de ${data.codigo} para ${next}.`);data.codigo=next;if(type==='produto')document.getElementById('p-codigo').value=next;else document.getElementById('c-codigo').value=next}}DB.save(type,data);form.reset();if(type==='produto'){document.getElementById('p-id').value='';ComboApp.comboItems=[];ComboApp.renderList();document.getElementById('p-img-preview').src='';document.getElementById('p-img-preview').style.display='none';document.getElementById('p-img-icon').style.display='block';document.getElementById('debug-path').innerText='';document.getElementById('p-margem').value='';document.getElementById('p-is-offer').checked=false;UI.toggleOfferInput();document.getElementById('p-image-slug').value='';document.getElementById('p-total-fisico-display').innerText='0';Views.catalogo.render()}else if(type==='cliente'){document.getElementById('c-id').value='';document.getElementById('client-history-area').style.display='none';Views.cliente.render()}},edit:(type,id)=>{const item=DB.load()[type].find(x=>x.id===id);if(!item)return;for(let k in item){const el=document.getElementById(`${type.charAt(0)}-${k}`);if(k==='obs'&&type==='produto'){const obsEl=document.getElementById('p-obs-produto');if(obsEl)obsEl.value=item[k];continue}if(el){if(el.type==='checkbox')el.checked=item[k];else el.value=item[k]}}document.getElementById(`${type.charAt(0)}-id`).value=item.id;if(type==='produto'){alert("Use os campos no próprio card para editar todas as informações.");}else if(type==='cliente'){const db=DB.load();const sales=db.venda.filter(v=>v.cliId===item.id).sort((a,b)=>b.date-a.date);const historyArea=document.getElementById('client-history-area');const historyList=document.getElementById('c-history-list');if(sales.length>0){historyArea.style.display='block';historyList.innerHTML=sales.map(s=>`<div class="item-row" style="cursor: pointer;" onclick="UI.goToOrder('${s.codigo}')"><span>${new Date(s.date).toLocaleDateString()}</span><span style="font-weight: 700;">#${s.codigo}</span><span style="color: var(--success);">R$ ${s.total.toFixed(2)}</span></div>`).join('')}else{historyArea.style.display='block';historyList.innerHTML='<div style="padding:0.5rem; text-align:center; color:var(--slate-400);">Nenhuma compra encontrada.</div>'}}},delete:(type,id)=>{if(confirm('Confirmar exclusão?')){DB.delete(type,id);if(type==='cliente')Views.cliente.render();else if(type==='produto')Views.catalogo.render();else if(type==='venda')Views.venda.render()}}};
-const UI={switchView:(view,btn)=>{document.querySelectorAll('.view-section').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));document.getElementById(`view-${view}`).classList.add('active');if(btn)btn.classList.add('active');document.getElementById('page-title').innerText=view==='logistica'?'Logística & Estoque':view.charAt(0).toUpperCase()+view.slice(1);if(view==='catalogo'){Views.catalogo.render();ComboApp.populateSelect();UI.populateCategories();document.querySelector('#view-catalogo .panel-left').style.display='none'}if(view==='cliente')Views.cliente.render();if(view==='logistica'){const sel=document.getElementById('e-produto');sel.innerHTML='<option value="">Sel...</option>'+DB.load().produto.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');Views.logistica.render()}if(view==='venda'){const db=DB.load();const cliSel=document.getElementById('v-cliente');cliSel.innerHTML='<option value="">Selecione...</option>'+db.cliente.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');const prodSel=document.getElementById('v-produto');prodSel.innerHTML='<option value="">Selecione...</option>'+db.produto.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');Views.venda.render()}if(view==='expedicao')Views.expedicao.render()},filter:(t,v)=>Views[t].filter(v),resetForm:(t)=>{const f=document.getElementById(`form-${t}`);if(f)f.reset();document.getElementById(`${t.charAt(0)}-id`).value='';if(t==='produto'){ComboApp.comboItems=[];ComboApp.renderList();if(document.getElementById('p-is-combo'))document.getElementById('p-is-combo').checked=false;UI.toggleComboArea(false);if(document.getElementById('p-img-preview')){document.getElementById('p-img-preview').src='';document.getElementById('p-img-preview').style.display='none'}if(document.getElementById('p-img-icon'))document.getElementById('p-img-icon').style.display='block';if(document.getElementById('debug-path'))document.getElementById('debug-path').innerText='';if(document.getElementById('p-margem'))document.getElementById('p-margem').value='';if(document.getElementById('p-is-offer'))document.getElementById('p-is-offer').checked=false;UI.toggleOfferInput();if(document.getElementById('p-image-slug'))document.getElementById('p-image-slug').value='';if(document.getElementById('p-total-fisico-display'))document.getElementById('p-total-fisico-display').innerText='0';document.querySelector('#view-catalogo .panel-left').style.display='none';Views.catalogo.render()}if(t==='cliente'){document.getElementById('client-history-area').style.display='none'}},toggleStockInputs:()=>{const type=document.querySelector('input[name="p-stock-type"]:checked')?.value;if(!type)return;const f=document.getElementById('grp-fisico');const fi=document.getElementById('grp-fiscal');if(f)f.style.display=type==='fiscal'?'none':'block';if(fi)fi.style.display=type==='fisico'?'none':'block'},toggleOfferInput:()=>{const isOffer=document.getElementById('p-is-offer');const c=document.getElementById('offer-price-container');if(isOffer&&c)c.style.display=isOffer.checked?'block':'none'},updateImageSlug:()=>{if(document.getElementById('p-image-slug').value)return;const name=document.getElementById('p-nome').value;const slug=name.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,'-').replace(/[^\w\-]+/g,'').replace(/\-\-+/g,'-').replace(/^-+/,'').replace(/-+$/,'');const previewUrl=`../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;UI.updatePreviewCommon(previewUrl)},updatePreviewManual:()=>{const slug=document.getElementById('p-image-slug').value;if(!slug){UI.updateImageSlug();return}const previewUrl=`../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;UI.updatePreviewCommon(previewUrl)},updatePreviewCommon:(url)=>{const imgEl=document.getElementById('p-img-preview');const iconEl=document.getElementById('p-img-icon');const debugEl=document.getElementById('debug-path');if(debugEl)debugEl.innerText=`Tentando: ${url}`;if(debugEl)debugEl.style.background="rgba(0,0,0,0.7)";if(imgEl){imgEl.src=url;imgEl.onload=()=>{imgEl.style.display='block';if(iconEl)iconEl.style.display='none';if(debugEl)debugEl.style.background="rgba(16, 185, 129, 0.9)"};imgEl.onerror=()=>{UI.onImgError()}}},onImgError:()=>{const imgEl=document.getElementById('p-img-preview');const iconEl=document.getElementById('p-img-icon');const debugEl=document.getElementById('debug-path');if(imgEl)imgEl.style.display='none';if(iconEl)iconEl.style.display='block';if(debugEl)debugEl.style.background="rgba(239, 68, 68, 0.9)"},copyImageSlug:()=>{const copyText=document.getElementById("p-image-slug");copyText.select();copyText.setSelectionRange(0,99999);navigator.clipboard.writeText(copyText.value).then(()=>{alert("Nome copiado: "+copyText.value)})},calcMargin:()=>{const cost=parseFloat(document.getElementById('p-custo').value)||0;const sale=parseFloat(document.getElementById('p-valor').value)||0;const marginEl=document.getElementById('p-margem');if(marginEl){if(cost>0&&sale>0){const margin=((sale-cost)/cost)*100;marginEl.value=margin.toFixed(2)+'%';marginEl.style.color=margin<0?'var(--danger)':'var(--success)'}else{marginEl.value='0%';marginEl.style.color='var(--slate-500)'}}},searchProduct:(val)=>{const db=DB.load();const prodSel=document.getElementById('v-produto');const term=val.toLowerCase();const filtered=db.produto.filter(p=>{const pNames=[p.nome,...(p.variacoesNome||[])].join(' ').toLowerCase();const pEans=[p.ean,...(p.variacoesEan||[])].join(' ');return pNames.includes(term)||p.codigo.toLowerCase().includes(term)||pEans.includes(term)});prodSel.innerHTML='<option value="">Selecione...</option>'+filtered.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('')},toggleComboArea:(checked)=>{const ca=document.getElementById('combo-area');if(ca)ca.style.display=checked?'block':'none';if(checked)ComboApp.populateSelect()},populateCategories:()=>{const db=DB.load();let options='<option value="">Sem Categoria</option>';db.categorias.forEach(c=>{options+=`<option value="${c.nome}">${c.nome}</option>`;if(c.subs&&c.subs.length>0){c.subs.forEach(s=>{options+=`<option value="${c.nome} > ${s.nome}">&nbsp;&nbsp;&nbsp;↳ ${s.nome}</option>`})}});const sel=document.getElementById('p-categoria');if(sel){const current=sel.value;sel.innerHTML=options;sel.value=current}const filterSel=document.getElementById('filter-cat');if(filterSel){const currentFilter=filterSel.value;const filterOptions=options.replace('value="">Sem Categoria','value="">Todas Categorias');filterSel.innerHTML=filterOptions;filterSel.value=currentFilter}},goToOrder:(orderCode)=>{const btnVenda=document.querySelector("button[onclick*='venda']");UI.switchView('venda',btnVenda);const searchInput=document.getElementById('v-search-input');if(searchInput){searchInput.value=orderCode;UI.filter('venda',orderCode)}}};
+const App={handleSave:(type,e)=>{e.preventDefault();const form=document.getElementById(`form-${type}`);let data={};if(type==='produto'){data.id=document.getElementById('p-id').value;if(!data.id){data.id=Date.now().toString()+Math.random().toString().slice(2,5);data.codigo=DB.nextCode('P')}else{data.codigo=document.getElementById('p-codigo').value}data.nome=document.getElementById('p-nome').value;data.ean=document.getElementById('p-ean').value;data.categoria=document.getElementById('p-categoria').value;data.fornecedor=document.getElementById('p-fornecedor').value;data.caracteristicas=document.getElementById('p-caracteristicas').value;data.custo=Number(document.getElementById('p-custo').value)||0;data.valor=Number(document.getElementById('p-valor').value)||0;data.batches=[];for(let i=1;i<=3;i++){const d=document.getElementById(`p-batch-date-${i}`).value;const q=Number(document.getElementById(`p-batch-qty-${i}`).value);if(q>0){data.batches.push({date:d,qty:q})}}data.estoque=data.batches.reduce((acc,b)=>acc+b.qty,0);data.estoqueFiscal=Number(document.getElementById('p-estoqueFiscal').value)||0;data.peso=Number(document.getElementById('p-peso').value)||0;data.limit=Number(document.getElementById('p-limit').value)||0;let prefixo=document.getElementById('p-image-slug').value.trim();if(!prefixo){prefixo=data.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,'-').replace(/[^\w\-]+/g,'').replace(/\-\-+/g,'-').replace(/^-+/,'').replace(/-+$/,'')}data.imageName=prefixo;data.imagem=`../site/img/produtos/${prefixo}-cesta-basica-cuiaba-varzea-grande.webp`;if(document.getElementById('p-is-combo').checked){data.items=ComboApp.comboItems}else{data.items=[]}data.personalized=document.getElementById('p-personalized').checked;data.isOffer=document.getElementById('p-is-offer').checked;data.offerPrice=data.isOffer?(Number(document.getElementById('p-offer-price').value)||0):0;const vNomes=document.getElementById('p-variacoesNome').value;data.variacoesNome=vNomes?vNomes.split('|').map(s=>s.trim()).filter(Boolean):[];const vEans=document.getElementById('p-variacoesEan').value;data.variacoesEan=vEans?vEans.split('|').map(s=>s.trim()).filter(Boolean):[];data.ncm=document.getElementById('p-ncm').value;data.cest=document.getElementById('p-cest').value;data.cfop=document.getElementById('p-cfop').value;data.csosn=document.getElementById('p-csosn').value;data.obs=document.getElementById('p-obs-produto').value;data.subcategoria=document.getElementById('p-subcategoria').value;data.nota=document.getElementById('p-nota').value;data.refId=document.getElementById('p-refId').value;data.fator=document.getElementById('p-fator').value;data.unidade=document.getElementById('p-unidade').value}else{Array.from(form.elements).forEach(el=>{if(el.id){const key=el.id.split('-')[1];if(key)data[key]=el.type==='checkbox'?el.checked:el.value}})}if(type==='produto'||type==='cliente'){const db=DB.load();const conflict=db[type].find(x=>x.codigo===data.codigo&&x.id!==data.id);if(conflict){const prefix=type==='produto'?'P':'C';const next=DB.nextCode(prefix);alert(`Código duplicado detectado! O sistema alterou automaticamente de ${data.codigo} para ${next}.`);data.codigo=next;if(type==='produto')document.getElementById('p-codigo').value=next;else document.getElementById('c-codigo').value=next}}DB.save(type,data);form.reset();if(type==='produto'){Views.catalogo.render()}else if(type==='cliente'){document.getElementById('c-id').value='';document.getElementById('client-history-area').style.display='none';Views.cliente.render()}},edit:(type,id)=>{const item=DB.load()[type].find(x=>x.id===id);if(!item)return;for(let k in item){const el=document.getElementById(`${type.charAt(0)}-${k}`);if(k==='obs'&&type==='produto'){const obsEl=document.getElementById('p-obs-produto');if(obsEl)obsEl.value=item[k];continue}if(el){if(el.type==='checkbox')el.checked=item[k];else el.value=item[k]}}document.getElementById(`${type.charAt(0)}-id`).value=item.id;if(type==='produto'){alert("Use os campos no próprio card para editar todas as informações.");}else if(type==='cliente'){const db=DB.load();const sales=db.venda.filter(v=>v.cliId===item.id).sort((a,b)=>b.date-a.date);const historyArea=document.getElementById('client-history-area');const historyList=document.getElementById('c-history-list');if(sales.length>0){historyArea.style.display='block';historyList.innerHTML=sales.map(s=>`<div class="item-row" style="cursor: pointer;" onclick="UI.goToOrder('${s.codigo}')"><span>${new Date(s.date).toLocaleDateString()}</span><span style="font-weight: 700;">#${s.codigo}</span><span style="color: var(--success);">R$ ${s.total.toFixed(2)}</span></div>`).join('')}else{historyArea.style.display='block';historyList.innerHTML='<div style="padding:0.5rem; text-align:center; color:var(--slate-400);">Nenhuma compra encontrada.</div>'}}},delete:(type,id)=>{if(confirm('Confirmar exclusão?')){DB.delete(type,id);if(type==='cliente')Views.cliente.render();else if(type==='produto')Views.catalogo.render();else if(type==='venda')Views.venda.render()}}};
+const UI={switchView:(view,btn)=>{document.querySelectorAll('.view-section').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));document.getElementById(`view-${view}`).classList.add('active');if(btn)btn.classList.add('active');document.getElementById('page-title').innerText=view==='logistica'?'Logística & Estoque':view.charAt(0).toUpperCase()+view.slice(1);if(view==='catalogo'){Views.catalogo.render();UI.populateCategories();document.querySelector('#view-catalogo .panel-left').style.display='none'}if(view==='cliente')Views.cliente.render();if(view==='logistica'){const sel=document.getElementById('e-produto');sel.innerHTML='<option value="">Sel...</option>'+DB.load().produto.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');Views.logistica.render()}if(view==='venda'){const db=DB.load();const cliSel=document.getElementById('v-cliente');cliSel.innerHTML='<option value="">Selecione...</option>'+db.cliente.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');const prodSel=document.getElementById('v-produto');prodSel.innerHTML='<option value="">Selecione...</option>'+db.produto.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');Views.venda.render()}if(view==='expedicao')Views.expedicao.render()},filter:(t,v)=>Views[t].filter(v),resetForm:(t)=>{const f=document.getElementById(`form-${t}`);if(f)f.reset();document.getElementById(`${t.charAt(0)}-id`).value='';if(t==='produto'){document.querySelector('#view-catalogo .panel-left').style.display='none';Views.catalogo.render()}if(t==='cliente'){document.getElementById('client-history-area').style.display='none'}},toggleStockInputs:()=>{const type=document.querySelector('input[name="p-stock-type"]:checked')?.value;if(!type)return;const f=document.getElementById('grp-fisico');const fi=document.getElementById('grp-fiscal');if(f)f.style.display=type==='fiscal'?'none':'block';if(fi)fi.style.display=type==='fisico'?'none':'block'},toggleOfferInput:()=>{const isOffer=document.getElementById('p-is-offer');const c=document.getElementById('offer-price-container');if(isOffer&&c)c.style.display=isOffer.checked?'block':'none'},updateImageSlug:()=>{if(document.getElementById('p-image-slug').value)return;const name=document.getElementById('p-nome').value;const slug=name.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,'-').replace(/[^\w\-]+/g,'').replace(/\-\-+/g,'-').replace(/^-+/,'').replace(/-+$/,'');const previewUrl=`../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;UI.updatePreviewCommon(previewUrl)},updatePreviewManual:()=>{const slug=document.getElementById('p-image-slug').value;if(!slug){UI.updateImageSlug();return}const previewUrl=`../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;UI.updatePreviewCommon(previewUrl)},updatePreviewCommon:(url)=>{const imgEl=document.getElementById('p-img-preview');const iconEl=document.getElementById('p-img-icon');const debugEl=document.getElementById('debug-path');if(debugEl)debugEl.innerText=`Tentando: ${url}`;if(debugEl)debugEl.style.background="rgba(0,0,0,0.7)";if(imgEl){imgEl.src=url;imgEl.onload=()=>{imgEl.style.display='block';if(iconEl)iconEl.style.display='none';if(debugEl)debugEl.style.background="rgba(16, 185, 129, 0.9)"};imgEl.onerror=()=>{UI.onImgError()}}},onImgError:()=>{const imgEl=document.getElementById('p-img-preview');const iconEl=document.getElementById('p-img-icon');const debugEl=document.getElementById('debug-path');if(imgEl)imgEl.style.display='none';if(iconEl)iconEl.style.display='block';if(debugEl)debugEl.style.background="rgba(239, 68, 68, 0.9)"},copyImageSlug:()=>{const copyText=document.getElementById("p-image-slug");copyText.select();copyText.setSelectionRange(0,99999);navigator.clipboard.writeText(copyText.value).then(()=>{alert("Nome copiado: "+copyText.value)})},calcMargin:()=>{const cost=parseFloat(document.getElementById('p-custo').value)||0;const sale=parseFloat(document.getElementById('p-valor').value)||0;const marginEl=document.getElementById('p-margem');if(marginEl){if(cost>0&&sale>0){const margin=((sale-cost)/cost)*100;marginEl.value=margin.toFixed(2)+'%';marginEl.style.color=margin<0?'var(--danger)':'var(--success)'}else{marginEl.value='0%';marginEl.style.color='var(--slate-500)'}}},searchProduct:(val)=>{const db=DB.load();const prodSel=document.getElementById('v-produto');const term=val.toLowerCase();const filtered=db.produto.filter(p=>{const pNames=[p.nome,...(p.variacoesNome||[])].join(' ').toLowerCase();const pEans=[p.ean,...(p.variacoesEan||[])].join(' ');return pNames.includes(term)||p.codigo.toLowerCase().includes(term)||pEans.includes(term)});prodSel.innerHTML='<option value="">Selecione...</option>'+filtered.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('')},toggleComboArea:(checked)=>{const ca=document.getElementById('combo-area');if(ca)ca.style.display=checked?'block':'none';if(checked)ComboApp.populateSelect()},populateCategories:()=>{const db=DB.load();let options='<option value="">Sem Categoria</option>';db.categorias.forEach(c=>{options+=`<option value="${c.nome}">${c.nome}</option>`;if(c.subs&&c.subs.length>0){c.subs.forEach(s=>{options+=`<option value="${c.nome} > ${s.nome}">&nbsp;&nbsp;&nbsp;↳ ${s.nome}</option>`})}});const sel=document.getElementById('p-categoria');if(sel){const current=sel.value;sel.innerHTML=options;sel.value=current}const filterSel=document.getElementById('filter-cat');if(filterSel){const currentFilter=filterSel.value;const filterOptions=options.replace('value="">Sem Categoria','value="">Todas Categorias');filterSel.innerHTML=filterOptions;filterSel.value=currentFilter}},goToOrder:(orderCode)=>{const btnVenda=document.querySelector("button[onclick*='venda']");UI.switchView('venda',btnVenda);const searchInput=document.getElementById('v-search-input');if(searchInput){searchInput.value=orderCode;UI.filter('venda',orderCode)}}};
 window.onload=()=>{UI.switchView('cliente',document.querySelector('.nav-item.active'));setInterval(()=>document.getElementById('clock').innerText=new Date().toLocaleTimeString().slice(0,5),1000);setTimeout(()=>{UI.populateCategories()},500)};
 </script>
 </body>
