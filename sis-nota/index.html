@@ -3,16 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitor XML para Cadastro Bling - Com Conversão</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>Leitor XML para Cadastro Bling - Standalone</title>
     <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { height: 8px; width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* --- CSS Reset & Base --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f8fafc; color: #334155; padding-bottom: 80px; }
+        input, button { font-family: inherit; }
+
+        /* --- Cores e Variáveis --- */
+        :root {
+            --primary: #4f46e5; /* Indigo */
+            --primary-dark: #4338ca;
+            --primary-light: #e0e7ff;
+            --success-bg: #dcfce7;
+            --success-text: #15803d;
+            --danger-bg: #fee2e2;
+            --danger-text: #b91c1c;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --white: #ffffff;
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-area svg { width: 32px; height: 32px; stroke-width: 2; }
+        .logo-text h1 { font-size: 1.1rem; font-weight: 700; line-height: 1.2; }
+        .logo-text p { font-size: 0.75rem; opacity: 0.8; }
+
+        /* --- Barra de Configurações (Header) --- */
+        .settings-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: rgba(0,0,0,0.2);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+        }
+        .setting-item { display: flex; flex-direction: column; }
+        .setting-label { text-transform: uppercase; font-weight: bold; font-size: 0.65rem; opacity: 0.8; margin-bottom: 2px; }
+        .setting-input-group { display: flex; align-items: center; gap: 5px; }
+        .setting-input {
+            width: 50px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .divider { width: 1px; height: 25px; background-color: rgba(255,255,255,0.3); }
+
+        /* --- Main Container --- */
+        main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+        /* --- Upload Area --- */
+        .upload-area {
+            background: white;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1.5rem;
+        }
+        .upload-area:hover { border-color: var(--primary); background-color: #f8fafc; }
+        .upload-icon { color: var(--primary); width: 48px; height: 48px; margin-bottom: 10px; }
+        .file-name {
+            display: inline-block;
+            margin-top: 10px;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        /* --- Cards de Produto --- */
+        .product-list { display: flex; flex-direction: column; gap: 1rem; }
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
         
+        .card-header {
+            padding: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        /* Coluna Nome */
+        .col-main { flex: 1; min-width: 250px; }
+        .tags-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
+        .badge {
+            font-size: 0.65rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+        .badge-st { background-color: var(--danger-bg); color: var(--danger-text); border-color: #fecaca; }
+        .badge-normal { background-color: var(--success-bg); color: var(--success-text); border-color: #bbf7d0; }
+        .badge-gray { background-color: #f1f5f9; color: var(--text-muted); border-color: var(--border); font-family: monospace; }
+        
+        .input-name {
+            width: 100%;
+            border: none;
+            border-bottom: 1px dashed var(--border);
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            padding: 4px 0;
+            background: transparent;
+            outline: none;
+        }
+        .input-name:focus { border-bottom-color: var(--primary); }
+
+        .actions-row { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+        .btn-mini {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .btn-mini:hover { border-color: var(--primary); color: var(--primary); background: white; }
+        .btn-mini svg { width: 12px; height: 12px; }
+
+        /* Coluna Quantidade e Preço */
+        .col-stats { display: flex; gap: 1rem; flex-wrap: wrap; }
+        
+        .stat-box {
+            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+        .stat-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 4px; }
+        .input-factor {
+            width: 50px;
+            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-weight: bold;
+            color: var(--primary);
+            padding: 2px;
+        }
+
+        .price-display { font-weight: bold; font-size: 0.9rem; color: #15803d; }
+        
+        .price-calculator {
+            min-width: 160px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        .calc-row.highlight { background-color: var(--primary-light); border-color: #c7d2fe; }
+
+        .margin-input { width: 35px; text-align: center; border: 1px solid var(--border); border-radius: 3px; font-size: 0.7rem; }
+
+        /* Botão Expandir */
+        .btn-expand {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            color: var(--text-muted);
+            align-self: center;
+        }
+        .btn-expand:hover { background-color: #f1f5f9; }
+
+        /* Detalhes (Campos Bling) */
+        .details-panel {
+            background-color: #f8fafc;
+            border-top: 1px solid var(--border);
+            padding: 1rem;
+            display: none; /* JS toggles this */
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .field-group { display: flex; flex-direction: column; }
+        .field-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+        .field-value {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            height: 34px;
+        }
+        .field-value:hover { border-color: #94a3b8; color: var(--primary); }
+        .field-value span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 5px; }
+        .field-value svg { width: 14px; height: 14px; color: #cbd5e1; flex-shrink: 0; }
+        .field-value:hover svg { color: var(--primary); }
+
+        /* Toast Notification */
         .toast {
             visibility: hidden;
             min-width: 250px;
@@ -22,7 +270,7 @@
             border-radius: 4px;
             padding: 16px;
             position: fixed;
-            z-index: 50;
+            z-index: 999;
             left: 50%;
             bottom: 30px;
             transform: translateX(-50%);
@@ -31,151 +279,161 @@
             transition: opacity 0.3s, bottom 0.3s;
         }
         .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
-        
-        /* Input number custom style */
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
+
+        .hidden { display: none !important; }
+        .rotate-180 { transform: rotate(180deg); }
+        .supplier-bar {
+            background: white; border-left: 4px solid var(--primary);
+            padding: 10px 15px; margin-bottom: 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border-radius: 0 8px 8px 0;
         }
+
+        /* SVG Icons Inline Classes */
+        .icon-sm { width: 14px; height: 14px; }
+        .icon-md { width: 18px; height: 18px; }
+        .icon-lg { width: 24px; height: 24px; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
+<body>
 
     <!-- Header -->
-    <header class="bg-indigo-600 text-white shadow-lg sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <i data-lucide="calculator" class="w-8 h-8"></i>
-                <div>
-                    <h1 class="text-xl font-bold">Conversor de Estoque XML</h1>
-                    <p class="text-xs text-indigo-100">De Caixa Fechada para Venda Unitária</p>
+    <header>
+        <div class="header-container">
+            <div class="logo-area">
+                <!-- Icon Package Search -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                    <path d="M16.5 9.4 7.55 4.24"/>
+                    <polyline points="3.29 7 12 12 20.71 7"/>
+                    <line x1="12" y1="22" x2="12" y2="12"/>
+                    <circle cx="18.5" cy="15.5" r="2.5"/>
+                    <path d="M20.27 17.27 22 19"/>
+                </svg>
+                <div class="logo-text">
+                    <h1>Mapeador XML -> Bling</h1>
+                    <p>Conversor Standalone</p>
                 </div>
             </div>
-            <div class="hidden md:flex gap-2 text-sm">
-                <div class="bg-indigo-700 py-1 px-3 rounded-full flex items-center gap-2">
-                    <i data-lucide="box" class="w-3 h-3"></i> Entrada: Caixa
+
+            <div class="settings-bar">
+                <div class="setting-item">
+                    <span class="setting-label">Margem Lucro</span>
+                    <div class="setting-input-group">
+                        <input type="number" id="global-margin" value="100" class="setting-input" onchange="recalculateAllPrices()">
+                        <span>%</span>
+                    </div>
                 </div>
-                <div class="bg-indigo-500 py-1 px-3 rounded-full flex items-center gap-2">
-                    <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                </div>
-                <div class="bg-green-600 py-1 px-3 rounded-full flex items-center gap-2">
-                    <i data-lucide="tag" class="w-3 h-3"></i> Saída: Unidade
+                <div class="divider"></div>
+                <div class="setting-item">
+                    <span class="setting-label">Estoque</span>
+                    <span>Igual Compra</span>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-[95%] mx-auto px-2 py-6">
+    <main>
         
         <!-- Upload Area -->
-        <div class="bg-white rounded-xl shadow-sm border-2 border-dashed border-slate-300 p-8 text-center transition-all hover:border-indigo-400 group mb-6" id="drop-zone">
-            <input type="file" id="fileInput" accept=".xml" class="hidden" />
-            <div class="flex flex-col items-center cursor-pointer" onclick="document.getElementById('fileInput').click()">
-                <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 transition-colors">
-                    <i data-lucide="upload-cloud" class="w-8 h-8"></i>
-                </div>
-                <h3 class="text-lg font-semibold text-slate-700">Carregar XML da Nota</h3>
-                <p class="text-slate-500 mt-2 text-sm">O sistema vai detectar automaticamente as quantidades na caixa (ex: 12x1)</p>
-                <p id="fileNameDisplay" class="mt-4 font-bold text-indigo-600 hidden"></p>
-            </div>
+        <div class="upload-area" id="drop-zone" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" accept=".xml" style="display: none;" />
+            <!-- Upload Icon -->
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+                <path d="M12 12v9"/>
+                <path d="m16 16-4-4-4 4"/>
+            </svg>
+            <h3>Clique para carregar o XML da Nota</h3>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">Processamento 100% local e seguro</p>
+            <span id="fileNameDisplay" class="file-name hidden"></span>
         </div>
 
-        <!-- Instructions (Hidden when file loaded) -->
-        <div id="instructions" class="text-center text-slate-400 text-sm mb-8">
-            <p>Dica: No Bling, cadastre o produto como "UN" (Unidade) e use o <b>Custo Unitário</b> calculado abaixo.</p>
+        <div id="instructions" style="text-align: center; color: #94a3b8; margin-bottom: 2rem;">
+            Carregue o arquivo XML acima para começar
         </div>
 
-        <!-- Results Table -->
-        <div id="results-section" class="hidden animate-fade-in">
-            <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
-                                <th class="p-3 border-b min-w-[250px]">Produto (Nome Limpo)</th>
-                                <th class="p-3 border-b text-center">Emb. Entrada</th>
-                                <th class="p-3 border-b text-center bg-indigo-50 text-indigo-700 border-indigo-100 w-32">
-                                    Qtd na Caixa
-                                    <span class="block text-[9px] normal-case opacity-70">(Fator de Conversão)</span>
-                                </th>
-                                <th class="p-3 border-b bg-green-50 text-green-700 border-green-100 min-w-[140px]">
-                                    Custo Unitário
-                                    <span class="block text-[9px] normal-case opacity-70">(Para cadastrar no Bling)</span>
-                                </th>
-                                <th class="p-3 border-b min-w-[150px]">Fiscal (Saída)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="products-table-body" class="text-sm divide-y divide-slate-100">
-                            <!-- Rows injected via JS -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Supplier Info -->
+        <div id="supplier-info" class="supplier-bar hidden">
+            <div>
+                <p style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: bold;">Fornecedor</p>
+                <h2 id="supplier-name" style="font-size: 1.1rem; color: var(--text-main);"></h2>
             </div>
+            <button class="btn-mini" onclick="copyToClipboard(document.getElementById('supplier-name').textContent)">
+                <!-- Copy Icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                Copiar
+            </button>
         </div>
+
+        <!-- Lista de Produtos -->
+        <div id="products-container" class="product-list hidden">
+            <!-- Os cards serão gerados aqui pelo JS -->
+        </div>
+
     </main>
 
-    <!-- Toast -->
-    <div id="toast" class="toast">Copiado!</div>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Copiado com sucesso!</div>
 
     <script>
-        lucide.createIcons();
+        // --- Ícones SVG em String (Para injeção dinâmica) ---
+        const ICONS = {
+            copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+            chevron: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+            tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94 .94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>`
+        };
 
-        // --- CORE LOGIC ---
+        // --- Mapeamento de Origem ---
+        const ORIGIN_MAP = {
+            '0': '0 - Nacional',
+            '1': '1 - Estrangeira (Imp. Direta)',
+            '2': '2 - Estrangeira (Merc. Interno)',
+            '3': '3 - Nacional (> 40%)',
+            '4': '4 - Nacional (PPB)',
+            '5': '5 - Nacional (<= 40%)',
+            '6': '6 - Estrangeira (Imp. Direta/CAMEX)',
+            '7': '7 - Estrangeira (Merc. Interno/CAMEX)',
+            '8': '8 - Nacional (> 70%)'
+        };
 
-        function getTaxRules(cfopEntrada, cest) {
+        // --- Lógica Fiscal ---
+        function getTaxRules(cfopEntrada) {
             const stCfops = ['5403', '5405', '6403', '6404', '1403', '2403'];
-            let isST = stCfops.includes(cfopEntrada);
-
+            const isST = stCfops.includes(cfopEntrada);
             if (isST) {
-                return {
-                    cfopSaida: '5.405',
-                    csosn: '500',
-                    desc: 'ST (Subst.)',
-                    colorClass: 'border-l-4 border-l-red-400 bg-red-50/30'
-                };
-            } else {
-                return {
-                    cfopSaida: '5.102',
-                    csosn: '102',
-                    desc: 'Normal',
-                    colorClass: 'border-l-4 border-l-green-400 bg-green-50/30'
-                };
+                return { cfopSaida: '5.405', desc: 'ST (Subst.)', badgeClass: 'badge-st' };
             }
+            return { cfopSaida: '5.102', desc: 'Normal', badgeClass: 'badge-normal' };
         }
 
-        // The "Brain" of the converter
+        // --- Lógica de Quantidade ---
         function guessQuantity(xProd) {
-            // Common patterns in Brazilian NFe: "12X1", "CX 24", "FD 06", "10X1KG"
             const regexes = [
-                /(\d+)\s*[xX]\s*\d+/, // Matches 12x1, 12X200
-                /\s+(\d+)[xX]\s+/,    // Matches space 12X space
-                /[Cc][Xx]\.?\s*(\d+)/, // CX 12, CX. 24
-                /FD\.?\s*(\d+)/,       // FD 12, FD. 06
-                /(\d+)\s*UN/i,         // 12 UN (at end or middle)
+                /(\d+)\s*[xX]\s*\d+/, 
+                /\s+(\d+)[xX]\s+/, 
+                /[Cc][Xx]\.?\s*(\d+)/, 
+                /FD\.?\s*(\d+)/, 
+                /(\d+)\s*UN/i
             ];
-
             for (let regex of regexes) {
                 const match = xProd.match(regex);
                 if (match && match[1]) {
                     const qtd = parseInt(match[1]);
-                    // Safety check: usually boxes contain between 2 and 500 items. 
-                    // If it finds "2024" (year) it ignores.
                     if (qtd > 1 && qtd < 1000) return qtd;
                 }
             }
-            return 1; // Default fallback
+            return 1;
         }
 
         function cleanProductName(name) {
-            // Removes confusing packaging info for the final customer
-            // E.g., "SABAO OMO 12X1" -> "SABAO OMO"
             return name
-                .replace(/\d+\s*[xX]\s*\d+[a-zA-Z]*/g, '') // Remove 12X1GR
-                .replace(/[Cc][Xx]\.?\s*\d+/g, '') // Remove CX 12
-                .replace(/FD\.?\s*\d+/g, '') // Remove FD 12
-                .replace(/\s+-\s+$/, '') // Remove trailing dash
+                .replace(/\d+\s*[xX]\s*\d+[a-zA-Z]*/g, '') 
+                .replace(/[Cc][Xx]\.?\s*\d+/g, '') 
+                .replace(/FD\.?\s*\d+/g, '') 
+                .replace(/\s+-\s+$/, '') 
                 .trim();
         }
 
@@ -183,141 +441,205 @@
             return parseFloat(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
         }
 
-        function formatBRL(val) {
-            return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-
-        // --- UI HANDLERS ---
-
-        function updateCalculations(rowId, totalCost) {
-            const inputFactor = document.getElementById(`factor-${rowId}`);
-            const cellUnitCost = document.getElementById(`unit-cost-${rowId}`);
-            const cellCopyBtn = document.getElementById(`copy-btn-${rowId}`);
+        // --- Funções de UI ---
+        function toggleDetails(rowId) {
+            const details = document.getElementById(`details-${rowId}`);
+            const icon = document.getElementById(`chevron-icon-${rowId}`);
             
-            let factor = parseFloat(inputFactor.value);
-            if (!factor || factor < 1) factor = 1;
-
-            const unitCost = totalCost / factor;
-            const formattedCost = unitCost.toFixed(4).replace('.', ','); // Bling format (comma)
-
-            cellUnitCost.textContent = `R$ ${formatCurrency(unitCost)}`;
-            cellCopyBtn.setAttribute('onclick', `copyToClipboard('${formattedCost}')`);
-            
-            // Highlight if factor > 1
-            if (factor > 1) {
-                inputFactor.classList.add('bg-indigo-100', 'font-bold', 'text-indigo-700');
+            if (details.style.display === 'block') {
+                details.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
             } else {
-                inputFactor.classList.remove('bg-indigo-100', 'font-bold', 'text-indigo-700');
+                details.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
             }
         }
 
-        function processXML(xml) {
-            const tableBody = document.getElementById('products-table-body');
-            tableBody.innerHTML = '';
+        function updateRowCalculation(rowId, totalBoxCost) {
+            const factorInput = document.getElementById(`factor-${rowId}`);
+            const marginInput = document.getElementById(`margin-${rowId}`);
             
-            document.getElementById('results-section').classList.remove('hidden');
-            document.getElementById('instructions').classList.add('hidden');
+            let factor = parseFloat(factorInput.value);
+            if (!factor || factor < 1) factor = 1;
+            
+            let margin = parseFloat(marginInput.value) || 0;
 
-            const dets = xml.getElementsByTagName('det');
+            // Cálculos
+            const unitCost = totalBoxCost / factor;
+            const salePrice = unitCost + (unitCost * (margin / 100));
+            const boxQty = parseFloat(document.getElementById(`stock-qty-${rowId}`).getAttribute('data-base-qty'));
+            const totalStock = boxQty * factor;
+
+            // Atualizar DOM
+            // Custo
+            const costEl = document.getElementById(`unit-cost-${rowId}`);
+            costEl.textContent = `R$ ${formatCurrency(unitCost)}`;
+            document.getElementById(`btn-copy-cost-${rowId}`).onclick = () => copyToClipboard(unitCost.toFixed(4).replace('.', ','));
+
+            // Venda
+            const saleEl = document.getElementById(`sale-price-${rowId}`);
+            saleEl.textContent = `R$ ${salePrice.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById(`btn-copy-sale-${rowId}`).onclick = () => copyToClipboard(salePrice.toFixed(2).replace('.', ','));
+
+            // Estoque Total
+            const stockEl = document.getElementById(`stock-qty-${rowId}`);
+            stockEl.textContent = totalStock;
+            stockEl.onclick = () => copyToClipboard(totalStock.toString());
+        }
+
+        function recalculateAllPrices() {
+            const globalMargin = document.getElementById('global-margin').value;
+            const inputs = document.querySelectorAll('.margin-input');
+            inputs.forEach(input => {
+                input.value = globalMargin;
+                // Disparar o evento onchange manualmente
+                input.dispatchEvent(new Event('change'));
+            });
+        }
+
+        // --- Gerador de HTML ---
+        function createField(label, value) {
+            if (!value) value = '';
+            const copyVal = String(value).replace(/'/g, "\\'");
+            return `
+                <div class="field-group">
+                    <span class="field-label">${label}</span>
+                    <div class="field-value" onclick="copyToClipboard('${copyVal}')" title="Copiar: ${value}">
+                        <span>${value || '-'}</span>
+                        <div style="width:14px; height:14px;">${ICONS.copy}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function processXML(xmlDoc) {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+            container.classList.remove('hidden');
+            document.getElementById('instructions').classList.add('hidden');
+            document.getElementById('supplier-info').classList.remove('hidden');
+
+            // Fornecedor
+            const emit = xmlDoc.getElementsByTagName('emit')[0];
+            const supplierName = emit.getElementsByTagName('xNome')[0]?.textContent || 'Desconhecido';
+            document.getElementById('supplier-name').textContent = supplierName;
+
+            const dets = xmlDoc.getElementsByTagName('det');
+            const globalMargin = document.getElementById('global-margin').value;
 
             Array.from(dets).forEach((det, index) => {
                 const prod = det.getElementsByTagName('prod')[0];
-                const xProd = getTagValue(prod, 'xProd');
-                const ncm = getTagValue(prod, 'NCM');
-                const cest = getTagValue(prod, 'CEST');
-                const cfop = getTagValue(prod, 'CFOP');
-                const uCom = getTagValue(prod, 'uCom');
-                const vUnCom = parseFloat(getTagValue(prod, 'vUnCom')); // Cost of the BOX
+                const imposto = det.getElementsByTagName('imposto')[0];
                 
-                const rules = getTaxRules(cfop, cest);
+                // Dados Básicos
+                const xProd = prod.getElementsByTagName('xProd')[0]?.textContent || '';
+                const ncm = prod.getElementsByTagName('NCM')[0]?.textContent || '';
+                const cest = prod.getElementsByTagName('CEST')[0]?.textContent || '';
+                const cfop = prod.getElementsByTagName('CFOP')[0]?.textContent || '';
+                const cEAN = prod.getElementsByTagName('cEAN')[0]?.textContent || '';
+                const cEANTrib = prod.getElementsByTagName('cEANTrib')[0]?.textContent || '';
+                const cProd = prod.getElementsByTagName('cProd')[0]?.textContent || '';
+                const qCom = parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent || 0);
+                const vUnCom = parseFloat(prod.getElementsByTagName('vUnCom')[0]?.textContent || 0);
+
+                // Origem
+                let orig = '0';
+                try {
+                    const icmsTags = imposto.getElementsByTagName('ICMS')[0].children[0];
+                    orig = icmsTags.getElementsByTagName('orig')[0]?.textContent || '0';
+                } catch(e) {}
+                const origFull = ORIGIN_MAP[orig] || orig;
+
+                // Lógica
+                const rules = getTaxRules(cfop);
                 const suggestedQty = guessQuantity(xProd);
                 const cleanName = cleanProductName(xProd);
-                const unitCost = vUnCom / suggestedQty;
-
                 const rowId = index;
-                const row = document.createElement('tr');
-                row.className = `hover:bg-white transition-colors border-b last:border-0 ${rules.colorClass}`;
 
-                row.innerHTML = `
-                    <td class="p-3 align-top">
-                        <div class="flex flex-col gap-1">
-                            <input type="text" value="${cleanName}" class="font-semibold text-slate-700 bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none w-full" id="name-${rowId}">
-                            <div class="flex gap-2 mt-1">
-                                <button onclick="copyToClipboard(document.getElementById('name-${rowId}').value)" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded flex items-center gap-1">
-                                    <i data-lucide="copy" class="w-3 h-3"></i> Nome
-                                </button>
-                                <span class="text-[10px] text-slate-400 truncate max-w-[200px]" title="${xProd}">Orig: ${xProd}</span>
+                // Template do Card
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <!-- Coluna Principal -->
+                        <div class="col-main">
+                            <div class="tags-row">
+                                <span class="badge ${rules.badgeClass}">${rules.desc}</span>
+                                <span class="badge badge-gray">NCM: ${ncm}</span>
                             </div>
-                            <div class="mt-2 text-xs text-slate-500 flex gap-2">
-                                <span title="NCM" class="cursor-help border-b border-dotted border-slate-300">NCM: ${ncm}</span>
-                                ${cest ? `<span title="CEST" class="cursor-help border-b border-dotted border-slate-300">CEST: ${cest}</span>` : ''}
+                            <input type="text" id="name-${rowId}" value="${cleanName}" class="input-name">
+                            <div class="actions-row">
+                                <button class="btn-mini" onclick="copyToClipboard(document.getElementById('name-${rowId}').value)">${ICONS.copy} Nome</button>
+                                <button class="btn-mini" onclick="copyToClipboard('${cProd}')">${ICONS.tag} SKU: ${cProd}</button>
                             </div>
                         </div>
-                    </td>
-                    
-                    <td class="p-3 align-top text-center">
-                        <div class="text-xs text-slate-500">Valor Caixa</div>
-                        <div class="font-medium text-slate-700">${formatCurrency(vUnCom)}</div>
-                        <div class="text-[10px] bg-slate-100 inline-block px-1 rounded text-slate-500 mt-1">${uCom}</div>
-                    </td>
 
-                    <td class="p-3 align-top text-center bg-indigo-50/30">
-                        <input type="number" id="factor-${rowId}" value="${suggestedQty}" min="1" step="1"
-                            onchange="updateCalculations(${rowId}, ${vUnCom})"
-                            class="w-16 text-center border border-indigo-200 rounded py-1 px-1 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm text-lg"
-                        >
-                        <div class="text-[10px] text-indigo-400 mt-1">Itens/Cx</div>
-                    </td>
+                        <!-- Coluna Stats -->
+                        <div class="col-stats">
+                            <div class="stat-box">
+                                <span class="stat-label">Itens/Cx</span>
+                                <input type="number" id="factor-${rowId}" value="${suggestedQty}" min="1" class="input-factor" onchange="updateRowCalculation(${rowId}, ${vUnCom})">
+                            </div>
 
-                    <td class="p-3 align-top bg-green-50/30 relative group">
-                        <div class="flex flex-col h-full justify-center">
-                            <div class="text-[10px] text-green-600 font-bold uppercase mb-1">Custo Unitário</div>
-                            <div class="text-xl font-bold text-green-700" id="unit-cost-${rowId}">R$ ${formatCurrency(unitCost)}</div>
-                            <button id="copy-btn-${rowId}" onclick="copyToClipboard('${unitCost.toFixed(4).replace('.', ',')}')" 
-                                class="mt-2 bg-green-100 hover:bg-green-200 text-green-700 text-xs py-1 px-2 rounded flex items-center justify-center gap-1 transition-colors w-full border border-green-200">
-                                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
-                            </button>
-                        </div>
-                    </td>
-
-                    <td class="p-3 align-top">
-                        <div class="space-y-2">
-                            <div>
-                                <div class="text-[10px] text-slate-400">CFOP Saída</div>
-                                <div class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 rounded p-1 -ml-1" onclick="copyToClipboard('${rules.cfopSaida.replace('.','')}')">
-                                    <span class="font-bold text-slate-700">${rules.cfopSaida}</span>
-                                    <i data-lucide="copy" class="w-3 h-3 text-slate-300"></i>
+                            <div class="stat-box" style="min-width: 60px;">
+                                <span class="stat-label">Estoque</span>
+                                <span id="stock-qty-${rowId}" class="price-display" style="color:var(--text-main); cursor:pointer;" data-base-qty="${qCom}">-</span>
+                            </div>
+                            
+                            <!-- Calculadora Preço -->
+                            <div class="price-calculator">
+                                <div class="calc-row">
+                                    <span style="color:var(--text-muted);">Custo UN:</span>
+                                    <div style="display:flex; align-items:center; gap:5px;">
+                                        <span id="unit-cost-${rowId}" style="font-weight:bold; color:var(--text-main);">-</span>
+                                        <div id="btn-copy-cost-${rowId}" style="width:12px; cursor:pointer; color:#94a3b8;">${ICONS.copy}</div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <div class="text-[10px] text-slate-400">CSOSN</div>
-                                <div class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 rounded p-1 -ml-1" onclick="copyToClipboard('${rules.csosn}')">
-                                    <span class="font-bold text-slate-700">${rules.csosn}</span>
-                                    <i data-lucide="copy" class="w-3 h-3 text-slate-300"></i>
+                                <div class="calc-row highlight">
+                                    <div style="display:flex; align-items:center; gap:4px;">
+                                        <span style="color:var(--primary); font-weight:bold;">Venda</span>
+                                        <input type="number" id="margin-${rowId}" value="${globalMargin}" class="margin-input" onchange="updateRowCalculation(${rowId}, ${vUnCom})">
+                                        <span style="font-size:0.7rem">%</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:5px;">
+                                        <span id="sale-price-${rowId}" class="price-display">-</span>
+                                        <div id="btn-copy-sale-${rowId}" style="width:12px; cursor:pointer; color:var(--primary);">${ICONS.copy}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </td>
+
+                        <!-- Botão Expandir -->
+                        <button class="btn-expand" onclick="toggleDetails(${rowId})">
+                            <div id="chevron-icon-${rowId}" style="width:20px; height:20px; transition: transform 0.3s;">${ICONS.chevron}</div>
+                        </button>
+                    </div>
+
+                    <!-- Detalhes Ocultos -->
+                    <div id="details-${rowId}" class="details-panel">
+                        <div class="details-grid">
+                            ${createField('Formato', 'Simples')}
+                            ${createField('Tipo', 'Produto')}
+                            ${createField('Unidade', 'UN')}
+                            ${createField('GTIN/EAN', cEAN)}
+                            ${createField('GTIN/EAN Trib', cEANTrib)}
+                            ${createField('SKU', cProd)}
+                            ${createField('NCM', ncm)}
+                            ${createField('CEST', cest)}
+                            ${createField('CFOP Saída', rules.cfopSaida)}
+                            ${createField('Origem', origFull)}
+                            ${createField('Marca', '')}
+                            ${createField('Peso Liq.', '')}
+                        </div>
+                    </div>
                 `;
 
-                tableBody.appendChild(row);
-                
-                // Initialize state for highlight
-                if(suggestedQty > 1) {
-                    document.getElementById(`factor-${rowId}`).classList.add('bg-indigo-100', 'font-bold', 'text-indigo-700');
-                }
+                container.appendChild(card);
+                updateRowCalculation(rowId, vUnCom);
             });
-            
-            lucide.createIcons();
         }
 
-        // --- UTILS ---
-        
-        function getTagValue(parent, tagName) {
-            const el = parent.getElementsByTagName(tagName)[0];
-            return el ? el.textContent : '';
-        }
-
+        // --- Utilitários ---
         function copyToClipboard(text) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -326,23 +648,25 @@
             try {
                 document.execCommand('copy');
                 const toast = document.getElementById("toast");
-                toast.textContent = `Copiado: ${text}`;
                 toast.className = "toast show";
-                setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+                setTimeout(() => toast.className = toast.className.replace("show", ""), 3000);
             } catch (err) {}
             document.body.removeChild(textarea);
         }
 
-        // File Handler
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            document.getElementById('fileNameDisplay').textContent = file.name;
-            document.getElementById('fileNameDisplay').classList.remove('hidden');
+            
+            const display = document.getElementById('fileNameDisplay');
+            display.textContent = file.name;
+            display.classList.remove('hidden');
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 const parser = new DOMParser();
-                processXML(parser.parseFromString(e.target.result, "text/xml"));
+                const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+                processXML(xmlDoc);
             };
             reader.readAsText(file);
         });
