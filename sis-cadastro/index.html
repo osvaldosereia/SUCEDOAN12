@@ -39,16 +39,26 @@
         header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 1rem 1.5rem;
+            padding: 0.75rem 1.5rem;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 1rem;
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
-        h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+        /* Top Nav Mobile Friendly */
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .sys-nav { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+
+        @media (min-width: 768px) {
+            header { flex-direction: row; align-items: center; justify-content: space-between; }
+            .sys-nav { margin-top: 0; }
+            .header-top { width: auto; gap: 20px; }
+        }
+
+        h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
         
         main {
             max-width: 1400px;
@@ -122,7 +132,7 @@
 
         input[readonly] { background-color: #f1f5f9; color: var(--text-muted); cursor: not-allowed; }
 
-        /* Buttons */
+        /* Buttons & Pills */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -145,6 +155,22 @@
         .btn-ghost:hover { color: var(--text-main); background: var(--bg); border-color: var(--border); }
         .btn-icon { width: 32px; height: 32px; padding: 0; border-radius: 4px; border: none; }
         
+        .nav-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #eff6ff;
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 99px;
+            border: 1px solid #dbeafe;
+            transition: all 0.2s;
+        }
+        .nav-pill:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
         /* Table */
         .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
@@ -159,16 +185,16 @@
         tr:hover { background-color: #f8fafc; }
 
         /* Utilities */
-        .badge {
-            display: inline-flex; padding: 2px 8px; border-radius: 99px;
-            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-        }
+        .badge { display: inline-flex; padding: 2px 8px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
         .badge-blue { background: #eff6ff; color: var(--primary); border: 1px solid #dbeafe; }
         .badge-gray { background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0; }
         
         .search-wrapper { position: relative; margin-bottom: 0; flex: 1; }
         .search-wrapper svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; width: 16px; height: 16px; }
         .search-wrapper input { padding-left: 2.2rem; }
+
+        .map-link { color: var(--text-muted); transition: color 0.2s; }
+        .map-link:hover { color: var(--success); }
 
         /* Icons SVG */
         svg { fill: currentColor; }
@@ -177,16 +203,33 @@
 <body>
 
 <header>
-    <h1>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        CLIENTES <span style="font-weight:400; color:var(--text-muted); font-size:0.8em; margin-left:5px;">| SISTEMA V3</span>
-    </h1>
-    <div style="display:flex; align-items:center; gap:10px;">
-        <button onclick="App.exportData()" class="btn-ghost" style="display:flex; align-items:center; gap:5px; font-size:0.75rem;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            BACKUP JSON
-        </button>
+    <div class="header-top">
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            CLIENTES <span style="font-weight:400; color:var(--text-muted); font-size:0.8em; margin-left:5px;">| V3</span>
+        </h1>
+        <div style="display:flex; align-items:center;">
+            <button onclick="App.exportData()" class="btn-ghost" style="display:flex; align-items:center; gap:5px; font-size:0.75rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                BACKUP
+            </button>
+        </div>
     </div>
+    
+    <nav class="sys-nav">
+        <a href="http://www.donaantonia.com.br/sis-produto" target="_blank" class="nav-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            PRODUTOS
+        </a>
+        <a href="http://www.donaantonia.com.br/sis-vendas" target="_blank" class="nav-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            VENDAS
+        </a>
+        <a href="http://www.donaantonia.com.br/xml" target="_blank" class="nav-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            XML
+        </a>
+    </nav>
 </header>
 
 <main>
@@ -238,14 +281,20 @@
                     </div>
                 </div>
 
-                <div>
-                    <label>Bairro</label>
-                    <input type="text" id="c-bairro">
+                <div class="row-2">
+                    <div>
+                        <label>Bairro</label>
+                        <input type="text" id="c-bairro">
+                    </div>
+                    <div>
+                        <label>Google Maps / Plus Code</label>
+                        <input type="text" id="c-maps" placeholder="Ex: 9W4X+GX">
+                    </div>
                 </div>
 
                 <div>
                     <label>Endereço / Referência</label>
-                    <textarea id="c-endereco" rows="3"></textarea>
+                    <textarea id="c-endereco" rows="2"></textarea>
                 </div>
 
                 <div style="margin-top:0.5rem;">
@@ -272,7 +321,7 @@
                     <tr>
                         <th style="width:70px">Cód</th>
                         <th>Cliente</th>
-                        <th>Rota/Cidade</th>
+                        <th>Rota/Local</th>
                         <th style="text-align:right">Ações</th>
                     </tr>
                 </thead>
@@ -296,15 +345,14 @@ const App = {
     state: { clients: [] },
 
     init: () => {
-        // Carrega dados ou inicia array vazio
         const saved = localStorage.getItem(App.key);
         if (saved) {
             App.state = JSON.parse(saved);
         } else {
-            // Seed Mock Data apenas se vazio para teste
+            // Seed Mock Data
             App.state.clients = [
-                { id: '1', codigo: 'C001', nome: 'Mercado Central', rota: 'CBA', tel: '6599999999', cidade: 'Cuiabá', bairro: 'Centro', endereco: 'Rua 10' },
-                { id: '2', codigo: 'C002', nome: 'Padaria do João', rota: 'VG', tel: '6588888888', cidade: 'Várzea Grande', bairro: 'Cristo Rei', endereco: 'Av Principal' }
+                { id: '1', codigo: 'C001', nome: 'Mercado Central', rota: 'CBA', tel: '6599999999', cidade: 'Cuiabá', bairro: 'Centro', endereco: 'Rua 10', maps: '9W4X+GX' },
+                { id: '2', codigo: 'C002', nome: 'Padaria do João', rota: 'VG', tel: '6588888888', cidade: 'Várzea Grande', bairro: 'Cristo Rei', endereco: 'Av Principal', maps: '' }
             ];
             App.saveToStorage();
         }
@@ -330,16 +378,15 @@ const App = {
             tel: document.getElementById('c-tel').value,
             cidade: document.getElementById('c-cidade').value,
             bairro: document.getElementById('c-bairro').value,
+            maps: document.getElementById('c-maps').value,
             endereco: document.getElementById('c-endereco').value
         };
 
         if (id) {
-            // Update
             const idx = App.state.clients.findIndex(c => c.id === id);
             if (idx > -1) App.state.clients[idx] = data;
         } else {
-            // Create
-            App.state.clients.unshift(data); // Add to top
+            App.state.clients.unshift(data); 
         }
 
         App.saveToStorage();
@@ -358,11 +405,10 @@ const App = {
         document.getElementById('c-tel').value = client.tel;
         document.getElementById('c-cidade').value = client.cidade;
         document.getElementById('c-bairro').value = client.bairro;
+        document.getElementById('c-maps').value = client.maps || '';
         document.getElementById('c-endereco').value = client.endereco;
         
         document.getElementById('form-title').innerText = `Editando: ${client.codigo}`;
-        
-        // Scroll to form on mobile
         window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
@@ -403,7 +449,12 @@ const App = {
         }
 
         empty.style.display = 'none';
-        tbody.innerHTML = list.map(c => `
+        tbody.innerHTML = list.map(c => {
+            const mapIcon = c.maps ? 
+                `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.maps)}" target="_blank" class="map-link" title="Abrir Mapa: ${c.maps}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></a>` 
+                : '<span style="color:#cbd5e1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></span>';
+
+            return `
             <tr>
                 <td style="font-family:monospace; color:var(--text-muted); font-weight:700;">${c.codigo}</td>
                 <td>
@@ -411,8 +462,11 @@ const App = {
                     <div style="font-size:0.75rem; color:var(--text-muted);">${c.tel || ''}</div>
                 </td>
                 <td>
-                    <span class="badge badge-blue">${c.rota}</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:5px;">${c.cidade}</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="badge badge-blue">${c.rota}</span>
+                        ${mapIcon}
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">${c.cidade}</div>
                 </td>
                 <td style="text-align:right;">
                     <button onclick="App.edit('${c.id}')" class="btn-ghost" title="Editar" style="color:var(--primary)">
@@ -423,7 +477,7 @@ const App = {
                     </button>
                 </td>
             </tr>
-        `).join('');
+        `}).join('');
     },
 
     nextCode: () => {
@@ -449,7 +503,6 @@ const App = {
     }
 };
 
-// Start
 document.addEventListener('DOMContentLoaded', App.init);
 </script>
 
