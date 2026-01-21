@@ -454,6 +454,30 @@
             transition: all 0.5s ease;
         }
         .intro-text.show { opacity: 1; transform: translateY(0); }
+
+        /* SIDE DRAWER (SUGGESTION) */
+        .side-drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10000;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+        }
+        .side-drawer-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .side-drawer {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: 85%; max-width: 320px; background: #fff;
+            z-index: 10001; transform: translateX(100%);
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+            display: flex; flex-direction: column; justify-content: center; padding: 20px;
+        }
+        .side-drawer.open { transform: translateX(0); }
+        
+        .sd-title { font-size: 1.1rem; font-weight: 800; color: var(--secondary); margin-bottom: 20px; text-align: center; }
+        .sd-btn-close {
+            margin-top: 20px; width: 100%; padding: 12px;
+            background: #f1f5f9; color: #64748b; font-weight: 600;
+            border-radius: 8px; border: 1px solid #e2e8f0;
+        }
     </style>
 </head>
 <body>
@@ -674,7 +698,7 @@
         <div class="main-content-col">
             <div class="container">
                 <div class="market-header">
-                    <h2 class="market-title">Aproveite. São mais de 100 produtos para você economizar.</h2>
+                    <h2 class="market-title">Esse é o nosso Mercadinho.</h2>
                     <p class="market-subtitle">Monte a sua cesta do seu jeito.</p>
                 </div>
                 <div id="extras-container"></div>
@@ -720,21 +744,18 @@
         </div>
     </div>
     
-    <div id="suggestion-toast" class="sug-toast">
-        <img id="st-img" style="width:40px; height:40px; border-radius:6px;" src="" alt="Produto Sugerido">
-        <div class="st-content">
-            <div style="font-weight:700; margin-bottom:2px;">Leve também!</div>
-            <div id="st-text">Sugestão</div>
-        </div>
-        <button id="st-btn" class="st-btn">Adicionar</button>
-        <div onclick="document.getElementById('suggestion-toast').classList.remove('visible')" style="padding:0 5px; font-size:1.2rem;">×</div>
-    </div>
-
     <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
     <div id="credit-sub-toast" class="credit-sub-toast">Adicione novos produtos</div>
 
     <div id="intro-overlay" class="intro-overlay hidden">
         <div id="intro-text" class="intro-text"></div>
+    </div>
+
+    <div id="suggestion-overlay" class="side-drawer-overlay" onclick="App.closeSuggestion()"></div>
+    <div id="suggestion-drawer" class="side-drawer">
+        <div class="sd-title">Sugestão para você!</div>
+        <div id="sd-content" style="width:100%;"></div>
+        <button class="sd-btn-close" onclick="App.closeSuggestion()">Fechar</button>
     </div>
 
     <dialog id="checkout-modal" class="modal-checkout">
@@ -1018,17 +1039,14 @@
             },
             
             playIntro() {
-                // 1. Configuração de 7 dias (em milissegundos)
                 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
                 const now = Date.now();
                 const lastSeen = localStorage.getItem('da_intro_seen');
 
-                // 2. Verifica se deve mostrar (se nunca viu OU se passou 7 dias)
                 if (lastSeen && (now - parseInt(lastSeen) < SEVEN_DAYS_MS)) {
-                    return; // Sai da função, não mostra a intro
+                    return; 
                 }
 
-                // 3. Se chegou aqui, vai mostrar. Salva a nova data.
                 localStorage.setItem('da_intro_seen', now.toString());
 
                 const overlay = document.getElementById('intro-overlay');
@@ -1055,7 +1073,6 @@
                     textBox.innerText = slides[index];
                     textBox.classList.add('show');
                     
-                    // 4. Tempo ajustado para 3.5 segundos (3500ms)
                     setTimeout(() => {
                         textBox.classList.remove('show');
                         index++;
@@ -1070,7 +1087,8 @@
                 document.getElementById('customizer-view').classList.add('hidden');
                 document.getElementById('home-view').classList.remove('hidden');
                 document.body.classList.remove('customizer-mode');
-                document.getElementById('suggestion-toast').classList.remove('visible');
+                document.getElementById('suggestion-drawer').classList.remove('open');
+                document.getElementById('suggestion-overlay').classList.remove('active');
                 
                 localStorage.setItem('da_state', JSON.stringify({view: 'home'}));
                 
@@ -1343,16 +1361,31 @@
             },
 
             checkSuggestion(code) {
-                const p = this.data.find(x => x.code === code);
+                // Acha o produto ligado
+                // NOTA: O código assume que o 'code' é equivalente ao 'id' ou que existe um campo 'code' no JSON.
+                // Como o JSON pode usar 'Codigo' ou 'id', vamos buscar por ambos para garantir.
+                const p = this.data.find(x => x.id === code || x.code === code || x.Codigo === code);
+                
+                // Se existe o produto E ele ainda não está no carrinho (para não ser chato)
                 if(p && !this.cart[p.id]) {
-                    const t = document.getElementById('suggestion-toast');
-                    document.getElementById('st-img').src = p.imagem;
-                    document.getElementById('st-img').alt = p.nome.replace(/"/g, ''); // A11Y FIX
-                    document.getElementById('st-text').innerHTML = `Leve <b>${p.nome}</b><br>por R$ ${p.valor.toFixed(2)}`;
-                    document.getElementById('st-btn').onclick = () => { this.modQty(p.id, 1); t.classList.remove('visible'); };
-                    t.classList.add('visible');
-                    setTimeout(() => t.classList.remove('visible'), 8000);
+                    setTimeout(() => {
+                        const drawer = document.getElementById('suggestion-drawer');
+                        const overlay = document.getElementById('suggestion-overlay');
+                        const content = document.getElementById('sd-content');
+                        
+                        // Injeta o HTML do Card (reutilizando a função buildCard para ficar idêntico)
+                        // Ajustamos a largura para 100% dentro do drawer
+                        content.innerHTML = `<div style="width:100%; pointer-events:auto;">${this.buildCard(p)}</div>`;
+                        
+                        overlay.classList.add('active');
+                        drawer.classList.add('open');
+                    }, 500); // Pausa de 0.5s
                 }
+            },
+            
+            closeSuggestion() {
+                document.getElementById('suggestion-drawer').classList.remove('open');
+                document.getElementById('suggestion-overlay').classList.remove('active');
             },
 
             toggleCoupon() {
