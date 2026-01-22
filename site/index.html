@@ -1042,10 +1042,13 @@
             async init() {
                 try {
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
-                    if (!res.ok) throw new Error("Erro ao carregar dados.");
-                    const raw = await res.json();
-                    
-                    this.data = raw.map(p => {
+
+if (!res.ok) throw new Error("Erro ao carregar dados.");
+const content = await res.json();
+// Ajuste: verifica se é a estrutura nova (content.produtos) ou a antiga (content direto)
+const raw = content.produtos || content; 
+
+this.data = raw.map(p => {
                         const catRaw = (p.categoria || "OUTROS").trim();
                         const catUpper = catRaw.toUpperCase();
                         
