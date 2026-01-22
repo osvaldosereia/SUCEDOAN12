@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V31 | Titanium Logistics Pro</title>
+    <title>SISTEMA V32 | Titanium Image Master</title>
     
     <style>
         /* --- 1. CORE & HIGH CONTRAST --- */
@@ -68,14 +68,14 @@
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); 
         }
         input[readonly] { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
-        textarea { height: auto; padding: 10px; width: 100%; border: 2px solid #cbd5e1; border-radius: var(--radius); }
+        textarea { height: auto; padding: 10px; }
 
         /* --- 3. LAYOUT --- */
         main { max-width: 98%; margin: 25px auto; }
         .card { background: var(--surface); border-radius: 12px; border: 1px solid #cbd5e1; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .toolbar { padding: 20px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
-        /* TABLE FIX: OPTIMIZED COLUMNS */
+        /* TABLE FIX */
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th { text-align: left; padding: 15px 10px; background: #1e293b; color: #fff; font-size: 0.8rem; text-transform: uppercase; position: sticky; top: 0; z-index: 10; cursor: pointer; user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         th:hover { background: #334155; }
@@ -106,7 +106,7 @@
 
         .layout-grid { display: grid; grid-template-columns: 2fr 1.3fr; gap: 20px; }
         .panel { background: white; padding: 20px; border-radius: 10px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .panel-title { font-size: 0.95rem; font-weight: 900; color: var(--focus); text-transform: uppercase; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .panel-title { font-size: 0.95rem; font-weight: 900; color: var(--focus); text-transform: uppercase; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
@@ -121,81 +121,43 @@
         .inner-table td { padding: 5px; border-bottom: 1px solid #cbd5e1; color: #444; vertical-align: middle; }
         .inner-table input { height: 30px; font-size: 0.8rem; border: 1px solid #ccc; }
 
-        /* --- 5. PRINT (100mm LOGISTICS - OPTIMIZED) --- */
+        /* Image Thumb in Modal */
+        .prod-thumb {
+            width: 100px; height: 100px; object-fit: cover; border-radius: 8px; 
+            border: 2px solid #cbd5e1; cursor: zoom-in; background: #fff;
+            transition: 0.2s;
+        }
+        .prod-thumb:hover { border-color: var(--focus); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        /* --- 5. PRINT --- */
         #receipt-area { display: none; }
-
         @media print {
-            @page { 
-                size: 100mm auto; 
-                margin: 0; 
-            }
-            
-            /* 1. NUCLEAR OPTION: Remove TUDO do layout, menos o cupom */
-            body > :not(#receipt-area) {
-                display: none !important;
-            }
-
-            /* 2. Reseta corpo para evitar páginas em branco extras */
-            html, body {
-                width: 100%;
-                height: auto;
-                margin: 0;
-                padding: 0;
-                overflow: visible;
-            }
-
-            /* 3. Posicionamento Centralizado e Largura Fixa */
+            @page { size: 100mm auto; margin: 0; }
+            body * { visibility: hidden; }
+            #receipt-area, #receipt-area * { visibility: visible; }
             #receipt-area { 
                 display: block !important;
-                position: absolute; 
-                top: 0; 
-                left: 50%; /* Move para o meio */
-                transform: translateX(-50%); /* Centraliza exato */
-                width: 90mm; /* Largura solicitada */
-                
-                color: black; 
-                background: white; 
-                font-family: 'Courier New', monospace; 
-                text-align: left;
-                padding: 5px 0;
+                position: absolute; left: 50%; transform: translateX(-50%); top: 0;
+                width: 94mm; padding: 10px 0;
+                color: black; background: white; 
+                font-family: 'Courier New', monospace; text-align: left;
                 z-index: 9999;
             }
-            
-            /* Garante visibilidade do conteúdo do cupom */
-            #receipt-area * { visibility: visible; }
-
-            /* Estilos do Cupom */
             .client-code { font-size: 48px; font-weight: 900; display: block; margin-bottom: 15px; border-bottom: 3px solid #000; text-align: center; }
-            .receipt-header { font-size: 16px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 10px; }
-            
+            .receipt-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; text-align: center; }
             .log-row { display: block; margin-bottom: 12px; border-bottom: 1px dashed #999; padding-bottom: 5px; }
             .log-code { font-size: 14px; font-weight: 900; background: #000; color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-right: 5px; }
-            .log-qty { font-size: 22px; font-weight: 900; float: right; margin-left: 10px; }
-            .log-name { font-size: 18px; font-weight: bold; line-height: 1.1; display: inline; }
-            
-            /* ITENS DO COMBO (FONTE GRANDE) */
-            .log-sub { 
-                margin-left: 10px; 
-                font-size: 18px; /* Aumentado para melhor leitura */
-                font-weight: 800; 
-                color: #000; 
-                display: block; 
-                margin-top: 5px; 
-                border-left: 4px solid #333; 
-                padding-left: 8px; 
-            }
-            
+            .log-qty { font-size: 18px; font-weight: 900; float: right; margin-left: 10px; }
+            .log-name { font-size: 16px; font-weight: bold; line-height: 1.2; display: inline; }
+            .log-sub { margin-left: 15px; font-size: 13px; color: #333; display: block; margin-top: 3px; border-left: 2px solid #ccc; padding-left: 5px; }
             .receipt-total { font-size: 28px; font-weight: 900; text-align: right; margin-top: 20px; border-top: 4px solid #000; padding-top: 10px; }
-            
-            /* Garante que outros elementos absolutos não apareçam */
-            #quotation-area { display: none !important; }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>📦 TITANIUM <span style="color:#fbbf24;">V31</span></h1>
+    <h1>📦 TITANIUM <span style="color:#fbbf24;">V32</span></h1>
     <div style="display:flex; gap:10px;">
         <button onclick="QuickCombo.open()" class="btn btn-primary" style="background:#4f46e5;">⚡ COMBO RÁPIDO</button>
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 CATEGORIAS</button>
@@ -217,7 +179,8 @@
         </div>
         <div style="overflow-x:auto;">
             <table>
-                <col width="40">  <col width="80">  <col width="50">  <col width="auto"> <col width="130"> <col width="130"> <col width="90">  <col width="90">  <col width="90">  <col width="160"> <thead>
+                <col width="40"> <col width="80"> <col width="50"> <col width="auto"> <col width="130"> <col width="130"> <col width="90"> <col width="90"> <col width="90"> <col width="160">
+                <thead>
                     <tr>
                         <th><input type="checkbox" onchange="App.toggleAllCheck(this.checked)"></th>
                         <th onclick="App.sort('codigo')">CÓD</th>
@@ -237,11 +200,11 @@
     </div>
 </main>
 
-<dialog id="modal-image" style="max-width:500px; padding:0; background:transparent; box-shadow:none;">
-    <div style="text-align:center;">
-        <img id="img-preview" src="" style="max-width:100%; max-height:80vh; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+<dialog id="modal-image" style="max-width:600px; padding:0; background:transparent; box-shadow:none;">
+    <div style="text-align:center; position:relative;">
+        <img id="img-preview" src="" style="max-width:100%; max-height:85vh; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.6); border:4px solid white;">
         <br>
-        <button onclick="document.getElementById('modal-image').close()" class="btn btn-danger" style="margin-top:10px;">FECHAR</button>
+        <button onclick="document.getElementById('modal-image').close()" class="btn btn-danger" style="margin-top:10px; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.3);">FECHAR VISUALIZAÇÃO</button>
     </div>
 </dialog>
 
@@ -260,12 +223,22 @@
             <div class="layout-grid">
                 <div>
                     <div class="panel">
-                        <div class="panel-title">🆔 IDENTIFICAÇÃO</div>
+                        <div class="panel-title">
+                            <span>🆔 IDENTIFICAÇÃO & IMAGEM</span>
+                            <img id="p-thumb" src="" class="prod-thumb" onclick="App.viewImage(this.src)" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmNWY5Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNjYmQ1ZTEiPklNRzwvdGV4dD48L3N2Zz4='">
+                        </div>
                         <div class="row-3">
                             <div><label>CÓDIGO INTERNO</label><input type="text" id="p-codigo" readonly style="font-weight:900; color:var(--focus);"></div>
                             <div style="grid-column: span 2"><label>CÓD. BARRAS (EAN)</label><input type="text" id="p-ean" placeholder="789..."></div>
                         </div>
                         <div style="margin-top:15px;"><label>NOME COMPLETO</label><input type="text" id="p-nome" style="font-weight:800; text-transform:uppercase;"></div>
+                        
+                        <div style="margin-top:15px; background:#f0f9ff; padding:10px; border-radius:6px; border:1px dashed #0ea5e9;">
+                            <label style="color:#0284c7;">NOME DO ARQUIVO (SLUG AUTO)</label>
+                            <input type="text" id="p-imageSlug" placeholder="nome-do-produto" style="font-weight:bold; color:#0284c7;">
+                            <small style="display:block; margin-top:4px; color:#64748b;">Sufixo automático: -cesta-basica-cuiaba-varzea-grande.webp</small>
+                        </div>
+
                         <div class="row-2" style="margin-top:15px;">
                             <div><label>CATEGORIA</label><input type="text" id="p-categoria" list="dl-cats"></div>
                             <div><label>PRODUTO VINCULADO (DICA)</label><input type="text" id="p-linkedProd" list="dl-prods" placeholder="Digite para buscar..."></div>
@@ -357,16 +330,7 @@
                                 <label>OU COLE LISTA (1x ITEM)</label>
                                 <textarea id="combo-paste" style="height:50px; font-size:0.8rem;"></textarea>
                                 <button type="button" onclick="Combo.processPaste()" class="btn btn-ghost btn-sm" style="width:100%; margin-top:5px;">PROCESSAR LISTA</button>
-                                
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-bottom:2px solid #ccc; padding-bottom:5px;">
-                                    <span style="font-weight:bold; font-size:0.8rem;">LISTA DE ITENS</span>
-                                    <span style="font-size:0.8rem; background:#cbd5e1; padding:2px 6px; border-radius:4px;">ITENS: <b id="combo-total-items">0</b></span>
-                                </div>
-                                <div id="combo-list" style="margin-top:5px; background:white; max-height:400px; overflow-y:auto; border:1px solid #ccc; margin-bottom:15px;"></div>
-                                
-                                <div style="text-align:right; font-size:0.9rem; color:#475569; margin-bottom:15px;">
-                                    SOMA VENDA (REF): <b id="combo-ref-value" style="color:#2563eb;">R$ 0.00</b>
-                                </div>
+                                <div id="combo-list" style="margin-top:10px; background:white; max-height:120px; overflow-y:auto; border:1px solid #ccc; margin-bottom:15px;"></div>
                             </div>
                             
                             <div style="border-top:2px solid #2563eb; padding-top:10px;">
@@ -407,44 +371,10 @@
         <button onclick="document.getElementById('modal-bulk-sell').close()" class="btn btn-danger">✕</button>
     </div>
     <div class="modal-body">
-        <div class="row-2" style="margin-bottom:15px; background:#e2e8f0; padding:15px; border-radius:8px;">
-            <div>
-                <label>CÓDIGO CLIENTE:</label>
-                <input type="text" id="bulk-client-code" value="000" style="font-weight:bold; font-size:1.2rem;">
-            </div>
-            <div>
-                <label>ROTA DE ENTREGA:</label>
-                <select id="bulk-route" style="font-weight:bold;">
-                    <option value="">SELECIONE...</option>
-                    <option value="CUIABÁ">CUIABÁ</option>
-                    <option value="VÁRZEA GRANDE">VÁRZEA GRANDE (VG)</option>
-                    <option value="COXIPÓ">COXIPÓ</option>
-                    <option value="GRANDE CPA">GRANDE CPA</option>
-                </select>
-            </div>
+        <div style="margin-bottom:15px; padding:10px; background:#e2e8f0; border-radius:6px; display:flex; align-items:center; gap:10px;">
+            <label style="margin:0;">CÓDIGO CLIENTE:</label>
+            <input type="text" id="bulk-client-code" value="000" style="width:100px; height:40px; font-weight:bold; font-size:1.2rem;">
         </div>
-        
-        <div class="row-2" style="margin-bottom:15px;">
-            <div>
-                <label>FORMA DE PAGAMENTO:</label>
-                <select id="bulk-payment">
-                    <option value="DINHEIRO">DINHEIRO</option>
-                    <option value="PIX">PIX</option>
-                    <option value="CARTÃO">CARTÃO</option>
-                    <option value="SÓ ENTREGAR">SÓ ENTREGAR (FIADO)</option>
-                </select>
-            </div>
-            <div>
-                <label>BRINDE / CORTESIA:</label>
-                <input type="text" id="bulk-gift" placeholder="Ex: Caneta, Copo...">
-            </div>
-        </div>
-
-        <div style="margin-bottom:15px;">
-            <label>OBSERVAÇÃO DO PEDIDO:</label>
-            <textarea id="bulk-obs" rows="2" placeholder="Ex: Entregar após as 14h, Cuidado Frágil..."></textarea>
-        </div>
-
         <table class="inner-table">
             <thead><tr><th>PRODUTO</th><th style="width:100px;">PREÇO UN</th><th style="width:100px;">QTD</th><th style="width:120px;">TOTAL</th></tr></thead>
             <tbody id="bulk-sell-rows"></tbody>
@@ -492,11 +422,11 @@
 
 <script>
 /**
- * SISTEMA V31 - TITANIUM LOGISTICS PRO
+ * SISTEMA V32 - TITANIUM IMAGE MASTER
  */
 
 const DB = {
-    key: 'sys_v31_titan',
+    key: 'sys_v32_titan',
     data: { produtos: [], categorias: [] },
     init: async () => {
         const raw = localStorage.getItem(DB.key);
@@ -513,7 +443,9 @@ const DB = {
                         limitQty: p.Limit || p.limitQty || 0,
                         isBestSeller: p.Mais_Vendido === "Sim" || p.isBestSeller === true,
                         linkedProductCode: p.Codigo_Produto_Ligado || p.linkedProductCode || "",
-                        comboItems: p.items || []
+                        comboItems: p.items || [],
+                        // Auto extract slug from image url if exists, or name
+                        imageSlug: p.imagem ? p.imagem.split('/').pop().replace('-cesta-basica-cuiaba-varzea-grande.webp','') : App.slugify(p.nome)
                     }));
                     DB.data = { produtos: loadedProds, categorias: [] };
                     
@@ -537,6 +469,18 @@ const DB = {
         if(!Array.isArray(DB.data.categorias)) DB.data.categorias = [];
         App.render();
         CatManager.refreshDatalist();
+        
+        // Auto-Slug Listener
+        document.getElementById('p-nome').addEventListener('input', function() {
+            if(!document.getElementById('p-id').value) { // Only auto-fill for new/clean
+                document.getElementById('p-imageSlug').value = App.slugify(this.value);
+            }
+        });
+        
+        // Live Preview Listener
+        document.getElementById('p-imageSlug').addEventListener('input', function() {
+            App.updateThumbPreview();
+        });
     },
     save: () => {
         localStorage.setItem(DB.key, JSON.stringify(DB.data));
@@ -558,6 +502,22 @@ const App = {
     sortState: { field: 'nome', order: 'asc' },
     init: () => { DB.init(); },
     
+    slugify: (text) => {
+        return text.toString().toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove accents
+            .replace(/\s+/g, '-')           // Replace spaces with -
+            .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+            .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+            .replace(/^-+/, '')             // Trim - from start of text
+            .replace(/-+$/, '');            // Trim - from end of text
+    },
+
+    updateThumbPreview: () => {
+        const slug = document.getElementById('p-imageSlug').value;
+        const url = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
+        document.getElementById('p-thumb').src = url;
+    },
+
     sort: (field) => {
         if(App.sortState.field === field) App.sortState.order = App.sortState.order === 'asc' ? 'desc' : 'asc';
         else { App.sortState.field = field; App.sortState.order = 'asc'; }
@@ -697,6 +657,7 @@ const App = {
             document.getElementById('p-codigo').value = p.codigo;
             document.getElementById('p-ean').value = p.ean||'';
             document.getElementById('p-nome').value = p.nome;
+            document.getElementById('p-imageSlug').value = p.imageSlug || App.slugify(p.nome);
             document.getElementById('p-varNome').value = (p.varNome||[]).join(' | ');
             document.getElementById('p-varEan').value = (p.varEan||[]).join(' | ');
             document.getElementById('p-categoria').value = p.categoria||'';
@@ -714,15 +675,13 @@ const App = {
             document.getElementById('p-linkedProd').value = p.linkedProductCode || "";
 
             App.calcMargin('price'); 
+            App.updateThumbPreview(); // Update thumbnail
 
             document.getElementById('p-isOffer').checked = p.isOffer;
             if(p.isOffer) { App.toggleOffer(true); document.getElementById('p-offerPrice').value = p.offerPrice.toFixed(2); }
             
             document.getElementById('p-isCombo').checked = p.isCombo;
-            if(p.isCombo) { 
-                Combo.items = p.comboItems||[]; 
-                Combo.toggle(true); // Isso ja dispara o renderList e o calculo em tempo real
-            }
+            if(p.isCombo) { Combo.toggle(true); Combo.items = p.comboItems||[]; Combo.renderList(); }
 
             const hist = p.entryHistory || [];
             const displayHist = hist.slice(0, 20);
@@ -752,20 +711,18 @@ const App = {
         } else {
             document.getElementById('p-id').value = '';
             document.getElementById('p-codigo').value = DB.nextCode();
+            document.getElementById('p-thumb').src = "";
         }
         document.getElementById('modal-prod').showModal();
     },
 
-    // UNIFIED CHECKOUT MODAL LOGIC
     openCheckout: (items) => {
         const rows = document.getElementById('bulk-sell-rows');
         rows.innerHTML = '';
         let total = 0;
 
         items.forEach(item => {
-            // item needs: id, name, price, qty, code
             const p = DB.data.produtos.find(x => x.id === item.id);
-            // Fallback for price if not passed explicitly (mostly manual mode)
             const price = item.price !== undefined ? item.price : (p.isOffer ? p.offerPrice : p.valor);
             const qty = item.qty || 1;
             
@@ -780,7 +737,7 @@ const App = {
             total += (price * qty);
         });
         
-        App.calcBulkTotal(); // Ensure calculation logic runs
+        App.calcBulkTotal();
         document.getElementById('modal-bulk-sell').showModal();
     },
 
@@ -792,7 +749,6 @@ const App = {
     },
 
     processSale: () => {
-        // Called from Product Modal (Single Item Sell)
         const id = document.getElementById('p-id').value;
         const qty = parseInt(document.getElementById('quick-sell-qty').value) || 1;
         const p = DB.data.produtos.find(x => x.id === id);
@@ -827,11 +783,6 @@ const App = {
 
     processBulkSell: () => {
         const client = document.getElementById('bulk-client-code').value;
-        const route = document.getElementById('bulk-route').value;
-        const payment = document.getElementById('bulk-payment').value;
-        const gift = document.getElementById('bulk-gift').value;
-        const obs = document.getElementById('bulk-obs').value;
-        
         const rows = document.querySelectorAll('#bulk-sell-rows tr');
         let printItems = [];
         let grandTotal = 0;
@@ -843,7 +794,6 @@ const App = {
             const p = DB.data.produtos.find(x => x.id === id);
             
             if(qty > 0 && p) {
-                // Execute sale logic (stock, history)
                 const items = p.isCombo ? p.comboItems : [{ id: id, qty: 1 }];
                 items.forEach(item => {
                     const child = DB.data.produtos.find(x => x.id === item.id);
@@ -855,7 +805,7 @@ const App = {
                             qty: item.qty * qty, 
                             type: 'BULK', 
                             salePrice: price.toFixed(2), 
-                            profit: 0 
+                            profit: 0
                         });
                     }
                 });
@@ -865,7 +815,6 @@ const App = {
                     nome: p.nome, 
                     price: price, 
                     code: p.codigo,
-                    // Pass child info for printing if combo
                     isCombo: p.isCombo,
                     comboItems: p.isCombo ? p.comboItems : []
                 });
@@ -874,41 +823,22 @@ const App = {
         });
 
         DB.save();
-        
-        // Update main list
         App.render();
-        // Update product modal if open
         const openModalId = document.getElementById('p-id').value;
-        if(document.getElementById('modal-prod').open && openModalId) {
-            App.openModal(openModalId);
-        }
-
+        if(document.getElementById('modal-prod').open && openModalId) { App.openModal(openModalId); }
         document.getElementById('modal-bulk-sell').close();
         
-        // --- GERAR HTML PARA IMPRESSÃO (AJUSTADO PARA NOVOS CAMPOS E FORMATO 100mm) ---
-        let html = `
-            <div class="client-code">${client}</div>
-            <div class="receipt-header">CUPOM SEPARAÇÃO</div>
-            
-            <div style="margin-bottom:15px; border-bottom:1px dashed #000; padding-bottom:10px; font-size:14px;">
-                ROTA: <b>${route || 'NÃO INFORMADA'}</b><br>
-                PGTO: <b>${payment}</b><br>
-                ${gift ? `BRINDE: <b>${gift}</b><br>` : ''}
-                ${obs ? `OBS: <b style="font-size:16px">${obs}</b>` : ''}
-            </div>
-        `;
+        let html = `<div class="client-code">${client}</div>
+            <div class="receipt-header">CUPOM SEPARAÇÃO</div>`;
             
         printItems.forEach(i => {
-            let dName = i.nome.length > 28 ? i.nome.substring(0,28) + '...' : i.nome;
-            
-            // Main Item Line
+            let dName = i.nome.length > 25 ? i.nome.substring(0,25) + '...' : i.nome;
             html += `<div class="log-row">
                 <span class="log-code">${i.code}</span>
                 <div class="log-name">${dName}</div>
                 <div class="log-qty">x${i.qty}</div>
             </div>`;
             
-            // If combo, list children
             if(i.isCombo && i.comboItems && i.comboItems.length > 0) {
                 i.comboItems.forEach(child => {
                     const childProd = DB.data.produtos.find(p => p.id === child.id);
@@ -916,9 +846,10 @@ const App = {
                     const childTotal = child.qty * i.qty;
                     const childName = child.nome.length > 25 ? child.nome.substring(0,25)+'...' : child.nome;
                     
-                    // AQUI ESTÁ A CLASSE AJUSTADA NO CSS (.log-sub)
                     html += `<div class="log-sub">
-                        ${childTotal}x [${childCode}] ${childName}
+                        <span style="font-weight:900;">${childTotal}x</span>
+                        <span style="font-size:0.85rem; background:#eee; padding:0 4px; border-radius:3px; margin:0 5px;">${childCode}</span>
+                        ${childName}
                     </div>`;
                 });
             }
@@ -946,16 +877,9 @@ const App = {
         const id = document.getElementById('p-id').value;
         const currentProd = id ? DB.data.produtos.find(x=>x.id===id) : {};
         
-        const isCombo = document.getElementById('p-isCombo').checked;
-        let custoFinal = parseFloat(document.getElementById('p-custo').value)||0;
-
-        // Se for combo, garante que o custo salvo é o calculado
-        if(isCombo) {
-            custoFinal = Combo.items.reduce((acc, item) => {
-                const child = DB.data.produtos.find(x => x.id === item.id);
-                return acc + (child ? (child.custo * item.qty) : 0);
-            }, 0);
-        }
+        // Build slug and image path
+        const slug = document.getElementById('p-imageSlug').value;
+        const finalImage = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
 
         const prod = {
             ...currentProd, 
@@ -969,7 +893,7 @@ const App = {
             ncm: document.getElementById('p-ncm').value,
             cest: document.getElementById('p-cest').value,
             cfop: document.getElementById('p-cfop').value,
-            custo: custoFinal, 
+            custo: parseFloat(document.getElementById('p-custo').value)||0,
             valor: parseFloat(document.getElementById('p-valor').value)||0,
             isOffer: document.getElementById('p-isOffer').checked,
             offerPrice: parseFloat(document.getElementById('p-offerPrice').value)||0,
@@ -977,173 +901,64 @@ const App = {
             limitQty: parseFloat(document.getElementById('p-limitQty').value)||0,
             expiryDate: document.getElementById('p-expiry').value, 
             unidade: document.getElementById('p-unidade').value,
-            isCombo: isCombo,
+            isCombo: document.getElementById('p-isCombo').checked,
             comboItems: Combo.items,
-            items: isCombo ? Combo.items : [], 
+            items: document.getElementById('p-isCombo').checked ? Combo.items : [], 
             entryHistory: currentProd.entryHistory || [],
             salesHistory: currentProd.salesHistory || [],
             isBestSeller: document.getElementById('p-isBestSeller').checked,
-            linkedProductCode: document.getElementById('p-linkedProd').value
+            linkedProductCode: document.getElementById('p-linkedProd').value,
+            
+            // New Image Fields
+            imageSlug: slug,
+            imagem: finalImage
         };
         if(id) { const idx = DB.data.produtos.findIndex(x=>x.id===id); if(idx>-1) DB.data.produtos[idx] = prod; }
         else { DB.data.produtos.push(prod); }
         DB.save(); App.render(); document.getElementById('modal-prod').close();
     },
     toggleOffer: (v) => document.getElementById('offer-area').style.display = v ? 'block' : 'none',
-
     exportBackup: () => {
-        // --- EXPORTAÇÃO (FORMATO EXTERNO) ---
-        const exportList = DB.data.produtos.map(p => {
-            const fullCategoryUpper = (p.categoria || '').toUpperCase();
-            const parts = fullCategoryUpper.split(' > ');
-            
+        const exportData = DB.data.produtos.map(p => {
+            const parts = (p.categoria || '').split(' > ');
             return {
-                id: p.id,
-                codigo: p.codigo,
-                nome: p.nome,
-                ean: p.ean,
-                categoria: fullCategoryUpper, // CAIXA ALTA
-                fornecedor: p.fornecedor || "",
-                caracteristicas: p.caracteristicas || "",
-                custo: p.custo,
-                valor: p.valor,
-                batches: p.entryHistory ? p.entryHistory.map(e => ({ date: e.date || "", qty: e.qty || 0 })) : [],
-                estoque: p.estoque,
-                estoqueFiscal: p.estoqueFiscal || 0,
-                peso: p.peso || 0,
-                
-                // Mapeamento para sistema externo
-                limit: p.limitQty || 0,
-                Limit: p.limitQty || 0,
-                imagem: p.imagem || "",
-                items: p.comboItems || [],
-                personalized: p.personalized || false,
-                isOffer: p.isOffer,
-                offerPrice: p.offerPrice || 0,
-                
-                variacoesNome: p.varNome || [], // Exporta como variacoesNome
-                variacoesEan: p.varEan || [],   // Exporta como variacoesEan
-                
-                ncm: p.ncm || "",
-                cest: p.cest || "",
-                cfop: p.cfop || "",
-                csosn: p.csosn || "",
-                obs: p.obs || "",
-                subcategoria: (p.subcategoria || "").toUpperCase(),
-                nota: p.nota || "",
-                refId: p.refId || "",
-                fator: p.fator || "",
-                unidade: p.unidade,
-                isCombo: p.isCombo,
-                
-                Oferta: p.isOffer ? "Sim" : "Não",
-                Valor_Oferta: p.offerPrice || 0,
-                Categoria: parts[0] || '',
-                Subcategoria: parts[1] ? parts[1].trim() : '', 
+                ...p,
+                hide_on_site: (p.estoque <= 0),
+                items: p.isCombo ? p.comboItems : [],
                 Mais_Vendido: p.isBestSeller ? "Sim" : "Não",
                 Tem_Ligacao: p.linkedProductCode ? "Sim" : "Não",
-                Codigo_Produto_Ligado: p.linkedProductCode || ""
+                Codigo_Produto_Ligado: p.linkedProductCode || "",
+                Oferta: p.isOffer ? "Sim" : "Não",
+                Valor_Oferta: p.offerPrice,
+                Limit: p.limitQty,
+                Categoria: parts[0] || '',
+                Subcategoria: parts[1] || ''
             };
         });
-
-        const blob = new Blob([JSON.stringify(exportList, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'produtos.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const fullDump = { ...DB.data, produtos: exportData };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullDump, null, 2));
+        const dl = document.createElement('a');
+        dl.setAttribute("href", dataStr); dl.setAttribute("download", "produtos.json"); dl.click();
     },
-
     restoreBackup: (input) => {
-        // --- RESTAURAÇÃO (CONVERTE DE VOLTA PARA O SITE) ---
         const file = input.files[0];
         if(!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                
-                let produtosEntrada = [];
-
-                // 1. Deteta se é formato Array (novo) ou Objeto (antigo)
-                if (Array.isArray(data)) {
-                    produtosEntrada = data;
-                } else if (data && Array.isArray(data.produtos)) {
-                    produtosEntrada = data.produtos;
-                }
-
-                if(produtosEntrada) { 
-                    // 2. CONVERSÃO REVERSA: Garante que os campos voltem a ter os nomes que o site usa
-                    const produtosCorrigidos = produtosEntrada.map(p => ({
-                        ...p,
-                        // Se tiver 'variacoesNome' (externo), converte de volta para 'varNome' (site)
-                        varNome: p.variacoesNome || p.varNome || [],
-                        varEan: p.variacoesEan || p.varEan || [],
-                        
-                        // Se tiver 'items' (externo), converte para 'comboItems' (site)
-                        comboItems: p.items || p.comboItems || [],
-                        
-                        // Se tiver 'Limit' ou 'limit' (externo), converte para 'limitQty' (site)
-                        limitQty: p.Limit || p.limit || p.limitQty || 0,
-                        
-                        // Garante que o histórico existe
-                        entryHistory: p.batches ? p.batches.map(b => ({ date: b.date, qty: b.qty })) : (p.entryHistory || [])
-                    }));
-
-                    DB.data.produtos = produtosCorrigidos; 
-                    DB.save(); 
-                    alert("BACKUP RESTAURADO COM SUCESSO! A base de dados foi atualizada."); 
-                    location.reload(); 
-                } else { 
-                    alert("ARQUIVO INVÁLIDO OU FORMATO DESCONHECIDO!"); 
-                }
-            } catch(err) { alert("ERRO AO LER ARQUIVO: " + err.message); }
+                if(data && Array.isArray(data.produtos)) { DB.data = data; DB.save(); alert("BACKUP RESTAURADO!"); location.reload(); } 
+                else { alert("ARQUIVO INVÁLIDO!"); }
+            } catch(err) { alert("ERRO: " + err.message); }
         };
         reader.readAsText(file); input.value = '';
     }
 };
 
-/* --- COMBO LOGIC (ATUALIZADA) --- */
+/* --- COMBO LOGIC --- */
 const Combo = {
     items: [],
-    
-    // Função principal que recalcula tudo em TEMPO REAL
-    updateTotals: () => {
-        let totalCost = 0;
-        let totalSaleRef = 0;
-        let totalQty = 0;
-
-        Combo.items.forEach(item => {
-            totalQty += item.qty;
-            if(item.id) {
-                const p = DB.data.produtos.find(x => x.id === item.id);
-                if(p) {
-                    totalCost += (p.custo * item.qty);
-                    totalSaleRef += (p.valor * item.qty);
-                }
-            }
-        });
-
-        // Atualiza campos na tela
-        document.getElementById('p-custo').value = totalCost.toFixed(2);
-        document.getElementById('combo-ref-value').innerText = 'R$ ' + totalSaleRef.toFixed(2);
-        document.getElementById('combo-total-items').innerText = totalQty;
-        
-        // Atualiza a margem em tempo real
-        App.calcMargin('cost');
-    },
-
-    toggle: (v) => { 
-        document.getElementById('combo-area').style.display = v?'block':'none'; 
-        if(v) {
-            Combo.renderList(); 
-            // Dispara o cálculo ao abrir para garantir dados frescos
-            Combo.updateTotals();
-        }
-    },
-    
+    toggle: (v) => { document.getElementById('combo-area').style.display = v?'block':'none'; if(v) Combo.renderList(); },
     addManual: () => {
         const nome = document.getElementById('combo-manual-search').value.toUpperCase();
         const qty = parseInt(document.getElementById('combo-manual-qty').value);
@@ -1153,7 +968,6 @@ const Combo = {
         Combo.renderList();
         document.getElementById('combo-manual-search').value = '';
     },
-    
     processPaste: () => {
         const lines = document.getElementById('combo-paste').value.split('\n');
         lines.forEach(l => {
@@ -1166,20 +980,14 @@ const Combo = {
         });
         Combo.renderList(); document.getElementById('combo-paste').value = '';
     },
-    
     renderList: () => {
         document.getElementById('combo-list').innerHTML = Combo.items.map((i,idx)=>`
             <div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px;font-size:0.9rem;">
-                <b>${i.qty}x</b> 
-                <span>${i.nome} ${i.id ? '✅' : '<b style="color:red">❌ NÃO ENCONTRADO</b>'}</span>
+                <b>${i.qty}x</b> <span>${i.nome} ${i.id?'✅':'⚠️'}</span>
                 <span style="color:red;cursor:pointer;font-weight:bold;" onclick="Combo.items.splice(${idx},1);Combo.renderList()">REMOVER</span>
             </div>
         `).join('');
-        
-        // Sempre que renderizar, recalcula os totais
-        Combo.updateTotals();
     },
-    
     sell: () => { App.processSale(); }
 };
 
@@ -1353,14 +1161,6 @@ const Importer = {
             }
         });
         DB.save(); App.render(); document.getElementById('modal-import').close(); alert("IMPORTAÇÃO CONCLUÍDA!");
-    }
-};
-
-/* PRINTER (VISUAL REVISED) */
-const Printer = {
-    // printCurrent is called without args from buttons, but we want it to check DOM if so
-    printCurrent: () => {
-        // Not used directly anymore, flow goes through processBulkSell
     }
 };
 
