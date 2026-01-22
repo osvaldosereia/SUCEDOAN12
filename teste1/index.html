@@ -3,621 +3,594 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estoque Pro | Minimalist</title>
+    <title>SISTEMA V15 | NFe Import Core</title>
+    
     <style>
-        /* --- CORE: RESET & VARIABLES --- */
+        /* --- 1. CORE VARIABLES & RESET --- */
         :root {
-            --bg: #f4f4f9; --surface: #ffffff; --text: #1a1a1a; --text-sec: #666;
-            --primary: #2563eb; --accent: #10b981; --danger: #ef4444; --warn: #f59e0b;
-            --border: #e5e7eb; --radius: 8px; --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            --font-stack: system-ui, -apple-system, sans-serif;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-sec: #64748b;
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --radius: 6px;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
         }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #0f172a; --surface: #1e293b; --text: #f1f5f9; --text-sec: #94a3b8;
-                --primary: #3b82f6; --border: #334155;
-            }
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-        body { font-family: var(--font-stack); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; padding-bottom: 80px; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text-main); font-family: system-ui, -apple-system, sans-serif; font-size: 14px; padding-bottom: 60px; }
         
-        /* --- LAYOUT --- */
-        header { 
-            position: sticky; top: 0; z-index: 10; background: var(--surface); 
-            padding: 1rem; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
-        .controls { display: flex; gap: 0.5rem; }
-        
-        main { max-width: 1100px; margin: 0 auto; padding: 1rem; }
-        
-        /* --- COMPONENTS: BUTTONS --- */
-        button {
-            cursor: pointer; padding: 0.5rem 1rem; border: none; border-radius: var(--radius);
-            font-weight: 600; font-size: 0.9rem; transition: opacity 0.2s;
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-            min-height: 44px; /* Touch target */
-        }
-        button:active { transform: scale(0.98); }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-sm { min-height: 32px; padding: 0.25rem 0.75rem; font-size: 0.8rem; }
-
-        /* --- PRODUCT LIST (GRID) --- */
-        .product-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;
-            margin-top: 1rem;
-        }
-        .card {
-            background: var(--surface); padding: 1rem; border-radius: var(--radius);
-            border: 1px solid var(--border); box-shadow: var(--shadow);
-            display: flex; flex-direction: column; gap: 0.5rem; position: relative;
-        }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .card-title { font-weight: 600; font-size: 1rem; line-height: 1.3; }
-        .card-meta { font-size: 0.8rem; color: var(--text-sec); display: flex; gap: 0.5rem; }
-        .tag { 
-            padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; 
-        }
-        .tag-st { background: var(--warn); color: #000; }
-        .tag-combo { background: var(--accent); color: white; }
-        
-        .card-price { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-top: auto; }
-        .stock-badge { 
-            font-size: 0.8rem; padding: 4px 8px; background: var(--bg); border-radius: 4px;
-            display: flex; justify-content: space-between;
-        }
-
-        /* --- MODAL (DIALOG) --- */
-        dialog {
-            background: var(--surface); color: var(--text); border: none; border-radius: var(--radius);
-            width: 95%; max-width: 600px; padding: 0; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-            margin: auto;
-        }
-        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
-        .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 1rem; max-height: 70vh; overflow-y: auto; }
-        .modal-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem; }
-
-        /* --- FORMS --- */
-        .form-grid { display: grid; gap: 1rem; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
-        label { font-size: 0.8rem; font-weight: 600; color: var(--text-sec); }
-        input, select, textarea {
-            padding: 0.75rem; background: var(--bg); border: 1px solid var(--border);
-            border-radius: var(--radius); color: var(--text); font-size: 1rem; width: 100%;
-        }
-        input:focus { border-color: var(--primary); }
-
-        /* --- TABS --- */
-        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1rem; overflow-x: auto; }
-        .tab-btn {
-            background: none; border: none; padding: 0.75rem 1rem; color: var(--text-sec);
-            font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
-        }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* --- UTILS --- */
+        /* --- 2. LAYOUT UTILS --- */
+        .flex { display: flex; align-items: center; gap: 8px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
         .hidden { display: none !important; }
-        .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
+        .w-full { width: 100%; }
         
-        /* Combo & Batches List */
-        .mini-list { list-style: none; margin-top: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); }
-        .mini-list li { padding: 0.5rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        .mini-list li:last-child { border-bottom: none; }
+        /* --- 3. COMPONENTS --- */
+        header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; position: sticky; top: 0; z-index: 50; box-shadow: var(--shadow); }
+        h1 { font-size: 1.1rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
 
+        main { max-width: 1400px; margin: 20px auto; padding: 0 15px; display: grid; gap: 20px; grid-template-columns: 1fr; }
+        @media (min-width: 1024px) { main { grid-template-columns: 420px 1fr; align-items: start; } }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+        .card-head { background: #f1f5f9; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: 700; color: var(--text-sec); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-body { padding: 15px; }
+
+        label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-sec); margin-bottom: 4px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 9px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; background: #fff; transition: border 0.15s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+        input[readonly] { background: #f8fafc; color: var(--text-sec); cursor: not-allowed; }
+
+        .divider { border-bottom: 1px dashed var(--border); margin: 15px 0 10px; padding-bottom: 5px; color: var(--primary); font-weight: 800; font-size: 0.7rem; text-transform: uppercase; }
+
+        /* --- 4. BUTTONS --- */
+        .btn { cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; font-weight: 600; font-size: 0.8rem; border-radius: var(--radius); border: 1px solid transparent; transition: 0.2s; min-height: 38px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-ghost { background: transparent; border-color: var(--border); color: var(--text-sec); }
+        .btn-ghost:hover { background: #f1f5f9; color: var(--text-main); }
+        .btn-danger { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+        .btn-success { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+        .btn-icon { width: 34px; padding: 0; }
+
+        /* --- 5. TABLE --- */
+        .table-wrap { overflow-x: auto; max-height: 75vh; border-top: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
+        th { text-align: left; padding: 10px; background: #f8fafc; border-bottom: 2px solid var(--border); color: var(--text-sec); position: sticky; top: 0; z-index: 10; font-size: 0.75rem; text-transform: uppercase; }
+        td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover { background: #f8fafc; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+        .bg-ok { background: #dcfce7; color: #166534; }
+        .bg-low { background: #fee2e2; color: #991b1b; }
+
+        /* --- 6. MODAL --- */
+        dialog { margin: auto; border: none; border-radius: 8px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); width: 95%; max-width: 1000px; padding: 0; }
+        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+        .modal-foot { padding: 15px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* Util for search suggestions */
+        .suggestions { position: absolute; background: white; width: 100%; max-height: 150px; overflow-y: auto; border: 1px solid var(--border); z-index: 50; box-shadow: var(--shadow); display: none; margin-top: 2px; }
+        .s-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
+        .s-item:hover { background: #eff6ff; color: var(--primary); }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Estoque<span style="color:var(--primary)">Pro</span></h1>
-    <div class="controls">
-        <div class="file-input-wrapper">
-            <button class="btn-outline">📂 Importar CSV</button>
-            <input type="file" id="csvInput" accept=".csv">
-        </div>
-        <button class="btn-primary" onclick="app.openModal()">+ Novo</button>
+<header class="flex-between">
+    <div class="flex">
+        <h1>📦 SISTEMA V15 <span style="font-weight:400; color:var(--text-sec); font-size:0.8rem; margin-left:5px;">Titanium NFe</span></h1>
+    </div>
+    <div class="flex">
+        <button onclick="document.getElementById('file-xml').click()" class="btn btn-primary" title="Importar NFe XML">📂 Importar XML</button>
+        <button onclick="App.exportJSON()" class="btn btn-ghost">Exportar</button>
     </div>
 </header>
 
 <main>
-    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
-        <input type="text" id="searchBox" placeholder="Buscar por nome, EAN ou código..." onkeyup="app.render()">
-        <button class="btn-outline" onclick="app.clearDB()">🗑 Limpar</button>
-    </div>
-    <div id="grid" class="product-grid"></div>
+    <section class="card">
+        <div class="card-head flex-between">
+            <span id="form-mode">Novo Produto</span>
+            <button onclick="App.reset()" class="btn btn-ghost btn-icon" title="Limpar">↺</button>
+        </div>
+        <div class="card-body">
+            <form id="form-prod" onsubmit="App.save(event)">
+                <input type="hidden" id="p-id">
+                
+                <div class="grid-3">
+                    <div>
+                        <label>Código Interno</label>
+                        <input type="text" id="p-codigo" readonly placeholder="Auto" style="font-weight:700; color:var(--primary); background:#eff6ff;">
+                    </div>
+                    <div style="grid-column: span 2">
+                        <label>EAN / GTIN</label>
+                        <input type="text" id="p-ean" placeholder="Código de Barras">
+                    </div>
+                </div>
+
+                <div style="margin-top:10px;">
+                    <label>Descrição do Produto</label>
+                    <input type="text" id="p-nome" required style="font-weight:700;">
+                </div>
+
+                <div class="grid-2" style="margin-top:10px;">
+                    <div><label>Fornecedor</label><input type="text" id="p-fornecedor" list="dl-fornecedores"></div>
+                    <div><label>Categoria</label><input type="text" id="p-categoria" list="dl-categorias"></div>
+                </div>
+
+                <div class="divider">💰 Custos & Precificação</div>
+                <div class="grid-3">
+                    <div><label>Custo (R$)</label><input type="number" id="p-custo" step="0.0001" oninput="App.calcMargin()"></div>
+                    <div><label>Margem (%)</label><input type="text" id="p-margem" readonly style="text-align:center;"></div>
+                    <div><label style="color:var(--primary)">Venda (R$)</label><input type="number" id="p-valor" step="0.01" oninput="App.calcMargin()" required></div>
+                </div>
+
+                <div class="divider">📦 Estoque & Fiscal</div>
+                <div class="grid-3">
+                    <div><label>Estoque</label><input type="number" id="p-estoque" required></div>
+                    <div><label>Mínimo</label><input type="number" id="p-minimo"></div>
+                    <div><label>Unidade</label><input type="text" id="p-unidade" placeholder="UN"></div>
+                </div>
+                <div class="grid-4" style="margin-top:10px;">
+                    <div><label>NCM</label><input type="text" id="p-ncm"></div>
+                    <div><label>CEST</label><input type="text" id="p-cest"></div>
+                    <div><label>CFOP</label><input type="text" id="p-cfop"></div>
+                    <div><label>Ref. NFe</label><input type="text" id="p-refNFe" placeholder="Chave/ID"></div>
+                </div>
+
+                <div class="divider">🔗 Detalhes</div>
+                <div class="grid-2">
+                    <div><label>Imagem (Arquivo)</label><input type="text" id="p-imagem"></div>
+                    <div><label>Peso (Kg)</label><input type="number" id="p-peso" step="0.001"></div>
+                </div>
+                <div style="margin-top:10px;">
+                    <label>Variações de Nome (Separar por | )</label>
+                    <input type="text" id="p-tags" placeholder="Ex: Arroz Branco | Arroz Tio João">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-full" style="margin-top:20px; padding:12px;">💾 SALVAR PRODUTO</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="card" style="min-height: 600px;">
+        <div class="card-head flex-between">
+            <span>Base de Dados (<span id="total-count">0</span>)</span>
+        </div>
+        <div style="padding:10px; background:#f8fafc; border-bottom:1px solid var(--border);" class="grid-4">
+            <input type="text" id="s-term" placeholder="🔍 Buscar..." oninput="App.render()" style="grid-column: span 2;">
+            <select id="s-forn" onchange="App.render()"><option value="">Fornecedor</option></select>
+            <select id="s-status" onchange="App.render()">
+                <option value="">Status</option>
+                <option value="ok">Estoque OK</option>
+                <option value="low">Estoque Baixo</option>
+            </select>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="80">Cód</th>
+                        <th>Produto</th>
+                        <th width="100">Custo</th>
+                        <th width="100">Venda</th>
+                        <th width="80">Estoque</th>
+                        <th width="80" style="text-align:right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbl-body"></tbody>
+            </table>
+        </div>
+    </section>
 </main>
 
-<dialog id="productDialog">
-    <div class="modal-header">
-        <h3 id="modalTitle">Editar Produto</h3>
-        <button class="btn-sm btn-outline" onclick="document.getElementById('productDialog').close()">✕</button>
+<dialog id="modal-xml">
+    <div class="card-head flex-between" style="background: white; font-size: 0.9rem;">
+        <b>📡 Conferência de NFe (XML)</b>
+        <button onclick="document.getElementById('modal-xml').close()" class="btn btn-ghost btn-icon">✕</button>
     </div>
-    <div class="modal-body">
-        <div class="tabs">
-            <button class="tab-btn active" onclick="app.switchTab('tab-geral')">Geral</button>
-            <button class="tab-btn" onclick="app.switchTab('tab-preco')">Precificação</button>
-            <button class="tab-btn" onclick="app.switchTab('tab-fiscal')">Fiscal</button>
-            <button class="tab-btn" onclick="app.switchTab('tab-estoque')">Estoque/Lotes</button>
-        </div>
-
-        <form id="productForm" onsubmit="event.preventDefault(); app.saveProduct();">
-            <input type="hidden" id="id">
-            
-            <div id="tab-geral" class="tab-content active form-grid">
-                <div class="form-row">
-                    <div class="form-group"><label>Cód. Interno</label><input type="text" id="code" required></div>
-                    <div class="form-group"><label>EAN (Barras)</label><input type="text" id="ean"></div>
-                </div>
-                <div class="form-group"><label>Nome do Produto</label><input type="text" id="name" required></div>
-                <div class="form-row">
-                    <div class="form-group"><label>Grupo/Categoria</label><input type="text" id="category"></div>
-                    <div class="form-group"><label>Unidade</label><input type="text" id="unit" placeholder="UN, KG..."></div>
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="isCombo" onchange="app.toggleCombo(this.checked)"> É um Combo/Kit?</label>
-                </div>
-                <div class="form-group"><label>Imagem (Nome Arq)</label><input type="text" id="image"></div>
-            </div>
-
-            <div id="tab-preco" class="tab-content form-grid">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Custo (R$)</label>
-                        <input type="number" step="0.01" id="cost" oninput="app.calcMargin()">
-                    </div>
-                    <div class="form-group">
-                        <label>Venda (R$)</label>
-                        <input type="number" step="0.01" id="price" oninput="app.calcMargin()" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label>Margem (%)</label><input type="text" id="margin" readonly tabindex="-1"></div>
-                    <div class="form-group" style="justify-content:center"><label><input type="checkbox" id="offer"> Em Oferta?</label></div>
-                </div>
-            </div>
-
-            <div id="tab-fiscal" class="tab-content form-grid">
-                <div class="form-row">
-                    <div class="form-group"><label>NCM</label><input type="text" id="ncm"></div>
-                    <div class="form-group"><label>CEST</label><input type="text" id="cest"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label>CFOP</label><input type="text" id="cfop" oninput="app.checkST()"></div>
-                    <div class="form-group"><label>CSOSN/CST</label><input type="text" id="cst"></div>
-                </div>
-                <div class="form-group">
-                    <label style="color:var(--warn); font-weight:700;">
-                        <input type="checkbox" id="isST"> Produto é Substituto Tributário (ST)?
-                    </label>
-                </div>
-            </div>
-
-            <div id="tab-estoque" class="tab-content form-grid">
-                
-                <div id="stock-normal">
-                    <div class="form-row">
-                        <div class="form-group"><label>Estoque Atual</label><input type="number" id="qty" readonly></div>
-                        <div class="form-group"><label>Estoque Mínimo</label><input type="number" id="minQty"></div>
-                    </div>
-                    
-                    <hr style="margin: 1rem 0; border:0; border-top:1px solid var(--border)">
-                    <h4>Lotes & Validade</h4>
-                    <div class="form-row">
-                        <div class="form-group"><input type="date" id="batchDate"></div>
-                        <div class="form-group" style="display:flex; flex-direction:row; gap:5px; align-items: flex-end;">
-                            <input type="number" id="batchQty" placeholder="Qtd">
-                            <button type="button" class="btn-primary btn-sm" onclick="app.addBatch()">Add</button>
-                        </div>
-                    </div>
-                    <ul id="batchList" class="mini-list"></ul>
-                </div>
-
-                <div id="stock-combo" class="hidden">
-                    <h4>Itens do Combo</h4>
-                    <div class="form-group">
-                        <label>Adicionar ID do Produto</label>
-                        <div style="display:flex; gap:5px;">
-                            <input type="text" id="comboPartId" placeholder="ID Interno">
-                            <input type="number" id="comboPartQty" placeholder="Qtd" style="width:80px">
-                            <button type="button" class="btn-primary btn-sm" onclick="app.addComboItem()">Add</button>
-                        </div>
-                    </div>
-                    <ul id="comboList" class="mini-list"></ul>
-                </div>
-
-            </div>
-
-        </form>
+    <div style="padding:10px; background:#eff6ff; border-bottom:1px solid var(--border); font-size:0.85rem;">
+        <div id="xml-info" style="font-weight:bold; color:var(--primary-dark);"></div>
     </div>
-    <div class="modal-footer">
-        <button type="button" class="btn-danger" id="btnDelete" onclick="app.deleteProduct()">Excluir</button>
-        <button type="submit" form="productForm" class="btn-primary">Salvar Alterações</button>
+    <div class="modal-body" style="padding:0;">
+        <table style="width:100%; font-size:0.8rem;">
+            <thead style="background:#f1f5f9;">
+                <tr>
+                    <th style="width:30px;"><input type="checkbox" checked onclick="Importer.toggleAll(this.checked)"></th>
+                    <th>Cód. Forn.</th>
+                    <th>Produto (XML)</th>
+                    <th>NCM</th>
+                    <th>Qtd</th>
+                    <th>Custo Un.</th>
+                    <th>Ação Prevista</th>
+                </tr>
+            </thead>
+            <tbody id="xml-list"></tbody>
+        </table>
+    </div>
+    <div class="modal-foot">
+        <span id="xml-stats" style="margin-right:auto; font-weight:700; color:var(--text-sec);"></span>
+        <button onclick="Importer.commit()" class="btn btn-success">✅ Processar Importação</button>
     </div>
 </dialog>
 
+<datalist id="dl-fornecedores"></datalist>
+<datalist id="dl-categorias"></datalist>
+
+<input type="file" id="file-xml" accept=".xml" class="hidden" onchange="Importer.parse(this)">
+
 <script>
 /**
- * SISTEMA ESTOQUE PRO - SINGLE FILE ARCHITECTURE
- * Filosofia: Pure JS, No Deps, Ultra Performance.
+ * SISTEMA V15 - TITANIUM
+ * Focado em Importação de XML e Integridade de Dados
  */
 
-const app = {
-    data: [],
-    currentId: null,
-
-    init() {
-        // Carrega do LocalStorage ou inicia vazio
-        const saved = localStorage.getItem('sys_stock_db');
-        if (saved) this.data = JSON.parse(saved);
-        this.render();
-
-        // Listener Importação CSV
-        document.getElementById('csvInput').addEventListener('change', (e) => this.importCSV(e));
+const DB = {
+    key: 'sys_v15_db',
+    data: { produtos: [] },
+    
+    init: () => {
+        const raw = localStorage.getItem(DB.key);
+        if (raw) DB.data = JSON.parse(raw);
+        // Garantir integridade
+        if (!Array.isArray(DB.data.produtos)) DB.data.produtos = [];
+    },
+    
+    save: () => localStorage.setItem(DB.key, JSON.stringify(DB.data)),
+    
+    // Algoritmo GAP FILLER: Encontra o menor ID numérico disponível (P001, P003 -> retorna P002)
+    nextCode: () => {
+        const nums = DB.data.produtos
+            .map(p => parseInt(p.codigo.replace(/\D/g, '')))
+            .filter(n => !isNaN(n))
+            .sort((a, b) => a - b);
+        
+        let next = 1;
+        for (let n of nums) {
+            if (n === next) next++;
+            else if (n > next) break;
+        }
+        return `P${String(next).padStart(3, '0')}`;
     },
 
-    save() {
-        localStorage.setItem('sys_stock_db', JSON.stringify(this.data));
-        this.render();
+    find: (id) => DB.data.produtos.find(p => p.id === id),
+    findByCode: (code) => DB.data.produtos.find(p => p.codigo === code),
+    
+    // Tenta encontrar produto existente pelo código do fornecedor (referência cruzada) ou EAN
+    findMatch: (ean, refForn) => {
+        return DB.data.produtos.find(p => 
+            (ean && p.ean === ean) || 
+            (p.refForn && p.refForn === refForn)
+        );
+    }
+};
+
+const App = {
+    init: () => {
+        DB.init();
+        App.render();
+        App.updateDatalists();
     },
 
-    // --- CSV PARSER ENGINE ---
-    importCSV(e) {
-        const file = e.target.files[0];
+    reset: () => {
+        document.getElementById('form-prod').reset();
+        document.getElementById('p-id').value = '';
+        document.getElementById('p-codigo').value = '';
+        document.getElementById('p-margem').value = '';
+        document.getElementById('form-mode').innerText = 'Novo Produto';
+    },
+
+    save: (e) => {
+        e.preventDefault();
+        const id = document.getElementById('p-id').value;
+        const codigo = document.getElementById('p-codigo').value || DB.nextCode();
+        
+        const prod = {
+            id: id || Date.now().toString(36),
+            codigo: codigo,
+            ean: document.getElementById('p-ean').value.trim(),
+            nome: document.getElementById('p-nome').value.trim().toUpperCase(),
+            fornecedor: document.getElementById('p-fornecedor').value.trim().toUpperCase(),
+            categoria: document.getElementById('p-categoria').value.trim().toUpperCase(),
+            custo: Number(document.getElementById('p-custo').value) || 0,
+            valor: Number(document.getElementById('p-valor').value) || 0,
+            estoque: Number(document.getElementById('p-estoque').value) || 0,
+            minimo: Number(document.getElementById('p-minimo').value) || 0,
+            unidade: document.getElementById('p-unidade').value.trim().toUpperCase(),
+            ncm: document.getElementById('p-ncm').value,
+            cest: document.getElementById('p-cest').value,
+            cfop: document.getElementById('p-cfop').value,
+            refNFe: document.getElementById('p-refNFe').value,
+            imagem: document.getElementById('p-imagem').value,
+            peso: Number(document.getElementById('p-peso').value),
+            tags: document.getElementById('p-tags').value,
+            lastUpdate: new Date().toISOString()
+        };
+
+        if (id) {
+            const idx = DB.data.produtos.findIndex(p => p.id === id);
+            if (idx > -1) DB.data.produtos[idx] = prod;
+        } else {
+            DB.data.produtos.push(prod);
+        }
+
+        DB.save();
+        App.reset();
+        App.render();
+        App.updateDatalists();
+    },
+
+    edit: (id) => {
+        const p = DB.find(id);
+        if (!p) return;
+        
+        document.getElementById('p-id').value = p.id;
+        document.getElementById('p-codigo').value = p.codigo;
+        document.getElementById('p-ean').value = p.ean || '';
+        document.getElementById('p-nome').value = p.nome;
+        document.getElementById('p-fornecedor').value = p.fornecedor || '';
+        document.getElementById('p-categoria').value = p.categoria || '';
+        document.getElementById('p-custo').value = p.custo;
+        document.getElementById('p-valor').value = p.valor;
+        document.getElementById('p-estoque').value = p.estoque;
+        document.getElementById('p-minimo').value = p.minimo || '';
+        document.getElementById('p-unidade').value = p.unidade || '';
+        document.getElementById('p-ncm').value = p.ncm || '';
+        document.getElementById('p-cest').value = p.cest || '';
+        document.getElementById('p-cfop').value = p.cfop || '';
+        document.getElementById('p-refNFe').value = p.refNFe || '';
+        document.getElementById('p-imagem').value = p.imagem || '';
+        document.getElementById('p-peso').value = p.peso || '';
+        document.getElementById('p-tags').value = p.tags || '';
+        
+        App.calcMargin();
+        document.getElementById('form-mode').innerText = `Editando ${p.codigo}`;
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    },
+
+    delete: (id) => {
+        if(!confirm('Deseja realmente excluir este produto?')) return;
+        DB.data.produtos = DB.data.produtos.filter(p => p.id !== id);
+        DB.save();
+        App.render();
+    },
+
+    calcMargin: () => {
+        const custo = Number(document.getElementById('p-custo').value);
+        const venda = Number(document.getElementById('p-valor').value);
+        const el = document.getElementById('p-margem');
+        if (custo > 0 && venda > 0) {
+            const mg = ((venda - custo) / custo) * 100;
+            el.value = mg.toFixed(1) + '%';
+            el.style.color = mg < 0 ? 'red' : 'green';
+        } else {
+            el.value = '-';
+        }
+    },
+
+    render: () => {
+        const term = document.getElementById('s-term').value.toLowerCase();
+        const forn = document.getElementById('s-forn').value;
+        const status = document.getElementById('s-status').value;
+
+        const list = DB.data.produtos.filter(p => {
+            if (term && !p.nome.toLowerCase().includes(term) && !p.codigo.toLowerCase().includes(term) && !p.ean.includes(term)) return false;
+            if (forn && p.fornecedor !== forn) return false;
+            if (status === 'low' && p.estoque >= (p.minimo || 1)) return false;
+            if (status === 'ok' && p.estoque < (p.minimo || 1)) return false;
+            return true;
+        });
+
+        document.getElementById('total-count').innerText = list.length;
+        document.getElementById('tbl-body').innerHTML = list.slice(0, 50).map(p => `
+            <tr>
+                <td><b>${p.codigo}</b></td>
+                <td>
+                    <div style="font-weight:600;">${p.nome}</div>
+                    <div style="font-size:0.7rem; color:var(--text-sec);">${p.categoria} | ${p.fornecedor}</div>
+                </td>
+                <td>R$ ${p.custo.toFixed(2)}</td>
+                <td>R$ ${p.valor.toFixed(2)}</td>
+                <td>
+                    <span class="badge ${p.estoque <= (p.minimo||0) ? 'bg-low' : 'bg-ok'}">${p.estoque} ${p.unidade}</span>
+                </td>
+                <td style="text-align:right">
+                    <button onclick="App.edit('${p.id}')" class="btn btn-ghost btn-icon">✎</button>
+                    <button onclick="App.delete('${p.id}')" class="btn btn-danger btn-icon">✕</button>
+                </td>
+            </tr>
+        `).join('');
+    },
+
+    updateDatalists: () => {
+        const forns = [...new Set(DB.data.produtos.map(p => p.fornecedor).filter(Boolean))].sort();
+        const cats = [...new Set(DB.data.produtos.map(p => p.categoria).filter(Boolean))].sort();
+
+        document.getElementById('dl-fornecedores').innerHTML = forns.map(x => `<option value="${x}">`).join('');
+        document.getElementById('dl-categorias').innerHTML = cats.map(x => `<option value="${x}">`).join('');
+        
+        const selForn = document.getElementById('s-forn');
+        selForn.innerHTML = '<option value="">Todos Fornecedores</option>' + forns.map(x => `<option value="${x}">${x}</option>`).join('');
+    },
+
+    exportJSON: () => {
+        const blob = new Blob([JSON.stringify(DB.data.produtos, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `backup_sistema_v15_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    }
+};
+
+/* --- MÓDULO DE IMPORTAÇÃO XML (NFe) --- */
+const Importer = {
+    staging: [],
+    
+    parse: (input) => {
+        const file = input.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (evt) => {
-            const text = evt.target.result;
-            // Quebra linhas e remove vazias
-            const lines = text.split('\n').filter(l => l.trim());
-            const headers = lines[0].split(';'); // Assume CSV pt-BR
-            
-            // Mapeamento simples de colunas (baseado no CSV fornecido)
-            // CSV: Internal Code;Status;Grupo;Nome;NCM;CFOP;CST;CEST...Preço
-            
-            let newCount = 0;
+        reader.onload = (e) => {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+                
+                // Dados da Nota
+                const emitente = Importer.getTag(xmlDoc, 'emit', 'xNome');
+                const nNFe = Importer.getTag(xmlDoc, 'ide', 'nNF');
+                const chNFe = Importer.getTag(xmlDoc, 'infNFe', 'Id')?.replace('NFe', '') || '';
 
-            for (let i = 1; i < lines.length; i++) {
-                const row = lines[i].split(';');
-                if (row.length < 5) continue;
+                document.getElementById('xml-info').innerHTML = `Fornecedor: ${emitente} | Nota: ${nNFe}`;
 
-                // Helper para limpar formato excel ="001"
-                const clean = (val) => val ? val.replace(/="/g, '').replace(/"/g, '').trim() : '';
-                const num = (val) => val ? parseFloat(val.replace('.', '').replace(',', '.')) || 0 : 0;
+                // Processar Produtos
+                const dets = xmlDoc.getElementsByTagName('det');
+                Importer.staging = [];
 
-                const product = {
-                    id: clean(row[0]),
-                    active: clean(row[1]) === 'Habilitado',
-                    category: clean(row[2]),
-                    name: clean(row[3]),
-                    ncm: clean(row[4]),
-                    cfop: clean(row[5]),
-                    cst: clean(row[6]),
-                    cest: clean(row[7]),
-                    price: num(row[row.length - 1]), // Preço costuma ser o último
-                    cost: 0,
-                    qty: 0,
-                    isCombo: false,
-                    isST: false,
-                    batches: [], // [{date: '2025-01-01', qty: 10}]
-                    comboItems: []
-                };
+                for (let i = 0; i < dets.length; i++) {
+                    const prod = dets[i].getElementsByTagName('prod')[0];
+                    const imposto = dets[i].getElementsByTagName('imposto')[0];
+                    
+                    const cProd = Importer.getVal(prod, 'cProd');
+                    const xProd = Importer.getVal(prod, 'xProd');
+                    const ncm = Importer.getVal(prod, 'NCM');
+                    const cest = Importer.getVal(prod, 'CEST');
+                    const cfop = Importer.getVal(prod, 'CFOP');
+                    const uCom = Importer.getVal(prod, 'uCom');
+                    const qCom = parseFloat(Importer.getVal(prod, 'qCom'));
+                    const vUnCom = parseFloat(Importer.getVal(prod, 'vUnCom'));
+                    const vProd = parseFloat(Importer.getVal(prod, 'vProd'));
 
-                // Detecção Automática de ST
-                if (['5405', '5403'].includes(product.cfop) || ['010', '030', '060', '070', '201', '202', '203', '500'].includes(product.cst)) {
-                    product.isST = true;
+                    // Tenta achar match existente
+                    const match = DB.findMatch(Importer.getVal(prod, 'cEAN'), cProd);
+
+                    Importer.staging.push({
+                        selected: true,
+                        matchId: match ? match.id : null,
+                        raw: {
+                            fornecedor: emitente,
+                            refNFe: chNFe,
+                            codForn: cProd,
+                            nome: xProd,
+                            ncm, cest, cfop,
+                            unidade: uCom,
+                            qtd: qCom,
+                            custo: vUnCom
+                        }
+                    });
                 }
-
-                // Upsert (Atualiza se existe, cria se não)
-                const idx = this.data.findIndex(p => p.id === product.id);
-                if (idx >= 0) {
-                    // Mantém dados sensíveis que não estão no CSV (estoque, custo)
-                    this.data[idx] = { ...this.data[idx], ...product, qty: this.data[idx].qty, cost: this.data[idx].cost }; 
-                } else {
-                    this.data.push(product);
-                    newCount++;
-                }
+                Importer.renderTable();
+                document.getElementById('modal-xml').showModal();
+            } catch (err) {
+                alert("Erro ao ler XML: " + err.message);
+                console.error(err);
             }
-            
-            alert(`Importação concluída! ${newCount} novos produtos.`);
-            this.save();
-            e.target.value = ''; // Reset input
         };
-        reader.readAsText(file, 'ISO-8859-1');
+        reader.readAsText(file);
+        input.value = ''; // Reset input
     },
 
-    // --- UI RENDERING ---
-    render() {
-        const grid = document.getElementById('grid');
-        const term = document.getElementById('searchBox').value.toLowerCase();
+    getVal: (el, tag) => {
+        const node = el.getElementsByTagName(tag)[0];
+        return node ? node.textContent : '';
+    },
+    
+    getTag: (doc, parentTag, childTag) => {
+        const p = doc.getElementsByTagName(parentTag)[0];
+        return p ? Importer.getVal(p, childTag) : 'Desc.';
+    },
+
+    renderTable: () => {
+        const tbody = document.getElementById('xml-list');
+        tbody.innerHTML = Importer.staging.map((item, idx) => `
+            <tr style="${item.matchId ? 'background:#dcfce7' : ''}">
+                <td><input type="checkbox" ${item.selected ? 'checked' : ''} onchange="Importer.toggle(${idx})"></td>
+                <td>${item.raw.codForn}</td>
+                <td style="white-space:normal; min-width:200px;">${item.raw.nome}</td>
+                <td>${item.raw.ncm}</td>
+                <td>${item.raw.qtd}</td>
+                <td>R$ ${item.raw.custo.toFixed(2)}</td>
+                <td><span class="badge ${item.matchId ? 'bg-ok' : 'bg-low'}">${item.matchId ? 'Atualizar Estoque/Custo' : 'Novo Produto'}</span></td>
+            </tr>
+        `).join('');
         
-        grid.innerHTML = '';
-        
-        // Filtro
-        const filtered = this.data.filter(p => 
-            p.name.toLowerCase().includes(term) || 
-            p.id.toLowerCase().includes(term) || 
-            (p.ean && p.ean.includes(term))
-        ).slice(0, 50); // Limite de renderização para performance (Lazy Load simulado)
+        const sel = Importer.staging.filter(x => x.selected).length;
+        document.getElementById('xml-stats').innerText = `${sel} itens selecionados`;
+    },
 
-        filtered.forEach(p => {
-            const card = document.createElement('div');
-            card.className = `card ${!p.active ? 'opacity-50' : ''}`;
-            card.onclick = (e) => this.openModal(p.id);
+    toggle: (idx) => {
+        Importer.staging[idx].selected = !Importer.staging[idx].selected;
+        Importer.renderTable();
+    },
 
-            // Calcula Estoque Total (Soma Lotes)
-            const stockTotal = p.batches?.length > 0 
-                ? p.batches.reduce((acc, b) => acc + b.qty, 0) 
-                : (p.qty || 0);
+    toggleAll: (val) => {
+        Importer.staging.forEach(x => x.selected = val);
+        Importer.renderTable();
+    },
 
-            // Tags
-            let tagsHtml = '';
-            if (p.isST) tagsHtml += `<span class="tag tag-st">ST</span>`;
-            if (p.isCombo) tagsHtml += `<span class="tag tag-combo">KIT</span>`;
+    commit: () => {
+        const toProcess = Importer.staging.filter(x => x.selected);
+        let novos = 0, atualizados = 0;
 
-            card.innerHTML = `
-                <div class="card-header">
-                    <span class="card-meta">#${p.id} • ${p.category || 'Geral'}</span>
-                    ${p.offer ? '<span class="tag" style="background:var(--danger);color:white">OFERTA</span>' : ''}
-                </div>
-                <div class="card-title">${p.name}</div>
-                <div style="display:flex; gap:5px; margin-top:5px;">${tagsHtml}</div>
-                <div class="card-price">R$ ${p.price.toFixed(2)}</div>
-                <div class="stock-badge">
-                    <span>Estoque: <b>${stockTotal}</b></span>
-                    <span>${p.ncm ? 'Fisc: OK' : '⚠️'}</span>
-                </div>
-            `;
-            grid.appendChild(card);
+        toProcess.forEach(item => {
+            const dados = item.raw;
+            
+            if (item.matchId) {
+                // Atualizar Existente
+                const p = DB.find(item.matchId);
+                p.estoque += dados.qtd; // Soma Estoque
+                p.custo = dados.custo; // Atualiza Custo
+                p.refNFe = dados.refNFe; // Atualiza Ref NFe
+                p.lastUpdate = new Date().toISOString();
+                atualizados++;
+            } else {
+                // Criar Novo
+                const newCode = DB.nextCode();
+                const newProd = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    codigo: newCode,
+                    ean: '',
+                    nome: dados.nome.toUpperCase(),
+                    fornecedor: dados.fornecedor.toUpperCase(),
+                    categoria: 'IMPORTADO XML',
+                    custo: dados.custo,
+                    valor: dados.custo * 1.5, // Sugestão Margem 50%
+                    estoque: dados.qtd,
+                    minimo: 5,
+                    unidade: dados.unidade,
+                    ncm: dados.ncm,
+                    cest: dados.cest,
+                    cfop: dados.cfop,
+                    refNFe: dados.refNFe,
+                    refForn: dados.codForn, // Salva código do fornecedor para link futuro
+                    imagem: '',
+                    peso: 0,
+                    tags: '',
+                    lastUpdate: new Date().toISOString()
+                };
+                DB.data.produtos.push(newProd);
+                novos++;
+            }
         });
-    },
 
-    // --- MODAL LOGIC ---
-    openModal(id = null) {
-        this.currentId = id;
-        const dialog = document.getElementById('productDialog');
-        const form = document.getElementById('productForm');
-        
-        form.reset();
-        document.getElementById('batchList').innerHTML = '';
-        document.getElementById('comboList').innerHTML = '';
-        
-        // Reset Tabs
-        this.switchTab('tab-geral');
-
-        if (id) {
-            const p = this.data.find(x => x.id === id);
-            if (!p) return;
-
-            // Preenche campos
-            ['id', 'code', 'ean', 'name', 'category', 'unit', 'image', 'ncm', 'cest', 'cfop', 'cst', 'price', 'cost', 'minQty'].forEach(field => {
-                if(document.getElementById(field)) {
-                    document.getElementById(field).value = p[field] === 'undefined' ? '' : (field === 'code' ? p.id : p[field] || '');
-                }
-            });
-            
-            // Checkboxes
-            document.getElementById('isCombo').checked = p.isCombo || false;
-            document.getElementById('isST').checked = p.isST || false;
-            document.getElementById('offer').checked = p.offer || false;
-
-            // Render Lotes
-            if (p.batches) p.batches.forEach(b => this.renderBatchRow(b));
-            // Render Combos
-            if (p.comboItems) p.comboItems.forEach(c => this.renderComboRow(c));
-            
-            // Atualiza Estoque Total no input
-            const total = p.batches?.reduce((a,b)=>a+b.qty,0) || p.qty || 0;
-            document.getElementById('qty').value = total;
-
-            this.toggleCombo(p.isCombo);
-            this.calcMargin();
-            
-            document.getElementById('btnDelete').classList.remove('hidden');
-            document.getElementById('modalTitle').innerText = 'Editar Produto';
-        } else {
-            // Novo Produto
-            document.getElementById('code').value = Date.now().toString().slice(-6); // ID Auto Simples
-            document.getElementById('qty').value = 0;
-            document.getElementById('btnDelete').classList.add('hidden');
-            document.getElementById('modalTitle').innerText = 'Novo Produto';
-            this.toggleCombo(false);
-        }
-
-        dialog.showModal();
-    },
-
-    saveProduct() {
-        const getVal = (id) => document.getElementById(id).value;
-        const getBool = (id) => document.getElementById(id).checked;
-        const getNum = (id) => parseFloat(getVal(id)) || 0;
-
-        const product = {
-            id: getVal('code'),
-            ean: getVal('ean'),
-            name: getVal('name'),
-            category: getVal('category'),
-            unit: getVal('unit'),
-            image: getVal('image'),
-            
-            price: getNum('price'),
-            cost: getNum('cost'),
-            offer: getBool('offer'),
-            
-            ncm: getVal('ncm'),
-            cest: getVal('cest'),
-            cfop: getVal('cfop'),
-            cst: getVal('cst'),
-            isST: getBool('isST'),
-            
-            isCombo: getBool('isCombo'),
-            active: true,
-            minQty: getNum('minQty'),
-            
-            // Coleta Lotes da UI
-            batches: Array.from(document.querySelectorAll('#batchList li')).map(li => ({
-                date: li.dataset.date,
-                qty: parseFloat(li.dataset.qty)
-            })),
-            
-            // Coleta Combo Items da UI
-            comboItems: Array.from(document.querySelectorAll('#comboList li')).map(li => ({
-                id: li.dataset.pid,
-                qty: parseFloat(li.dataset.qty)
-            }))
-        };
-        
-        // Se não tiver lotes, usa o qty calculado ou 0
-        product.qty = product.batches.reduce((a, b) => a + b.qty, 0);
-
-        if (this.currentId) {
-            const idx = this.data.findIndex(p => p.id === this.currentId);
-            this.data[idx] = product;
-        } else {
-            this.data.push(product);
-        }
-
-        this.save();
-        document.getElementById('productDialog').close();
-    },
-
-    deleteProduct() {
-        if(confirm('Tem certeza?')) {
-            this.data = this.data.filter(p => p.id !== this.currentId);
-            this.save();
-            document.getElementById('productDialog').close();
-        }
-    },
-
-    clearDB() {
-        if(confirm('Isso apagará TODOS os produtos. Confirma?')) {
-            localStorage.removeItem('sys_stock_db');
-            this.data = [];
-            this.render();
-        }
-    },
-
-    // --- LOGIC HELPERS ---
-
-    switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(tabId).classList.add('active');
-        // Acha o botão correspondente (hack simples)
-        const btns = document.querySelectorAll('.tab-btn');
-        if(tabId === 'tab-geral') btns[0].classList.add('active');
-        if(tabId === 'tab-preco') btns[1].classList.add('active');
-        if(tabId === 'tab-fiscal') btns[2].classList.add('active');
-        if(tabId === 'tab-estoque') btns[3].classList.add('active');
-    },
-
-    calcMargin() {
-        const cost = parseFloat(document.getElementById('cost').value) || 0;
-        const sell = parseFloat(document.getElementById('price').value) || 0;
-        const margin = document.getElementById('margin');
-        
-        if (sell > 0 && cost >= 0) {
-            const mg = ((sell - cost) / sell) * 100;
-            margin.value = mg.toFixed(1) + '%';
-        } else {
-            margin.value = '-';
-        }
-    },
-
-    checkST() {
-        // Lógica simples de sugestão
-        const cfop = document.getElementById('cfop').value;
-        const isStBox = document.getElementById('isST');
-        if (cfop.startsWith('54') || cfop === '5405') {
-            isStBox.checked = true;
-        }
-    },
-
-    toggleCombo(isCombo) {
-        const norm = document.getElementById('stock-normal');
-        const combo = document.getElementById('stock-combo');
-        if (isCombo) {
-            norm.classList.add('hidden');
-            combo.classList.remove('hidden');
-        } else {
-            norm.classList.remove('hidden');
-            combo.classList.add('hidden');
-        }
-    },
-
-    // --- BATCHES & COMBO UI ---
-
-    addBatch() {
-        const date = document.getElementById('batchDate').value;
-        const qty = document.getElementById('batchQty').value;
-        if (!date || !qty) return;
-        
-        this.renderBatchRow({date, qty});
-        document.getElementById('batchQty').value = '';
-    },
-
-    renderBatchRow(batch) {
-        const ul = document.getElementById('batchList');
-        const li = document.createElement('li');
-        li.dataset.date = batch.date;
-        li.dataset.qty = batch.qty;
-        
-        // Verifica validade
-        const isExpired = new Date(batch.date) < new Date();
-        const color = isExpired ? 'color:var(--danger)' : '';
-        
-        li.innerHTML = `
-            <span style="${color}">${batch.date} ${isExpired ? '(Vencido)' : ''}</span>
-            <span>Qtd: ${batch.qty} <button class="btn-sm btn-outline" style="margin-left:5px" onclick="this.parentElement.parentElement.remove()">X</button></span>
-        `;
-        ul.appendChild(li);
-    },
-
-    addComboItem() {
-        const id = document.getElementById('comboPartId').value;
-        const qty = document.getElementById('comboPartQty').value;
-        if(!id || !qty) return;
-
-        // Tenta achar nome
-        const prod = this.data.find(p => p.id === id);
-        const name = prod ? prod.name : 'ID Desconhecido';
-
-        this.renderComboRow({id, qty, name});
-        document.getElementById('comboPartId').value = '';
-        document.getElementById('comboPartQty').value = '';
-    },
-
-    renderComboRow(item) {
-        // Se o nome não veio no objeto (carregamento), busca
-        let name = item.name;
-        if (!name) {
-            const p = this.data.find(x => x.id === item.id);
-            name = p ? p.name : 'Desconhecido';
-        }
-
-        const ul = document.getElementById('comboList');
-        const li = document.createElement('li');
-        li.dataset.pid = item.id;
-        li.dataset.qty = item.qty;
-        li.innerHTML = `
-            <span>${name} (${item.id})</span>
-            <span>x${item.qty} <button class="btn-sm btn-outline" onclick="this.parentElement.parentElement.remove()">X</button></span>
-        `;
-        ul.appendChild(li);
+        DB.save();
+        document.getElementById('modal-xml').close();
+        App.init();
+        alert(`Processamento Concluído!\n🆕 Novos: ${novos}\n🔄 Atualizados: ${atualizados}`);
     }
 };
 
 // Start
-app.init();
+document.addEventListener('DOMContentLoaded', App.init);
 </script>
 </body>
 </html>
