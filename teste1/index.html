@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V21 | Titanium Perfect</title>
+    <title>SISTEMA V22 | Titanium Final</title>
     
     <style>
         /* --- 1. CORE & HIGH CONTRAST --- */
@@ -13,7 +13,6 @@
             --border: #64748b; 
             --focus: #2563eb;
             --text: #0f172a;
-            --sec: #475569;
             
             --btn-primary: #1d4ed8;
             --btn-success: #15803d;
@@ -21,7 +20,6 @@
             --btn-warning: #d97706;
             
             --input-h: 48px; 
-            --btn-h: 48px;
             --font-base: 15px;
             --radius: 8px;
         }
@@ -42,7 +40,7 @@
         .btn { 
             cursor: pointer; padding: 0 20px; border-radius: var(--radius); border: 2px solid transparent; 
             font-weight: 700; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;
-            display: inline-flex; align-items: center; gap: 8px; transition: 0.1s; height: var(--btn-h);
+            display: inline-flex; align-items: center; gap: 8px; transition: 0.1s; height: 48px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;
         }
         .btn:active { transform: translateY(2px); }
@@ -73,7 +71,8 @@
         .toolbar { padding: 20px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
         table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        th { text-align: left; padding: 15px; background: #1e293b; color: #fff; font-size: 0.85rem; text-transform: uppercase; position: sticky; top: 0; z-index: 10; }
+        th { text-align: left; padding: 15px; background: #1e293b; color: #fff; font-size: 0.85rem; text-transform: uppercase; position: sticky; top: 0; z-index: 10; cursor: pointer; user-select: none; }
+        th:hover { background: #334155; }
         td { padding: 12px 15px; border-bottom: 1px solid #cbd5e1; font-size: 1rem; color: #333; font-weight: 500; }
         tr:nth-child(even) { background: #f8fafc; }
         tr:hover { background: #eff6ff; }
@@ -99,35 +98,47 @@
         .big-money { font-size: 1.4rem; color: #15803d; font-weight: bold; text-align: right; }
         .big-stock { font-size: 1.4rem; color: #1d4ed8; font-weight: bold; text-align: center; }
 
-        /* --- 5. PRINT (100mm) --- */
+        /* Histórico de Entradas */
+        .history-table { width: 100%; font-size: 0.85rem; border: 1px solid #cbd5e1; }
+        .history-table th { background: #e2e8f0; color: #333; padding: 8px; text-transform: uppercase; cursor: default; }
+        .history-table td { padding: 8px; border-bottom: 1px solid #cbd5e1; color: #444; }
+
+        /* --- 5. PRINT (100mm CENTRALIZED) --- */
         @media print {
             @page { size: 100mm auto; margin: 0; }
             body * { visibility: hidden; }
             #receipt-area, #receipt-area * { visibility: visible; }
             #receipt-area { 
-                position: absolute; left: 0; top: 0; 
-                width: 100mm; 
-                padding: 0 3mm; /* Margem lateral 3mm */
+                position: absolute; left: 50%; transform: translateX(-50%); top: 0;
+                width: 94mm; /* 100mm - 3mm margem cada lado */
+                padding: 5px 0;
                 color: black; background: white; 
                 font-family: 'Courier New', monospace;
+                text-align: center;
             }
-            .receipt-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
-            .client-code { font-size: 32px; font-weight: 900; text-align: center; display: block; margin-bottom: 5px; }
-            .receipt-line { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; border-bottom: 1px dashed #ccc; }
-            .receipt-total { font-size: 24px; font-weight: 900; text-align: right; margin-top: 15px; border-top: 3px solid #000; padding-top: 5px; }
+            .client-code { font-size: 40px; font-weight: 900; display: block; margin-bottom: 10px; border-bottom: 2px solid #000; }
+            .receipt-header { font-size: 16px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+            
+            .receipt-combo-title { font-size: 18px; font-weight: 900; margin-top: 10px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 2px; }
+            
+            .receipt-item-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; text-align: left; }
+            .receipt-item-name { flex: 1; }
+            .receipt-item-price { white-space: nowrap; margin-left: 10px; }
+            
+            .receipt-total { font-size: 26px; font-weight: 900; text-align: right; margin-top: 15px; border-top: 3px solid #000; padding-top: 5px; }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>📦 TITANIUM <span style="color:#fbbf24;">V21</span></h1>
+    <h1>📦 TITANIUM <span style="color:#fbbf24;">V22</span></h1>
     <div style="display:flex; gap:10px;">
         <button onclick="QuickCombo.open()" class="btn btn-primary" style="background:#4f46e5;">⚡ COMBO RÁPIDO</button>
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 CATEGORIAS</button>
         <button onclick="App.openModal()" class="btn btn-ghost" style="border:2px solid #fff; background:#334155; color:#fff;">+ NOVO PRODUTO</button>
         <button onclick="document.getElementById('xml-file').click()" class="btn btn-success">📥 IMPORTAR XML</button>
-        <button onclick="App.exportBackup()" class="btn btn-warning">💾 EXPORTAR BACKUP</button>
+        <button onclick="App.exportBackup()" class="btn btn-warning">💾 EXPORTAR JSON</button>
     </div>
 </header>
 
@@ -142,10 +153,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="100">CÓDIGO</th>
-                        <th>DESCRIÇÃO DO PRODUTO</th>
-                        <th width="150">CATEGORIA</th>
-                        <th width="120" style="text-align:center">ESTOQUE</th>
+                        <th width="100" onclick="App.sort('codigo')">CÓDIGO ⇅</th>
+                        <th onclick="App.sort('nome')">DESCRIÇÃO DO PRODUTO ⇅</th>
+                        <th width="150" onclick="App.sort('categoria')">CATEGORIA ⇅</th>
+                        <th width="120" style="text-align:center" onclick="App.sort('estoque')">ESTOQUE ⇅</th>
                         <th width="120" style="text-align:right">CUSTO</th>
                         <th width="120" style="text-align:right">VENDA</th>
                         <th width="100" style="text-align:right">AÇÃO</th>
@@ -182,7 +193,7 @@
                             <div><label>CATEGORIA</label><input type="text" id="p-categoria" list="dl-cats"></div>
                             <div><label>VARIAÇÕES NOME</label><input type="text" id="p-varNome" placeholder="Nomes alternativos do XML"></div>
                         </div>
-                        <div style="margin-top:15px;"><label>VARIAÇÕES EAN</label><input type="text" id="p-varEan" placeholder="Outros códigos de barras (separar por |)"></div>
+                        <div style="margin-top:15px;"><label>VARIAÇÕES EAN</label><input type="text" id="p-varEan" placeholder="Outros códigos (separar por |)"></div>
                     </div>
 
                     <div class="panel panel-fiscal">
@@ -193,6 +204,14 @@
                             <div><label>CFOP</label><input type="text" id="p-cfop"></div>
                             <div><label>UN. FISCAL</label><input type="text" id="p-unidade" placeholder="UN"></div>
                         </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-title">🚚 HISTÓRICO DE ENTRADAS (ÚLTIMAS 10)</div>
+                        <table class="history-table">
+                            <thead><tr><th>DATA</th><th>QTD</th><th>FORNECEDOR</th><th>NOTA</th><th>VALIDADE</th></tr></thead>
+                            <tbody id="history-rows"></tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -212,14 +231,16 @@
 
                     <div class="panel">
                         <div class="panel-title">📦 ESTOQUE & KIT</div>
-                        <div><label>QUANTIDADE ATUAL</label><input type="number" id="p-estoque" class="big-stock"></div>
+                        <div class="row-2">
+                            <div><label>QTD ATUAL</label><input type="number" id="p-estoque" class="big-stock"></div>
+                            <div><label>LIMITE P/ VENDA</label><input type="number" id="p-limitQty" placeholder="Sem Limite" style="text-align:center;"></div>
+                        </div>
                         
                         <div style="margin-top:20px; border-top:2px dashed #cbd5e1; padding-top:15px;">
                             <label style="cursor:pointer; color:var(--focus);"><input type="checkbox" id="p-isCombo" onchange="Combo.toggle(this.checked)" style="width:20px; height:20px; vertical-align:middle;"> ESTE PRODUTO É UM KIT/COMBO?</label>
                         </div>
                         
                         <div id="combo-area" style="display:none; background:#eff6ff; padding:10px; border-radius:6px; margin-top:10px; border:1px solid #93c5fd;">
-                            
                             <div style="background:#fff; padding:10px; border:1px solid #cbd5e1; margin-bottom:10px; border-radius:6px;">
                                 <label>BUSCAR E INCLUIR MANUALMENTE</label>
                                 <div style="display:flex; gap:5px;">
@@ -228,13 +249,11 @@
                                     <button type="button" onclick="Combo.addManual()" class="btn btn-primary btn-sm">ADD</button>
                                 </div>
                             </div>
-
                             <label>OU COLE UMA LISTA (1x ITEM)</label>
                             <textarea id="combo-paste" style="height:60px; font-size:0.8rem;"></textarea>
                             <button type="button" onclick="Combo.processPaste()" class="btn btn-ghost btn-sm" style="width:100%; margin-top:5px;">PROCESSAR LISTA</button>
-                            
                             <div id="combo-list" style="margin-top:10px; background:white; max-height:150px; overflow-y:auto; border:1px solid #ccc;"></div>
-
+                            
                             <div style="margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
                                 <label>REALIZAR VENDA DO KIT</label>
                                 <div style="display:flex; gap:5px;">
@@ -303,18 +322,20 @@
 
 <script>
 /**
- * SISTEMA V21 - TITANIUM PERFECT
+ * SISTEMA V22 - TITANIUM FINAL
  */
 
 const DB = {
-    key: 'sys_v21_titan',
+    key: 'sys_v22_titan',
     data: { produtos: [], categorias: [] },
     init: () => {
         const raw = localStorage.getItem(DB.key);
         if(raw) DB.data = JSON.parse(raw);
         if(!Array.isArray(DB.data.categorias)) DB.data.categorias = [];
     },
-    save: () => localStorage.setItem(DB.key, JSON.stringify(DB.data)),
+    save: () => {
+        localStorage.setItem(DB.key, JSON.stringify(DB.data));
+    },
     nextCode: () => {
         const nums = DB.data.produtos.map(p => parseInt(p.codigo.replace(/\D/g,''))).filter(n => !isNaN(n)).sort((a,b)=>a-b);
         let next = 1;
@@ -324,14 +345,34 @@ const DB = {
 };
 
 const App = {
+    sortState: { field: 'nome', order: 'asc' },
     init: () => { DB.init(); App.render(); CatManager.refreshDatalist(); },
+    
+    sort: (field) => {
+        if(App.sortState.field === field) App.sortState.order = App.sortState.order === 'asc' ? 'desc' : 'asc';
+        else { App.sortState.field = field; App.sortState.order = 'asc'; }
+        App.render();
+    },
+
     render: () => {
         const s = document.getElementById('search').value.toLowerCase();
         const tbody = document.getElementById('tbl-body');
-        // Popula datalist de produtos para busca manual do combo
         document.getElementById('dl-prods').innerHTML = DB.data.produtos.map(p => `<option value="${p.nome}">`).join('');
 
-        const list = DB.data.produtos.filter(p => p.nome.toLowerCase().includes(s) || p.codigo.toLowerCase().includes(s));
+        let list = DB.data.produtos.filter(p => p.nome.toLowerCase().includes(s) || p.codigo.toLowerCase().includes(s));
+        
+        // Sorting
+        const f = App.sortState.field;
+        const o = App.sortState.order === 'asc' ? 1 : -1;
+        list.sort((a,b) => {
+            const va = (a[f]||'').toString().toLowerCase();
+            const vb = (b[f]||'').toString().toLowerCase();
+            if(f === 'estoque' || f === 'codigo') {
+                return (parseFloat(a[f].replace(/\D/g,'')) - parseFloat(b[f].replace(/\D/g,''))) * o;
+            }
+            return va.localeCompare(vb) * o;
+        });
+
         document.getElementById('total-rows').innerText = list.length;
         
         tbody.innerHTML = list.map(p => `
@@ -357,6 +398,8 @@ const App = {
     openModal: (id) => {
         const f = document.getElementById('form-prod'); f.reset();
         Combo.items = []; Combo.toggle(false); App.toggleOffer(false);
+        document.getElementById('history-rows').innerHTML = '';
+
         if(id) {
             const p = DB.data.produtos.find(x=>x.id===id);
             document.getElementById('p-id').value = p.id;
@@ -372,6 +415,7 @@ const App = {
             document.getElementById('p-custo').value = p.custo;
             document.getElementById('p-valor').value = p.valor;
             document.getElementById('p-estoque').value = p.estoque;
+            document.getElementById('p-limitQty').value = p.limitQty || '';
             document.getElementById('p-unidade').value = p.unidade||'UN';
             
             document.getElementById('p-isOffer').checked = p.isOffer;
@@ -379,6 +423,13 @@ const App = {
             
             document.getElementById('p-isCombo').checked = p.isCombo;
             if(p.isCombo) { Combo.toggle(true); Combo.items = p.comboItems||[]; Combo.renderList(); }
+
+            // Render History
+            const hist = p.entryHistory || [];
+            document.getElementById('history-rows').innerHTML = hist.slice(0, 10).map(h => `
+                <tr><td>${h.date}</td><td>${h.qty}</td><td>${h.provider}</td><td>${h.invoice}</td><td>${h.expiry||'-'}</td></tr>
+            `).join('');
+
         } else {
             document.getElementById('p-id').value = '';
             document.getElementById('p-codigo').value = DB.nextCode();
@@ -387,7 +438,10 @@ const App = {
     },
     save: () => {
         const id = document.getElementById('p-id').value;
+        const currentProd = id ? DB.data.produtos.find(x=>x.id===id) : {};
+        
         const prod = {
+            ...currentProd, // Mantem historico
             id: id || Date.now().toString(36),
             codigo: document.getElementById('p-codigo').value,
             ean: document.getElementById('p-ean').value,
@@ -403,9 +457,11 @@ const App = {
             isOffer: document.getElementById('p-isOffer').checked,
             offerPrice: parseFloat(document.getElementById('p-offerPrice').value)||0,
             estoque: parseFloat(document.getElementById('p-estoque').value)||0,
+            limitQty: parseFloat(document.getElementById('p-limitQty').value)||0,
             unidade: document.getElementById('p-unidade').value,
             isCombo: document.getElementById('p-isCombo').checked,
-            comboItems: Combo.items
+            comboItems: Combo.items,
+            entryHistory: currentProd.entryHistory || []
         };
         if(id) { const idx = DB.data.produtos.findIndex(x=>x.id===id); if(idx>-1) DB.data.produtos[idx] = prod; }
         else { DB.data.produtos.push(prod); }
@@ -413,7 +469,14 @@ const App = {
     },
     toggleOffer: (v) => document.getElementById('offer-area').style.display = v ? 'block' : 'none',
     exportBackup: () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(DB.data, null, 2));
+        // Logica para incluir flag hide_on_site
+        const exportData = DB.data.produtos.map(p => ({
+            ...p,
+            hide_on_site: (p.estoque <= 0)
+        }));
+        const fullDump = { ...DB.data, produtos: exportData };
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullDump, null, 2));
         const dl = document.createElement('a');
         dl.setAttribute("href", dataStr);
         dl.setAttribute("download", "backup_titanium_completo.json");
@@ -421,7 +484,7 @@ const App = {
     }
 };
 
-/* --- COMBO LOGIC (MANUAL ADD) --- */
+/* --- COMBO LOGIC --- */
 const Combo = {
     items: [],
     toggle: (v) => { document.getElementById('combo-area').style.display = v?'block':'none'; if(v) Combo.renderList(); },
@@ -456,6 +519,7 @@ const Combo = {
     },
     sell: () => {
         const q = parseInt(document.getElementById('combo-sell-qty').value)||1;
+        // Validação de limite de venda não aplicada aqui, apenas na lógica de UI ou Regra de Negócio se fosse PDV
         Combo.items.forEach(i => { if(i.id) { const p = DB.data.produtos.find(x=>x.id===i.id); if(p) p.estoque -= (i.qty*q); }});
         DB.save(); App.render(); alert(`VENDA REALIZADA! BAIXA EM ${Combo.items.length} ITENS.`);
     }
@@ -484,34 +548,37 @@ const QuickCombo = {
             }
         });
 
-        // Criar produto Combo
         const comboProd = {
             id: Date.now().toString(36), codigo: DB.nextCode(), ean: '', nome: nome, categoria: document.getElementById('qc-cat').value,
-            ncm: '', cest: '', cfop: '5102', custo: 0, valor: val, isOffer: false, offerPrice: 0, estoque: 999, unidade: 'UN', isCombo: true, comboItems: items
+            ncm: '', cest: '', cfop: '5102', custo: 0, valor: val, isOffer: false, offerPrice: 0, estoque: 999, limitQty: 0, unidade: 'UN', isCombo: true, comboItems: items, entryHistory: []
         };
         DB.data.produtos.push(comboProd);
         DB.save(); App.render(); document.getElementById('modal-quick-combo').close();
         
-        // Pergunta final
         if(confirm("COMBO CRIADO! DESEJA VENDER UMA UNIDADE E IMPRIMIR O CUPOM AGORA?")) {
-            // Baixa estoque dos itens
             items.forEach(i => { if(i.id) { const p = DB.data.produtos.find(x=>x.id===i.id); if(p) p.estoque -= i.qty; } });
             DB.save(); App.render();
-            // Prepara para impressão (simula que campos do modal principal estão preenchidos para usar Printer.printCurrent, ou cria lógica ad-hoc)
-            // Lógica Ad-Hoc para impressão direta:
-            const clientCode = prompt("CÓDIGO DO CLIENTE:", "001");
-            let cupomHtml = `<div class="client-code">${clientCode}</div>
-                <div class="receipt-header">CUPOM VENDA</div>
-                <div class="receipt-line"><span>${nome}</span></div>
-                <div class="receipt-line"><span>1 x R$${val.toFixed(2)}</span><span>R$${val.toFixed(2)}</span></div>
-                <div class="receipt-total">TOTAL: R$ ${val.toFixed(2)}</div>`;
-            document.getElementById('receipt-area').innerHTML = cupomHtml;
+            
+            // Impressão rápida
+            const clientCode = prompt("CÓDIGO DO CLIENTE:", "000");
+            const q = 1;
+            
+            // Build items list html for receipt
+            let itemsHtml = items.map(i => `<div class="receipt-item-row"><span class="receipt-item-name">${i.qty*q}x ${i.nome}</span></div>`).join('');
+
+            document.getElementById('receipt-area').innerHTML = `
+                <div class="client-code">${clientCode}</div>
+                <div class="receipt-header">CUPOM NÃO FISCAL</div>
+                <div class="receipt-combo-title">${nome}</div>
+                <div style="text-align:left; margin-bottom:10px;">${itemsHtml}</div>
+                <div class="receipt-total">TOTAL: R$ ${val.toFixed(2)}</div>
+            `;
             window.print();
         }
     }
 };
 
-/* --- CATEGORY MANAGER (CORRIGIDO SUBCATEGORIAS) --- */
+/* --- CATEGORY MANAGER --- */
 const CatManager = {
     open: () => { CatManager.render(); document.getElementById('modal-cats').showModal(); },
     refreshDatalist: () => {
@@ -566,13 +633,22 @@ const CatManager = {
     }
 };
 
-/* --- IMPORTER --- */
+/* --- IMPORTER (WITH HISTORY) --- */
 const Importer = {
     staged: [],
+    meta: {},
     parse: (inp) => {
         const r = new FileReader();
         r.onload = (e) => {
             const x = new DOMParser().parseFromString(e.target.result, "text/xml");
+            
+            // Meta Data for History
+            const emitName = x.getElementsByTagName('emit')[0]?.getElementsByTagName('xNome')[0]?.textContent || 'DESCONHECIDO';
+            const nNF = x.getElementsByTagName('ide')[0]?.getElementsByTagName('nNF')[0]?.textContent || '000';
+            const dhEmi = x.getElementsByTagName('dhEmi')[0]?.textContent?.split('T')[0] || new Date().toISOString().split('T')[0];
+            
+            Importer.meta = { provider: emitName, invoice: nNF, date: dhEmi };
+
             const d = x.getElementsByTagName('det');
             Importer.staged = [];
             for(let i=0; i<d.length; i++) {
@@ -617,14 +693,30 @@ const Importer = {
             const finalQ = r.qXml * f;
             const finalC = r.vXml / f;
             const p = DB.data.produtos.find(x => x.ean===r.ean || x.nome===r.nome);
+            
+            // Build Entry Object
+            const entry = {
+                date: Importer.meta.date,
+                qty: finalQ,
+                provider: Importer.meta.provider,
+                invoice: Importer.meta.invoice,
+                expiry: '-' // XML NFe standard usually doesn't have item expiry
+            };
+
             if(p) { 
                 p.estoque+=finalQ; p.custo=finalC;
                 if(!p.varNome) p.varNome = []; if(p.nome !== r.nome && !p.varNome.includes(r.nome)) p.varNome.push(r.nome);
+                
+                // Add History
+                if(!p.entryHistory) p.entryHistory = [];
+                p.entryHistory.unshift(entry);
+                p.entryHistory = p.entryHistory.slice(0, 10); // Keep last 10
             } else { 
                 DB.data.produtos.push({
                     id: Date.now().toString(36)+Math.random(), codigo: DB.nextCode(), ean: r.ean !== 'SEM GTIN' ? r.ean : '', nome: r.nome,
                     custo: finalC, valor: finalC*1.6, estoque: finalQ, unidade: r.isPackage ? 'UN' : r.uXml,
-                    ncm:r.ncm, cest:r.cest, cfop:r.cfop, isCombo:false, isOffer:false, varNome: [], varEan: []
+                    ncm:r.ncm, cest:r.cest, cfop:r.cfop, isCombo:false, isOffer:false, varNome: [], varEan: [], limitQty: 0,
+                    entryHistory: [entry]
                 });
             }
         });
@@ -632,7 +724,7 @@ const Importer = {
     }
 };
 
-/* PRINTER 100mm WITH CLIENT CODE */
+/* PRINTER 100mm CENTRALIZED WITH CHILDREN */
 const Printer = {
     printCurrent: () => {
         const clientCode = prompt("CÓDIGO DO CLIENTE:", "000");
@@ -640,11 +732,17 @@ const Printer = {
         const v = parseFloat(document.getElementById('p-isOffer').checked ? document.getElementById('p-offerPrice').value : document.getElementById('p-valor').value);
         const q = parseInt(document.getElementById('combo-sell-qty').value);
         
+        // Build items list if combo
+        let itemsHtml = '';
+        if(document.getElementById('p-isCombo').checked && Combo.items.length > 0) {
+            itemsHtml = Combo.items.map(i => `<div class="receipt-item-row"><span class="receipt-item-name">${i.qty*q}x ${i.nome}</span></div>`).join('');
+        }
+
         document.getElementById('receipt-area').innerHTML = `
             <div class="client-code">${clientCode}</div>
             <div class="receipt-header">CUPOM NÃO FISCAL</div>
-            <div class="receipt-line"><span>${n}</span></div>
-            <div class="receipt-line"><span>${q} x R$${v.toFixed(2)}</span><span>R$${(q*v).toFixed(2)}</span></div>
+            <div class="receipt-combo-title">${n}</div>
+            <div style="text-align:left; margin-bottom:10px;">${itemsHtml}</div>
             <div class="receipt-total">TOTAL: R$ ${(q*v).toFixed(2)}</div>
         `;
         window.print();
