@@ -168,7 +168,6 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        /* Ajuste: Centralizar Título */
         .hbc-header { margin-bottom: 15px; text-align: center; } 
         .hbc-title { font-size: 1.4rem; font-weight: 800; color: #2e2e2e; text-transform: capitalize; line-height: 1.1; letter-spacing: -0.5px; margin: 0; }
         
@@ -209,7 +208,7 @@
             margin-top: auto; border-top: 1px solid #f0f0f0;
             padding-top: 15px; display: flex; flex-direction: column; gap: 10px;
         }
-        /* Ajuste: Flex Row para Preço e Botão Foto */
+        
         .hbc-price-row {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 5px;
@@ -424,11 +423,38 @@
             cursor: pointer; display: flex; align-items: center; gap: 6px;
         }
 
-        /* --- 9. MODALS & OVERLAYS --- */
-        .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000; opacity: 0; pointer-events: none; transition: opacity 0.3s; display: flex; flex-direction: column; justify-content: flex-end; }
+        /* --- 9. MODALS & OVERLAYS (CORREÇÃO DESKTOP) --- */
+        .sheet-overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+            z-index: 11000; opacity: 0; pointer-events: none; 
+            transition: opacity 0.3s; 
+            display: flex; flex-direction: column; justify-content: flex-end; 
+            /* Para desktop: centralizar na tela */
+            align-items: center;
+        }
         .sheet-overlay.open { opacity: 1; pointer-events: auto; }
-        .sheet-box { background: #fff; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; padding: 20px; }
+        
+        .sheet-box { 
+            background: #fff; 
+            width: 100%; 
+            border-radius: 20px 20px 0 0; 
+            max-height: 85vh; 
+            overflow-y: auto; 
+            transform: translateY(100%); 
+            transition: transform 0.3s; 
+            padding: 20px; 
+        }
         .sheet-overlay.open .sheet-box { transform: translateY(0); }
+        
+        /* Ajuste específico para Desktop */
+        @media(min-width: 768px) {
+            .sheet-box {
+                max-width: 500px; /* Largura máxima ideal para leitura */
+                margin-bottom: 20px; /* Pequeno espaço inferior para efeito flutuante */
+                border-radius: 20px; /* Arredondar todas as bordas */
+                box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+            }
+        }
         
         details.faq-box { margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
         details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
@@ -562,7 +588,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
-                <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
+                <img src="site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
                 <div class="logo-text-col">
                     <span class="logo-name">Dona Antônia</span>
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
