@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V10 | Blindado</title>
+    <title>SISTEMA V11 | Mapeamento Fiscal</title>
     
     <style>
         /* --- 1. CORE STYLES --- */
@@ -113,14 +113,14 @@
         .bg-red { background: #fee2e2; color: #991b1b; }
         .bg-gray { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-        /* Specific Modules */
+        /* Combo & Paste */
         .combo-box { background: #eff6ff; padding: 10px; border: 1px dashed #bfdbfe; border-radius: 6px; margin-top: 5px; display: none; }
         .search-results { position: absolute; background: white; width: 100%; max-height: 180px; overflow-y: auto; border: 1px solid var(--border); z-index: 50; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px; display: none; }
         .search-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
         .search-item:hover { background: #f8fafc; color: var(--primary); }
         .paste-area { width: 100%; height: 100px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 5px; }
 
-        /* Modal */
+        /* Modals */
         dialog { margin: auto; border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 90%; max-width: 900px; padding: 0; }
         dialog::backdrop { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px); }
         .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
@@ -140,7 +140,7 @@
 <body>
 
 <header>
-    <h1>📋 CATÁLOGO PRO V10</h1>
+    <h1>📋 CATÁLOGO PRO V11</h1>
     <div style="display:flex; gap:8px;">
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 Categorias</button>
         <button onclick="Importer.open()" class="btn btn-primary">📥 Importar (Auditoria)</button>
@@ -172,12 +172,12 @@
                 
                 <div class="form-grid-2">
                     <div><label>Unidade</label><input type="text" id="p-unidade" placeholder="UN, CX, KG"></div>
-                    <div><label>Imagem</label><input type="text" id="p-imageName" placeholder="foto.jpg"></div>
+                    <div><label>Imagem (Nome)</label><input type="text" id="p-imageName" placeholder="foto.jpg"></div>
                 </div>
 
                 <div class="section-divider"><span>💰 Custos & Preços</span></div>
                 <div class="form-grid-3">
-                    <div><label>Custo (R$)</label><input type="number" id="p-custo" step="0.01" oninput="App.calcMargin()"></div>
+                    <div><label>Custo (R$)</label><input type="number" id="p-custo" step="0.0001" oninput="App.calcMargin()"></div>
                     <div><label>Margem</label><input type="text" id="p-margem" readonly style="text-align:center;"></div>
                     <div><label style="color:var(--primary)">Venda (R$)</label><input type="number" id="p-valor" step="0.01" oninput="App.calcMargin()" required></div>
                 </div>
@@ -315,6 +315,8 @@
                     <th>Cód.</th>
                     <th>Nome Detectado</th>
                     <th>Estoque</th>
+                    <th>Custo</th>
+                    <th>CFOP</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -332,17 +334,16 @@
 
 <script>
 /**
- * SISTEMA V10 - CORRETIVA E BLINDADA
+ * SISTEMA V11 - MAPEAMENTO FISCAL
  */
 
 const DB = {
-    key: 'sys_master_v10',
+    key: 'sys_master_v11',
     get: () => {
         const raw = localStorage.getItem(DB.key);
         const data = raw ? JSON.parse(raw) : { produto: [], categorias: [] };
         if(!Array.isArray(data.produto)) data.produto = [];
         if(!Array.isArray(data.categorias)) data.categorias = [];
-        // Garantia de integridade categorias
         data.categorias.forEach(c => { if(!Array.isArray(c.subs)) c.subs = []; });
         return data;
     },
@@ -356,19 +357,17 @@ const DB = {
 
 const App = {
     init: () => {
-        App.sanitizeDB(); // AUTO-CORREÇÃO DE DADOS
+        App.sanitizeDB();
         App.renderBatches();
         CatManager.refreshSelects();
         App.renderList();
-        console.log("Sistema V10 Iniciado.");
+        console.log("Sistema V11 Iniciado.");
     },
 
-    // --- CORREÇÃO AUTOMÁTICA DE DADOS ---
     sanitizeDB: () => {
         const db = DB.get();
         let changed = false;
         db.produto.forEach(p => {
-            // Garante campos mínimos que impedem a listagem de quebrar
             if(!p.nome) { p.nome = p.xProd || p.description || "PRODUTO SEM NOME"; changed=true; }
             if(p.categoria === undefined || p.categoria === null) { p.categoria = ""; changed=true; }
             if(p.fornecedor === undefined || p.fornecedor === null) { p.fornecedor = ""; changed=true; }
@@ -376,7 +375,6 @@ const App = {
         });
         if(changed) {
             DB.save(db);
-            console.log("Base de dados corrigida automaticamente.");
         }
     },
 
@@ -536,14 +534,12 @@ const App = {
 
     renderList: () => {
         const db = DB.get();
-        
-        // Refresh Suppliers
         const selForn = document.getElementById('f-forn');
-        const currentForn = selForn.value;
+        
         if(selForn.options.length <= 1) {
             const forns = [...new Set(db.produto.map(p => p.fornecedor).filter(Boolean))].sort();
             selForn.innerHTML = '<option value="">Todos Fornecedores</option>' + forns.map(f => `<option value="${f}">${f}</option>`).join('');
-            selForn.value = currentForn;
+            selForn.value = document.getElementById('f-forn').value;
             document.getElementById('dl-fornecedores').innerHTML = forns.map(f => `<option value="${f}">`).join('');
         }
 
@@ -553,21 +549,9 @@ const App = {
         const stockTeto = document.getElementById('f-stock').value;
 
         let list = db.produto.filter(p => {
-            // NAVEGAÇÃO SEGURA: Impede crash se campo for null
-            const txt = [
-                (p.nome || ''), 
-                (p.codigo || ''), 
-                (p.ean || '')
-            ].join(' ').toLowerCase();
-            
+            const txt = [(p.nome || ''), (p.codigo || ''), (p.ean || '')].join(' ').toLowerCase();
             if(term && !txt.includes(term)) return false;
-            
-            // Categoria: Comparação segura
-            if(cat) {
-                if(!p.categoria) return false;
-                if(p.categoria !== cat) return false;
-            }
-            
+            if(cat && (!p.categoria || p.categoria !== cat)) return false;
             if(forn && p.fornecedor !== forn) return false;
             if(stockTeto !== '' && p.estoque > Number(stockTeto)) return false;
             return true;
@@ -576,7 +560,7 @@ const App = {
         document.getElementById('total-count').innerText = `${list.length} PRODUTOS`;
 
         if(list.length === 0) {
-            document.getElementById('prod-list').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Nenhum produto encontrado. Verifique os filtros.</td></tr>`;
+            document.getElementById('prod-list').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Nenhum produto encontrado.</td></tr>`;
             return;
         }
 
@@ -615,13 +599,35 @@ const App = {
     }
 };
 
-/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA --- */
+/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA (V11) --- */
 const Importer = {
     stagedProducts: [],
     stagedCats: [],
     
     open: () => document.getElementById('file-input').click(),
     
+    // TRADUTOR DE CAMPOS (NORMALIZER)
+    normalize: (item) => {
+        return {
+            ...item,
+            // Prioriza os campos específicos do JSON de importação fiscal
+            nome: (item.xProd || item.nome || item.description || "SEM NOME").toUpperCase(),
+            ean: item.cEAN || item.ean || "",
+            cfop: item.CFOP_SAIDA || item.cfop || "",
+            ncm: item.NCM || item.ncm || "",
+            cest: item.CEST || item.cest || "",
+            estoque: Number(item.Quantidade_Total_Unidades || item.estoque || 0),
+            estoqueFiscal: Number(item.Quantidade_Total_Unidades || item.estoqueFiscal || 0),
+            custo: Number(item.Custo_Unitario || item.custo || 0),
+            unidade: item.Unidade_Venda || item.uCom || item.unidade || "UN",
+            codigo: item.cProd_Sugestao || item.codigo || "", // Tenta usar a sugestão
+            // Campos que talvez não venham no JSON fiscal
+            valor: Number(item.valor || 0),
+            fornecedor: (item.fornecedor || "").toUpperCase(),
+            categoria: item.categoria || ""
+        };
+    },
+
     run: (input) => {
         const file = input.files[0];
         if(!file) return;
@@ -636,14 +642,15 @@ const Importer = {
                 
                 if(json.categorias) Importer.stagedCats = json.categorias;
 
-                // PREPARA LISTA PARA AUDITORIA E NORMALIZA CAMPOS NA ENTRADA
+                // APLICA A NORMALIZAÇÃO
                 Importer.stagedProducts = rawList.map(item => {
-                    const nome = item.nome || item.xProd || item.description || "SEM NOME DETECTADO";
-                    const estoque = item.estoque || item.qCom || item.quantity || 0;
+                    const norm = Importer.normalize(item);
                     return {
-                        ...item,
-                        _tempName: nome,
-                        _tempStock: estoque,
+                        ...norm,
+                        _tempName: norm.nome,
+                        _tempStock: norm.estoque,
+                        _tempCost: norm.custo,
+                        _tempCfop: norm.cfop,
                         _selected: true
                     };
                 });
@@ -672,15 +679,17 @@ const Importer = {
             return `
             <tr class="${p._selected ? 'selected' : ''}" onclick="Importer.toggle(${idx})">
                 <td><input type="checkbox" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); Importer.toggle(${idx})"></td>
-                <td>${p.codigo || '-'}</td>
-                <td>${p._tempName}</td>
+                <td>${p.codigo || 'Auto'}</td>
+                <td><div style="width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p._tempName}</div></td>
                 <td>${p._tempStock}</td>
+                <td>${p._tempCost}</td>
+                <td>${p._tempCfop}</td>
                 <td>${status}</td>
             </tr>`;
         }).join('');
 
         const selectedCount = Importer.stagedProducts.filter(p => p._selected).length;
-        document.getElementById('import-stats').innerText = `${selectedCount} produtos selecionados de ${Importer.stagedProducts.length}.`;
+        document.getElementById('import-stats').innerText = `${selectedCount} produtos selecionados.`;
     },
 
     toggle: (idx) => {
@@ -703,14 +712,18 @@ const Importer = {
         toImport.forEach(raw => {
             const cleanProd = {
                 ...raw,
-                nome: (raw.nome || raw._tempName || 'SEM NOME').toUpperCase(),
-                estoque: Number(raw.estoque || raw._tempStock),
-                id: raw.id || Date.now() + Math.random().toString()
+                id: raw.id || Date.now() + Math.random().toString(),
+                codigo: raw.codigo || DB.nextCode() // Gera código se não veio
             };
+            
+            // Limpa campos temporários da UI
             delete cleanProd._tempName;
             delete cleanProd._tempStock;
+            delete cleanProd._tempCost;
+            delete cleanProd._tempCfop;
             delete cleanProd._selected;
 
+            // Busca por ID ou Código para atualizar
             const idx = db.produto.findIndex(ex => ex.id === cleanProd.id || (ex.codigo && ex.codigo === cleanProd.codigo));
             
             if(idx > -1) {
@@ -722,7 +735,7 @@ const Importer = {
             }
         });
 
-        // Importa Categorias se existirem
+        // Importa Categorias
         let catsAdded = 0;
         Importer.stagedCats.forEach(c => {
             if(!db.categorias.some(ex => ex.id === c.id || ex.nome === c.nome)) {
@@ -734,7 +747,6 @@ const Importer = {
         DB.save(db);
         document.getElementById('modal-import-preview').close();
         
-        // FORÇA RECARREGAMENTO SEGURO
         App.sanitizeDB(); 
         App.clearFilters();
         App.renderList(); 
