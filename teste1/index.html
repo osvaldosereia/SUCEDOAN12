@@ -121,47 +121,50 @@
         .inner-table td { padding: 5px; border-bottom: 1px solid #cbd5e1; color: #444; vertical-align: middle; }
         .inner-table input { height: 30px; font-size: 0.8rem; border: 1px solid #ccc; }
 
-        /* --- 5. PRINT (90mm LOGISTICS) --- */
-        /* HIDDEN BY DEFAULT ON SCREEN */
+        /* --- 5. PRINT (100mm LOGISTICS - OPTIMIZED) --- */
         #receipt-area { display: none; }
 
-       @media print {
-            @page { size: 90mm auto; margin: 5mm; }
+        @media print {
+            @page { 
+                size: 100mm auto; 
+                margin: 0; 
+            }
             
-            /* 1. TÉCNICA "NUCLEAR": Remove TUDO do layout (não ocupa espaço) */
+            /* 1. NUCLEAR OPTION: Remove TUDO do layout, menos o cupom */
             body > :not(#receipt-area) {
                 display: none !important;
             }
 
-            /* 2. Reseta altura do corpo para não criar folhas extras */
+            /* 2. Reseta corpo para evitar páginas em branco extras */
             html, body {
+                width: 100%;
                 height: auto;
-                min-height: 0;
                 margin: 0;
                 padding: 0;
-                overflow: hidden;
+                overflow: visible;
             }
 
-            /* 3. Posiciona o cupom no topo absoluto */
+            /* 3. Posicionamento Centralizado e Largura Fixa */
             #receipt-area { 
                 display: block !important;
                 position: absolute; 
                 top: 0; 
-                left: 0;
-                width: 82mm; /* Ajuste leve para não cortar margem */
-                padding: 5px 0;
+                left: 50%; /* Move para o meio */
+                transform: translateX(-50%); /* Centraliza exato */
+                width: 90mm; /* Largura solicitada */
                 
                 color: black; 
                 background: white; 
                 font-family: 'Courier New', monospace; 
                 text-align: left;
+                padding: 5px 0;
                 z-index: 9999;
             }
             
-            /* Garante que o conteúdo do cupom apareça */
+            /* Garante visibilidade do conteúdo do cupom */
             #receipt-area * { visibility: visible; }
 
-            /* --- ESTILOS DO CUPOM --- */
+            /* Estilos do Cupom */
             .client-code { font-size: 48px; font-weight: 900; display: block; margin-bottom: 15px; border-bottom: 3px solid #000; text-align: center; }
             .receipt-header { font-size: 16px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 10px; }
             
@@ -170,10 +173,10 @@
             .log-qty { font-size: 22px; font-weight: 900; float: right; margin-left: 10px; }
             .log-name { font-size: 18px; font-weight: bold; line-height: 1.1; display: inline; }
             
-            /* ITENS DO COMBO (MAIORES) */
+            /* ITENS DO COMBO (FONTE GRANDE) */
             .log-sub { 
                 margin-left: 10px; 
-                font-size: 16px; 
+                font-size: 18px; /* Aumentado para melhor leitura */
                 font-weight: 800; 
                 color: #000; 
                 display: block; 
@@ -184,7 +187,8 @@
             
             .receipt-total { font-size: 28px; font-weight: 900; text-align: right; margin-top: 20px; border-top: 4px solid #000; padding-top: 10px; }
             
-            #quotation-area { display: none; } /* Garante que a cotação não atrapalhe se estiver aberta */
+            /* Garante que outros elementos absolutos não apareçam */
+            #quotation-area { display: none !important; }
         }
     </style>
 </head>
@@ -869,7 +873,7 @@ const App = {
 
         document.getElementById('modal-bulk-sell').close();
         
-        // --- GERAR HTML PARA IMPRESSÃO (AJUSTADO PARA NOVOS CAMPOS E FORMATO 90mm) ---
+        // --- GERAR HTML PARA IMPRESSÃO (AJUSTADO PARA NOVOS CAMPOS E FORMATO 100mm) ---
         let html = `
             <div class="client-code">${client}</div>
             <div class="receipt-header">CUPOM SEPARAÇÃO</div>
