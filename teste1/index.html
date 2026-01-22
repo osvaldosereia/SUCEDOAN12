@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V30 | Titanium Unified Sales</title>
+    <title>SISTEMA V31 | Titanium Logistics Pro</title>
     
     <style>
         /* --- 1. CORE & HIGH CONTRAST --- */
@@ -146,7 +146,9 @@
             .log-code { font-size: 14px; font-weight: 900; background: #000; color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-right: 5px; }
             .log-qty { font-size: 18px; font-weight: 900; float: right; margin-left: 10px; }
             .log-name { font-size: 16px; font-weight: bold; line-height: 1.2; display: inline; }
-            .log-sub { margin-left: 20px; font-size: 14px; color: #333; display: block; margin-top: 2px; }
+            
+            /* Sub item style for combos */
+            .log-sub { margin-left: 15px; font-size: 13px; color: #333; display: block; margin-top: 3px; border-left: 2px solid #ccc; padding-left: 5px; }
             
             .receipt-total { font-size: 28px; font-weight: 900; text-align: right; margin-top: 20px; border-top: 4px solid #000; padding-top: 10px; }
             
@@ -158,7 +160,7 @@
 <body>
 
 <header>
-    <h1>📦 TITANIUM <span style="color:#fbbf24;">V30</span></h1>
+    <h1>📦 TITANIUM <span style="color:#fbbf24;">V31</span></h1>
     <div style="display:flex; gap:10px;">
         <button onclick="QuickCombo.open()" class="btn btn-primary" style="background:#4f46e5;">⚡ COMBO RÁPIDO</button>
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 CATEGORIAS</button>
@@ -412,11 +414,11 @@
 
 <script>
 /**
- * SISTEMA V30 - TITANIUM UNIFIED SALES
+ * SISTEMA V31 - TITANIUM LOGISTICS PRO
  */
 
 const DB = {
-    key: 'sys_v30_titan',
+    key: 'sys_v31_titan',
     data: { produtos: [], categorias: [] },
     init: async () => {
         const raw = localStorage.getItem(DB.key);
@@ -755,6 +757,8 @@ const App = {
             const p = DB.data.produtos.find(x => x.id === id);
             
             if(qty > 0 && p) {
+                // Execute sale logic (stock, history)
+                // We adapt executeSale logic inline to not trigger individual prints
                 const items = p.isCombo ? p.comboItems : [{ id: id, qty: 1 }];
                 items.forEach(item => {
                     const child = DB.data.produtos.find(x => x.id === item.id);
@@ -771,7 +775,15 @@ const App = {
                     }
                 });
                 
-                printItems.push({ qty: qty, nome: p.nome, price: price, code: p.codigo });
+                printItems.push({ 
+                    qty: qty, 
+                    nome: p.nome, 
+                    price: price, 
+                    code: p.codigo,
+                    // Pass child info for printing if combo
+                    isCombo: p.isCombo,
+                    comboItems: p.isCombo ? p.comboItems : []
+                });
                 grandTotal += (price * qty);
             }
         });
@@ -788,16 +800,35 @@ const App = {
 
         document.getElementById('modal-bulk-sell').close();
         
-        // Generate Print HTML
+        // GENERATE PRINT HTML (UPDATED FOR COMBOS)
         let html = `<div class="client-code">${client}</div>
             <div class="receipt-header">CUPOM SEPARAÇÃO</div>`;
+            
         printItems.forEach(i => {
             let dName = i.nome.length > 25 ? i.nome.substring(0,25) + '...' : i.nome;
+            
+            // Main Item Line
             html += `<div class="log-row">
                 <span class="log-code">${i.code}</span>
                 <div class="log-name">${dName}</div>
                 <div class="log-qty">x${i.qty}</div>
             </div>`;
+            
+            // If combo, list children
+            if(i.isCombo && i.comboItems && i.comboItems.length > 0) {
+                i.comboItems.forEach(child => {
+                    const childProd = DB.data.produtos.find(p => p.id === child.id);
+                    const childCode = childProd ? childProd.codigo : '???';
+                    const childTotal = child.qty * i.qty;
+                    const childName = child.nome.length > 25 ? child.nome.substring(0,25)+'...' : child.nome;
+                    
+                    html += `<div class="log-sub">
+                        <span style="font-weight:900;">${childTotal}x</span>
+                        <span style="font-size:0.85rem; background:#eee; padding:0 4px; border-radius:3px; margin:0 5px;">${childCode}</span>
+                        ${childName}
+                    </div>`;
+                });
+            }
         });
         html += `<div class="receipt-total">TOTAL: R$ ${grandTotal.toFixed(2)}</div>`;
         
@@ -1098,6 +1129,14 @@ const Importer = {
             }
         });
         DB.save(); App.render(); document.getElementById('modal-import').close(); alert("IMPORTAÇÃO CONCLUÍDA!");
+    }
+};
+
+/* PRINTER (VISUAL REVISED) */
+const Printer = {
+    // printCurrent is called without args from buttons, but we want it to check DOM if so
+    printCurrent: () => {
+        // Not used directly anymore, flow goes through processBulkSell
     }
 };
 
