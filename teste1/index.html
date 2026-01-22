@@ -889,14 +889,19 @@ const App = {
     exportBackup: () => {
         // 1. Mapear os produtos para o formato EXATO do sistema externo
         const exportList = DB.data.produtos.map(p => {
-            const parts = (p.categoria || '').split(' > ');
+            // AJUSTE: Converte a categoria completa para MAIÚSCULAS antes de dividir
+            const fullCategoryUpper = (p.categoria || '').toUpperCase();
+            const parts = fullCategoryUpper.split(' > ');
             
             return {
                 id: p.id,
                 codigo: p.codigo,
                 nome: p.nome,
                 ean: p.ean,
-                categoria: p.categoria,
+                
+                // AJUSTE: Categoria completa em maiúsculas
+                categoria: fullCategoryUpper, 
+                
                 fornecedor: p.fornecedor || "",
                 caracteristicas: p.caracteristicas || "",
                 custo: p.custo,
@@ -910,10 +915,10 @@ const App = {
                 peso: p.peso || 0,
                 
                 // --- AJUSTES DE NOMES DE VARIÁVEIS ---
-                limit: p.limitQty || 0,      // O sistema pede minusculo
-                Limit: p.limitQty || 0,      // O sistema pede Maiusculo também
+                limit: p.limitQty || 0,
+                Limit: p.limitQty || 0,
                 imagem: p.imagem || "",
-                items: p.comboItems || [],   // O sistema chama de 'items', nós chamamos de 'comboItems'
+                items: p.comboItems || [],
                 personalized: p.personalized || false,
                 isOffer: p.isOffer,
                 offerPrice: p.offerPrice || 0,
@@ -927,7 +932,10 @@ const App = {
                 cfop: p.cfop || "",
                 csosn: p.csosn || "",
                 obs: p.obs || "",
-                subcategoria: p.subcategoria || "",
+                
+                // AJUSTE: Garante que se existir subcategoria avulsa, também vai em maiúsculas
+                subcategoria: (p.subcategoria || "").toUpperCase(), 
+                
                 nota: p.nota || "",
                 refId: p.refId || "",
                 fator: p.fator || "",
@@ -937,15 +945,18 @@ const App = {
                 // Campos calculados e textos (Sim/Não)
                 Oferta: p.isOffer ? "Sim" : "Não",
                 Valor_Oferta: p.offerPrice || 0,
+                
+                // AJUSTE: Campos divididos em MAIÚSCULAS
                 Categoria: parts[0] || '',
-                Subcategoria: parts[1] || '',
+                Subcategoria: parts[1] ? parts[1].trim() : '', 
+                
                 Mais_Vendido: p.isBestSeller ? "Sim" : "Não",
                 Tem_Ligacao: p.linkedProductCode ? "Sim" : "Não",
                 Codigo_Produto_Ligado: p.linkedProductCode || ""
             };
         });
 
-        // 2. Criar e baixar o arquivo JSON (Formato Array Puro)
+        // 2. Criar e baixar o arquivo JSON
         const blob = new Blob([JSON.stringify(exportList, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -964,21 +975,15 @@ const App = {
             try {
                 const data = JSON.parse(e.target.result);
                 
-                // Verificação dupla: Aceita se for Array direto (novo formato) ou Objeto (velho formato)
                 let produtosParaRestaurar = null;
 
                 if (Array.isArray(data)) {
-                    produtosParaRestaurar = data; // Formato novo
+                    produtosParaRestaurar = data; // Formato novo (Array direto)
                 } else if (data && Array.isArray(data.produtos)) {
-                    produtosParaRestaurar = data.produtos; // Formato antigo
+                    produtosParaRestaurar = data.produtos; // Formato antigo (Objeto)
                 }
 
                 if(produtosParaRestaurar) { 
-                    // Ao restaurar, precisamos reverter o mapeamento (variacoesNome -> varNome) se necessário, 
-                    // mas para simplificar, vamos assumir que o sistema lê as propriedades principais.
-                    // Idealmente, deveriamos re-mapear aqui se o backup for usado para reimportar no MESMO site.
-                    // Como este backup é para sistema externo, vou carregar direto.
-                    
                     DB.data.produtos = produtosParaRestaurar; 
                     DB.save(); 
                     alert("BACKUP RESTAURADO COM SUCESSO!"); 
@@ -989,8 +994,7 @@ const App = {
             } catch(err) { alert("ERRO AO LER ARQUIVO: " + err.message); }
         };
         reader.readAsText(file); input.value = '';
-    }
-};
+    };
 
 /* --- COMBO LOGIC --- */
 const Combo = {
