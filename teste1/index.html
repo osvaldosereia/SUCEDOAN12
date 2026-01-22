@@ -886,7 +886,8 @@ const App = {
         DB.save(); App.render(); document.getElementById('modal-prod').close();
     },
     toggleOffer: (v) => document.getElementById('offer-area').style.display = v ? 'block' : 'none',
-  exportBackup: () => {
+
+    exportBackup: () => {
         // --- EXPORTAÇÃO (FORMATO EXTERNO) ---
         const exportList = DB.data.produtos.map(p => {
             const fullCategoryUpper = (p.categoria || '').toUpperCase();
@@ -997,7 +998,8 @@ const App = {
             } catch(err) { alert("ERRO AO LER ARQUIVO: " + err.message); }
         };
         reader.readAsText(file); input.value = '';
-    };
+    }
+};
 
 /* --- COMBO LOGIC --- */
 const Combo = {
