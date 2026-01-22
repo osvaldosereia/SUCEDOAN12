@@ -3,185 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V17 | XML Master Integration</title>
+    <title>SISTEMA V18 | Titanium Ultimate</title>
     
     <style>
-        /* --- 1. CORE & RESET --- */
+        /* --- 1. CORE STYLES --- */
         :root {
-            --bg: #f3f4f6;
-            --surface: #ffffff;
-            --border: #e5e7eb;
-            --text-main: #111827;
-            --text-sec: #6b7280;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --danger: #ef4444;
-            --success: #10b981;
-            --radius: 6px;
+            --bg: #f3f4f6; --surface: #ffffff; --border: #d1d5db;
+            --text: #111827; --sec: #6b7280;
+            --primary: #2563eb; --primary-dark: #1e40af;
+            --danger: #ef4444; --success: #16a34a; --warning: #f59e0b;
         }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: system-ui, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 50px; font-size: 14px; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text-main); font-family: system-ui, -apple-system, sans-serif; font-size: 13px; padding-bottom: 40px; }
-        
-        /* --- 2. COMPONENTS --- */
-        .btn { cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; font-weight: 600; border-radius: var(--radius); border: 1px solid transparent; transition: all 0.2s; font-size: 0.85rem; height: 36px; }
+        /* --- 2. UI COMPONENTS --- */
+        header { background: var(--surface); padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h1 { color: var(--primary); font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+
+        .btn { cursor: pointer; padding: 10px 16px; border-radius: 6px; border: none; font-weight: 600; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); }
-        .btn-ghost { background: white; border: 1px solid var(--border); color: var(--text-sec); }
-        .btn-ghost:hover { background: #f9fafb; color: var(--text-main); border-color: #d1d5db; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-ghost { background: white; border: 1px solid var(--border); color: var(--sec); }
         .btn-success { background: var(--success); color: white; }
-        .btn-sm { padding: 4px 8px; height: 28px; font-size: 0.75rem; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
 
-        input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; background: #fff; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        input[readonly] { background: #f3f4f6; color: var(--text-sec); }
-        
-        /* --- 3. LAYOUT --- */
-        header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 40; }
-        h1 { font-size: 1.25rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-        
-        main { width: 98%; max-width: 1920px; margin: 20px auto; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: #fff; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        input[readonly] { background: #f9fafb; color: var(--sec); }
 
-        /* --- 4. TABLE FULL WIDTH --- */
-        .table-container { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .table-toolbar { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; background: #f9fafb; align-items: center; }
-        .table-wrapper { overflow-x: auto; max-height: calc(100vh - 140px); }
+        /* --- 3. LAYOUT GRID --- */
+        main { max-width: 1800px; margin: 20px auto; padding: 0 15px; }
+        .card { background: var(--surface); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .toolbar { padding: 15px; background: #f9fafb; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         
         table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        th { text-align: left; padding: 12px 16px; background: #f9fafb; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; color: var(--text-sec); font-weight: 700; position: sticky; top: 0; z-index: 10; }
-        td { padding: 8px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-main); font-size: 0.9rem; }
-        tr:hover { background: #f8fafc; }
+        th { text-align: left; padding: 12px; background: #f3f4f6; border-bottom: 2px solid var(--border); font-size: 0.75rem; text-transform: uppercase; color: var(--sec); position: sticky; top: 0; z-index: 10; }
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+        tr:hover { background: #f9fafb; }
         
-        .inp-clean { border: 1px solid transparent; background: transparent; padding: 4px; font-weight: 600; text-align: center; width: 100%; }
-        .inp-clean:hover, .inp-clean:focus { border-color: var(--border); background: white; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .bg-offer { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
-        /* --- 5. MODAL --- */
-        dialog { margin: auto; border: none; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 95%; max-width: 1100px; padding: 0; }
-        dialog::backdrop { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+        /* --- 4. MODAL --- */
+        dialog { margin: auto; border: none; border-radius: 10px; width: 95%; max-width: 1100px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-head { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; background: #fff; position: sticky; top: 0; z-index: 20; align-items: center; }
+        .modal-body { padding: 20px; max-height: 80vh; overflow-y: auto; background: #f9fafb; }
         
-        .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; position: sticky; top: 0; z-index: 20; }
-        .modal-content { padding: 24px; background: #f9fafb; max-height: 80vh; overflow-y: auto; }
-        
-        .form-section { background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .section-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: var(--primary); margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
-        
-        .g-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .g-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
-        
-        label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-sec); margin-bottom: 4px; }
+        .section { background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .sec-title { font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
 
-        /* Import Review Table */
-        .review-table { width: 100%; font-size: 0.8rem; }
-        .review-table th { background: #eff6ff; padding: 8px; text-align: left; }
-        .review-table td { padding: 8px; border-bottom: 1px solid #eee; }
-        .tag { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
-        .tag-new { background: #dbeafe; color: #1e40af; }
-        .tag-upd { background: #dcfce7; color: #166534; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
+
+        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--sec); margin-bottom: 4px; }
+
+        /* --- 5. COMBO & OFFER SPECIALS --- */
+        .offer-box { background: #fff1f2; border: 1px solid #fda4af; padding: 10px; border-radius: 6px; display: none; margin-top: 10px; }
+        .combo-ctrl { background: #eff6ff; border: 1px dashed #60a5fa; padding: 15px; border-radius: 8px; margin-top: 15px; display: none; }
+        
+        /* IMPRESSÃO TÉRMICA 100mm */
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-area, #receipt-area * { visibility: visible; }
+            #receipt-area { position: absolute; left: 0; top: 0; width: 100mm; padding: 5px; color: black; background: white; }
+            .receipt-line { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; font-family: 'Courier New', monospace; margin-bottom: 5px; border-bottom: 1px dashed #000; padding-bottom: 2px; }
+            .receipt-header { text-align: center; font-size: 20px; font-weight: 900; margin-bottom: 15px; border-bottom: 2px solid #000; }
+            .receipt-total { font-size: 22px; font-weight: 900; text-align: right; margin-top: 10px; border-top: 2px solid #000; padding-top: 5px; }
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>📦 SYSTEM V17 <span style="font-weight:400; font-size:0.8rem; color:#9ca3af;">Integrador NFe</span></h1>
-    <div style="display:flex; gap:10px;">
+    <h1>🔥 TITANIUM <small style="font-weight:400; font-size:0.8rem; margin-left:10px; color:var(--sec);">V18 Ultimate</small></h1>
+    <div>
         <button onclick="App.openModal()" class="btn btn-primary">+ Novo Produto</button>
-        <button onclick="document.getElementById('file-xml').click()" class="btn btn-ghost">📂 Importar XML</button>
+        <button onclick="document.getElementById('xml-file').click()" class="btn btn-ghost">📂 Importar NFe (XML)</button>
     </div>
 </header>
 
 <main>
-    <div class="table-container">
-        <div class="table-toolbar">
-            <input type="text" id="search-input" placeholder="🔍 Buscar Nome, EAN, Código..." oninput="App.render()" style="max-width: 400px;">
-            <div style="flex:1;"></div>
-            <span style="font-size:0.85rem; color:var(--text-sec);">Produtos: <b id="total-rows" style="color:var(--text-main);">0</b></span>
+    <div class="card">
+        <div class="toolbar">
+            <input type="text" id="search" placeholder="🔍 Buscar nome, EAN, código..." oninput="App.render()" style="max-width: 350px;">
+            <div style="flex:1"></div>
+            <span style="font-weight:bold; color:var(--sec);">Total: <span id="total-rows">0</span></span>
         </div>
-        <div class="table-wrapper">
+        <div style="overflow-x:auto;">
             <table>
                 <thead>
                     <tr>
-                        <th width="80">Cód</th>
-                        <th width="120">EAN</th>
+                        <th>Cód</th>
                         <th>Produto</th>
-                        <th width="100" style="text-align:center;">Estoque</th>
-                        <th width="100" style="text-align:center;">Custo (R$)</th>
-                        <th width="100" style="text-align:center;">Venda (R$)</th>
-                        <th width="80" style="text-align:center;">Margem</th>
-                        <th width="100" style="text-align:right;">Ações</th>
+                        <th>Fiscal (NCM/CFOP)</th>
+                        <th style="text-align:center">Estoque</th>
+                        <th style="text-align:right">Custo</th>
+                        <th style="text-align:right">Venda</th>
+                        <th style="text-align:right">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="table-body"></tbody>
+                <tbody id="tbl-body"></tbody>
             </table>
         </div>
     </div>
 </main>
 
-<dialog id="prod-modal">
-    <div class="modal-header">
-        <span style="font-weight:bold; font-size:1.1rem;">Detalhes do Produto</span>
+<dialog id="modal-prod">
+    <div class="modal-head">
+        <span style="font-weight:bold; font-size:1.1rem;">Ficha do Produto</span>
         <div style="display:flex; gap:10px;">
             <button onclick="App.save()" class="btn btn-primary">💾 Salvar</button>
-            <button onclick="document.getElementById('prod-modal').close()" class="btn btn-ghost">✕</button>
+            <button onclick="document.getElementById('modal-prod').close()" class="btn btn-ghost">✕</button>
         </div>
     </div>
-    <div class="modal-content">
+    <div class="modal-body">
         <form id="form-prod">
             <input type="hidden" id="p-id">
             
-            <div class="form-section">
-                <div class="section-title">🆔 Dados Principais</div>
-                <div class="g-3" style="margin-bottom:15px;">
-                    <div><label>Código</label><input type="text" id="p-codigo" readonly style="font-weight:bold; color:var(--primary);"></div>
-                    <div><label>EAN (Auto)</label><input type="text" id="p-ean" placeholder="Preenchimento Auto"></div>
-                    <div><label>Ref. Forn.</label><input type="text" id="p-refForn"></div>
-                </div>
-                <div><label>Nome do Produto</label><input type="text" id="p-nome" style="font-weight:700;"></div>
-                
-                <div class="g-2" style="margin-top:10px;">
-                    <div><label>Variações de Nome (Match XML)</label><textarea id="p-var-nome" style="height:50px; font-size:0.8rem;" placeholder="Nomes alternativos do XML aparecem aqui..."></textarea></div>
-                    <div><label>Variações de EAN</label><textarea id="p-var-ean" style="height:50px; font-size:0.8rem;" placeholder="EANs secundários..."></textarea></div>
-                </div>
-            </div>
+            <div class="grid-2">
+                <div>
+                    <div class="section">
+                        <div class="sec-title">🆔 Identificação</div>
+                        <div class="grid-3">
+                            <div><label>Código</label><input type="text" id="p-codigo" readonly style="font-weight:bold;"></div>
+                            <div style="grid-column: span 2"><label>EAN (Automático)</label><input type="text" id="p-ean" placeholder="Vazio = Gerar Auto"></div>
+                        </div>
+                        <div style="margin-top:10px;"><label>Nome do Produto</label><input type="text" id="p-nome" style="font-weight:800;"></div>
+                        <div style="margin-top:10px;"><label>Variações de Nome (XML)</label><input type="text" id="p-varNome" placeholder="Salvo automaticamente na importação"></div>
+                    </div>
 
-            <div class="g-2">
-                <div class="form-section">
-                    <div class="section-title">💰 Valores</div>
-                    <div class="g-2">
-                        <div><label>Custo</label><input type="number" id="p-custo" step="0.01" oninput="Utils.calcMargin()"></div>
-                        <div><label>Venda</label><input type="number" id="p-valor" step="0.01" oninput="Utils.calcMargin()"></div>
-                    </div>
-                    <div style="margin-top:10px;"><label>Margem</label><input type="text" id="p-margem" readonly style="text-align:center;"></div>
-                </div>
-                <div class="form-section">
-                    <div class="section-title">📦 Estoque</div>
-                    <div class="g-3">
-                        <div><label>Atual</label><input type="number" id="p-estoque"></div>
-                        <div><label>Mín</label><input type="number" id="p-min"></div>
-                        <div><label>Un</label><input type="text" id="p-unidade"></div>
-                    </div>
-                    <div style="margin-top:10px; display:flex; align-items:center; gap:5px;">
-                        <input type="checkbox" id="p-isCombo" style="width:auto;" onchange="Combo.toggle(this.checked)">
-                        <label for="p-isCombo" style="margin:0; font-weight:bold; cursor:pointer;">Ativar Combo/Kit</label>
+                    <div class="section">
+                        <div class="sec-title">⚖️ Fiscal (Automático)</div>
+                        <div class="grid-3">
+                            <div><label>NCM</label><input type="text" id="p-ncm"></div>
+                            <div><label>CEST</label><input type="text" id="p-cest"></div>
+                            <div><label>CFOP (Saída)</label><input type="text" id="p-cfop" placeholder="Ex: 5102"></div>
+                        </div>
+                        <div class="grid-2" style="margin-top:10px;">
+                            <div><label>CSOSN/CST</label><input type="text" id="p-csosn"></div>
+                            <div><label>Origem</label><input type="text" id="p-origem" value="0"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="form-section">
-                <div class="section-title">🚚 Histórico de Entradas (Últimas 3)</div>
-                <div id="batch-container">
+                <div>
+                    <div class="section">
+                        <div class="sec-title">💰 Valores & Oferta</div>
+                        <div class="grid-2">
+                            <div><label>Custo (R$)</label><input type="number" id="p-custo" step="0.01" oninput="App.calcMargin()"></div>
+                            <div><label>Venda (R$)</label><input type="number" id="p-valor" step="0.01" oninput="App.calcMargin()"></div>
+                        </div>
+                        
+                        <div style="margin-top:10px; display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="p-isOffer" style="width:auto;" onchange="App.toggleOffer(this.checked)">
+                            <label for="p-isOffer" style="margin:0; font-weight:bold; color:var(--danger); cursor:pointer;">PRODUTO EM OFERTA?</label>
+                        </div>
+                        
+                        <div id="offer-area" class="offer-box">
+                            <label style="color:var(--danger);">Preço de Oferta (R$)</label>
+                            <input type="number" id="p-offerPrice" step="0.01" style="border-color:var(--danger); font-weight:bold;">
+                        </div>
                     </div>
-            </div>
 
-            <div id="combo-area" style="display:none; margin-top:10px; padding:15px; border:1px dashed #2563eb; background:#eff6ff; border-radius:8px;">
-                <div class="g-2" style="align-items:start;">
-                    <div>
-                        <label>Colar Lista (Ex: "1x Coca Cola")</label>
-                        <textarea id="combo-paste" style="height:60px;"></textarea>
-                        <button type="button" onclick="Combo.processPaste()" class="btn btn-primary btn-sm" style="width:100%; margin-top:5px;">Processar Lista</button>
-                    </div>
-                    <div>
-                        <label>Itens no Combo</label>
-                        <div id="combo-list-render" style="background:white; border:1px solid #ddd; padding:5px; min-height:60px;"></div>
+                    <div class="section">
+                        <div class="sec-title">📦 Estoque & Combo</div>
+                        <div class="grid-3">
+                            <div><label>Atual</label><input type="number" id="p-estoque"></div>
+                            <div><label>Unidade</label><input type="text" id="p-unidade"></div>
+                            <div><label>Entradas</label><button type="button" class="btn btn-ghost btn-sm" onclick="alert('Histórico salvo no DB!')">Ver 3+</button></div>
+                        </div>
+
+                        <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" id="p-isCombo" style="width:auto;" onchange="Combo.toggle(this.checked)">
+                                <label for="p-isCombo" style="margin:0; font-weight:bold; color:var(--primary); cursor:pointer;">ATIVAR KIT / COMBO</label>
+                            </div>
+                        </div>
+
+                        <div id="combo-area" class="combo-ctrl">
+                            <label>Venda Rápida de Combo</label>
+                            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                                <input type="number" id="combo-sell-qty" value="1" style="width:70px;">
+                                <button type="button" onclick="Combo.sell()" class="btn btn-success" style="flex:1;">💲 VENDER</button>
+                                <button type="button" onclick="Printer.printCurrent()" class="btn btn-primary btn-sm">🖨️ CUPOM</button>
+                            </div>
+
+                            <label style="margin-top:10px;">Itens do Kit</label>
+                            <textarea id="combo-paste" placeholder="Cole lista aqui:&#10;1x Coca Cola&#10;2x Coxinha" style="height:60px;"></textarea>
+                            <button type="button" onclick="Combo.processPaste()" class="btn btn-ghost btn-sm" style="width:100%; margin-top:5px;">Processar Lista</button>
+                            <div id="combo-list" style="margin-top:5px; background:white; padding:5px; border-radius:4px;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -189,30 +203,32 @@
     </div>
 </dialog>
 
-<dialog id="import-modal">
-    <div class="modal-header">
-        <span style="font-weight:bold;">Conferência de XML</span>
-        <button onclick="document.getElementById('import-modal').close()" class="btn btn-ghost">✕</button>
+<dialog id="modal-import">
+    <div class="modal-head">
+        <b>Importação Inteligente NFe</b>
+        <button onclick="document.getElementById('modal-import').close()" class="btn btn-ghost">✕</button>
     </div>
-    <div class="modal-content">
-        <div id="xml-info" style="margin-bottom:10px; font-weight:bold; color:var(--text-sec);"></div>
-        <table class="review-table">
-            <thead><tr><th>Cód XML</th><th>Nome XML</th><th>Qtd</th><th>Custo</th><th>Ação Sistema</th></tr></thead>
-            <tbody id="import-list"></tbody>
+    <div class="modal-body">
+        <div style="margin-bottom:10px; font-size:0.85rem; color:var(--sec);">
+            ⚠️ Itens marcados como <b>CX/CAIXA</b> precisam de fator de conversão. O sistema dividirá o custo e multiplicará a quantidade.
+        </div>
+        <table style="font-size:0.8rem;">
+            <thead><tr><th>Produto XML</th><th>Un. XML</th><th>Qtd XML</th><th>Fator Conv.</th><th>Qtd Final</th><th>Custo UN</th></tr></thead>
+            <tbody id="import-rows"></tbody>
         </table>
-        <div style="margin-top:20px; text-align:right;">
-            <button onclick="Importer.commit()" class="btn btn-success">✅ Confirmar Importação</button>
+        <div style="text-align:right; margin-top:15px;">
+            <button onclick="Importer.commit()" class="btn btn-success">Confirmar Importação</button>
         </div>
     </div>
 </dialog>
 
-<input type="file" id="file-xml" accept=".xml" style="display:none;" onchange="Importer.parse(this)">
+<div id="receipt-area"></div>
+
+<input type="file" id="xml-file" accept=".xml" hidden onchange="Importer.parse(this)">
 
 <script>
-/* SISTEMA V17 - CORE JS */
-
 const DB = {
-    key: 'sys_v17_db',
+    key: 'sys_v18_titan',
     data: { produtos: [] },
     init: () => {
         const raw = localStorage.getItem(DB.key);
@@ -225,296 +241,316 @@ const DB = {
         for(let n of nums) { if(n===next) next++; else if(n>next) break; }
         return `P${String(next).padStart(4,'0')}`;
     },
-    // Busca inteligente: EAN, Codigo Interno ou Variações de Nome
-    findSmart: (ean, name) => {
-        // 1. Tenta EAN Exato
+    find: (id) => DB.data.produtos.find(p => p.id === id),
+    // Busca por EAN ou Variação de Nome
+    findSmart: (ean, nome) => {
         let p = DB.data.produtos.find(x => x.ean && x.ean === ean);
-        if(p) return p;
-        // 2. Tenta Nome Exato
-        p = DB.data.produtos.find(x => x.nome === name.toUpperCase());
-        if(p) return p;
-        // 3. Tenta Variação de Nome
-        return DB.data.produtos.find(x => (x.varNome||[]).includes(name.toUpperCase()));
-    }
-};
-
-const Utils = {
-    fmtMoeda: (v) => parseFloat(v||0).toFixed(2),
-    calcMargin: () => {
-        const c = parseFloat(document.getElementById('p-custo').value)||0;
-        const v = parseFloat(document.getElementById('p-valor').value)||0;
-        const m = (c>0 && v>0) ? (((v-c)/c)*100).toFixed(0)+'%' : '-';
-        document.getElementById('p-margem').value = m;
+        if(!p && nome) {
+            const n = nome.toUpperCase();
+            p = DB.data.produtos.find(x => x.nome === n || (x.varNome||[]).includes(n));
+        }
+        return p;
     }
 };
 
 const App = {
-    init: () => {
-        DB.init();
-        App.render();
-        App.renderBatchInputs();
-    },
-    renderBatchInputs: () => {
-        let h = '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-bottom:5px; font-weight:bold; font-size:0.75rem;"><span>Data Entrada</span><span>Qtd</span><span>Validade</span></div>';
-        for(let i=0; i<3; i++) {
-            h += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-bottom:5px;">
-                <input type="date" id="b-date-${i}">
-                <input type="number" id="b-qtd-${i}" placeholder="Qtd">
-                <input type="date" id="b-valid-${i}">
-            </div>`;
-        }
-        document.getElementById('batch-container').innerHTML = h;
-    },
+    init: () => { DB.init(); App.render(); },
+    
     render: () => {
-        const term = document.getElementById('search-input').value.toLowerCase();
-        const tbody = document.getElementById('table-body');
+        const s = document.getElementById('search').value.toLowerCase();
+        const body = document.getElementById('tbl-body');
         const list = DB.data.produtos.filter(p => 
-            p.nome.toLowerCase().includes(term) || 
-            p.codigo.toLowerCase().includes(term) ||
-            (p.ean||'').includes(term)
+            p.nome.toLowerCase().includes(s) || p.codigo.toLowerCase().includes(s) || (p.ean||'').includes(s)
         );
         document.getElementById('total-rows').innerText = list.length;
         
-        tbody.innerHTML = list.map(p => {
-            const mg = (p.custo>0 && p.valor>0) ? (((p.valor-p.custo)/p.custo)*100).toFixed(0) : 0;
+        body.innerHTML = list.map(p => {
+            const offerDisplay = p.isOffer 
+                ? `<div class="badge bg-offer">OFERTA R$ ${parseFloat(p.offerPrice).toFixed(2)}</div>` 
+                : '';
+            
             return `<tr>
-                <td style="font-weight:bold; color:var(--primary);">${p.codigo}</td>
-                <td style="color:#666;">${p.ean || '-'}</td>
-                <td>${p.nome}</td>
-                <td><input class="inp-clean" type="number" value="${p.estoque}" onchange="App.quickUpdate('${p.id}','estoque',this.value)"></td>
-                <td><input class="inp-clean" type="number" step="0.01" value="${Utils.fmtMoeda(p.custo)}" onchange="App.quickUpdate('${p.id}','custo',this.value)"></td>
-                <td><input class="inp-clean" type="number" step="0.01" value="${Utils.fmtMoeda(p.valor)}" onchange="App.quickUpdate('${p.id}','valor',this.value)"></td>
-                <td style="text-align:center; color:${mg<0?'red':'green'}">${mg}%</td>
-                <td style="text-align:right;"><button onclick="App.openModal('${p.id}')" class="btn btn-primary btn-sm">Editar</button></td>
+                <td><b>${p.codigo}</b></td>
+                <td>
+                    <div style="font-weight:700;">${p.nome}</div>
+                    <small style="color:#666;">${p.ean || 'S/ GTIN'}</small>
+                </td>
+                <td><small>${p.ncm || '-'} / ${p.cfop || '-'}</small></td>
+                <td style="text-align:center;">${p.estoque} ${p.unidade}</td>
+                <td style="text-align:right;">${parseFloat(p.custo).toFixed(2)}</td>
+                <td style="text-align:right;">
+                    <div style="font-weight:bold; color:var(--primary);">${parseFloat(p.valor).toFixed(2)}</div>
+                    ${offerDisplay}
+                </td>
+                <td style="text-align:right;">
+                    <button onclick="App.openModal('${p.id}')" class="btn btn-ghost btn-sm">Editar</button>
+                </td>
             </tr>`;
         }).join('');
     },
-    quickUpdate: (id, field, val) => {
-        const p = DB.data.produtos.find(x=>x.id===id);
-        if(p) { p[field] = parseFloat(val); DB.save(); App.render(); }
-    },
-    openModal: (id=null) => {
-        const form = document.getElementById('form-prod');
-        form.reset();
+
+    openModal: (id) => {
+        document.getElementById('form-prod').reset();
         Combo.items = [];
+        Combo.toggle(false);
+        App.toggleOffer(false);
         
         if(id) {
-            const p = DB.data.produtos.find(x=>x.id===id);
-            document.getElementById('p-id').value = p.id;
-            document.getElementById('p-codigo').value = p.codigo;
-            document.getElementById('p-ean').value = p.ean;
-            document.getElementById('p-refForn').value = p.refForn||'';
-            document.getElementById('p-nome').value = p.nome;
-            document.getElementById('p-var-nome').value = (p.varNome||[]).join(' | ');
-            document.getElementById('p-var-ean').value = (p.varEan||[]).join(' | ');
-            document.getElementById('p-custo').value = p.custo;
-            document.getElementById('p-valor').value = p.valor;
-            document.getElementById('p-estoque').value = p.estoque;
-            document.getElementById('p-min').value = p.min||'';
-            document.getElementById('p-unidade').value = p.unidade||'UN';
-            document.getElementById('p-isCombo').checked = p.isCombo||false;
+            const p = DB.find(id);
+            // Preencher campos gerais
+            for (const key in p) {
+                const el = document.getElementById(`p-${key}`);
+                if(el) el.value = p[key];
+            }
+            // Campos especiais
+            document.getElementById('p-varNome').value = (p.varNome||[]).join(' | ');
+            document.getElementById('p-isOffer').checked = p.isOffer || false;
+            document.getElementById('p-isCombo').checked = p.isCombo || false;
             
-            // Batches
-            (p.batches||[]).forEach((b,i) => {
-                if(i<3) {
-                    document.getElementById(`b-date-${i}`).value = b.date;
-                    document.getElementById(`b-qtd-${i}`).value = b.qtd;
-                    document.getElementById(`b-valid-${i}`).value = b.valid;
-                }
-            });
-            Combo.items = p.comboItems||[];
+            App.toggleOffer(p.isOffer);
+            Combo.toggle(p.isCombo);
+            Combo.items = p.comboItems || [];
+            Combo.renderList();
         } else {
             document.getElementById('p-id').value = '';
             document.getElementById('p-codigo').value = DB.nextCode();
         }
-        
-        Utils.calcMargin();
-        Combo.toggle(document.getElementById('p-isCombo').checked);
-        document.getElementById('prod-modal').showModal();
+        document.getElementById('modal-prod').showModal();
     },
+
     save: () => {
         const id = document.getElementById('p-id').value;
-        const eanVal = document.getElementById('p-ean').value.trim();
-        // EAN AUTO
-        const finalEan = eanVal || ("789"+Date.now().toString().slice(-9)); 
+        const ean = document.getElementById('p-ean').value || ("789"+Date.now().toString().slice(-9)); // Auto EAN
         
-        let batches = [];
-        for(let i=0; i<3; i++) {
-            const d = document.getElementById(`b-date-${i}`).value;
-            const q = document.getElementById(`b-qtd-${i}`).value;
-            const v = document.getElementById(`b-valid-${i}`).value;
-            if(d || q) batches.push({date:d, qtd:q, valid:v});
-        }
-
         const prod = {
             id: id || Date.now().toString(36),
             codigo: document.getElementById('p-codigo').value,
-            ean: finalEan,
-            refForn: document.getElementById('p-refForn').value,
+            ean: ean,
             nome: document.getElementById('p-nome').value.toUpperCase(),
-            varNome: document.getElementById('p-var-nome').value.split('|').map(s=>s.trim()).filter(Boolean),
-            varEan: document.getElementById('p-var-ean').value.split('|').map(s=>s.trim()).filter(Boolean),
+            varNome: document.getElementById('p-varNome').value.split('|').map(x=>x.trim()).filter(Boolean),
+            
+            // Fiscal
+            ncm: document.getElementById('p-ncm').value,
+            cest: document.getElementById('p-cest').value,
+            cfop: document.getElementById('p-cfop').value,
+            csosn: document.getElementById('p-csosn').value,
+            origem: document.getElementById('p-origem').value,
+
+            // Valores
             custo: parseFloat(document.getElementById('p-custo').value)||0,
             valor: parseFloat(document.getElementById('p-valor').value)||0,
+            isOffer: document.getElementById('p-isOffer').checked,
+            offerPrice: parseFloat(document.getElementById('p-offerPrice').value)||0,
+            
+            // Estoque & Combo
             estoque: parseFloat(document.getElementById('p-estoque').value)||0,
-            min: parseFloat(document.getElementById('p-min').value)||0,
             unidade: document.getElementById('p-unidade').value,
             isCombo: document.getElementById('p-isCombo').checked,
-            batches: batches,
             comboItems: Combo.items
         };
 
         if(id) {
-            const idx = DB.data.produtos.findIndex(x=>x.id===id);
-            if(idx>-1) DB.data.produtos[idx] = prod;
+            const idx = DB.data.produtos.findIndex(x => x.id === id);
+            if(idx > -1) DB.data.produtos[idx] = prod;
         } else {
             DB.data.produtos.push(prod);
         }
         DB.save();
         App.render();
-        document.getElementById('prod-modal').close();
+        document.getElementById('modal-prod').close();
+    },
+
+    toggleOffer: (chk) => document.getElementById('offer-area').style.display = chk ? 'block' : 'none',
+    calcMargin: () => { /* Logica de margem visual opcional */ }
+};
+
+/* --- COMBO LOGIC --- */
+const Combo = {
+    items: [],
+    toggle: (active) => {
+        document.getElementById('combo-area').style.display = active ? 'block' : 'none';
+        if(active) Combo.renderList();
+    },
+    processPaste: () => {
+        const lines = document.getElementById('combo-paste').value.split('\n');
+        lines.forEach(l => {
+            const m = l.trim().match(/^(\d+)[\sxX-]+\s*(.+)$/);
+            if(m) {
+                const name = m[2].trim().toUpperCase();
+                // Busca ID real no sistema
+                const prod = DB.data.produtos.find(p => p.nome === name || (p.varNome||[]).includes(name));
+                Combo.items.push({ id: prod?prod.id:null, nome: name, qty: parseInt(m[1]) });
+            }
+        });
+        Combo.renderList();
+    },
+    renderList: () => {
+        document.getElementById('combo-list').innerHTML = Combo.items.map((i, idx) => `
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.85rem;">
+                <b>${i.qty}x</b> <span>${i.nome} ${i.id?'✅':'⚠️'}</span>
+                <span style="color:red; cursor:pointer;" onclick="Combo.items.splice(${idx},1); Combo.renderList()">✕</span>
+            </div>
+        `).join('');
+    },
+    sell: () => {
+        const qtySale = parseInt(document.getElementById('combo-sell-qty').value) || 1;
+        let log = [];
+        
+        Combo.items.forEach(item => {
+            if(item.id) {
+                const prod = DB.find(item.id);
+                if(prod) {
+                    const totalDed = item.qty * qtySale;
+                    prod.estoque -= totalDed;
+                    log.push(`${prod.nome}: -${totalDed}`);
+                }
+            }
+        });
+        DB.save();
+        alert(`Venda Realizada!\nBaixas:\n${log.join('\n')}`);
+        App.render(); // Atualiza tela
     }
 };
 
-/* --- LOGICA XML / IMPORTADOR --- */
+/* --- IMPRESSÃO TÉRMICA --- */
+const Printer = {
+    printCurrent: () => {
+        const nome = document.getElementById('p-nome').value;
+        const val = parseFloat(document.getElementById('p-isOffer').checked 
+            ? document.getElementById('p-offerPrice').value 
+            : document.getElementById('p-valor').value);
+        const qty = parseInt(document.getElementById('combo-sell-qty').value);
+        const total = val * qty;
+
+        let itemsHtml = '';
+        Combo.items.forEach(i => {
+            itemsHtml += `<div class="receipt-line" style="font-size:14px; font-weight:normal;">
+                <span>${i.qty * qty}x ${i.nome.substring(0,15)}</span>
+            </div>`;
+        });
+
+        const cupom = `
+            <div class="receipt-header">SISTEMA V18<br>PEDIDO DE VENDA</div>
+            <div class="receipt-line">
+                <span>ITEM: ${nome}</span>
+            </div>
+            <div class="receipt-line">
+                <span>QTD: ${qty}</span>
+                <span>UNIT: ${val.toFixed(2)}</span>
+            </div>
+            <hr style="border:1px dashed #000; margin:5px 0;">
+            <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">ITENS BAIXADOS:</div>
+            ${itemsHtml}
+            <div class="receipt-total">TOTAL: R$ ${total.toFixed(2)}</div>
+            <div style="text-align:center; font-size:12px; margin-top:20px;">${new Date().toLocaleString()}</div>
+        `;
+        
+        document.getElementById('receipt-area').innerHTML = cupom;
+        window.print();
+    }
+};
+
+/* --- IMPORTADOR NFE (XML) COM CONVERSÃO --- */
 const Importer = {
     staged: [],
     parse: (input) => {
-        const file = input.files[0];
-        if(!file) return;
-        
+        if(!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(e.target.result, "text/xml");
-            
-            const dhEmi = xml.getElementsByTagName('dhEmi')[0]?.textContent?.split('T')[0] || new Date().toISOString().split('T')[0];
+            const xml = new DOMParser().parseFromString(e.target.result, "text/xml");
             const dets = xml.getElementsByTagName('det');
-            
             Importer.staged = [];
-            
+
             for(let i=0; i<dets.length; i++) {
                 const prod = dets[i].getElementsByTagName('prod')[0];
-                const cEAN = prod.getElementsByTagName('cEAN')[0]?.textContent || '';
-                const xProd = prod.getElementsByTagName('xProd')[0]?.textContent || 'SEM NOME';
-                const qCom = parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent || 0);
-                const vUnCom = parseFloat(prod.getElementsByTagName('vUnCom')[0]?.textContent || 0);
-                const cProd = prod.getElementsByTagName('cProd')[0]?.textContent || '';
-                
-                // Tenta achar produto existente
-                const match = DB.findSmart(cEAN, xProd);
+                const uCom = prod.getElementsByTagName('uCom')[0].textContent;
+                const isBox = uCom.toUpperCase().includes('CX') || uCom.toUpperCase().includes('CAIXA') || uCom.toUpperCase().includes('DZ');
                 
                 Importer.staged.push({
-                    xmlName: xProd.toUpperCase(),
-                    xmlEan: cEAN,
-                    xmlCode: cProd,
-                    qty: qCom,
-                    custo: vUnCom,
-                    date: dhEmi,
-                    match: match
+                    nome: prod.getElementsByTagName('xProd')[0].textContent,
+                    ean: prod.getElementsByTagName('cEAN')[0]?.textContent || '',
+                    ncm: prod.getElementsByTagName('NCM')[0]?.textContent || '',
+                    cest: prod.getElementsByTagName('CEST')[0]?.textContent || '',
+                    cfop: prod.getElementsByTagName('CFOP')[0]?.textContent || '5102',
+                    unXml: uCom,
+                    qty: parseFloat(prod.getElementsByTagName('qCom')[0].textContent),
+                    cost: parseFloat(prod.getElementsByTagName('vUnCom')[0].textContent),
+                    isBox: isBox,
+                    factor: isBox ? '' : 1 // Se for caixa, fator vazio para obrigar user
                 });
             }
-            Importer.renderReview();
-            document.getElementById('import-modal').showModal();
+            Importer.renderRows();
+            document.getElementById('modal-import').showModal();
         };
-        reader.readAsText(file);
+        reader.readAsText(input.files[0]);
         input.value = '';
     },
-    renderReview: () => {
-        document.getElementById('import-list').innerHTML = Importer.staged.map(item => `
+    renderRows: () => {
+        document.getElementById('import-rows').innerHTML = Importer.staged.map((r, i) => `
             <tr>
-                <td>${item.xmlCode}</td>
-                <td>${item.xmlName}<br><small>${item.xmlEan}</small></td>
-                <td>${item.qty}</td>
-                <td>R$ ${item.custo}</td>
+                <td>${r.nome}</td>
+                <td><b style="color:${r.isBox?'red':'black'}">${r.unXml}</b></td>
+                <td>${r.qty}</td>
                 <td>
-                    ${item.match 
-                        ? `<span class="tag tag-upd">ATUALIZAR (${item.match.codigo})</span>` 
-                        : `<span class="tag tag-new">CADASTRAR NOVO</span>`}
+                    <input type="number" style="width:60px; border-color:${r.factor===''?'red':'#ddd'}" 
+                    value="${r.factor}" onchange="Importer.staged[${i}].factor=this.value; Importer.renderRows()">
                 </td>
+                <td><b>${r.factor ? (r.qty * r.factor) : '-'}</b></td>
+                <td>R$ ${r.factor ? (r.cost / r.factor).toFixed(2) : '-'}</td>
             </tr>
         `).join('');
     },
     commit: () => {
-        Importer.staged.forEach(item => {
-            if(item.match) {
-                // ATUALIZAR
-                const p = item.match;
-                p.estoque += item.qty;
-                p.custo = item.custo;
-                
-                // Lógica de Batches (Entradas)
-                if(!p.batches) p.batches = [];
-                p.batches.unshift({ date: item.date, qtd: item.qty, valid: '' });
-                p.batches = p.batches.slice(0, 3); // Manter ultimos 3
-                
-                // Lógica de Variação de Nome
-                if(p.nome !== item.xmlName) {
+        // Validação: Todos os fatores preenchidos?
+        if(Importer.staged.some(x => x.factor === '' || x.factor <= 0)) {
+            alert('Por favor, preencha o Fator de Conversão para os itens em vermelho (CX).');
+            return;
+        }
+
+        Importer.staged.forEach(r => {
+            const finalQty = r.qty * parseFloat(r.factor);
+            const finalCost = r.cost / parseFloat(r.factor);
+            
+            // Auto CFOP Logic: Se entrada for 5102/5405, mantem ou ajusta. Aqui simplificamos.
+            // Se XML veio 5102 (Revenda), mantemos.
+            
+            // Busca Match
+            let p = DB.findSmart(r.ean, r.nome);
+            if(p) {
+                // Update
+                p.estoque += finalQty;
+                p.custo = finalCost;
+                p.ncm = r.ncm;
+                p.cest = r.cest;
+                if(r.nome !== p.nome && !(p.varNome||[]).includes(r.nome)) {
                     if(!p.varNome) p.varNome = [];
-                    if(!p.varNome.includes(item.xmlName)) p.varNome.push(item.xmlName);
+                    p.varNome.push(r.nome);
                 }
             } else {
-                // NOVO
-                const newCode = DB.nextCode();
-                const newEan = item.xmlEan && item.xmlEan !== 'SEM GTIN' ? item.xmlEan : ("789"+Date.now().toString().slice(-9));
-                
+                // New
                 DB.data.produtos.push({
                     id: Date.now().toString(36) + Math.random(),
-                    codigo: newCode,
-                    ean: newEan,
-                    refForn: item.xmlCode,
-                    nome: item.xmlName,
-                    custo: item.custo,
-                    valor: item.custo * 1.5, // Sugestão 50%
-                    estoque: item.qty,
-                    min: 5,
-                    unidade: 'UN',
-                    batches: [{ date: item.date, qtd: item.qty, valid: '' }],
+                    codigo: DB.nextCode(),
+                    ean: r.ean !== 'SEM GTIN' ? r.ean : '',
+                    nome: r.nome.toUpperCase(),
                     varNome: [],
-                    varEan: []
+                    ncm: r.ncm, cest: r.cest, cfop: '5102', csosn: '', origem: '0',
+                    custo: finalCost,
+                    valor: finalCost * 1.6, // Margem padrao
+                    estoque: finalQty,
+                    unidade: r.isBox ? 'UN' : r.unXml, // Se era caixa, virou UN
+                    isOffer: false, isCombo: false
                 });
             }
         });
         DB.save();
         App.render();
-        document.getElementById('import-modal').close();
-        alert('Importação processada!');
+        document.getElementById('modal-import').close();
+        alert('Importação e Conversão concluídas!');
     }
 };
 
-const Combo = {
-    items: [],
-    toggle: (v) => { 
-        document.getElementById('combo-area').style.display = v ? 'block' : 'none'; 
-        if(v) Combo.render();
-    },
-    processPaste: () => {
-        const lines = document.getElementById('combo-paste').value.split('\n');
-        // Regex para "1x - Nome" ou "10 - Nome"
-        const rgx = /^(\d+)[\sxX-]+\s*(.+)$/;
-        lines.forEach(l => {
-            const m = l.trim().match(rgx);
-            if(m) {
-                const qtd = parseInt(m[1]);
-                const nameRaw = m[2].trim().toUpperCase();
-                // Tenta achar produto no sistema para pegar ID
-                const dbP = DB.data.produtos.find(x => x.nome === nameRaw || (x.varNome||[]).includes(nameRaw));
-                Combo.items.push({ id: dbP?dbP.id:null, nome: dbP?dbP.nome:nameRaw, qtd });
-            }
-        });
-        Combo.render();
-        document.getElementById('combo-paste').value = '';
-    },
-    render: () => {
-        document.getElementById('combo-list-render').innerHTML = Combo.items.map((i, idx) => `
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
-                <b>${i.qtd}x</b> <span>${i.nome} ${i.id?'✅':'⚠️'}</span>
-                <span style="color:red; cursor:pointer;" onclick="Combo.items.splice(${idx},1); Combo.render()">✕</span>
-            </div>
-        `).join('');
-    }
-};
-
+// Start
 document.addEventListener('DOMContentLoaded', App.init);
 </script>
 </body>
