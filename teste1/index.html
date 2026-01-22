@@ -886,10 +886,9 @@ const App = {
         DB.save(); App.render(); document.getElementById('modal-prod').close();
     },
     toggleOffer: (v) => document.getElementById('offer-area').style.display = v ? 'block' : 'none',
-    exportBackup: () => {
-        // 1. Mapear os produtos para o formato EXATO do sistema externo
+  exportBackup: () => {
+        // --- EXPORTAÇÃO (FORMATO EXTERNO) ---
         const exportList = DB.data.produtos.map(p => {
-            // AJUSTE: Converte a categoria completa para MAIÚSCULAS antes de dividir
             const fullCategoryUpper = (p.categoria || '').toUpperCase();
             const parts = fullCategoryUpper.split(' > ');
             
@@ -898,23 +897,17 @@ const App = {
                 codigo: p.codigo,
                 nome: p.nome,
                 ean: p.ean,
-                
-                // AJUSTE: Categoria completa em maiúsculas
-                categoria: fullCategoryUpper, 
-                
+                categoria: fullCategoryUpper, // CAIXA ALTA
                 fornecedor: p.fornecedor || "",
                 caracteristicas: p.caracteristicas || "",
                 custo: p.custo,
                 valor: p.valor,
-                
-                // Converte histórico para 'batches'
                 batches: p.entryHistory ? p.entryHistory.map(e => ({ date: e.date || "", qty: e.qty || 0 })) : [],
-                
                 estoque: p.estoque,
                 estoqueFiscal: p.estoqueFiscal || 0,
                 peso: p.peso || 0,
                 
-                // --- AJUSTES DE NOMES DE VARIÁVEIS ---
+                // Mapeamento para sistema externo
                 limit: p.limitQty || 0,
                 Limit: p.limitQty || 0,
                 imagem: p.imagem || "",
@@ -923,40 +916,31 @@ const App = {
                 isOffer: p.isOffer,
                 offerPrice: p.offerPrice || 0,
                 
-                // Variáveis importantes corrigidas
-                variacoesNome: p.varNome || [],
-                variacoesEan: p.varEan || [],
+                variacoesNome: p.varNome || [], // Exporta como variacoesNome
+                variacoesEan: p.varEan || [],   // Exporta como variacoesEan
                 
                 ncm: p.ncm || "",
                 cest: p.cest || "",
                 cfop: p.cfop || "",
                 csosn: p.csosn || "",
                 obs: p.obs || "",
-                
-                // AJUSTE: Garante que se existir subcategoria avulsa, também vai em maiúsculas
-                subcategoria: (p.subcategoria || "").toUpperCase(), 
-                
+                subcategoria: (p.subcategoria || "").toUpperCase(),
                 nota: p.nota || "",
                 refId: p.refId || "",
                 fator: p.fator || "",
                 unidade: p.unidade,
                 isCombo: p.isCombo,
                 
-                // Campos calculados e textos (Sim/Não)
                 Oferta: p.isOffer ? "Sim" : "Não",
                 Valor_Oferta: p.offerPrice || 0,
-                
-                // AJUSTE: Campos divididos em MAIÚSCULAS
                 Categoria: parts[0] || '',
                 Subcategoria: parts[1] ? parts[1].trim() : '', 
-                
                 Mais_Vendido: p.isBestSeller ? "Sim" : "Não",
                 Tem_Ligacao: p.linkedProductCode ? "Sim" : "Não",
                 Codigo_Produto_Ligado: p.linkedProductCode || ""
             };
         });
 
-        // 2. Criar e baixar o arquivo JSON
         const blob = new Blob([JSON.stringify(exportList, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -968,6 +952,7 @@ const App = {
     },
 
     restoreBackup: (input) => {
+        // --- RESTAURAÇÃO (CONVERTE DE VOLTA PARA O SITE) ---
         const file = input.files[0];
         if(!file) return;
         const reader = new FileReader();
@@ -975,18 +960,36 @@ const App = {
             try {
                 const data = JSON.parse(e.target.result);
                 
-                let produtosParaRestaurar = null;
+                let produtosEntrada = [];
 
+                // 1. Deteta se é formato Array (novo) ou Objeto (antigo)
                 if (Array.isArray(data)) {
-                    produtosParaRestaurar = data; // Formato novo (Array direto)
+                    produtosEntrada = data;
                 } else if (data && Array.isArray(data.produtos)) {
-                    produtosParaRestaurar = data.produtos; // Formato antigo (Objeto)
+                    produtosEntrada = data.produtos;
                 }
 
-                if(produtosParaRestaurar) { 
-                    DB.data.produtos = produtosParaRestaurar; 
+                if(produtosEntrada) { 
+                    // 2. CONVERSÃO REVERSA: Garante que os campos voltem a ter os nomes que o site usa
+                    const produtosCorrigidos = produtosEntrada.map(p => ({
+                        ...p,
+                        // Se tiver 'variacoesNome' (externo), converte de volta para 'varNome' (site)
+                        varNome: p.variacoesNome || p.varNome || [],
+                        varEan: p.variacoesEan || p.varEan || [],
+                        
+                        // Se tiver 'items' (externo), converte para 'comboItems' (site)
+                        comboItems: p.items || p.comboItems || [],
+                        
+                        // Se tiver 'Limit' ou 'limit' (externo), converte para 'limitQty' (site)
+                        limitQty: p.Limit || p.limit || p.limitQty || 0,
+                        
+                        // Garante que o histórico existe
+                        entryHistory: p.batches ? p.batches.map(b => ({ date: b.date, qty: b.qty })) : (p.entryHistory || [])
+                    }));
+
+                    DB.data.produtos = produtosCorrigidos; 
                     DB.save(); 
-                    alert("BACKUP RESTAURADO COM SUCESSO!"); 
+                    alert("BACKUP RESTAURADO COM SUCESSO! A base de dados foi atualizada."); 
                     location.reload(); 
                 } else { 
                     alert("ARQUIVO INVÁLIDO OU FORMATO DESCONHECIDO!"); 
