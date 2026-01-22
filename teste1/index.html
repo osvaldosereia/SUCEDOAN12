@@ -121,12 +121,12 @@
         .inner-table td { padding: 5px; border-bottom: 1px solid #cbd5e1; color: #444; vertical-align: middle; }
         .inner-table input { height: 30px; font-size: 0.8rem; border: 1px solid #ccc; }
 
-        /* --- 5. PRINT (100mm LOGISTICS) --- */
+        /* --- 5. PRINT (90mm LOGISTICS) --- */
         /* HIDDEN BY DEFAULT ON SCREEN */
         #receipt-area { display: none; }
 
        @media print {
-            @page { size: 90mm auto; margin: 0; }
+            @page { size: 90mm auto; margin: 5mm; }
             
             /* 1. TÉCNICA "NUCLEAR": Remove TUDO do layout (não ocupa espaço) */
             body > :not(#receipt-area) {
@@ -148,7 +148,7 @@
                 position: absolute; 
                 top: 0; 
                 left: 0;
-                width: 88mm; /* Ajuste leve para não cortar margem */
+                width: 82mm; /* Ajuste leve para não cortar margem */
                 padding: 5px 0;
                 
                 color: black; 
@@ -869,7 +869,7 @@ const App = {
 
         document.getElementById('modal-bulk-sell').close();
         
-        // --- GERAR HTML PARA IMPRESSÃO (AJUSTADO PARA NOVOS CAMPOS E FORMATO 100mm) ---
+        // --- GERAR HTML PARA IMPRESSÃO (AJUSTADO PARA NOVOS CAMPOS E FORMATO 90mm) ---
         let html = `
             <div class="client-code">${client}</div>
             <div class="receipt-header">CUPOM SEPARAÇÃO</div>
