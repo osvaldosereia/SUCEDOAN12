@@ -1841,7 +1841,7 @@ this.data = raw.map(p => {
             openInfo(id) {
                 const p = this.data.find(x => x.id === id);
                 if(!p) return;
-                document.getElementById('info-title').innerText = p.nome;
+                document.getElementById('info-title').innerHTML = p.nome;
                 
                 let desc = p.caracteristicas;
                 if (desc) {
