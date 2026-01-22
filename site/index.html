@@ -37,7 +37,7 @@
             --primary: #d31a28; 
             --primary-dark: #b91c1c; 
             --secondary: #3e3e3e; 
-            --text-main: #222222; /* Texto base mais escuro para contraste */
+            --text-main: #222222; 
             --text-light: #555555; 
             --bg-body: #ffffff;
             --border-color: #f2f2f2;
@@ -83,7 +83,7 @@
         .logo-container { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--secondary); }
         .logo-text-col { display: flex; flex-direction: column; justify-content: center; }
         .logo-name { font-weight: 700; font-size: 1.1rem; line-height: 1.1; }
-        .logo-slogan { font-size: 0.65rem; color: #555; font-weight: 500; letter-spacing: 0.5px; } /* Ajuste contraste */
+        .logo-slogan { font-size: 0.65rem; color: #555; font-weight: 500; letter-spacing: 0.5px; } 
         .logo-brand-img { width: 53px; height: 53px; border-radius: 50%; object-fit: cover; }
 
         .location-pill { 
@@ -113,7 +113,7 @@
             padding: 8px 12px 8px 36px; font-size: 0.9rem; color: #333; outline: none;
             height: 36px; 
         }
-        .ah-search-input::placeholder { color: #666; } /* Ajuste contraste placeholder */
+        .ah-search-input::placeholder { color: #666; } 
         .ah-search-icon {
             position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
             color: #ea1d2c; font-size: 1rem;
@@ -142,7 +142,7 @@
         }
         .btn-hero-custom:active { transform: scale(0.96); }
         .min-order-badge { 
-            font-size: 0.8rem; color: #555; font-weight: 600; /* Ajuste contraste */
+            font-size: 0.8rem; color: #555; font-weight: 600; 
             background: #f3f4f6; padding: 4px 12px; border-radius: 20px; border: 1px solid #e5e7eb;
         }
 
@@ -165,13 +165,20 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             transition: transform 0.2s, box-shadow 0.2s;
             padding: 20px;
-            color: #333; /* Garantir contraste do texto geral do card */
+            color: #333; 
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        .hbc-header { margin-bottom: 15px; text-align: center; } 
+        /* Ajuste Home Card */
+        .hbc-header { margin-bottom: 10px; text-align: center; } 
         .hbc-title { font-size: 1.4rem; font-weight: 800; color: #1a1a1a; text-transform: capitalize; line-height: 1.1; letter-spacing: -0.5px; margin: 0; }
         
+        /* Novo Subtítulo no Card Home */
+        .hbc-subtitle {
+            text-align: center; font-size: 0.75rem; color: #888; 
+            margin-bottom: 12px; font-weight: 400; letter-spacing: 0.3px;
+        }
+
         /* Carousel Wrapper Relative for Arrows */
         .hbc-carousel-box { position: relative; margin-bottom: 15px; }
 
@@ -195,14 +202,21 @@
         }
         .cps-img { width: 95%; height: 95%; object-fit: contain; }
         
-        .cps-qty-text { color: var(--primary); font-size: 0.75rem; font-weight: 800; margin-bottom: 2px; }
+        /* Ajuste: Quantidade mais leve e estreita */
+        .cps-qty-text { 
+            color: var(--primary); font-size: 0.75rem; font-weight: 600; /* Leve */
+            margin-bottom: 2px; 
+            margin-left: 2px; margin-right: 2px; /* Estreito */
+        }
         .cps-sep { width: 100%; height: 1px; background: #eee; margin: 2px 0 6px 0; }
         
+        /* Ajuste: Nome do produto mais leve e estreito */
         .cps-name {
-            font-size: 0.75rem; color: #222; /* Ajuste contraste */
+            font-size: 0.75rem; color: #222; 
             line-height: 1.25;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-            font-weight: 600;
+            font-weight: 400; /* Leve */
+            margin-left: 2px; margin-right: 2px; /* Estreito */
         }
 
         /* CARD FOOTER */
@@ -218,7 +232,6 @@
         .hbc-price-val {
             font-size: 1.3rem; font-weight: 800; color: #15803d; line-height: 1;
         }
-        /* CORREÇÃO CONTRASTE */
         .hbc-price-label { font-size: 0.75rem; color: #555; font-weight: 700; display: block; margin-bottom: 2px; }
 
         /* Botão Foto */
@@ -228,7 +241,7 @@
             padding: 6px 14px;
             border-radius: 20px;
             font-size: 0.85rem;
-            color: #444; /* Ajuste contraste */
+            color: #444; 
             font-weight: 600;
             display: flex;
             align-items: center;
@@ -274,9 +287,15 @@
 
         /* --- 6. PRODUCTS (NEW CARD DESIGN) --- */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
+        
+        /* Ajuste: Subtitulos Leves e sem Capslock forçado */
         .subcat-title { 
-            font-size: 1.1rem; font-weight: 800; color: #1a1a1a; 
-            margin: 0 0 12px 16px; letter-spacing: -0.5px;
+            font-size: 1.1rem; 
+            font-weight: 600; /* Leve */
+            color: #1a1a1a; 
+            margin: 0 0 12px 16px; 
+            letter-spacing: -0.3px;
+            /* Cores aplicadas via JS */
         }
         
         .carousel-wrapper { position: relative; }
@@ -362,18 +381,25 @@
         }
         .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
+        /* Ajuste: Preço mais estreito e leve */
         .cp-price { 
-            font-size: 0.95rem; font-weight: 700; color: #1a1a1a; 
+            font-size: 0.95rem; font-weight: 600; /* Leve (era 700) */
+            color: #1a1a1a; 
             margin-bottom: 2px; text-align: left; 
+            margin-left: 2px; margin-right: 2px; /* Estreito */
         }
         .cp-price small { font-size: 0.7rem; text-decoration: line-through; color: #777; font-weight: 400; margin-right: 4px; }
         
+        /* Ajuste: Titulo mais estreito, leve e menor */
         .cp-title { 
-            font-size: 0.85rem; font-weight: 400; color: #333; 
+            font-size: 0.75rem; /* Menor (era 0.85) */
+            font-weight: 400; 
+            color: #333; 
             margin-bottom: 4px; line-height: 1.3; 
             min-height: 3.9em; 
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
             text-align: left;
+            margin-left: 2px; margin-right: 2px; /* Estreito */
         }
         
         .cp-validity { 
@@ -426,13 +452,12 @@
             cursor: pointer; display: flex; align-items: center; gap: 6px;
         }
 
-        /* --- 9. MODALS & OVERLAYS (CORREÇÃO DESKTOP) --- */
+        /* --- 9. MODALS & OVERLAYS --- */
         .sheet-overlay { 
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
             z-index: 11000; opacity: 0; pointer-events: none; 
             transition: opacity 0.3s; 
             display: flex; flex-direction: column; justify-content: flex-end; 
-            /* Para desktop: centralizar na tela */
             align-items: center;
         }
         .sheet-overlay.open { opacity: 1; pointer-events: auto; }
@@ -449,12 +474,11 @@
         }
         .sheet-overlay.open .sheet-box { transform: translateY(0); }
         
-        /* Ajuste específico para Desktop */
         @media(min-width: 768px) {
             .sheet-box {
-                max-width: 500px; /* Largura máxima ideal para leitura */
-                margin-bottom: 20px; /* Pequeno espaço inferior para efeito flutuante */
-                border-radius: 20px; /* Arredondar todas as bordas */
+                max-width: 500px; 
+                margin-bottom: 20px; 
+                border-radius: 20px; 
                 box-shadow: 0 10px 40px rgba(0,0,0,0.25);
             }
         }
@@ -509,10 +533,9 @@
         .side-drawer.open { transform: translateX(0); }
         
         .sd-title { font-size: 1.1rem; font-weight: 800; color: var(--secondary); margin-bottom: 20px; text-align: center; }
-        /* CORREÇÃO CONTRASTE */
         .sd-btn-close {
             margin-top: 20px; width: 70%; margin-left: auto; margin-right: auto; padding: 12px;
-            background: #f1f5f9; color: #334155; font-weight: 600; /* Texto mais escuro */
+            background: #f1f5f9; color: #334155; font-weight: 600; 
             border-radius: 8px; border: 1px solid #cbd5e1; display: block;
         }
 
@@ -987,11 +1010,12 @@
                             </div>`;
                         }
                         
-                        // NOVO LAYOUT DO CARD HOME
+                        // NOVO LAYOUT DO CARD HOME (COM "PRODUTOS DA CESTA")
                         return `
                         <div class="home-basket-card">
                             <div class="hbc-header">
                                 <h2 class="hbc-title">${p.nome}</h2>
+                                <div class="hbc-subtitle">Produtos da Cesta</div>
                             </div>
                             
                             ${carouselHtml}
@@ -1146,6 +1170,13 @@
                 
                 let isFirstSection = true;
 
+                // Paleta de cores para subtítulos
+                const pantoneColors = [
+                    "#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", 
+                    "#c2185b", "#689f38", "#afb42b", "#e65100", "#424242"
+                ];
+                let colorIndex = 0;
+
                 const renderSection = (title, items, isSpecial = false) => {
                      if (items.length === 0) return '';
                      
@@ -1169,9 +1200,14 @@
                         
                         if (isFirstSection) isFirstSection = false;
 
+                        // Título tratado com Smart Case e cor variada
+                        const niceTitle = isSpecial ? title : this.toSmartTitleCase(subName);
+                        const currentColor = pantoneColors[colorIndex % pantoneColors.length];
+                        colorIndex++;
+
                         sectionHtml += `
                         <div class="subcat-section">
-                            <div class="subcat-title">${isSpecial ? title : subName}</div>
+                            <div class="subcat-title" style="color:${currentColor};">${niceTitle}</div>
                             <div class="carousel-wrapper">
                                 ${handHintHtml}
                                 <div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})">
