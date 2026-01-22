@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V32 | Titanium Image Master</title>
+    <title>SISTEMA V33 | Titanium Universal Loader</title>
     
     <style>
         /* --- 1. CORE & HIGH CONTRAST --- */
@@ -157,7 +157,7 @@
 <body>
 
 <header>
-    <h1>📦 TITANIUM <span style="color:#fbbf24;">V32</span></h1>
+    <h1>📦 TITANIUM <span style="color:#fbbf24;">V33</span></h1>
     <div style="display:flex; gap:10px;">
         <button onclick="QuickCombo.open()" class="btn btn-primary" style="background:#4f46e5;">⚡ COMBO RÁPIDO</button>
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 CATEGORIAS</button>
@@ -422,11 +422,11 @@
 
 <script>
 /**
- * SISTEMA V32 - TITANIUM IMAGE MASTER
+ * SISTEMA V33 - TITANIUM UNIVERSAL LOADER
  */
 
 const DB = {
-    key: 'sys_v32_titan',
+    key: 'sys_v33_titan',
     data: { produtos: [], categorias: [] },
     init: async () => {
         const raw = localStorage.getItem(DB.key);
@@ -444,7 +444,6 @@ const DB = {
                         isBestSeller: p.Mais_Vendido === "Sim" || p.isBestSeller === true,
                         linkedProductCode: p.Codigo_Produto_Ligado || p.linkedProductCode || "",
                         comboItems: p.items || [],
-                        // Auto extract slug from image url if exists, or name
                         imageSlug: p.imagem ? p.imagem.split('/').pop().replace('-cesta-basica-cuiaba-varzea-grande.webp','') : App.slugify(p.nome)
                     }));
                     DB.data = { produtos: loadedProds, categorias: [] };
@@ -470,14 +469,12 @@ const DB = {
         App.render();
         CatManager.refreshDatalist();
         
-        // Auto-Slug Listener
         document.getElementById('p-nome').addEventListener('input', function() {
-            if(!document.getElementById('p-id').value) { // Only auto-fill for new/clean
+            if(!document.getElementById('p-id').value) {
                 document.getElementById('p-imageSlug').value = App.slugify(this.value);
             }
         });
         
-        // Live Preview Listener
         document.getElementById('p-imageSlug').addEventListener('input', function() {
             App.updateThumbPreview();
         });
@@ -504,12 +501,12 @@ const App = {
     
     slugify: (text) => {
         return text.toString().toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove accents
-            .replace(/\s+/g, '-')           // Replace spaces with -
-            .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-            .replace(/\-\-+/g, '-')         // Replace multiple - with single -
-            .replace(/^-+/, '')             // Trim - from start of text
-            .replace(/-+$/, '');            // Trim - from end of text
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
     },
 
     updateThumbPreview: () => {
@@ -675,7 +672,7 @@ const App = {
             document.getElementById('p-linkedProd').value = p.linkedProductCode || "";
 
             App.calcMargin('price'); 
-            App.updateThumbPreview(); // Update thumbnail
+            App.updateThumbPreview();
 
             document.getElementById('p-isOffer').checked = p.isOffer;
             if(p.isOffer) { App.toggleOffer(true); document.getElementById('p-offerPrice').value = p.offerPrice.toFixed(2); }
@@ -845,7 +842,6 @@ const App = {
                     const childCode = childProd ? childProd.codigo : '???';
                     const childTotal = child.qty * i.qty;
                     const childName = child.nome.length > 25 ? child.nome.substring(0,25)+'...' : child.nome;
-                    
                     html += `<div class="log-sub">
                         <span style="font-weight:900;">${childTotal}x</span>
                         <span style="font-size:0.85rem; background:#eee; padding:0 4px; border-radius:3px; margin:0 5px;">${childCode}</span>
@@ -877,7 +873,6 @@ const App = {
         const id = document.getElementById('p-id').value;
         const currentProd = id ? DB.data.produtos.find(x=>x.id===id) : {};
         
-        // Build slug and image path
         const slug = document.getElementById('p-imageSlug').value;
         const finalImage = `../site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp`;
 
@@ -908,8 +903,6 @@ const App = {
             salesHistory: currentProd.salesHistory || [],
             isBestSeller: document.getElementById('p-isBestSeller').checked,
             linkedProductCode: document.getElementById('p-linkedProd').value,
-            
-            // New Image Fields
             imageSlug: slug,
             imagem: finalImage
         };
@@ -947,8 +940,44 @@ const App = {
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                if(data && Array.isArray(data.produtos)) { DB.data = data; DB.save(); alert("BACKUP RESTAURADO!"); location.reload(); } 
-                else { alert("ARQUIVO INVÁLIDO!"); }
+                // UNIVERSAL LOADER LOGIC
+                if (Array.isArray(data)) {
+                    // Raw Array (Legacy/External)
+                    const loadedProds = data.map(p => ({
+                        ...p,
+                        isOffer: p.Oferta === "Sim" || p.isOffer === true,
+                        limitQty: p.Limit || p.limitQty || 0,
+                        isBestSeller: p.Mais_Vendido === "Sim" || p.isBestSeller === true,
+                        linkedProductCode: p.Codigo_Produto_Ligado || p.linkedProductCode || "",
+                        comboItems: p.items || [],
+                        imageSlug: p.imagem ? p.imagem.split('/').pop().replace('-cesta-basica-cuiaba-varzea-grande.webp','') : App.slugify(p.nome)
+                    }));
+                    DB.data = { produtos: loadedProds, categorias: [] };
+                    // Rebuild categories
+                    DB.data.produtos.forEach(p => {
+                        if(p.categoria) {
+                            const parts = p.categoria.split(' > ');
+                            const root = parts[0].trim().toUpperCase();
+                            let catObj = DB.data.categorias.find(c => c.nome === root);
+                            if(!catObj) { catObj = { id: Date.now() + Math.random(), nome: root, subs: [] }; DB.data.categorias.push(catObj); }
+                            if(parts[1]) {
+                                const sub = parts[1].trim().toUpperCase();
+                                if(!catObj.subs.includes(sub)) catObj.subs.push(sub);
+                            }
+                        }
+                    });
+                    DB.save();
+                    alert("BACKUP (LISTA) RESTAURADO!");
+                    location.reload();
+                } else if (data && Array.isArray(data.produtos)) {
+                    // Full System Backup
+                    DB.data = data;
+                    DB.save();
+                    alert("BACKUP (SISTEMA) RESTAURADO!");
+                    location.reload();
+                } else {
+                    alert("ARQUIVO INVÁLIDO!");
+                }
             } catch(err) { alert("ERRO: " + err.message); }
         };
         reader.readAsText(file); input.value = '';
