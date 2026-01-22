@@ -133,7 +133,6 @@
         .hero h1 span { color: var(--primary); }
         .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
         
-        /* NOVO BOTÃO MONTE SUA CESTA - REMOVIDO TEMPORARIAMENTE MAS CSS MANTIDO CASO PRECISE */
         .hero-actions { margin-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 8px; display: none; } 
         .btn-hero-custom { 
             background: var(--primary); color: white; padding: 14px 28px; 
@@ -169,7 +168,8 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        .hbc-header { margin-bottom: 15px; text-align: left; }
+        /* Ajuste: Centralizar Título */
+        .hbc-header { margin-bottom: 15px; text-align: center; } 
         .hbc-title { font-size: 1.4rem; font-weight: 800; color: #2e2e2e; text-transform: capitalize; line-height: 1.1; letter-spacing: -0.5px; margin: 0; }
         
         /* Carousel Wrapper Relative for Arrows */
@@ -177,17 +177,15 @@
 
         .hbc-carousel-wrapper { 
             overflow-x: auto; display: flex; gap: 12px; padding-bottom: 5px; scroll-behavior: smooth; 
-            /* ROLAGEM LIVRE AGORA */
         }
         .hbc-carousel-wrapper::-webkit-scrollbar { height: 4px; }
         .hbc-carousel-wrapper::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
 
         /* STATIC PRODUCT CARD (HOME ONLY) */
         .card-prod-static {
-            min-width: 135px; max-width: 135px; /* AUMENTADO 20% */
+            min-width: 135px; max-width: 135px; 
             display: flex; flex-direction: column;
             flex-shrink: 0;
-            /* ROLAGEM LIVRE AGORA - REMOVIDO SNAP ALIGN */
         }
         .cps-img-box {
             width: 100%; aspect-ratio: 1;
@@ -197,7 +195,6 @@
         }
         .cps-img { width: 95%; height: 95%; object-fit: contain; }
         
-        /* New Text Styling */
         .cps-qty-text { color: var(--primary); font-size: 0.75rem; font-weight: 800; margin-bottom: 2px; }
         .cps-sep { width: 100%; height: 1px; background: #eee; margin: 2px 0 6px 0; }
         
@@ -212,11 +209,32 @@
             margin-top: auto; border-top: 1px solid #f0f0f0;
             padding-top: 15px; display: flex; flex-direction: column; gap: 10px;
         }
+        /* Ajuste: Flex Row para Preço e Botão Foto */
         .hbc-price-row {
-            font-size: 1.3rem; font-weight: 800; color: #15803d; 
-            margin-bottom: 5px; display: block;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 5px;
         }
-        .hbc-price-label { font-size: 0.75rem; color: #888; font-weight: 600; display: block; margin-bottom: -2px; }
+        .hbc-price-val {
+            font-size: 1.3rem; font-weight: 800; color: #15803d; line-height: 1;
+        }
+        .hbc-price-label { font-size: 0.75rem; color: #888; font-weight: 600; display: block; margin-bottom: 2px; }
+
+        /* Botão Foto */
+        .btn-photo-view {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #555;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-photo-view:hover { background: #f9f9f9; border-color: #ccc; }
 
         .btn-home-cust { 
             width: 100%; padding: 12px; 
@@ -302,12 +320,11 @@
         
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #eef9f2; color: #2d6c4a; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
-        /* Container da imagem com fundo cinza claro */
         .cp-img-box { 
             width: 100%; aspect-ratio: 1; 
             display: flex; align-items: center; justify-content: center; 
             margin-bottom: 8px; cursor: pointer; position: relative;
-            background: #f3f4f6; /* Fundo cinza */
+            background: #f3f4f6; 
             border-radius: 18px; 
             overflow: hidden; 
         }
@@ -316,10 +333,9 @@
             border-radius: 18px; 
         }
         
-        /* BOTÃO MAIOR E CIRCULAR */
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px;
-            width: 38px; height: 38px; /* Aumentado */
+            width: 38px; height: 38px;
             border-radius: 50%;
             background: white; border: 1px solid #e5e5e5;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -333,7 +349,7 @@
 
         .qty-ctrl-float {
             position: absolute; bottom: 8px; right: 8px;
-            height: 38px; /* Acompanha o botão */
+            height: 38px;
             background: white; border: 1px solid #e5e5e5;
             border-radius: 19px; display: flex; align-items: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
@@ -344,7 +360,6 @@
         }
         .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
-        /* FONTES MENORES */
         .cp-price { 
             font-size: 0.95rem; font-weight: 700; color: #1f1f1f; 
             margin-bottom: 2px; text-align: left; 
@@ -537,7 +552,6 @@
         }
         .f-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #cbd5e1; }
         
-        /* Ensure icons in footer display correctly */
         .f-btn icon { display: block; font-size: 1.4rem; margin-bottom: 2px; font-style: normal; }
         
         .copyright { text-align: center; font-size: 0.8rem; color: #475569; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
@@ -548,7 +562,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
-                <img src="https://www.donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
+                <img src="site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo Dona Antônia">
                 <div class="logo-text-col">
                     <span class="logo-name">Dona Antônia</span>
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
@@ -743,7 +757,6 @@
         const CONSTANTS = { 
             PHONE: "5565996813588",
             LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 },
-            // CONFIGURAÇÃO DO CUPOM
             COUPON_CODE: "BEMVINDO",
             COUPON_VAL: 5.00
         };
@@ -754,7 +767,6 @@
 
             async init() {
                 try {
-                    // FIX: Caminho absoluto direto
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
                     
                     if (!res.ok) throw new Error("Erro ao carregar dados.");
@@ -778,7 +790,6 @@
                         let rawVal = p.validade || p.Validade || "";
                         let fmtVal = (rawVal && rawVal !== '0' && rawVal !== '00') ? App.formatDateBr(rawVal) : "";
 
-                        // CORREÇÃO: Converter linkCode para String e remover espaços para evitar erros
                         let linkCode = p.Codigo_Produto_Ligado || p.codigo_produto_ligado || "";
                         if(linkCode) linkCode = String(linkCode).trim();
 
@@ -786,17 +797,16 @@
                         
                         let smartName = this.toSmartTitleCase(p.nome.trim());
 
-                        // FIX: Caminho de imagem absoluto
                         let imgUrl = 'img/placeholder.jpg';
                         if(p.imagem) {
-                             const imgName = p.imagem.split('/').pop(); // Pega só o nome do arquivo
+                             const imgName = p.imagem.split('/').pop();
                              imgUrl = `img/produtos/${imgName}`;
                         }
 
                         return {
                             ...p,
                             id: String(p.id),
-                            codigo: String(p.codigo || ""), // Garante que o código interno esteja disponível
+                            codigo: String(p.codigo || ""),
                             nome: smartName, 
                             valor: parseFloat(p.valor || 0),
                             offerPrice: parseFloat(p.Valor_Oferta || 0),
@@ -810,11 +820,10 @@
                             hasLink: (hasLink === 'Sim'),
                             validade: fmtVal,
                             categoria: catUpper,
-                            isBest: (p.Mais_Vendido === 'Sim') // Add best seller flag
+                            isBest: (p.Mais_Vendido === 'Sim')
                         };
                     });
                     
-                    // CHECK FOR SAVED STATE
                     const saved = localStorage.getItem('da_state');
                     if (saved) {
                         try {
@@ -843,10 +852,9 @@
                                     document.body.classList.add('customizer-mode');
                                     
                                     this.renderAllLists();
-                                    document.body.classList.add('loaded'); // Show UI
+                                    document.body.classList.add('loaded'); 
                                     return; 
                                 } else if (state.basketId === 'custom_create') {
-                                    // RESTORE CUSTOM CREATE MODE
                                     this.cart = state.cart || {};
                                     this.cartOrder = state.cartOrder || [];
                                     this.currentBasket = { id: 'custom_create', nome: 'Minha Cesta Personalizada', valor: 0, items: [], limit: 999 };
@@ -866,7 +874,7 @@
                     }
 
                     this.renderHome();
-                    document.body.classList.add('loaded'); // Show UI
+                    document.body.classList.add('loaded');
                 } catch (e) { 
                     console.error("Erro Fatal:", e);
                     document.body.classList.add('loaded');
@@ -949,6 +957,7 @@
                             </div>`;
                         }
                         
+                        // NOVO LAYOUT DO CARD HOME
                         return `
                         <div class="home-basket-card">
                             <div class="hbc-header">
@@ -959,8 +968,14 @@
                             
                             <div class="hbc-footer">
                                 <div class="hbc-price-row">
-                                    <span class="hbc-price-label">Valor da Cesta</span>
-                                    R$ ${p.valor.toFixed(2).replace('.',',')}
+                                    <div>
+                                        <span class="hbc-price-label">Valor da Cesta</span>
+                                        <span class="hbc-price-val">R$ ${p.valor.toFixed(2).replace('.',',')}</span>
+                                    </div>
+                                    <button class="btn-photo-view" onclick="App.openPhoto('${p.imagem}', '${p.nome}')">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        Foto
+                                    </button>
                                 </div>
                                 <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Trocar e Adicionar produtos</button>
                                 <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar esta cesta padrão</button>
@@ -971,7 +986,6 @@
             },
 
             openEmptyCustomizer() {
-                // Configura uma cesta "virtual" vazia
                 this.currentBasket = { 
                     id: 'custom_create', 
                     nome: 'Minha Cesta Personalizada', 
@@ -982,8 +996,8 @@
                 
                 this.cart = {};
                 this.cartOrder = [];
-                this.originalCart = {}; // Sem itens originais
-                this.currentLimit = 999; // Sem limite de troca
+                this.originalCart = {};
+                this.currentLimit = 999;
                 this.appliedCoupon = false;
 
                 document.getElementById('home-view').classList.add('hidden');
@@ -1025,9 +1039,7 @@
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
-                this.saveState(); // SAVE STATE
-                
-                // PLAY INTRO ANIMATION
+                this.saveState(); 
                 this.playIntro();
             },
             
@@ -1085,7 +1097,6 @@
                 
                 localStorage.setItem('da_state', JSON.stringify({view: 'home'}));
                 
-                // IMPORTANT: Ensure home is rendered correctly when returning
                 if(this.data.length > 0) this.renderHome();
             },
 
@@ -1097,7 +1108,6 @@
 
                 if (query && query.length > 1) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
                 
-                // Define special categories content
                 const offers = products.filter(p => p.isOffer);
                 const bestSellers = products.filter(p => p.isBest);
 
@@ -1106,11 +1116,9 @@
                 
                 let isFirstSection = true;
 
-                // Function to render section
                 const renderSection = (title, items, isSpecial = false) => {
                      if (items.length === 0) return '';
                      
-                     // Group by SubCategory if not special
                      const groups = {};
                      if (isSpecial) {
                          groups[title] = items;
@@ -1125,7 +1133,6 @@
                      for (const [subName, subItems] of Object.entries(groups)) {
                         const rowId = `row-${title}-${subName}`.replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
                         
-                        // Inject Hand Hint HTML in the first carousel only
                         const handHintHtml = isFirstSection 
                             ? `<div class="hand-hint-overlay active"><svg class="hand-icon" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v10.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V10a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V11a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v4.6l-.2.9a5 5 0 0 1-4.8 3.5h-2.1a5 5 0 0 1-5-5V6a1 1 0 0 1 1-1h1zm-3 5a1 1 0 0 1 1 1v5.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V7a1 1 0 0 1 1-1h.5z"/></svg></div>`
                             : '';
@@ -1152,37 +1159,32 @@
                      return sectionHtml;
                 };
 
-                // 1. Render Special Categories
                 html += renderSection("OFERTAS", offers, true);
                 html += renderSection("MAIS VENDIDOS", bestSellers, true);
 
-                // 2. Render Main Categories
                 order.forEach(mainCat => {
                     const itemsInMain = products.filter(p => p.appCategory === mainCat);
-                    html += renderSection(mainCat, itemsInMain); // Pass false for isSpecial to group by subcat
+                    html += renderSection(mainCat, itemsInMain); 
                 });
 
                 container.innerHTML = html || '<p style="text-align:center; padding:40px; color:#999;">Nada encontrado.</p>';
                 this.updateTotal();
                 
-                // Trigger animation logic
                 this.showHandHint();
             },
 
             showHandHint() {
                 if (localStorage.getItem('seenHandHint')) {
-                    // If seen, remove the element immediately to be safe
                     const el = document.querySelector('.hand-hint-overlay');
                     if(el) el.remove();
                     return;
                 }
                 
-                // If not seen, set timeout to remove it and mark as seen
                 setTimeout(() => {
                     const el = document.querySelector('.hand-hint-overlay');
                     if(el) el.remove();
                     localStorage.setItem('seenHandHint', 'true');
-                }, 6000); // Remove after animation ends (approx 3 loops)
+                }, 6000); 
             },
 
             renderIncluded(targetElement, isCheckout = false) {
@@ -1217,20 +1219,16 @@
                 }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
             },
 
-            // UPDATED BUILDCARD
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 
-                // Button logic (Circular +) with STOP PROPAGATION to prevent opening details modal
                 const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1)">+</div>`;
                 
-                // Trash Icon
                 const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
                 const decContent = qty === 1 ? trashIcon : '-';
 
-                // Qty logic with STOP PROPAGATION
                 const qtyHtml = `<div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()">
                                     <div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${decContent}</div>
                                     <div class="qcf-val" id="qty-val-${p.id}">${qty}</div>
@@ -1242,7 +1240,6 @@
                      valHtml = `<div class="cp-validity">Val: ${p.validade}</div>`;
                 }
                 
-                // IMPORTANT: The parent div has onclick="App.openInfo", so buttons inside MUST have stopPropagation
                 return `
                 <div class="card-prod" id="card-${p.id}">
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
@@ -1257,17 +1254,13 @@
                 </div>`;
             },
 
-            // === UPDATE HERE: checkout card is now similar to customization card but without price ===
             buildCheckoutCard(p) {
                 const qty = this.cart[p.id] || 0;
                 
-                // Trash Icon
                 const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
                 const decContent = qty === 1 ? trashIcon : '-';
                 
-                // Reusing classes from main card structure for consistency, adjusted for layout
-                // KEY FIX: Adicionando IDs para que updateCardUI consiga achar os elementos dentro do modal!
                 return `
                 <div class="co-card">
                     <div class="cp-img-box">
@@ -1322,12 +1315,10 @@
                 this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 
-                this.saveState(); // SAVE STATE ON CHANGE
+                this.saveState(); 
             },
 
             updateCardUI(id, qty) {
-                // UPDATE FIX: Usa querySelectorAll para pegar TODAS as instâncias do ID (Lista + Modal)
-                // Isso resolve o problema de ter o mesmo botão no Modal e na Lista
                 const addBtns = document.querySelectorAll(`[id="btn-add-${id}"]`);
                 const qtyCtrls = document.querySelectorAll(`[id="qty-ctrl-${id}"]`);
                 const qtyVals = document.querySelectorAll(`[id="qty-val-${id}"]`);
@@ -1335,24 +1326,20 @@
 
                 const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-                // Atualiza Visibilidade do Botão Adicionar
                 addBtns.forEach(btn => {
                     if (qty > 0) btn.classList.add('hidden');
                     else btn.classList.remove('hidden');
                 });
 
-                // Atualiza Visibilidade dos Controles
                 qtyCtrls.forEach(ctrl => {
                     if (qty > 0) ctrl.classList.remove('hidden');
                     else ctrl.classList.add('hidden');
                 });
 
-                // Atualiza Valor Numérico
                 qtyVals.forEach(val => {
                     val.innerText = qty;
                 });
 
-                // Atualiza Ícone (Lixeira ou Menos)
                 decBtns.forEach(btn => {
                     if (qty === 1) {
                         btn.innerHTML = trashIcon;
@@ -1363,29 +1350,25 @@
             },
 
             checkSuggestion(code) {
-                // CORREÇÃO CRÍTICA: Garantir que o ID buscado seja String e sem espaços
                 if(!code) return;
-                const targetCode = String(code).trim().toUpperCase(); // Normaliza para evitar erros
+                const targetCode = String(code).trim().toUpperCase(); 
                 
-                // Busca se o 'targetCode' bate com o ID OU com o Código curto (ex: P099)
                 const p = this.data.find(x => 
                     x.id === targetCode || 
                     (x.codigo && String(x.codigo).trim().toUpperCase() === targetCode)
                 );
                 
-                // Se existe o produto E ele ainda não está no carrinho
                 if(p && !this.cart[p.id]) {
                     setTimeout(() => {
                         const drawer = document.getElementById('suggestion-drawer');
                         const overlay = document.getElementById('suggestion-overlay');
                         const content = document.getElementById('sd-content');
                         
-                        // Injeta o HTML com um container que limita a largura do card para ficar bonito (igual ao carousel)
                         content.innerHTML = `<div style="width: 180px; margin: 0 auto; pointer-events:auto;">${this.buildCard(p)}</div>`;
                         
                         overlay.classList.add('active');
                         drawer.classList.add('open');
-                    }, 500); // Pausa de 0.5s
+                    }, 500); 
                 }
             },
             
@@ -1430,11 +1413,9 @@
                 const toast = document.getElementById('credit-toast');
                 const subToast = document.getElementById('credit-sub-toast');
 
-                // LÓGICA DE MONTAGEM DO ZERO (MÍNIMO R$ 200)
                 if (this.currentBasket.id === 'custom_create') {
                     const minOrder = 200.00;
                     
-                    // Breakdown Simples para Cesta Personalizada
                     let breakdownHtml = `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Itens Selecionados</span><span>R$ ${sum.toFixed(2).replace('.', ',')}</span></div>`;
                     
                     let displayTotal = sum;
@@ -1447,7 +1428,6 @@
 
                     document.getElementById('co-breakdown').innerHTML = breakdownHtml;
                     
-                    // Bloqueio por Mínimo
                     if (sum < minOrder) {
                         const remaining = minOrder - sum;
                         if (finalBtn) {
@@ -1455,7 +1435,6 @@
                             finalBtn.innerText = `Mínimo de R$ 200,00 (Faltam R$ ${remaining.toFixed(2).replace('.', ',')})`;
                             finalBtn.style.background = "#ccc";
                         }
-                        // Oculta alertas de crédito de troca
                         if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
                         toast.classList.remove('visible');
                         subToast.classList.remove('visible');
@@ -1473,7 +1452,6 @@
                     document.getElementById('cart-count-badge').innerText = count;
 
                 } else {
-                    // LÓGICA PADRÃO (CESTAS PRONTAS COM BASE FEE)
                     if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
                          let startSum = 0;
                          for(let i in this.originalCart) {
@@ -1488,14 +1466,12 @@
                     let displayTotal = 0;
                     let breakdownHtml = '';
 
-                    // 1. Linha Valor Base
                     breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Valor da Cesta</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div>`;
 
                     if (effectiveTotal > basketPrice) {
                         const exceeded = effectiveTotal - basketPrice;
                         const threshold = basketPrice * 0.02; 
 
-                        // 2. Linha Adicionais
                         breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#ea1d2c;"><span>Itens Adicionais</span><span>+ R$ ${exceeded.toFixed(2).replace('.', ',')}</span></div>`;
 
                         if (exceeded < threshold) {
@@ -1577,9 +1553,32 @@
                     desc = "Sem informações adicionais.";
                 }
                 
+                // --- LÓGICA NOVA: CÁLCULO DE PORCENTAGEM DE OFERTA ---
+                if(p.isOffer && p.valor > 0) {
+                    const percent = Math.round(((p.valor - p.offerPrice) / p.valor) * 100);
+                    const offerHtml = `
+                    <div style="background:#fef2f2; border:1px solid #fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:15px; text-align:center;">
+                        <div style="font-weight:800; font-size:1.1rem; margin-bottom:4px;">${percent}% OFF</div>
+                        <div style="display:flex; justify-content:center; gap:8px; align-items:baseline;">
+                            <span style="text-decoration:line-through; color:#7f1d1d; font-size:0.9rem;">R$ ${p.valor.toFixed(2).replace('.',',')}</span>
+                            <span style="font-weight:800; font-size:1.2rem; color:#dc2626;">R$ ${p.offerPrice.toFixed(2).replace('.',',')}</span>
+                        </div>
+                    </div>`;
+                    desc = offerHtml + desc;
+                }
+                // -----------------------------------------------------
+                
                 document.getElementById('info-body').innerHTML = desc;
                 const mediaDiv = document.getElementById('info-media');
                 mediaDiv.innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%; border-radius:8px;" alt="${p.nome}">` : '';
+                App.openSheet('info-sheet');
+            },
+
+            openPhoto(imgUrl, title) {
+                document.getElementById('info-title').innerText = title;
+                document.getElementById('info-body').innerHTML = ''; 
+                const mediaDiv = document.getElementById('info-media');
+                mediaDiv.innerHTML = `<img src="${imgUrl}" style="width:100%; border-radius:8px;" alt="${title}">`;
                 App.openSheet('info-sheet');
             },
 
