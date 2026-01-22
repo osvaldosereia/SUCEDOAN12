@@ -1,1019 +1,623 @@
 <!DOCTYPE html>
-<html lang="pt-BR" dir="ltr">
+<html lang="pt-BR">
 <head>
-    <!-- 
-        ================================================================
-        ARCHITECT: SEO Code Architect (SCA)
-        VERSION: 11.4 - Clean Header & Toast Refinement
-        CHANGELOG:
-        - UI: Removido cabeçalho textual redundante do customizador.
-        - UI: Toast de Crédito movido para top: 30px.
-        - UI: Adicionado Toast Auxiliar ("Adicione novos produtos") abaixo do crédito.
-        - HOME UI: Imagens da cesta e dos itens aumentadas em +20%.
-        ================================================================
-    -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    
-    <meta name="color-scheme" content="light only">
-    <meta name="theme-color" content="#ffffff">
-    
-    <title>Cestas Básicas & Mercadinho | Dona Antônia</title>
-    <meta name="description" content="Compre Cesta Básica em Cuiabá e Várzea Grande com entrega grátis*. Personalize sua cesta com Arroz Tio Alvino. Pagamento na entrega.">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="produtos/produtos.json" as="fetch" crossorigin="anonymous">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque Pro | Minimalist</title>
     <style>
-        /* --- 1. RESET & VARIABLES --- */
-        :root { 
-            --primary: #dc2626; --primary-dark: #b91c1c; 
-            --secondary: #1e293b; --text-main: #334155; --text-light: #64748b; 
-            --bg-body: #f8fafc; --border-color: #e2e8f0;
-            --header-height: 60px; 
-            --bottom-panel-height: 180px; 
+        /* --- CORE: RESET & VARIABLES --- */
+        :root {
+            --bg: #f4f4f9; --surface: #ffffff; --text: #1a1a1a; --text-sec: #666;
+            --primary: #2563eb; --accent: #10b981; --danger: #ef4444; --warn: #f59e0b;
+            --border: #e5e7eb; --radius: 8px; --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --font-stack: system-ui, -apple-system, sans-serif;
         }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        html { scroll-behavior: smooth; background: var(--bg-body); }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            color: var(--text-main); padding-bottom: 0; width: 100%; margin: 0;
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a; --surface: #1e293b; --text: #f1f5f9; --text-sec: #94a3b8;
+                --primary: #3b82f6; --border: #334155;
+            }
         }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { font-family: var(--font-stack); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; padding-bottom: 80px; }
         
-        .container { max-width: 1280px; margin: 0 auto; padding: 0 16px; width: 100%; }
-        img { display: block; max-width: 100%; height: auto; }
-        button { cursor: pointer; border: none; font-family: inherit; background: none; }
-        .hidden { display: none !important; }
-
-        /* --- SCROLLBAR STYLING (ELEGANT) --- */
-        * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
-        ::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
-        
-        .hbc-items-slider::-webkit-scrollbar, #included-list-mob.horizontal-slider::-webkit-scrollbar { height: 6px; display: block; }
-        .hbc-items-slider::-webkit-scrollbar-thumb, #included-list-mob.horizontal-slider::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-
-        /* --- 2. HEADER --- */
+        /* --- LAYOUT --- */
         header { 
-            position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
-            background: rgba(255,255,255,0.98); border-bottom: 1px solid var(--border-color); z-index: 1000; 
-            display: flex; align-items: center; backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 10; background: var(--surface); 
+            padding: 1rem; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
         }
-        body.customizer-mode header { display: none !important; }
+        h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
+        .controls { display: flex; gap: 0.5rem; }
         
-        .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; }
-        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--secondary); text-decoration: none; }
-        .logo-circle { width: 32px; height: 32px; background: #fecaca; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
-
-        /* --- 3. HERO & HOME STYLES --- */
-        #home-view { padding-top: var(--header-height); background: #fff; min-height: 100vh; }
-        .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid var(--border-color); background: #f8fafc; }
-        .hero h1 { font-size: 1.8rem; line-height: 1.1; color: var(--secondary); margin-bottom: 10px; }
-        .hero p { color: var(--text-light); margin-bottom: 0; font-size: 0.95rem; }
+        main { max-width: 1100px; margin: 0 auto; padding: 1rem; }
         
-        /* HOME GRID (Baskets) */
-        .home-grid-container { padding: 40px 0 80px; }
-        .baskets-grid { 
-            display: grid; grid-template-columns: 1fr; gap: 30px; 
-            max-width: 1200px; margin: 0 auto; 
+        /* --- COMPONENTS: BUTTONS --- */
+        button {
+            cursor: pointer; padding: 0.5rem 1rem; border: none; border-radius: var(--radius);
+            font-weight: 600; font-size: 0.9rem; transition: opacity 0.2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            min-height: 44px; /* Touch target */
         }
-        @media(min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media(min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); gap: 40px; } }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sm { min-height: 32px; padding: 0.25rem 0.75rem; font-size: 0.8rem; }
 
-        /* HOME CARD DESIGN (REVISED HORIZONTAL TOP) */
-        .home-basket-card {
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
-            overflow: hidden; display: flex; flex-direction: column;
-            transition: transform 0.2s, box-shadow 0.2s;
+        /* --- PRODUCT LIST (GRID) --- */
+        .product-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;
+            margin-top: 1rem;
         }
-        .home-basket-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-color: #cbd5e1; }
-
-        /* Top Section: Image Left | Info Right */
-        .hbc-top {
-            display: grid; 
-            grid-template-columns: 120px 1fr; /* Increased image column */
-            gap: 15px; padding: 15px;
-            border-bottom: 1px solid #f8fafc;
-            align-items: center;
+        .card {
+            background: var(--surface); padding: 1rem; border-radius: var(--radius);
+            border: 1px solid var(--border); box-shadow: var(--shadow);
+            display: flex; flex-direction: column; gap: 0.5rem; position: relative;
         }
-
-        .hbc-img-wrap { 
-            width: 100%; height: 120px; /* Increased +20% */
-            display: flex; align-items: center; justify-content: center; 
-            background: #fff; border-radius: 8px;
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-title { font-weight: 600; font-size: 1rem; line-height: 1.3; }
+        .card-meta { font-size: 0.8rem; color: var(--text-sec); display: flex; gap: 0.5rem; }
+        .tag { 
+            padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; 
         }
-        .hbc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .tag-st { background: var(--warn); color: #000; }
+        .tag-combo { background: var(--accent); color: white; }
         
-        .hbc-info-col { display: flex; flex-direction: column; justify-content: center; }
-        .hbc-title { font-size: 1.1rem; font-weight: 800; color: var(--secondary); line-height: 1.2; text-align: left; margin-bottom: 4px; }
-        .hbc-price { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-align: left; }
+        .card-price { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-top: auto; }
+        .stock-badge { 
+            font-size: 0.8rem; padding: 4px 8px; background: var(--bg); border-radius: 4px;
+            display: flex; justify-content: space-between;
+        }
+
+        /* --- MODAL (DIALOG) --- */
+        dialog {
+            background: var(--surface); color: var(--text); border: none; border-radius: var(--radius);
+            width: 95%; max-width: 600px; padding: 0; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+            margin: auto;
+        }
+        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 1rem; max-height: 70vh; overflow-y: auto; }
+        .modal-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+        /* --- FORMS --- */
+        .form-grid { display: grid; gap: 1rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 0.8rem; font-weight: 600; color: var(--text-sec); }
+        input, select, textarea {
+            padding: 0.75rem; background: var(--bg); border: 1px solid var(--border);
+            border-radius: var(--radius); color: var(--text); font-size: 1rem; width: 100%;
+        }
+        input:focus { border-color: var(--primary); }
+
+        /* --- TABS --- */
+        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1rem; overflow-x: auto; }
+        .tab-btn {
+            background: none; border: none; padding: 0.75rem 1rem; color: var(--text-sec);
+            font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
+        }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
         
-        .hbc-content { padding: 0 15px 15px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        /* Combo & Batches List */
+        .mini-list { list-style: none; margin-top: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); }
+        .mini-list li { padding: 0.5rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .mini-list li:last-child { border-bottom: none; }
 
-        /* Mini Item Carousel (Increased Size) */
-        .hbc-items-slider {
-            display: flex; gap: 10px; overflow-x: auto; 
-            padding: 10px 5px; margin-bottom: 10px;
-            background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;
-        }
-        
-        /* Larger Items inside carousel */
-        .hbc-item { 
-            flex: 0 0 96px; /* Increased from 80px (+20%) */
-            display: flex; flex-direction: column; align-items: center; gap: 4px; 
-            background: #fff; border-radius: 6px; padding: 6px; border: 1px solid #eee;
-        }
-        .hbc-item img { width: 72px; height: 72px; object-fit: contain; } /* Increased from 60px (+20%) */
-        .hbc-item span { font-size: 0.65rem; font-weight: 700; color: var(--text-light); background: #e2e8f0; padding: 1px 6px; border-radius: 4px; }
-
-        /* Action Buttons */
-        .hbc-actions { display: grid; gap: 10px; margin-top: auto; }
-        .btn-home-cust { 
-            width: 100%; padding: 12px; background: var(--secondary); color: white; 
-            border-radius: 50px; font-weight: 700; font-size: 0.95rem; text-align: center;
-        }
-        .btn-home-order { 
-            width: 100%; padding: 10px; background: white; color: var(--secondary); 
-            border: 1px solid #e2e8f0; border-radius: 50px; font-weight: 600; font-size: 0.9rem; text-align: center;
-        }
-        .btn-home-order:hover { background: #f8fafc; border-color: #cbd5e1; }
-
-        /* --- 4. CUSTOMIZER VIEW --- */
-        #customizer-view { 
-            padding-bottom: calc(var(--bottom-panel-height) + 20px); 
-            min-height: 100vh; background: #f8fafc; 
-            padding-top: 20px; 
-        }
-        
-        /* Floating FAQ Button */
-        .fab-faq {
-            position: fixed; top: 20px; right: 20px; z-index: 10000;
-            width: 40px; height: 40px; background: #fff; border: 1px solid #e2e8f0;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--secondary); font-weight: 700;
-            font-size: 1.2rem; transition: transform 0.2s;
-        }
-        .fab-faq:active { transform: scale(0.95); }
-
-        /* Welcome Overlay */
-        .welcome-overlay {
-            position: fixed; inset: 0; z-index: 12000;
-            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px);
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
-        }
-        .welcome-overlay.visible { opacity: 1; pointer-events: auto; }
-        
-        .welcome-card {
-            background: white; padding: 40px 30px; border-radius: 20px;
-            text-align: center; max-width: 90%; width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            border: 1px solid #e2e8f0; transform: translateY(20px); transition: transform 0.4s ease;
-        }
-        .welcome-overlay.visible .welcome-card { transform: translateY(0); }
-        
-        .welcome-title { font-size: 1.4rem; font-weight: 800; color: var(--secondary); margin-bottom: 15px; line-height: 1.2; }
-        .welcome-sub { font-size: 1rem; color: var(--text-light); margin-bottom: 30px; line-height: 1.5; }
-        .welcome-btn {
-            background: var(--primary); color: white; border-radius: 50px;
-            padding: 14px 40px; font-weight: 700; font-size: 1rem;
-            box-shadow: 0 5px 20px rgba(220, 38, 38, 0.3); transition: transform 0.2s;
-        }
-
-        /* --- 5. MOBILE BOTTOM PANEL --- */
-        .mobile-bottom-panel {
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            background: #fff; border-top: 1px solid #e2e8f0; z-index: 9999;
-            display: flex; flex-direction: column;
-            padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -4px 30px rgba(0,0,0,0.12);
-        }
-
-        .mbp-actions-row {
-            display: grid; grid-template-columns: auto auto 1fr auto; 
-            align-items: center; gap: 10px; padding: 8px 12px; height: 60px;
-            background: #fff; border-bottom: 1px solid #f1f5f9;
-        }
-        
-        .mbp-basket-row { background: #f8fafc; padding: 10px 0; }
-        .mbp-basket-header { padding: 0 16px 4px; display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
-        
-        .mba-btn-icon { 
-            display: flex; align-items: center; justify-content: center; 
-            width: 40px; height: 40px; border-radius: 50%; background: #f1f5f9; color: var(--secondary); 
-            border: 1px solid #e2e8f0; cursor: pointer;
-        }
-        .mba-info { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding-right: 5px; }
-        .mba-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-light); }
-        .mba-total { font-size: 1rem; font-weight: 800; color: var(--secondary); white-space: nowrap; line-height: 1; }
-        .mba-btn-order {
-            background: #16a34a; color: white; border-radius: 50px;
-            padding: 0 18px; height: 40px; font-weight: 700; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap;
-            box-shadow: 0 2px 5px rgba(22,163,74,0.3); border: none; cursor: pointer;
-        }
-
-        /* Basket Slider (Common) */
-        #included-list-mob.horizontal-slider { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 8px; scroll-snap-type: x mandatory; }
-        
-        /* CARD CESTA (SIMPLIFIED) */
-        .card-inc {
-            background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid var(--primary);
-            border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            padding: 8px 12px; display: flex; gap: 12px; align-items: center;
-            flex-shrink: 0; position: relative;
-        }
-        .horizontal-slider .card-inc { min-width: 200px; max-width: 240px; scroll-snap-align: start; }
-        .vertical-slider .card-inc { width: 100%; margin-bottom: 8px; }
-
-        /* Increased Image Size */
-        .ci-img { width: 60px; height: 60px; object-fit: contain; mix-blend-mode: multiply; cursor: pointer; flex-shrink: 0; }
-        
-        .ci-content { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        
-        .qty-sm { display: flex; align-items: center; background: #f1f5f9; border-radius: 4px; height: 32px; border: 1px solid #e2e8f0; }
-        .qs-btn { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--secondary); cursor: pointer; border: none; background: transparent; }
-        .qs-val { font-size: 0.9rem; font-weight: 700; padding: 0 6px; min-width: 24px; text-align: center; }
-
-        .ci-trash { 
-            width: 32px; height: 32px; border-radius: 50%; background: #fee2e2; 
-            color: #b91c1c; display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; border: 1px solid #fca5a5;
-        }
-        .ci-trash:active { transform: scale(0.95); }
-
-        /* --- 6. MERCADINHO GRID & CARDS --- */
-        .cat-header { 
-            position: static; background: #f1f5f9; color: var(--secondary);
-            padding: 8px 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.5px; margin: 15px 0; border-radius: 4px; border: 1px solid #e2e8f0;
-        }
-
-        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
-        @media(min-width: 768px) { .products-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
-
-        .card-prod {
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-            padding: 12px; display: flex; flex-direction: column; text-align: center;
-            height: 100%; position: relative; transition: border-color 0.2s;
-        }
-        .card-prod:active { border-color: #cbd5e1; }
-        
-        .cp-tag { position: absolute; top: 8px; left: 8px; background: #dcfce7; color: #166534; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index: 2; }
-        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; }
-        .cp-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .cp-title { 
-            font-size: 0.8rem; font-weight: 600; color: var(--secondary); 
-            margin-bottom: 4px; line-height: 1.3; min-height: 2.6em;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-        }
-        
-        /* New Info Chip below Validity */
-        .cp-info-chip { 
-            font-size: 0.65rem; color: var(--text-light); background: #f1f5f9; 
-            padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0; 
-            cursor: pointer; display: inline-block; margin-top: 4px;
-        }
-        .cp-info-chip:active { background: #e2e8f0; }
-
-        .cp-price { font-size: 1rem; font-weight: 800; color: var(--text-main); margin-top: auto; margin-bottom: 8px; }
-        .cp-price small { font-size: 0.75rem; text-decoration: line-through; color: #94a3b8; font-weight: 400; margin-right: 4px; }
-        
-        .cp-validity-badge { 
-            font-size: 0.65rem; color: #15803d; background: #f0fdf4; 
-            padding: 2px 6px; border-radius: 4px; border: 1px solid #dcfce7; 
-            margin-top: 6px; display: inline-block; width: 100%; text-align: center; 
-        }
-
-        .btn-add { width: 100%; padding: 8px 0; background: white; border: 1px solid var(--primary); color: var(--primary); border-radius: 50px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; transition: all 0.2s; }
-        .qty-ctrl { display: flex; align-items: center; justify-content: space-between; width: 100%; background: var(--primary); border-radius: 50px; height: 32px; color: white; }
-        .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; cursor: pointer; }
-        .qc-val { font-weight: 700; font-size: 0.9rem; }
-
-        /* --- 7. DESKTOP SPECIFIC --- */
-        .desktop-sidebar { display: none; }
-        
-        @media(min-width: 1024px) {
-            #customizer-view:not(.hidden) { 
-                padding-bottom: 0; display: grid !important; 
-                grid-template-columns: 1fr 350px; gap: 40px; 
-                max-width: 1280px; margin: 0 auto; padding: 40px 20px; align-items: start;
-            }
-            .mobile-bottom-panel, .fab-faq { display: none; }
-            .mercadinho-header { text-align: left; padding: 0 0 20px 0; }
-            
-            .desktop-sidebar {
-                display: flex; flex-direction: column;
-                position: sticky; top: 20px;
-                background: white; border: 1px solid #e2e8f0; border-radius: 12px;
-                padding: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.05);
-                max-height: calc(100vh - 40px); overflow-y: auto;
-            }
-            
-            .v-nav-ctrl { display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer; color: var(--text-light); padding: 2px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; transition: all 0.2s; font-size: 0.7rem; }
-            .v-nav-ctrl:hover { background: #e2e8f0; color: var(--secondary); }
-            .v-nav-ctrl.down { margin-top: 5px; }
-            .v-nav-ctrl.up { margin-bottom: 5px; }
-            
-            #included-list-desk.vertical-slider {
-                display: flex; flex-direction: column; gap: 0;
-                overflow: hidden; max-height: 330px; transition: scroll-top 0.3s;
-                border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; padding: 5px 0;
-            }
-
-            .ds-section-title { font-size: 0.9rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-            .ds-divider { height: 1px; background: #e2e8f0; margin: 15px 0; }
-            .ds-total { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-align: center; margin: 20px 0; letter-spacing: -0.5px; }
-            
-            .ds-actions-row { display: flex; gap: 10px; margin-bottom: 15px; }
-            .ds-btn { flex: 1; padding: 10px; background: #16a34a; color: white; font-weight: 700; border-radius: 8px; font-size: 0.9rem; cursor: pointer; border: none; white-space: nowrap; }
-            .ds-btn:hover { transform: scale(1.02); }
-            .ds-btn-outline { flex: 1; padding: 10px; background: #fff; border: 1px solid #e2e8f0; color: var(--secondary); font-weight: 600; border-radius: 8px; cursor: pointer; font-size: 0.9rem; white-space: nowrap; }
-            .ds-btn-outline:hover { background: #f8fafc; }
-            
-            .ds-nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
-            .ds-nav-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: var(--text-light); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-        }
-
-        /* --- 9. SHEETS --- */
-        .sheet-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            display: flex; flex-direction: column; justify-content: flex-end;
-        }
-        .sheet-overlay.open { opacity: 1; pointer-events: auto; }
-        .sheet-box {
-            background: #fff; width: 100%; border-radius: 20px 20px 0 0;
-            max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s;
-            padding: 20px; padding-bottom: 40px;
-        }
-        .sheet-overlay.open .sheet-box { transform: translateY(0); }
-        
-        .cat-list-btn {
-            display: flex; width: 100%; padding: 16px; text-align: left;
-            border-bottom: 1px solid #f1f5f9; font-weight: 600; color: var(--secondary);
-            align-items: center; justify-content: space-between; font-size: 0.9rem;
-        }
-        
-        details.faq-box { margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
-        details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
-        .faq-text { padding: 15px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
-
-        /* Toasts */
-        .sug-toast {
-            position: fixed; bottom: 180px; left: 16px; right: 16px; background: white;
-            border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 4px solid #3b82f6;
-            transform: translateY(20px); opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 9998;
-        }
-        .sug-toast.visible { transform: translateY(0); opacity: 1; visibility: visible; }
-        .st-content { flex: 1; font-size: 0.8rem; line-height: 1.3; }
-        .st-btn { background: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
-        
-        .limit-alert { font-size: 0.7rem; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a; font-weight: 600; }
-        .limit-alert.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
-        
-        .credit-toast {
-            position: fixed; top: 30px; left: 50%; transform: translate(-50%, 0);
-            background: rgba(30, 41, 59, 0.95); color: white;
-            padding: 12px 24px; border-radius: 50px; font-weight: 600;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            z-index: 12000; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .credit-toast.visible { opacity: 1; }
-
-        /* Sub Toast for Credit Info */
-        .credit-sub-toast {
-            position: fixed; top: 80px; left: 50%; transform: translate(-50%, 0);
-            background: #dcfce7; color: #166534;
-            padding: 6px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 600;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            z-index: 11900; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .credit-sub-toast.visible { opacity: 1; }
-
-        /* Checkout Modal */
-        dialog.modal-checkout {
-            margin: auto; inset: 0; position: fixed; border: none; border-radius: 16px; 
-            width: 90%; max-width: 380px; 
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
-            padding: 20px; background: #fff;
-        }
-        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
-
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- WELCOME OVERLAY -->
-    <div id="welcome-overlay" class="welcome-overlay">
-        <div class="welcome-card">
-            <h2 class="welcome-title">Agora você pode deixar a cesta básica do seu jeito.</h2>
-            <p class="welcome-sub">Temos mais de 100 produtos para você economizar. O básico com o melhor preço de Cuiabá e VG.</p>
-            <button class="welcome-btn" onclick="App.closeWelcome()">Começar</button>
+<header>
+    <h1>Estoque<span style="color:var(--primary)">Pro</span></h1>
+    <div class="controls">
+        <div class="file-input-wrapper">
+            <button class="btn-outline">📂 Importar CSV</button>
+            <input type="file" id="csvInput" accept=".csv">
         </div>
+        <button class="btn-primary" onclick="app.openModal()">+ Novo</button>
     </div>
+</header>
 
-    <!-- HOME VIEW -->
-    <main id="home-view">
-        <header>
-            <div class="container header-inner">
-                <a href="#" class="logo" onclick="location.reload()"><div class="logo-circle">DA</div> Dona Antônia</a>
-                <div class="logo-circle" style="background:transparent; font-size:1.5rem;">🏠</div>
-            </div>
-        </header>
-        
-        <section class="hero">
-            <div class="container">
-                <h1>Cestas Básicas<br>Dona Antônia</h1>
-                <p>Qualidade e economia na sua porta.</p>
-                <button class="btn-cta" onclick="document.getElementById('baskets-anchor').scrollIntoView()">Ver Cestas</button>
-            </div>
-        </section>
-        
-        <div class="container home-grid-container" id="baskets-anchor">
-            <div id="home-list" class="baskets-grid">
-                <div class="loader" style="margin: 20px auto; text-align:center;">Carregando...</div>
-            </div>
-        </div>
-    </main>
+<main>
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+        <input type="text" id="searchBox" placeholder="Buscar por nome, EAN ou código..." onkeyup="app.render()">
+        <button class="btn-outline" onclick="app.clearDB()">🗑 Limpar</button>
+    </div>
+    <div id="grid" class="product-grid"></div>
+</main>
 
-    <!-- CUSTOMIZER VIEW -->
-    <div id="customizer-view" class="hidden">
-        
-        <!-- FLOATING FAQ BTN -->
-        <button class="fab-faq" onclick="App.openSheet('faq-sheet')">?</button>
-
-        <!-- LEFT COLUMN (MAIN CONTENT) -->
-        <div class="main-content-col">
-            <!-- REMOVED HEADER TEXT -->
-            
-            <!-- PRODUCTS GRID -->
-            <div class="container" style="padding-top:10px;">
-                <div id="extras-container"></div>
-            </div>
+<dialog id="productDialog">
+    <div class="modal-header">
+        <h3 id="modalTitle">Editar Produto</h3>
+        <button class="btn-sm btn-outline" onclick="document.getElementById('productDialog').close()">✕</button>
+    </div>
+    <div class="modal-body">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="app.switchTab('tab-geral')">Geral</button>
+            <button class="tab-btn" onclick="app.switchTab('tab-preco')">Precificação</button>
+            <button class="tab-btn" onclick="app.switchTab('tab-fiscal')">Fiscal</button>
+            <button class="tab-btn" onclick="app.switchTab('tab-estoque')">Estoque/Lotes</button>
         </div>
 
-        <!-- RIGHT COLUMN (DESKTOP SIDEBAR FIXED) -->
-        <aside class="desktop-sidebar">
-            <div class="ds-section-title">
-                Minha Cesta
-                <span id="limit-alert-desk" class="limit-alert">Alt: 0/0</span>
-            </div>
+        <form id="productForm" onsubmit="event.preventDefault(); app.saveProduct();">
+            <input type="hidden" id="id">
             
-            <div class="v-nav-ctrl up" onclick="App.scrollVertical(-1)">▲</div>
-            <div id="included-list-desk" class="vertical-slider"></div>
-            <div class="v-nav-ctrl down" onclick="App.scrollVertical(1)">▼</div>
-            
-            <div class="ds-divider"></div>
-            
-            <div class="ds-total" id="ds-total">R$ 0,00</div>
-            
-            <div class="ds-actions-row">
-                <button class="ds-btn" onclick="App.openCheckout()">Concluir</button>
-                <button class="ds-btn-outline" onclick="App.goHome()">Voltar</button>
-            </div>
-
-            <div class="ds-nav-row">
-                <div class="ds-nav-btn" onclick="App.openSheet('categories-sheet')">☰ Categorias</div>
-                <div class="ds-nav-btn" onclick="App.openSheet('faq-sheet')">? Dúvidas</div>
-            </div>
-        </aside>
-
-        <!-- MOBILE BOTTOM PANEL (UNIFIED FIXED) -->
-        <div class="mobile-bottom-panel">
-            <!-- Row 1: Actions Bar (Top) -->
-            <div class="mbp-actions-row">
-                <button class="mba-btn-icon" onclick="App.goHome()" aria-label="Voltar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <button class="mba-btn-icon" onclick="App.openSheet('categories-sheet')" aria-label="Categorias">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                
-                <div class="mba-info">
-                    <div class="mba-label">Total Estimado</div>
-                    <div class="mba-total" id="mba-total">R$ 0,00</div>
+            <div id="tab-geral" class="tab-content active form-grid">
+                <div class="form-row">
+                    <div class="form-group"><label>Cód. Interno</label><input type="text" id="code" required></div>
+                    <div class="form-group"><label>EAN (Barras)</label><input type="text" id="ean"></div>
                 </div>
-                
-                <button class="mba-btn-order" onclick="App.openCheckout()">
-                    Encomendar <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
-            </div>
-
-            <!-- Row 2: Basket Carousel (Bottom) -->
-            <div class="mbp-basket-row">
-                <div class="mbp-basket-header">
-                    <span>Minha Cesta</span>
-                    <span id="limit-alert">Alt: 0/0</span>
+                <div class="form-group"><label>Nome do Produto</label><input type="text" id="name" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Grupo/Categoria</label><input type="text" id="category"></div>
+                    <div class="form-group"><label>Unidade</label><input type="text" id="unit" placeholder="UN, KG..."></div>
                 </div>
-                <div id="included-list-mob" class="horizontal-slider"></div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="isCombo" onchange="app.toggleCombo(this.checked)"> É um Combo/Kit?</label>
+                </div>
+                <div class="form-group"><label>Imagem (Nome Arq)</label><input type="text" id="image"></div>
             </div>
-        </div>
-    </div>
 
-    <!-- SHEETS & MODALS -->
-    <div id="categories-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('categories-sheet')">
-        <div class="sheet-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700; color:var(--secondary);">
-                <span>Categorias</span><span onclick="App.closeSheet('categories-sheet')">✕</span>
+            <div id="tab-preco" class="tab-content form-grid">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Custo (R$)</label>
+                        <input type="number" step="0.01" id="cost" oninput="app.calcMargin()">
+                    </div>
+                    <div class="form-group">
+                        <label>Venda (R$)</label>
+                        <input type="number" step="0.01" id="price" oninput="app.calcMargin()" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Margem (%)</label><input type="text" id="margin" readonly tabindex="-1"></div>
+                    <div class="form-group" style="justify-content:center"><label><input type="checkbox" id="offer"> Em Oferta?</label></div>
+                </div>
             </div>
-            <button class="cat-list-btn" onclick="App.scrollToCat('MERCEARIA E ALIMENTOS')">MERCEARIA E ALIMENTOS <span>❯</span></button>
-            <button class="cat-list-btn" onclick="App.scrollToCat('CAFÉ DA MANHÃ E LANCHES')">CAFÉ DA MANHÃ E LANCHES <span>❯</span></button>
-            <button class="cat-list-btn" onclick="App.scrollToCat('LIMPEZA E LAVANDERIA')">LIMPEZA E LAVANDERIA <span>❯</span></button>
-            <button class="cat-list-btn" onclick="App.scrollToCat('CUIDADOS PESSOAIS')">CUIDADOS PESSOAIS <span>❯</span></button>
-            <button class="cat-list-btn" onclick="App.scrollToCat('BAZAR E UTILIDADES')">BAZAR E UTILIDADES <span>❯</span></button>
-        </div>
-    </div>
 
-    <div id="info-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('info-sheet')">
-        <div class="sheet-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
-                <span id="info-title">Detalhes</span><span onclick="App.closeSheet('info-sheet')">✕</span>
+            <div id="tab-fiscal" class="tab-content form-grid">
+                <div class="form-row">
+                    <div class="form-group"><label>NCM</label><input type="text" id="ncm"></div>
+                    <div class="form-group"><label>CEST</label><input type="text" id="cest"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>CFOP</label><input type="text" id="cfop" oninput="app.checkST()"></div>
+                    <div class="form-group"><label>CSOSN/CST</label><input type="text" id="cst"></div>
+                </div>
+                <div class="form-group">
+                    <label style="color:var(--warn); font-weight:700;">
+                        <input type="checkbox" id="isST"> Produto é Substituto Tributário (ST)?
+                    </label>
+                </div>
             </div>
-            <!-- Media first -->
-            <div id="info-media" style="margin-bottom:15px;"></div>
-            <!-- Text content second -->
-            <div id="info-body" style="font-size:0.95rem; line-height:1.6; color:var(--text-main);"></div>
-        </div>
-    </div>
 
-    <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
-        <div class="sheet-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
-                <h3 style="margin:0; color:var(--secondary);">Dúvidas Frequentes</h3>
-                <span onclick="App.closeSheet('faq-sheet')" style="font-size:1.5rem; color:#999;">✕</span>
+            <div id="tab-estoque" class="tab-content form-grid">
+                
+                <div id="stock-normal">
+                    <div class="form-row">
+                        <div class="form-group"><label>Estoque Atual</label><input type="number" id="qty" readonly></div>
+                        <div class="form-group"><label>Estoque Mínimo</label><input type="number" id="minQty"></div>
+                    </div>
+                    
+                    <hr style="margin: 1rem 0; border:0; border-top:1px solid var(--border)">
+                    <h4>Lotes & Validade</h4>
+                    <div class="form-row">
+                        <div class="form-group"><input type="date" id="batchDate"></div>
+                        <div class="form-group" style="display:flex; flex-direction:row; gap:5px; align-items: flex-end;">
+                            <input type="number" id="batchQty" placeholder="Qtd">
+                            <button type="button" class="btn-primary btn-sm" onclick="app.addBatch()">Add</button>
+                        </div>
+                    </div>
+                    <ul id="batchList" class="mini-list"></ul>
+                </div>
+
+                <div id="stock-combo" class="hidden">
+                    <h4>Itens do Combo</h4>
+                    <div class="form-group">
+                        <label>Adicionar ID do Produto</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="comboPartId" placeholder="ID Interno">
+                            <input type="number" id="comboPartQty" placeholder="Qtd" style="width:80px">
+                            <button type="button" class="btn-primary btn-sm" onclick="app.addComboItem()">Add</button>
+                        </div>
+                    </div>
+                    <ul id="comboList" class="mini-list"></ul>
+                </div>
+
             </div>
-            <div style="overflow-y:auto; padding-bottom:20px;">
-                <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-text">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação (Alelo, Sodexo, Ticket, etc).</div></details>
-                <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
-                <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
-                <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras do nosso mercadinho.</div></details>
-                <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá. Mas você pode pedir tudo por aqui com total conforto.</div></details>
-            </div>
-        </div>
+
+        </form>
     </div>
-    
-    <div id="suggestion-toast" class="sug-toast">
-        <img id="st-img" style="width:40px; height:40px; border-radius:6px;" src="">
-        <div class="st-content">
-            <div style="font-weight:700; margin-bottom:2px;">Leve também!</div>
-            <div id="st-text">Sugestão</div>
-        </div>
-        <button id="st-btn" class="st-btn">Adicionar</button>
-        <div onclick="document.getElementById('suggestion-toast').classList.remove('visible')" style="padding:0 5px; font-size:1.2rem;">×</div>
+    <div class="modal-footer">
+        <button type="button" class="btn-danger" id="btnDelete" onclick="app.deleteProduct()">Excluir</button>
+        <button type="submit" form="productForm" class="btn-primary">Salvar Alterações</button>
     </div>
+</dialog>
 
-    <!-- CREDIT TOASTS -->
-    <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
-    <div id="credit-sub-toast" class="credit-sub-toast">Adicione novos produtos</div>
+<script>
+/**
+ * SISTEMA ESTOQUE PRO - SINGLE FILE ARCHITECTURE
+ * Filosofia: Pure JS, No Deps, Ultra Performance.
+ */
 
-    <dialog id="checkout-modal" class="modal-checkout">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700;">
-            <span>Resumo do Pedido</span><span onclick="document.getElementById('checkout-modal').close()">✕</span>
-        </div>
-        <ul id="checkout-items" style="list-style:none; margin-bottom:20px; max-height:200px; overflow-y:auto; border:1px solid #eee; padding:10px; border-radius:8px; font-size:0.85rem;"></ul>
-        <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.2rem; margin-bottom:20px; color:var(--primary);">
-            <span>Total</span><span id="co-total">R$ 0,00</span>
-        </div>
-        <select id="payment-method" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; margin-bottom:20px;">
-            <option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Vale Alimentação</option>
-        </select>
-        <button onclick="App.sendWhatsApp()" style="width:100%; padding:14px; background:#16a34a; color:white; font-weight:700; border-radius:8px;">Enviar no WhatsApp</button>
-    </dialog>
+const app = {
+    data: [],
+    currentId: null,
 
-    <script>
-        const CONSTANTS = { 
-            PHONE: "5565996813588",
-            LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 }
+    init() {
+        // Carrega do LocalStorage ou inicia vazio
+        const saved = localStorage.getItem('sys_stock_db');
+        if (saved) this.data = JSON.parse(saved);
+        this.render();
+
+        // Listener Importação CSV
+        document.getElementById('csvInput').addEventListener('change', (e) => this.importCSV(e));
+    },
+
+    save() {
+        localStorage.setItem('sys_stock_db', JSON.stringify(this.data));
+        this.render();
+    },
+
+    // --- CSV PARSER ENGINE ---
+    importCSV(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const text = evt.target.result;
+            // Quebra linhas e remove vazias
+            const lines = text.split('\n').filter(l => l.trim());
+            const headers = lines[0].split(';'); // Assume CSV pt-BR
+            
+            // Mapeamento simples de colunas (baseado no CSV fornecido)
+            // CSV: Internal Code;Status;Grupo;Nome;NCM;CFOP;CST;CEST...Preço
+            
+            let newCount = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                const row = lines[i].split(';');
+                if (row.length < 5) continue;
+
+                // Helper para limpar formato excel ="001"
+                const clean = (val) => val ? val.replace(/="/g, '').replace(/"/g, '').trim() : '';
+                const num = (val) => val ? parseFloat(val.replace('.', '').replace(',', '.')) || 0 : 0;
+
+                const product = {
+                    id: clean(row[0]),
+                    active: clean(row[1]) === 'Habilitado',
+                    category: clean(row[2]),
+                    name: clean(row[3]),
+                    ncm: clean(row[4]),
+                    cfop: clean(row[5]),
+                    cst: clean(row[6]),
+                    cest: clean(row[7]),
+                    price: num(row[row.length - 1]), // Preço costuma ser o último
+                    cost: 0,
+                    qty: 0,
+                    isCombo: false,
+                    isST: false,
+                    batches: [], // [{date: '2025-01-01', qty: 10}]
+                    comboItems: []
+                };
+
+                // Detecção Automática de ST
+                if (['5405', '5403'].includes(product.cfop) || ['010', '030', '060', '070', '201', '202', '203', '500'].includes(product.cst)) {
+                    product.isST = true;
+                }
+
+                // Upsert (Atualiza se existe, cria se não)
+                const idx = this.data.findIndex(p => p.id === product.id);
+                if (idx >= 0) {
+                    // Mantém dados sensíveis que não estão no CSV (estoque, custo)
+                    this.data[idx] = { ...this.data[idx], ...product, qty: this.data[idx].qty, cost: this.data[idx].cost }; 
+                } else {
+                    this.data.push(product);
+                    newCount++;
+                }
+            }
+            
+            alert(`Importação concluída! ${newCount} novos produtos.`);
+            this.save();
+            e.target.value = ''; // Reset input
+        };
+        reader.readAsText(file, 'ISO-8859-1');
+    },
+
+    // --- UI RENDERING ---
+    render() {
+        const grid = document.getElementById('grid');
+        const term = document.getElementById('searchBox').value.toLowerCase();
+        
+        grid.innerHTML = '';
+        
+        // Filtro
+        const filtered = this.data.filter(p => 
+            p.name.toLowerCase().includes(term) || 
+            p.id.toLowerCase().includes(term) || 
+            (p.ean && p.ean.includes(term))
+        ).slice(0, 50); // Limite de renderização para performance (Lazy Load simulado)
+
+        filtered.forEach(p => {
+            const card = document.createElement('div');
+            card.className = `card ${!p.active ? 'opacity-50' : ''}`;
+            card.onclick = (e) => this.openModal(p.id);
+
+            // Calcula Estoque Total (Soma Lotes)
+            const stockTotal = p.batches?.length > 0 
+                ? p.batches.reduce((acc, b) => acc + b.qty, 0) 
+                : (p.qty || 0);
+
+            // Tags
+            let tagsHtml = '';
+            if (p.isST) tagsHtml += `<span class="tag tag-st">ST</span>`;
+            if (p.isCombo) tagsHtml += `<span class="tag tag-combo">KIT</span>`;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="card-meta">#${p.id} • ${p.category || 'Geral'}</span>
+                    ${p.offer ? '<span class="tag" style="background:var(--danger);color:white">OFERTA</span>' : ''}
+                </div>
+                <div class="card-title">${p.name}</div>
+                <div style="display:flex; gap:5px; margin-top:5px;">${tagsHtml}</div>
+                <div class="card-price">R$ ${p.price.toFixed(2)}</div>
+                <div class="stock-badge">
+                    <span>Estoque: <b>${stockTotal}</b></span>
+                    <span>${p.ncm ? 'Fisc: OK' : '⚠️'}</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    },
+
+    // --- MODAL LOGIC ---
+    openModal(id = null) {
+        this.currentId = id;
+        const dialog = document.getElementById('productDialog');
+        const form = document.getElementById('productForm');
+        
+        form.reset();
+        document.getElementById('batchList').innerHTML = '';
+        document.getElementById('comboList').innerHTML = '';
+        
+        // Reset Tabs
+        this.switchTab('tab-geral');
+
+        if (id) {
+            const p = this.data.find(x => x.id === id);
+            if (!p) return;
+
+            // Preenche campos
+            ['id', 'code', 'ean', 'name', 'category', 'unit', 'image', 'ncm', 'cest', 'cfop', 'cst', 'price', 'cost', 'minQty'].forEach(field => {
+                if(document.getElementById(field)) {
+                    document.getElementById(field).value = p[field] === 'undefined' ? '' : (field === 'code' ? p.id : p[field] || '');
+                }
+            });
+            
+            // Checkboxes
+            document.getElementById('isCombo').checked = p.isCombo || false;
+            document.getElementById('isST').checked = p.isST || false;
+            document.getElementById('offer').checked = p.offer || false;
+
+            // Render Lotes
+            if (p.batches) p.batches.forEach(b => this.renderBatchRow(b));
+            // Render Combos
+            if (p.comboItems) p.comboItems.forEach(c => this.renderComboRow(c));
+            
+            // Atualiza Estoque Total no input
+            const total = p.batches?.reduce((a,b)=>a+b.qty,0) || p.qty || 0;
+            document.getElementById('qty').value = total;
+
+            this.toggleCombo(p.isCombo);
+            this.calcMargin();
+            
+            document.getElementById('btnDelete').classList.remove('hidden');
+            document.getElementById('modalTitle').innerText = 'Editar Produto';
+        } else {
+            // Novo Produto
+            document.getElementById('code').value = Date.now().toString().slice(-6); // ID Auto Simples
+            document.getElementById('qty').value = 0;
+            document.getElementById('btnDelete').classList.add('hidden');
+            document.getElementById('modalTitle').innerText = 'Novo Produto';
+            this.toggleCombo(false);
+        }
+
+        dialog.showModal();
+    },
+
+    saveProduct() {
+        const getVal = (id) => document.getElementById(id).value;
+        const getBool = (id) => document.getElementById(id).checked;
+        const getNum = (id) => parseFloat(getVal(id)) || 0;
+
+        const product = {
+            id: getVal('code'),
+            ean: getVal('ean'),
+            name: getVal('name'),
+            category: getVal('category'),
+            unit: getVal('unit'),
+            image: getVal('image'),
+            
+            price: getNum('price'),
+            cost: getNum('cost'),
+            offer: getBool('offer'),
+            
+            ncm: getVal('ncm'),
+            cest: getVal('cest'),
+            cfop: getVal('cfop'),
+            cst: getVal('cst'),
+            isST: getBool('isST'),
+            
+            isCombo: getBool('isCombo'),
+            active: true,
+            minQty: getNum('minQty'),
+            
+            // Coleta Lotes da UI
+            batches: Array.from(document.querySelectorAll('#batchList li')).map(li => ({
+                date: li.dataset.date,
+                qty: parseFloat(li.dataset.qty)
+            })),
+            
+            // Coleta Combo Items da UI
+            comboItems: Array.from(document.querySelectorAll('#comboList li')).map(li => ({
+                id: li.dataset.pid,
+                qty: parseFloat(li.dataset.qty)
+            }))
         };
         
-        const App = {
-            data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [],
+        // Se não tiver lotes, usa o qty calculado ou 0
+        product.qty = product.batches.reduce((a, b) => a + b.qty, 0);
 
-            async init() {
-                try {
-                    const res = await fetch('produtos/produtos.json?v=' + Date.now());
-                    const raw = await res.json();
-                    
-                    this.data = raw.map(p => {
-                        const catStr = (p.categoria || "").toUpperCase();
-                        let appCat = "BAZAR E UTILIDADES"; 
-                        if (catStr.includes('ALIMENTOS') || catStr.includes('MERCEARIA') || catStr.includes('GRÃOS') || catStr.includes('TEMPEROS') || catStr.includes('MOLHOS')) appCat = "MERCEARIA E ALIMENTOS";
-                        else if (catStr.includes('MATINAIS') || catStr.includes('BISCOITOS') || catStr.includes('BEBIDAS') || catStr.includes('LANCHE')) appCat = "CAFÉ DA MANHÃ E LANCHES";
-                        else if (catStr.includes('LIMPEZA') || catStr.includes('LAVANDERIA') || catStr.includes('SABÃO')) appCat = "LIMPEZA E LAVANDERIA";
-                        else if (catStr.includes('HIGIENE') || catStr.includes('PESSOAL') || catStr.includes('COSMÉTICOS')) appCat = "CUIDADOS PESSOAIS";
-                        else if (catStr.includes('BAZAR') || catStr.includes('UTILIDADES')) appCat = "BAZAR E UTILIDADES";
+        if (this.currentId) {
+            const idx = this.data.findIndex(p => p.id === this.currentId);
+            this.data[idx] = product;
+        } else {
+            this.data.push(product);
+        }
 
-                        let rawVal = p.validade || p.Validade || "";
-                        let fmtVal = "";
-                        if (rawVal && rawVal !== '0' && rawVal !== '00') {
-                            fmtVal = App.formatDateBr(rawVal);
-                        }
+        this.save();
+        document.getElementById('productDialog').close();
+    },
 
-                        let hasLink = p.Tem_Ligacao || p.tem_ligacao || "Não";
-                        let linkCode = p.Codigo_Produto_Ligado || p.codigo_produto_ligado || "";
+    deleteProduct() {
+        if(confirm('Tem certeza?')) {
+            this.data = this.data.filter(p => p.id !== this.currentId);
+            this.save();
+            document.getElementById('productDialog').close();
+        }
+    },
 
-                        return {
-                            ...p,
-                            id: String(p.id),
-                            nome: p.nome.trim(),
-                            valor: parseFloat(p.valor || 0),
-                            offerPrice: parseFloat(p.Valor_Oferta || 0),
-                            isOffer: (p.Oferta === 'Sim'),
-                            isBest: (p.Mais_Vendido === 'Sim'),
-                            appCategory: appCat,
-                            imagem: p.imagem ? (p.imagem.includes('/') ? `img/produtos/${p.imagem.split('/').pop()}` : `img/produtos/${p.imagem}`) : 'img/placeholder.jpg',
-                            limit: parseInt(p.Limit || p.limit || 0),
-                            caracteristicas: p.Caracteristicas || p.caracteristicas || "",
-                            linkedCode: linkCode,
-                            hasLink: (hasLink === 'Sim'),
-                            validade: fmtVal,
-                            categoria: catStr
-                        };
-                    });
-                    this.renderHome();
-                } catch (e) { console.error(e); }
-            },
+    clearDB() {
+        if(confirm('Isso apagará TODOS os produtos. Confirma?')) {
+            localStorage.removeItem('sys_stock_db');
+            this.data = [];
+            this.render();
+        }
+    },
 
-            formatDateBr(dateStr) {
-                 if (!dateStr) return '';
-                 if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                     const [y, m, d] = dateStr.split('-');
-                     return `${d}/${m}/${y}`;
-                 }
-                 return dateStr; 
-            },
+    // --- LOGIC HELPERS ---
 
-            renderHome() {
-                const list = document.getElementById('home-list');
-                const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
-                
-                list.innerHTML = baskets.map(p => {
-                    let carouselHtml = '';
-                    if (p.items && p.items.length > 0) {
-                        carouselHtml = `<div class="hbc-items-slider">` + 
-                            p.items.map(i => {
-                                const itemData = this.data.find(d => d.id === String(i.id));
-                                if(!itemData) return '';
-                                return `
-                                <div class="hbc-item">
-                                    <img src="${itemData.imagem}" loading="lazy">
-                                    <span>${i.qty || 1}un</span>
-                                </div>`;
-                            }).join('') + 
-                        `</div>`;
-                    }
+    switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        // Acha o botão correspondente (hack simples)
+        const btns = document.querySelectorAll('.tab-btn');
+        if(tabId === 'tab-geral') btns[0].classList.add('active');
+        if(tabId === 'tab-preco') btns[1].classList.add('active');
+        if(tabId === 'tab-fiscal') btns[2].classList.add('active');
+        if(tabId === 'tab-estoque') btns[3].classList.add('active');
+    },
 
-                    return `
-                    <div class="home-basket-card">
-                        <div class="hbc-top">
-                            <div class="hbc-img-wrap">
-                                <img src="${p.imagem}" class="hbc-img" loading="lazy">
-                            </div>
-                            <div class="hbc-info-col">
-                                <h3 class="hbc-title">${p.nome}</h3>
-                                <div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
-                            </div>
-                        </div>
-                        <div class="hbc-content">
-                            ${carouselHtml}
-                            <div class="hbc-actions">
-                                <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button>
-                                <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar Agora</button>
-                            </div>
-                        </div>
-                    </div>`;
-                }).join('');
-            },
+    calcMargin() {
+        const cost = parseFloat(document.getElementById('cost').value) || 0;
+        const sell = parseFloat(document.getElementById('price').value) || 0;
+        const margin = document.getElementById('margin');
+        
+        if (sell > 0 && cost >= 0) {
+            const mg = ((sell - cost) / sell) * 100;
+            margin.value = mg.toFixed(1) + '%';
+        } else {
+            margin.value = '-';
+        }
+    },
 
-            openCustomizer(id) {
-                const basket = this.data.find(p => p.id === id);
-                if(!basket) return;
-                this.currentBasket = basket;
-                this.cart = {};
-                this.cartOrder = [];
-                
-                if(basket.items) {
-                    basket.items.forEach(i => {
-                        let match = this.data.find(p => p.id === String(i.id));
-                        if(match) {
-                            this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qty || 1));
-                            if(!this.cartOrder.includes(match.id)) this.cartOrder.push(match.id);
-                        }
-                    });
-                }
-                
-                this.originalCart = { ...this.cart };
-                const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
-                let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
-                this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
+    checkST() {
+        // Lógica simples de sugestão
+        const cfop = document.getElementById('cfop').value;
+        const isStBox = document.getElementById('isST');
+        if (cfop.startsWith('54') || cfop === '5405') {
+            isStBox.checked = true;
+        }
+    },
 
-                document.getElementById('home-view').classList.add('hidden');
-                document.getElementById('customizer-view').classList.remove('hidden');
-                document.body.classList.add('customizer-mode');
-                document.getElementById('welcome-overlay').classList.add('visible'); // Show welcome
-                
-                window.scrollTo(0,0);
-                this.renderAllLists();
-            },
-            
-            closeWelcome() {
-                document.getElementById('welcome-overlay').classList.remove('visible');
-            },
+    toggleCombo(isCombo) {
+        const norm = document.getElementById('stock-normal');
+        const combo = document.getElementById('stock-combo');
+        if (isCombo) {
+            norm.classList.add('hidden');
+            combo.classList.remove('hidden');
+        } else {
+            norm.classList.remove('hidden');
+            combo.classList.add('hidden');
+        }
+    },
 
-            goHome() {
-                document.getElementById('customizer-view').classList.add('hidden');
-                document.getElementById('home-view').classList.remove('hidden');
-                document.body.classList.remove('customizer-mode');
-                document.getElementById('suggestion-toast').classList.remove('visible');
-            },
+    // --- BATCHES & COMBO UI ---
 
-            renderAllLists(filter = null) {
-                this.renderIncluded();
-                const container = document.getElementById('extras-container');
-                let products = this.data.filter(p => !p.categoria.includes('CESTA'));
-                
-                const searchValue = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
-                const query = (filter !== null) ? filter : searchValue;
+    addBatch() {
+        const date = document.getElementById('batchDate').value;
+        const qty = document.getElementById('batchQty').value;
+        if (!date || !qty) return;
+        
+        this.renderBatchRow({date, qty});
+        document.getElementById('batchQty').value = '';
+    },
 
-                if (query && query.length > 2) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
-                products.sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
+    renderBatchRow(batch) {
+        const ul = document.getElementById('batchList');
+        const li = document.createElement('li');
+        li.dataset.date = batch.date;
+        li.dataset.qty = batch.qty;
+        
+        // Verifica validade
+        const isExpired = new Date(batch.date) < new Date();
+        const color = isExpired ? 'color:var(--danger)' : '';
+        
+        li.innerHTML = `
+            <span style="${color}">${batch.date} ${isExpired ? '(Vencido)' : ''}</span>
+            <span>Qtd: ${batch.qty} <button class="btn-sm btn-outline" style="margin-left:5px" onclick="this.parentElement.parentElement.remove()">X</button></span>
+        `;
+        ul.appendChild(li);
+    },
 
-                const groups = {};
-                products.forEach(p => {
-                    if(!groups[p.appCategory]) groups[p.appCategory] = [];
-                    groups[p.appCategory].push(p);
-                });
+    addComboItem() {
+        const id = document.getElementById('comboPartId').value;
+        const qty = document.getElementById('comboPartQty').value;
+        if(!id || !qty) return;
 
-                const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
-                let html = "";
-                order.forEach(catName => {
-                    if(groups[catName] && groups[catName].length > 0) {
-                        html += `<div id="cat-${catName}" class="cat-header">${catName}</div>
-                        <div class="products-grid">
-                            ${groups[catName].map(p => this.buildCard(p)).join('')}
-                        </div>`;
-                    }
-                });
+        // Tenta achar nome
+        const prod = this.data.find(p => p.id === id);
+        const name = prod ? prod.name : 'ID Desconhecido';
 
-                container.innerHTML = html || '<p style="text-align:center; padding:40px;">Nada encontrado.</p>';
-                this.updateTotal();
-            },
+        this.renderComboRow({id, qty, name});
+        document.getElementById('comboPartId').value = '';
+        document.getElementById('comboPartQty').value = '';
+    },
 
-            renderIncluded() {
-                const ids = this.cartOrder.filter(id => this.cart[id] > 0);
-                const html = ids.length ? ids.map(id => {
-                    const p = this.data.find(x => x.id === id);
-                    if(!p) return '';
-                    
-                    return `
-                    <div class="card-inc">
-                        <img src="${p.imagem}" class="ci-img" onclick="App.openInfo('${p.id}')">
-                        <div class="ci-content">
-                            <div class="qty-sm">
-                                <button class="qs-btn" onclick="App.modQty('${p.id}', -1)">-</button>
-                                <div class="qs-val">${this.cart[p.id]}</div>
-                                <button class="qs-btn" onclick="App.modQty('${p.id}', 1)">+</button>
-                            </div>
-                            <button class="ci-trash" onclick="App.removeItem('${p.id}')">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                        </div>
-                    </div>`;
-                }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
+    renderComboRow(item) {
+        // Se o nome não veio no objeto (carregamento), busca
+        let name = item.name;
+        if (!name) {
+            const p = this.data.find(x => x.id === item.id);
+            name = p ? p.name : 'Desconhecido';
+        }
 
-                if(document.getElementById('included-list-mob')) document.getElementById('included-list-mob').innerHTML = html;
-                if(document.getElementById('included-list-desk')) document.getElementById('included-list-desk').innerHTML = html;
-            },
+        const ul = document.getElementById('comboList');
+        const li = document.createElement('li');
+        li.dataset.pid = item.id;
+        li.dataset.qty = item.qty;
+        li.innerHTML = `
+            <span>${name} (${item.id})</span>
+            <span>x${item.qty} <button class="btn-sm btn-outline" onclick="this.parentElement.parentElement.remove()">X</button></span>
+        `;
+        ul.appendChild(li);
+    }
+};
 
-            buildCard(p) {
-                const qty = this.cart[p.id] || 0;
-                const price = p.isOffer ? p.offerPrice : p.valor;
-                let btn = qty === 0 
-                    ? `<button class="btn-add" onclick="App.modQty('${p.id}', 1)">Adicionar</button>` 
-                    : `<div class="qty-ctrl"><div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div><div class="qc-val">${qty}</div><div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div></div>`;
-
-                let valHtml = '';
-                if (p.validade && p.validade.length > 2) {
-                     valHtml = `<div class="cp-validity-badge">Val: ${p.validade}</div>`;
-                }
-                
-                // Chip "Informações" below validity
-                let infoHtml = '';
-                if (p.caracteristicas) {
-                    infoHtml = `<div style="text-align:center; margin-top:4px;"><span class="cp-info-chip" onclick="App.openInfo('${p.id}')">Informações</span></div>`;
-                }
-
-                return `
-                <div class="card-prod">
-                    ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}
-                    <div class="cp-img-box" onclick="App.openInfo('${p.id}')"><img src="${p.imagem}" class="cp-img" loading="lazy"></div>
-                    <div class="cp-title">${p.nome}</div>
-                    <div class="cp-price">${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}R$ ${price.toFixed(2).replace('.',',')}</div>
-                    ${btn}
-                    ${valHtml}
-                    ${infoHtml}
-                </div>`;
-            },
-
-            removeItem(id) {
-                if (this.cart[id]) {
-                    this.modQty(id, -this.cart[id]); // Remove all qty
-                }
-            },
-
-            countRemovals() {
-                let count = 0;
-                for(let id in this.originalCart) {
-                    if (this.originalCart[id] > 0 && (!this.cart[id] || this.cart[id] === 0)) count++;
-                }
-                return count;
-            },
-
-            modQty(id, delta) {
-                const p = this.data.find(x => x.id === id);
-                if(!this.cart[id]) this.cart[id] = 0;
-                
-                const isNew = this.cart[id] === 0;
-                const newQty = this.cart[id] + delta;
-                
-                if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
-                if (this.originalCart[id] && delta < 0 && newQty === 0 && this.countRemovals() >= this.currentLimit) return alert(`Limite de ${this.currentLimit} trocas atingido.`);
-
-                this.cart[id] = newQty;
-                
-                if(this.cart[id] <= 0) {
-                    delete this.cart[id];
-                    this.cartOrder = this.cartOrder.filter(x => x !== id);
-                } else {
-                    if (isNew) {
-                        this.cartOrder = this.cartOrder.filter(x => x !== id);
-                        this.cartOrder.unshift(id);
-                    }
-                }
-                
-                this.renderIncluded();
-                if (isNew && delta > 0) {
-                    const mobSlider = document.getElementById('included-list-mob');
-                    if(mobSlider) mobSlider.scrollTo({left:0, behavior:'smooth'});
-                    const deskSlider = document.getElementById('included-list-desk');
-                    if(deskSlider) deskSlider.scrollTop = 0;
-                }
-                
-                const searchVal = document.getElementById('desk-search') ? document.getElementById('desk-search').value : "";
-                this.renderAllLists(searchVal);
-                
-                if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
-            },
-
-            checkSuggestion(code) {
-                const p = this.data.find(x => x.code === code);
-                if(p && !this.cart[p.id]) {
-                    const t = document.getElementById('suggestion-toast');
-                    document.getElementById('st-img').src = p.imagem;
-                    document.getElementById('st-text').innerHTML = `Leve <b>${p.nome}</b><br>por R$ ${p.valor.toFixed(2)}`;
-                    document.getElementById('st-btn').onclick = () => { this.modQty(p.id, 1); t.classList.remove('visible'); };
-                    t.classList.add('visible');
-                    setTimeout(() => t.classList.remove('visible'), 8000);
-                }
-            },
-
-            updateTotal() {
-                let sum = 0;
-                for(let id in this.cart) {
-                    let p = this.data.find(x => x.id === id);
-                    if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
-                }
-                
-                if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
-                     let startSum = 0;
-                     for(let i in this.originalCart) {
-                         let p = this.data.find(x => x.id === i);
-                         if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i];
-                     }
-                     this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
-                }
-
-                const total = Math.max(sum + this.baseFee, this.currentBasket.valor);
-                const txt = 'R$ ' + total.toFixed(2).replace('.', ',');
-                
-                const toast = document.getElementById('credit-toast');
-                const subToast = document.getElementById('credit-sub-toast');
-                
-                if (this.currentBasket.valor > (sum + this.baseFee)) {
-                    const diff = this.currentBasket.valor - (sum + this.baseFee);
-                    toast.innerText = `Você tem R$ ${diff.toFixed(2).replace('.',',')} em crédito!`;
-                    toast.classList.add('visible');
-                    subToast.classList.add('visible');
-                } else {
-                    toast.classList.remove('visible');
-                    subToast.classList.remove('visible');
-                }
-
-                if(document.getElementById('mba-total')) document.getElementById('mba-total').innerText = txt;
-                document.getElementById('co-total').innerText = txt;
-                if(document.getElementById('ds-total')) {
-                    document.getElementById('ds-total').innerText = txt;
-                }
-
-                const rem = this.countRemovals();
-                const limitTxt = `Alt: ${rem}/${this.currentLimit}`;
-                document.getElementById('limit-alert').innerText = limitTxt;
-                document.getElementById('limit-alert-desk').innerText = limitTxt;
-                
-                const badgeClass = rem >= this.currentLimit ? 'limit-alert error' : 'limit-alert';
-                document.getElementById('limit-alert').className = badgeClass;
-                document.getElementById('limit-alert-desk').className = badgeClass;
-            },
-
-            scrollVertical(dir) {
-                const el = document.getElementById('included-list-desk');
-                if(el) el.scrollBy({top: dir * 100, behavior: 'smooth'});
-            },
-
-            openInfo(id) {
-                const p = this.data.find(x => x.id === id);
-                if(!p) return;
-                document.getElementById('info-title').innerText = p.nome;
-                
-                let desc = p.caracteristicas;
-                if (desc) {
-                    desc = desc.replace(/\n/g, '<br>');
-                    desc = desc.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    desc = desc.replace(/\* /g, '• ');
-                } else {
-                    desc = "Sem informações adicionais.";
-                }
-                
-                document.getElementById('info-body').innerHTML = desc;
-                const mediaDiv = document.getElementById('info-media');
-                mediaDiv.innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%; border-radius:8px;">` : '';
-                App.openSheet('info-sheet');
-            },
-
-            scrollToCat(name) {
-                App.closeSheet('categories-sheet');
-                
-                const dSearch = document.getElementById('desk-search');
-                if(dSearch) dSearch.value = "";
-                
-                App.renderAllLists();
-
-                setTimeout(() => {
-                    const el = document.getElementById('cat-' + name);
-                    if(el) {
-                        const stickyHeader = document.querySelector('.sticky-basket-container');
-                        const headerHeight = (stickyHeader && stickyHeader.offsetParent !== null) ? stickyHeader.offsetHeight : 0;
-                        const offset = headerHeight + 20; 
-
-                        const elementPosition = el.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-                        window.scrollTo({
-                            top: offsetPosition,
-                            behavior: 'smooth'
-                        });
-                    }
-                }, 150);
-            },
-
-            openSheet(id) { document.getElementById(id).classList.add('open'); },
-            closeSheet(id) { document.getElementById(id).classList.remove('open'); },
-            
-            openCheckout() {
-                if(Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
-                const list = document.getElementById('checkout-items');
-                list.innerHTML = Object.keys(this.cart).map(id => {
-                    const p = this.data.find(x => x.id === id);
-                    return `<li class="co-item"><span>${this.cart[id]}x ${p.nome}</span></li>`;
-                }).join('');
-                document.getElementById('checkout-modal').showModal();
-            },
-
-            sendWhatsApp() {
-                const total = document.getElementById('co-total').innerText;
-                const method = document.getElementById('payment-method').value;
-                let msg = `*PEDIDO: ${this.currentBasket.nome}*\n`;
-                for(let id in this.cart) {
-                    const p = this.data.find(x => x.id === id);
-                    msg += `${this.cart[id]}x ${p.nome}\n`;
-                }
-                msg += `\n*TOTAL: ${total}*\nPagamento: ${method}`;
-                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
-            },
-
-            directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => App.init());
-    </script>
+// Start
+app.init();
+</script>
 </body>
 </html>
