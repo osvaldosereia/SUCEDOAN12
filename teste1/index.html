@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V20 | Titanium High-Vis</title>
+    <title>SISTEMA V21 | Titanium Perfect</title>
     
     <style>
         /* --- 1. CORE & HIGH CONTRAST --- */
         :root {
-            --bg: #e2e8f0; /* Fundo mais escuro para contraste */
+            --bg: #e2e8f0; 
             --surface: #ffffff;
-            --border: #64748b; /* Borda escura */
+            --border: #64748b; 
             --focus: #2563eb;
             --text: #0f172a;
             --sec: #475569;
@@ -18,8 +18,8 @@
             --btn-primary: #1d4ed8;
             --btn-success: #15803d;
             --btn-danger: #b91c1c;
+            --btn-warning: #d97706;
             
-            /* Tamanhos Comerciais */
             --input-h: 48px; 
             --btn-h: 48px;
             --font-base: 15px;
@@ -29,7 +29,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: var(--bg); color: var(--text); padding-bottom: 60px; font-size: var(--font-base); }
 
-        /* --- 2. COMPONENTS (BIGGER & BOLDER) --- */
+        /* --- 2. COMPONENTS --- */
         header { 
             background: #1e293b; 
             padding: 15px 25px; 
@@ -43,7 +43,7 @@
             cursor: pointer; padding: 0 20px; border-radius: var(--radius); border: 2px solid transparent; 
             font-weight: 700; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;
             display: inline-flex; align-items: center; gap: 8px; transition: 0.1s; height: var(--btn-h);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;
         }
         .btn:active { transform: translateY(2px); }
         .btn-primary { background: var(--btn-primary); color: white; border-color: #1e40af; }
@@ -51,9 +51,9 @@
         .btn-ghost:hover { background: #e2e8f0; border-color: #94a3b8; color: #000; }
         .btn-success { background: var(--btn-success); color: white; }
         .btn-danger { background: var(--btn-danger); color: white; }
+        .btn-warning { background: var(--btn-warning); color: white; }
         .btn-sm { height: 34px; padding: 0 12px; font-size: 0.8rem; }
 
-        /* INPUTS DE ALTA VISIBILIDADE */
         label { display: block; font-size: 0.85rem; font-weight: 800; color: #334155; margin-bottom: 6px; text-transform: uppercase; }
         input, select, textarea { 
             width: 100%; height: var(--input-h); padding: 0 12px; 
@@ -72,7 +72,6 @@
         .card { background: var(--surface); border-radius: 12px; border: 1px solid #cbd5e1; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .toolbar { padding: 20px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
-        /* TABLE HIGH CONTRAST */
         table { width: 100%; border-collapse: collapse; white-space: nowrap; }
         th { text-align: left; padding: 15px; background: #1e293b; color: #fff; font-size: 0.85rem; text-transform: uppercase; position: sticky; top: 0; z-index: 10; }
         td { padding: 12px 15px; border-bottom: 1px solid #cbd5e1; font-size: 1rem; color: #333; font-weight: 500; }
@@ -82,14 +81,13 @@
         .badge-box { background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; font-weight: bold; font-size: 0.8rem; }
         .badge-unit { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; border: 1px solid #86efac; font-weight: bold; font-size: 0.8rem; }
 
-        /* --- 4. MODAL ORGANIZADO --- */
+        /* --- 4. MODAL --- */
         dialog { margin: auto; border: none; border-radius: 12px; width: 95%; max-width: 1300px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
         dialog::backdrop { background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); }
         .modal-head { padding: 20px 25px; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; background: #fff; position: sticky; top: 0; z-index: 20; align-items: center; }
         .modal-head b { font-size: 1.3rem; color: #1e293b; }
         .modal-body { padding: 25px; max-height: 80vh; overflow-y: auto; background: #f1f5f9; }
 
-        /* Grid Layouts do Modal */
         .layout-grid { display: grid; grid-template-columns: 2fr 1.2fr; gap: 20px; }
         .panel { background: white; padding: 20px; border-radius: 10px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .panel-title { font-size: 0.95rem; font-weight: 900; color: var(--focus); text-transform: uppercase; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
@@ -97,27 +95,39 @@
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
         .row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
-
-        /* Fiscal Panel (Cinza para diferenciar) */
         .panel-fiscal { background: #f8fafc; border: 1px dashed #94a3b8; }
-
-        /* Big Price Inputs */
         .big-money { font-size: 1.4rem; color: #15803d; font-weight: bold; text-align: right; }
         .big-stock { font-size: 1.4rem; color: #1d4ed8; font-weight: bold; text-align: center; }
 
-        /* --- 5. EXTRAS --- */
-        .cat-tree-view { border: 2px solid #cbd5e1; background: #fff; padding: 10px; border-radius: 8px; }
+        /* --- 5. PRINT (100mm) --- */
+        @media print {
+            @page { size: 100mm auto; margin: 0; }
+            body * { visibility: hidden; }
+            #receipt-area, #receipt-area * { visibility: visible; }
+            #receipt-area { 
+                position: absolute; left: 0; top: 0; 
+                width: 100mm; 
+                padding: 0 3mm; /* Margem lateral 3mm */
+                color: black; background: white; 
+                font-family: 'Courier New', monospace;
+            }
+            .receipt-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
+            .client-code { font-size: 32px; font-weight: 900; text-align: center; display: block; margin-bottom: 5px; }
+            .receipt-line { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; border-bottom: 1px dashed #ccc; }
+            .receipt-total { font-size: 24px; font-weight: 900; text-align: right; margin-top: 15px; border-top: 3px solid #000; padding-top: 5px; }
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>📦 TITANIUM <span style="color:#fbbf24;">V20</span></h1>
+    <h1>📦 TITANIUM <span style="color:#fbbf24;">V21</span></h1>
     <div style="display:flex; gap:10px;">
         <button onclick="QuickCombo.open()" class="btn btn-primary" style="background:#4f46e5;">⚡ COMBO RÁPIDO</button>
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 CATEGORIAS</button>
         <button onclick="App.openModal()" class="btn btn-ghost" style="border:2px solid #fff; background:#334155; color:#fff;">+ NOVO PRODUTO</button>
         <button onclick="document.getElementById('xml-file').click()" class="btn btn-success">📥 IMPORTAR XML</button>
+        <button onclick="App.exportBackup()" class="btn btn-warning">💾 EXPORTAR BACKUP</button>
     </div>
 </header>
 
@@ -162,20 +172,21 @@
             <div class="layout-grid">
                 <div>
                     <div class="panel">
-                        <div class="panel-title">🆔 IDENTIFICAÇÃO PRINCIPAL</div>
+                        <div class="panel-title">🆔 IDENTIFICAÇÃO</div>
                         <div class="row-3">
                             <div><label>CÓDIGO INTERNO</label><input type="text" id="p-codigo" readonly style="font-weight:900; color:var(--focus);"></div>
                             <div style="grid-column: span 2"><label>CÓD. BARRAS (EAN)</label><input type="text" id="p-ean" placeholder="789..."></div>
                         </div>
-                        <div style="margin-top:15px;"><label>NOME COMPLETO DO PRODUTO</label><input type="text" id="p-nome" style="font-weight:800; text-transform:uppercase;"></div>
+                        <div style="margin-top:15px;"><label>NOME COMPLETO</label><input type="text" id="p-nome" style="font-weight:800; text-transform:uppercase;"></div>
                         <div class="row-2" style="margin-top:15px;">
                             <div><label>CATEGORIA</label><input type="text" id="p-categoria" list="dl-cats"></div>
-                            <div><label>VARIAÇÕES NOME (XML)</label><input type="text" id="p-varNome" readonly></div>
+                            <div><label>VARIAÇÕES NOME</label><input type="text" id="p-varNome" placeholder="Nomes alternativos do XML"></div>
                         </div>
+                        <div style="margin-top:15px;"><label>VARIAÇÕES EAN</label><input type="text" id="p-varEan" placeholder="Outros códigos de barras (separar por |)"></div>
                     </div>
 
                     <div class="panel panel-fiscal">
-                        <div class="panel-title">⚖️ DADOS FISCAIS (AUTO)</div>
+                        <div class="panel-title">⚖️ DADOS FISCAIS</div>
                         <div class="row-4">
                             <div><label>NCM</label><input type="text" id="p-ncm"></div>
                             <div><label>CEST</label><input type="text" id="p-cest"></div>
@@ -208,16 +219,30 @@
                         </div>
                         
                         <div id="combo-area" style="display:none; background:#eff6ff; padding:10px; border-radius:6px; margin-top:10px; border:1px solid #93c5fd;">
-                            <label>VENDA RÁPIDA (KIT)</label>
-                            <div style="display:flex; gap:5px; margin-bottom:10px;">
-                                <input type="number" id="combo-sell-qty" value="1" style="width:70px; text-align:center;">
-                                <button type="button" onclick="Combo.sell()" class="btn btn-success" style="flex:1;">💲 VENDER</button>
-                                <button type="button" onclick="Printer.printCurrent()" class="btn btn-primary btn-icon">🖨️</button>
+                            
+                            <div style="background:#fff; padding:10px; border:1px solid #cbd5e1; margin-bottom:10px; border-radius:6px;">
+                                <label>BUSCAR E INCLUIR MANUALMENTE</label>
+                                <div style="display:flex; gap:5px;">
+                                    <input type="text" id="combo-manual-search" list="dl-prods" placeholder="Nome do produto..." style="font-size:0.9rem;">
+                                    <input type="number" id="combo-manual-qty" value="1" style="width:60px; text-align:center;">
+                                    <button type="button" onclick="Combo.addManual()" class="btn btn-primary btn-sm">ADD</button>
+                                </div>
                             </div>
-                            <label>COLAR LISTA (1x ITEM)</label>
+
+                            <label>OU COLE UMA LISTA (1x ITEM)</label>
                             <textarea id="combo-paste" style="height:60px; font-size:0.8rem;"></textarea>
-                            <button type="button" onclick="Combo.processPaste()" class="btn btn-ghost btn-sm" style="width:100%; margin-top:5px;">PROCESSAR ITENS</button>
-                            <div id="combo-list" style="margin-top:5px; background:white; max-height:100px; overflow-y:auto; border:1px solid #ccc;"></div>
+                            <button type="button" onclick="Combo.processPaste()" class="btn btn-ghost btn-sm" style="width:100%; margin-top:5px;">PROCESSAR LISTA</button>
+                            
+                            <div id="combo-list" style="margin-top:10px; background:white; max-height:150px; overflow-y:auto; border:1px solid #ccc;"></div>
+
+                            <div style="margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
+                                <label>REALIZAR VENDA DO KIT</label>
+                                <div style="display:flex; gap:5px;">
+                                    <input type="number" id="combo-sell-qty" value="1" style="width:70px; text-align:center;">
+                                    <button type="button" onclick="Combo.sell()" class="btn btn-success" style="flex:1;">💲 VENDER</button>
+                                    <button type="button" onclick="Printer.printCurrent()" class="btn btn-primary btn-icon">🖨️</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -243,35 +268,6 @@
     </div>
 </dialog>
 
-<dialog id="modal-import">
-    <div class="modal-head">
-        <b>📥 IMPORTAÇÃO INTELIGENTE XML</b>
-        <button onclick="document.getElementById('modal-import').close()" class="btn btn-ghost">✕</button>
-    </div>
-    <div class="modal-body">
-        <div style="background:#fff7ed; border-left:5px solid #f97316; padding:15px; margin-bottom:20px;">
-            <p style="color:#c2410c; font-weight:bold;">🤖 INTELIGÊNCIA ATIVA:</p>
-            <p style="font-size:0.9rem; color:#ea580c;">O sistema analisou os nomes dos produtos e sugeriu automaticamente as conversões de Caixa/Fardo para Unidade.</p>
-        </div>
-        <table style="font-size:0.9rem;">
-            <thead>
-                <tr>
-                    <th>PRODUTO (XML)</th>
-                    <th style="text-align:center;">EMBALAGEM</th>
-                    <th style="text-align:center;">QTD XML</th>
-                    <th style="text-align:center;">FATOR (IA)</th>
-                    <th style="text-align:center;">ESTOQUE FINAL</th>
-                    <th style="text-align:right;">CUSTO UN.</th>
-                </tr>
-            </thead>
-            <tbody id="import-rows"></tbody>
-        </table>
-        <div style="text-align:right; margin-top:20px;">
-            <button onclick="Importer.commit()" class="btn btn-success" style="padding:0 40px;">✅ CONFIRMAR IMPORTAÇÃO</button>
-        </div>
-    </div>
-</dialog>
-
 <dialog id="modal-cats" style="max-width:700px;">
     <div class="modal-head"><b>GERENCIAR CATEGORIAS</b><button onclick="document.getElementById('modal-cats').close()" class="btn btn-ghost">✕</button></div>
     <div class="modal-body">
@@ -283,17 +279,35 @@
     </div>
 </dialog>
 
+<dialog id="modal-import">
+    <div class="modal-head"><b>📥 IMPORTAÇÃO INTELIGENTE XML</b><button onclick="document.getElementById('modal-import').close()" class="btn btn-ghost">✕</button></div>
+    <div class="modal-body">
+        <div style="background:#fff7ed; border-left:5px solid #f97316; padding:15px; margin-bottom:20px;">
+            <p style="color:#c2410c; font-weight:bold;">🤖 INTELIGÊNCIA ATIVA:</p>
+            <p style="font-size:0.9rem; color:#ea580c;">Conversões de embalagem sugeridas automaticamente.</p>
+        </div>
+        <table style="font-size:0.9rem;">
+            <thead>
+                <tr><th>PRODUTO (XML)</th><th>EMB</th><th>QTD XML</th><th>FATOR</th><th>FINAL</th><th>CUSTO UN.</th></tr>
+            </thead>
+            <tbody id="import-rows"></tbody>
+        </table>
+        <div style="text-align:right; margin-top:20px;"><button onclick="Importer.commit()" class="btn btn-success" style="padding:0 40px;">✅ CONFIRMAR IMPORTAÇÃO</button></div>
+    </div>
+</dialog>
+
 <datalist id="dl-cats"></datalist>
+<datalist id="dl-prods"></datalist>
 <div id="receipt-area"></div>
 <input type="file" id="xml-file" accept=".xml" hidden onchange="Importer.parse(this)">
 
 <script>
 /**
- * SISTEMA V20 - TITANIUM HIGH-VIS + AI PARSER
+ * SISTEMA V21 - TITANIUM PERFECT
  */
 
 const DB = {
-    key: 'sys_v20_titan',
+    key: 'sys_v21_titan',
     data: { produtos: [], categorias: [] },
     init: () => {
         const raw = localStorage.getItem(DB.key);
@@ -314,6 +328,9 @@ const App = {
     render: () => {
         const s = document.getElementById('search').value.toLowerCase();
         const tbody = document.getElementById('tbl-body');
+        // Popula datalist de produtos para busca manual do combo
+        document.getElementById('dl-prods').innerHTML = DB.data.produtos.map(p => `<option value="${p.nome}">`).join('');
+
         const list = DB.data.produtos.filter(p => p.nome.toLowerCase().includes(s) || p.codigo.toLowerCase().includes(s));
         document.getElementById('total-rows').innerText = list.length;
         
@@ -347,6 +364,7 @@ const App = {
             document.getElementById('p-ean').value = p.ean||'';
             document.getElementById('p-nome').value = p.nome;
             document.getElementById('p-varNome').value = (p.varNome||[]).join(' | ');
+            document.getElementById('p-varEan').value = (p.varEan||[]).join(' | ');
             document.getElementById('p-categoria').value = p.categoria||'';
             document.getElementById('p-ncm').value = p.ncm||'';
             document.getElementById('p-cest').value = p.cest||'';
@@ -375,6 +393,7 @@ const App = {
             ean: document.getElementById('p-ean').value,
             nome: document.getElementById('p-nome').value.toUpperCase(),
             varNome: document.getElementById('p-varNome').value.split('|').filter(Boolean),
+            varEan: document.getElementById('p-varEan').value.split('|').filter(Boolean),
             categoria: document.getElementById('p-categoria').value,
             ncm: document.getElementById('p-ncm').value,
             cest: document.getElementById('p-cest').value,
@@ -392,13 +411,29 @@ const App = {
         else { DB.data.produtos.push(prod); }
         DB.save(); App.render(); document.getElementById('modal-prod').close();
     },
-    toggleOffer: (v) => document.getElementById('offer-area').style.display = v ? 'block' : 'none'
+    toggleOffer: (v) => document.getElementById('offer-area').style.display = v ? 'block' : 'none',
+    exportBackup: () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(DB.data, null, 2));
+        const dl = document.createElement('a');
+        dl.setAttribute("href", dataStr);
+        dl.setAttribute("download", "backup_titanium_completo.json");
+        dl.click();
+    }
 };
 
-/* --- COMBO LOGIC --- */
+/* --- COMBO LOGIC (MANUAL ADD) --- */
 const Combo = {
     items: [],
     toggle: (v) => { document.getElementById('combo-area').style.display = v?'block':'none'; if(v) Combo.renderList(); },
+    addManual: () => {
+        const nome = document.getElementById('combo-manual-search').value.toUpperCase();
+        const qty = parseInt(document.getElementById('combo-manual-qty').value);
+        if(!nome || qty<=0) return;
+        const dbP = DB.data.produtos.find(p=>p.nome===nome);
+        Combo.items.push({ id: dbP?dbP.id:null, nome: nome, qty: qty });
+        Combo.renderList();
+        document.getElementById('combo-manual-search').value = '';
+    },
     processPaste: () => {
         const lines = document.getElementById('combo-paste').value.split('\n');
         lines.forEach(l => {
@@ -421,17 +456,12 @@ const Combo = {
     },
     sell: () => {
         const q = parseInt(document.getElementById('combo-sell-qty').value)||1;
-        Combo.items.forEach(i => {
-            if(i.id) {
-                const p = DB.data.produtos.find(x=>x.id===i.id);
-                if(p) p.estoque -= (i.qty*q);
-            }
-        });
+        Combo.items.forEach(i => { if(i.id) { const p = DB.data.produtos.find(x=>x.id===i.id); if(p) p.estoque -= (i.qty*q); }});
         DB.save(); App.render(); alert(`VENDA REALIZADA! BAIXA EM ${Combo.items.length} ITENS.`);
     }
 };
 
-/* --- QUICK COMBO --- */
+/* --- QUICK COMBO WITH PROMPT --- */
 const QuickCombo = {
     open: () => {
         document.getElementById('qc-nome').value = ''; document.getElementById('qc-valor').value = '';
@@ -441,7 +471,7 @@ const QuickCombo = {
     save: () => {
         const nome = document.getElementById('qc-nome').value.toUpperCase();
         const val = parseFloat(document.getElementById('qc-valor').value);
-        if(!nome || !val) return alert("PREENCHA O NOME E VALOR DO COMBO!");
+        if(!nome || !val) return alert("PREENCHA NOME E VALOR!");
         
         const lines = document.getElementById('qc-paste').value.split('\n');
         let items = [];
@@ -454,15 +484,34 @@ const QuickCombo = {
             }
         });
 
-        DB.data.produtos.push({
+        // Criar produto Combo
+        const comboProd = {
             id: Date.now().toString(36), codigo: DB.nextCode(), ean: '', nome: nome, categoria: document.getElementById('qc-cat').value,
             ncm: '', cest: '', cfop: '5102', custo: 0, valor: val, isOffer: false, offerPrice: 0, estoque: 999, unidade: 'UN', isCombo: true, comboItems: items
-        });
+        };
+        DB.data.produtos.push(comboProd);
         DB.save(); App.render(); document.getElementById('modal-quick-combo').close();
+        
+        // Pergunta final
+        if(confirm("COMBO CRIADO! DESEJA VENDER UMA UNIDADE E IMPRIMIR O CUPOM AGORA?")) {
+            // Baixa estoque dos itens
+            items.forEach(i => { if(i.id) { const p = DB.data.produtos.find(x=>x.id===i.id); if(p) p.estoque -= i.qty; } });
+            DB.save(); App.render();
+            // Prepara para impressão (simula que campos do modal principal estão preenchidos para usar Printer.printCurrent, ou cria lógica ad-hoc)
+            // Lógica Ad-Hoc para impressão direta:
+            const clientCode = prompt("CÓDIGO DO CLIENTE:", "001");
+            let cupomHtml = `<div class="client-code">${clientCode}</div>
+                <div class="receipt-header">CUPOM VENDA</div>
+                <div class="receipt-line"><span>${nome}</span></div>
+                <div class="receipt-line"><span>1 x R$${val.toFixed(2)}</span><span>R$${val.toFixed(2)}</span></div>
+                <div class="receipt-total">TOTAL: R$ ${val.toFixed(2)}</div>`;
+            document.getElementById('receipt-area').innerHTML = cupomHtml;
+            window.print();
+        }
     }
 };
 
-/* --- CATEGORY MANAGER --- */
+/* --- CATEGORY MANAGER (CORRIGIDO SUBCATEGORIAS) --- */
 const CatManager = {
     open: () => { CatManager.render(); document.getElementById('modal-cats').showModal(); },
     refreshDatalist: () => {
@@ -480,18 +529,44 @@ const CatManager = {
             DB.save(); CatManager.render(); CatManager.refreshDatalist(); document.getElementById('new-cat-root').value='';
         }
     },
+    addSub: (idx) => {
+        const s = prompt("NOME DA SUBCATEGORIA:");
+        if(s) {
+            if(!DB.data.categorias[idx].subs) DB.data.categorias[idx].subs = [];
+            DB.data.categorias[idx].subs.push(s.toUpperCase());
+            DB.save(); CatManager.render(); CatManager.refreshDatalist();
+        }
+    },
+    removeSub: (idx, subIdx) => {
+        if(confirm("REMOVER SUBCATEGORIA?")) {
+            DB.data.categorias[idx].subs.splice(subIdx, 1);
+            DB.save(); CatManager.render(); CatManager.refreshDatalist();
+        }
+    },
     render: () => {
         document.getElementById('cat-tree-view').innerHTML = DB.data.categorias.map((c, i) => `
-            <div style="margin-bottom:10px; border:1px solid #ccc; padding:10px; background:#f8fafc;">
-                <div style="font-weight:bold; display:flex; justify-content:space-between;">
-                    ${c.nome} <button onclick="DB.data.categorias.splice(${i},1);DB.save();CatManager.render();" class="btn btn-danger btn-sm">X</button>
+            <div style="margin-bottom:10px; border:1px solid #ccc; background:#f8fafc; border-radius:6px; overflow:hidden;">
+                <div style="padding:10px; font-weight:bold; display:flex; justify-content:space-between; background:#e2e8f0;">
+                    ${c.nome} 
+                    <div>
+                        <button onclick="CatManager.addSub(${i})" class="btn btn-primary btn-sm" style="margin-right:5px;">+ SUB</button>
+                        <button onclick="DB.data.categorias.splice(${i},1);DB.save();CatManager.render();" class="btn btn-danger btn-sm">X</button>
+                    </div>
+                </div>
+                <div style="padding:5px 10px;">
+                    ${(c.subs||[]).map((sub, si) => `
+                        <div style="padding:5px; border-bottom:1px dashed #ccc; display:flex; justify-content:space-between;">
+                            ↳ ${sub}
+                            <button onclick="CatManager.removeSub(${i}, ${si})" class="btn btn-ghost btn-sm" style="height:24px; padding:0 5px; color:red;">x</button>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         `).join('');
     }
 };
 
-/* --- IMPORTER WITH AI REGEX INTELLIGENCE --- */
+/* --- IMPORTER --- */
 const Importer = {
     staged: [],
     parse: (inp) => {
@@ -507,37 +582,17 @@ const Importer = {
                 const qXml = parseFloat(p.getElementsByTagName('qCom')[0].textContent);
                 const vXml = parseFloat(p.getElementsByTagName('vUnCom')[0].textContent);
 
-                // --- AI INTELLIGENCE START ---
                 let factor = 1;
-                let isPackage = false;
-
-                // 1. Detectar se é pacote baseado na Unidade
-                if(['CX','CAIXA','FD','FARDO','SC','SACO','DZ','PCT'].includes(uXml)) {
-                    isPackage = true;
-                }
-
-                // 2. Tentar extrair quantidade do nome (Regex: "12X1", "24X200", "6X2LT")
-                // Procura padrão NUMERO + X + NUMERO ou NUMERO + X
-                const regex = /\b(\d+)\s*[xX]/i;
-                const match = nome.match(regex);
-                
-                if (match) {
-                    factor = parseInt(match[1]); // Pega o primeiro número antes do X (ex: 12X1 -> 12)
-                } else if (uXml === 'DZ') {
-                    factor = 12;
-                }
+                let isPackage = /CX|CAIXA|FD|FARDO|SC|SACO|DZ|PCT/.test(uXml);
+                const match = nome.match(/\b(\d+)\s*[xX]/i);
+                if (match) factor = parseInt(match[1]);
+                else if (uXml === 'DZ') factor = 12;
 
                 Importer.staged.push({
-                    nome: nome,
-                    ean: p.getElementsByTagName('cEAN')[0]?.textContent||'',
-                    ncm: p.getElementsByTagName('NCM')[0]?.textContent||'',
-                    cest: p.getElementsByTagName('CEST')[0]?.textContent||'',
+                    nome: nome, ean: p.getElementsByTagName('cEAN')[0]?.textContent||'',
+                    ncm: p.getElementsByTagName('NCM')[0]?.textContent||'', cest: p.getElementsByTagName('CEST')[0]?.textContent||'',
                     cfop: p.getElementsByTagName('CFOP')[0]?.textContent||'5102',
-                    qXml: qXml,
-                    vXml: vXml,
-                    uXml: uXml,
-                    isPackage: isPackage,
-                    factor: factor // Fator sugerido pela IA
+                    qXml: qXml, vXml: vXml, uXml: uXml, isPackage: isPackage, factor: factor
                 });
             }
             Importer.render(); document.getElementById('modal-import').showModal();
@@ -549,14 +604,9 @@ const Importer = {
         document.getElementById('import-rows').innerHTML = Importer.staged.map((r,i)=>`
             <tr>
                 <td>${r.nome}</td>
-                <td style="text-align:center;">
-                    ${r.isPackage ? `<span class="badge-box">${r.uXml}</span>` : `<span class="badge-unit">${r.uXml}</span>`}
-                </td>
+                <td style="text-align:center;">${r.isPackage ? `<span class="badge-box">${r.uXml}</span>` : `<span class="badge-unit">${r.uXml}</span>`}</td>
                 <td style="text-align:center;">${r.qXml}</td>
-                <td style="text-align:center;">
-                    <input type="number" style="width:70px; text-align:center; border:2px solid ${r.factor>1?'#2563eb':'#ccc'}; color:${r.factor>1?'#2563eb':'#000'}; font-weight:bold;" 
-                    value="${r.factor}" onchange="Importer.staged[${i}].factor=this.value;Importer.render()">
-                </td>
+                <td style="text-align:center;"><input type="number" style="width:70px; text-align:center; font-weight:bold;" value="${r.factor}" onchange="Importer.staged[${i}].factor=this.value;Importer.render()"></td>
                 <td style="text-align:center; font-weight:bold;">${r.qXml * r.factor}</td>
                 <td style="text-align:right;">R$ ${(r.vXml / r.factor).toFixed(2)}</td>
             </tr>`).join('');
@@ -566,41 +616,33 @@ const Importer = {
             const f = parseFloat(r.factor)||1;
             const finalQ = r.qXml * f;
             const finalC = r.vXml / f;
-            
-            // Busca produto existente (Smart Match)
             const p = DB.data.produtos.find(x => x.ean===r.ean || x.nome===r.nome);
-            
             if(p) { 
-                p.estoque+=finalQ; 
-                p.custo=finalC;
-                if(!p.varNome) p.varNome = [];
-                if(p.nome !== r.nome && !p.varNome.includes(r.nome)) p.varNome.push(r.nome);
+                p.estoque+=finalQ; p.custo=finalC;
+                if(!p.varNome) p.varNome = []; if(p.nome !== r.nome && !p.varNome.includes(r.nome)) p.varNome.push(r.nome);
             } else { 
                 DB.data.produtos.push({
-                    id: Date.now().toString(36)+Math.random(), 
-                    codigo: DB.nextCode(), 
-                    ean: r.ean !== 'SEM GTIN' ? r.ean : '', 
-                    nome: r.nome,
-                    custo: finalC, 
-                    valor: finalC*1.6, // Margem padrão sugerida
-                    estoque: finalQ, 
-                    unidade: r.isPackage ? 'UN' : r.uXml, // Converte pacote pra unidade
-                    ncm:r.ncm, cest:r.cest, cfop:r.cfop, isCombo:false, isOffer:false, varNome: []
+                    id: Date.now().toString(36)+Math.random(), codigo: DB.nextCode(), ean: r.ean !== 'SEM GTIN' ? r.ean : '', nome: r.nome,
+                    custo: finalC, valor: finalC*1.6, estoque: finalQ, unidade: r.isPackage ? 'UN' : r.uXml,
+                    ncm:r.ncm, cest:r.cest, cfop:r.cfop, isCombo:false, isOffer:false, varNome: [], varEan: []
                 });
             }
         });
-        DB.save(); App.render(); document.getElementById('modal-import').close(); alert("IMPORTAÇÃO CONCLUÍDA COM SUCESSO!");
+        DB.save(); App.render(); document.getElementById('modal-import').close(); alert("IMPORTAÇÃO CONCLUÍDA!");
     }
 };
 
-/* PRINTER SIMPLIFICADA */
+/* PRINTER 100mm WITH CLIENT CODE */
 const Printer = {
     printCurrent: () => {
+        const clientCode = prompt("CÓDIGO DO CLIENTE:", "000");
         const n = document.getElementById('p-nome').value;
         const v = parseFloat(document.getElementById('p-isOffer').checked ? document.getElementById('p-offerPrice').value : document.getElementById('p-valor').value);
         const q = parseInt(document.getElementById('combo-sell-qty').value);
+        
         document.getElementById('receipt-area').innerHTML = `
-            <div class="receipt-header">CUPOM</div>
+            <div class="client-code">${clientCode}</div>
+            <div class="receipt-header">CUPOM NÃO FISCAL</div>
             <div class="receipt-line"><span>${n}</span></div>
             <div class="receipt-line"><span>${q} x R$${v.toFixed(2)}</span><span>R$${(q*v).toFixed(2)}</span></div>
             <div class="receipt-total">TOTAL: R$ ${(q*v).toFixed(2)}</div>
