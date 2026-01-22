@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V26 | Titanium JSON Integrator</title>
+    <title>SISTEMA V27 | Titanium Polished</title>
     
     <style>
         /* --- 1. CORE & HIGH CONTRAST --- */
@@ -55,7 +55,7 @@
         .btn-info { background: var(--btn-info); color: white; }
         .btn-dark { background: var(--btn-dark); color: white; }
         .btn-sm { height: 34px; padding: 0 12px; font-size: 0.8rem; }
-        .btn-xs { height: 28px; padding: 0 8px; font-size: 0.75rem; }
+        .btn-xs { height: 30px; padding: 0 10px; font-size: 0.8rem; }
 
         label { display: block; font-size: 0.85rem; font-weight: 800; color: #334155; margin-bottom: 6px; text-transform: uppercase; }
         input, select, textarea { 
@@ -71,14 +71,24 @@
         textarea { height: auto; padding: 10px; }
 
         /* --- 3. LAYOUT --- */
-        main { max-width: 95%; margin: 25px auto; }
+        main { max-width: 98%; margin: 25px auto; }
         .card { background: var(--surface); border-radius: 12px; border: 1px solid #cbd5e1; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .toolbar { padding: 20px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
-        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        /* TABLE FIX: WRAP TEXT, NO HORIZONTAL SCROLL */
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th { text-align: left; padding: 15px; background: #1e293b; color: #fff; font-size: 0.85rem; text-transform: uppercase; position: sticky; top: 0; z-index: 10; cursor: pointer; user-select: none; }
         th:hover { background: #334155; }
-        td { padding: 12px 15px; border-bottom: 1px solid #cbd5e1; font-size: 1rem; color: #333; font-weight: 500; }
+        td { 
+            padding: 10px 15px; 
+            border-bottom: 1px solid #cbd5e1; 
+            font-size: 0.95rem; 
+            color: #333; 
+            font-weight: 500;
+            white-space: normal; /* Permite quebra de linha */
+            word-wrap: break-word; /* Quebra palavras longas */
+            overflow-wrap: break-word;
+        }
         tr:nth-child(even) { background: #f8fafc; }
         tr:hover { background: #eff6ff; }
         
@@ -137,7 +147,7 @@
 <body>
 
 <header>
-    <h1>📦 TITANIUM <span style="color:#fbbf24;">V26</span></h1>
+    <h1>📦 TITANIUM <span style="color:#fbbf24;">V27</span></h1>
     <div style="display:flex; gap:10px;">
         <button onclick="QuickCombo.open()" class="btn btn-primary" style="background:#4f46e5;">⚡ COMBO RÁPIDO</button>
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 CATEGORIAS</button>
@@ -158,16 +168,21 @@
         </div>
         <div style="overflow-x:auto;">
             <table>
-                <thead>
+                <col width="40">
+                <col width="100">
+                <col width="auto"> <col width="180"> <col width="100">
+                <col width="120">
+                <col width="120">
+                <col width="180"> <thead>
                     <tr>
-                        <th width="40"><input type="checkbox" onchange="App.toggleAllCheck(this.checked)"></th>
-                        <th width="100" onclick="App.sort('codigo')">CÓDIGO ⇅</th>
+                        <th><input type="checkbox" onchange="App.toggleAllCheck(this.checked)"></th>
+                        <th onclick="App.sort('codigo')">CÓDIGO ⇅</th>
                         <th onclick="App.sort('nome')">DESCRIÇÃO DO PRODUTO ⇅</th>
-                        <th width="150" onclick="App.sort('categoria')">CATEGORIA ⇅</th>
-                        <th width="120" style="text-align:center" onclick="App.sort('estoque')">ESTOQUE ⇅</th>
-                        <th width="120" style="text-align:right">CUSTO</th>
-                        <th width="120" style="text-align:right">VENDA</th>
-                        <th width="140" style="text-align:right">AÇÃO</th>
+                        <th onclick="App.sort('categoria')">CATEGORIA ⇅</th>
+                        <th style="text-align:center" onclick="App.sort('estoque')">ESTOQUE ⇅</th>
+                        <th style="text-align:right">CUSTO</th>
+                        <th style="text-align:right">VENDA</th>
+                        <th style="text-align:right">AÇÃO</th>
                     </tr>
                 </thead>
                 <tbody id="tbl-body"></tbody>
@@ -360,34 +375,48 @@
 
 <script>
 /**
- * SISTEMA V26 - TITANIUM JSON INTEGRATOR
+ * SISTEMA V27 - TITANIUM POLISHED
  */
 
 const DB = {
-    key: 'sys_v26_titan',
+    key: 'sys_v27_titan',
     data: { produtos: [], categorias: [] },
     init: async () => {
         const raw = localStorage.getItem(DB.key);
         if (raw) {
             DB.data = JSON.parse(raw);
         } else {
-            // Try to load local json on first run
             try {
                 const resp = await fetch('produtos.json');
                 if(resp.ok) {
                     const json = await resp.json();
-                    // Normalize loaded data to internal schema
                     const loadedProds = (Array.isArray(json) ? json : (json.produtos || [])).map(p => ({
                         ...p,
-                        // Map external/legacy fields to internal
                         isOffer: p.Oferta === "Sim" || p.isOffer === true,
                         limitQty: p.Limit || p.limitQty || 0,
                         isBestSeller: p.Mais_Vendido === "Sim" || p.isBestSeller === true,
                         linkedProductCode: p.Codigo_Produto_Ligado || p.linkedProductCode || "",
                         comboItems: p.items || []
                     }));
-                    
                     DB.data = { produtos: loadedProds, categorias: [] };
+                    
+                    // AUTO EXTRACT CATEGORIES FROM LOADED PRODUCTS
+                    const uniqueCats = new Set();
+                    DB.data.produtos.forEach(p => {
+                        if(p.categoria) {
+                            const parts = p.categoria.split(' > ');
+                            const root = parts[0].trim().toUpperCase();
+                            let catObj = DB.data.categorias.find(c => c.nome === root);
+                            if(!catObj) {
+                                catObj = { id: Date.now() + Math.random(), nome: root, subs: [] };
+                                DB.data.categorias.push(catObj);
+                            }
+                            if(parts[1]) {
+                                const sub = parts[1].trim().toUpperCase();
+                                if(!catObj.subs.includes(sub)) catObj.subs.push(sub);
+                            }
+                        }
+                    });
                     DB.save();
                 }
             } catch (e) { console.log('Local JSON not found or CORS restricted. Starting empty.'); }
@@ -404,7 +433,7 @@ const DB = {
         const nums = DB.data.produtos.map(p => parseInt((p.codigo||'').replace(/\D/g,''))).filter(n => !isNaN(n)).sort((a,b)=>a-b);
         let next = 1;
         for(let n of nums) { if(n===next) next++; else if(n>next) break; }
-        return `P${String(next).padStart(3,'0')}`; // Matching sample P108 format
+        return `P${String(next).padStart(3,'0')}`; 
     }
 };
 
@@ -488,7 +517,6 @@ const App = {
 
         let list = DB.data.produtos.filter(p => p.nome.toLowerCase().includes(s) || p.codigo.toLowerCase().includes(s));
         
-        // Sorting
         const f = App.sortState.field;
         const o = App.sortState.order === 'asc' ? 1 : -1;
         list.sort((a,b) => {
@@ -522,6 +550,7 @@ const App = {
                     ${p.isOffer ? '<br><small style="color:#b91c1c; font-weight:bold;">OFERTA</small>' : ''}
                 </td>
                 <td style="text-align:right; white-space:nowrap;">
+                    <button onclick="App.quickSellList('${p.id}')" class="btn btn-success btn-xs" title="Vender Agora">💲</button>
                     <button onclick="App.openModal('${p.id}')" class="btn btn-ghost btn-xs">✏️</button>
                     <button onclick="App.clone('${p.id}')" class="btn btn-ghost btn-xs" title="Clonar">📋</button>
                     <button onclick="App.delete('${p.id}')" class="btn btn-danger btn-xs" title="Excluir">✕</button>
@@ -578,7 +607,6 @@ const App = {
             document.getElementById('p-expiry').value = p.expiryDate || ''; 
             document.getElementById('p-unidade').value = p.unidade||'UN';
             
-            // New fields
             document.getElementById('p-isBestSeller').checked = p.isBestSeller || false;
             document.getElementById('p-linkedProd').value = p.linkedProductCode || "";
 
@@ -590,7 +618,6 @@ const App = {
             document.getElementById('p-isCombo').checked = p.isCombo;
             if(p.isCombo) { Combo.toggle(true); Combo.items = p.comboItems||[]; Combo.renderList(); }
 
-            // Render Entry History (Limit 20)
             const hist = p.entryHistory || [];
             const displayHist = hist.slice(0, 20);
             document.getElementById('history-rows').innerHTML = displayHist.map((h, idx) => `
@@ -600,11 +627,9 @@ const App = {
                 </tr>
             `).join('');
             
-            // Total Entry Qty
             const totalEntry = displayHist.reduce((acc, curr) => acc + (parseFloat(curr.qty)||0), 0);
             document.getElementById('total-entry-qty').innerText = totalEntry;
 
-            // Render Sales History
             const sales = p.salesHistory || [];
             document.getElementById('sales-history-rows').innerHTML = sales.slice(0, 50).map(s => `
                 <tr>
@@ -618,7 +643,6 @@ const App = {
                 </tr>
             `).join('');
             
-            // Total Sold Qty
             const totalSales = sales.slice(0, 50).reduce((acc, curr) => acc + (parseFloat(curr.qty)||0), 0);
             document.getElementById('total-sales-qty').innerText = totalSales;
 
@@ -629,15 +653,38 @@ const App = {
         document.getElementById('modal-prod').showModal();
     },
 
+    quickSellList: (id) => {
+        const p = DB.data.produtos.find(x => x.id === id);
+        if(!p) return;
+        const qty = prompt(`VENDER: ${p.nome}\nQuantidade:`, "1");
+        if(qty === null || qty.trim() === "") return;
+        
+        const qInt = parseInt(qty);
+        if(isNaN(qInt) || qInt <= 0) return alert("Quantidade Inválida");
+
+        const client = prompt("CÓDIGO CLIENTE:", "000");
+        
+        // Simulating form inputs for processSale logic reused logic
+        // But since processSale reads from Modal DOM, we need a dedicated function or temporary mock
+        // Better: create a universal sell function accepting params
+        App.executeSale(p.id, qInt, client);
+    },
+
     processSale: () => {
+        // Called from Modal
         const id = document.getElementById('p-id').value;
-        const qtyToSell = parseInt(document.getElementById('quick-sell-qty').value) || 1;
-        const isCombo = document.getElementById('p-isCombo').checked;
-        const items = isCombo ? Combo.items : [{ id: id, qty: 1 }];
+        const qty = parseInt(document.getElementById('quick-sell-qty').value) || 1;
+        const client = prompt("CÓDIGO DO CLIENTE:", "000");
+        App.executeSale(id, qty, client);
+    },
+
+    executeSale: (id, qtyToSell, clientCode) => {
         const mainProd = DB.data.produtos.find(x => x.id === id);
+        if(!mainProd) return;
 
-        if(!id || !mainProd) return;
-
+        // Determine items to deduct
+        const items = mainProd.isCombo ? mainProd.comboItems : [{ id: id, qty: 1 }];
+        
         items.forEach(item => {
             if(item.id) {
                 const p = DB.data.produtos.find(x => x.id === item.id);
@@ -665,7 +712,7 @@ const App = {
                                 p.salesHistory.unshift({
                                     date: new Date().toISOString(),
                                     qty: take,
-                                    type: isCombo ? 'COMBO' : 'INDIVIDUAL',
+                                    type: mainProd.isCombo ? 'COMBO' : 'INDIVIDUAL',
                                     expirySold: entry.expiry,
                                     daysInStock: Utils.diffDays(new Date(), entry.date),
                                     salePrice: salePrice.toFixed(2),
@@ -680,9 +727,16 @@ const App = {
         });
 
         DB.save();
-        App.openModal(id);
+        
+        // Update UI if modal is open
+        if(document.getElementById('modal-prod').open && document.getElementById('p-id').value === id) {
+            App.openModal(id);
+        }
         App.render();
-        alert("VENDA REALIZADA! BAIXA NO ESTOQUE (FIFO).");
+
+        // Print
+        const val = mainProd.isOffer ? mainProd.offerPrice : mainProd.valor;
+        Printer.printCustom(clientCode, mainProd.nome, val, qtyToSell, items);
     },
 
     save: () => {
@@ -714,8 +768,6 @@ const App = {
             items: document.getElementById('p-isCombo').checked ? Combo.items : [], 
             entryHistory: currentProd.entryHistory || [],
             salesHistory: currentProd.salesHistory || [],
-            
-            // New Fields
             isBestSeller: document.getElementById('p-isBestSeller').checked,
             linkedProductCode: document.getElementById('p-linkedProd').value
         };
@@ -726,25 +778,19 @@ const App = {
     toggleOffer: (v) => document.getElementById('offer-area').style.display = v ? 'block' : 'none',
     exportBackup: () => {
         const exportData = DB.data.produtos.map(p => {
-            // Split category for legacy format
             const parts = (p.categoria || '').split(' > ');
-            const mainCat = parts[0] || '';
-            const subCat = parts[1] || '';
-
             return {
                 ...p,
                 hide_on_site: (p.estoque <= 0),
                 items: p.isCombo ? p.comboItems : [],
-                
-                // MAPPING TO LEGACY JSON FORMAT
                 Mais_Vendido: p.isBestSeller ? "Sim" : "Não",
                 Tem_Ligacao: p.linkedProductCode ? "Sim" : "Não",
                 Codigo_Produto_Ligado: p.linkedProductCode || "",
                 Oferta: p.isOffer ? "Sim" : "Não",
                 Valor_Oferta: p.offerPrice,
                 Limit: p.limitQty,
-                Categoria: mainCat,
-                Subcategoria: subCat
+                Categoria: parts[0] || '',
+                Subcategoria: parts[1] || ''
             };
         });
         const fullDump = { ...DB.data, produtos: exportData };
@@ -848,7 +894,7 @@ const QuickCombo = {
         if(confirm("COMBO CRIADO! VENDER AGORA?")) {
             items.forEach(i => { if(i.id) { const p = DB.data.produtos.find(x=>x.id===i.id); if(p) p.estoque -= i.qty; } });
             DB.save(); App.render();
-            Printer.printCurrent(nome, val, 1, items);
+            Printer.printCustom(null, nome, val, 1, items); // Pass 1 qty for the combo itself
         }
     }
 };
@@ -977,7 +1023,7 @@ const Importer = {
                 if(!p.varNome) p.varNome = []; if(p.nome !== r.nome && !p.varNome.includes(r.nome)) p.varNome.push(r.nome);
                 if(!p.entryHistory) p.entryHistory = [];
                 p.entryHistory.unshift(entry);
-                p.entryHistory = p.entryHistory.slice(0, 20); // Limit 20
+                p.entryHistory = p.entryHistory.slice(0, 20); 
             } else { 
                 DB.data.produtos.push({
                     id: Date.now().toString(36)+Math.random(), codigo: DB.nextCode(), ean: r.ean !== 'SEM GTIN' ? r.ean : '', nome: r.nome,
@@ -993,16 +1039,16 @@ const Importer = {
 
 /* PRINTER */
 const Printer = {
-    printCurrent: (altName, altVal, altQty, altItems) => {
+    // printCurrent is called without args from buttons, but we want it to check DOM if so
+    printCurrent: () => {
         const clientCode = prompt("CÓDIGO DO CLIENTE:", "000");
-        const n = altName || document.getElementById('p-nome').value;
-        const v = altVal || parseFloat(document.getElementById('p-isOffer').checked ? document.getElementById('p-offerPrice').value : document.getElementById('p-valor').value);
-        const q = altQty || parseInt(document.getElementById('combo-sell-qty').value);
+        const n = document.getElementById('p-nome').value;
+        const v = parseFloat(document.getElementById('p-isOffer').checked ? document.getElementById('p-offerPrice').value : document.getElementById('p-valor').value);
+        const q = parseInt(document.getElementById('quick-sell-qty') ? document.getElementById('quick-sell-qty').value : 1);
         
         let itemsHtml = '';
-        const items = altItems || (document.getElementById('p-isCombo').checked ? Combo.items : []);
-        if(items.length > 0) {
-            itemsHtml = items.map(i => `<div class="receipt-item-row"><span class="receipt-item-name">${i.qty*q}x ${i.nome}</span></div>`).join('');
+        if(document.getElementById('p-isCombo').checked && Combo.items.length > 0) {
+            itemsHtml = Combo.items.map(i => `<div class="receipt-item-row"><span class="receipt-item-name">${i.qty*q}x ${i.nome}</span></div>`).join('');
         }
 
         const area = document.getElementById('receipt-area');
@@ -1014,7 +1060,22 @@ const Printer = {
             <div class="receipt-total">TOTAL: R$ ${(q*v).toFixed(2)}</div>
         `;
         
-        // Small delay to ensure DOM render before print
+        setTimeout(() => window.print(), 300);
+    },
+    // Custom print for quick list sales
+    printCustom: (clientCode, name, val, qty, items) => {
+        if(!clientCode) clientCode = "000";
+        let itemsHtml = '';
+        if(items && items.length > 0) {
+            itemsHtml = items.map(i => `<div class="receipt-item-row"><span class="receipt-item-name">${i.qty*qty}x ${i.nome}</span></div>`).join('');
+        }
+        document.getElementById('receipt-area').innerHTML = `
+            <div class="client-code">${clientCode}</div>
+            <div class="receipt-header">CUPOM NÃO FISCAL</div>
+            <div class="receipt-combo-title">${name}</div>
+            <div style="text-align:left; margin-bottom:10px;">${itemsHtml}</div>
+            <div class="receipt-total">TOTAL: R$ ${(val*qty).toFixed(2)}</div>
+        `;
         setTimeout(() => window.print(), 300);
     }
 };
