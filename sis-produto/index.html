@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V12 | Exportação Integral</title>
+    <title>SISTEMA V13 | Gap Filler & Full Persistence</title>
     
     <style>
         /* --- 1. CORE STYLES --- */
@@ -58,7 +58,7 @@
         }
 
         @media (min-width: 1200px) {
-            main { grid-template-columns: 450px 1fr; align-items: start; }
+            main { grid-template-columns: 480px 1fr; align-items: start; }
         }
 
         /* --- 3. COMPONENTS --- */
@@ -113,14 +113,14 @@
         .bg-red { background: #fee2e2; color: #991b1b; }
         .bg-gray { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-        /* Combo & Paste */
+        /* Specific Modules */
         .combo-box { background: #eff6ff; padding: 10px; border: 1px dashed #bfdbfe; border-radius: 6px; margin-top: 5px; display: none; }
         .search-results { position: absolute; background: white; width: 100%; max-height: 180px; overflow-y: auto; border: 1px solid var(--border); z-index: 50; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px; display: none; }
         .search-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
         .search-item:hover { background: #f8fafc; color: var(--primary); }
         .paste-area { width: 100%; height: 100px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 5px; }
 
-        /* Modals */
+        /* Modal */
         dialog { margin: auto; border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 90%; max-width: 900px; padding: 0; }
         dialog::backdrop { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px); }
         .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
@@ -140,11 +140,11 @@
 <body>
 
 <header>
-    <h1>📋 CATÁLOGO PRO V12</h1>
+    <h1>📋 CATÁLOGO PRO V13</h1>
     <div style="display:flex; gap:8px;">
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 Categorias</button>
         <button onclick="Importer.open()" class="btn btn-primary">📥 Importar (Auditoria)</button>
-        <button onclick="App.exportData()" class="btn btn-ghost">💾 Backup Completo</button>
+        <button onclick="App.exportData()" class="btn btn-ghost">💾 Exportar JSON</button>
     </div>
 </header>
 
@@ -160,7 +160,7 @@
                 <input type="hidden" id="p-dataCadastro">
                 
                 <div class="form-grid-3">
-                    <div><label>Código</label><input type="text" id="p-codigo" readonly placeholder="Auto" style="font-weight:700;"></div>
+                    <div><label>Código</label><input type="text" id="p-codigo" readonly placeholder="Auto (P001)" style="font-weight:700; background:#eff6ff; color:var(--primary);"></div>
                     <div style="grid-column: span 2;"><label>EAN / GTIN</label><input type="text" id="p-ean"></div>
                 </div>
                 <div class="form-group"><label>Nome do Produto</label><input type="text" id="p-nome" required style="font-weight:600;"></div>
@@ -172,7 +172,12 @@
                 
                 <div class="form-grid-2">
                     <div><label>Unidade</label><input type="text" id="p-unidade" placeholder="UN, CX, KG"></div>
-                    <div><label>Imagem (Nome)</label><input type="text" id="p-imageName" placeholder="foto.jpg"></div>
+                    <div><label>Imagem (URL/Caminho)</label><input type="text" id="p-imagem" placeholder="../site/img/..."></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Características (Descrição Técnica)</label>
+                    <textarea id="p-caracteristicas" placeholder="Detalhes do produto, marca, etc..." style="height:80px;"></textarea>
                 </div>
 
                 <div class="section-divider"><span>💰 Custos & Preços</span></div>
@@ -334,11 +339,11 @@
 
 <script>
 /**
- * SISTEMA V12 - EXPORTAÇÃO INTEGRAL E IMPORTAÇÃO INTELIGENTE
+ * SISTEMA V13 - GAP FILLER & PERSISTÊNCIA COMPLETA
  */
 
 const DB = {
-    key: 'sys_master_v12',
+    key: 'sys_master_v13',
     get: () => {
         const raw = localStorage.getItem(DB.key);
         const data = raw ? JSON.parse(raw) : { produto: [], categorias: [] };
@@ -348,10 +353,28 @@ const DB = {
         return data;
     },
     save: (data) => localStorage.setItem(DB.key, JSON.stringify(data)),
+    
+    // --- LÓGICA DE REAPROVEITAMENTO DE CÓDIGOS (GAP FILLER) ---
     nextCode: () => {
         const db = DB.get();
-        const max = db.produto.reduce((acc, p) => Math.max(acc, parseInt((p.codigo||'').replace(/\D/g,'')||0)), 0);
-        return `P${String(max + 1).padStart(4, '0')}`;
+        // Extrai apenas os números dos códigos existentes (Ex: P005 -> 5)
+        const existingNums = db.produto
+            .map(p => parseInt((p.codigo || '').replace(/[^\d]/g, '')))
+            .filter(n => !isNaN(n))
+            .sort((a, b) => a - b);
+
+        // Procura o primeiro buraco na sequência
+        let nextNum = 1;
+        for (let num of existingNums) {
+            if (num === nextNum) {
+                nextNum++;
+            } else if (num > nextNum) {
+                // Encontrou uma lacuna (ex: tem 1, 2, 4 -> falta o 3)
+                break;
+            }
+        }
+        // Gera o código formatado (ex: P003)
+        return `P${String(nextNum).padStart(3, '0')}`;
     }
 };
 
@@ -361,7 +384,7 @@ const App = {
         App.renderBatches();
         CatManager.refreshSelects();
         App.renderList();
-        console.log("Sistema V12 Iniciado.");
+        console.log("Sistema V13 Iniciado - LocalStorage Carregado.");
     },
 
     sanitizeDB: () => {
@@ -371,11 +394,10 @@ const App = {
             if(!p.nome) { p.nome = p.xProd || p.description || "PRODUTO SEM NOME"; changed=true; }
             if(p.categoria === undefined || p.categoria === null) { p.categoria = ""; changed=true; }
             if(p.fornecedor === undefined || p.fornecedor === null) { p.fornecedor = ""; changed=true; }
+            // Garante código se estiver vazio
             if(!p.codigo) { p.codigo = DB.nextCode(); changed=true; }
         });
-        if(changed) {
-            DB.save(db);
-        }
+        if(changed) DB.save(db);
     },
 
     clearFilters: () => {
@@ -391,7 +413,12 @@ const App = {
         const db = DB.get();
         const id = document.getElementById('p-id').value;
         const now = new Date().toISOString();
-        let codigo = document.getElementById('p-codigo').value || (id ? '' : DB.nextCode());
+        
+        // Se for novo, gera código reaproveitando buracos. Se for edição, mantém.
+        let codigo = document.getElementById('p-codigo').value;
+        if(!id && (!codigo || codigo === '')) {
+            codigo = DB.nextCode();
+        }
 
         let batches = [];
         for(let i=0; i<3; i++){
@@ -400,17 +427,19 @@ const App = {
             if(d && q > 0) batches.push({date: d, qty: q});
         }
 
+        // OBJETO COMPLETO BASEADO NO PRODUTOS.JSON DO USUÁRIO
         const prod = {
             id: id || Date.now().toString(),
             dataCadastro: document.getElementById('p-dataCadastro').value || now,
             ultimaAtualizacao: now,
-            codigo,
+            codigo: codigo,
             ean: (document.getElementById('p-ean').value || '').trim(),
             nome: (document.getElementById('p-nome').value || 'SEM NOME').trim().toUpperCase(),
             fornecedor: (document.getElementById('p-fornecedor').value || '').toUpperCase(),
             categoria: document.getElementById('p-categoria').value || '',
             unidade: document.getElementById('p-unidade').value || '',
-            imageName: document.getElementById('p-imageName').value || '',
+            imagem: document.getElementById('p-imagem').value || '', // Campo atualizado
+            caracteristicas: document.getElementById('p-caracteristicas').value || '', // Novo campo
             custo: Number(document.getElementById('p-custo').value)||0,
             valor: Number(document.getElementById('p-valor').value)||0,
             isOffer: document.getElementById('p-isOffer').checked,
@@ -420,7 +449,7 @@ const App = {
             limit: Number(document.getElementById('p-limit').value)||0,
             peso: Number(document.getElementById('p-peso').value)||0,
             pesoLiq: Number(document.getElementById('p-pesoLiq').value)||0,
-            batches,
+            batches: batches,
             isCombo: document.getElementById('p-isCombo').checked,
             items: ComboManager.currentItems,
             variacoesEan: (document.getElementById('p-variacoesEan').value || '').split('|').map(s=>s.trim()).filter(Boolean),
@@ -429,7 +458,8 @@ const App = {
             linkedProdCode: document.getElementById('p-linkedName').value,
             ncm: document.getElementById('p-ncm').value,
             cest: document.getElementById('p-cest').value,
-            cfop: document.getElementById('p-cfop').value
+            cfop: document.getElementById('p-cfop').value,
+            personalized: false // Padrão do JSON
         };
 
         if(id) {
@@ -442,7 +472,7 @@ const App = {
         DB.save(db);
         App.resetForm();
         App.renderList();
-        alert('Salvo!');
+        alert(`Produto salvo com sucesso! Código: ${prod.codigo}`);
     },
 
     edit: (id) => {
@@ -450,7 +480,6 @@ const App = {
         const p = db.produto.find(x => x.id === id);
         if(!p) return;
 
-        // Populate safely
         const setVal = (eid, val) => document.getElementById(eid).value = val || '';
         
         setVal('p-id', p.id);
@@ -461,7 +490,8 @@ const App = {
         setVal('p-fornecedor', p.fornecedor);
         setVal('p-categoria', p.categoria);
         setVal('p-unidade', p.unidade);
-        setVal('p-imageName', p.imageName);
+        setVal('p-imagem', p.imagem || p.imageName); // Suporte a ambos
+        setVal('p-caracteristicas', p.caracteristicas);
         setVal('p-custo', p.custo);
         setVal('p-valor', p.valor);
         setVal('p-offerPrice', p.offerPrice);
@@ -491,7 +521,7 @@ const App = {
     },
 
     delete: (id) => {
-        if(!confirm('Excluir?')) return;
+        if(!confirm('Excluir este produto? O código dele ficará disponível para novos cadastros.')) return;
         const db = DB.get();
         db.produto = db.produto.filter(p => p.id !== id);
         DB.save(db);
@@ -587,15 +617,14 @@ const App = {
         }).join('');
     },
 
-    // --- EXPORTAÇÃO INTEGRAL V12 ---
     exportData: () => {
         const db = DB.get();
-        // Garantia de que todos os dados são exportados
+        // EXPORTAÇÃO APENAS DOS PRODUTOS (CONFORME SOLICITADO NO ARQUIVO MODELO)
+        // Se quiser exportar configurações e categorias também, mude para JSON.stringify(db)
         const now = new Date();
-        const fileName = `backup_sistema_${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}.json`;
+        const fileName = `produtos_backup_${String(now.getDate()).padStart(2,'0')}_${String(now.getMonth()+1).padStart(2,'0')}.json`;
         
-        // Exporta o banco de dados completo (produtos + categorias + configs)
-        const blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
+        const blob = new Blob([JSON.stringify(db.produto, null, 2)], {type:'application/json'});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = fileName;
@@ -603,7 +632,7 @@ const App = {
     }
 };
 
-/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA (V11/V12) --- */
+/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA --- */
 const Importer = {
     stagedProducts: [],
     stagedCats: [],
@@ -625,7 +654,9 @@ const Importer = {
             codigo: item.cProd_Sugestao || item.codigo || "",
             valor: Number(item.valor || 0),
             fornecedor: (item.fornecedor || "").toUpperCase(),
-            categoria: item.categoria || ""
+            categoria: item.categoria || "",
+            imagem: item.imagem || item.imageName || "",
+            caracteristicas: item.caracteristicas || ""
         };
     },
 
@@ -637,9 +668,9 @@ const Importer = {
             try {
                 const json = JSON.parse(e.target.result);
                 let rawList = [];
+                // Suporta formato Lista [...] ou formato Banco {produto: [...]}
                 if(Array.isArray(json)) rawList = json;
                 else if(json.produto) rawList = json.produto;
-                else if(json.produtos) rawList = json.produtos;
                 
                 if(json.categorias) Importer.stagedCats = json.categorias;
 
@@ -655,12 +686,12 @@ const Importer = {
                     };
                 });
 
-                if(Importer.stagedProducts.length === 0) throw new Error("JSON sem produtos reconhecíveis");
+                if(Importer.stagedProducts.length === 0) throw new Error("JSON inválido ou vazio");
 
                 Importer.renderPreview();
                 document.getElementById('modal-import-preview').showModal();
 
-            } catch(err) { alert("Erro ao ler JSON: " + err.message); }
+            } catch(err) { alert("Erro JSON: " + err.message); }
         };
         reader.readAsText(file);
         input.value = '';
@@ -669,98 +700,66 @@ const Importer = {
     renderPreview: () => {
         const tbody = document.getElementById('import-preview-list');
         const db = DB.get();
-        
         tbody.innerHTML = Importer.stagedProducts.map((p, idx) => {
             const exists = db.produto.some(ex => ex.id === p.id || (ex.codigo && ex.codigo === p.codigo));
-            const status = exists 
-                ? '<span class="badge bg-gray">Atualizar</span>' 
-                : '<span class="badge bg-green">Novo</span>';
-            
+            const status = exists ? '<span class="badge bg-gray">Atualizar</span>' : '<span class="badge bg-green">Novo</span>';
             return `
             <tr class="${p._selected ? 'selected' : ''}" onclick="Importer.toggle(${idx})">
                 <td><input type="checkbox" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); Importer.toggle(${idx})"></td>
                 <td>${p.codigo || 'Auto'}</td>
-                <td><div style="width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p._tempName}</div></td>
+                <td><div style="width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p._tempName}</div></td>
                 <td>${p._tempStock}</td>
                 <td>${p._tempCost}</td>
                 <td>${p._tempCfop}</td>
                 <td>${status}</td>
             </tr>`;
         }).join('');
-
-        const selectedCount = Importer.stagedProducts.filter(p => p._selected).length;
-        document.getElementById('import-stats').innerText = `${selectedCount} produtos selecionados.`;
+        document.getElementById('import-stats').innerText = `${Importer.stagedProducts.filter(p => p._selected).length} selecionados.`;
     },
 
-    toggle: (idx) => {
-        Importer.stagedProducts[idx]._selected = !Importer.stagedProducts[idx]._selected;
-        Importer.renderPreview();
-    },
-
-    toggleAll: (val) => {
-        Importer.stagedProducts.forEach(p => p._selected = val);
-        Importer.renderPreview();
-    },
+    toggle: (idx) => { Importer.stagedProducts[idx]._selected = !Importer.stagedProducts[idx]._selected; Importer.renderPreview(); },
+    toggleAll: (val) => { Importer.stagedProducts.forEach(p => p._selected = val); Importer.renderPreview(); },
 
     commit: () => {
         const toImport = Importer.stagedProducts.filter(p => p._selected);
-        if(toImport.length === 0) return alert("Nenhum item selecionado.");
-
+        if(toImport.length === 0) return alert("Nada selecionado.");
+        
         const db = DB.get();
-        let added = 0, updated = 0;
+        let added=0, updated=0;
 
         toImport.forEach(raw => {
-            const cleanProd = {
-                ...raw,
-                id: raw.id || Date.now() + Math.random().toString(),
-                codigo: raw.codigo || DB.nextCode()
-            };
+            const cleanProd = { ...raw };
+            // Se não tiver ID, cria. Se não tiver código, o App.sanitize vai criar depois, ou podemos criar agora.
+            // Para importação, preferimos manter o código se existir.
+            if(!cleanProd.id) cleanProd.id = Date.now() + Math.random().toString();
             
-            delete cleanProd._tempName;
-            delete cleanProd._tempStock;
-            delete cleanProd._tempCost;
-            delete cleanProd._tempCfop;
-            delete cleanProd._selected;
+            // Remove auxiliares
+            delete cleanProd._tempName; delete cleanProd._tempStock; delete cleanProd._tempCost;
+            delete cleanProd._tempCfop; delete cleanProd._selected;
 
             const idx = db.produto.findIndex(ex => ex.id === cleanProd.id || (ex.codigo && ex.codigo === cleanProd.codigo));
-            
-            if(idx > -1) {
-                db.produto[idx] = { ...db.produto[idx], ...cleanProd };
-                updated++;
-            } else {
-                db.produto.push(cleanProd);
-                added++;
-            }
+            if(idx > -1) { db.produto[idx] = { ...db.produto[idx], ...cleanProd }; updated++; }
+            else { db.produto.push(cleanProd); added++; }
         });
 
-        // Importa Categorias
-        let catsAdded = 0;
-        Importer.stagedCats.forEach(c => {
-            if(!db.categorias.some(ex => ex.id === c.id || ex.nome === c.nome)) {
-                db.categorias.push(c);
-                catsAdded++;
-            }
-        });
+        // Categorias
+        if(Importer.stagedCats && Importer.stagedCats.length > 0) {
+            Importer.stagedCats.forEach(c => {
+                if(!db.categorias.some(ex => ex.nome === c.nome)) db.categorias.push(c);
+            });
+        }
 
         DB.save(db);
         document.getElementById('modal-import-preview').close();
-        
-        App.sanitizeDB(); 
-        App.clearFilters();
-        App.renderList(); 
-        CatManager.refreshSelects();
-        
-        alert(`Processo Concluído!\n\n+ ${added} Novos\n~ ${updated} Atualizados\n+ ${catsAdded} Categorias`);
+        App.init(); // Recarrega tudo
+        alert(`Concluído: ${added} Novos, ${updated} Atualizados.`);
     }
 };
 
 /* --- MÓDULOS AUXILIARES --- */
 const ComboManager = {
     currentItems: [],
-    toggle: (checked) => {
-        document.getElementById('combo-area').style.display = checked ? 'block' : 'none';
-        if(checked) ComboManager.render();
-    },
+    toggle: (checked) => { document.getElementById('combo-area').style.display = checked ? 'block' : 'none'; if(checked) ComboManager.render(); },
     processPaste: () => {
         const text = document.getElementById('combo-paste').value;
         const db = DB.get();
