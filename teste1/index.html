@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V22 | Titanium Final</title>
+    <title>SISTEMA V23 | Titanium Pro+</title>
     
     <style>
         /* --- 1. CORE & HIGH CONTRAST --- */
@@ -18,6 +18,7 @@
             --btn-success: #15803d;
             --btn-danger: #b91c1c;
             --btn-warning: #d97706;
+            --btn-info: #0891b2;
             
             --input-h: 48px; 
             --font-base: 15px;
@@ -50,7 +51,9 @@
         .btn-success { background: var(--btn-success); color: white; }
         .btn-danger { background: var(--btn-danger); color: white; }
         .btn-warning { background: var(--btn-warning); color: white; }
+        .btn-info { background: var(--btn-info); color: white; }
         .btn-sm { height: 34px; padding: 0 12px; font-size: 0.8rem; }
+        .btn-xs { height: 28px; padding: 0 8px; font-size: 0.75rem; }
 
         label { display: block; font-size: 0.85rem; font-weight: 800; color: #334155; margin-bottom: 6px; text-transform: uppercase; }
         input, select, textarea { 
@@ -110,7 +113,7 @@
             #receipt-area, #receipt-area * { visibility: visible; }
             #receipt-area { 
                 position: absolute; left: 50%; transform: translateX(-50%); top: 0;
-                width: 94mm; /* 100mm - 3mm margem cada lado */
+                width: 94mm; 
                 padding: 5px 0;
                 color: black; background: white; 
                 font-family: 'Courier New', monospace;
@@ -118,21 +121,23 @@
             }
             .client-code { font-size: 40px; font-weight: 900; display: block; margin-bottom: 10px; border-bottom: 2px solid #000; }
             .receipt-header { font-size: 16px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
-            
             .receipt-combo-title { font-size: 18px; font-weight: 900; margin-top: 10px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 2px; }
-            
             .receipt-item-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; text-align: left; }
-            .receipt-item-name { flex: 1; }
-            .receipt-item-price { white-space: nowrap; margin-left: 10px; }
-            
             .receipt-total { font-size: 26px; font-weight: 900; text-align: right; margin-top: 15px; border-top: 3px solid #000; padding-top: 5px; }
+            
+            /* Print Specific for Quotation */
+            #quotation-area, #quotation-area * { visibility: visible; }
+            #quotation-area {
+                position: absolute; left: 0; top: 0; width: 100%;
+                font-family: Arial, sans-serif; text-align: left;
+            }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>📦 TITANIUM <span style="color:#fbbf24;">V22</span></h1>
+    <h1>📦 TITANIUM <span style="color:#fbbf24;">V23</span></h1>
     <div style="display:flex; gap:10px;">
         <button onclick="QuickCombo.open()" class="btn btn-primary" style="background:#4f46e5;">⚡ COMBO RÁPIDO</button>
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 CATEGORIAS</button>
@@ -146,6 +151,7 @@
     <div class="card">
         <div class="toolbar">
             <input type="text" id="search" placeholder="🔍 DIGITE NOME, EAN OU CÓDIGO..." oninput="App.render()" style="max-width: 450px; border-color: #94a3b8;">
+            <button onclick="App.generateQuote()" class="btn btn-info">📄 PEDIR COTAÇÃO (PDF)</button>
             <div style="flex:1"></div>
             <div style="font-size:1.2rem; font-weight:bold; color:#334155;">TOTAL ITENS: <span id="total-rows" style="color:var(--focus)">0</span></div>
         </div>
@@ -153,13 +159,14 @@
             <table>
                 <thead>
                     <tr>
+                        <th width="40"><input type="checkbox" onchange="App.toggleAllCheck(this.checked)"></th>
                         <th width="100" onclick="App.sort('codigo')">CÓDIGO ⇅</th>
                         <th onclick="App.sort('nome')">DESCRIÇÃO DO PRODUTO ⇅</th>
                         <th width="150" onclick="App.sort('categoria')">CATEGORIA ⇅</th>
                         <th width="120" style="text-align:center" onclick="App.sort('estoque')">ESTOQUE ⇅</th>
                         <th width="120" style="text-align:right">CUSTO</th>
                         <th width="120" style="text-align:right">VENDA</th>
-                        <th width="100" style="text-align:right">AÇÃO</th>
+                        <th width="140" style="text-align:right">AÇÃO</th>
                     </tr>
                 </thead>
                 <tbody id="tbl-body"></tbody>
@@ -233,8 +240,9 @@
                         <div class="panel-title">📦 ESTOQUE & KIT</div>
                         <div class="row-2">
                             <div><label>QTD ATUAL</label><input type="number" id="p-estoque" class="big-stock"></div>
-                            <div><label>LIMITE P/ VENDA</label><input type="number" id="p-limitQty" placeholder="Sem Limite" style="text-align:center;"></div>
+                            <div><label>VALIDADE LOTE (MANUAL)</label><input type="date" id="p-expiry"></div>
                         </div>
+                        <div style="margin-top:10px;"><label>LIMITE P/ VENDA</label><input type="number" id="p-limitQty" placeholder="Sem Limite"></div>
                         
                         <div style="margin-top:20px; border-top:2px dashed #cbd5e1; padding-top:15px;">
                             <label style="cursor:pointer; color:var(--focus);"><input type="checkbox" id="p-isCombo" onchange="Combo.toggle(this.checked)" style="width:20px; height:20px; vertical-align:middle;"> ESTE PRODUTO É UM KIT/COMBO?</label>
@@ -242,9 +250,9 @@
                         
                         <div id="combo-area" style="display:none; background:#eff6ff; padding:10px; border-radius:6px; margin-top:10px; border:1px solid #93c5fd;">
                             <div style="background:#fff; padding:10px; border:1px solid #cbd5e1; margin-bottom:10px; border-radius:6px;">
-                                <label>BUSCAR E INCLUIR MANUALMENTE</label>
+                                <label>BUSCAR MANUALMENTE</label>
                                 <div style="display:flex; gap:5px;">
-                                    <input type="text" id="combo-manual-search" list="dl-prods" placeholder="Nome do produto..." style="font-size:0.9rem;">
+                                    <input type="text" id="combo-manual-search" list="dl-prods" placeholder="Nome do produto...">
                                     <input type="number" id="combo-manual-qty" value="1" style="width:60px; text-align:center;">
                                     <button type="button" onclick="Combo.addManual()" class="btn btn-primary btn-sm">ADD</button>
                                 </div>
@@ -255,7 +263,7 @@
                             <div id="combo-list" style="margin-top:10px; background:white; max-height:150px; overflow-y:auto; border:1px solid #ccc;"></div>
                             
                             <div style="margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
-                                <label>REALIZAR VENDA DO KIT</label>
+                                <label>VENDA RÁPIDA KIT</label>
                                 <div style="display:flex; gap:5px;">
                                     <input type="number" id="combo-sell-qty" value="1" style="width:70px; text-align:center;">
                                     <button type="button" onclick="Combo.sell()" class="btn btn-success" style="flex:1;">💲 VENDER</button>
@@ -322,11 +330,11 @@
 
 <script>
 /**
- * SISTEMA V22 - TITANIUM FINAL
+ * SISTEMA V23 - TITANIUM PRO+
  */
 
 const DB = {
-    key: 'sys_v22_titan',
+    key: 'sys_v23_titan',
     data: { produtos: [], categorias: [] },
     init: () => {
         const raw = localStorage.getItem(DB.key);
@@ -354,6 +362,48 @@ const App = {
         App.render();
     },
 
+    toggleAllCheck: (checked) => {
+        document.querySelectorAll('.prod-check').forEach(c => c.checked = checked);
+    },
+
+    generateQuote: () => {
+        const selected = Array.from(document.querySelectorAll('.prod-check:checked')).map(c => c.value);
+        if(selected.length === 0) return alert("SELECIONE PRODUTOS NA LISTA!");
+
+        let html = `<html><head><title>Cotação</title><style>
+            body { font-family: Arial; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background: #eee; }
+            h1 { text-align: center; }
+        </style></head><body>
+        <h1>COTAÇÃO DE PREÇOS</h1>
+        <table>
+            <tr><th>CÓD</th><th>PRODUTO</th><th>ESTOQUE</th><th>ÚLT. PREÇOS (3)</th><th>FORNECEDORES (3)</th><th>DATAS</th></tr>`;
+
+        selected.forEach(id => {
+            const p = DB.data.produtos.find(x => x.id === id);
+            const hist = (p.entryHistory || []).slice(0, 3);
+            const prices = hist.map(h => (h.qty ? `R$ ${(h.cost || p.custo).toFixed(2)}` : '-')).join('<br>');
+            const forns = hist.map(h => h.provider || '-').join('<br>');
+            const dates = hist.map(h => h.date || '-').join('<br>');
+
+            html += `<tr>
+                <td>${p.codigo}</td>
+                <td>${p.nome}</td>
+                <td>${p.estoque} ${p.unidade}</td>
+                <td>${prices || 'R$ ' + p.custo.toFixed(2)}</td>
+                <td>${forns || '-'}</td>
+                <td>${dates || '-'}</td>
+            </tr>`;
+        });
+        html += `</table></body></html>`;
+
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+    },
+
     render: () => {
         const s = document.getElementById('search').value.toLowerCase();
         const tbody = document.getElementById('tbl-body');
@@ -377,6 +427,7 @@ const App = {
         
         tbody.innerHTML = list.map(p => `
             <tr>
+                <td><input type="checkbox" class="prod-check" value="${p.id}"></td>
                 <td style="font-weight:900; color:var(--focus);">${p.codigo}</td>
                 <td>
                     <div style="font-weight:700; font-size:1.05rem;">${p.nome}</div>
@@ -391,10 +442,30 @@ const App = {
                     </b>
                     ${p.isOffer ? '<br><small style="color:#b91c1c; font-weight:bold;">OFERTA</small>' : ''}
                 </td>
-                <td style="text-align:right"><button onclick="App.openModal('${p.id}')" class="btn btn-ghost btn-sm">EDITAR</button></td>
+                <td style="text-align:right; white-space:nowrap;">
+                    <button onclick="App.openModal('${p.id}')" class="btn btn-ghost btn-xs">✏️</button>
+                    <button onclick="App.clone('${p.id}')" class="btn btn-ghost btn-xs" title="Clonar">📋</button>
+                    <button onclick="App.delete('${p.id}')" class="btn btn-danger btn-xs" title="Excluir">✕</button>
+                </td>
             </tr>
         `).join('');
     },
+    
+    clone: (id) => {
+        const p = DB.data.produtos.find(x => x.id === id);
+        if(!p) return;
+        const newP = { ...p, id: Date.now().toString(36), codigo: DB.nextCode(), nome: p.nome + ' (CÓPIA)', estoque: 0, entryHistory: [] };
+        DB.data.produtos.push(newP);
+        DB.save(); App.render();
+    },
+    
+    delete: (id) => {
+        if(confirm("TEM CERTEZA QUE DESEJA EXCLUIR ESTE PRODUTO?")) {
+            DB.data.produtos = DB.data.produtos.filter(p => p.id !== id);
+            DB.save(); App.render();
+        }
+    },
+
     openModal: (id) => {
         const f = document.getElementById('form-prod'); f.reset();
         Combo.items = []; Combo.toggle(false); App.toggleOffer(false);
@@ -416,6 +487,7 @@ const App = {
             document.getElementById('p-valor').value = p.valor;
             document.getElementById('p-estoque').value = p.estoque;
             document.getElementById('p-limitQty').value = p.limitQty || '';
+            document.getElementById('p-expiry').value = p.expiryDate || ''; // Manual Expiry
             document.getElementById('p-unidade').value = p.unidade||'UN';
             
             document.getElementById('p-isOffer').checked = p.isOffer;
@@ -458,9 +530,11 @@ const App = {
             offerPrice: parseFloat(document.getElementById('p-offerPrice').value)||0,
             estoque: parseFloat(document.getElementById('p-estoque').value)||0,
             limitQty: parseFloat(document.getElementById('p-limitQty').value)||0,
+            expiryDate: document.getElementById('p-expiry').value, // Manual Expiry
             unidade: document.getElementById('p-unidade').value,
             isCombo: document.getElementById('p-isCombo').checked,
-            comboItems: Combo.items,
+            comboItems: Combo.items, // JSON COMBO STRUCTURE
+            items: document.getElementById('p-isCombo').checked ? Combo.items : [], // JSON STRUCTURE DUPLICATE FOR SITE COMPATIBILITY
             entryHistory: currentProd.entryHistory || []
         };
         if(id) { const idx = DB.data.produtos.findIndex(x=>x.id===id); if(idx>-1) DB.data.produtos[idx] = prod; }
@@ -469,10 +543,11 @@ const App = {
     },
     toggleOffer: (v) => document.getElementById('offer-area').style.display = v ? 'block' : 'none',
     exportBackup: () => {
-        // Logica para incluir flag hide_on_site
         const exportData = DB.data.produtos.map(p => ({
             ...p,
-            hide_on_site: (p.estoque <= 0)
+            hide_on_site: (p.estoque <= 0),
+            // Ensure combo items structure matches site requirement
+            items: p.isCombo ? p.comboItems : []
         }));
         const fullDump = { ...DB.data, produtos: exportData };
         
@@ -519,7 +594,6 @@ const Combo = {
     },
     sell: () => {
         const q = parseInt(document.getElementById('combo-sell-qty').value)||1;
-        // Validação de limite de venda não aplicada aqui, apenas na lógica de UI ou Regra de Negócio se fosse PDV
         Combo.items.forEach(i => { if(i.id) { const p = DB.data.produtos.find(x=>x.id===i.id); if(p) p.estoque -= (i.qty*q); }});
         DB.save(); App.render(); alert(`VENDA REALIZADA! BAIXA EM ${Combo.items.length} ITENS.`);
     }
@@ -550,7 +624,7 @@ const QuickCombo = {
 
         const comboProd = {
             id: Date.now().toString(36), codigo: DB.nextCode(), ean: '', nome: nome, categoria: document.getElementById('qc-cat').value,
-            ncm: '', cest: '', cfop: '5102', custo: 0, valor: val, isOffer: false, offerPrice: 0, estoque: 999, limitQty: 0, unidade: 'UN', isCombo: true, comboItems: items, entryHistory: []
+            ncm: '', cest: '', cfop: '5102', custo: 0, valor: val, isOffer: false, offerPrice: 0, estoque: 999, limitQty: 0, unidade: 'UN', isCombo: true, comboItems: items, items: items, entryHistory: []
         };
         DB.data.produtos.push(comboProd);
         DB.save(); App.render(); document.getElementById('modal-quick-combo').close();
@@ -559,13 +633,9 @@ const QuickCombo = {
             items.forEach(i => { if(i.id) { const p = DB.data.produtos.find(x=>x.id===i.id); if(p) p.estoque -= i.qty; } });
             DB.save(); App.render();
             
-            // Impressão rápida
             const clientCode = prompt("CÓDIGO DO CLIENTE:", "000");
             const q = 1;
-            
-            // Build items list html for receipt
             let itemsHtml = items.map(i => `<div class="receipt-item-row"><span class="receipt-item-name">${i.qty*q}x ${i.nome}</span></div>`).join('');
-
             document.getElementById('receipt-area').innerHTML = `
                 <div class="client-code">${clientCode}</div>
                 <div class="receipt-header">CUPOM NÃO FISCAL</div>
@@ -641,12 +711,9 @@ const Importer = {
         const r = new FileReader();
         r.onload = (e) => {
             const x = new DOMParser().parseFromString(e.target.result, "text/xml");
-            
-            // Meta Data for History
             const emitName = x.getElementsByTagName('emit')[0]?.getElementsByTagName('xNome')[0]?.textContent || 'DESCONHECIDO';
             const nNF = x.getElementsByTagName('ide')[0]?.getElementsByTagName('nNF')[0]?.textContent || '000';
             const dhEmi = x.getElementsByTagName('dhEmi')[0]?.textContent?.split('T')[0] || new Date().toISOString().split('T')[0];
-            
             Importer.meta = { provider: emitName, invoice: nNF, date: dhEmi };
 
             const d = x.getElementsByTagName('det');
@@ -694,23 +761,14 @@ const Importer = {
             const finalC = r.vXml / f;
             const p = DB.data.produtos.find(x => x.ean===r.ean || x.nome===r.nome);
             
-            // Build Entry Object
-            const entry = {
-                date: Importer.meta.date,
-                qty: finalQ,
-                provider: Importer.meta.provider,
-                invoice: Importer.meta.invoice,
-                expiry: '-' // XML NFe standard usually doesn't have item expiry
-            };
+            const entry = { date: Importer.meta.date, qty: finalQ, provider: Importer.meta.provider, invoice: Importer.meta.invoice, expiry: '-' };
 
             if(p) { 
                 p.estoque+=finalQ; p.custo=finalC;
                 if(!p.varNome) p.varNome = []; if(p.nome !== r.nome && !p.varNome.includes(r.nome)) p.varNome.push(r.nome);
-                
-                // Add History
                 if(!p.entryHistory) p.entryHistory = [];
                 p.entryHistory.unshift(entry);
-                p.entryHistory = p.entryHistory.slice(0, 10); // Keep last 10
+                p.entryHistory = p.entryHistory.slice(0, 10);
             } else { 
                 DB.data.produtos.push({
                     id: Date.now().toString(36)+Math.random(), codigo: DB.nextCode(), ean: r.ean !== 'SEM GTIN' ? r.ean : '', nome: r.nome,
@@ -724,7 +782,7 @@ const Importer = {
     }
 };
 
-/* PRINTER 100mm CENTRALIZED WITH CHILDREN */
+/* PRINTER */
 const Printer = {
     printCurrent: () => {
         const clientCode = prompt("CÓDIGO DO CLIENTE:", "000");
@@ -732,7 +790,6 @@ const Printer = {
         const v = parseFloat(document.getElementById('p-isOffer').checked ? document.getElementById('p-offerPrice').value : document.getElementById('p-valor').value);
         const q = parseInt(document.getElementById('combo-sell-qty').value);
         
-        // Build items list if combo
         let itemsHtml = '';
         if(document.getElementById('p-isCombo').checked && Combo.items.length > 0) {
             itemsHtml = Combo.items.map(i => `<div class="receipt-item-row"><span class="receipt-item-name">${i.qty*q}x ${i.nome}</span></div>`).join('');
