@@ -129,7 +129,8 @@
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         
         .hero { padding: 25px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
-        .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--secondary); margin-bottom: 12px; }
+        /* AJUSTE COR DO TÍTULO */
+        .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--primary); margin-bottom: 12px; }
         .hero h1 span { color: var(--primary); }
         .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
         
@@ -214,8 +215,11 @@
         /* Carousel Wrapper Relative for Arrows */
         .hbc-carousel-box { position: relative; margin-bottom: 15px; }
 
+        /* AJUSTE CARROSSEL RESPIRO */
         .hbc-carousel-wrapper { 
-            overflow-x: auto; display: flex; gap: 12px; padding-bottom: 5px; scroll-behavior: smooth; 
+            overflow-x: auto; display: flex; gap: 14px; /* Mais gap */
+            padding-bottom: 15px; /* Mais espaço para rolagem */
+            scroll-behavior: smooth; 
         }
         .hbc-carousel-wrapper::-webkit-scrollbar { height: 4px; }
         .hbc-carousel-wrapper::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
@@ -225,6 +229,7 @@
             min-width: 135px; max-width: 135px; 
             display: flex; flex-direction: column;
             flex-shrink: 0;
+            margin-bottom: 4px; /* Extra safe space */
         }
         .cps-img-box {
             width: 100%; aspect-ratio: 1;
