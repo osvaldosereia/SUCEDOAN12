@@ -1072,6 +1072,7 @@ this.data = raw.map(p => {
                         let hasLink = p.Tem_Ligacao || p.tem_ligacao || "Não";
                         
                         let smartName = this.toSmartTitleCase(p.nome.trim());
+                        smartName = smartName.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
 
                         let imgUrl = 'img/placeholder.jpg';
                         if(p.imagem) {
