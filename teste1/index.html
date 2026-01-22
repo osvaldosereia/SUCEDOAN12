@@ -126,7 +126,7 @@
 
         @media print {
             @page { 
-                size: 80mm auto; 
+                size: 100mm auto; 
                 margin: 0; 
             }
             
@@ -151,7 +151,7 @@
                 top: 0; 
                 left: 50%; /* Move para o meio */
                 transform: translateX(-50%); /* Centraliza exato */
-                width: 80mm; /* Largura solicitada */
+                width: 90mm; /* Largura solicitada */
                 
                 color: black; 
                 background: white; 
@@ -165,19 +165,19 @@
             #receipt-area * { visibility: visible; }
 
             /* Estilos do Cupom */
-            .client-code { font-size: 48px; font-weight: 700; display: block; margin-bottom: 15px; border-bottom: 3px solid #000; text-align: center; }
+            .client-code { font-size: 48px; font-weight: 900; display: block; margin-bottom: 15px; border-bottom: 3px solid #000; text-align: center; }
             .receipt-header { font-size: 16px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 10px; }
             
             .log-row { display: block; margin-bottom: 12px; border-bottom: 1px dashed #999; padding-bottom: 5px; }
-            .log-code { font-size: 14px; font-weight: 700; background: #000; color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-right: 5px; }
-            .log-qty { font-size: 22px; font-weight: 700; float: right; margin-left: 10px; }
+            .log-code { font-size: 14px; font-weight: 900; background: #000; color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-right: 5px; }
+            .log-qty { font-size: 22px; font-weight: 900; float: right; margin-left: 10px; }
             .log-name { font-size: 18px; font-weight: bold; line-height: 1.1; display: inline; }
             
             /* ITENS DO COMBO (FONTE GRANDE) */
             .log-sub { 
                 margin-left: 10px; 
-                font-size: 14px; /* Aumentado para melhor leitura */
-                font-weight: 600; 
+                font-size: 18px; /* Aumentado para melhor leitura */
+                font-weight: 800; 
                 color: #000; 
                 display: block; 
                 margin-top: 5px; 
@@ -934,6 +934,17 @@ const App = {
         const id = document.getElementById('p-id').value;
         const currentProd = id ? DB.data.produtos.find(x=>x.id===id) : {};
         
+        const isCombo = document.getElementById('p-isCombo').checked;
+        let custoFinal = parseFloat(document.getElementById('p-custo').value)||0;
+
+        // NOVA LÓGICA: Se for combo, soma os custos dos itens
+        if(isCombo) {
+            custoFinal = Combo.items.reduce((acc, item) => {
+                const child = DB.data.produtos.find(x => x.id === item.id);
+                return acc + (child ? (child.custo * item.qty) : 0);
+            }, 0);
+        }
+
         const prod = {
             ...currentProd, 
             id: id || Date.now().toString(36),
@@ -946,7 +957,7 @@ const App = {
             ncm: document.getElementById('p-ncm').value,
             cest: document.getElementById('p-cest').value,
             cfop: document.getElementById('p-cfop').value,
-            custo: parseFloat(document.getElementById('p-custo').value)||0,
+            custo: custoFinal, // Usa o custo calculado se for combo
             valor: parseFloat(document.getElementById('p-valor').value)||0,
             isOffer: document.getElementById('p-isOffer').checked,
             offerPrice: parseFloat(document.getElementById('p-offerPrice').value)||0,
@@ -954,9 +965,9 @@ const App = {
             limitQty: parseFloat(document.getElementById('p-limitQty').value)||0,
             expiryDate: document.getElementById('p-expiry').value, 
             unidade: document.getElementById('p-unidade').value,
-            isCombo: document.getElementById('p-isCombo').checked,
+            isCombo: isCombo,
             comboItems: Combo.items,
-            items: document.getElementById('p-isCombo').checked ? Combo.items : [], 
+            items: isCombo ? Combo.items : [], 
             entryHistory: currentProd.entryHistory || [],
             salesHistory: currentProd.salesHistory || [],
             isBestSeller: document.getElementById('p-isBestSeller').checked,
