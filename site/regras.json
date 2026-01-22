@@ -1,0 +1,67 @@
+[
+  {
+    "id": "regras_boas_vindas",
+    "ativo": true,
+    "gatilho": "tempo_pagina",
+    "valor": 5,
+    "frequencia": "sessao_unica",
+    "acao": "toast",
+    "titulo": "Entrega Rápida 🚀",
+    "mensagem": "Entregamos em toda Cuiabá e Várzea Grande em até 24h!"
+  },
+  {
+    "id": "interesse_limpeza",
+    "ativo": true,
+    "gatilho": "clique_categoria",
+    "valor": "LIMPEZA E LAVANDERIA",
+    "pontos_necessarios": 2,
+    "frequencia": "sempre",
+    "acao": "drawer",
+    "titulo": "Vai faxinar?",
+    "mensagem": "Temos Água Sanitária e Sabão em Pó com preços ótimos. Aproveite para levar!",
+    "id_produto_sugerido": "205"
+  },
+  {
+    "id": "carrinho_quase_minimo",
+    "ativo": true,
+    "gatilho": "valor_carrinho_intervalo",
+    "min": 150,
+    "max": 199,
+    "frequencia": "a_cada_atualizacao",
+    "acao": "toast_alerta",
+    "titulo": "Falta Pouco! 🛒",
+    "mensagem": "Adicione mais alguns itens para atingir o pedido mínimo de R$ 200,00."
+  },
+  {
+    "id": "indecisao_checkout",
+    "ativo": true,
+    "gatilho": "ocioso_carrinho_cheio",
+    "tempo_ocioso": 20,
+    "min_itens": 3,
+    "frequencia": "sessao_unica",
+    "acao": "modal_centro",
+    "titulo": "Precisa de ajuda?",
+    "mensagem": "Se tiver dúvida sobre como finalizar, chame no WhatsApp agora mesmo.",
+    "texto_botao": "Chamar no Whats"
+  },
+  {
+    "id": "interesse_premium",
+    "ativo": true,
+    "gatilho": "visualizar_produto_especifico",
+    "id_produto": "1", 
+    "frequencia": "sessao_unica",
+    "acao": "toast",
+    "titulo": "Ótima Escolha 🌟",
+    "mensagem": "Essa é a nossa cesta mais completa. Ideal para famílias grandes."
+  },
+  {
+    "id": "rolagem_profunda",
+    "ativo": true,
+    "gatilho": "scroll_profundo",
+    "porcentagem": 85,
+    "frequencia": "sessao_unica",
+    "acao": "toast",
+    "titulo": "Não achou o que queria?",
+    "mensagem": "Nossa lista é atualizada toda semana. Fale com a gente se precisar de algo específico."
+  }
+]
