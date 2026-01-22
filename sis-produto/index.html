@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA V11 | Mapeamento Fiscal</title>
+    <title>SISTEMA V12 | Exportação Integral</title>
     
     <style>
         /* --- 1. CORE STYLES --- */
@@ -140,11 +140,11 @@
 <body>
 
 <header>
-    <h1>📋 CATÁLOGO PRO V11</h1>
+    <h1>📋 CATÁLOGO PRO V12</h1>
     <div style="display:flex; gap:8px;">
         <button onclick="CatManager.open()" class="btn btn-ghost">📂 Categorias</button>
         <button onclick="Importer.open()" class="btn btn-primary">📥 Importar (Auditoria)</button>
-        <button onclick="App.exportData()" class="btn btn-ghost">💾 Exportar</button>
+        <button onclick="App.exportData()" class="btn btn-ghost">💾 Backup Completo</button>
     </div>
 </header>
 
@@ -334,11 +334,11 @@
 
 <script>
 /**
- * SISTEMA V11 - MAPEAMENTO FISCAL
+ * SISTEMA V12 - EXPORTAÇÃO INTEGRAL E IMPORTAÇÃO INTELIGENTE
  */
 
 const DB = {
-    key: 'sys_master_v11',
+    key: 'sys_master_v12',
     get: () => {
         const raw = localStorage.getItem(DB.key);
         const data = raw ? JSON.parse(raw) : { produto: [], categorias: [] };
@@ -361,7 +361,7 @@ const App = {
         App.renderBatches();
         CatManager.refreshSelects();
         App.renderList();
-        console.log("Sistema V11 Iniciado.");
+        console.log("Sistema V12 Iniciado.");
     },
 
     sanitizeDB: () => {
@@ -587,10 +587,14 @@ const App = {
         }).join('');
     },
 
+    // --- EXPORTAÇÃO INTEGRAL V12 ---
     exportData: () => {
         const db = DB.get();
+        // Garantia de que todos os dados são exportados
         const now = new Date();
-        const fileName = `produtos-${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}.json`;
+        const fileName = `backup_sistema_${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}.json`;
+        
+        // Exporta o banco de dados completo (produtos + categorias + configs)
         const blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -599,18 +603,16 @@ const App = {
     }
 };
 
-/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA (V11) --- */
+/* --- MÓDULOS DE IMPORTAÇÃO E AUDITORIA (V11/V12) --- */
 const Importer = {
     stagedProducts: [],
     stagedCats: [],
     
     open: () => document.getElementById('file-input').click(),
     
-    // TRADUTOR DE CAMPOS (NORMALIZER)
     normalize: (item) => {
         return {
             ...item,
-            // Prioriza os campos específicos do JSON de importação fiscal
             nome: (item.xProd || item.nome || item.description || "SEM NOME").toUpperCase(),
             ean: item.cEAN || item.ean || "",
             cfop: item.CFOP_SAIDA || item.cfop || "",
@@ -620,8 +622,7 @@ const Importer = {
             estoqueFiscal: Number(item.Quantidade_Total_Unidades || item.estoqueFiscal || 0),
             custo: Number(item.Custo_Unitario || item.custo || 0),
             unidade: item.Unidade_Venda || item.uCom || item.unidade || "UN",
-            codigo: item.cProd_Sugestao || item.codigo || "", // Tenta usar a sugestão
-            // Campos que talvez não venham no JSON fiscal
+            codigo: item.cProd_Sugestao || item.codigo || "",
             valor: Number(item.valor || 0),
             fornecedor: (item.fornecedor || "").toUpperCase(),
             categoria: item.categoria || ""
@@ -642,7 +643,6 @@ const Importer = {
                 
                 if(json.categorias) Importer.stagedCats = json.categorias;
 
-                // APLICA A NORMALIZAÇÃO
                 Importer.stagedProducts = rawList.map(item => {
                     const norm = Importer.normalize(item);
                     return {
@@ -713,17 +713,15 @@ const Importer = {
             const cleanProd = {
                 ...raw,
                 id: raw.id || Date.now() + Math.random().toString(),
-                codigo: raw.codigo || DB.nextCode() // Gera código se não veio
+                codigo: raw.codigo || DB.nextCode()
             };
             
-            // Limpa campos temporários da UI
             delete cleanProd._tempName;
             delete cleanProd._tempStock;
             delete cleanProd._tempCost;
             delete cleanProd._tempCfop;
             delete cleanProd._selected;
 
-            // Busca por ID ou Código para atualizar
             const idx = db.produto.findIndex(ex => ex.id === cleanProd.id || (ex.codigo && ex.codigo === cleanProd.codigo));
             
             if(idx > -1) {
