@@ -357,7 +357,16 @@
                                 <label>OU COLE LISTA (1x ITEM)</label>
                                 <textarea id="combo-paste" style="height:50px; font-size:0.8rem;"></textarea>
                                 <button type="button" onclick="Combo.processPaste()" class="btn btn-ghost btn-sm" style="width:100%; margin-top:5px;">PROCESSAR LISTA</button>
-                                <div id="combo-list" style="margin-top:10px; background:white; max-height:120px; overflow-y:auto; border:1px solid #ccc; margin-bottom:15px;"></div>
+                                
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-bottom:2px solid #ccc; padding-bottom:5px;">
+                                    <span style="font-weight:bold; font-size:0.8rem;">LISTA DE ITENS</span>
+                                    <span style="font-size:0.8rem; background:#cbd5e1; padding:2px 6px; border-radius:4px;">ITENS: <b id="combo-total-items">0</b></span>
+                                </div>
+                                <div id="combo-list" style="margin-top:5px; background:white; max-height:400px; overflow-y:auto; border:1px solid #ccc; margin-bottom:15px;"></div>
+                                
+                                <div style="text-align:right; font-size:0.9rem; color:#475569; margin-bottom:15px;">
+                                    SOMA VENDA (REF): <b id="combo-ref-value" style="color:#2563eb;">R$ 0.00</b>
+                                </div>
                             </div>
                             
                             <div style="border-top:2px solid #2563eb; padding-top:10px;">
@@ -710,7 +719,10 @@ const App = {
             if(p.isOffer) { App.toggleOffer(true); document.getElementById('p-offerPrice').value = p.offerPrice.toFixed(2); }
             
             document.getElementById('p-isCombo').checked = p.isCombo;
-            if(p.isCombo) { Combo.toggle(true); Combo.items = p.comboItems||[]; Combo.renderList(); }
+            if(p.isCombo) { 
+                Combo.items = p.comboItems||[]; 
+                Combo.toggle(true); // Isso ja dispara o renderList e o calculo em tempo real
+            }
 
             const hist = p.entryHistory || [];
             const displayHist = hist.slice(0, 20);
@@ -937,7 +949,7 @@ const App = {
         const isCombo = document.getElementById('p-isCombo').checked;
         let custoFinal = parseFloat(document.getElementById('p-custo').value)||0;
 
-        // NOVA LÓGICA: Se for combo, soma os custos dos itens
+        // Se for combo, garante que o custo salvo é o calculado
         if(isCombo) {
             custoFinal = Combo.items.reduce((acc, item) => {
                 const child = DB.data.produtos.find(x => x.id === item.id);
@@ -957,7 +969,7 @@ const App = {
             ncm: document.getElementById('p-ncm').value,
             cest: document.getElementById('p-cest').value,
             cfop: document.getElementById('p-cfop').value,
-            custo: custoFinal, // Usa o custo calculado se for combo
+            custo: custoFinal, 
             valor: parseFloat(document.getElementById('p-valor').value)||0,
             isOffer: document.getElementById('p-isOffer').checked,
             offerPrice: parseFloat(document.getElementById('p-offerPrice').value)||0,
@@ -1093,10 +1105,45 @@ const App = {
     }
 };
 
-/* --- COMBO LOGIC --- */
+/* --- COMBO LOGIC (ATUALIZADA) --- */
 const Combo = {
     items: [],
-    toggle: (v) => { document.getElementById('combo-area').style.display = v?'block':'none'; if(v) Combo.renderList(); },
+    
+    // Função principal que recalcula tudo em TEMPO REAL
+    updateTotals: () => {
+        let totalCost = 0;
+        let totalSaleRef = 0;
+        let totalQty = 0;
+
+        Combo.items.forEach(item => {
+            totalQty += item.qty;
+            if(item.id) {
+                const p = DB.data.produtos.find(x => x.id === item.id);
+                if(p) {
+                    totalCost += (p.custo * item.qty);
+                    totalSaleRef += (p.valor * item.qty);
+                }
+            }
+        });
+
+        // Atualiza campos na tela
+        document.getElementById('p-custo').value = totalCost.toFixed(2);
+        document.getElementById('combo-ref-value').innerText = 'R$ ' + totalSaleRef.toFixed(2);
+        document.getElementById('combo-total-items').innerText = totalQty;
+        
+        // Atualiza a margem em tempo real
+        App.calcMargin('cost');
+    },
+
+    toggle: (v) => { 
+        document.getElementById('combo-area').style.display = v?'block':'none'; 
+        if(v) {
+            Combo.renderList(); 
+            // Dispara o cálculo ao abrir para garantir dados frescos
+            Combo.updateTotals();
+        }
+    },
+    
     addManual: () => {
         const nome = document.getElementById('combo-manual-search').value.toUpperCase();
         const qty = parseInt(document.getElementById('combo-manual-qty').value);
@@ -1106,6 +1153,7 @@ const Combo = {
         Combo.renderList();
         document.getElementById('combo-manual-search').value = '';
     },
+    
     processPaste: () => {
         const lines = document.getElementById('combo-paste').value.split('\n');
         lines.forEach(l => {
@@ -1118,14 +1166,20 @@ const Combo = {
         });
         Combo.renderList(); document.getElementById('combo-paste').value = '';
     },
+    
     renderList: () => {
         document.getElementById('combo-list').innerHTML = Combo.items.map((i,idx)=>`
             <div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px;font-size:0.9rem;">
-                <b>${i.qty}x</b> <span>${i.nome} ${i.id?'✅':'⚠️'}</span>
+                <b>${i.qty}x</b> 
+                <span>${i.nome} ${i.id ? '✅' : '<b style="color:red">❌ NÃO ENCONTRADO</b>'}</span>
                 <span style="color:red;cursor:pointer;font-weight:bold;" onclick="Combo.items.splice(${idx},1);Combo.renderList()">REMOVER</span>
             </div>
         `).join('');
+        
+        // Sempre que renderizar, recalcula os totais
+        Combo.updateTotals();
     },
+    
     sell: () => { App.processSale(); }
 };
 
