@@ -136,17 +136,23 @@
             padding: 4px; margin-left: -4px; cursor: pointer;
         }
 
-        /* SEARCH BAR TRANSFORMADA */
-        .ah-search-wrapper { flex: 1; display: flex; justify-content: flex-end; align-items: center; }
+        /* SEARCH BAR (LUPA EXPANSIVA) */
+        .ah-search-wrapper { flex: 1; display: flex; justify-content: flex-end; align-items: center; position: relative; }
+        
         .ah-search-trigger {
             width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
             color: #555; background: #f2f2f2; border-radius: 50%; cursor: pointer;
+            transition: background 0.2s;
         }
+        
         .ah-search-input-box {
-            position: absolute; left: 60px; right: 60px; top: 8px; bottom: 8px;
-            display: none; z-index: 2001;
+            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+            width: 0; overflow: hidden; transition: width 0.3s ease;
+            height: 36px; z-index: 2005;
+            background: #fff; display: flex; align-items: center;
         }
-        .ah-search-input-box.active { display: block; }
+        .ah-search-input-box.active { width: 100%; }
+        
         .ah-search-input {
             width: 100%; height: 100%; background: #f2f2f2; border: 1px solid #ddd; border-radius: 8px;
             padding: 0 12px; font-size: 0.9rem; color: #333; outline: none;
@@ -160,10 +166,11 @@
 
         /* BOTÃO FIXO TOPO */
         .ah-sticky-btn {
-            background: #3e3e3e; color: white; font-size: 0.8rem;
-            padding: 6px 12px; border-radius: 20px; font-weight: 600;
+            background: #3e3e3e; color: white; font-size: 0.75rem;
+            padding: 6px 14px; border-radius: 20px; font-weight: 600;
             display: none; align-items: center; gap: 6px;
             opacity: 0; transition: opacity 0.3s; margin-left: auto;
+            white-space: nowrap;
         }
         .ah-sticky-btn.visible { display: flex; opacity: 1; }
 
@@ -440,7 +447,7 @@
             padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
             cursor: pointer; display: flex; align-items: center; gap: 6px;
         }
-        .icb-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .icb-btn:disabled { background: #ccc !important; cursor: not-allowed; }
 
         /* --- 9. MODALS & OVERLAYS --- */
         .sheet-overlay { 
@@ -469,19 +476,19 @@
 
         /* TOASTS REDESIGN */
         .credit-toast {
-            position: fixed; top: 70px; left: 50%; transform: translate(-50%, -20px);
+            position: fixed; top: 75px; left: 50%; transform: translate(-50%, -20px);
             background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(6px); color: #fff;
-            padding: 12px 20px; border-radius: 50px; 
-            font-weight: 500; font-size: 0.85rem; line-height: 1.4; text-align: center;
-            width: auto; max-width: 95%; white-space: nowrap; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 2147483647;
+            padding: 10px 18px; border-radius: 50px; 
+            font-weight: 500; font-size: 0.85rem; line-height: 1.2; text-align: center;
+            width: auto; max-width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); z-index: 2147483647;
             opacity: 0; visibility: hidden; pointer-events: none;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .credit-toast.visible { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
         
         .credit-sub-toast { 
-            position: fixed; top: 120px; left: 50%; transform: translate(-50%, -10px); 
+            position: fixed; top: 125px; left: 50%; transform: translate(-50%, -10px); 
             background: #dcfce7; color: #166534; 
             padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; 
             opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; z-index: 2147483647; 
@@ -592,7 +599,7 @@
         .co-payment-box select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; margin-top: 10px; background: white; }
         .co-footer { padding: 16px; border-top: 1px solid #f0f0f0; background: white; }
         .co-btn-final { width: 100%; padding: 14px; background: var(--primary); color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; text-align: center; }
-        .co-btn-final:disabled { background: #ccc; cursor: not-allowed; }
+        .co-btn-final:disabled { background: #ccc !important; cursor: not-allowed; }
 
         .coupon-toggle { font-size: 0.8rem; color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: underline; margin-top: 10px; display: inline-block; }
         .coupon-box { display: flex; gap: 8px; margin-top: 10px; }
@@ -783,7 +790,8 @@
             
             <div id="rm-credit-alert" class="modal-credit-box hidden" style="margin-bottom:20px;">
                 <div style="margin-bottom:5px">Você possui <strong>R$ <span id="rm-credit-val">0,00</span></strong> de Crédito.</div>
-                <div style="font-size:0.8rem;">Adicione novos produtos para aproveitar.</div>
+                <div style="font-size:0.8rem; margin-bottom:8px">Adicione novos produtos para aproveitar.</div>
+                <button class="mca-btn" onclick="document.getElementById('review-modal').close(); document.body.classList.remove('modal-open')">Ver Produtos</button>
             </div>
 
             <div style="background:#f0f9ff; border:1px solid #e0f2fe; padding:15px; border-radius:8px; margin-bottom:20px;">
@@ -1152,7 +1160,7 @@
 
             checkSplash() {
                 const splash = document.getElementById('splash-screen');
-                const session = sessionStorage.getItem('splash_shown'); // Alterado para Session
+                const session = sessionStorage.getItem('splash_shown');
 
                 if (!session) {
                     setTimeout(() => {
@@ -1463,15 +1471,15 @@
                 
                 MarketingApp.logCartUpdate(sum, count);
                 
-                const footerBtn = document.querySelector('.icb-btn'); // Botão Rodapé
-                const reviewBtn = document.getElementById('btn-finalize-review'); // Botão Modal Minha Cesta
+                const footerBtn = document.querySelector('.icb-btn'); 
+                const reviewBtn = document.getElementById('btn-finalize-review'); 
                 const modalCreditAlert = document.getElementById('modal-credit-alert');
                 const rmCreditAlert = document.getElementById('rm-credit-alert');
                 const toast = document.getElementById('credit-toast');
                 const subToast = document.getElementById('credit-sub-toast');
 
                 if (this.currentBasket.id === 'custom_create') {
-                    // Logica Cesta Livre (sem credito, apenas minimo)
+                    // Logica Cesta Livre 
                     let breakdownHtml = `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Itens Selecionados</span><span>R$ ${sum.toFixed(2).replace('.', ',')}</span></div>`;
                     let displayTotal = sum;
                     if(this.appliedCoupon) { displayTotal -= CONSTANTS.COUPON_VAL; breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`; }
@@ -1488,7 +1496,7 @@
                     }
 
                 } else {
-                    // Logica Cesta Padrão (com credito)
+                    // Logica Cesta Padrão 
                     if(this.baseFee === 0 && Object.keys(this.cart).length > 0) { let startSum = 0; for(let i in this.originalCart) { let p = this.data.find(x => x.id === i); if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i]; } this.baseFee = Math.max(0, this.currentBasket.valor - startSum); }
                     const basketPrice = this.currentBasket.valor; const effectiveTotal = sum + this.baseFee;
                     let displayTotal = 0; let breakdownHtml = `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Valor da Cesta</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div>`;
