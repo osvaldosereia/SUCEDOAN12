@@ -1145,32 +1145,39 @@
                             const state = JSON.parse(saved);
                             if (state.view === 'customizer' && state.basketId) {
                                 const basket = this.data.find(p => p.id === state.basketId);
-                                if (basket) {
-                                    this.cart = state.cart || {};
-                                    this.cartOrder = state.cartOrder || [];
-                                    this.currentBasket = basket;
-                                    
-                                    const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
-                                    let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
-                                    this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
-                                    
-                                    this.originalCart = {};
-                                    if(basket.items) {
-                                        basket.items.forEach(i => {
-                                            let match = this.data.find(p => p.id === String(i.id));
-                                            if(match) this.originalCart[match.id] = (this.originalCart[match.id] || 0) + (parseInt(i.qty || 1));
-                                        });
-                                    }
+                                // Procure este trecho dentro do seu init() e deixe-o assim:
+if (basket) {
+    this.cart = state.cart || {};
+    this.cartOrder = state.cartOrder || [];
+    this.currentBasket = basket;
+    
+    const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
+    let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
+    this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
+    
+    this.originalCart = {};
+    if(basket.items) {
+        basket.items.forEach(i => {
+            let match = this.data.find(p => p.id === String(i.id));
+            if(match) this.originalCart[match.id] = (this.originalCart[match.id] || 0) + (parseInt(i.qty || 1));
+        });
+    }
 
-                                    document.getElementById('home-view').classList.add('hidden');
-                                    document.getElementById('customizer-view').classList.remove('hidden');
-                                    document.body.classList.add('customizer-mode');
-                                    
-                                    this.renderAllLists();
-                                    document.body.classList.add('loaded'); 
-                                    MarketingApp.init(); // START MARKETING
-                                    return; 
-                                }
+    document.getElementById('home-view').classList.add('hidden');
+    document.getElementById('customizer-view').classList.remove('hidden');
+    document.body.classList.add('customizer-mode');
+
+    // --- ADICIONE ESTAS 3 LINHAS ABAIXO PARA CORRIGIR O TÍTULO E O X ---
+    const val = basket.valor.toFixed(2).replace('.',',');
+    document.getElementById('cust-welcome-title').innerHTML = `Legal! Você escolheu a <strong>${basket.nome}</strong> no valor de R$ ${val}`;
+    document.getElementById('rm-limit-info').innerText = this.currentLimit;
+    // ------------------------------------------------------------------
+    
+    this.renderAllLists();
+    document.body.classList.add('loaded'); 
+    MarketingApp.init();
+    return; 
+}
                             }
                         } catch (e) { console.error("Restore error", e); localStorage.removeItem('da_state'); }
                     }
