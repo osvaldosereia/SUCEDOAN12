@@ -566,9 +566,9 @@
         /* TOASTS REDESIGN (TOPO E SEGUROS) */
         .credit-toast {
             position: fixed;
-            top: 20px; /* Margem do topo */
+            top: 75px; /* AJUSTE: Mais para baixo para não cobrir a busca */
             left: 50%;
-            transform: translate(-50%, -20px);
+            transform: translate(-50%, 0);
             
             background: rgba(30, 30, 30, 0.95); 
             backdrop-filter: blur(6px);
@@ -583,11 +583,11 @@
             text-align: center;
             
             width: auto;
-            max-width: 85%; /* Evita encostar nas bordas */
-            white-space: normal; 
+            max-width: 95%; /* AJUSTE: Mais largo */
+            white-space: nowrap; /* AJUSTE: Forçar uma linha */
             
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            z-index: 9999; /* Alto, mas abaixo do splash */
+            z-index: 9999; 
             
             opacity: 0;
             visibility: hidden;
@@ -598,30 +598,10 @@
         .credit-toast.visible {
             opacity: 1;
             visibility: visible;
-            transform: translate(-50%, 0);
         }
         
-        /* Subtoast também no topo, logo abaixo */
-        .credit-sub-toast { 
-            position: fixed; 
-            top: 70px; /* Logo abaixo do principal */
-            left: 50%; 
-            transform: translate(-50%, -10px); 
-            
-            background: #dcfce7; color: #166534; 
-            padding: 6px 14px; border-radius: 50px; 
-            font-size: 0.8rem; font-weight: 600; 
-            
-            opacity: 0; pointer-events: none; 
-            transition: opacity 0.3s, transform 0.3s; 
-            z-index: 9998; 
-            text-align: center; white-space: nowrap; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-        }
-        .credit-sub-toast.visible { 
-            opacity: 1; 
-            transform: translate(-50%, 0);
-        }
+        /* AJUSTE: Subtoast removido conforme pedido */
+        .credit-sub-toast { display: none !important; }
 
         /* MARKETING INTELLIGENCE STYLES */
         .mk-modal-overlay {
@@ -902,43 +882,6 @@
         </div>
     </div>
 
-    <dialog id="review-modal" class="modal-checkout">
-        <div class="co-header">
-            <span class="co-title">Minha Cesta</span>
-            <span class="co-close" onclick="document.getElementById('review-modal').close(); document.body.classList.remove('modal-open')">✕</span>
-        </div>
-        <div class="co-body" style="background:#fff; overflow-y:auto; overscroll-behavior: contain;">
-            <div style="background:#f0f9ff; border:1px solid #e0f2fe; padding:15px; border-radius:8px; margin-bottom:20px;">
-                <h4 style="color:#0369a1; margin-bottom:5px; font-size:0.95rem;">💡 Como funciona:</h4>
-                <p style="color:#334155; font-size:0.85rem; line-height:1.4; margin:0;">
-                    Você pode trocar até <strong id="rm-limit-info">X</strong> produtos da sua cesta e adicionar quantos quiser do nosso mercadinho.
-                </p>
-            </div>
-
-            <div class="co-section-title">Itens Atuais</div>
-            <div id="review-cart-list" class="co-horizontal-list"></div>
-            
-            <div class="co-total-row" style="margin-top:20px; text-align:center;">
-                <span style="font-size:0.9rem; color:#666;">Total Atual</span>
-                <div style="font-size:1.6rem; font-weight:800; color:var(--primary);" id="rm-total-display">R$ 0,00</div>
-            </div>
-
-            <div class="history-grid">
-                <div class="history-col">
-                    <h5 style="color:#b91c1c;">Retirados</h5>
-                    <div id="hist-removed-list"></div>
-                </div>
-                <div class="history-col">
-                    <h5 style="color:#15803d;">Adicionados</h5>
-                    <div id="hist-added-list"></div>
-                </div>
-            </div>
-        </div>
-        <div class="co-footer">
-            <button class="co-btn-final" onclick="document.getElementById('review-modal').close(); document.body.classList.remove('modal-open'); App.openCheckout()">Finalizar Pedido</button>
-        </div>
-    </dialog>
-
     <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
         <div class="sheet-box">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
@@ -972,10 +915,17 @@
 
     <dialog id="checkout-modal" class="modal-checkout">
         <div class="co-header">
-            <span class="co-title">Finalizar Pedido</span>
+            <span class="co-title">Minha Cesta</span>
             <span class="co-close" onclick="document.getElementById('checkout-modal').close()">✕</span>
         </div>
         <div class="co-body">
+            <div style="background:#f0f9ff; border:1px solid #e0f2fe; padding:15px; border-radius:8px; margin-bottom:20px;">
+                <h4 style="color:#0369a1; margin-bottom:5px; font-size:0.95rem;">💡 Como funciona:</h4>
+                <p style="color:#334155; font-size:0.85rem; line-height:1.4; margin:0;">
+                    Você pode trocar até <strong id="rm-limit-info">X</strong> produtos da sua cesta e adicionar quantos quiser do nosso mercadinho.
+                </p>
+            </div>
+
             <div class="co-section-title">Sua Nova Cesta</div>
             <div id="modal-cart-list" class="co-horizontal-list"></div>
             
@@ -1005,8 +955,19 @@
                     <button class="coupon-btn" onclick="App.applyCoupon()">Aplicar</button>
                 </div>
             </div>
+
+            <div class="history-grid">
+                <div class="history-col">
+                    <h5 style="color:#b91c1c;">Retirados</h5>
+                    <div id="hist-removed-list"></div>
+                </div>
+                <div class="history-col">
+                    <h5 style="color:#15803d;">Adicionados</h5>
+                    <div id="hist-added-list"></div>
+                </div>
+            </div>
             
-            <div class="co-payment-box">
+            <div class="co-payment-box" style="margin-top:20px;">
                 <div class="co-section-title" style="margin-bottom:0;">Pagamento</div>
                 <label style="display:block; font-size:0.85rem; color:#888; margin-top:5px;">Pagamento realizado na entrega.</label>
                 <select id="payment-method">
@@ -1490,15 +1451,9 @@
             },
             
             playIntro() {
-                const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-                const now = Date.now();
-                const lastSeen = localStorage.getItem('da_intro_seen');
-
-                if (lastSeen && (now - parseInt(lastSeen) < SEVEN_DAYS_MS)) {
-                    return; 
-                }
-
-                localStorage.setItem('da_intro_seen', now.toString());
+                // AJUSTE: Atualiza a cada sessão
+                if (sessionStorage.getItem('intro_shown')) return;
+                sessionStorage.setItem('intro_shown', 'true');
 
                 const overlay = document.getElementById('intro-overlay');
                 const textBox = document.getElementById('intro-text');
@@ -1811,14 +1766,12 @@
                 
                 this.updateCardUI(id, newQty);
                 this.renderIncluded(document.getElementById('included-list-desk'));
-                const modal = document.getElementById('checkout-modal');
-                if(modal.open) this.renderIncluded(document.getElementById('modal-cart-list'), true);
                 
-                // Atualizar Modal de Revisão também se estiver aberto
-                const reviewModal = document.getElementById('review-modal');
-                if(reviewModal.open) {
-                    this.renderIncluded(document.getElementById('review-cart-list'), true);
-                    this.renderHistory(); // Atualiza histórico
+                // UNIFICAÇÃO: Atualiza o modal unificado (checkout-modal) se estiver aberto
+                const modal = document.getElementById('checkout-modal');
+                if(modal.open) {
+                    this.renderIncluded(document.getElementById('modal-cart-list'), true);
+                    this.renderHistory();
                 }
                 
                 this.updateTotal();
@@ -1924,7 +1877,7 @@
                 const finalBtn = document.getElementById('final-btn');
                 const modalCreditAlert = document.getElementById('modal-credit-alert');
                 const toast = document.getElementById('credit-toast');
-                const subToast = document.getElementById('credit-sub-toast');
+                // Removed subToast reference
 
                 if (this.currentBasket.id === 'custom_create') {
                     const minOrder = 200.00;
@@ -1950,7 +1903,6 @@
                         }
                         if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
                         toast.classList.remove('visible');
-                        subToast.classList.remove('visible');
                     } else {
                         if (finalBtn) {
                             finalBtn.disabled = false;
@@ -1962,7 +1914,6 @@
                     const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                     document.getElementById('co-total').innerText = txtTotal;
                     document.getElementById('icb-total-val').innerText = txtTotal;
-                    document.getElementById('rm-total-display').innerText = txtTotal; // Atualiza Modal Revisão
                     document.getElementById('cart-count-badge').innerText = count;
 
                 } else {
@@ -2009,7 +1960,6 @@
                     const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                     document.getElementById('co-total').innerText = txtTotal;
                     document.getElementById('icb-total-val').innerText = txtTotal;
-                    document.getElementById('rm-total-display').innerText = txtTotal; // Atualiza Modal Revisão
                     document.getElementById('cart-count-badge').innerText = count;
                     
                     if (basketPrice > effectiveTotal) {
@@ -2018,21 +1968,20 @@
                         
                         toast.innerText = `Você tem R$ ${diffTxt} em crédito!`;
                         toast.classList.add('visible');
-                        subToast.classList.add('visible');
                         
                         if (modalCreditAlert) {
                             document.getElementById('mca-val').innerText = diffTxt;
                             modalCreditAlert.classList.remove('hidden');
                         }
                         
+                        // AJUSTE: Bloquear botão se houver crédito
                         if(finalBtn) {
                             finalBtn.disabled = true;
-                            finalBtn.innerText = "Complete sua cesta para finalizar";
+                            finalBtn.innerText = "Adicione produtos para usar seu crédito";
                             finalBtn.style.background = "#ccc";
                         }
                     } else {
                         toast.classList.remove('visible');
-                        subToast.classList.remove('visible');
                         
                         if (modalCreditAlert) modalCreditAlert.classList.add('hidden');
                         
@@ -2097,14 +2046,9 @@
                 App.openSheet('info-sheet');
             },
 
-            // --- NOVA FUNÇÃO: ABRIR MODAL MINHA CESTA ---
+            // --- UNIFICADO: Redireciona para o checkout unificado ---
             openReviewModal() {
-                if(Object.keys(this.cart).length === 0) return alert("Sua cesta está vazia.");
-                this.renderIncluded(document.getElementById('review-cart-list'), true);
-                this.renderHistory();
-                
-                document.body.classList.add('modal-open'); // Trava rolagem
-                document.getElementById('review-modal').showModal();
+                App.openCheckout();
             },
             // -------------------------------------------
 
@@ -2119,6 +2063,7 @@
             openCheckout() {
                 if(Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
                 this.renderIncluded(document.getElementById('modal-cart-list'), true);
+                this.renderHistory(); // Renderiza histórico
                 document.getElementById('checkout-modal').showModal();
             },
 
