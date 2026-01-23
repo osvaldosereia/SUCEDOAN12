@@ -899,16 +899,20 @@
                 </div>
             </div>
 
-            <div class="history-grid">
-                <div class="history-col">
-                    <h5 style="color:#b91c1c;">Retirados</h5>
-                    <div id="hist-removed-list"></div>
-                </div>
-                <div class="history-col">
-                    <h5 style="color:#15803d;">Adicionados</h5>
-                    <div id="hist-added-list"></div>
-                </div>
+            <div style="margin-top: 25px; border-top: 2px dashed #e2e8f0; padding-top: 20px;">
+    
+    <div style="margin-bottom: 20px;">
+        <h5 style="color: #b91c1c; font-weight: 800; font-size: 1rem; margin-bottom: 10px; text-transform: uppercase;">Retirados</h5>
+        <div id="hist-removed-list" style="display: flex; flex-direction: column; gap: 8px;">
             </div>
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        <h5 style="color: #15803d; font-weight: 800; font-size: 1rem; margin-bottom: 10px; text-transform: uppercase;">Adicionados</h5>
+        <div id="hist-added-list" style="display: flex; flex-direction: column; gap: 8px;">
+            </div>
+    </div>
+</div>
             
             <div class="co-payment-box" style="margin-top:20px;">
                 <div class="co-section-title" style="margin-bottom:0;">Como será o Pagamento?</div>
@@ -1455,45 +1459,51 @@ if (basket) {
             },
 
             // --- FUNÇÃO HISTÓRICO NOVO ---
-            renderHistory() {
-                const removedEl = document.getElementById('hist-removed-list');
-                const addedEl = document.getElementById('hist-added-list');
-                if(!removedEl || !addedEl) return;
+           renderHistory() {
+    const removedEl = document.getElementById('hist-removed-list');
+    const addedEl = document.getElementById('hist-added-list');
+    if(!removedEl || !addedEl) return;
 
-                let removedHtml = '';
-                let addedHtml = '';
+    let removedHtml = '';
+    let addedHtml = '';
 
-                // Verifica removidos (Estava no original, mas diminuiu ou zerou)
-                for(let id in this.originalCart) {
-                    const originalQty = this.originalCart[id];
-                    const currentQty = this.cart[id] || 0;
-                    
-                    if(currentQty < originalQty) {
-                        const p = this.data.find(x => x.id === id);
-                        if(p) {
-                            const diff = originalQty - currentQty;
-                            removedHtml += `<div class="history-item"><span>-${diff}x</span> <span>${p.nome}</span></div>`;
-                        }
-                    }
-                }
+    // Verifica removidos
+    for(let id in this.originalCart) {
+        const originalQty = this.originalCart[id];
+        const currentQty = this.cart[id] || 0;
+        if(currentQty < originalQty) {
+            const p = this.data.find(x => x.id === id);
+            if(p) {
+                const diff = originalQty - currentQty;
+                removedHtml += `
+                    <div style="margin-bottom: 8px;">
+                        <div style="color: #b91c1c; font-weight: 800; font-size: 0.9rem;">-${diff}x</div>
+                        <div style="color: #334155; font-size: 0.95rem;">${p.nome}</div>
+                    </div>`;
+            }
+        }
+    }
 
-                // Verifica adicionados (Não estava ou aumentou)
-                for(let id in this.cart) {
-                    const currentQty = this.cart[id];
-                    const originalQty = this.originalCart[id] || 0;
-                    
-                    if(currentQty > originalQty) {
-                        const p = this.data.find(x => x.id === id);
-                        if(p) {
-                            const diff = currentQty - originalQty;
-                            addedHtml += `<div class="history-item"><span>+${diff}x</span> <span>${p.nome}</span></div>`;
-                        }
-                    }
-                }
+    // Verifica adicionados
+    for(let id in this.cart) {
+        const currentQty = this.cart[id];
+        const originalQty = this.originalCart[id] || 0;
+        if(currentQty > originalQty) {
+            const p = this.data.find(x => x.id === id);
+            if(p) {
+                const diff = currentQty - originalQty;
+                addedHtml += `
+                    <div style="margin-bottom: 8px;">
+                        <div style="color: #15803d; font-weight: 800; font-size: 0.9rem;">+${diff}x</div>
+                        <div style="color: #334155; font-size: 0.95rem;">${p.nome}</div>
+                    </div>`;
+            }
+        }
+    }
 
-                removedEl.innerHTML = removedHtml || '<span style="font-size:0.75rem; color:#999;">Nada retirado</span>';
-                addedEl.innerHTML = addedHtml || '<span style="font-size:0.75rem; color:#999;">Nada adicionado</span>';
-            },
+    removedEl.innerHTML = removedHtml || '<span style="font-size:0.85rem; color:#999;">Nenhum item removido</span>';
+    addedEl.innerHTML = addedHtml || '<span style="font-size:0.85rem; color:#999;">Nenhum item adicionado</span>';
+},
             // -----------------------------
 
             buildCard(p) {
