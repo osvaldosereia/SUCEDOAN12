@@ -434,8 +434,19 @@
         </div>
         <table class="inner-table">
             <thead>
-                <tr><th>STATUS</th><th>PRODUTO (XML)</th><th>EMB</th><th>QTD XML</th><th>FATOR</th><th>FINAL</th><th>CUSTO UN.</th></tr>
-            </thead>
+    <tr>
+        <th style="width:40px; text-align:center;">
+            <input type="checkbox" onchange="Importer.toggleAll(this.checked)" checked>
+        </th>
+        <th>STATUS</th>
+        <th>PRODUTO (XML)</th>
+        <th>EMB</th>
+        <th>QTD XML</th>
+        <th>FATOR</th>
+        <th>FINAL</th>
+        <th>CUSTO UN.</th>
+    </tr>
+</thead>
             <tbody id="import-rows"></tbody>
         </table>
         <div style="text-align:right; margin-top:20px;"><button onclick="Importer.commit()" class="btn btn-success" style="padding:0 40px;">✅ CONFIRMAR IMPORTAÇÃO</button></div>
