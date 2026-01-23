@@ -309,12 +309,12 @@
             text-align: center; 
         }
         .market-title { 
-            font-size: 1.4rem; font-weight: 800; color: var(--primary); 
-            margin-bottom: 6px; line-height: 1.2; letter-spacing: -0.5px;
+            font-size: 1.5rem; font-weight: 600; color: var(--primary); 
+            margin-bottom: 10px; line-height: 1.3; letter-spacing: -0.5px;
         }
         /* Subtitulo Orientativo */
         .market-instruction {
-            color: #555; font-size: 0.9rem; margin-top: 5px; margin-bottom: 10px;
+            color: #555; font-size: 0.9rem; margin-top: 10px; margin-bottom: 8px;
             max-width: 90%; margin-left: auto; margin-right: auto; line-height: 1.4;
         }
         .market-subtitle { 
@@ -789,7 +789,7 @@
             <div class="container">
                 <div class="market-header">
                     <h2 class="market-title" id="cust-welcome-title"></h2>
-                    <p class="market-instruction">Retire da sua cesta os produtos que você não quer, e monte a sua nova cesta do seu jeito.</p>
+                    <p class="market-instruction">Aproveite nossos preços para trocar e adicionar novos produtos.<br>Boas Compras ❤!</p>
                     <button id="btn-top-main" class="btn-top-review" onclick="App.openReviewModal()">Ver Minha Cesta 🧺</button>
                 </div>
                 <div id="extras-container"></div>
@@ -1170,7 +1170,7 @@ if (basket) {
 
     // --- ADICIONE ESTAS 3 LINHAS ABAIXO PARA CORRIGIR O TÍTULO E O X ---
     const val = basket.valor.toFixed(2).replace('.',',');
-    document.getElementById('cust-welcome-title').innerHTML = `Legal! Você escolheu a <strong>${basket.nome}</strong> no valor de R$ ${val}`;
+    document.getElementById('cust-welcome-title').innerHTML = `Você escolheu a <strong>${basket.nome}</strong> no valor de R$ ${val}`;
     document.getElementById('rm-limit-info').innerText = this.currentLimit;
     // ------------------------------------------------------------------
     
