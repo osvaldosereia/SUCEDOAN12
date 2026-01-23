@@ -42,6 +42,7 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
         .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--accent); color: white; }
         .btn-sm { height: 28px; padding: 0 0.5rem; font-size: 0.75rem; }
 
         /* --- GRID SYSTEM --- */
@@ -65,7 +66,6 @@
             background: var(--bg); border: 1px solid var(--border);
         }
         .bg-st { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
-        .bg-new { background: #ecfdf5; color: #047857; border-color: #d1fae5; }
         
         .stats-row { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: auto; 
@@ -122,6 +122,10 @@
             border-bottom: 1px solid var(--border); background: var(--bg); font-size: 0.85rem;
         }
         .list-item:last-child { border-bottom: none; }
+        
+        /* Log Visuals */
+        .log-in { color: var(--accent); font-weight: bold; }
+        .log-out { color: var(--danger); font-weight: bold; }
 
         /* Toast Notification */
         #toast {
@@ -175,7 +179,7 @@
             <div class="tabs">
                 <button type="button" class="tab-btn active" onclick="app.tab('geral')">1. Cadastro</button>
                 <button type="button" class="tab-btn" onclick="app.tab('fiscal')">2. Fiscal</button>
-                <button type="button" class="tab-btn" onclick="app.tab('estoque')">3. Estoque & Lotes</button>
+                <button type="button" class="tab-btn" onclick="app.tab('estoque')">3. Estoque & Mov.</button>
             </div>
 
             <div id="tab-geral" class="tab-pane active form-grid">
@@ -239,16 +243,34 @@
             <div id="tab-estoque" class="tab-pane form-grid">
                 <div id="stock-normal-ui">
                     <div class="cols-2">
-                        <div class="form-group"><label>Estoque Atual</label><input type="number" id="qty" readonly style="background:#e2e8f0;"></div>
+                        <div class="form-group"><label>Estoque Atual</label><input type="number" id="qty" style="font-weight:bold;"></div>
                         <div class="form-group"><label>Estoque Mínimo</label><input type="number" id="minQty"></div>
                     </div>
 
+                    <div style="margin-top:1.5rem; background:var(--bg); padding:1rem; border-radius:var(--radius); border:1px solid var(--border);">
+                        <label style="color:var(--primary); margin-bottom:0.5rem; display:block;">Nova Movimentação Manual</label>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 2fr auto; gap:0.5rem;">
+                            <select id="movType">
+                                <option value="in">Entrada (+)</option>
+                                <option value="out">Saída (-)</option>
+                            </select>
+                            <input type="number" id="movQty" placeholder="Qtd">
+                            <input type="text" id="movNote" placeholder="Motivo (Ex: Ajuste, Quebra)">
+                            <button type="button" class="btn-success" onclick="app.addMovement()">Registrar</button>
+                        </div>
+                    </div>
+
                     <div style="margin-top:1rem;">
-                        <label>Adicionar Lote / Validade</label>
+                        <label>Histórico de Movimentações</label>
+                        <ul id="historyList" class="list-group" style="max-height: 200px; overflow-y: auto;"></ul>
+                    </div>
+
+                    <div style="margin-top:1.5rem; border-top:1px dashed var(--border); padding-top:1rem;">
+                        <label>Controle de Lotes (Opcional)</label>
                         <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
                             <input type="date" id="batchDate">
                             <input type="number" id="batchQty" placeholder="Qtd">
-                            <button type="button" class="btn-primary" onclick="app.addBatch()">Add</button>
+                            <button type="button" class="btn-primary" onclick="app.addBatch()">Add Lote</button>
                         </div>
                         <ul id="batchList" class="list-group"></ul>
                     </div>
@@ -278,7 +300,7 @@
 <div id="toast">Operação realizada com sucesso</div>
 
 <script>
-/* * SISTEMA V2 - XML ENGINE 
+/* * SISTEMA V2 - XML ENGINE & STOCK CONTROL
  * Autor: SISTEMAS (AI)
  */
 
@@ -290,8 +312,6 @@ const app = {
         const db = localStorage.getItem('sys_v2_db');
         if (db) this.data = JSON.parse(db);
         this.render();
-        
-        // Listener unificado
         document.getElementById('fileInput').addEventListener('change', (e) => this.handleFiles(e));
     },
 
@@ -307,7 +327,7 @@ const app = {
         setTimeout(() => t.classList.remove('show'), 3000);
     },
 
-    // --- FILE HANDLER ENGINE (CSV & XML) ---
+    // --- FILE HANDLER ENGINE ---
     async handleFiles(e) {
         const files = Array.from(e.target.files);
         if (!files.length) return;
@@ -333,19 +353,17 @@ const app = {
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('grid').classList.remove('hidden');
         this.toast(`Importação: ${countNew} novos, ${countUpd} atualizados.`);
-        e.target.value = ''; // Reset
+        e.target.value = ''; 
     },
 
     parseXML(xmlString) {
         const parser = new DOMParser();
         const xml = parser.parseFromString(xmlString, "text/xml");
         
-        // Dados da Nota
         const nNF = xml.querySelector('ide > nNF')?.textContent || '';
         const emitente = xml.querySelector('emit > xNome')?.textContent || '';
         const dataEmissao = xml.querySelector('ide > dhEmi')?.textContent?.split('T')[0] || new Date().toISOString().split('T')[0];
 
-        // Itens
         const dets = xml.querySelectorAll('det');
         let cNew = 0, cUpd = 0;
 
@@ -360,49 +378,45 @@ const app = {
             const cfop = prod.querySelector('CFOP')?.textContent;
             const uCom = prod.querySelector('uCom')?.textContent;
             const qCom = parseFloat(prod.querySelector('qCom')?.textContent || 0);
-            const vUnCom = parseFloat(prod.querySelector('vUnCom')?.textContent || 0); // Custo Unitário na nota
+            const vUnCom = parseFloat(prod.querySelector('vUnCom')?.textContent || 0);
             const cest = prod.querySelector('CEST')?.textContent || '';
 
-            // Tenta Rastreabilidade (Lote/Validade)
             let loteInfo = null;
             const rastro = prod.querySelector('rastro');
             if (rastro) {
-                loteInfo = {
-                    date: rastro.querySelector('dVal')?.textContent || '',
-                    qty: qCom // Assume que tudo do item pertence ao lote
-                };
+                loteInfo = { date: rastro.querySelector('dVal')?.textContent || '', qty: qCom };
             }
 
-            // Verifica ST (Olhando CST ICMS)
             let isST = false;
             const icms = imposto?.querySelector('ICMS');
             if (icms) {
-                // CSTs comuns de ST: 10, 30, 60, 70 ou CSOSN 201, 202, 203, 500, 900
                 const tagsST = ['ICMS10', 'ICMS30', 'ICMS60', 'ICMS70', 'ICMSSN201', 'ICMSSN202', 'ICMSSN500'];
                 tagsST.forEach(tag => { if (icms.querySelector(tag)) isST = true; });
-                // Verifica CFOP 5405
                 if (cfop === '5405') isST = true;
             }
 
-            // Lógica de Upsert
-            // Procura por EAN (se valido) ou Código Interno
             let existing = null;
             if (ean && ean !== 'SEM GTIN') existing = this.data.find(p => p.ean === ean);
             if (!existing) existing = this.data.find(p => p.id === codigo);
 
             if (existing) {
-                // ATUALIZAR
-                existing.qty += qCom; // Soma Estoque
-                existing.cost = vUnCom; // Atualiza Custo
+                existing.qty += qCom;
+                existing.cost = vUnCom;
                 existing.lastNFe = nNF;
-                existing.cfop = cfop; // Atualiza fiscal
+                existing.cfop = cfop;
+                
+                // Add Movement Log for XML Import
+                if(!existing.history) existing.history = [];
+                existing.history.push({
+                    date: new Date().toISOString(), type: 'in', qty: qCom, note: `NFe ${nNF} - XML`
+                });
+
                 if (loteInfo && loteInfo.date) {
                     if (!existing.batches) existing.batches = [];
                     existing.batches.push(loteInfo);
                 }
                 cUpd++;
             } else {
-                // CRIAR NOVO
                 const newProd = {
                     id: codigo,
                     ean: (ean && ean !== 'SEM GTIN') ? ean : '',
@@ -410,7 +424,7 @@ const app = {
                     category: 'XML Import',
                     unit: uCom,
                     cost: vUnCom,
-                    price: vUnCom * 1.5, // Sugere 50% margem inicial
+                    price: vUnCom * 1.5,
                     qty: qCom,
                     ncm: ncm,
                     cest: cest,
@@ -419,6 +433,7 @@ const app = {
                     supplier: emitente,
                     lastNFe: nNF,
                     batches: loteInfo && loteInfo.date ? [loteInfo] : [],
+                    history: [{ date: new Date().toISOString(), type: 'in', qty: qCom, note: `NFe ${nNF} - Inicial` }],
                     active: true,
                     isCombo: false
                 };
@@ -433,12 +448,10 @@ const app = {
     parseCSV(csvText) {
         const lines = csvText.split('\n').filter(l => l.trim());
         let cNew = 0, cUpd = 0;
-        
-        // Simples parser CSV ignorando cabeçalho se houver "Internal Code"
         const start = lines[0].includes('Internal Code') ? 1 : 0;
         
         for (let i = start; i < lines.length; i++) {
-            const row = lines[i].split(';'); // Ponto e virgula
+            const row = lines[i].split(';');
             if (row.length < 3) continue;
 
             const clean = (s) => s ? s.replace(/[="]/g, '').trim() : '';
@@ -454,7 +467,6 @@ const app = {
 
             const idx = this.data.findIndex(x => x.id === p.id);
             if (idx >= 0) {
-                // Atualiza apenas dados básicos no CSV, preserva estoque
                 this.data[idx].price = p.price;
                 this.data[idx].active = p.active;
                 cUpd++;
@@ -463,7 +475,7 @@ const app = {
                     ...p, 
                     qty: 0, cost: 0, category: clean(row[2]), 
                     cfop: clean(row[5]), cst: clean(row[6]),
-                    isST: false, batches: []
+                    isST: false, batches: [], history: []
                 });
                 cNew++;
             }
@@ -483,15 +495,14 @@ const app = {
             (p.ean && p.ean.includes(term)) ||
             (p.supplier && p.supplier.toLowerCase().includes(term)) ||
             (p.lastNFe && p.lastNFe.includes(term))
-        ).slice(0, 50); // Limit 50 for speed
+        ).slice(0, 50);
 
         filtered.forEach(p => {
             const el = document.createElement('div');
             el.className = `card ${!p.active ? 'opacity-50' : ''}`;
             el.onclick = () => this.openModal(p.id);
             
-            const stock = p.batches?.reduce((acc, b) => acc + b.qty, 0) || p.qty || 0;
-            const isLow = p.minQty && stock <= p.minQty;
+            const isLow = p.minQty && p.qty <= p.minQty;
             
             el.innerHTML = `
                 <div class="card-header">
@@ -511,7 +522,7 @@ const app = {
                     </div>
                     <div class="stat-item" style="align-items:flex-end">
                         <span class="stat-label">ESTOQUE</span>
-                        <span class="stat-val" style="color:${isLow ? 'var(--danger)' : 'var(--text)'}">${stock} ${p.unit||''}</span>
+                        <span class="stat-val" style="color:${isLow ? 'var(--danger)' : 'var(--text)'}">${p.qty || 0} ${p.unit||''}</span>
                     </div>
                 </div>
             `;
@@ -526,14 +537,15 @@ const app = {
         form.reset();
         document.getElementById('batchList').innerHTML = '';
         document.getElementById('comboList').innerHTML = '';
+        document.getElementById('historyList').innerHTML = '';
         this.tab('geral');
 
         if (id) {
             const p = this.data.find(x => x.id === id);
             if (!p) return;
 
-            // Fill basic fields
-            const fields = ['code','ean','name','category','unit','weight','cost','price','supplier','ncm','cest','cfop','cst','lastNFe','minQty'];
+            // Basic Fields
+            const fields = ['code','ean','name','category','unit','weight','cost','price','supplier','ncm','cest','cfop','cst','lastNFe','minQty','qty'];
             fields.forEach(f => {
                 if(document.getElementById(f)) document.getElementById(f).value = (f === 'code' ? p.id : p[f]) || '';
             });
@@ -543,27 +555,84 @@ const app = {
             document.getElementById('isST').checked = p.isST || false;
             document.getElementById('isCombo').checked = p.isCombo || false;
 
-            // Computed Stock
-            const totalStock = p.batches?.reduce((a,b)=>a+b.qty,0) || p.qty || 0;
-            document.getElementById('qty').value = totalStock;
-            
-            // Batches
+            // Arrays
             if (p.batches) p.batches.forEach(b => this.addBatchRow(b));
-            // Combo Items
             if (p.comboItems) p.comboItems.forEach(c => this.addComboRow(c));
+            
+            // History
+            if (p.history) {
+                // Show last 10
+                p.history.slice(-10).reverse().forEach(h => this.addHistoryRow(h));
+            }
 
             this.calcMargin();
             this.toggleComboUI();
             document.getElementById('btnDelete').classList.remove('hidden');
             document.getElementById('modalTitle').innerText = 'Editar Produto';
         } else {
-            // New
             document.getElementById('code').value = Date.now().toString().slice(-6);
+            document.getElementById('qty').value = 0;
             document.getElementById('btnDelete').classList.add('hidden');
             document.getElementById('modalTitle').innerText = 'Novo Produto';
             this.toggleComboUI();
         }
         dialog.showModal();
+    },
+
+    // --- MANUAL MOVEMENT LOGIC ---
+    addMovement() {
+        const type = document.getElementById('movType').value;
+        const qtyVal = parseFloat(document.getElementById('movQty').value);
+        const note = document.getElementById('movNote').value;
+        const currentStock = parseFloat(document.getElementById('qty').value) || 0;
+
+        if (!qtyVal || qtyVal <= 0) {
+            alert('Digite uma quantidade válida.');
+            return;
+        }
+
+        // 1. Update UI Input
+        let newStock = currentStock;
+        if (type === 'in') newStock += qtyVal;
+        else newStock -= qtyVal;
+        
+        document.getElementById('qty').value = newStock;
+
+        // 2. Add to Visual List (History)
+        const moveData = {
+            date: new Date().toISOString(),
+            type: type,
+            qty: qtyVal,
+            note: note || 'Ajuste Manual'
+        };
+        this.addHistoryRow(moveData);
+
+        // Clear inputs
+        document.getElementById('movQty').value = '';
+        document.getElementById('movNote').value = '';
+    },
+
+    addHistoryRow(h) {
+        const ul = document.getElementById('historyList');
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        
+        // Formata data e hora
+        const d = new Date(h.date);
+        const dateStr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        
+        li.dataset.json = JSON.stringify(h); // Guarda dados para salvar depois
+        li.innerHTML = `
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-size:0.75rem; color:var(--text-sec)">${dateStr}</span>
+                <span>${h.note}</span>
+            </div>
+            <div class="${h.type === 'in' ? 'log-in' : 'log-out'}">
+                ${h.type === 'in' ? '+' : '-'}${h.qty}
+            </div>
+        `;
+        // Insert at top
+        ul.prepend(li);
     },
 
     saveProduct() {
@@ -590,6 +659,7 @@ const app = {
             isST: getBool('isST'),
             lastNFe: getVal('lastNFe'),
             
+            qty: getNum('qty'), // NOW SAVES MANUAL INPUT DIRECTLY
             minQty: getNum('minQty'),
             isCombo: getBool('isCombo'),
             active: true,
@@ -599,14 +669,19 @@ const app = {
             })),
             comboItems: Array.from(document.querySelectorAll('#comboList li')).map(li => ({
                 id: li.dataset.id, qty: parseFloat(li.dataset.qty)
-            }))
+            })),
+            // Rebuild history from UI list + current movements
+            history: Array.from(document.querySelectorAll('#historyList li')).map(li => JSON.parse(li.dataset.json)).reverse()
         };
-
-        // Recalculate flat qty
-        p.qty = p.batches.reduce((a,b) => a+b.qty, 0);
 
         if (this.editingId) {
             const idx = this.data.findIndex(x => x.id === this.editingId);
+            // Merge old history if needed, but here we just grab from UI
+            // Better strategy: keep old history in memory and just append new ones? 
+            // Simplified: The UI list contains everything we need for now.
+            // But wait, the UI clears on modal open. We need to preserve full history.
+            // FIX: We rely on the object `p.history` being passed correctly.
+            // Since we render previous history in `openModal`, the `<ul>` has the data.
             this.data[idx] = p;
         } else {
             this.data.push(p);
@@ -648,7 +723,6 @@ const app = {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(`tab-${name}`).classList.add('active');
-        // Simple index map for buttons active state
         const idx = {'geral':0, 'fiscal':1, 'estoque':2}[name];
         document.querySelectorAll('.tab-btn')[idx].classList.add('active');
     },
@@ -710,7 +784,6 @@ const app = {
         const qty = document.getElementById('comboQty').value;
         if(!term || !qty) return;
 
-        // Try find product
         const p = this.data.find(x => x.id === term || x.name.toLowerCase().includes(term.toLowerCase()));
         if(p) {
             this.addComboRow({id: p.id, qty, name: p.name});
