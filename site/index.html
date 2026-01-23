@@ -307,7 +307,7 @@
         dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         
         .co-header { padding: 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
-        .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #f7f7f7; }
+        .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #DEDEDE; }
         .co-horizontal-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 20px; }
         .co-horizontal-list::-webkit-scrollbar { display: none; }
         
@@ -485,8 +485,18 @@
         </div>
         <div class="co-body">
             <div class="co-section-title" style="font-weight: 600; color: #222B49; font-size: 1.1rem; margin-bottom: 10px;">Veja os Produtos da sua Cesta</div>
-            <div id="modal-cart-list" class="co-horizontal-list"></div>
+<div class="carousel-wrapper" style="margin-bottom: 20px; position: relative;">
+                
+                <div class="scroll-btn left" style="display:flex;" onclick="document.getElementById('modal-cart-list').scrollBy({left: -200, behavior: 'smooth'})">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                </div>
 
+                <div id="modal-cart-list" class="co-horizontal-list"></div>
+
+                <div class="scroll-btn right" style="display:flex;" onclick="document.getElementById('modal-cart-list').scrollBy({left: 200, behavior: 'smooth'})">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+            </div>
             <div style="background:#f0f9ff; border:1px solid #e0f2fe; padding:15px; border-radius:8px; margin-bottom:20px; margin-top:10px;">
                 <h4 style="color:#0369a1; margin-bottom:5px; font-size:1.1rem;">💡 Sobre as trocas:</h4>
                 <p style="color:#334155; font-size:0.95rem; line-height:1.4; margin:0;">Você pode trocar até <strong id="rm-limit-info">X</strong> produtos e adicionar quantos quiser.</p>
