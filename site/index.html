@@ -706,12 +706,18 @@
                     basketId: this.currentBasket ? this.currentBasket.id : null, cart: this.cart, cartOrder: this.cartOrder
                 }));
             },
-            toSmartTitleCase(str) {
-                const smallWords = ['de', 'da', 'do', 'e', 'com', 'sem', 'para', 'na', 'no', 'em'];
+          toSmartTitleCase(str) {
+                const smallWords = ['de', 'da', 'do', 'e', 'com', 'sem', 'para', 'na', 'no', 'em', 'ao', 'a', 'o', 'as', 'os'];
                 const upperWords = ['kg', 'ml', 'g', 'l', 'un', 'pvc', 'uht', 'pet', 'ypê', 'sbp', 'tixan', 'qboa'];
+                
                 return str.toLowerCase().split(' ').map((w, i) => {
-                    if (i === 0 || upperWords.includes(w)) return w.toUpperCase();
-                    if (smallWords.includes(w)) return w;
+                    // 1. Se for unidade de medida ou marca específica, mantém TUDO MAIÚSCULO
+                    if (upperWords.includes(w)) return w.toUpperCase();
+                    
+                    // 2. Se for preposição (de, da, do...) e NÃO for a primeira palavra, mantém minúsculo
+                    if (smallWords.includes(w) && i !== 0) return w;
+                    
+                    // 3. Padrão: Apenas a primeira letra maiúscula
                     return w.charAt(0).toUpperCase() + w.slice(1);
                 }).join(' ');
             },
