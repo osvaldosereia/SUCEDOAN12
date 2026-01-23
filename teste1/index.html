@@ -1251,9 +1251,18 @@ const Importer = {
         if(inp.files[0]) r.readAsText(inp.files[0]);
         inp.value='';
     },
+    
+    // NOVA FUNÇÃO: Marcar/Desmarcar todos
+    toggleAll: (checked) => {
+        document.querySelectorAll('.import-chk').forEach(c => c.checked = checked);
+    },
+
     render: () => {
         document.getElementById('import-rows').innerHTML = Importer.staged.map((r,i)=>`
             <tr>
+                <td style="text-align:center;">
+                    <input type="checkbox" class="import-chk" value="${i}" checked>
+                </td>
                 <td><span class="${r.status==='NOVO'?'badge-new':'badge-upd'}">${r.status}</span></td>
                 <td>${r.nome}</td>
                 <td style="text-align:center;">${r.isPackage ? `<span class="badge-box">${r.uXml}</span>` : `<span class="badge-unit">${r.uXml}</span>`}</td>
@@ -1263,8 +1272,19 @@ const Importer = {
                 <td style="text-align:right;">R$ ${(r.vXml / r.factor).toFixed(2)}</td>
             </tr>`).join('');
     },
+
     commit: () => {
-        Importer.staged.forEach(r => {
+        // FILTRO: Pega apenas os checkboxes marcados
+        const selectedChecks = document.querySelectorAll('.import-chk:checked');
+        
+        if(selectedChecks.length === 0) return alert("SELECIONE PELO MENOS UM PRODUTO!");
+        
+        let count = 0;
+
+        selectedChecks.forEach(chk => {
+            const idx = parseInt(chk.value);
+            const r = Importer.staged[idx]; // Pega o objeto original pelo índice
+            
             const f = parseFloat(r.factor)||1;
             const finalQ = r.qXml * f;
             const finalC = r.vXml / f;
@@ -1286,8 +1306,13 @@ const Importer = {
                     entryHistory: [entry], salesHistory: [], manualHistory: [], isBestSeller: false, linkedProductCode: ""
                 });
             }
+            count++;
         });
-        DB.save(); App.render(); document.getElementById('modal-import').close(); alert("IMPORTAÇÃO CONCLUÍDA!");
+
+        DB.save(); 
+        App.render(); 
+        document.getElementById('modal-import').close(); 
+        alert(`IMPORTAÇÃO CONCLUÍDA! (${count} ITENS PROCESSADOS)`);
     }
 };
 
