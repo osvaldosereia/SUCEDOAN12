@@ -515,16 +515,7 @@
                 </div>
             </div>
 
-            <div style="margin-top: 25px; border-top: 2px dashed #e2e8f0; padding-top: 20px;">
-                <div style="margin-bottom: 20px;">
-                    <h5 style="color: #b91c1c; font-weight: 800; font-size: 1rem; margin-bottom: 10px; text-transform: uppercase;">Retirados</h5>
-                    <div id="hist-removed-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                </div>
-                <div style="margin-bottom: 10px;">
-                    <h5 style="color: #15803d; font-weight: 800; font-size: 1rem; margin-bottom: 10px; text-transform: uppercase;">Adicionados</h5>
-                    <div id="hist-added-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                </div>
-            </div>
+        
             
             <div class="co-payment-box" style="margin-top:20px;">
     <div class="co-section-title" style="margin-bottom:0; font-weight:600;">
@@ -893,64 +884,112 @@
                 if(document.getElementById('coupon-input').value.toUpperCase() === CONSTANTS.COUPON_CODE) { this.appliedCoupon = true; alert("Cupom Aplicado!"); this.updateTotal(); } 
                 else alert("Cupom Inválido");
             },
-            updateTotal() {
-    let sum = 0, count = 0;
-    for(let id in this.cart) { 
-        const p = this.data.find(x => x.id === id); 
-        if(p) { sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; count += this.cart[id]; } 
-    }
-    MarketingApp.logCartUpdate(sum, count);
-    
-    const finalBtn = document.getElementById('final-btn');
-    const mAlert = document.getElementById('modal-credit-alert');
-    const toast = document.getElementById('credit-toast');
-    const payMethod = document.getElementById('payment-method').value; // <--- Captura o valor
+           updateTotal() {
+                let sum = 0, count = 0;
+                // Calcula soma dos itens atuais
+                for(let id in this.cart) { 
+                    const p = this.data.find(x => x.id === id); 
+                    if(p) { sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; count += this.cart[id]; } 
+                }
+                MarketingApp.logCartUpdate(sum, count);
+                
+                const finalBtn = document.getElementById('final-btn');
+                const mAlert = document.getElementById('modal-credit-alert');
+                const toast = document.getElementById('credit-toast');
+                const payMethod = document.getElementById('payment-method').value; // Captura o pagamento
 
-    if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
-            let startSum = 0;
-            for(let i in this.originalCart) { let p = this.data.find(x => x.id === i); if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i]; }
-            this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
-    }
-    const basketPrice = this.currentBasket.valor;
-    const effectiveTotal = sum + this.baseFee;
-    let displayTotal = effectiveTotal > basketPrice ? (effectiveTotal - basketPrice < basketPrice * 0.02 ? basketPrice : effectiveTotal) : basketPrice;
-    
-    // ... (Lógica de renderização do breakdown/HTML mantém igual, omiti para brevidade, mas mantenha seu código original aqui até a linha do co-total) ...
-    
-    // RECOLOQUE A LOGICA DE BREAKDOWN AQUI (linhas 723-731 do código anterior)
-    let bdHtml = `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#555;"><span>Valor da Cesta</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div>`;
-    if (effectiveTotal > basketPrice) {
-        const exc = effectiveTotal - basketPrice;
-        bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#ea1d2c;"><span>Itens Adicionais</span><span>+ R$ ${exc.toFixed(2).replace('.', ',')}</span></div>`;
-        if (exc < basketPrice * 0.02) bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Desconto (Cortesia)</span><span>- R$ ${exc.toFixed(2).replace('.', ',')}</span></div>`;
-    }
-    if(this.appliedCoupon) { displayTotal = Math.max(0, displayTotal - CONSTANTS.COUPON_VAL); bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`; }
-    
-    document.getElementById('co-breakdown').innerHTML = bdHtml;
-    const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
-    document.getElementById('co-total').innerText = txtTotal;
-    document.getElementById('icb-total-val').innerText = txtTotal;
-    document.getElementById('cart-count-badge').innerText = count;
+                // Calcula taxa base se necessário
+                if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
+                        let startSum = 0;
+                        for(let i in this.originalCart) { let p = this.data.find(x => x.id === i); if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i]; }
+                        this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
+                }
+                const basketPrice = this.currentBasket.valor;
+                const effectiveTotal = sum + this.baseFee;
+                
+                // Define total a ser exibido (lógica de não ficar abaixo do valor da cesta salvo desconto)
+                let displayTotal = effectiveTotal > basketPrice ? (effectiveTotal - basketPrice < basketPrice * 0.02 ? basketPrice : effectiveTotal) : basketPrice;
+                if(this.appliedCoupon) displayTotal = Math.max(0, displayTotal - CONSTANTS.COUPON_VAL);
+                
+                // --- GERAÇÃO DO EXTRATO (CUPOM FISCAL) ---
+                let bdHtml = `<div style="padding-bottom:10px; border-bottom:1px dashed #ccc; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; font-weight:700; font-size:0.9rem;">
+                        <span>Cesta ${this.currentBasket.nome}</span>
+                        <span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                </div>`;
 
-    // --- LÓGICA DE VALIDAÇÃO DO BOTÃO ---
-    if (basketPrice > effectiveTotal) {
-        // Caso 1: Ainda tem crédito (Cesta incompleta)
-        const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
-        toast.innerText = `Você tem R$ ${diff} em crédito!`; toast.classList.add('visible');
-        document.getElementById('mca-val').innerText = diff; mAlert.classList.remove('hidden');
-        if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Adicione produtos para usar seu crédito"; finalBtn.style.background = "#ccc"; }
-    } else if (!payMethod) { 
-        // Caso 2: Total ok, mas SEM pagamento selecionado
-        toast.classList.remove('visible'); mAlert.classList.add('hidden');
-        if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Selecione a forma de pagamento"; finalBtn.style.background = "#ccc"; }
-    } else {
-        // Caso 3: Tudo ok (Total ok + Pagamento ok)
-        toast.classList.remove('visible'); mAlert.classList.add('hidden');
-        if(finalBtn) { finalBtn.disabled = false; finalBtn.innerText = "Fazer Pedido no WhatsApp"; finalBtn.style.background = "var(--primary)"; }
-    }
-    const bar = document.getElementById('ifood-cart-bar');
-    bar.classList.toggle('visible', count > 0);
-},
+                // 1. Itens Retirados (Vermelho)
+                for(let id in this.originalCart) {
+                    const diff = this.originalCart[id] - (this.cart[id] || 0);
+                    if(diff > 0) {
+                        const p = this.data.find(x => x.id === id);
+                        if(p) {
+                            const unitVal = p.isOffer ? p.offerPrice : p.valor;
+                            const totalRemovido = unitVal * diff;
+                            bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#b91c1c; margin-bottom:4px;">
+                                <span>-${diff}x ${p.nome.substring(0, 25)}...</span>
+                                <span>- R$ ${totalRemovido.toFixed(2).replace('.', ',')}</span>
+                            </div>`;
+                        }
+                    }
+                }
+
+                // 2. Itens Adicionados (Verde)
+                for(let id in this.cart) {
+                    const diff = this.cart[id] - (this.originalCart[id] || 0);
+                    if(diff > 0) {
+                        const p = this.data.find(x => x.id === id);
+                        if(p) {
+                            const unitVal = p.isOffer ? p.offerPrice : p.valor;
+                            const totalAdicionado = unitVal * diff;
+                            bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#15803d; margin-bottom:4px;">
+                                <span>+${diff}x ${p.nome.substring(0, 25)}...</span>
+                                <span>+ R$ ${totalAdicionado.toFixed(2).replace('.', ',')}</span>
+                            </div>`;
+                        }
+                    }
+                }
+
+                // 3. Ajuste de Itens Adicionais / Cortesia
+                if (effectiveTotal > basketPrice) {
+                    const exc = effectiveTotal - basketPrice;
+                    // Se a diferença for muito pequena (ex: arredondamento), dá como cortesia
+                    if (exc < basketPrice * 0.02) {
+                        bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;"><span>Desconto (Cortesia)</span><span>- R$ ${exc.toFixed(2).replace('.', ',')}</span></div>`;
+                    }
+                }
+
+                // 4. Cupom
+                if(this.appliedCoupon) { 
+                    bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600; margin-top:5px;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`; 
+                }
+                
+                document.getElementById('co-breakdown').innerHTML = bdHtml;
+                const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
+                document.getElementById('co-total').innerText = txtTotal;
+                document.getElementById('icb-total-val').innerText = txtTotal;
+                document.getElementById('cart-count-badge').innerText = count;
+
+                // --- VALIDAÇÃO DO BOTÃO ---
+                if (basketPrice > effectiveTotal) {
+                    // Caso 1: Ainda tem crédito
+                    const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
+                    toast.innerText = `Você tem R$ ${diff} em crédito!`; toast.classList.add('visible');
+                    document.getElementById('mca-val').innerText = diff; mAlert.classList.remove('hidden');
+                    if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Adicione produtos para usar seu crédito"; finalBtn.style.background = "#ccc"; }
+                } else if (!payMethod) { 
+                    // Caso 2: Total OK, mas SEM pagamento
+                    toast.classList.remove('visible'); mAlert.classList.add('hidden');
+                    if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Selecione a forma de pagamento"; finalBtn.style.background = "#ccc"; }
+                } else {
+                    // Caso 3: Tudo OK
+                    toast.classList.remove('visible'); mAlert.classList.add('hidden');
+                    if(finalBtn) { finalBtn.disabled = false; finalBtn.innerText = "Fazer Pedido no WhatsApp"; finalBtn.style.background = "var(--primary)"; }
+                }
+                const bar = document.getElementById('ifood-cart-bar');
+                bar.classList.toggle('visible', count > 0);
+            },
             openInfo(id) {
                 const p = this.data.find(x => x.id === id); if(!p) return;
                 document.getElementById('info-title').innerText = p.nome;
@@ -973,7 +1012,8 @@
             closeSheet(id) { document.getElementById(id).classList.remove('open'); },
             openCheckout() {
                 if(Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
-                this.renderIncluded(document.getElementById('modal-cart-list'), true); this.renderHistory();
+                this.renderIncluded(document.getElementById('modal-cart-list'), true); 
+                // this.renderHistory(); // Removido pois a lógica agora está no Extrato/Total
                 document.getElementById('checkout-modal').showModal();
             },
             sendWhatsApp() {
