@@ -57,6 +57,7 @@
             opacity: 0; visibility: hidden; transition: opacity 0.2s ease-in;
         }
         body.loaded { opacity: 1; visibility: visible; }
+        body.modal-open { overflow: hidden; } /* Trava rolagem do fundo */
         
         .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; width: 100%; }
         
@@ -111,6 +112,16 @@
             display: flex; align-items: center; gap: 6px;
         }
 
+        /* AJUDA VISIVEL */
+        .help-btn-visible {
+            width: 36px; height: 36px;
+            background: var(--secondary); color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.1rem; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-left: 10px;
+        }
+
         /* --- 3. CUSTOMIZER HEADER (APP STYLE) --- */
         .app-header {
             position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
@@ -138,11 +149,14 @@
             color: #ea1d2c; font-size: 1rem;
         }
 
-        .ah-help-btn {
-            font-size: 0.9rem; font-weight: 600; color: var(--secondary);
-            display: flex; align-items: center; justify-content: center;
-            width: 32px; height: 32px; cursor: pointer;
+        /* BOTÃO FIXO TOPO (ESCONDIDO POR PADRÃO) */
+        .ah-sticky-btn {
+            background: #3e3e3e; color: white; font-size: 0.8rem;
+            padding: 6px 12px; border-radius: 20px; font-weight: 600;
+            display: none; align-items: center; gap: 6px;
+            opacity: 0; transition: opacity 0.3s;
         }
+        .ah-sticky-btn.visible { display: flex; opacity: 1; }
 
         /* --- 4. HERO & HOME CONTENT --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
@@ -164,6 +178,9 @@
             font-size: 0.8rem; color: #555; font-weight: 600; 
             background: #f3f4f6; padding: 4px 12px; border-radius: 20px; border: 1px solid #e5e7eb;
         }
+
+        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
+        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 
         /* HOME GRID */
         .home-grid-container { padding: 0px 0 60px; }
@@ -313,11 +330,16 @@
             font-size: 1.4rem; font-weight: 800; color: var(--primary); 
             margin-bottom: 6px; line-height: 1.2; letter-spacing: -0.5px;
         }
+        /* Subtitulo Orientativo */
+        .market-instruction {
+            color: #555; font-size: 0.9rem; margin-top: 5px; margin-bottom: 10px;
+            max-width: 90%; margin-left: auto; margin-right: auto; line-height: 1.4;
+        }
         .market-subtitle { 
             color: var(--secondary); font-size: 1rem; font-weight: 500;
         }
         
-        /* BOTÃO TOPO - VER MINHA CESTA */
+        /* BOTÃO TOPO - VER MINHA CESTA (ORIGINAL) */
         .btn-top-review {
             display: inline-flex; align-items: center; gap: 8px;
             background: #3e3e3e; color: white;
@@ -541,32 +563,31 @@
         details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
         .faq-text { padding: 15px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
 
-        /* TOASTS REDESIGN (MODERNO E RESPONSIVO) */
+        /* TOASTS REDESIGN (TOPO E SEGUROS) */
         .credit-toast {
             position: fixed;
-            top: 24px;
+            top: 20px; /* Margem do topo */
             left: 50%;
-            transform: translate(-50%, -10px);
+            transform: translate(-50%, -20px);
             
-            background: rgba(30, 30, 30, 0.95); /* Fundo escuro */
-            backdrop-filter: blur(6px); /* Efeito vidro */
+            background: rgba(30, 30, 30, 0.95); 
+            backdrop-filter: blur(6px);
             color: #fff;
             
             padding: 12px 20px;
-            border-radius: 50px; /* Pílula */
+            border-radius: 50px; 
             
             font-weight: 500;
             font-size: 0.85rem;
             line-height: 1.4;
             text-align: center;
             
-            /* CORREÇÃO DO ESTOURO */
             width: auto;
-            max-width: 90%; 
+            max-width: 85%; /* Evita encostar nas bordas */
             white-space: normal; 
             
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            z-index: 2147483647;
+            z-index: 9999; /* Alto, mas abaixo do splash */
             
             opacity: 0;
             visibility: hidden;
@@ -580,8 +601,27 @@
             transform: translate(-50%, 0);
         }
         
-        .credit-sub-toast { position: fixed; top: 65px; left: 50%; transform: translate(-50%, 0); background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2147483647; text-align: center; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .credit-sub-toast.visible { opacity: 1; }
+        /* Subtoast também no topo, logo abaixo */
+        .credit-sub-toast { 
+            position: fixed; 
+            top: 70px; /* Logo abaixo do principal */
+            left: 50%; 
+            transform: translate(-50%, -10px); 
+            
+            background: #dcfce7; color: #166534; 
+            padding: 6px 14px; border-radius: 50px; 
+            font-size: 0.8rem; font-weight: 600; 
+            
+            opacity: 0; pointer-events: none; 
+            transition: opacity 0.3s, transform 0.3s; 
+            z-index: 9998; 
+            text-align: center; white-space: nowrap; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+        }
+        .credit-sub-toast.visible { 
+            opacity: 1; 
+            transform: translate(-50%, 0);
+        }
 
         /* MARKETING INTELLIGENCE STYLES */
         .mk-modal-overlay {
@@ -656,6 +696,14 @@
         .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #f7f7f7; }
         .co-horizontal-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 20px; }
         .co-horizontal-list::-webkit-scrollbar { display: none; }
+        
+        /* HISTORY GRID */
+        .history-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;
+            border-top: 1px solid #eee; padding-top: 20px;
+        }
+        .history-col h5 { font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .history-item { font-size: 0.8rem; margin-bottom: 4px; color: #555; display: flex; gap: 6px; }
         
         /* CHECKOUT CARD - Same as main card but adapted */
         .co-card { min-width: 140px; max-width: 140px; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; flex-shrink: 0; }
@@ -735,9 +783,13 @@
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
                 </div>
             </a>
-            <div class="location-pill">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                Cuiabá & VG
+            
+            <div style="display:flex; align-items:center;">
+                <div class="location-pill">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Cuiabá & VG
+                </div>
+                <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')">?</div>
             </div>
         </div>
     </header>
@@ -796,6 +848,11 @@
             <div class="ah-back-btn" onclick="App.goHome()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
             </div>
+            
+            <div id="sticky-review-btn" class="ah-sticky-btn" onclick="App.openReviewModal()">
+                Ver Cesta 🧺
+            </div>
+
             <div class="ah-search-box">
                 <svg class="ah-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 <input type="text" class="ah-search-input" placeholder="Buscar em Mercadinho" oninput="App.renderAllLists(this.value)">
@@ -807,7 +864,8 @@
             <div class="container">
                 <div class="market-header">
                     <h2 class="market-title" id="cust-welcome-title">Esse é o nosso Mercadinho.</h2>
-                    <button class="btn-top-review" onclick="App.openReviewModal()">Ver Minha Cesta 🧺</button>
+                    <p class="market-instruction">Retire da sua cesta os produtos que você não quer, e monte a sua nova cesta do seu jeito.</p>
+                    <button id="btn-top-main" class="btn-top-review" onclick="App.openReviewModal()">Ver Minha Cesta 🧺</button>
                 </div>
                 <div id="extras-container"></div>
             </div>
@@ -847,9 +905,9 @@
     <dialog id="review-modal" class="modal-checkout">
         <div class="co-header">
             <span class="co-title">Minha Cesta</span>
-            <span class="co-close" onclick="document.getElementById('review-modal').close()">✕</span>
+            <span class="co-close" onclick="document.getElementById('review-modal').close(); document.body.classList.remove('modal-open')">✕</span>
         </div>
-        <div class="co-body" style="background:#fff;">
+        <div class="co-body" style="background:#fff; overflow-y:auto; overscroll-behavior: contain;">
             <div style="background:#f0f9ff; border:1px solid #e0f2fe; padding:15px; border-radius:8px; margin-bottom:20px;">
                 <h4 style="color:#0369a1; margin-bottom:5px; font-size:0.95rem;">💡 Como funciona:</h4>
                 <p style="color:#334155; font-size:0.85rem; line-height:1.4; margin:0;">
@@ -864,9 +922,20 @@
                 <span style="font-size:0.9rem; color:#666;">Total Atual</span>
                 <div style="font-size:1.6rem; font-weight:800; color:var(--primary);" id="rm-total-display">R$ 0,00</div>
             </div>
+
+            <div class="history-grid">
+                <div class="history-col">
+                    <h5 style="color:#b91c1c;">Retirados</h5>
+                    <div id="hist-removed-list"></div>
+                </div>
+                <div class="history-col">
+                    <h5 style="color:#15803d;">Adicionados</h5>
+                    <div id="hist-added-list"></div>
+                </div>
+            </div>
         </div>
         <div class="co-footer">
-            <button class="co-btn-final" onclick="document.getElementById('review-modal').close(); App.openCheckout()">Finalizar Pedido</button>
+            <button class="co-btn-final" onclick="document.getElementById('review-modal').close(); document.body.classList.remove('modal-open'); App.openCheckout()">Finalizar Pedido</button>
         </div>
     </dialog>
 
@@ -999,6 +1068,16 @@
                 window.addEventListener('scroll', () => {
                     const scrollPercent = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
                     this.checkRules('scroll_profundo', scrollPercent);
+                    
+                    // --- STICKY BUTTON LOGIC ---
+                    const stickyBtn = document.getElementById('sticky-review-btn');
+                    const originalBtn = document.getElementById('btn-top-main');
+                    if(originalBtn && stickyBtn) {
+                        const rect = originalBtn.getBoundingClientRect();
+                        if(rect.bottom < 0) stickyBtn.classList.add('visible');
+                        else stickyBtn.classList.remove('visible');
+                    }
+                    // ---------------------------
                 }, { passive: true });
             },
             
@@ -1211,7 +1290,7 @@
                         } catch (e) { console.error("Restore error", e); localStorage.removeItem('da_state'); }
                     }
 
-                    // --- CHECK SPLASH SCREEN ---
+                    // --- CHECK SPLASH SCREEN (SESSION STORAGE) ---
                     this.checkSplash();
                     // ---------------------------
 
@@ -1231,18 +1310,15 @@
 
             checkSplash() {
                 const splash = document.getElementById('splash-screen');
-                const lastSeen = localStorage.getItem('splash_last_seen');
-                const now = Date.now();
-                const ONE_DAY = 24 * 60 * 60 * 1000;
+                const session = sessionStorage.getItem('splash_shown');
 
-                if (!lastSeen || (now - parseInt(lastSeen) > ONE_DAY)) {
-                    // Mostrar Splash
+                if (!session) {
+                    // Mostrar Splash se for nova sessão
                     setTimeout(() => {
                         splash.classList.add('fade-out');
-                        localStorage.setItem('splash_last_seen', now.toString());
-                    }, 3000); // 3 Segundos
+                        sessionStorage.setItem('splash_shown', 'true');
+                    }, 3000); 
                 } else {
-                    // Esconder imediatamente
                     splash.style.display = 'none';
                 }
             },
@@ -1372,7 +1448,7 @@
                 window.scrollTo(0,0);
                 this.renderAllLists();
                 this.saveState();
-                this.playIntro(); // Keep old intro for customizer specific tutorial if needed, or remove
+                this.playIntro();
             },
 
             openCustomizer(id) {
@@ -1414,9 +1490,6 @@
             },
             
             playIntro() {
-                // Mantive o intro overlay antigo para a parte de personalização (se necessário)
-                // ou podemos removê-lo se o Splash Screen já for suficiente.
-                // Vou manter para não quebrar a lógica existente de tutorial.
                 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
                 const now = Date.now();
                 const lastSeen = localStorage.getItem('da_intro_seen');
@@ -1604,11 +1677,53 @@
                 }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999; font-size:0.8rem;">Cesta vazia</p>';
             },
 
+            // --- FUNÇÃO HISTÓRICO NOVO ---
+            renderHistory() {
+                const removedEl = document.getElementById('hist-removed-list');
+                const addedEl = document.getElementById('hist-added-list');
+                if(!removedEl || !addedEl) return;
+
+                let removedHtml = '';
+                let addedHtml = '';
+
+                // Verifica removidos (Estava no original, mas diminuiu ou zerou)
+                for(let id in this.originalCart) {
+                    const originalQty = this.originalCart[id];
+                    const currentQty = this.cart[id] || 0;
+                    
+                    if(currentQty < originalQty) {
+                        const p = this.data.find(x => x.id === id);
+                        if(p) {
+                            const diff = originalQty - currentQty;
+                            removedHtml += `<div class="history-item"><span>-${diff}x</span> <span>${p.nome}</span></div>`;
+                        }
+                    }
+                }
+
+                // Verifica adicionados (Não estava ou aumentou)
+                for(let id in this.cart) {
+                    const currentQty = this.cart[id];
+                    const originalQty = this.originalCart[id] || 0;
+                    
+                    if(currentQty > originalQty) {
+                        const p = this.data.find(x => x.id === id);
+                        if(p) {
+                            const diff = currentQty - originalQty;
+                            addedHtml += `<div class="history-item"><span>+${diff}x</span> <span>${p.nome}</span></div>`;
+                        }
+                    }
+                }
+
+                removedEl.innerHTML = removedHtml || '<span style="font-size:0.75rem; color:#999;">Nada retirado</span>';
+                addedEl.innerHTML = addedHtml || '<span style="font-size:0.75rem; color:#999;">Nada adicionado</span>';
+            },
+            // -----------------------------
+
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 
-                const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1); MarketingApp.logClick('${p.subCategory}');"> + </div>`; // Add Marketing Log
+                const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1); MarketingApp.logClick('${p.subCategory}');"> + </div>`; 
                 
                 const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -1625,7 +1740,6 @@
                      valHtml = `<div class="cp-validity">Val: ${p.validade}</div>`;
                 }
                 
-                // --- Ajuste para cor de oferta vermelha ---
                 const priceClass = p.isOffer ? 'cp-price offer-price' : 'cp-price';
                 
                 return `
@@ -1704,6 +1818,7 @@
                 const reviewModal = document.getElementById('review-modal');
                 if(reviewModal.open) {
                     this.renderIncluded(document.getElementById('review-cart-list'), true);
+                    this.renderHistory(); // Atualiza histórico
                 }
                 
                 this.updateTotal();
@@ -1986,6 +2101,9 @@
             openReviewModal() {
                 if(Object.keys(this.cart).length === 0) return alert("Sua cesta está vazia.");
                 this.renderIncluded(document.getElementById('review-cart-list'), true);
+                this.renderHistory();
+                
+                document.body.classList.add('modal-open'); // Trava rolagem
                 document.getElementById('review-modal').showModal();
             },
             // -------------------------------------------
