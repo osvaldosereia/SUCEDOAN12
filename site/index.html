@@ -1304,24 +1304,7 @@
                 }
             },
 
-            openEmptyCustomizer() {
-                this.currentBasket = { 
-                    id: 'custom_create', 
-                    nome: 'Minha Cesta Personalizada', 
-                    valor: 0, 
-                    items: [],
-                    limit: 999 
-                };
-                
-                this.cart = {};
-                this.cartOrder = [];
-                this.originalCart = {};
-                this.currentLimit = 999;
-                this.appliedCoupon = false;
 
-                document.getElementById('home-view').classList.add('hidden');
-                document.getElementById('customizer-view').classList.remove('hidden');
-                document.body.classList.add('customizer-mode');
                 
                 // HEADER CUSTOMIZER UPDATE
                 document.getElementById('cust-welcome-title').innerText = "Personalize sua Cesta";
