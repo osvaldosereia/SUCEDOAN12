@@ -685,7 +685,7 @@
                                     document.getElementById('customizer-view').classList.remove('hidden');
                                     document.body.classList.add('customizer-mode');
                                     const val = basket.valor.toFixed(2).replace('.',',');
-                                    document.getElementById('cust-welcome-title').innerHTML = `Você escolheu a <strong>${basket.nome}</strong> no valor de R$ ${val}`;
+                                    document.getElementById('cust-welcome-title').innerHTML = `Você escolheu a <br><strong>${basket.nome}</strong>de R$ ${val}`;
                                     document.getElementById('rm-limit-info').innerText = this.currentLimit;
                                     this.renderAllLists();
                                     document.body.classList.add('loaded'); MarketingApp.init();
