@@ -482,12 +482,12 @@
             <span class="co-title" style="font-weight:700">Minha Cesta</span>
             <span class="co-close" style="font-size:1.5rem; cursor:pointer" onclick="document.getElementById('checkout-modal').close()">✕</span>
         </div>
+        
         <div class="co-body">
             <div class="co-section-title" style="font-weight: 600; color: #222B49; font-size: 1.1rem; margin-bottom: 10px;">Veja os Produtos da sua Cesta</div>
-<div class="co-section-title" style="font-weight: 600; color: #222B49; font-size: 1.1rem; margin-bottom: 10px;">Veja os Produtos da sua Cesta</div>
 
-<div id="modal-cart-list" class="co-horizontal-list"></div>
-            </div>
+            <div id="modal-cart-list" class="co-horizontal-list"></div>
+
             <div style="background:#f0f9ff; border:1px solid #e0f2fe; padding:15px; border-radius:8px; margin-bottom:20px; margin-top:10px;">
                 <h4 style="color:#0369a1; margin-bottom:5px; font-size:1.1rem;">💡 Sobre as trocas:</h4>
                 <p style="color:#334155; font-size:0.95rem; line-height:1.4; margin:0;">Você pode trocar até <strong id="rm-limit-info">X</strong> produtos e adicionar quantos quiser.</p>
@@ -516,23 +516,20 @@
                 </div>
             </div>
 
-        
-            
             <div class="co-payment-box" style="margin-top:20px;">
-    <div class="co-section-title" style="margin-bottom:0; font-weight:600;">
-        Como será o Pagamento? <span style="color:#b91c1c">*</span>
-    </div>
-    <select id="payment-method" onchange="App.updateTotal()">
-        <option value="" selected disabled>Clique aqui para selecionar...</option>
-        <option>Pix</option>
-        <option>Dinheiro</option>
-        <option>Cartão de Crédito (até 3x sem juros)</option>
-        <option>Cartão de Débito</option>
-        <option>Vale Alimentação</option>
-    </select>
-</div>
-        </div>
-        <div class="co-footer">
+                <div class="co-section-title" style="margin-bottom:0; font-weight:600;">
+                    Como será o Pagamento? <span style="color:#b91c1c">*</span>
+                </div>
+                <select id="payment-method" onchange="App.updateTotal()">
+                    <option value="" selected disabled>Clique aqui para selecionar...</option>
+                    <option>Pix</option>
+                    <option>Dinheiro</option>
+                    <option>Cartão de Crédito (até 3x sem juros)</option>
+                    <option>Cartão de Débito</option>
+                    <option>Vale Alimentação</option>
+                </select>
+            </div>
+        </div> <div class="co-footer">
             <button id="final-btn" class="co-btn-final" onclick="App.sendWhatsApp()">Fazer Pedido no WhatsApp</button>
         </div>
     </dialog>
