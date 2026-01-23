@@ -70,6 +70,25 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 
+        /* --- SPLASH SCREEN (APP STYLE) --- */
+        .splash-screen {
+            position: fixed; inset: 0; z-index: 99999;
+            background: #ffffff;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+        .splash-screen.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+        
+        .splash-logo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: pulseLogo 2s infinite; }
+        .splash-title { font-size: 1.5rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; }
+        .splash-text { font-size: 1rem; color: #666; font-weight: 500; }
+        
+        @keyframes pulseLogo {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
         /* --- 2. HEADER (HOME) --- */
         #main-header { 
             position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
@@ -128,11 +147,10 @@
         /* --- 4. HERO & HOME CONTENT --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         
-        .hero { padding: 25px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
-        /* AJUSTE COR DO TÍTULO */
-        .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--primary); margin-bottom: 12px; }
-        .hero h1 span { color: var(--primary); }
-        .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
+        .hero { padding: 30px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
+        /* TÍTULO ORIENTATIVO */
+        .hero h1 { font-size: 1.8rem; line-height: 1.2; color: var(--primary); margin-bottom: 10px; font-weight: 800; }
+        .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto; line-height: 1.5; }
         
         .hero-actions { margin-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 8px; display: none; } 
         .btn-hero-custom { 
@@ -146,9 +164,6 @@
             font-size: 0.8rem; color: #555; font-weight: 600; 
             background: #f3f4f6; padding: 4px 12px; border-radius: 20px; border: 1px solid #e5e7eb;
         }
-
-        .trust-badges { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; margin-top: 5px; }
-        .badge-item { display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 
         /* HOME GRID */
         .home-grid-container { padding: 0px 0 60px; }
@@ -170,6 +185,7 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
+        /* Ajuste Home Card - Layout Flex para Cabeçalho */
         .hbc-header { 
             margin-bottom: 10px; 
             display: flex; 
@@ -190,6 +206,7 @@
             margin: 0; 
         }
         
+        /* Ajuste: Subtítulo mais escuro, mais afastado e alinhado */
         .hbc-subtitle {
             text-align: left; 
             font-size: 0.75rem; 
@@ -200,6 +217,7 @@
             letter-spacing: 0.3px;
         }
 
+        /* Nova Miniatura da Cesta */
         .hbc-thumb-mini {
             width: 50px; height: 50px;
             border-radius: 50%;
@@ -702,6 +720,12 @@
 </head>
 <body>
 
+    <div id="splash-screen" class="splash-screen">
+        <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="splash-logo" alt="Logo">
+        <div class="splash-title">Dona Antônia</div>
+        <div class="splash-text">O jeito mais fácil de fazer suas compras.</div>
+    </div>
+
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
@@ -721,8 +745,7 @@
     <main id="home-view">
         <section class="hero">
             <div class="container">
-                <div class="trust-badges"><div class="badge-item">🔒 Pagamento na Entrega</div><div class="badge-item">🚀 Entrega em até 24h</div></div>
-                <h1>A cesta básica que fica do seu jeito.</h1>
+                <h1>Escolha abaixo a cesta ideal para sua família.</h1>
                 <p>Encomende sua cesta e pague somente na entrega na sua casa.</p>
                 
                 <div class="hero-actions">
@@ -1188,6 +1211,10 @@
                         } catch (e) { console.error("Restore error", e); localStorage.removeItem('da_state'); }
                     }
 
+                    // --- CHECK SPLASH SCREEN ---
+                    this.checkSplash();
+                    // ---------------------------
+
                     this.renderHome();
                     document.body.classList.add('loaded');
                     MarketingApp.init(); // START MARKETING
@@ -1199,6 +1226,24 @@
                             <p>Não foi possível carregar os produtos.</p>
                             <button onclick="location.reload()" style="margin-top:10px; padding:10px 20px; background:var(--primary); color:white; border-radius:8px;">Tentar Novamente</button>
                         </div>`;
+                }
+            },
+
+            checkSplash() {
+                const splash = document.getElementById('splash-screen');
+                const lastSeen = localStorage.getItem('splash_last_seen');
+                const now = Date.now();
+                const ONE_DAY = 24 * 60 * 60 * 1000;
+
+                if (!lastSeen || (now - parseInt(lastSeen) > ONE_DAY)) {
+                    // Mostrar Splash
+                    setTimeout(() => {
+                        splash.classList.add('fade-out');
+                        localStorage.setItem('splash_last_seen', now.toString());
+                    }, 3000); // 3 Segundos
+                } else {
+                    // Esconder imediatamente
+                    splash.style.display = 'none';
                 }
             },
 
@@ -1327,7 +1372,7 @@
                 window.scrollTo(0,0);
                 this.renderAllLists();
                 this.saveState();
-                this.playIntro();
+                this.playIntro(); // Keep old intro for customizer specific tutorial if needed, or remove
             },
 
             openCustomizer(id) {
@@ -1369,6 +1414,9 @@
             },
             
             playIntro() {
+                // Mantive o intro overlay antigo para a parte de personalização (se necessário)
+                // ou podemos removê-lo se o Splash Screen já for suficiente.
+                // Vou manter para não quebrar a lógica existente de tutorial.
                 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
                 const now = Date.now();
                 const lastSeen = localStorage.getItem('da_intro_seen');
@@ -1560,7 +1608,7 @@
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 
-                const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1); MarketingApp.logClick('${p.subCategory}');"> + </div>`; 
+                const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1); MarketingApp.logClick('${p.subCategory}');"> + </div>`; // Add Marketing Log
                 
                 const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -1577,6 +1625,7 @@
                      valHtml = `<div class="cp-validity">Val: ${p.validade}</div>`;
                 }
                 
+                // --- Ajuste para cor de oferta vermelha ---
                 const priceClass = p.isOffer ? 'cp-price offer-price' : 'cp-price';
                 
                 return `
