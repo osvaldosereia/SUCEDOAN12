@@ -71,25 +71,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 
-        /* --- SPLASH SCREEN (APP STYLE) --- */
-        .splash-screen {
-            position: fixed; inset: 0; z-index: 99999;
-            background: #ffffff;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease-out, visibility 0.5s;
-        }
-        .splash-screen.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
-        
-        .splash-logo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: pulseLogo 2s infinite; }
-        .splash-title { font-size: 1.5rem; font-weight: 800; color: var(--secondary); margin-bottom: 10px; }
-        .splash-text { font-size: 1rem; color: #666; font-weight: 500; }
-        
-        @keyframes pulseLogo {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
         /* --- 2. HEADER (HOME) --- */
         #main-header { 
             position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
@@ -482,21 +463,6 @@
             font-size: 0.7rem; color: #777; text-align: left; margin-top: auto; 
         }
 
-        /* HAND ANIMATION */
-        @keyframes swipe-hint {
-            0% { opacity: 0; transform: translateX(50px) rotate(15deg); }
-            20% { opacity: 1; transform: translateX(50px) rotate(15deg); }
-            60% { opacity: 1; transform: translateX(-50px) rotate(-15deg); }
-            80% { opacity: 0; transform: translateX(-50px) rotate(-15deg); }
-            100% { opacity: 0; transform: translateX(-50px) rotate(-15deg); }
-        }
-        .hand-hint-overlay {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 50; pointer-events: none; display: none;
-        }
-        .hand-hint-overlay.active { display: block; animation: swipe-hint 1.8s ease-in-out 3 forwards; }
-        .hand-icon { width: 60px; height: 60px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); fill: rgba(255, 255, 255, 0.95); stroke: #333; stroke-width: 1.5px; }
-
         /* --- 7. DESKTOP LAYOUT --- */
         @media(min-width: 1024px) {
             .scroll-btn { display: flex; }
@@ -627,22 +593,6 @@
         }
         .mk-close { color: #999; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
 
-        /* INTRO OVERLAY (PRESENTATION) */
-        .intro-overlay {
-            position: fixed; inset: 0; z-index: 12000;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.5s;
-        }
-        .intro-overlay.active { opacity: 1; pointer-events: auto; }
-        .intro-text {
-            color: white; font-size: 1.4rem; font-weight: 700;
-            text-align: center; max-width: 80%; line-height: 1.4;
-            opacity: 0; transform: translateY(20px);
-            transition: all 0.5s ease;
-        }
-        .intro-text.show { opacity: 1; transform: translateY(0); }
-
         /* SIDE DRAWER (SUGGESTION) */
         .side-drawer-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10000;
@@ -747,12 +697,6 @@
     </style>
 </head>
 <body>
-
-    <div id="splash-screen" class="splash-screen">
-        <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="splash-logo" alt="Logo">
-        <div class="splash-title">Dona Antônia</div>
-        <div class="splash-text">O jeito mais fácil de fazer suas compras.</div>
-    </div>
 
     <header id="main-header">
         <div class="container header-inner">
@@ -901,10 +845,6 @@
     
     <div id="credit-toast" class="credit-toast">Você tem crédito!</div>
     <div id="credit-sub-toast" class="credit-sub-toast">Adicione novos produtos</div>
-
-    <div id="intro-overlay" class="intro-overlay hidden">
-        <div id="intro-text" class="intro-text"></div>
-    </div>
 
     <div id="suggestion-overlay" class="side-drawer-overlay" onclick="App.closeSuggestion()"></div>
     <div id="suggestion-drawer" class="side-drawer">
@@ -1251,10 +1191,6 @@
                         } catch (e) { console.error("Restore error", e); localStorage.removeItem('da_state'); }
                     }
 
-                    // --- CHECK SPLASH SCREEN (SESSION STORAGE) ---
-                    this.checkSplash();
-                    // ---------------------------
-
                     this.renderHome();
                     document.body.classList.add('loaded');
                     MarketingApp.init(); // START MARKETING
@@ -1266,21 +1202,6 @@
                             <p>Não foi possível carregar os produtos.</p>
                             <button onclick="location.reload()" style="margin-top:10px; padding:10px 20px; background:var(--primary); color:white; border-radius:8px;">Tentar Novamente</button>
                         </div>`;
-                }
-            },
-
-            checkSplash() {
-                const splash = document.getElementById('splash-screen');
-                const session = sessionStorage.getItem('splash_shown');
-
-                if (!session) {
-                    // Mostrar Splash se for nova sessão
-                    setTimeout(() => {
-                        splash.classList.add('fade-out');
-                        sessionStorage.setItem('splash_shown', 'true');
-                    }, 3000); 
-                } else {
-                    splash.style.display = 'none';
                 }
             },
 
@@ -1409,7 +1330,6 @@
                 window.scrollTo(0,0);
                 this.renderAllLists();
                 this.saveState();
-                this.playIntro();
             },
 
             openCustomizer(id) {
@@ -1447,46 +1367,6 @@
                 window.scrollTo(0,0);
                 this.renderAllLists();
                 this.saveState(); 
-                this.playIntro();
-            },
-            
-            playIntro() {
-                // AJUSTE: Atualiza a cada sessão
-                if (sessionStorage.getItem('intro_shown')) return;
-                sessionStorage.setItem('intro_shown', 'true');
-
-                const overlay = document.getElementById('intro-overlay');
-                const textBox = document.getElementById('intro-text');
-                const slides = [
-                    "Olá, aqui você vai personalizar a sua cesta.",
-                    "Você pode retirar produtos e adicionar novos.",
-                    "Monte a sua compra do seu jeito.",
-                    "Boas Compras."
-                ];
-                
-                overlay.classList.remove('hidden');
-                requestAnimationFrame(() => overlay.classList.add('active'));
-                
-                let index = 0;
-                
-                const nextSlide = () => {
-                    if(index >= slides.length) {
-                        overlay.classList.remove('active');
-                        setTimeout(() => overlay.classList.add('hidden'), 500);
-                        return;
-                    }
-                    
-                    textBox.innerText = slides[index];
-                    textBox.classList.add('show');
-                    
-                    setTimeout(() => {
-                        textBox.classList.remove('show');
-                        index++;
-                        setTimeout(nextSlide, 500);
-                    }, 3500);
-                };
-                
-                setTimeout(nextSlide, 500);
             },
             
             goHome() {
@@ -1515,8 +1395,6 @@
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
                 let html = "";
                 
-                let isFirstSection = true;
-
                 // Paleta de cores para subtítulos
                 const pantoneColors = [
                     "#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", 
@@ -1541,12 +1419,6 @@
                      for (const [subName, subItems] of Object.entries(groups)) {
                         const rowId = `row-${title}-${subName}`.replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
                         
-                        const handHintHtml = isFirstSection 
-                            ? `<div class="hand-hint-overlay active"><svg class="hand-icon" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v10.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V10a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v3.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V11a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v4.6l-.2.9a5 5 0 0 1-4.8 3.5h-2.1a5 5 0 0 1-5-5V6a1 1 0 0 1 1-1h1zm-3 5a1 1 0 0 1 1 1v5.5a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V7a1 1 0 0 1 1-1h.5z"/></svg></div>`
-                            : '';
-                        
-                        if (isFirstSection) isFirstSection = false;
-
                         // Título tratado com Smart Case e cor variada
                         const niceTitle = isSpecial ? title : this.toSmartTitleCase(subName);
                         const currentColor = pantoneColors[colorIndex % pantoneColors.length];
@@ -1556,7 +1428,6 @@
                         <div class="subcat-section">
                             <div class="subcat-title" style="color:${currentColor};">${niceTitle}</div>
                             <div class="carousel-wrapper">
-                                ${handHintHtml}
                                 <div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})">
                                     <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
                                 </div>
@@ -1582,22 +1453,6 @@
 
                 container.innerHTML = html || '<p style="text-align:center; padding:40px; color:#999;">Nada encontrado.</p>';
                 this.updateTotal();
-                
-                this.showHandHint();
-            },
-
-            showHandHint() {
-                if (localStorage.getItem('seenHandHint')) {
-                    const el = document.querySelector('.hand-hint-overlay');
-                    if(el) el.remove();
-                    return;
-                }
-                
-                setTimeout(() => {
-                    const el = document.querySelector('.hand-hint-overlay');
-                    if(el) el.remove();
-                    localStorage.setItem('seenHandHint', 'true');
-                }, 6000); 
             },
 
             renderIncluded(targetElement, isCheckout = false) {
