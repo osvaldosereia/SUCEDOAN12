@@ -1,29 +1,3 @@
-Aqui está o código refatorado.
-
-**O que foi feito:**
-
-1. **Limpeza de Código Morto:**
-* Removida a `div.hero-actions` e seus estilos (estava com `display: none` no CSS original e sem uso prático).
-* Removido `credit-sub-toast` (estava com `display: none !important`).
-* Removida a função `App.scrollToCat` e referências a `#categories-sheet` (elemento não existia no DOM).
-* Removida a função `App.openEmptyCustomizer` (o botão que a chamava estava oculto).
-* Removida a lógica de renderização para `#included-list-desk` dentro de `App.renderIncluded` (este elemento não existia no HTML, apenas no Modal).
-* Removidos *listeners* de Google Fonts (trocado por System Fonts para performance zero-latency).
-
-
-2. **Otimização de Performance:**
-* CSS consolidado no `<head>`.
-* Uso de fontes do sistema (`font-family: -apple-system...`) eliminando requisições externas bloqueantes.
-* Layout shifts (CLS) mitigados garantindo containers de imagem com aspecto definido via CSS.
-* JS movido para o final do `body` para não bloquear a renderização inicial.
-
-
-3. **Funcionalidade:**
-* Preservada **exatamente** como no original (Cestas, Personalização, Marketing Intelligence, Checkout no WhatsApp e Persistência de Estado).
-
-
-
-```html
 <!DOCTYPE html>
 <html lang="pt-BR" dir="ltr">
 <head>
