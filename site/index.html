@@ -147,16 +147,8 @@
         .market-title { font-size: 1.4rem; font-weight: 600; color: var(--primary); margin-bottom: 10px; line-height: 1.3; }
         .market-instruction { color: #444; font-size: 1.10rem; margin: 10px auto 20px; max-width: 90%; line-height: 1.5; }
 
-        /* ACTIVE BASKET STICKY CAROUSEL */
-        #active-basket-container {
-            width: 100%;
-            padding: 10px 0 20px;
-            background: #ffffff;
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 10;
-        }
-        #active-basket-container.is-sticky {
+        /* STICKY TOP CONTAINER (Hidden Initially) */
+        #sticky-basket-container {
             position: fixed;
             top: var(--app-header-height);
             left: 0; right: 0;
@@ -166,44 +158,16 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(5px);
+            transform: translateY(-150%);
+            transition: transform 0.3s ease;
         }
-        .abc-list {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-        }
-        /* Hide Scrollbar on ABC List */
-        .abc-list::-webkit-scrollbar { display: none; }
-        .abc-list { -ms-overflow-style: none; scrollbar-width: none; }
+        #sticky-basket-container.visible { transform: translateY(0); }
+        
+        /* Sticky List & Mini Cards */
+        .sticky-list { display: flex; gap: 12px; overflow-x: auto; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
+        .sticky-list::-webkit-scrollbar { display: none; }
 
-        /* Cards in the Active Basket Carousel */
-        .abc-card {
-            min-width: 140px; max-width: 140px;
-            display: flex; flex-direction: column; flex-shrink: 0;
-            transition: all 0.3s ease;
-        }
-        .abc-img-box {
-            width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-            margin-bottom: 8px; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        .abc-img { width: 105%; height: 105%; object-fit: contain; }
-        .abc-title {
-            font-size: 0.8rem; color: #3e3e3e; text-align: left; font-weight: 500;
-            height: 2.4em; overflow: hidden; display: -webkit-box;
-            -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2;
-            margin-bottom: 6px; width: 100%; transition: all 0.3s ease;
-        }
-        .abc-qty-ctrl {
-            position: absolute; bottom: 8px; right: 8px; height: 38px; background: white; 
-            border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        /* Sticky State Transformations */
-        #active-basket-container.is-sticky .abc-card {
+        #sticky-basket-container .abc-card {
             min-width: 200px; max-width: 200px;
             flex-direction: row;
             align-items: center;
@@ -212,19 +176,68 @@
             border-radius: 10px;
             padding: 4px 6px;
             gap: 8px;
+            display: flex; flex-shrink: 0;
         }
-        #active-basket-container.is-sticky .abc-img-box {
+        #sticky-basket-container .abc-img-box {
             width: 40px; height: 40px; border-radius: 8px; margin: 0; background: transparent; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; position: relative;
         }
-        #active-basket-container.is-sticky .abc-img { width: 100%; height: 100%; object-fit: contain; }
-        #active-basket-container.is-sticky .abc-title {
+        #sticky-basket-container .abc-img { width: 100%; height: 100%; object-fit: contain; }
+        #sticky-basket-container .abc-title {
             height: auto; margin: 0; font-size: 0.75rem; -webkit-line-clamp: 1; flex: 1;
+            overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; color: #333; font-weight: 500;
         }
-        #active-basket-container.is-sticky .abc-qty-ctrl {
+        #sticky-basket-container .abc-qty-ctrl {
             position: static; height: 32px; box-shadow: none; border: 1px solid #cbd5e1; transform: none;
+            background: white; border-radius: 16px; display: flex; align-items: center; overflow: hidden;
         }
-        #active-basket-container.is-sticky .qcf-btn { width: 28px; font-size: 1rem; }
-        #active-basket-container.is-sticky .qcf-val { font-size: 0.8rem; min-width: 18px; }
+        #sticky-basket-container .qcf-btn { width: 28px; font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--primary); }
+        #sticky-basket-container .qcf-val { font-size: 0.8rem; min-width: 18px; text-align: center; font-weight: 700; }
+
+        /* ACTIVE BASKET NORMAL (In Flow) */
+        #active-basket-container {
+            width: 100%;
+            padding: 10px 0 20px;
+            background: #ffffff;
+            position: relative;
+            z-index: 10;
+        }
+        .abc-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding-bottom: 10px; /* Space for scrollbar */
+        }
+        /* Restore Scrollbar for Main List */
+        .abc-list::-webkit-scrollbar { display: block; height: 4px; }
+        .abc-list::-webkit-scrollbar-track { background: transparent; }
+        .abc-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+        /* Normal Cards */
+        #active-basket-container .abc-card {
+            min-width: 140px; max-width: 140px;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        #active-basket-container .abc-img-box {
+            width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            margin-bottom: 8px; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden;
+        }
+        #active-basket-container .abc-img { width: 105%; height: 105%; object-fit: contain; }
+        #active-basket-container .abc-title {
+            font-size: 0.8rem; color: #3e3e3e; text-align: left; font-weight: 500;
+            height: 2.4em; overflow: hidden; display: -webkit-box;
+            -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2;
+            margin-bottom: 6px; width: 100%;
+        }
+        #active-basket-container .abc-qty-ctrl {
+            position: absolute; bottom: 8px; right: 8px; height: 38px; background: white; 
+            border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        #active-basket-container .qcf-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer; }
+        #active-basket-container .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
         /* Products Horizontal Row */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
@@ -468,6 +481,11 @@
     </main>
 
     <div id="customizer-view" class="hidden">
+        
+        <div id="sticky-basket-container">
+            <div id="sticky-basket-list" class="sticky-list"></div>
+        </div>
+
         <div class="app-header">
             <div class="ah-back-btn" onclick="App.goHome()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
@@ -486,6 +504,8 @@
                     <h2 class="market-title" id="cust-welcome-title"></h2>
                     <p class="market-instruction">Monte a cesta do seu jeito!<br><strong>Boas Compras 🧡🛒!</strong></p>
                 </div>
+
+                <div class="subcat-title" style="color:var(--primary); margin-left:16px;">Itens da sua Cesta</div>
 
                 <div id="active-basket-container">
                     <div id="active-basket-list" class="abc-list"></div>
@@ -640,13 +660,13 @@
                     this.checkRules('scroll_profundo', scrollPercent);
                     
                     // Logic for sticky basket carousel
-                    const basketContainer = document.getElementById('active-basket-container');
-                    if (basketContainer && document.body.classList.contains('customizer-mode')) {
-                         // 56px is app-header-height. 150px is approximate threshold
-                        if (window.scrollY > 150) {
-                            basketContainer.classList.add('is-sticky');
+                    const stickyContainer = document.getElementById('sticky-basket-container');
+                    if (stickyContainer && document.body.classList.contains('customizer-mode')) {
+                         // Show sticky when scrolled past ~180px
+                        if (window.scrollY > 180) {
+                            stickyContainer.classList.add('visible');
                         } else {
-                            basketContainer.classList.remove('is-sticky');
+                            stickyContainer.classList.remove('visible');
                         }
                     }
                 }, { passive: true });
@@ -892,33 +912,40 @@
                 }
             },
             renderActiveCarousel() {
-                const target = document.getElementById('active-basket-list');
-                const ids = this.cartOrder.filter(id => this.cart[id] > 0);
+                // RENDER TO BOTH CONTAINERS (Static & Sticky)
+                const targets = ['active-basket-list', 'sticky-basket-list'];
                 
-                if (ids.length === 0) {
-                    target.innerHTML = '<div style="width:100%; text-align:center; padding:10px; color:#999;">Cesta vazia</div>';
-                    return;
-                }
-                
-                target.innerHTML = ids.map(id => {
-                    const p = this.data.find(x => x.id === id);
-                    if (!p) return '';
-                    const qty = this.cart[id] || 0;
-                    const trashIcon = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+                targets.forEach(targetId => {
+                    const target = document.getElementById(targetId);
+                    if(!target) return;
+
+                    const ids = this.cartOrder.filter(id => this.cart[id] > 0);
                     
-                    // Estrutura do card inteligente (adapta via CSS)
-                    return `<div class="abc-card">
-                        <div class="abc-img-box" onclick="App.openInfo('${p.id}')">
-                            <img src="${p.imagem}" class="abc-img" alt="${p.nome.replace(/"/g, '&quot;')}">
-                            <div class="abc-qty-ctrl" onclick="event.stopPropagation()">
-                                <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trashIcon:'-'}</div>
-                                <div class="qcf-val">${qty}</div>
-                                <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                    if (ids.length === 0) {
+                        target.innerHTML = '<div style="width:100%; text-align:center; padding:10px; color:#999;">Cesta vazia</div>';
+                        return;
+                    }
+                    
+                    target.innerHTML = ids.map(id => {
+                        const p = this.data.find(x => x.id === id);
+                        if (!p) return '';
+                        const qty = this.cart[id] || 0;
+                        const trashIcon = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+                        
+                        // Estrutura do card inteligente (adapta via CSS baseado no pai)
+                        return `<div class="abc-card">
+                            <div class="abc-img-box" onclick="App.openInfo('${p.id}')">
+                                <img src="${p.imagem}" class="abc-img" alt="${p.nome.replace(/"/g, '"')}">
+                                <div class="abc-qty-ctrl" onclick="event.stopPropagation()">
+                                    <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trashIcon:'-'}</div>
+                                    <div class="qcf-val">${qty}</div>
+                                    <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="abc-title">${p.nome}</div>
-                    </div>`;
-                }).join('');
+                            <div class="abc-title">${p.nome}</div>
+                        </div>`;
+                    }).join('');
+                });
             },
             renderHistory() {
                 const removedEl = document.getElementById('hist-removed-list'), addedEl = document.getElementById('hist-added-list');
