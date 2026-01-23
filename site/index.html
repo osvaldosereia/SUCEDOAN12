@@ -1170,21 +1170,6 @@
                                     document.body.classList.add('loaded'); 
                                     MarketingApp.init(); // START MARKETING
                                     return; 
-                                } else if (state.basketId === 'custom_create') {
-                                    this.cart = state.cart || {};
-                                    this.cartOrder = state.cartOrder || [];
-                                    this.currentBasket = { id: 'custom_create', nome: 'Minha Cesta Personalizada', valor: 0, items: [], limit: 999 };
-                                    this.originalCart = {};
-                                    this.currentLimit = 999;
-                                    
-                                    document.getElementById('home-view').classList.add('hidden');
-                                    document.getElementById('customizer-view').classList.remove('hidden');
-                                    document.body.classList.add('customizer-mode');
-                                    
-                                    this.renderAllLists();
-                                    document.body.classList.add('loaded');
-                                    MarketingApp.init(); // START MARKETING
-                                    return;
                                 }
                             }
                         } catch (e) { console.error("Restore error", e); localStorage.removeItem('da_state'); }
