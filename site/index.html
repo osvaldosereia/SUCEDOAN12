@@ -143,17 +143,88 @@
 
         /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { padding-top: calc(var(--app-header-height) + 10px); padding-bottom: 100px; min-height: 100vh; background: #ffffff; }
-        .market-header { margin: 20px 0 30px; text-align: center; }
+        .market-header { margin: 20px 0 20px; text-align: center; }
         .market-title { font-size: 1.4rem; font-weight: 600; color: var(--primary); margin-bottom: 10px; line-height: 1.3; }
-        .market-instruction { color: #444; font-size: 1.10rem; margin: 20px auto 10px; max-width: 90%; line-height: 1.5; }
-        
-        .btn-top-review {
-            display: inline-flex; align-items: center; gap: 8px; background: #3e3e3e; color: white;
-            padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: 600;
-            margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+        .market-instruction { color: #444; font-size: 1.10rem; margin: 10px auto 20px; max-width: 90%; line-height: 1.5; }
+
+        /* ACTIVE BASKET STICKY CAROUSEL */
+        #active-basket-container {
+            width: 100%;
+            padding: 10px 0 20px;
+            background: #ffffff;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
         }
-        .btn-top-review:active { transform: scale(0.95); }
+        #active-basket-container.is-sticky {
+            position: fixed;
+            top: var(--app-header-height);
+            left: 0; right: 0;
+            z-index: 999;
+            padding: 8px 16px;
+            border-bottom: 1px solid #eee;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(5px);
+        }
+        .abc-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+        }
+        /* Hide Scrollbar on ABC List */
+        .abc-list::-webkit-scrollbar { display: none; }
+        .abc-list { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Cards in the Active Basket Carousel */
+        .abc-card {
+            min-width: 140px; max-width: 140px;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .abc-img-box {
+            width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            margin-bottom: 8px; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .abc-img { width: 105%; height: 105%; object-fit: contain; }
+        .abc-title {
+            font-size: 0.8rem; color: #3e3e3e; text-align: left; font-weight: 500;
+            height: 2.4em; overflow: hidden; display: -webkit-box;
+            -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2;
+            margin-bottom: 6px; width: 100%; transition: all 0.3s ease;
+        }
+        .abc-qty-ctrl {
+            position: absolute; bottom: 8px; right: 8px; height: 38px; background: white; 
+            border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Sticky State Transformations */
+        #active-basket-container.is-sticky .abc-card {
+            min-width: 200px; max-width: 200px;
+            flex-direction: row;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 4px 6px;
+            gap: 8px;
+        }
+        #active-basket-container.is-sticky .abc-img-box {
+            width: 40px; height: 40px; border-radius: 8px; margin: 0; background: transparent; flex-shrink: 0;
+        }
+        #active-basket-container.is-sticky .abc-img { width: 100%; height: 100%; object-fit: contain; }
+        #active-basket-container.is-sticky .abc-title {
+            height: auto; margin: 0; font-size: 0.75rem; -webkit-line-clamp: 1; flex: 1;
+        }
+        #active-basket-container.is-sticky .abc-qty-ctrl {
+            position: static; height: 32px; box-shadow: none; border: 1px solid #cbd5e1; transform: none;
+        }
+        #active-basket-container.is-sticky .qcf-btn { width: 28px; font-size: 1rem; }
+        #active-basket-container.is-sticky .qcf-val { font-size: 0.8rem; min-width: 18px; }
 
         /* Products Horizontal Row */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
@@ -309,7 +380,7 @@
         .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #f7f7f7; }
         .co-horizontal-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 20px; }
         
-        /* Checkout Card */
+        /* Checkout Card Reuse for Modal */
         .co-card { min-width: 140px; max-width: 140px; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; flex-shrink: 0; }
         .co-card .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
         .co-card-img { width: 105%; height: 105%; object-fit: contain; }
@@ -414,8 +485,12 @@
                 <div class="market-header">
                     <h2 class="market-title" id="cust-welcome-title"></h2>
                     <p class="market-instruction">Monte a cesta do seu jeito!<br><strong>Boas Compras 🧡🛒!</strong></p>
-                    <button id="btn-top-main" class="btn-top-review" onclick="App.openReviewModal()">Veja os Produtos da sua Cesta 🧺</button>
                 </div>
+
+                <div id="active-basket-container">
+                    <div id="active-basket-list" class="abc-list"></div>
+                </div>
+
                 <div id="extras-container"></div>
             </div>
         </div>
@@ -563,11 +638,16 @@
                 window.addEventListener('scroll', () => {
                     const scrollPercent = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
                     this.checkRules('scroll_profundo', scrollPercent);
-                    const stickyBtn = document.getElementById('sticky-review-btn');
-                    const originalBtn = document.getElementById('btn-top-main');
-                    if(originalBtn && stickyBtn) {
-                        const rect = originalBtn.getBoundingClientRect();
-                        stickyBtn.classList.toggle('visible', rect.bottom < 0);
+                    
+                    // Logic for sticky basket carousel
+                    const basketContainer = document.getElementById('active-basket-container');
+                    if (basketContainer && document.body.classList.contains('customizer-mode')) {
+                         // 56px is app-header-height. 150px is approximate threshold
+                        if (window.scrollY > 150) {
+                            basketContainer.classList.add('is-sticky');
+                        } else {
+                            basketContainer.classList.remove('is-sticky');
+                        }
                     }
                 }, { passive: true });
             },
@@ -679,6 +759,7 @@
                                     document.getElementById('cust-welcome-title').innerHTML = `Você escolheu a <br><strong>${basket.nome}</strong> de R$ ${val}`;
                                     document.getElementById('rm-limit-info').innerText = this.currentLimit;
                                     this.renderAllLists();
+                                    this.renderActiveCarousel();
                                     document.body.classList.add('loaded'); MarketingApp.init();
                                     return; 
                                 }
@@ -757,7 +838,10 @@
                 const val = basket.valor.toFixed(2).replace('.',',');
                 document.getElementById('cust-welcome-title').innerHTML = `Legal! Você escolheu a <strong>${basket.nome}</strong> no valor de R$ ${val}`;
                 document.getElementById('rm-limit-info').innerText = this.currentLimit;
-                window.scrollTo(0,0); this.renderAllLists(); this.saveState(); 
+                window.scrollTo(0,0); 
+                this.renderAllLists(); 
+                this.renderActiveCarousel();
+                this.saveState(); 
             },
             goHome() {
                 document.getElementById('customizer-view').classList.add('hidden');
@@ -807,6 +891,35 @@
                     }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999;">Cesta vazia</p>';
                 }
             },
+            renderActiveCarousel() {
+                const target = document.getElementById('active-basket-list');
+                const ids = this.cartOrder.filter(id => this.cart[id] > 0);
+                
+                if (ids.length === 0) {
+                    target.innerHTML = '<div style="width:100%; text-align:center; padding:10px; color:#999;">Cesta vazia</div>';
+                    return;
+                }
+                
+                target.innerHTML = ids.map(id => {
+                    const p = this.data.find(x => x.id === id);
+                    if (!p) return '';
+                    const qty = this.cart[id] || 0;
+                    const trashIcon = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+                    
+                    // Estrutura do card inteligente (adapta via CSS)
+                    return `<div class="abc-card">
+                        <div class="abc-img-box" onclick="App.openInfo('${p.id}')">
+                            <img src="${p.imagem}" class="abc-img" alt="${p.nome.replace(/"/g, '&quot;')}">
+                            <div class="abc-qty-ctrl" onclick="event.stopPropagation()">
+                                <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trashIcon:'-'}</div>
+                                <div class="qcf-val">${qty}</div>
+                                <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                            </div>
+                        </div>
+                        <div class="abc-title">${p.nome}</div>
+                    </div>`;
+                }).join('');
+            },
             renderHistory() {
                 const removedEl = document.getElementById('hist-removed-list'), addedEl = document.getElementById('hist-added-list');
                 if(!removedEl || !addedEl) return;
@@ -852,7 +965,8 @@
                 if(this.cart[id] <= 0) { delete this.cart[id]; this.cartOrder = this.cartOrder.filter(x => x !== id); } 
                 else if (isNew) { this.cartOrder = this.cartOrder.filter(x => x !== id); this.cartOrder.unshift(id); }
                 this.updateCardUI(id, newQty);
-                if(document.getElementById('checkout-modal').open) { this.renderIncluded(document.getElementById('modal-cart-list'), true); this.renderHistory(); }
+                if(document.getElementById('checkout-modal').open) { this.renderIncluded(document.getElementById('modal-cart-list'), true); }
+                this.renderActiveCarousel(); // Atualiza o topo do customizer
                 this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 this.saveState(); 
@@ -1010,7 +1124,6 @@
             openCheckout() {
                 if(Object.keys(this.cart).length === 0) return alert("Cesta vazia.");
                 this.renderIncluded(document.getElementById('modal-cart-list'), true); 
-                // this.renderHistory(); // Removido pois a lógica agora está no Extrato/Total
                 document.getElementById('checkout-modal').showModal();
             },
             sendWhatsApp() {
