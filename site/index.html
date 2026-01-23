@@ -129,6 +129,7 @@
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         
         .hero { padding: 25px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
+        /* AJUSTE COR DO TÍTULO */
         .hero h1 { font-size: 1.9rem; line-height: 1.15; color: var(--primary); margin-bottom: 12px; }
         .hero h1 span { color: var(--primary); }
         .hero p { color: var(--text-light); margin-bottom: 0; font-size: 1rem; max-width: 600px; margin: 0 auto 20px; line-height: 1.5; }
@@ -169,7 +170,6 @@
         }
         .home-basket-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
-        /* Ajuste Home Card - Layout Flex para Cabeçalho */
         .hbc-header { 
             margin-bottom: 10px; 
             display: flex; 
@@ -292,12 +292,24 @@
             text-align: center; 
         }
         .market-title { 
-            font-size: 1.8rem; font-weight: 800; color: var(--primary); 
-            margin-bottom: 6px; line-height: 1.1; letter-spacing: -0.5px;
+            font-size: 1.4rem; font-weight: 800; color: var(--primary); 
+            margin-bottom: 6px; line-height: 1.2; letter-spacing: -0.5px;
         }
         .market-subtitle { 
             color: var(--secondary); font-size: 1rem; font-weight: 500;
         }
+        
+        /* BOTÃO TOPO - VER MINHA CESTA */
+        .btn-top-review {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #3e3e3e; color: white;
+            padding: 8px 16px; border-radius: 50px;
+            font-size: 0.85rem; font-weight: 600;
+            margin-top: 10px; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .btn-top-review:active { transform: scale(0.95); }
 
         /* --- 6. PRODUCTS (NEW CARD DESIGN) --- */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
@@ -771,8 +783,8 @@
         <div class="main-content-col">
             <div class="container">
                 <div class="market-header">
-                    <h2 class="market-title">Esse é o nosso Mercadinho.</h2>
-                    <p class="market-subtitle">Monte a sua cesta do seu jeito.</p>
+                    <h2 class="market-title" id="cust-welcome-title">Esse é o nosso Mercadinho.</h2>
+                    <button class="btn-top-review" onclick="App.openReviewModal()">Ver Minha Cesta 🧺</button>
                 </div>
                 <div id="extras-container"></div>
             </div>
@@ -808,6 +820,32 @@
             <div id="info-body" style="font-size:0.95rem; line-height:1.6; color:var(--text-main);"></div>
         </div>
     </div>
+
+    <dialog id="review-modal" class="modal-checkout">
+        <div class="co-header">
+            <span class="co-title">Minha Cesta</span>
+            <span class="co-close" onclick="document.getElementById('review-modal').close()">✕</span>
+        </div>
+        <div class="co-body" style="background:#fff;">
+            <div style="background:#f0f9ff; border:1px solid #e0f2fe; padding:15px; border-radius:8px; margin-bottom:20px;">
+                <h4 style="color:#0369a1; margin-bottom:5px; font-size:0.95rem;">💡 Como funciona:</h4>
+                <p style="color:#334155; font-size:0.85rem; line-height:1.4; margin:0;">
+                    Você pode trocar até <strong id="rm-limit-info">X</strong> produtos da sua cesta e adicionar quantos quiser do nosso mercadinho.
+                </p>
+            </div>
+
+            <div class="co-section-title">Itens Atuais</div>
+            <div id="review-cart-list" class="co-horizontal-list"></div>
+            
+            <div class="co-total-row" style="margin-top:20px; text-align:center;">
+                <span style="font-size:0.9rem; color:#666;">Total Atual</span>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--primary);" id="rm-total-display">R$ 0,00</div>
+            </div>
+        </div>
+        <div class="co-footer">
+            <button class="co-btn-final" onclick="document.getElementById('review-modal').close(); App.openCheckout()">Finalizar Pedido</button>
+        </div>
+    </dialog>
 
     <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
         <div class="sheet-box">
@@ -1042,13 +1080,11 @@
             async init() {
                 try {
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
-
-if (!res.ok) throw new Error("Erro ao carregar dados.");
-const content = await res.json();
-// Ajuste: verifica se é a estrutura nova (content.produtos) ou a antiga (content direto)
-const raw = content.produtos || content; 
-
-this.data = raw.map(p => {
+                    if (!res.ok) throw new Error("Erro ao carregar dados.");
+                    const content = await res.json();
+                    const raw = content.produtos || content;
+                    
+                    this.data = raw.map(p => {
                         const catRaw = (p.categoria || "OUTROS").trim();
                         const catUpper = catRaw.toUpperCase();
                         
@@ -1284,6 +1320,10 @@ this.data = raw.map(p => {
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
                 
+                // HEADER CUSTOMIZER UPDATE
+                document.getElementById('cust-welcome-title').innerText = "Personalize sua Cesta";
+                document.getElementById('rm-limit-info').innerText = "quantos";
+                
                 window.scrollTo(0,0);
                 this.renderAllLists();
                 this.saveState();
@@ -1316,6 +1356,11 @@ this.data = raw.map(p => {
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
+                
+                // HEADER CUSTOMIZER UPDATE
+                const val = basket.valor.toFixed(2).replace('.',',');
+                document.getElementById('cust-welcome-title').innerHTML = `Legal! Você escolheu a <strong>${basket.nome}</strong> no valor de R$ ${val}`;
+                document.getElementById('rm-limit-info').innerText = this.currentLimit;
                 
                 window.scrollTo(0,0);
                 this.renderAllLists();
@@ -1515,7 +1560,7 @@ this.data = raw.map(p => {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 
-                const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1); MarketingApp.logClick('${p.subCategory}');"> + </div>`; // Add Marketing Log
+                const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1); MarketingApp.logClick('${p.subCategory}');"> + </div>`; 
                 
                 const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -1532,7 +1577,6 @@ this.data = raw.map(p => {
                      valHtml = `<div class="cp-validity">Val: ${p.validade}</div>`;
                 }
                 
-                // --- Ajuste para cor de oferta vermelha ---
                 const priceClass = p.isOffer ? 'cp-price offer-price' : 'cp-price';
                 
                 return `
@@ -1606,6 +1650,12 @@ this.data = raw.map(p => {
                 this.renderIncluded(document.getElementById('included-list-desk'));
                 const modal = document.getElementById('checkout-modal');
                 if(modal.open) this.renderIncluded(document.getElementById('modal-cart-list'), true);
+                
+                // Atualizar Modal de Revisão também se estiver aberto
+                const reviewModal = document.getElementById('review-modal');
+                if(reviewModal.open) {
+                    this.renderIncluded(document.getElementById('review-cart-list'), true);
+                }
                 
                 this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
@@ -1748,6 +1798,7 @@ this.data = raw.map(p => {
                     const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                     document.getElementById('co-total').innerText = txtTotal;
                     document.getElementById('icb-total-val').innerText = txtTotal;
+                    document.getElementById('rm-total-display').innerText = txtTotal; // Atualiza Modal Revisão
                     document.getElementById('cart-count-badge').innerText = count;
 
                 } else {
@@ -1794,6 +1845,7 @@ this.data = raw.map(p => {
                     const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                     document.getElementById('co-total').innerText = txtTotal;
                     document.getElementById('icb-total-val').innerText = txtTotal;
+                    document.getElementById('rm-total-display').innerText = txtTotal; // Atualiza Modal Revisão
                     document.getElementById('cart-count-badge').innerText = count;
                     
                     if (basketPrice > effectiveTotal) {
@@ -1841,7 +1893,7 @@ this.data = raw.map(p => {
             openInfo(id) {
                 const p = this.data.find(x => x.id === id);
                 if(!p) return;
-                document.getElementById('info-title').innerHTML = p.nome;
+                document.getElementById('info-title').innerText = p.nome;
                 
                 let desc = p.caracteristicas;
                 if (desc) {
@@ -1880,6 +1932,14 @@ this.data = raw.map(p => {
                 mediaDiv.innerHTML = `<img src="${imgUrl}" style="width:100%; border-radius:8px;" alt="${title}">`;
                 App.openSheet('info-sheet');
             },
+
+            // --- NOVA FUNÇÃO: ABRIR MODAL MINHA CESTA ---
+            openReviewModal() {
+                if(Object.keys(this.cart).length === 0) return alert("Sua cesta está vazia.");
+                this.renderIncluded(document.getElementById('review-cart-list'), true);
+                document.getElementById('review-modal').showModal();
+            },
+            // -------------------------------------------
 
             scrollToCat(name) {
                 App.closeSheet('categories-sheet');
