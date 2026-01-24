@@ -13,6 +13,8 @@
             --primary: #d31a28; 
             --primary-dark: #b91c1c; 
             --secondary: #3e3e3e; 
+            --whatsapp: #25D366; /* NOVO: Verde WhatsApp */
+            --whatsapp-dark: #128C7E;
             --text-main: #222222; 
             --text-light: #555555; 
             --bg-body: #ffffff;
@@ -98,6 +100,23 @@
             opacity: 0; transition: opacity 0.3s;
         }
         .ah-sticky-btn.visible { display: flex; opacity: 1; }
+
+        /* NOVO: CHIPS DE NAVEGAÇÃO */
+        .nav-chips-container {
+            display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 8px; 
+            background: #fff; border-bottom: 1px solid #f0f0f0;
+            -ms-overflow-style: none; scrollbar-width: none;
+        }
+        .nav-chips-container::-webkit-scrollbar { display: none; }
+        
+        .nav-chip {
+            white-space: nowrap; padding: 8px 16px; background: #f8fafc; color: #334155;
+            border-radius: 20px; font-size: 0.85rem; font-weight: 600; border: 1px solid #e2e8f0;
+            cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+        }
+        .nav-chip:active, .nav-chip.active { 
+            background: var(--secondary); color: white; border-color: var(--secondary); transform: scale(0.95);
+        }
 
         /* --- 4. HERO & HOME --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
@@ -240,7 +259,7 @@
         #active-basket-container .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
         /* Products Horizontal Row */
-        .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
+        .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; scroll-margin-top: 130px; } /* Ajuste de scroll */
         .subcat-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 12px 16px; letter-spacing: -0.3px; }
         
         .carousel-wrapper { position: relative; }
@@ -392,8 +411,10 @@
         .co-total-row, .co-payment-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
         .co-payment-box select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; margin-top: 10px; background: white; }
         .co-footer { padding: 16px; border-top: 1px solid #f0f0f0; background: white; }
-        .co-btn-final { width: 100%; padding: 14px; background: var(--primary); color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; text-align: center; }
-        .co-btn-final:disabled { background: #ccc; cursor: not-allowed; }
+        
+        /* NOVO: BOTÃO WHATSAPP */
+        .co-btn-final { width: 100%; padding: 14px; background: var(--whatsapp); color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; text-align: center; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
+        .co-btn-final:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; color:#555; }
 
         .coupon-toggle { font-size: 0.8rem; color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: underline; margin-top: 10px; display: inline-block; }
         .coupon-box { display: flex; gap: 8px; margin-top: 10px; }
@@ -494,6 +515,8 @@
             <div class="ah-help-btn" style="padding: 0 8px; font-weight:700; color:#555; cursor:pointer;" onclick="App.openSheet('faq-sheet')">?</div>
         </div>
 
+        <div id="quick-nav" class="nav-chips-container"></div>
+
         <div class="main-content-col">
             <div class="container">
                 <div class="market-header">
@@ -524,7 +547,7 @@
 
         <div id="ifood-cart-bar" class="ifood-cart-bar">
             <div class="icb-info">
-                <span class="icb-label">Valor Total</span>
+                <span class="icb-label">Valor Total <small style="color:#16a34a; font-weight:600;">(Pague na Entrega)</small></span>
                 <span class="icb-total" id="icb-total-val">R$ 0,00</span>
             </div>
             <div class="icb-btn" onclick="App.openCheckout()">
@@ -607,8 +630,8 @@
                     <span class="co-total-label" style="font-weight:800; font-size:1.1rem;">Total a pagar</span>
                     <span class="co-total-val" id="co-total" style="font-size:1.4rem; color:#d31a28;">R$ 0,00</span>
                 </div>
-                <div style="margin-top:12px; font-size:0.85rem; color:#717171; text-align:left; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; line-height:1.4;">
-                    Você só paga quando a cesta chegar na sua casa.
+                <div style="margin-top:12px; font-size:0.9rem; color:#15803d; text-align:center; background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0; line-height:1.4; font-weight:600;">
+                    🔒 Pague somente na entrega
                 </div>
                 <div class="coupon-toggle" onclick="App.toggleCoupon()">Possui cupom de desconto?</div>
                 <div id="coupon-area" class="coupon-box hidden">
@@ -631,7 +654,7 @@
                 </select>
             </div>
         </div> <div class="co-footer">
-            <button id="final-btn" class="co-btn-final" onclick="App.sendWhatsApp()">Fazer Pedido no WhatsApp</button>
+            <button id="final-btn" class="co-btn-final" onclick="App.sendWhatsApp()">Enviar Pedido no WhatsApp</button>
         </div>
     </dialog>
 
@@ -756,6 +779,9 @@
                         };
                     });
                     
+                    // Render Chips
+                    this.renderChips();
+
                     const saved = localStorage.getItem('da_state');
                     if (saved) {
                         try {
@@ -795,6 +821,36 @@
                     view: document.body.classList.contains('customizer-mode') ? 'customizer' : 'home',
                     basketId: this.currentBasket ? this.currentBasket.id : null, cart: this.cart, cartOrder: this.cartOrder
                 }));
+            },
+            renderChips() {
+                const chips = [
+                    { name: 'OFERTAS', target: 'OFERTAS' },
+                    { name: 'Mais Vendidos', target: 'MAIS VENDIDOS' },
+                    { name: 'Alimentos', target: 'MERCEARIA E ALIMENTOS' },
+                    { name: 'Café', target: 'CAFÉ DA MANHÃ E LANCHES' },
+                    { name: 'Limpeza', target: 'LIMPEZA E LAVANDERIA' },
+                    { name: 'Higiene', target: 'CUIDADOS PESSOAIS' }
+                ];
+                
+                const container = document.getElementById('quick-nav');
+                if(!container) return;
+                container.innerHTML = chips.map(c => 
+                    `<div class="nav-chip" onclick="App.scrollToSection('${c.target}')">${c.name}</div>`
+                ).join('');
+            },
+            scrollToSection(title) {
+                // Encontrar o primeiro sub-item da categoria para fazer scroll
+                const safeTitle = title.replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
+                // Procurar elementos que começam com row-titulo
+                const el = document.querySelector(`[id^="row-${safeTitle}"]`);
+                if(el) {
+                    const offset = 120; 
+                    const bodyRect = document.body.getBoundingClientRect().top;
+                    const elementRect = el.parentNode.parentNode.getBoundingClientRect().top; 
+                    const elementPosition = elementRect - bodyRect;
+                    const offsetPosition = elementPosition - offset;
+                    window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                }
             },
             toSmartTitleCase(str) {
                 const smallWords = ['de', 'da', 'do', 'e', 'com', 'sem', 'para', 'na', 'no', 'em', 'ao', 'a', 'o', 'as', 'os'];
@@ -902,7 +958,7 @@
                         const rowId = `row-${title}-${subName}`.replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
                         const niceTitle = isSpecial ? title : this.toSmartTitleCase(subName);
                         const currentColor = colors[cIdx % colors.length]; cIdx++;
-                        sHtml += `<div class="subcat-section"><div class="subcat-title" style="color:${currentColor};">${niceTitle}</div><div class="carousel-wrapper"><div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg></div><div class="horizontal-products-row" id="${rowId}">${subItems.map(p => this.buildCard(p)).join('')}</div><div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></div></div></div>`;
+                        sHtml += `<div class="subcat-section" id="${rowId}"><div class="subcat-title" style="color:${currentColor};">${niceTitle}</div><div class="carousel-wrapper"><div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg></div><div class="horizontal-products-row" id="${rowId}-list">${subItems.map(p => this.buildCard(p)).join('')}</div><div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></div></div></div>`;
                      }
                      return sHtml;
                 };
@@ -971,6 +1027,9 @@
                 return count;
             },
             modQty(id, delta) {
+                // NOVO: Feedback Tátil
+                if (navigator.vibrate) navigator.vibrate(50);
+
                 const p = this.data.find(x => x.id === id);
                 if(!this.cart[id]) this.cart[id] = 0;
                 const isNew = this.cart[id] === 0, newQty = this.cart[id] + delta;
@@ -1060,7 +1119,7 @@
                     if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Selecione a forma de pagamento"; finalBtn.style.background = "#ccc"; }
                 } else {
                     toast.classList.remove('visible'); mAlert.classList.add('hidden');
-                    if(finalBtn) { finalBtn.disabled = false; finalBtn.innerText = "Fazer Pedido no WhatsApp"; finalBtn.style.background = "var(--primary)"; }
+                    if(finalBtn) { finalBtn.disabled = false; finalBtn.innerText = "Enviar Pedido no WhatsApp"; finalBtn.style.background = "var(--whatsapp)"; }
                 }
                 const bar = document.getElementById('ifood-cart-bar'); bar.classList.toggle('visible', count > 0);
             },
