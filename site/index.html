@@ -254,13 +254,10 @@
         }
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #fef2f2; color: #dc2626; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
-        /* Badge para quantidade na Home */
-        .home-qty-badge {
-            position: absolute; top: 6px; right: 6px; 
-            background: rgba(255, 255, 255, 0.95); 
-            color: #333; font-size: 0.75rem; font-weight: 700; 
-            padding: 3px 8px; border-radius: 8px; z-index: 5;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        /* Texto de Quantidade na Home (Abaixo da foto) */
+        .home-qty-text {
+            text-align: center; font-size: 0.75rem; color: #555; font-weight: 600; 
+            margin-top: 4px; margin-bottom: 2px;
         }
 
         .grid-products-row .cp-img-box {
@@ -663,14 +660,16 @@
                 const lastMsg = this.container.lastElementChild;
                 if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
-            showBasketGrid() {
+            async showBasketGrid() {
+                // GAP DE HUMANIZAÇÃO
+                await this.wait(800);
+                
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
                 const sectionId = `basket-grid-${Date.now()}`;
                 
-                // --- LÓGICA DE 2 LINHAS NO MÁXIMO (INDEPENDENTE DO DEVICE) ---
                 const isDesktop = window.innerWidth >= 1024;
                 const cols = isDesktop ? 6 : 2;
-                const initialLimit = cols * 2; // 2 Linhas exatas
+                const initialLimit = cols * 2; 
                 
                 const hasMore = ids.length > initialLimit;
                 const visibleIds = ids.slice(0, initialLimit);
@@ -810,12 +809,14 @@
                 await this.wait(2000); 
                 this.askNextCategory();
             },
-            renderChatGrid(products, color, title) {
+            async renderChatGrid(products, color, title) {
+                // GAP DE HUMANIZAÇÃO
+                await this.wait(800);
+
                 if(products.length > 0) {
-                     // --- LÓGICA DE 2 LINHAS NO MÁXIMO (INDEPENDENTE DO DEVICE) ---
                      const isDesktop = window.innerWidth >= 1024;
                      const cols = isDesktop ? 6 : 2;
-                     const initialLimit = cols * 2; // 2 Linhas exatas
+                     const initialLimit = cols * 2; 
 
                      const hasMore = products.length > initialLimit;
                      const visibleItems = products.slice(0, initialLimit);
@@ -849,6 +850,24 @@
             },
             
             async startCheckout() {
+                // BLOQUEIO SE TIVER CRÉDITO (Valor atual < Valor Cesta)
+                let currentSum = 0;
+                for(let id in App.cart) { 
+                    const p = App.data.find(x => x.id === id); 
+                    if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; 
+                }
+                const effectiveTotal = currentSum + App.baseFee;
+                
+                // Margem de erro pequena para float
+                if(effectiveTotal < App.currentBasket.valor - 0.05) {
+                    const diff = App.currentBasket.valor - effectiveTotal;
+                    this.addMessage(`⚠️ Ops! Você ainda tem <strong>R$ ${diff.toFixed(2).replace('.',',')}</strong> de crédito para usar. Adicione mais produtos para completar o valor da cesta.`);
+                    await this.wait(1000);
+                    // Reabre o grid da cesta ou sugere continuar
+                    this.addMessage("Dê uma olhada na sua cesta ou continue navegando para escolher mais itens.");
+                    return; 
+                }
+
                 // Hide Floating Chip
                 document.getElementById('credit-chip').classList.remove('visible');
                 
@@ -1129,7 +1148,11 @@
                                 if(d) validItems.push({d, qty:i.qty});
                             });
                             
-                            const initialLimit = 6; 
+                            // LÓGICA DE 2 LINHAS IGUAL AO CHAT
+                            const isDesktop = window.innerWidth >= 1024;
+                            const cols = isDesktop ? 6 : 2;
+                            const initialLimit = cols * 2; 
+
                             const hasMore = validItems.length > initialLimit;
                             const visibleItems = validItems.slice(0, initialLimit);
                             const hiddenItems = validItems.slice(initialLimit);
@@ -1138,15 +1161,24 @@
                             productsGrid = `<div class="grid-products-row">
                                 ${visibleItems.map(obj => {
                                     let cardHtml = this.buildCard(obj.d);
-                                    // INJETAR O BADGE DE QUANTIDADE NA HOME
-                                    cardHtml = cardHtml.replace('<div class="cp-img-box"', `<div class="cp-img-box"><div class="home-qty-badge">${obj.qty}x</div>`);
+                                    
+                                    // REMOVE O PREÇO E BOTOES, INSERE A QUANTIDADE POR EXTENSO ABAIXO DA FOTO
+                                    // Remove Price Div
+                                    cardHtml = cardHtml.replace(/<div class="cp-price.*?<\/div>/, '');
+                                    // Inject text
+                                    const qtyText = `<div class="home-qty-text">${obj.qty} ${obj.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
+                                    // Replace end of image box to insert text before title
+                                    cardHtml = cardHtml.replace('</div><div class="cp-title">', `</div>${qtyText}<div class="cp-title">`);
+                                    
                                     return cardHtml.replace('class="card-prod"', 'class="card-prod readonly"');
                                 }).join('')}
                                 
                                 ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
                                     ${hiddenItems.map(obj => {
                                         let cardHtml = this.buildCard(obj.d);
-                                        cardHtml = cardHtml.replace('<div class="cp-img-box"', `<div class="cp-img-box"><div class="home-qty-badge">${obj.qty}x</div>`);
+                                        cardHtml = cardHtml.replace(/<div class="cp-price.*?<\/div>/, '');
+                                        const qtyText = `<div class="home-qty-text">${obj.qty} ${obj.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
+                                        cardHtml = cardHtml.replace('</div><div class="cp-title">', `</div>${qtyText}<div class="cp-title">`);
                                         return cardHtml.replace('class="card-prod"', 'class="card-prod readonly"');
                                     }).join('')}
                                 </div>` : ''}
