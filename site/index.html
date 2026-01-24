@@ -393,6 +393,8 @@
         .mk-btn { background: var(--secondary); color: white; padding: 12px; border-radius: 8px; width: 100%; font-weight: 700; margin-bottom: 10px; display: block; text-decoration: none; }
         .mk-close { color: #999; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
 
+        /* OVER BUDGET MODAL REMOVIDO */
+
         /* Side Drawer */
         .side-drawer-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.4s;
@@ -735,12 +737,11 @@
                 if(el) el.remove();
             },
 
-           addMessage(text, type = 'bot') {
+            addMessage(text, type = 'bot') {
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
                 const lastMsg = this.container.lastElementChild;
-                
-                // COMENTE ESTA LINHA ABAIXO PARA PARAR DE ROLAR PRA MENSAGEM:
+                // ROLAGEM AUTOMÁTICA DESATIVADA PARA NÃO ATRAPALHAR A LISTA
                 // if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
 
@@ -820,40 +821,7 @@
                 } catch(e){ console.error("Chip Error", e); }
                 
                 await this.wait(1000);
-                this.offerStep(); 
-            },
-
-            async offerStep() {
-                const id = 'act-offers';
-                this.addMessage(`Antes de irmos para as seções, posso te mostrar as <strong>Ofertas do Dia</strong>?`);
-                const html = `<div id="${id}" class="chat-actions">
-                     <button class="btn-chat primary" onclick="ChatFlow.showOffers('${id}')">Ver Ofertas</button>
-                     <button class="btn-chat" onclick="ChatFlow.skipOffers('${id}')">Pular</button>
-                </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                          this.scrollToBottom();
-
-            },
-
-            async showOffers(elemId) {
-                const el = document.getElementById(elemId);
-                if(el) el.remove();
-                this.addMessage("Ver Ofertas", 'user');
-                await this.showTyping();
-
-                const products = App.data.filter(p => p.isOffer);
-                // OFERTAS: Mostrar com paginação e rolagem
-                this.renderChatGrid(products, "#d31a28", "OFERTAS ESPECIAIS");
-                
-                await this.wait(2000);
-                this.askNextCategory();
-            },
-
-            skipOffers(elemId) {
-                const el = document.getElementById(elemId);
-                if(el) el.remove();
-                this.addMessage("Pular", 'user');
-                this.askNextCategory();
+                this.askNextCategory(); // VAI DIRETO PARA AS CATEGORIAS
             },
 
             async askNextCategory() {
@@ -883,6 +851,7 @@
                      <button class="btn-chat" onclick="ChatFlow.startCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
             },
 
             async showCategory(elemId, catName) {
@@ -892,10 +861,8 @@
                 
                 await this.showTyping();
                 
-                // FILTRO POR CATEGORIA PAI
+                // FILTRO POR CATEGORIA PAI + ORDENAÇÃO POR SUBCATEGORIA
                 const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
-                
-                // ORDENAR POR SUBCATEGORIA PARA OS TÍTULOS APARECEM JUNTOS
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
 
                 const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
@@ -920,7 +887,7 @@
                      
                      App.setupPagination(sectionId, products, 'chat');
                      
-                     // SCROLL PARA O TOPO DA SEÇÃO
+                     // SCROLL PARA O TOPO DA SEÇÃO E PARA
                      const element = document.getElementById(sectionId);
                      if(element) {
                         const headerOffset = 100;
@@ -1141,11 +1108,10 @@
             },
 
             scrollToBottom() {
-                // COMENTE AS LINHAS DENTRO DESTA FUNÇÃO:
-                
-                // if(this.container.lastElementChild) {
-                //    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                // }
+                // Rola para o fim apenas se necessário (ex: botões finais)
+                if(this.container.lastElementChild) {
+                    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
             },
 
             wait(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -1247,7 +1213,8 @@
             setupPagination(sectionId, products, type='home') {
                 const isDesktop = window.innerWidth >= 1024;
                 const cols = isDesktop ? 6 : 2;
-                const limit = cols * 6; // 6 Lines always
+                // AQUI: Mudei para 6 linhas (cols * 6)
+                const limit = cols * 6; 
                 
                 // Save to store
                 this.paginationStore[sectionId] = {
@@ -1326,62 +1293,13 @@
 
                 // Scroll Logic (Modified for "Ver Mais")
                 if(!isInitial) {
-                    // Encontra o primeiro elemento novo adicionado
-                    const children = grid.children;
-                    // O novo bloco começa em: total - tamanho do batch
-                    // Mas como temos headers injetados, a conta exata por children pode variar.
-                    // Vamos tentar pegar o ultimo header ou primeiro card do batch.
-                    
-                    // Simplificação: Rola para o topo do grid, mas ajustado para onde o usuário parou
-                    // Melhor: Rola o primeiro item NOVO para o topo (block: start)
-                    const firstNewIndex = children.length - batch.length; 
-                    // Cuidado: Headers contam como children.
-                    // Vamos pegar o último elemento adicionado e rolar um pouco pra cima? Não.
-                    // O cliente pediu: "rola pra cima colocando os novos produtos no incio da tela no topo"
-                    // Vamos pegar o último botão (que foi removido) como referência? Não.
-                    
-                    // Estratégia: Pegar o primeiro elemento do 'batchHtml' inserido não é trivial pq é string.
-                    // Vamos pegar o elemento que estava no final antes do append?
-                    // Vamos usar uma abordagem visual: Rolar para o primeiro elemento visível do novo lote.
-                    // Como não temos referência exata, vamos usar o último filho do grid e subtrair a altura estimada? Não.
-                    
-                    // Vamos usar o índice. Se adicionamos X itens, pegamos o item (Total - X)
-                    // Mas tem headers no meio.
-                    // Solução segura: Rolar para o botão "Ver Mais" antigo? Ele sumiu.
-                    
-                    // Solução Robusta:
-                    // O grid tem filhos. Vamos pegar o filho no índice (TotalFilhos - BatchCount - HeadersCount). 
-                    // Aproximação: Pegar o (TotalFilhos - 1) e scrollIntoView? Não, vai pro final.
-                    
-                    // Vamos rolar para o elemento que representa o início do novo lote.
-                    // Como acabamos de inserir, são os últimos elementos do DOM dentro do grid.
-                    // Vamos pegar o primeiro elemento desses novos.
-                    // Mas como saber quantos elementos HTML foram gerados (cards + headers)?
-                    // Truque: Contar quantos children tem agora, subtrair o que tinha antes?
-                    // Complexo.
-                    
-                    // Solução Simples e Eficaz:
-                    // O botão "Ver Mais" estava no final. Ao clicar, ele some e novos itens aparecem.
-                    // O foco deve ir para onde o botão estava.
-                    // O grid cresce.
-                    // Vamos fazer um scroll suave para um pouco abaixo de onde estava o último item visível.
-                    // O cliente pediu explicitamente: "rola pra cima colocando os novos produtos no incio da tela no topo".
-                    // Isso é `block: 'start'`.
-                    
-                    // Vamos pegar o último elemento do grid e subir X pixels? Não.
-                    
-                    // Vamos tentar identificar o primeiro card do novo lote pelo ID se possível, mas os IDs são do produto.
-                    // O primeiro produto do batch é `batch[0]`.
-                    // O ID no DOM é `card-${batch[0].id}` (ou home-sec...).
-                    // No chat é `card-${p.id}`.
-                    
+                    // PEGA O PRIMEIRO ITEM DO NOVO LOTE E ROLA PARA O TOPO (BLOCK: START)
                     const firstItem = batch[0];
                     if (firstItem) {
                         const pId = data.type === 'home' ? firstItem.d.id : firstItem.id;
                         const el = document.getElementById(`card-${pId}`);
                         if (el) {
                              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                             // Pequeno ajuste para cabeçalho se precisar (mas start costuma ser bom)
                         }
                     }
                 }
