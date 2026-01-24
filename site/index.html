@@ -245,6 +245,19 @@
         .subcat-title { font-size: 1.1rem; margin: 0 0 12px 16px; letter-spacing: -0.3px; display: flex; }
         .subcat-pill { padding: 6px 16px; border-radius: 20px; font-weight: 700; display: inline-block; }
         
+        /* --- ESTILO NOVO PARA SUBTITULOS INTERNOS --- */
+        .internal-subcat-title {
+            grid-column: 1 / -1; /* Ocupa largura total */
+            font-size: 0.9rem;
+            color: #555;
+            font-weight: 700;
+            margin: 15px 0 5px 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+        }
+
         @media(min-width: 1024px) { 
             #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 60px 20px 100px; }
             .horizontal-products-row { margin: 0; }
@@ -725,7 +738,9 @@
             addMessage(text, type = 'bot') {
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
-                // ROLAGEM AUTOMÁTICA DESATIVADA PARA NÃO QUEBRAR O SCROLL DA LISTA
+                const lastMsg = this.container.lastElementChild;
+                // ROLAGEM AUTOMÁTICA DESATIVADA NA MENSAGEM PARA NÃO ATRAPALHAR A LISTA
+                // if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
 
             async showBasketGrid() {
@@ -763,6 +778,7 @@
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
+                // Rolagem manual removida aqui também para não descer a tela
             },
 
             async handleRemovalYes(elemId) {
@@ -877,6 +893,10 @@
                 
                 // FILTRO POR CATEGORIA PAI
                 const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
+                
+                // ORDENAR POR SUBCATEGORIA PARA OS TÍTULOS APARECEM JUNTOS
+                products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
+
                 const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
                 const color = colors[this.catIndex % colors.length];
                 
@@ -899,6 +919,7 @@
                      
                      App.setupPagination(sectionId, products, 'chat');
                      
+                     // SCROLL PARA O TOPO DA SEÇÃO
                      const element = document.getElementById(sectionId);
                      if(element) {
                         const headerOffset = 100;
@@ -1224,15 +1245,15 @@
             setupPagination(sectionId, products, type='home') {
                 const isDesktop = window.innerWidth >= 1024;
                 const cols = isDesktop ? 6 : 2;
-                // AQUI: Mudei para 6 linhas (cols * 6) conforme solicitado
-                const limit = cols * 6; 
+                const limit = cols * 6; // 6 Lines always
                 
                 // Save to store
                 this.paginationStore[sectionId] = {
                     products: products,
                     currentIndex: 0,
                     limit: limit,
-                    type: type
+                    type: type,
+                    lastSubCat: '' // Rastreio para cabeçalho de subcategoria
                 };
                 
                 // Initial Load
@@ -1248,17 +1269,31 @@
                 
                 // Generate HTML for batch
                 let html = '';
-                if(data.type === 'home') {
-                     html = batch.map(obj => {
-                        let cardHtml = this.buildCard(obj.d);
+                
+                // --- INJECTION OF SUB-HEADERS LOGIC ---
+                let batchHtml = '';
+                batch.forEach(item => {
+                    // Decide which object to use (home uses {d, qty}, chat uses product directly)
+                    const p = data.type === 'home' ? item.d : item;
+                    
+                    // Check for subcategory change
+                    if(data.type === 'chat' && p.subCategory && p.subCategory !== data.lastSubCat) {
+                        data.lastSubCat = p.subCategory;
+                        batchHtml += `<div class="internal-subcat-title">${p.subCategory}</div>`;
+                    }
+
+                    if(data.type === 'home') {
+                        let cardHtml = this.buildCard(item.d);
                         cardHtml = cardHtml.replace(/<div class="cp-price.*?<\/div>/, '');
-                        const qtyText = `<div class="home-qty-text">${obj.qty} ${obj.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
+                        const qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
                         cardHtml = cardHtml.replace('</div><div class="cp-title">', `</div>${qtyText}<div class="cp-title">`);
-                        return cardHtml.replace('class="card-prod"', 'class="card-prod readonly"');
-                    }).join('');
-                } else {
-                    html = batch.map(p => this.buildCard(p)).join('');
-                }
+                        batchHtml += cardHtml.replace('class="card-prod"', 'class="card-prod readonly"');
+                    } else {
+                        batchHtml += this.buildCard(p);
+                    }
+                });
+                
+                html = batchHtml;
 
                 // Append to grid
                 let grid = document.querySelector(`#${sectionId} .grid-products-row`);
@@ -1287,13 +1322,65 @@
                     container.insertAdjacentHTML('beforeend', `<div id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${nextLoadCount} PRODUTOS</div>`);
                 }
 
-                // Scroll Minimal (if not initial)
+                // Scroll Logic (Modified for "Ver Mais")
                 if(!isInitial) {
-                    // Find the first new element added
+                    // Encontra o primeiro elemento novo adicionado
                     const children = grid.children;
-                    const firstNew = children[children.length - batch.length];
-                    if(firstNew) {
-                         firstNew.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    // O novo bloco começa em: total - tamanho do batch
+                    // Mas como temos headers injetados, a conta exata por children pode variar.
+                    // Vamos tentar pegar o ultimo header ou primeiro card do batch.
+                    
+                    // Simplificação: Rola para o topo do grid, mas ajustado para onde o usuário parou
+                    // Melhor: Rola o primeiro item NOVO para o topo (block: start)
+                    const firstNewIndex = children.length - batch.length; 
+                    // Cuidado: Headers contam como children.
+                    // Vamos pegar o último elemento adicionado e rolar um pouco pra cima? Não.
+                    // O cliente pediu: "rola pra cima colocando os novos produtos no incio da tela no topo"
+                    // Vamos pegar o último botão (que foi removido) como referência? Não.
+                    
+                    // Estratégia: Pegar o primeiro elemento do 'batchHtml' inserido não é trivial pq é string.
+                    // Vamos pegar o elemento que estava no final antes do append?
+                    // Vamos usar uma abordagem visual: Rolar para o primeiro elemento visível do novo lote.
+                    // Como não temos referência exata, vamos usar o último filho do grid e subtrair a altura estimada? Não.
+                    
+                    // Vamos usar o índice. Se adicionamos X itens, pegamos o item (Total - X)
+                    // Mas tem headers no meio.
+                    // Solução segura: Rolar para o botão "Ver Mais" antigo? Ele sumiu.
+                    
+                    // Solução Robusta:
+                    // O grid tem filhos. Vamos pegar o filho no índice (TotalFilhos - BatchCount - HeadersCount). 
+                    // Aproximação: Pegar o (TotalFilhos - 1) e scrollIntoView? Não, vai pro final.
+                    
+                    // Vamos rolar para o elemento que representa o início do novo lote.
+                    // Como acabamos de inserir, são os últimos elementos do DOM dentro do grid.
+                    // Vamos pegar o primeiro elemento desses novos.
+                    // Mas como saber quantos elementos HTML foram gerados (cards + headers)?
+                    // Truque: Contar quantos children tem agora, subtrair o que tinha antes?
+                    // Complexo.
+                    
+                    // Solução Simples e Eficaz:
+                    // O botão "Ver Mais" estava no final. Ao clicar, ele some e novos itens aparecem.
+                    // O foco deve ir para onde o botão estava.
+                    // O grid cresce.
+                    // Vamos fazer um scroll suave para um pouco abaixo de onde estava o último item visível.
+                    // O cliente pediu explicitamente: "rola pra cima colocando os novos produtos no incio da tela no topo".
+                    // Isso é `block: 'start'`.
+                    
+                    // Vamos pegar o último elemento do grid e subir X pixels? Não.
+                    
+                    // Vamos tentar identificar o primeiro card do novo lote pelo ID se possível, mas os IDs são do produto.
+                    // O primeiro produto do batch é `batch[0]`.
+                    // O ID no DOM é `card-${batch[0].id}` (ou home-sec...).
+                    // No chat é `card-${p.id}`.
+                    
+                    const firstItem = batch[0];
+                    if (firstItem) {
+                        const pId = data.type === 'home' ? firstItem.d.id : firstItem.id;
+                        const el = document.getElementById(`card-${pId}`);
+                        if (el) {
+                             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                             // Pequeno ajuste para cabeçalho se precisar (mas start costuma ser bom)
+                        }
                     }
                 }
             },
