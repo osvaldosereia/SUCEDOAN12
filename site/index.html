@@ -629,26 +629,25 @@
                 this.container.innerHTML = '';
                 this.catIndex = 0;
                 
-                // Carrega categorias
+                // Carrega categorias (PRINCIPAIS/PAI)
                 try {
                     let catGroups = {};
                     App.data.forEach(p => {
                          if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
-                         const subKey = p.subCategory || "Geral";
-                         if(!catGroups[subKey]) { catGroups[subKey] = p.appCategory; }
+                         // AQUI: Usamos appCategory como chave principal
+                         const mainKey = p.appCategory;
+                         if(!catGroups[mainKey]) { catGroups[mainKey] = true; }
                     });
                     this.categories = Object.keys(catGroups);
                     this.categories.sort((a,b) => {
-                        const parentA = catGroups[a];
-                        const parentB = catGroups[b];
                         const getScore = (catName) => {
                             if(catName.includes('MERCEARIA') || catName.includes('ALIMENTOS')) return 3;
                             if(catName.includes('MATINAIS') || catName.includes('LANCHES')) return 2;
                             if(catName.includes('LIMPEZA')) return 1;
                             return 0;
                         };
-                        const scoreA = getScore(parentA);
-                        const scoreB = getScore(parentB);
+                        const scoreA = getScore(a);
+                        const scoreB = getScore(b);
                         if(scoreA !== scoreB) return scoreB - scoreA; 
                         return a.localeCompare(b); 
                     });
@@ -686,7 +685,7 @@
 
                 await this.wait(1600);
                 await this.showTyping();
-                this.addMessage("Depois você vai repor e comprar o que quiser no nosso novo supermercado.");
+                this.addMessage("Depois você terá o nosso supermercado inteiro para repor os produtos e comprar o que quiser, como se estivesse com o carrinho no corredor.");
                                     
                 await this.wait(2000);
                 this.addMessage("Vou mostrar a lista de produtos que já estão na sua cesta, pode ser?");
@@ -697,6 +696,7 @@
                     <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Pode mostrar</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
             },
 
             // Mostra a lista e depois pergunta se removeu
@@ -725,9 +725,7 @@
             addMessage(text, type = 'bot') {
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
-                const lastMsg = this.container.lastElementChild;
-                // ROLAGEM AUTOMÁTICA DESATIVADA NA MENSAGEM PARA NÃO ATRAPALHAR A LISTA
-                // if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // ROLAGEM AUTOMÁTICA DESATIVADA PARA NÃO QUEBRAR O SCROLL DA LISTA
             },
 
             async showBasketGrid() {
@@ -765,7 +763,6 @@
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                // Rolagem manual removida aqui também para não descer a tela
             },
 
             async handleRemovalYes(elemId) {
@@ -817,8 +814,7 @@
                      <button class="btn-chat" onclick="ChatFlow.skipOffers('${id}')">Pular</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-              this.scrollToBottom();
-
+                this.scrollToBottom();
             },
 
             async showOffers(elemId) {
@@ -828,6 +824,7 @@
                 await this.showTyping();
 
                 const products = App.data.filter(p => p.isOffer);
+                // OFERTAS: Mostrar com paginação e rolagem
                 this.renderChatGrid(products, "#d31a28", "OFERTAS ESPECIAIS");
                 
                 await this.wait(2000);
@@ -868,7 +865,7 @@
                      <button class="btn-chat" onclick="ChatFlow.startCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                
+                this.scrollToBottom();
             },
 
             async showCategory(elemId, catName) {
@@ -878,7 +875,8 @@
                 
                 await this.showTyping();
                 
-                const products = App.data.filter(p => p.subCategory === catName && !p.categoria.includes('CESTA'));
+                // FILTRO POR CATEGORIA PAI
+                const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
                 const color = colors[this.catIndex % colors.length];
                 
@@ -1132,8 +1130,8 @@
 
         const App = {
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [], appliedCoupon: false,
+            // Armazena dados de paginação
             paginationStore: {},
-            
             async init() {
                 try {
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
@@ -1226,7 +1224,8 @@
             setupPagination(sectionId, products, type='home') {
                 const isDesktop = window.innerWidth >= 1024;
                 const cols = isDesktop ? 6 : 2;
-                const limit = cols * 2; // 2 Lines always
+                // AQUI: Mudei para 6 linhas (cols * 6) conforme solicitado
+                const limit = cols * 6; 
                 
                 // Save to store
                 this.paginationStore[sectionId] = {
