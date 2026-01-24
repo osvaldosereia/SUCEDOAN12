@@ -245,17 +245,53 @@
         .subcat-title { font-size: 1.1rem; margin: 0 0 12px 16px; letter-spacing: -0.3px; display: flex; }
         .subcat-pill { padding: 6px 16px; border-radius: 20px; font-weight: 700; display: inline-block; }
         
-        /* --- ESTILO NOVO PARA SUBTITULOS INTERNOS --- */
-        .internal-subcat-title {
-            grid-column: 1 / -1; /* Ocupa largura total */
-            font-size: 0.9rem;
-            color: #555;
+        /* --- NOVA BARRA DE CHIPS FIXA --- */
+        .sticky-chips-bar {
+            position: -webkit-sticky; /* Safari */
+            position: sticky;
+            top: calc(var(--app-header-height) - 1px); /* Cola logo abaixo do cabeçalho */
+            z-index: 99; 
+            background: #fff;
+            padding: 12px 5px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            /* Esconder scrollbar padrão */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .sticky-chips-bar::-webkit-scrollbar { display: none; }
+
+        .chip-btn {
+            flex: 0 0 auto;
+            padding: 10px 20px;
+            border-radius: 50px;
+            background: #f1f5f9;
+            color: #334155;
             font-weight: 700;
-            margin: 15px 0 5px 4px;
+            font-size: 0.9rem;
+            border: 1px solid #cbd5e1;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chip-btn:active { background: #cbd5e1; transform: scale(0.95); }
+
+        /* --- ESTILO PARA SUBTITULOS INTERNOS --- */
+        .internal-subcat-title {
+            grid-column: 1 / -1; 
+            font-size: 0.95rem;
+            color: #555;
+            font-weight: 800;
+            margin: 25px 0 10px 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 2px solid #f1f5f9;
             padding-bottom: 4px;
+            scroll-margin-top: 140px; /* Garante que o titulo nao fique escondido atras da barra */
         }
 
         @media(min-width: 1024px) { 
@@ -392,8 +428,6 @@
         .mk-desc { color: #555; font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5; }
         .mk-btn { background: var(--secondary); color: white; padding: 12px; border-radius: 8px; width: 100%; font-weight: 700; margin-bottom: 10px; display: block; text-decoration: none; }
         .mk-close { color: #999; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
-
-        /* OVER BUDGET MODAL REMOVIDO */
 
         /* Side Drawer */
         .side-drawer-overlay {
@@ -678,12 +712,12 @@
                 
                 await this.wait(1000);
                 await this.showTyping();
-                this.addMessage("Vamos deixar a cesta do seu jeito, ok?");
+                this.addMessage("Agora vamos deixar a cesta do seu jeito, combinado?");
 
                 // Botão 1: Autorizar explicação
                 const id = 'act-intro';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">OK!</button>
+                    <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Combinado!</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -693,20 +727,22 @@
             async explainRules(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage("Ok!", 'user');
+                this.addMessage("Combinado!", 'user');
 
                 await this.showTyping();
-                this.addMessage("Eu vou mostrar aqui a lista dos produtos quem vem na cesta.");
+                this.addMessage("Primeiro você vai retirar da cesta os produtos que você não quer.");
 
                 await this.wait(1600);
                 await this.showTyping();
-                this.addMessage("Você vai retirar os produtos que você não quer, beleza?.");
+                this.addMessage("Depois você terá o nosso supermercado inteiro para repor os produtos e comprar o que quiser, como se estivesse com o carrinho no corredor.");
                                     
+                await this.wait(2000);
+                this.addMessage("Vou mostrar a lista de produtos que já estão na sua cesta, pode ser?");
 
                 // Botão 2: Mostrar Lista
                 const id = 'act-show-list';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Sim</button>
+                    <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Pode mostrar</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -716,7 +752,7 @@
             async showInitialList(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage("Sim", 'user');
+                this.addMessage("Pode mostrar", 'user');
                 
                 await this.wait(600);
                 this.showBasketGrid(); // Mostra a lista sem rolar pro fim
@@ -739,8 +775,7 @@
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
                 const lastMsg = this.container.lastElementChild;
-                
-                // COMENTE ESTA LINHA ABAIXO PARA PARAR DE ROLAR PRA MENSAGEM:
+                // ROLAGEM AUTOMÁTICA DESATIVADA PARA NÃO ATRAPALHAR A LISTA
                 // if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
 
@@ -773,13 +808,13 @@
             },
 
             askRemovalConfirmation() {
-                this.addMessage(`Pronto. Você retirou da lista os produtos que não quer?`);
+                this.addMessage(`Você já retirou da lista os produtos que não quer?`);
                 const id = 'actions-removal';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-              this.scrollToBottom();
+                // Rolagem manual removida aqui também para não descer a tela
             },
 
             async handleRemovalYes(elemId) {
@@ -805,16 +840,17 @@
                 await this.showTyping();
                 
                 if (removedVal > 0) {
-                    this.addMessage(`Perfeito!\n\nO valor dos produtos que retirou foi de: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
-                    await this.wait(1600);
-                    this.addMessage(`Agora, aproveite para economizar com os menores preços da cidade.`);
-                    await this.wait(1600);
-                    this.addMessage(`São mais de 200 produtos.`);
-                    await this.wait(1600);
-                    this.addMessage(`Monte a cesta perfeita pra você.`);
-                    await this.wait(1600);
+                    this.addMessage(`Perfeito! O valor dos produtos que retirou foi de: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
+                    await this.wait(800);
+                    this.addMessage(`Agora, vamos adicionar novos produtos à sua cesta.`);
+                    await this.wait(800);
+                    this.addMessage(`Temos mais de 200 produtos diferentes.`);
+                    await this.wait(800);
+                    this.addMessage(`Você vai montando a cesta do seu jeito.`);
+                    await this.wait(800);
+                    this.addMessage(`Vá acompanhando o valor na parte debaixo da tela.`);
+                    await this.wait(800);
                     this.addMessage(`Boas Compras.`);
-                    
                 } else {
                     this.addMessage(`Ok! Você manteve a cesta completa.`);
                     await this.wait(800);
@@ -827,30 +863,24 @@
                 } catch(e){ console.error("Chip Error", e); }
                 
                 await this.wait(1000);
-                this.askNextCategory(); // VAI DIRETO PARA AS CATEGORIAS
-
+                this.askNextCategory(); 
             },
 
             async askNextCategory() {
-                // Se acabaram as categorias, avisa o fim
                 if(this.catIndex >= this.categories.length) {
                     this.addMessage("Finalizamos as categorias! Clique abaixo para fechar seu pedido.");
                     return;
                 }
-
                 const catName = this.categories[this.catIndex];
                 const niceName = App.toSmartTitleCase(catName);
                 const id = 'act-' + this.catIndex;
                 
-                // AQUI FORAM REMOVIDAS AS FRASES E O "ADDMESSAGE"
-                
-                // Exibe direto os botões
+                // --- BOTÕES DIRETOS, SEM PERGUNTA ANTERIOR ---
                 const html = `<div id="${id}" class="chat-actions">
                      <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
                      <button class="btn-chat" onclick="ChatFlow.skipCategory('${id}')">Não, próximo</button>
                      <button class="btn-chat" onclick="ChatFlow.startCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
                 </div>`;
-                
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
             },
@@ -886,9 +916,10 @@
                      </div>`;
                      this.container.insertAdjacentHTML('beforeend', htmlHeader);
                      
+                     // CHAMA PAGINAÇÃO COM TIPO 'CHAT' (CARREGA TUDO + CHIPS)
                      App.setupPagination(sectionId, products, 'chat');
                      
-                     // SCROLL PARA O TOPO DA SEÇÃO E PARA
+                     // SCROLL PARA O TOPO DA SEÇÃO
                      const element = document.getElementById(sectionId);
                      if(element) {
                         const headerOffset = 100;
@@ -1108,12 +1139,11 @@
                 window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
 
-           scrollToBottom() {
-                // COMENTE AS LINHAS DENTRO DESTA FUNÇÃO:
-                
-                // if(this.container.lastElementChild) {
-                //    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                // }
+            scrollToBottom() {
+                // Rola para o fim apenas se necessário (ex: botões finais)
+                if(this.container.lastElementChild) {
+                    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
             },
 
             wait(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -1211,12 +1241,43 @@
                  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) { const [y, m, d] = dateStr.split('-'); return `${d}/${m}/${y}`; }
                  return dateStr; 
             },
-            // --- NEW: Centralized Pagination Logic ---
+            
+            // --- NOVA PAGINAÇÃO CENTRALIZADA COM SUPORTE A CHIPS ---
             setupPagination(sectionId, products, type='home') {
                 const isDesktop = window.innerWidth >= 1024;
                 const cols = isDesktop ? 6 : 2;
-                // AQUI: Mudei para 6 linhas (cols * 6)
-                const limit = cols * 6; 
+                let limit = cols * 6; // Padrão: 6 linhas
+                
+                // NO CHAT: CARREGA TUDO DE UMA VEZ PARA FUNCIONAR OS CHIPS
+                if (type === 'chat') {
+                    limit = products.length; // Limite é o total
+                    
+                    // GERAÇÃO DOS CHIPS
+                    const subcats = [...new Set(products.map(p => p.subCategory))];
+                    if (subcats.length > 1) { // Só mostra se tiver mais de 1 subcategoria
+                        let chipsHtml = `<div class="sticky-chips-bar">`;
+                        subcats.forEach(sc => {
+                            // Cria um ID seguro para âncora
+                            const safeId = 'sc-' + sc.replace(/[^a-zA-Z0-9]/g, '');
+                            chipsHtml += `<button class="chip-btn" onclick="document.getElementById('${safeId}').scrollIntoView({behavior:'smooth', block:'start'});">${sc}</button>`;
+                        });
+                        chipsHtml += `</div>`;
+                        
+                        // Injeta os chips LOGO APÓS o título da seção
+                        setTimeout(() => {
+                            const container = document.getElementById(sectionId);
+                            if(container) {
+                                const titleEl = container.querySelector('.subcat-title');
+                                if(titleEl) {
+                                    // Verifica se já não foi injetado antes para evitar duplicidade
+                                    if(!container.querySelector('.sticky-chips-bar')) {
+                                        titleEl.insertAdjacentHTML('afterend', chipsHtml);
+                                    }
+                                }
+                            }
+                        }, 50);
+                    }
+                }
                 
                 // Save to store
                 this.paginationStore[sectionId] = {
@@ -1244,13 +1305,14 @@
                 // --- INJECTION OF SUB-HEADERS LOGIC ---
                 let batchHtml = '';
                 batch.forEach(item => {
-                    // Decide which object to use (home uses {d, qty}, chat uses product directly)
                     const p = data.type === 'home' ? item.d : item;
                     
-                    // Check for subcategory change
+                    // Check for subcategory change (CHAT ONLY)
                     if(data.type === 'chat' && p.subCategory && p.subCategory !== data.lastSubCat) {
                         data.lastSubCat = p.subCategory;
-                        batchHtml += `<div class="internal-subcat-title">${p.subCategory}</div>`;
+                        const safeId = 'sc-' + p.subCategory.replace(/[^a-zA-Z0-9]/g, '');
+                        // Adiciona ID para o chip funcionar e style para compensar a barra fixa
+                        batchHtml += `<div id="${safeId}" class="internal-subcat-title">${p.subCategory}</div>`;
                     }
 
                     if(data.type === 'home') {
@@ -1295,7 +1357,6 @@
 
                 // Scroll Logic (Modified for "Ver Mais")
                 if(!isInitial) {
-                    // PEGA O PRIMEIRO ITEM DO NOVO LOTE E ROLA PARA O TOPO (BLOCK: START)
                     const firstItem = batch[0];
                     if (firstItem) {
                         const pId = data.type === 'home' ? firstItem.d.id : firstItem.id;
