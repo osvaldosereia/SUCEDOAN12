@@ -805,13 +805,16 @@
                 await this.showTyping();
                 
                 if (removedVal > 0) {
-                    this.addMessage(`Perfeito! O valor dos produtos que retirou foi de: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
+                    this.addMessage(`Perfeito!\n\nO valor dos produtos que retirou foi de: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
                     await this.wait(1600);
-                    this.addMessage(`Agora, vamos adicionar novos produtos à sua cesta.`);
+                    this.addMessage(`Agora, aproveite para economizar com os menores preços da cidade.`);
                     await this.wait(1600);
-                    this.addMessage(`Você vai montando a cesta do seu jeito.`);
-                    await this.wait(1300);
-                    this.addMessage(`São mais de 200 produtos diferentes. Boas Compras.`);
+                    this.addMessage(`São mais de 200 produtos.`);
+                    await this.wait(1600);
+                    this.addMessage(`Monte a cesta perfeita pra você.`);
+                    await this.wait(1600);
+                    this.addMessage(`Boas Compras.`);
+                    
                 } else {
                     this.addMessage(`Ok! Você manteve a cesta completa.`);
                     await this.wait(800);
