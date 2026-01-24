@@ -705,7 +705,9 @@
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
                 const lastMsg = this.container.lastElementChild;
-                if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // COMENTE OU APAGUE A LINHA ABAIXO PARA PARAR DE ROLAR SOZINHO:
+                // if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
             async showBasketGrid() {
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
