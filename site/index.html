@@ -835,31 +835,25 @@
             },
 
             async askNextCategory() {
+                // Se acabaram as categorias, avisa o fim
                 if(this.catIndex >= this.categories.length) {
                     this.addMessage("Finalizamos as categorias! Clique abaixo para fechar seu pedido.");
                     return;
                 }
+
                 const catName = this.categories[this.catIndex];
-                await this.showTyping();
-                
                 const niceName = App.toSmartTitleCase(catName);
                 const id = 'act-' + this.catIndex;
                 
-                const phrases = [
-                    `Que tal dar uma olhada em <strong>${niceName}</strong>?`,
-                    `Agora vamos ver as opções de <strong>${niceName}</strong>?`,
-                    `Confira agora o que temos de <strong>${niceName}</strong>.`,
-                    `Deseja ver os itens de <strong>${niceName}</strong>?`
-                ];
-                const msg = phrases[Math.floor(Math.random() * phrases.length)];
+                // AQUI FORAM REMOVIDAS AS FRASES E O "ADDMESSAGE"
                 
-                this.addMessage(msg);
-
+                // Exibe direto os botões
                 const html = `<div id="${id}" class="chat-actions">
                      <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
                      <button class="btn-chat" onclick="ChatFlow.skipCategory('${id}')">Não, próximo</button>
                      <button class="btn-chat" onclick="ChatFlow.startCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
                 </div>`;
+                
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
             },
