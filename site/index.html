@@ -785,21 +785,50 @@
                 this.addMessage("Finalizar Agora", 'user');
                 await this.showTyping();
                 
-                let summary = `<strong>Resumo do Pedido:</strong><br><br>`;
+                // --- DETAILED SUMMARY CONSTRUCTION ---
+                let summary = `<div style="background:white; padding:15px; border-radius:10px; border:1px solid #e2e8f0; margin-top:10px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">`;
                 
-                let addedCount = 0;
-                for(let id in App.cart) {
-                    const diff = App.cart[id] - (App.originalCart[id] || 0);
-                    if(diff > 0) {
-                        const p = App.data.find(x => x.id === id);
-                        if(p) { summary += `+ ${diff}x ${p.nome}<br>`; addedCount++; }
-                    }
+                // 1. Basket Name & Original Price
+                summary += `<div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px; font-size:1rem; color:#222;">
+                    <strong>Cesta ${App.currentBasket.nome}</strong> 
+                    <span style="float:right; font-weight:700;">R$ ${App.currentBasket.valor.toFixed(2).replace('.',',')}</span>
+                </div>`;
+
+                // 2. Removed Items
+                let removedTxt = "";
+                for(let id in App.originalCart) {
+                     let diff = App.originalCart[id] - (App.cart[id]||0);
+                     if(diff > 0) {
+                         let p = App.data.find(x=>x.id==id);
+                         let unitVal = p.isOffer ? p.offerPrice : p.valor;
+                         removedTxt += `<div style="display:flex; justify-content:space-between; color:#b91c1c; font-size:0.85rem; margin-bottom:4px;">
+                            <span>- ${diff}x ${p.nome.substring(0, 20)}...</span>
+                            <span>- R$ ${(unitVal * diff).toFixed(2).replace('.',',')}</span>
+                         </div>`;
+                     }
                 }
-                if(addedCount === 0) summary += "Nenhum item adicionado.<br>";
+                if(removedTxt) summary += `<div style="margin-bottom:10px; border-bottom:1px dashed #eee; padding-bottom:10px;"><strong>🔻 Retirados:</strong><div style="margin-top:5px;">${removedTxt}</div></div>`;
+
+                // 3. Added Items
+                let addedTxt = "";
+                for(let id in App.cart) {
+                     let diff = App.cart[id] - (App.originalCart[id]||0);
+                     if(diff > 0) {
+                         let p = App.data.find(x=>x.id==id);
+                         let unitVal = p.isOffer ? p.offerPrice : p.valor;
+                         addedTxt += `<div style="display:flex; justify-content:space-between; color:#15803d; font-size:0.85rem; margin-bottom:4px;">
+                            <span>+ ${diff}x ${p.nome.substring(0, 20)}...</span>
+                            <span>+ R$ ${(unitVal * diff).toFixed(2).replace('.',',')}</span>
+                         </div>`;
+                     }
+                }
+                if(addedTxt) summary += `<div style="margin-bottom:10px;"><strong>💚 Adicionados:</strong><div style="margin-top:5px;">${addedTxt}</div></div>`;
                 
-                // Get display total
+                // 4. Total
                 const totalDisplay = document.getElementById('icb-total-val').innerText;
-                summary += `<br><strong>Total:</strong> ${totalDisplay}`;
+                summary += `<div style="border-top:1px solid #eee; padding-top:10px; margin-top:5px; font-size:1.2rem; font-weight:800; text-align:right; color:#d31a28;">Total: ${totalDisplay}</div>`;
+                summary += `</div>`;
+                
                 this.addMessage(summary);
                 
                 await this.wait(1000);
@@ -833,7 +862,7 @@
                 if(val === CONSTANTS.COUPON_CODE) {
                     App.appliedCoupon = true;
                     this.addMessage(`Cupom <strong>${val}</strong> aplicado!`, 'user');
-                    App.updateTotal(); // recalculate total
+                    App.updateTotal(); 
                     this.askPayment();
                 } else {
                     alert("Cupom Inválido");
@@ -863,20 +892,23 @@
                 this.addMessage(method, 'user');
                 this.checkoutState.paymentMethod = method;
                 
-                await this.wait(800);
+                await this.showTyping();
+                this.addMessage(`Perfeito, pagamento via <strong>${method}</strong> anotado.`);
+                
+                await this.wait(1000);
                 this.finalizeOrder();
             },
             async finalizeOrder() {
                 await this.showTyping();
                 const totalText = document.getElementById('icb-total-val').innerText;
                 
-                this.addMessage(`Combinado! O total final é <strong>${totalText}</strong>. Clique abaixo para enviar o pedido.`);
+                this.addMessage(`Tudo pronto! Clique no botão abaixo para enviar o pedido no WhatsApp.`);
                 
                 const id = 'act-finish';
                 const html = `<div id="${id}" class="chat-actions">
-                    <button class="btn-chat primary" onclick="ChatFlow.sendWhatsAppChat()" style="background:#25D366; border-color:#25D366; color:white; width:100%; justify-content:center; display:flex; align-items:center; gap:8px;">
-                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.001.572 2.097.872 3.154.872h.001c3.181 0 5.768-2.586 5.768-5.766.001-3.18-2.585-5.767-5.766-5.767zm6.591 9.473c-.22.616-1.282 1.13-1.756 1.189-.436.054-.925.263-3.136-1.157-2.39-1.536-3.927-4.137-4.047-4.298-.119-.161-.963-1.286-.963-2.453 0-1.166.608-1.742.824-1.981.216-.239.576-.299.768-.299.192 0 .384.001.552.012.18.012.42.067.636.587.228.552.768 1.908.84 2.046.072.138.12.3.024.492-.096.192-.144.312-.288.48-.144.168-.3.234-.432.396-.144.15-.294.312-.126.6.168.288.75 1.224 1.608 1.992 1.104.984 2.04 1.29 2.328 1.428.288.138.456.12.624-.072.168-.192.72-1.05.912-1.41.192-.36.384-.3.648-.198.264.102 1.68.792 1.968.936.288.144.48.216.552.336.072.12.072.696-.144 1.312z"/></svg>
-                        Enviar Pedido no WhatsApp
+                    <button class="btn-chat primary" onclick="ChatFlow.sendWhatsAppChat()" style="background:#25D366; border-color:#25D366; color:white; width:100%; justify-content:center; display:flex; align-items:center; gap:8px; padding:14px; font-size:1rem;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.001.572 2.097.872 3.154.872h.001c3.181 0 5.768-2.586 5.768-5.766.001-3.18-2.585-5.767-5.766-5.767zm6.591 9.473c-.22.616-1.282 1.13-1.756 1.189-.436.054-.925.263-3.136-1.157-2.39-1.536-3.927-4.137-4.047-4.298-.119-.161-.963-1.286-.963-2.453 0-1.166.608-1.742.824-1.981.216-.239.576-.299.768-.299.192 0 .384.001.552.012.18.012.42.067.636.587.228.552.768 1.908.84 2.046.072.138.12.3.024.492-.096.192-.144.312-.288.48-.144.168-.3.234-.432.396-.144.15-.294.312-.126.6.168.288.75 1.224 1.608 1.992 1.104.984 2.04 1.29 2.328 1.428.288.138.456.12.624-.072.168-.192.72-1.05.912-1.41.192-.36.384-.3.648-.198.264.102 1.68.792 1.968.936.288.144.48.216.552.336.072.12.072.696-.144 1.312z"/></svg>
+                        Enviar Pedido
                     </button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
