@@ -241,8 +241,36 @@
 
         /* Products Horizontal Row */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
-        .subcat-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 12px 16px; letter-spacing: -0.3px; }
+        .subcat-title { font-size: 1.1rem; margin: 0 0 12px 16px; letter-spacing: -0.3px; display: flex; }
+        .subcat-pill { padding: 6px 16px; border-radius: 20px; font-weight: 700; display: inline-block; }
         
+        .carousel-wrapper { position: relative; }
+        .horizontal-products-row { display: flex; gap: 20px; overflow-x: auto; padding: 0 16px 16px 16px; margin: 0 -16px; scroll-behavior: smooth; }
+        
+        /* Updated Scroll Btn: Small on mobile, Large on Desktop */
+        .scroll-btn {
+            position: absolute; top: 50%; transform: translateY(-50%); 
+            width: 32px; height: 32px; /* Mobile Size */
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12); display: none; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 20; color: #333; transition: all 0.3s;
+        }
+        .scroll-btn:hover { background: #fff; transform: translateY(-50%) scale(1.15); color: var(--primary); }
+        .scroll-btn.left { left: 0px; }
+        .scroll-btn.right { right: 0px; }
+
+        @media(min-width: 1024px) { 
+            .scroll-btn { display: flex; width: 48px; height: 48px; } /* Desktop Size */
+            .scroll-btn.left { left: -24px; }
+            .scroll-btn.right { right: -24px; }
+            #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 60px 20px 100px; }
+            .horizontal-products-row { margin: 0; }
+            #active-basket-container .scroll-btn { display: flex; }
+            #active-basket-container .scroll-btn.left { left: -20px; }
+            #active-basket-container .scroll-btn.right { right: -20px; }
+        }
+
         /* NEW GRID LAYOUT CSS */
         .grid-products-row {
             display: grid;
@@ -250,8 +278,8 @@
             gap: 16px;
             padding: 0 0 16px 0;
         }
-        @media(min-width: 768px) {
-            .grid-products-row { grid-template-columns: repeat(4, 1fr); }
+        @media(min-width: 1024px) {
+            .grid-products-row { grid-template-columns: repeat(6, 1fr); } /* 6 Columns on Desktop */
         }
 
         .btn-load-more {
@@ -269,7 +297,6 @@
         }
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #fef2f2; color: #dc2626; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
-        /* Removed background and maximized image for grid view items inside grid-products-row */
         .grid-products-row .cp-img-box {
             background: transparent; 
             border: none;
@@ -279,13 +306,13 @@
         .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
         .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
         
-        /* Specific overrides for clean grid look */
         .grid-products-row .cp-img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.05); }
 
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px; width: 38px; height: 38px; border-radius: 50%;
-            background: white; border: 1px solid #e5e5e5; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: flex; align-items: center; justify-content: center; color: var(--primary); 
+            background: var(--primary); /* Red Background */
+            border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center; color: white; /* White Plus */
             font-size: 1.6rem; font-weight: 300; cursor: pointer; padding-bottom: 3px; line-height: 1;
         }
         .qty-ctrl-float {
@@ -512,7 +539,7 @@
                     <h2 class="market-title" id="cust-welcome-title"></h2>
                 </div>
 
-                <div class="subcat-title" style="color:#333; text-align:center; margin-bottom:15px;">Itens da sua Cesta</div>
+                <div class="subcat-title" style="color:#333; text-align:center; margin-bottom:15px; display:block;">Itens da sua Cesta</div>
 
                 <div id="active-basket-container">
                     <div class="carousel-wrapper">
@@ -919,7 +946,7 @@
                         const sectionId = `section-${title}-${subName}`.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
 
                         sHtml += `<div class="subcat-section">
-                            <div class="subcat-title" style="color:${currentColor};">${niceTitle}</div>
+                            <div class="subcat-title"><span class="subcat-pill" style="color:${currentColor}; background-color:${currentColor}1a;">${niceTitle}</span></div>
                             <div class="grid-products-row">
                                 ${visibleItems.map(p => this.buildCard(p)).join('')}
                                 ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
