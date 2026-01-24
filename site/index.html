@@ -380,6 +380,21 @@
         .mk-btn { background: var(--secondary); color: white; padding: 12px; border-radius: 8px; width: 100%; font-weight: 700; margin-bottom: 10px; display: block; text-decoration: none; }
         .mk-close { color: #999; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
 
+        /* OVER BUDGET MODAL */
+        .ob-modal-overlay {
+            position: fixed; inset: 0; z-index: 13000; background: rgba(0,0,0,0.75); backdrop-filter: blur(2px);
+            display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .ob-modal-overlay.visible { opacity: 1; pointer-events: auto; }
+        .ob-modal {
+            background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 340px; 
+            text-align: center; transform: translateY(20px); transition: transform 0.3s;
+        }
+        .ob-modal-overlay.visible .ob-modal { transform: translateY(0); }
+        .ob-btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; margin-bottom: 10px; border: none; cursor: pointer; font-size: 0.9rem; }
+        .ob-btn.remove { background: #fee2e2; color: #dc2626; }
+        .ob-btn.continue { background: var(--secondary); color: white; margin-bottom: 0; }
+
         /* Side Drawer */
         .side-drawer-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.4s;
@@ -498,6 +513,15 @@
             <div id="mk-modal-msg" class="mk-desc"></div>
             <a href="#" id="mk-modal-btn" class="mk-btn" target="_blank">Ver Agora</a>
             <div class="mk-close" onclick="MarketingApp.closeModal()">Fechar</div>
+        </div>
+    </div>
+
+    <div id="ob-modal-overlay" class="ob-modal-overlay">
+        <div class="ob-modal">
+            <div class="mk-title" style="color:#d31a28;">Atenção!</div>
+            <div class="mk-desc">O valor total da sua compra ultrapassou o valor da cesta original.</div>
+            <button id="ob-remove-btn" class="ob-btn remove">Remover Último Item</button>
+            <button id="ob-continue-btn" class="ob-btn continue">Continuar Assim</button>
         </div>
     </div>
 
@@ -697,15 +721,21 @@
                 await this.wait(800);
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
                 
+                // Get Product Objects
                 const products = ids.map(id => App.data.find(x => x.id === id)).filter(p => p);
                 
                 const sectionId = `basket-grid-${Date.now()}`;
                 
-                // INJETAR O CONTAINER ANTES DE CHAMAR A PAGINAÇÃO
-                this.container.insertAdjacentHTML('beforeend', `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;"></div>`);
+                // --- MOSTRAR TUDO DE UMA VEZ (SEM PAGINAÇÃO) ---
+                const html = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
+                    <div class="grid-products-row">
+                        ${products.map(p => App.buildCard(p)).join('')}
+                    </div>
+                </div>`;
                 
-                App.setupPagination(sectionId, products, 'chat');
+                this.container.insertAdjacentHTML('beforeend', html);
                 
+                // SCROLL PARA O TOPO (TÍTULO) - NÃO PARA O FINAL
                 document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
             },
             askRemovalConfirmation() {
@@ -1057,8 +1087,9 @@
 
         const App = {
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [], appliedCoupon: false,
-            // Armazena dados de paginação
             paginationStore: {},
+            hasWarnedOverBudget: false, // FLAG DE AVISO
+            
             async init() {
                 try {
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
@@ -1189,7 +1220,6 @@
                 // Append to grid
                 let grid = document.querySelector(`#${sectionId} .grid-products-row`);
                 if(!grid) {
-                    // Create grid if not exists (first run)
                     const container = document.getElementById(sectionId);
                     container.insertAdjacentHTML('beforeend', `<div class="grid-products-row"></div>`);
                     grid = container.querySelector('.grid-products-row');
@@ -1215,7 +1245,6 @@
 
                 // Scroll Minimal (if not initial)
                 if(!isInitial) {
-                    // Find the first new element added
                     const children = grid.children;
                     const firstNew = children[children.length - batch.length];
                     if(firstNew) {
@@ -1240,7 +1269,6 @@
                         // ID unique for this section
                         const sectionId = `home-sec-${p.id}`;
                         
-                        // Just setup structure, content comes from pagination init
                         setTimeout(() => App.setupPagination(sectionId, validItems, 'home'), 0);
 
                         return `<div class="home-basket-card">
@@ -1255,12 +1283,12 @@
                 if(!basket) return;
 
                 if (!this.currentBasket || this.currentBasket.id !== id) {
-                    // RESET CHAT STATE
                     this.cart = {}; 
                     this.cartOrder = []; 
                     this.appliedCoupon = false;
                     ChatFlow.catIndex = 0;
                     ChatFlow.checkoutState = { paymentMethod: '', couponApplied: false };
+                    this.hasWarnedOverBudget = false; // Reset warning
                     
                     if(basket.items) {
                         basket.items.forEach(i => {
@@ -1282,7 +1310,6 @@
                 
                 window.scrollTo(0,0); 
                 
-                // Ensure Chat Starts Fresh if it's a new basket
                 ChatFlow.start();
                 this.saveState(); 
             },
@@ -1316,20 +1343,65 @@
                 for(let id in this.originalCart) { if (this.originalCart[id] > 0 && (!this.cart[id] || this.cart[id] === 0)) count++; }
                 return count;
             },
+            
+            // --- MODIFIED MODQTY FOR OVER BUDGET WARNING ---
             modQty(id, delta) {
                 const p = this.data.find(x => x.id === id);
                 if(!this.cart[id]) this.cart[id] = 0;
                 const isNew = this.cart[id] === 0, newQty = this.cart[id] + delta;
                 if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
                 if (this.originalCart[id] && delta < 0 && newQty === 0 && this.countRemovals() >= this.currentLimit) return alert(`Limite de ${this.currentLimit} trocas atingido.`);
+                
                 this.cart[id] = newQty;
                 if(this.cart[id] <= 0) { delete this.cart[id]; this.cartOrder = this.cartOrder.filter(x => x !== id); } 
                 else if (isNew) { this.cartOrder = this.cartOrder.filter(x => x !== id); this.cartOrder.unshift(id); }
+                
                 this.updateCardUI(id, newQty);
                 this.updateTotal();
+                
+                // CHECK OVER BUDGET (ONLY ON ADD)
+                if(delta > 0 && !this.hasWarnedOverBudget) {
+                    let currentSum = 0;
+                    for(let i in this.cart) { 
+                        const prod = this.data.find(x => x.id === i); 
+                        if(prod) currentSum += (prod.isOffer ? prod.offerPrice : prod.valor) * this.cart[i]; 
+                    }
+                    // Calculate effective total with base fee logic (simplified for check)
+                    let startSum = 0; 
+                    for(let i in this.originalCart) { 
+                        let prod = this.data.find(x => x.id === i); 
+                        if(prod) startSum += (prod.isOffer ? prod.offerPrice : prod.valor) * this.originalCart[i]; 
+                    }
+                    const baseFee = Math.max(0, this.currentBasket.valor - startSum);
+                    const total = currentSum + baseFee;
+
+                    if(total > this.currentBasket.valor) {
+                        this.hasWarnedOverBudget = true;
+                        this.showOverBudgetWarning(id);
+                    }
+                }
+
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 this.saveState(); 
             },
+            
+            showOverBudgetWarning(lastId) {
+                const overlay = document.getElementById('ob-modal-overlay');
+                const btnRemove = document.getElementById('ob-remove-btn');
+                const btnContinue = document.getElementById('ob-continue-btn');
+                
+                overlay.classList.add('visible');
+                
+                btnRemove.onclick = () => {
+                    this.modQty(lastId, -1); // Revert
+                    overlay.classList.remove('visible');
+                };
+                
+                btnContinue.onclick = () => {
+                    overlay.classList.remove('visible');
+                };
+            },
+
             updateCardUI(id, qty) {
                 const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
                 document.querySelectorAll(`[id="btn-add-${id}"]`).forEach(b => b.classList.toggle('hidden', qty > 0));
