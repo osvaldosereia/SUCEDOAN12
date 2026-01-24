@@ -5459,7 +5459,7 @@
       "custo": 4.75,
       "valor": 7.49,
       "batches": [],
-      "estoque": 12,
+      "estoque": 24,
       "estoqueFiscal": 12,
       "peso": 0,
       "limit": 0,
@@ -5494,7 +5494,21 @@
       "linkedProductCode": "LOCAO SKALA LAVANDA 400ML ",
       "comboItems": [],
       "imageSlug": "abs-intimus-com-abas-com-8un",
-      "hide_on_site": false
+      "hide_on_site": false,
+      "manualHistory": [
+        {
+          "date": "2026-01-24T01:35:27.390Z",
+          "type": "IN",
+          "qty": 12,
+          "reason": "CADASTRO DUPLICADO",
+          "user": "ADMIN"
+        }
+      ],
+      "varNome": [],
+      "varEan": [],
+      "expiryDate": "",
+      "entryHistory": [],
+      "salesHistory": []
     },
     {
       "id": "1768682407149995",
@@ -6447,10 +6461,10 @@
       "categoria": "CUIDADOS PESSOAIS > MANICURE",
       "fornecedor": "CASA DOMINGOS",
       "caracteristicas": "",
-      "custo": 1.9833,
+      "custo": 1.98,
       "valor": 3.5,
       "batches": [],
-      "estoque": 6,
+      "estoque": 0,
       "estoqueFiscal": 6,
       "peso": 0.05,
       "limit": 1,
@@ -6485,7 +6499,21 @@
       "linkedProductCode": "",
       "comboItems": [],
       "imageSlug": "lixa-enox-unha-6un",
-      "hide_on_site": false
+      "hide_on_site": true,
+      "manualHistory": [
+        {
+          "date": "2026-01-24T01:42:04.062Z",
+          "type": "OUT",
+          "qty": 6,
+          "reason": "ANALISE",
+          "user": "ADMIN"
+        }
+      ],
+      "varNome": [],
+      "varEan": [],
+      "expiryDate": "",
+      "entryHistory": [],
+      "salesHistory": []
     },
     {
       "id": "1768681442963565",
@@ -12175,65 +12203,6 @@
       "manualHistory": []
     },
     {
-      "id": "mkpexz420.004531884609224379",
-      "codigo": "P214",
-      "nome": "ABS INTIMUS GEL NORMAL COM ABAS SECA 8UN",
-      "ean": "07896007540631",
-      "categoria": "CUIDADOS PESSOAIS > INFANTIL E FEMININO",
-      "fornecedor": "",
-      "caracteristicas": "",
-      "custo": 4.35,
-      "valor": 6.9,
-      "batches": [
-        {
-          "date": "2026-01-20",
-          "qty": 12
-        }
-      ],
-      "estoque": 12,
-      "estoqueFiscal": 0,
-      "peso": 0,
-      "limit": 6,
-      "Limit": 6,
-      "imagem": "../site/img/produtos/abs-intimus-gel-normal-cabas-seca-8un-cesta-basica-cuiaba-varzea-grande.webp",
-      "items": [],
-      "personalized": false,
-      "isOffer": false,
-      "offerPrice": 0,
-      "variacoesNome": [],
-      "variacoesEan": [],
-      "ncm": "96190000",
-      "cest": "2005000",
-      "cfop": "5403",
-      "csosn": "",
-      "obs": "",
-      "subcategoria": "",
-      "nota": "",
-      "refId": "",
-      "fator": "",
-      "unidade": "UN",
-      "isCombo": false,
-      "Oferta": "Não",
-      "Valor_Oferta": 0,
-      "Categoria": "CUIDADOS PESSOAIS",
-      "Subcategoria": "INFANTIL E FEMININO",
-      "Mais_Vendido": "Não",
-      "Tem_Ligacao": "Não",
-      "Codigo_Produto_Ligado": "",
-      "limitQty": 6,
-      "isBestSeller": false,
-      "linkedProductCode": "",
-      "comboItems": [],
-      "imageSlug": "abs-intimus-gel-normal-cabas-seca-8un",
-      "hide_on_site": false,
-      "varNome": [],
-      "varEan": [],
-      "expiryDate": "",
-      "entryHistory": [],
-      "salesHistory": [],
-      "manualHistory": []
-    },
-    {
       "id": "mkpexz430.4278560520991189",
       "codigo": "P215",
       "nome": "MISTURA CREME LEITE MOCOCA TP 200GR",
@@ -12737,13 +12706,13 @@
     {
       "id": "mkpexz450.9518188256642274",
       "codigo": "P224",
-      "nome": "ABS S LIVRE COM ABAS SUAVE LEVE 8 PAGUE 7",
+      "nome": "ABS SEMPRE LIVRE COM ABAS SUAVE LEVE 8 PAGUE 7",
       "ean": "7891010973483",
       "categoria": "CUIDADOS PESSOAIS > INFANTIL E FEMININO",
       "fornecedor": "",
       "caracteristicas": "",
       "custo": 3.26,
-      "valor": 4.99,
+      "valor": 5.49,
       "batches": [
         {
           "date": "2026-01-20",
@@ -17292,9 +17261,9 @@
       "id": "mkr6c0ec0.4845221850517053",
       "codigo": "P317",
       "ean": "7908787427351",
-      "nome": "ELASTICO DE CABELO ELASTANO BORBOLETA",
-      "custo": 0.75,
-      "valor": 1.9,
+      "nome": "ELASTICO DE CABELO ELASTANO BORBOLETA 5 UNIDADES",
+      "custo": 3.75,
+      "valor": 5.9,
       "estoque": 5,
       "unidade": "UN",
       "ncm": "96151900",
