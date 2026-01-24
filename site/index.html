@@ -145,7 +145,7 @@
         #customizer-view { padding-top: calc(var(--app-header-height) + 10px); padding-bottom: 100px; min-height: 100vh; background: #ffffff; }
         
         /* CHAT STYLES */
-        .chat-container { display: flex; flex-direction: column; gap: 20px; padding-bottom: 140px; }
+        .chat-container { display: flex; flex-direction: column; gap: 20px; padding-bottom: 40px; }
         .chat-msg { 
             background: #f1f5f9; padding: 16px; border-radius: 0 16px 16px 16px; 
             max-width: 90%; align-self: flex-start; color: #334155; line-height: 1.5; font-size: 0.95rem;
@@ -648,7 +648,7 @@
 
         const ChatFlow = {
             container: null,
-            categories: ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES", "CALÇADOS"],
+            categories: ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"],
             catIndex: 0,
             
             async start() {
@@ -687,6 +687,7 @@
                 this.scrollToBottom();
             },
             showBasketGrid() {
+                // Show grid but DO NOT scroll to bottom. 
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
                 const html = `<div class="grid-products-row" style="animation:fadeIn 0.5s ease forwards; padding-left:16px;">` + 
                     ids.map(id => {
@@ -702,18 +703,20 @@
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
+                // Keep view at start of list
                 this.container.scrollIntoView({ behavior: 'smooth', block: 'start' });
             },
             async handleRemovalYes(elemId) {
                 document.getElementById(elemId).remove();
-                this.addMessage("Sim, já retirei.");
+                this.addMessage("Sim, já retirei."); // User feedback
                 
+                // Calculate Credit
                 let startSum = 0; 
                 for(let i in App.originalCart) { 
                     let p = App.data.find(x => x.id === i); 
                     if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * App.originalCart[i]; 
                 }
-                
+                // Determine removed value
                 let removedVal = 0;
                 for(let id in App.originalCart) {
                     const diff = App.originalCart[id] - (App.cart[id] || 0);
@@ -736,34 +739,9 @@
                 }
 
                 document.getElementById('credit-chip').classList.add('visible');
-                App.updateTotal(); 
+                App.updateTotal(); // Update chip val
                 
                 await this.wait(1000);
-                this.offerStep(); // INICIA A ETAPA DE OFERTAS
-            },
-            async offerStep() {
-                const id = 'act-offers';
-                const html = `<div id="${id}" class="chat-actions" style="margin-left:16px;">
-                     <div style="width:100%; margin-bottom:5px;">Antes de irmos para as seções, posso te mostrar as <strong>Ofertas do Dia</strong>?</div>
-                     <button class="btn-chat primary" onclick="ChatFlow.showOffers('${id}')">Ver Ofertas</button>
-                     <button class="btn-chat" onclick="ChatFlow.skipOffers('${id}')">Pular</button>
-                </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom();
-            },
-            async showOffers(elemId) {
-                document.getElementById(elemId).remove();
-                this.addMessage("Ver Ofertas");
-                await this.showTyping();
-
-                const products = App.data.filter(p => p.isOffer);
-                this.renderChatGrid(products, "#d31a28", "OFERTAS ESPECIAIS");
-                
-                await this.wait(2000);
-                this.askNextCategory();
-            },
-            skipOffers(elemId) {
-                document.getElementById(elemId).remove();
                 this.askNextCategory();
             },
             async askNextCategory() {
@@ -777,7 +755,7 @@
                 const niceName = App.toSmartTitleCase(catName);
                 const id = 'act-' + this.catIndex;
                 const html = `<div id="${id}" class="chat-actions" style="margin-left:16px;">
-                     <div style="width:100%; margin-bottom:5px;">Que tal dar uma olhada em <strong>${niceName}</strong>?</div>
+                     <div style="width:100%; margin-bottom:5px;">Gostaria de ver itens de <strong>${niceName}</strong>?</div>
                      <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
                      <button class="btn-chat" onclick="ChatFlow.skipCategory('${id}')">Não, próximo</button>
                      <button class="btn-chat" onclick="App.openCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
@@ -787,30 +765,25 @@
             },
             async showCategory(elemId, catName) {
                 document.getElementById(elemId).remove();
-                this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`);
+                this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`); // User echo
                 
                 await this.showTyping();
                 
+                // Render Grid for Cat
                 const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
-                const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
+                const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b"];
                 const color = colors[this.catIndex % colors.length];
                 
-                this.renderChatGrid(products, color, App.toSmartTitleCase(catName));
-                
-                this.catIndex++;
-                await this.wait(2000); 
-                this.askNextCategory();
-            },
-            renderChatGrid(products, color, title) {
                 if(products.length > 0) {
-                     const initialLimit = 6;
+                     // Limit Logic reused
+                     const initialLimit = 4;
                      const hasMore = products.length > initialLimit;
                      const visibleItems = products.slice(0, initialLimit);
                      const hiddenItems = products.slice(initialLimit);
-                     const sectionId = `chat-sec-${Date.now()}`;
+                     const sectionId = `chat-sec-${this.catIndex}`;
 
                      const html = `<div class="subcat-section" style="padding-left:16px;">
-                        <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${title}</span></div>
+                        <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${App.toSmartTitleCase(catName)}</span></div>
                         <div class="grid-products-row">
                             ${visibleItems.map(p => App.buildCard(p)).join('')}
                             ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
@@ -823,6 +796,10 @@
                 } else {
                     this.addMessage("Não encontrei itens nesta categoria hoje.");
                 }
+                
+                this.catIndex++;
+                await this.wait(2000); // Give time to look
+                this.askNextCategory();
             },
             skipCategory(elemId) {
                 document.getElementById(elemId).remove();
@@ -853,7 +830,6 @@
                         else if (mainCat.includes('CAFÉ') || mainCat.includes('MATINAIS')) appCat = "CAFÉ DA MANHÃ E LANCHES";
                         else if (mainCat.includes('LIMPEZA') || mainCat.includes('LAVANDERIA')) appCat = "LIMPEZA E LAVANDERIA";
                         else if (mainCat.includes('HIGIENE') || mainCat.includes('PESSOAL')) appCat = "CUIDADOS PESSOAIS";
-                        else if (mainCat.includes('CALÇADO')) appCat = "CALÇADOS";
                         
                         let imgUrl = 'img/placeholder.jpg';
                         if(p.imagem) imgUrl = `img/produtos/${p.imagem.split('/').pop()}`;
@@ -891,7 +867,7 @@
                                     document.getElementById('customizer-view').classList.remove('hidden');
                                     document.body.classList.add('customizer-mode');
                                     document.getElementById('rm-limit-info').innerText = this.currentLimit;
-                                    ChatFlow.start();
+                                    ChatFlow.start(); // START CHAT
                                     document.body.classList.add('loaded'); MarketingApp.init();
                                     return; 
                                 }
@@ -928,32 +904,18 @@
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 if (baskets.length > 0) {
                     list.innerHTML = baskets.map(p => {
-                        let productsGrid = '';
+                        const carouselId = `home-scroll-${p.id}`;
+                        let carouselHtml = '';
                         if (p.items && p.items.length > 0) {
-                            let validItems = [];
-                            p.items.forEach(i => {
+                            carouselHtml = `<div class="hbc-carousel-box"><div class="scroll-btn left" onclick="document.getElementById('${carouselId}').scrollBy({left: -200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg></div><div class="hbc-carousel-wrapper" id="${carouselId}">` + 
+                            p.items.map(i => {
                                 const d = this.data.find(x => x.id === String(i.id));
-                                if(d) validItems.push({d, qty:i.qty});
-                            });
-                            
-                            const initialLimit = 6; 
-                            const hasMore = validItems.length > initialLimit;
-                            const visibleItems = validItems.slice(0, initialLimit);
-                            const hiddenItems = validItems.slice(initialLimit);
-                            const sectionId = `home-sec-${p.id}`;
-
-                            productsGrid = `<div class="grid-products-row">
-                                ${visibleItems.map(obj => `<div class="card-prod-static"><div class="cps-img-box"><img src="${obj.d.imagem}" class="cps-img" loading="lazy" width="100" height="100" alt="${obj.d.nome.replace(/"/g, '"')}"></div><div class="cps-qty-text">${obj.qty} Unid.</div><div class="cps-sep"></div><div class="cps-name">${obj.d.nome}</div></div>`).join('')}
-                                ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
-                                    ${hiddenItems.map(obj => `<div class="card-prod-static"><div class="cps-img-box"><img src="${obj.d.imagem}" class="cps-img" loading="lazy" width="100" height="100" alt="${obj.d.nome.replace(/"/g, '"')}"></div><div class="cps-qty-text">${obj.qty} Unid.</div><div class="cps-sep"></div><div class="cps-name">${obj.d.nome}</div></div>`).join('')}
-                                </div>` : ''}
-                            </div>
-                            ${hasMore ? `<div id="btn-${sectionId}" class="btn-load-more" onclick="document.getElementById('more-${sectionId}').style.display='contents'; this.style.display='none';">Ver mais ${hiddenItems.length} produtos</div>` : ''}`;
+                                return d ? `<div class="card-prod-static"><div class="cps-img-box"><img src="${d.imagem}" class="cps-img" loading="lazy" width="100" height="100" alt="${d.nome.replace(/"/g, '"')}"></div><div class="cps-qty-text">${i.qty} Unid.</div><div class="cps-sep"></div><div class="cps-name">${d.nome}</div></div>` : '';
+                            }).join('') + `</div><div class="scroll-btn right" onclick="document.getElementById('${carouselId}').scrollBy({left: 200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></div></div>`;
                         }
-                        
                         return `<div class="home-basket-card">
                             <div class="hbc-header"><div class="hbc-text-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-subtitle">Ítens e Quantidades</div></div><img src="${p.imagem}" class="hbc-thumb-mini" onclick="App.openPhoto('${p.imagem}', '${p.nome}')" alt="Foto"></div>
-                            ${productsGrid}
+                            ${carouselHtml}
                             <div class="hbc-footer"><div class="hbc-price-row"><div><span class="hbc-price-label">Valor da Cesta</span><span class="hbc-price-val">R$ ${p.valor.toFixed(2).replace('.',',')}</span></div></div><button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button><button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar a Cesta Normal</button></div></div>`;
                     }).join('');
                 }
@@ -985,6 +947,7 @@
                 document.getElementById('rm-limit-info').innerText = this.currentLimit;
                 window.scrollTo(0,0); 
                 
+                // START CHAT FLOW INSTEAD OF RENDER ALL
                 ChatFlow.start();
                 this.saveState(); 
             },
@@ -997,7 +960,8 @@
                 if(this.data.length > 0) this.renderHome();
             },
             renderAllLists(filter = null) {
-                const container = document.getElementById('chat-stream'); 
+                // Not used in chat mode, but kept for search compatibility if needed
+                const container = document.getElementById('chat-stream'); // Use chat stream
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 if (filter && filter.length > 1) {
                     products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
@@ -1113,34 +1077,27 @@
                 document.getElementById('co-total').innerText = txtTotal;
                 document.getElementById('cart-count-badge').innerText = count;
 
-                // Update Chip & Enforce Obliged Products Rule
+                // Update Chip
                 const chipBtn = document.querySelector('.ccb-btn');
                 const chipLabel = document.getElementById('ccb-label');
                 const chipVal = document.getElementById('ccb-val');
                 
                 if (basketPrice > effectiveTotal) {
-                    // HAS CREDIT - Cannot finalize yet
+                    // Has Credit
                     const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
                     toast.innerText = `Você tem R$ ${diff} em crédito!`; toast.classList.add('visible');
                     document.getElementById('mca-val').innerText = diff; mAlert.classList.remove('hidden');
                     
-                    if(chipBtn) {
-                        chipBtn.innerText = "Adicionar Itens";
-                        // Opens Modal but will be blocked there, or we can just dismiss sheet to let them shop
-                        chipBtn.onclick = function() { App.openCheckout(); }; 
-                    }
-                    if(chipLabel) chipLabel.innerText = "Crédito Disponível";
+                    if(chipBtn) chipBtn.innerText = "Adicionar Mais";
+                    if(chipLabel) chipLabel.innerText = "Seu Crédito";
                     if(chipVal) { chipVal.innerText = `R$ ${diff}`; chipVal.style.color = "#4ade80"; }
 
                     if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Adicione produtos para usar seu crédito"; finalBtn.style.background = "#ccc"; }
                 } else {
-                    // PAYING EXTRA or EQUAL - Can finalize
+                    // Excess or Equal
                     toast.classList.remove('visible'); mAlert.classList.add('hidden');
                     
-                    if(chipBtn) {
-                        chipBtn.innerText = "Finalizar Pedido";
-                        chipBtn.onclick = function() { App.openCheckout(); };
-                    }
+                    if(chipBtn) chipBtn.innerText = "Finalizar Pedido";
                     if(chipLabel) chipLabel.innerText = "Total a Pagar";
                     if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
 
