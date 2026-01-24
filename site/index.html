@@ -832,7 +832,6 @@
                 const niceName = App.toSmartTitleCase(catName);
                 const id = 'act-' + this.catIndex;
                 
-                this.addMessage(`Que tal dar uma olhada em <strong>${niceName}</strong>?`);
 
                 const html = `<div id="${id}" class="chat-actions">
                      <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
