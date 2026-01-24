@@ -830,6 +830,8 @@
                      <button class="btn-chat" onclick="ChatFlow.skipOffers('${id}')">Pular</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
+                          this.scrollToBottom();
+
             },
 
             async showOffers(elemId) {
