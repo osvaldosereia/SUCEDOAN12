@@ -2,473 +2,641 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="Dona Antônia - Cestas Básicas Inteligentes">
     <meta name="theme-color" content="#ffffff">
-    <title>Dona Antônia | Cestas</title>
+    <title>Dona Antônia | Personalizar</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <style>
-        /* --- RESET & VARS --- */
+        /* --- 1. DESIGN SYSTEM & RESET --- */
         :root {
-            --primary: #d31a28;
-            --text: #1a1a1a;
-            --gray-light: #f5f5f5;
-            --gray-med: #e0e0e0;
-            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --primary: #d31a28;        /* Vermelho Marca */
+            --primary-dark: #b91c1c;
+            --accent: #22c55e;         /* Verde Sucesso/Zap */
+            --bg-app: #ffffff;
+            --bg-sec: #f8f9fa;
+            --text-main: #1f2937;
+            --text-sec: #6b7280;
+            --border: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --header-h: 60px;
         }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { margin: 0; padding: 0; font-family: var(--font-main); color: var(--text); background: #fff; }
-        img { max-width: 100%; display: block; }
-        button { border: none; background: none; font-family: inherit; cursor: pointer; }
+        
+        body {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-app); color: var(--text-main);
+            font-size: 16px; line-height: 1.5;
+            overflow-x: hidden;
+        }
 
-        /* --- UI COMPONENTS --- */
-        .container { max-width: 600px; margin: 0 auto; padding: 0 16px; position: relative; }
+        /* Utilitários */
         .hidden { display: none !important; }
-        
-        /* Cabeçalho Minimalista */
-        header { 
-            position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); 
-            backdrop-filter: blur(10px); border-bottom: 1px solid var(--gray-light); height: 60px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .logo { font-weight: 800; font-size: 1.2rem; color: var(--text); letter-spacing: -0.5px; }
-        
-        /* Botão Flutuante de Cesta (Chat) */
-        .cart-float {
-            position: absolute; right: 16px; top: 12px; background: var(--gray-light);
-            padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
-            display: flex; align-items: center; gap: 6px; transition: 0.2s;
-        }
-        .cart-float.active { background: var(--primary); color: white; }
+        .container { max-width: 600px; margin: 0 auto; padding: 0 16px; position: relative; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+        img { display: block; max-width: 100%; }
 
-        /* --- HOME --- */
-        #view-home { padding: 30px 0 60px; }
-        .hero-txt { text-align: center; margin-bottom: 30px; }
-        .hero-txt h1 { font-size: 1.5rem; margin-bottom: 8px; letter-spacing: -0.5px; }
-        .hero-txt p { color: #666; font-size: 0.95rem; }
+        /* --- 2. COMPONENTES UI --- */
 
-        .basket-grid { display: grid; gap: 24px; }
-        .basket-item { 
-            border-radius: 16px; overflow: hidden; background: #fff; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06); transition: transform 0.2s;
+        /* Header Fixo */
+        .app-header {
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border); z-index: 1000;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; max-width: 600px; margin: 0 auto;
         }
-        .basket-item:active { transform: scale(0.98); }
-        .bi-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: var(--gray-light); }
-        .bi-info { padding: 20px; }
-        .bi-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
-        .bi-price { font-size: 1.3rem; color: var(--primary); font-weight: 700; margin-bottom: 15px; }
+        .logo { font-weight: 800; font-size: 1.1rem; color: var(--text-main); letter-spacing: -0.5px; }
         
-        .bi-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; text-align: center; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-outline { border: 2px solid var(--gray-med); color: var(--text); }
+        /* Botão Carrinho (Pílula) */
+        .cart-pill {
+            background: var(--bg-sec); border: 1px solid var(--border);
+            padding: 6px 12px; border-radius: 20px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.85rem; font-weight: 700; transition: all 0.2s;
+        }
+        .cart-pill.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .cart-pill span { font-variant-numeric: tabular-nums; }
 
-        /* --- CHAT FLOW --- */
-        #view-chat { 
-            position: fixed; inset: 0; background: #fff; z-index: 200; 
-            display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-        #view-chat.open { transform: translateX(0); }
+        /* --- 3. VIEW: HOME (Lista de Cestas) --- */
+        #view-home { padding-top: calc(var(--header-h) + 20px); padding-bottom: 60px; }
         
-        .chat-scroll { flex: 1; overflow-y: auto; padding: 20px 0 80px; scroll-behavior: smooth; }
+        .hero { text-align: center; margin-bottom: 30px; }
+        .hero h1 { font-size: 1.6rem; margin-bottom: 8px; line-height: 1.2; letter-spacing: -0.5px; }
+        .hero p { color: var(--text-sec); font-size: 0.95rem; }
+
+        .basket-card {
+            background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+            overflow: hidden; margin-bottom: 24px;
+            box-shadow: var(--shadow-sm); transition: transform 0.2s;
+        }
+        .basket-card:active { transform: scale(0.98); }
+        .bc-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: var(--bg-sec); }
+        .bc-content { padding: 20px; }
+        .bc-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+        .bc-price { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 16px; }
+        
+        .bc-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; }
+        .btn {
+            padding: 14px; border-radius: 10px; font-weight: 700; font-size: 0.95rem;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-sec { background: var(--bg-sec); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-pri { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(211, 26, 40, 0.25); }
+
+        /* --- 4. VIEW: FLOW (Chat/Personalizador) --- */
+        #view-flow {
+            position: fixed; inset: 0; background: #fff; z-index: 2000;
+            display: flex; flex-direction: column;
+            transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        #view-flow.active { transform: translateX(0); }
+
+        .flow-content { flex: 1; overflow-y: auto; padding: 20px 0 100px; scroll-behavior: smooth; }
         
         /* Mensagens do Robô */
-        .msg-bot { 
-            margin: 15px 16px; font-size: 1.05rem; line-height: 1.5; color: #333; 
-            animation: slideIn 0.3s ease;
+        .msg-bot {
+            max-width: 90%; margin: 10px 16px 20px;
+            font-size: 1.1rem; color: var(--text-main); line-height: 1.4;
+            animation: fadeIn 0.4s ease;
         }
-        .msg-bot strong { color: var(--primary); }
-        @keyframes slideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .msg-bot strong { color: var(--primary); font-weight: 700; }
 
-        /* Botões de Resposta (Inline) */
-        .options-group { 
-            display: flex; flex-wrap: wrap; gap: 10px; padding: 0 16px; margin-bottom: 30px; 
-            animation: fadeIn 0.5s ease;
-        }
-        .btn-opt {
-            flex: 1 1 45%; padding: 16px; background: #fff; border: 1px solid var(--gray-med);
-            border-radius: 12px; font-weight: 600; color: #444; text-align: left;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: all 0.2s;
-        }
-        .btn-opt.highlight { background: var(--text); color: white; border-color: var(--text); }
-        .btn-opt:active { transform: scale(0.97); }
+        /* Typing Indicator */
+        .typing { display: flex; gap: 4px; padding: 0 16px; margin-bottom: 15px; }
+        .dot { width: 8px; height: 8px; background: #ccc; border-radius: 50%; animation: bounce 1.4s infinite; }
+        .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-        /* GRID PRODUTOS (Minimalista) */
-        .chat-products {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
-            padding: 10px 16px 20px; animation: slideIn 0.4s ease;
+        /* Grid de Produtos (Minimalista) */
+        .prod-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+            padding: 0 16px 24px; animation: slideUp 0.4s ease;
         }
-        .prod-card { position: relative; }
-        .pc-img-box { 
-            background: var(--gray-light); border-radius: 12px; aspect-ratio: 1; 
-            margin-bottom: 8px; position: relative; overflow: hidden;
+        .prod-card {
+            position: relative; display: flex; flex-direction: column;
+        }
+        .pc-img-box {
+            position: relative; aspect-ratio: 1; background: var(--bg-sec);
+            border-radius: var(--radius); overflow: hidden; margin-bottom: 8px;
         }
         .pc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        
-        /* Controles de Qtd */
-        .pc-ctrl {
-            position: absolute; bottom: 8px; right: 8px; background: white;
-            border-radius: 20px; display: flex; align-items: center; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
-        }
-        .pc-btn { width: 32px; height: 32px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; color: var(--primary); }
-        .pc-val { font-weight: 700; font-size: 0.9rem; min-width: 20px; text-align: center; }
-        
-        /* Quando qty = 0, mostra só botão + */
-        .pc-add-btn {
-            position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px;
-            background: white; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.5rem;
+        .pc-tag {
+            position: absolute; top: 6px; left: 6px; background: #fee2e2; color: #991b1b;
+            font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
         }
 
-        .pc-name { font-size: 0.85rem; line-height: 1.2; color: #444; margin-bottom: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        .pc-price { font-weight: 700; font-size: 0.95rem; color: var(--text); }
-        .pc-price small { color: #999; text-decoration: line-through; font-weight: 400; font-size: 0.8rem; margin-right: 4px; }
+        .pc-info { flex: 1; display: flex; flex-direction: column; }
+        .pc-title { font-size: 0.85rem; line-height: 1.25; color: #374151; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .pc-price { font-weight: 700; font-size: 1rem; color: var(--text-main); margin-top: auto; }
+        .pc-price s { font-size: 0.75rem; color: #9ca3af; font-weight: 400; margin-right: 4px; }
 
-        /* --- MODAL CARRINHO --- */
+        /* Botões de Controle (+/-) */
+        .pc-action { position: absolute; bottom: 8px; right: 8px; }
+        
+        .btn-add {
+            width: 36px; height: 36px; border-radius: 50%; background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: var(--primary); transition: transform 0.1s;
+        }
+        .btn-add:active { transform: scale(0.9); }
+
+        .qty-ctrl {
+            display: flex; align-items: center; background: #fff; border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12); height: 36px; border: 1px solid var(--border); overflow: hidden;
+        }
+        .qc-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--primary); }
+        .qc-val { font-weight: 700; font-size: 0.9rem; min-width: 24px; text-align: center; }
+
+        /* Botões de Resposta (Footer) */
+        .flow-actions {
+            background: #fff; padding: 16px; border-top: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .btn-opt {
+            width: 100%; padding: 16px; background: var(--bg-sec); border: 1px solid var(--border);
+            border-radius: var(--radius); text-align: left; font-weight: 600; color: var(--text-main);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .btn-opt.highlight { background: var(--text-main); color: #fff; border-color: var(--text-main); }
+        .btn-opt:active { transform: scale(0.98); }
+
+        /* --- 5. MODAL: CARRINHO --- */
         dialog {
-            width: 100%; max-width: 500px; border: none; border-radius: 20px 20px 0 0;
-            padding: 0; position: fixed; bottom: 0; margin: 0 auto;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s;
+            margin: 0; padding: 0; border: none; width: 100%; max-width: 600px;
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+            border-radius: 24px 24px 0 0; background: #fff;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.2); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 5000;
         }
-        dialog::backdrop { background: rgba(0,0,0,0.5); }
-        @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        dialog[open] { transform: translateX(-50%) translateY(0); }
+        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+
+        .cart-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .cart-title { font-size: 1.2rem; font-weight: 800; }
         
-        .modal-head { padding: 20px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--gray-light); font-weight: 700; font-size: 1.1rem; }
-        .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
-        .modal-foot { padding: 20px; border-top: 1px solid var(--gray-light); background: #f9f9f9; }
+        .cart-body { max-height: 50vh; overflow-y: auto; padding: 20px; }
+        .cart-item { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
         
-        .cart-line { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; }
-        .total-row { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+        .cart-footer { padding: 20px; background: var(--bg-sec); border-top: 1px solid var(--border); }
+        .cart-total { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: 800; margin-bottom: 15px; }
         
-        select { width: 100%; padding: 12px; border: 1px solid var(--gray-med); border-radius: 8px; margin-top: 5px; font-size: 1rem; background: white; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; color: var(--text-sec); }
+        .form-select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 1rem; margin-bottom: 15px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<div class="container" id="view-home">
-    <header style="margin-bottom:20px; border:none; background:transparent;">
-        <div class="logo">Dona Antônia</div>
-    </header>
-    
-    <div class="hero-txt">
-        <h1>Cestas Básicas & Mercado</h1>
-        <p>Praticidade para sua casa. Pague só na entrega.</p>
-    </div>
+    <div id="view-home">
+        <header class="app-header">
+            <div class="logo">Dona Antônia</div>
+            <div style="width:24px"></div> </header>
 
-    <div class="basket-grid" id="home-list">
-        </div>
-</div>
-
-<div id="view-chat">
-    <header>
-        <button onclick="Chat.close()" style="position:absolute; left:16px; font-size:1.5rem;">✕</button>
-        <div class="logo">Personalizar</div>
-        <button class="cart-float" onclick="App.openCart()">
-            🛒 <span id="cart-total">R$ 0,00</span>
-        </button>
-    </header>
-
-    <div class="chat-scroll" id="chat-feed">
-        </div>
-</div>
-
-<dialog id="modal-cart">
-    <div class="modal-head">
-        Sua Lista <button onclick="document.getElementById('modal-cart').close()">✕</button>
-    </div>
-    <div class="modal-body" id="cart-list"></div>
-    <div class="modal-foot">
-        <div class="total-row">
-            <span>Total</span> <span id="modal-total" style="color:var(--primary)">R$ 0,00</span>
-        </div>
-        <div style="margin-bottom:15px">
-            <label style="font-size:0.85rem; font-weight:600;">Forma de Pagamento:</label>
-            <select id="pay-method">
-                <option>Pix na Entrega</option>
-                <option>Dinheiro</option>
-                <option>Cartão Crédito/Débito</option>
-                <option>Vale Alimentação</option>
-            </select>
-        </div>
-        <button class="btn btn-primary" style="width:100%" onclick="App.sendZap()">Confirmar Pedido</button>
-    </div>
-</dialog>
-
-<script>
-// DADOS DE CATEGORIAS (Ordem de Condução)
-const CATEGORY_FLOW = [
-    { key: 'MERCEARIA E ALIMENTOS', label: 'Mercearia e Alimentos' },
-    { key: 'CAFÉ DA MANHÃ E LANCHES', label: 'Café da Manhã' },
-    { key: 'LIMPEZA E LAVANDERIA', label: 'Limpeza' },
-    { key: 'CUIDADOS PESSOAIS', label: 'Higiene e Pessoal' },
-    { key: 'BAZAR E UTILIDADES', label: 'Utilidades' }
-];
-
-const App = {
-    data: [],
-    cart: {},
-    currentBasket: null,
-
-    async init() {
-        try {
-            const req = await fetch('produtos/produtos.json?v=' + Date.now());
-            const json = await req.json();
-            const raw = json.produtos || json;
-            
-            // Tratamento e Mapeamento
-            this.data = raw.map(p => ({
-                ...p,
-                id: String(p.id),
-                valor: parseFloat(p.valor || 0),
-                offerPrice: parseFloat(p.Valor_Oferta || 0),
-                isOffer: p.Oferta === 'Sim',
-                catMain: this.getCategoryRoot(p.categoria || ""),
-                imagem: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg'
-            }));
-
-            this.renderHome();
-        } catch(e) { alert("Erro ao carregar produtos."); console.error(e); }
-    },
-
-    getCategoryRoot(catStr) {
-        const c = catStr.toUpperCase();
-        // Mapeamento baseado na sua lista
-        if (c.includes('MERCEARIA') || c.includes('ALIMENTOS')) return 'MERCEARIA E ALIMENTOS';
-        if (c.includes('CAFÉ') || c.includes('LANCHES')) return 'CAFÉ DA MANHÃ E LANCHES';
-        if (c.includes('LIMPEZA') || c.includes('LAVANDERIA')) return 'LIMPEZA E LAVANDERIA';
-        if (c.includes('CUIDADOS') || c.includes('PESSOAIS')) return 'CUIDADOS PESSOAIS';
-        if (c.includes('BAZAR') || c.includes('UTILIDADES')) return 'BAZAR E UTILIDADES';
-        return 'OUTROS';
-    },
-
-    renderHome() {
-        const grid = document.getElementById('home-list');
-        const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
-        
-        grid.innerHTML = baskets.map(b => `
-            <div class="basket-item">
-                <img src="${b.imagem}" class="bi-img" loading="lazy">
-                <div class="bi-info">
-                    <div class="bi-title">${b.nome}</div>
-                    <div class="bi-price">R$ ${b.valor.toFixed(2).replace('.',',')}</div>
-                    <div class="bi-actions">
-                        <button class="btn btn-outline" onclick="App.directOrder('${b.id}')">Pedir Direto</button>
-                        <button class="btn btn-primary" onclick="Chat.start('${b.id}')">Personalizar</button>
-                    </div>
-                </div>
+        <div class="container">
+            <div class="hero">
+                <h1>Cestas Básicas<br>Sem Complicação</h1>
+                <p>Escolha, personalize e receba em casa.</p>
             </div>
-        `).join('');
-    },
+            <div id="basket-list">
+                <div style="text-align:center; padding:40px; color:#999">Carregando produtos...</div>
+            </div>
+        </div>
+    </div>
 
-    modQty(id, delta) {
-        if(!this.cart[id]) this.cart[id] = 0;
-        this.cart[id] += delta;
-        if(this.cart[id] <= 0) delete this.cart[id];
-        
-        this.updateTotals();
-        Chat.refreshGrids(id); // Atualiza grids visíveis no chat
-    },
+    <div id="view-flow">
+        <header class="app-header">
+            <button onclick="App.closeFlow()" style="font-size:1.5rem; padding:5px;">✕</button>
+            <div class="logo">Personalizar</div>
+            <button class="cart-pill" onclick="App.openCart()">
+                🛒 <span id="cart-total-display">R$ 0,00</span>
+            </button>
+        </header>
 
-    updateTotals() {
-        let total = 0, count = 0;
-        for(let id in this.cart) {
-            const p = this.data.find(x => x.id === id);
-            if(p) {
-                total += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
-                count += this.cart[id];
-            }
-        }
-        
-        // Atualiza UI
-        const txt = "R$ " + total.toFixed(2).replace('.',',');
-        document.getElementById('cart-total').innerText = txt;
-        document.getElementById('modal-total').innerText = txt;
-        
-        const btn = document.querySelector('.cart-float');
-        if(count > 0) btn.classList.add('active'); else btn.classList.remove('active');
-        
-        return total;
-    },
+        <div class="flow-content" id="flow-feed">
+            </div>
 
-    openCart() {
-        const list = document.getElementById('cart-list');
-        list.innerHTML = Object.keys(this.cart).length === 0 
-            ? '<p style="text-align:center; color:#999">Cesta vazia.</p>'
-            : Object.keys(this.cart).map(id => {
-                const p = this.data.find(x => x.id === id);
-                const price = p.isOffer ? p.offerPrice : p.valor;
+        </div>
+
+    <dialog id="modal-cart">
+        <div class="cart-header">
+            <span class="cart-title">Seu Pedido</span>
+            <button onclick="document.getElementById('modal-cart').close()" style="font-size:1.5rem">✕</button>
+        </div>
+        <div class="cart-body" id="cart-items"></div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total</span>
+                <span id="modal-total-val" style="color:var(--primary)">R$ 0,00</span>
+            </div>
+            <div class="form-group">
+                <label>Como prefere pagar na entrega?</label>
+                <select class="form-select" id="pay-method">
+                    <option value="Pix">Pix (Na hora)</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Vale Alimentação">Vale Alimentação</option>
+                </select>
+            </div>
+            <button class="btn btn-pri" style="width:100%" onclick="App.checkout()">
+                Confirmar no WhatsApp ➡
+            </button>
+        </div>
+    </dialog>
+
+    <script>
+        // CONFIGURAÇÃO DO FLUXO (WIZARD)
+        // Define exatamente a ordem que o "Robô" vai apresentar as subcategorias
+        const FLOW_STEPS = [
+            { id: 'start', title: 'Itens da Cesta', type: 'basket_review' },
+            // Mercearia
+            { id: 'graos', title: 'Arroz, Feijão e Óleo', category: 'MERCEARIA E ALIMENTOS', sub: 'ARROZ, FEIJÃO E ÓLEO' },
+            { id: 'massas', title: 'Massas e Molhos', category: 'MERCEARIA E ALIMENTOS', sub: 'MASSAS E MOLHOS' },
+            { id: 'temperos', title: 'Culinária e Temperos', category: 'MERCEARIA E ALIMENTOS', sub: 'CULINÁRIA E TEMPEROS' },
+            { id: 'conservas', title: 'Conservas e Enlatados', category: 'MERCEARIA E ALIMENTOS', sub: 'CONSERVAS E ENLATADOS' },
+            // Café da Manhã
+            { id: 'cafe', title: 'Café, Chás e Sucos', category: 'CAFÉ DA MANHÃ E LANCHES', sub: 'CAFÉ, CHÁS E SUCOS' },
+            { id: 'leites', title: 'Leites e Achocolatados', category: 'CAFÉ DA MANHÃ E LANCHES', sub: 'LEITES, CEREAIS E ACHOCOLATADOS' },
+            { id: 'biscoitos', title: 'Biscoitos e Snacks', category: 'CAFÉ DA MANHÃ E LANCHES', sub: 'BISCOITOS E SNACKS' },
+            // Limpeza
+            { id: 'roupas', title: 'Roupas e Lavanderia', category: 'LIMPEZA E LAVANDERIA', sub: 'ROUPAS E LAVANDERIA' },
+            { id: 'cozinha_limp', title: 'Cozinha e Banheiro', category: 'LIMPEZA E LAVANDERIA', sub: 'COZINHA E BANHEIRO' },
+            // Higiene
+            { id: 'banho', title: 'Banho e Higiene', category: 'CUIDADOS PESSOAIS', sub: 'BANHO E HIGIENE' },
+            { id: 'pessoal', title: 'Cuidados Pessoais', category: 'CUIDADOS PESSOAIS', sub: 'CUIDADOS E ESTÉTICA' },
+            // Fim
+            { id: 'end', title: 'Finalizar', type: 'end' }
+        ];
+
+        const DonaAntoniaApp = {
+            data: [],
+            cart: {}, // { id: qtd }
+            activeBasket: null,
+            currentStepIndex: 0,
+
+            // Inicialização
+            async init() {
+                try {
+                    // Carrega JSON (usando o nome que você forneceu)
+                    const res = await fetch('produtos (10).json');
+                    // Fallback se o nome mudar
+                    if(!res.ok) throw new Error("Arquivo não encontrado");
+                    
+                    const json = await res.json();
+                    const rawProducts = json.produtos || json;
+
+                    // Tratamento e Limpeza de Dados
+                    this.data = rawProducts.map(p => ({
+                        id: String(p.id),
+                        name: p.nome.trim(),
+                        price: parseFloat(p.valor || 0),
+                        offerPrice: parseFloat(p.Valor_Oferta || 0),
+                        isOffer: p.Oferta === 'Sim',
+                        // Separa Categoria > Subcategoria
+                        catMain: (p.categoria || "").split('>')[0].trim().toUpperCase(),
+                        catSub: (p.categoria || "").split('>')[1] ? (p.categoria || "").split('>')[1].trim().toUpperCase() : "",
+                        image: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'https://via.placeholder.com/300?text=Sem+Foto'
+                    }));
+
+                    this.renderHome();
+                } catch (err) {
+                    console.error(err);
+                    // Tenta carregar o arquivo padrao se o (10) falhar
+                    fetch('produtos.json').then(r=>r.json()).then(json => {
+                        const raw = json.produtos || json;
+                        this.data = raw.map(p => ({
+                            id: String(p.id),
+                            name: p.nome.trim(),
+                            price: parseFloat(p.valor || 0),
+                            offerPrice: parseFloat(p.Valor_Oferta || 0),
+                            isOffer: p.Oferta === 'Sim',
+                            catMain: (p.categoria || "").split('>')[0].trim().toUpperCase(),
+                            catSub: (p.categoria || "").split('>')[1] ? (p.categoria || "").split('>')[1].trim().toUpperCase() : "",
+                            image: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'https://via.placeholder.com/300?text=Sem+Foto'
+                        }));
+                        this.renderHome();
+                    }).catch(e => alert("Erro ao carregar sistema. Verifique o arquivo produtos.json"));
+                }
+            },
+
+            // --- RENDERIZAÇÃO HOME ---
+            renderHome() {
+                const listEl = document.getElementById('basket-list');
+                const baskets = this.data.filter(p => p.catMain.includes('CESTA'));
+
+                listEl.innerHTML = baskets.map(b => `
+                    <div class="basket-card">
+                        <img src="${b.image}" class="bc-img" loading="lazy">
+                        <div class="bc-content">
+                            <div class="bc-title">${b.name}</div>
+                            <div class="bc-price">R$ ${b.price.toFixed(2).replace('.',',')}</div>
+                            <div class="bc-actions">
+                                <button class="btn btn-sec" onclick="App.directOrder('${b.id}')">
+                                    <span>⚡</span> Pedir Já
+                                </button>
+                                <button class="btn btn-pri" onclick="App.startFlow('${b.id}')">
+                                    <span>💬</span> Personalizar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            // --- LÓGICA DO CARRINHO ---
+            modQty(id, delta) {
+                if (!this.cart[id]) this.cart[id] = 0;
+                this.cart[id] += delta;
+                if (this.cart[id] <= 0) delete this.cart[id];
+                
+                this.updateCartUI();
+                this.refreshActiveGrids(id);
+            },
+
+            getCartMetrics() {
+                let total = 0, count = 0;
+                for (let id in this.cart) {
+                    const p = this.data.find(x => x.id === id);
+                    if (p) {
+                        const finalPrice = p.isOffer ? p.offerPrice : p.price;
+                        total += finalPrice * this.cart[id];
+                        count += this.cart[id];
+                    }
+                }
+                return { total, count };
+            },
+
+            updateCartUI() {
+                const { total, count } = this.getCartMetrics();
+                const text = `R$ ${total.toFixed(2).replace('.',',')}`;
+                
+                document.getElementById('cart-total-display').innerText = text;
+                document.getElementById('modal-total-val').innerText = text;
+                
+                const pill = document.querySelector('.cart-pill');
+                if (count > 0) pill.classList.add('active'); else pill.classList.remove('active');
+            },
+
+            // --- LÓGICA DO FLUXO (CHAT) ---
+            startFlow(basketId) {
+                this.activeBasket = this.data.find(x => x.id === basketId);
+                this.cart = {};
+                this.currentStepIndex = 0;
+
+                // Popula o carrinho inicial com os itens da cesta (se houver items no json)
+                // Assumindo que o JSON não tem a propriedade 'items' preenchida para todos,
+                // vamos iniciar zerado mas adicionar a própria cesta como item base se desejar, 
+                // ou apenas iniciar o fluxo. 
+                // A lógica anterior tentava ler basket.items. Vamos simplificar:
+                // Se a cesta tiver itens definidos no JSON, adiciona.
+                if(this.activeBasket.items && Array.isArray(this.activeBasket.items)) {
+                    this.activeBasket.items.forEach(i => {
+                        this.cart[String(i.id)] = parseInt(i.qty || 1);
+                    });
+                } else {
+                    // Se não tiver items definidos, adiciona a cesta em si como produto
+                    // OU assume que o usuário vai montar do zero.
+                    // Para este modelo "Personalizar", o ideal é começar com a cesta.
+                    this.cart[basketId] = 1;
+                }
+
+                this.updateCartUI();
+                
+                document.getElementById('view-flow').classList.add('active');
+                document.getElementById('flow-feed').innerHTML = ''; // Limpa chat
+                
+                this.renderStep();
+            },
+
+            closeFlow() {
+                if(confirm("Sair agora perderá sua cesta atual. Deseja sair?")) {
+                    document.getElementById('view-flow').classList.remove('active');
+                }
+            },
+
+            nextStep() {
+                this.currentStepIndex++;
+                if (this.currentStepIndex >= FLOW_STEPS.length) {
+                    this.openCart(); // Fim do fluxo
+                    return;
+                }
+                this.renderStep();
+            },
+
+            renderStep() {
+                const step = FLOW_STEPS[this.currentStepIndex];
+                const feed = document.getElementById('flow-feed');
+
+                // 1. Efeito de Digitação (Humanização)
+                const typing = document.createElement('div');
+                typing.className = 'typing';
+                typing.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+                feed.appendChild(typing);
+                feed.scrollTo(0, feed.scrollHeight);
+
+                // 2. Processa o passo após delay
+                setTimeout(() => {
+                    typing.remove();
+                    
+                    // Texto do Robô
+                    let msg = "";
+                    if (step.type === 'basket_review') {
+                        msg = `Oi! Você escolheu a <strong>${this.activeBasket.name}</strong>. Veja os itens inclusos e adicione mais coisas se quiser.`;
+                    } else if (step.type === 'end') {
+                        msg = `Prontinho! Vamos revisar seu pedido?`;
+                    } else {
+                        msg = `Vamos ver opções de <strong>${step.title}</strong>?`;
+                    }
+                    
+                    const msgEl = document.createElement('div');
+                    msgEl.className = 'msg-bot';
+                    msgEl.innerHTML = msg;
+                    feed.appendChild(msgEl);
+
+                    // 3. Renderiza Produtos (Se houver categoria)
+                    if (step.category) {
+                        const products = this.getProducts(step.category, step.sub);
+                        if (products.length > 0) {
+                            feed.appendChild(this.createProductGrid(products));
+                        } else {
+                            // Se não tiver produtos nessa categoria, avisa e pula
+                            const empty = document.createElement('div');
+                            empty.className = 'msg-bot';
+                            empty.innerHTML = "<small>Não tenho itens desta categoria no momento.</small>";
+                            feed.appendChild(empty);
+                        }
+                    } else if (step.type === 'basket_review') {
+                        // Mostra o que já está no carrinho
+                        const ids = Object.keys(this.cart);
+                        const items = ids.map(id => this.data.find(x => x.id === id)).filter(x=>x);
+                        feed.appendChild(this.createProductGrid(items));
+                    }
+
+                    // 4. Renderiza Botões de Ação
+                    this.renderActions(step);
+                    
+                    feed.scrollTo(0, feed.scrollHeight);
+
+                }, 600); // Delay de 600ms
+            },
+
+            renderActions(step) {
+                const feed = document.getElementById('flow-feed');
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'flow-actions';
+
+                if (step.type === 'end') {
+                    actionsDiv.innerHTML = `
+                        <button class="btn-opt highlight" onclick="App.openCart()">
+                            <span>✅ Ver Resumo e Pedir</span> <span>➡</span>
+                        </button>
+                    `;
+                } else {
+                    const btnLabel = (step.type === 'basket_review') ? 'Tudo certo, continuar' : 'Próxima Categoria';
+                    actionsDiv.innerHTML = `
+                        <button class="btn-opt highlight" onclick="this.parentElement.remove(); App.nextStep()">
+                            <span>${btnLabel}</span> <span>➡</span>
+                        </button>
+                    `;
+                    // Botão Pular (Opcional, se não for review)
+                    if(step.type !== 'basket_review') {
+                         /* Pode adicionar um botão "Pular" se quiser */
+                    }
+                }
+                feed.appendChild(actionsDiv);
+            },
+
+            // --- HELPER DE DADOS ---
+            getProducts(mainCat, subCat) {
+                // Filtra por Categoria Principal e Subcategoria (contém)
+                return this.data.filter(p => {
+                    if (p.catMain !== mainCat) return false;
+                    if (subCat && !p.catSub.includes(subCat)) return false;
+                    return true;
+                }).slice(0, 20); // Limite de segurança
+            },
+
+            // --- COMPONENTE GRID HTML ---
+            createProductGrid(products) {
+                const grid = document.createElement('div');
+                grid.className = 'prod-grid';
+                grid.innerHTML = products.map(p => this.getProductCardHTML(p)).join('');
+                return grid;
+            },
+
+            getProductCardHTML(p) {
+                const qty = this.cart[p.id] || 0;
+                const price = p.isOffer ? p.offerPrice : p.price;
+                
+                // Botão Adicionar ou Controle Qtd
+                let actionBtn = '';
+                if (qty === 0) {
+                    actionBtn = `<div class="btn-add" onclick="App.modQty('${p.id}', 1)">+</div>`;
+                } else {
+                    actionBtn = `
+                        <div class="qty-ctrl">
+                            <div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                            <div class="qc-val">${qty}</div>
+                            <div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                        </div>
+                    `;
+                }
+
                 return `
-                <div class="cart-line">
-                    <span style="flex:1">${this.cart[id]}x ${p.nome}</span>
-                    <span style="font-weight:700">R$ ${(price * this.cart[id]).toFixed(2).replace('.',',')}</span>
-                </div>`;
-            }).join('');
-        document.getElementById('modal-cart').showModal();
-    },
+                    <div class="prod-card" data-pid="${p.id}">
+                        <div class="pc-img-box">
+                            <img src="${p.image}" class="pc-img" loading="lazy">
+                            ${p.isOffer ? '<span class="pc-tag">OFERTA</span>' : ''}
+                        </div>
+                        <div class="pc-info">
+                            <div class="pc-title">${p.name}</div>
+                            <div class="pc-price">
+                                ${p.isOffer ? `<s>R$${p.price.toFixed(2)}</s>` : ''}
+                                R$ ${price.toFixed(2).replace('.',',')}
+                            </div>
+                        </div>
+                        <div class="pc-action">
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+            },
 
-    directOrder(bid) {
-        const b = this.data.find(x => x.id === bid);
-        if(confirm(`Pedir ${b.nome} direto no WhatsApp?`)) {
-            const msg = `Olá! Quero pedir a *${b.nome}* (Padrão) de R$ ${b.valor.toFixed(2).replace('.',',')}`;
-            window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
-        }
-    },
+            refreshActiveGrids(pid) {
+                // Atualiza cards existentes na tela sem recriar o grid todo
+                const product = this.data.find(x => x.id === pid);
+                if (!product) return;
+                
+                const cards = document.querySelectorAll(`.prod-card[data-pid="${pid}"]`);
+                cards.forEach(card => {
+                    card.outerHTML = this.getProductCardHTML(product);
+                });
+            },
 
-    sendZap() {
-        let msg = `*PEDIDO DONA ANTÔNIA*\n`;
-        if(this.currentBasket) msg += `Base: ${this.currentBasket.nome}\n`;
-        msg += `\n*ITENS:*\n`;
-        for(let id in this.cart) {
-            const p = this.data.find(x => x.id === id);
-            msg += `${this.cart[id]}x ${p.nome}\n`;
-        }
-        msg += `\n*TOTAL: ${document.getElementById('modal-total').innerText}*\n`;
-        msg += `Pagamento: ${document.getElementById('pay-method').value}`;
-        window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
-    }
-};
+            // --- CHECKOUT ---
+            openCart() {
+                const modal = document.getElementById('modal-cart');
+                const list = document.getElementById('cart-items');
+                
+                if (Object.keys(this.cart).length === 0) {
+                    list.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Sua cesta está vazia.</p>';
+                } else {
+                    list.innerHTML = Object.keys(this.cart).map(id => {
+                        const p = this.data.find(x => x.id === id);
+                        if(!p) return '';
+                        const price = p.isOffer ? p.offerPrice : p.price;
+                        return `
+                            <div class="cart-item">
+                                <div>
+                                    <strong>${this.cart[id]}x</strong> ${p.name}
+                                </div>
+                                <div>R$ ${(price * this.cart[id]).toFixed(2).replace('.',',')}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                modal.showModal();
+            },
 
-const Chat = {
-    feed: document.getElementById('chat-feed'),
-    flowIndex: 0,
+            directOrder(basketId) {
+                const b = this.data.find(x => x.id === basketId);
+                const msg = `Olá! Gostaria de pedir a *${b.name}* (Padrão) por R$ ${b.price.toFixed(2).replace('.',',')}`;
+                window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
+            },
 
-    start(basketId) {
-        App.currentBasket = App.data.find(x => x.id === basketId);
-        App.cart = {};
-        
-        // Popula itens iniciais
-        if(App.currentBasket.items) {
-            App.currentBasket.items.forEach(i => {
-                const pid = String(i.id);
-                if(App.data.find(x => x.id === pid)) App.cart[pid] = (App.cart[pid]||0) + parseInt(i.qty||1);
-            });
-        }
-        App.updateTotals();
+            checkout() {
+                const { total } = this.getCartMetrics();
+                const payMethod = document.getElementById('pay-method').value;
+                
+                let msg = `*PEDIDO DONA ANTÔNIA* 🛒\n\n`;
+                msg += `*ITENS:*\n`;
+                
+                for (let id in this.cart) {
+                    const p = this.data.find(x => x.id === id);
+                    if(p) msg += `▪ ${this.cart[id]}x ${p.name}\n`;
+                }
+                
+                msg += `\n*TOTAL: R$ ${total.toFixed(2).replace('.',',')}*\n`;
+                msg += `Pagamento: ${payMethod}\n`;
+                msg += `(Cliente aguardando confirmação)`;
 
-        // UI Open
-        document.getElementById('view-chat').classList.add('open');
-        this.feed.innerHTML = '';
-        this.flowIndex = 0;
-
-        // Início
-        this.botSay(`Você escolheu a <strong>${App.currentBasket.nome}</strong>.`);
-        this.botSay("Aqui está o que vem nela. Pode retirar o que não quiser:");
-        
-        const initialItems = Object.keys(App.cart).map(id => App.data.find(x => x.id === id));
-        this.showProductGrid(initialItems);
-
-        this.askOptions("Tudo certo com esses itens?", [
-            { text: "👍 Tudo certo, vamos seguir", next: () => this.nextCategory() }
-        ]);
-    },
-
-    nextCategory() {
-        if (this.flowIndex >= CATEGORY_FLOW.length) {
-            this.finish();
-            return;
-        }
-
-        const cat = CATEGORY_FLOW[this.flowIndex];
-        const items = App.data.filter(p => p.catMain === cat.key).slice(0, 16); // Top 16 para não travar
-        
-        this.flowIndex++;
-
-        if (items.length === 0) {
-            this.nextCategory(); // Pula se vazia
-            return;
-        }
-
-        this.botSay(`Vamos ver <strong>${cat.label}</strong>?`);
-        this.showProductGrid(items);
-        this.askOptions("Deseja algo mais daqui?", [
-            { text: "Próxima categoria ➡", next: () => this.nextCategory(), highlight: true }
-        ]);
-    },
-
-    finish() {
-        this.botSay("Finalizamos! Confira seu pedido no carrinho lá em cima 🛒 ou clique abaixo.");
-        this.askOptions("Concluir Pedido", [
-            { text: "✅ Ver Resumo e Pedir", next: () => App.openCart(), highlight: true },
-            { text: "Ver Ofertas Extras", next: () => { /* Logica extra se quiser */ App.openCart() } }
-        ]);
-    },
-
-    // UI Builders
-    botSay(html) {
-        const el = document.createElement('div');
-        el.className = 'msg-bot';
-        el.innerHTML = html;
-        this.feed.appendChild(el);
-        this.scrollToBottom();
-    },
-
-    showProductGrid(list) {
-        const el = document.createElement('div');
-        el.className = 'chat-products';
-        el.innerHTML = list.map(p => this.cardHTML(p)).join('');
-        this.feed.appendChild(el);
-    },
-
-    cardHTML(p) {
-        const qty = App.cart[p.id] || 0;
-        const price = p.isOffer ? p.offerPrice : p.valor;
-        
-        // Layout Minimalista: Imagem grande, titulo pequeno
-        return `
-        <div class="prod-card" data-pid="${p.id}">
-            <div class="pc-img-box"><img src="${p.imagem}" class="pc-img" loading="lazy"></div>
-            <div class="pc-name">${p.nome}</div>
-            <div class="pc-price">${p.isOffer ? `<small>R$${p.valor}</small>` : ''}R$ ${price.toFixed(2).replace('.',',')}</div>
-            
-            ${qty === 0 
-                ? `<div class="pc-add-btn" onclick="App.modQty('${p.id}', 1)">+</div>`
-                : `<div class="pc-ctrl">
-                    <div class="pc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
-                    <div class="pc-val">${qty}</div>
-                    <div class="pc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
-                   </div>`
+                window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
             }
-        </div>`;
-    },
+        };
 
-    refreshGrids(id) {
-        // Atualiza apenas os cards desse produto visíveis na tela (sem recriar tudo)
-        const p = App.data.find(x => x.id === id);
-        if(!p) return;
-        const cards = document.querySelectorAll(`.prod-card[data-pid="${id}"]`);
-        cards.forEach(card => {
-            card.outerHTML = this.cardHTML(p);
-        });
-    },
+        // Atalho global
+        const App = DonaAntoniaApp;
+        window.onload = () => App.init();
 
-    askOptions(title, options) {
-        const group = document.createElement('div');
-        group.className = 'options-group';
-        options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = `btn-opt ${opt.highlight ? 'highlight' : ''}`;
-            btn.innerText = opt.text;
-            btn.onclick = () => {
-                group.remove(); // Remove botões após clique
-                opt.next();
-            };
-            group.appendChild(btn);
-        });
-        this.feed.appendChild(group);
-        this.scrollToBottom();
-    },
-
-    scrollToBottom() {
-        setTimeout(() => this.feed.scrollTop = this.feed.scrollHeight, 100);
-    },
-
-    close() {
-        if(confirm("Sair e perder as alterações?")) {
-            document.getElementById('view-chat').classList.remove('open');
-        }
-    }
-};
-
-window.onload = () => App.init();
-</script>
+    </script>
 </body>
 </html>
