@@ -145,7 +145,6 @@
         #customizer-view { padding-top: calc(var(--app-header-height) + 10px); padding-bottom: 100px; min-height: 100vh; background: #ffffff; }
         
         /* CHAT STYLES */
-        /* Increased padding-bottom to ensure buttons are visible above floating chip */
         .chat-container { display: flex; flex-direction: column; gap: 20px; padding-bottom: 140px; }
         .chat-msg { 
             background: #f1f5f9; padding: 16px; border-radius: 0 16px 16px 16px; 
@@ -649,7 +648,6 @@
 
         const ChatFlow = {
             container: null,
-            // Categories reordered for intelligent upselling
             categories: ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES", "CALÇADOS"],
             catIndex: 0,
             
@@ -689,7 +687,6 @@
                 this.scrollToBottom();
             },
             showBasketGrid() {
-                // Show grid but DO NOT scroll to bottom. 
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
                 const html = `<div class="grid-products-row" style="animation:fadeIn 0.5s ease forwards; padding-left:16px;">` + 
                     ids.map(id => {
@@ -705,20 +702,18 @@
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                // Keep view at start of list
                 this.container.scrollIntoView({ behavior: 'smooth', block: 'start' });
             },
             async handleRemovalYes(elemId) {
                 document.getElementById(elemId).remove();
-                this.addMessage("Sim, já retirei."); // User feedback
+                this.addMessage("Sim, já retirei.");
                 
-                // Calculate Credit
                 let startSum = 0; 
                 for(let i in App.originalCart) { 
                     let p = App.data.find(x => x.id === i); 
                     if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * App.originalCart[i]; 
                 }
-                // Determine removed value
+                
                 let removedVal = 0;
                 for(let id in App.originalCart) {
                     const diff = App.originalCart[id] - (App.cart[id] || 0);
@@ -741,10 +736,10 @@
                 }
 
                 document.getElementById('credit-chip').classList.add('visible');
-                App.updateTotal(); // Update chip val
+                App.updateTotal(); 
                 
                 await this.wait(1000);
-                this.offerStep(); // NEW STEP: OFFER
+                this.offerStep(); // INICIA A ETAPA DE OFERTAS
             },
             async offerStep() {
                 const id = 'act-offers';
@@ -792,11 +787,10 @@
             },
             async showCategory(elemId, catName) {
                 document.getElementById(elemId).remove();
-                this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`); // User echo
+                this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`);
                 
                 await this.showTyping();
                 
-                // Render Grid for Cat
                 const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
                 const color = colors[this.catIndex % colors.length];
@@ -804,13 +798,12 @@
                 this.renderChatGrid(products, color, App.toSmartTitleCase(catName));
                 
                 this.catIndex++;
-                await this.wait(2000); // Give time to look
+                await this.wait(2000); 
                 this.askNextCategory();
             },
             renderChatGrid(products, color, title) {
                 if(products.length > 0) {
-                     // Limit Logic reused
-                     const initialLimit = 6; // Show 6 items (3 rows mobile, 1 row desktop)
+                     const initialLimit = 6;
                      const hasMore = products.length > initialLimit;
                      const visibleItems = products.slice(0, initialLimit);
                      const hiddenItems = products.slice(initialLimit);
@@ -898,7 +891,7 @@
                                     document.getElementById('customizer-view').classList.remove('hidden');
                                     document.body.classList.add('customizer-mode');
                                     document.getElementById('rm-limit-info').innerText = this.currentLimit;
-                                    ChatFlow.start(); // START CHAT
+                                    ChatFlow.start();
                                     document.body.classList.add('loaded'); MarketingApp.init();
                                     return; 
                                 }
@@ -937,14 +930,13 @@
                     list.innerHTML = baskets.map(p => {
                         let productsGrid = '';
                         if (p.items && p.items.length > 0) {
-                            // GRID LOGIC FOR HOME
                             let validItems = [];
                             p.items.forEach(i => {
                                 const d = this.data.find(x => x.id === String(i.id));
                                 if(d) validItems.push({d, qty:i.qty});
                             });
                             
-                            const initialLimit = 6; // Shows 3 rows on mobile, 1 on desktop
+                            const initialLimit = 6; 
                             const hasMore = validItems.length > initialLimit;
                             const visibleItems = validItems.slice(0, initialLimit);
                             const hiddenItems = validItems.slice(initialLimit);
@@ -993,7 +985,6 @@
                 document.getElementById('rm-limit-info').innerText = this.currentLimit;
                 window.scrollTo(0,0); 
                 
-                // START CHAT FLOW INSTEAD OF RENDER ALL
                 ChatFlow.start();
                 this.saveState(); 
             },
@@ -1006,8 +997,7 @@
                 if(this.data.length > 0) this.renderHome();
             },
             renderAllLists(filter = null) {
-                // Not used in chat mode, but kept for search compatibility if needed
-                const container = document.getElementById('chat-stream'); // Use chat stream
+                const container = document.getElementById('chat-stream'); 
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 if (filter && filter.length > 1) {
                     products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
@@ -1123,27 +1113,34 @@
                 document.getElementById('co-total').innerText = txtTotal;
                 document.getElementById('cart-count-badge').innerText = count;
 
-                // Update Chip
+                // Update Chip & Enforce Obliged Products Rule
                 const chipBtn = document.querySelector('.ccb-btn');
                 const chipLabel = document.getElementById('ccb-label');
                 const chipVal = document.getElementById('ccb-val');
                 
                 if (basketPrice > effectiveTotal) {
-                    // Has Credit
+                    // HAS CREDIT - Cannot finalize yet
                     const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
                     toast.innerText = `Você tem R$ ${diff} em crédito!`; toast.classList.add('visible');
                     document.getElementById('mca-val').innerText = diff; mAlert.classList.remove('hidden');
                     
-                    if(chipBtn) chipBtn.innerText = "Adicionar Mais";
-                    if(chipLabel) chipLabel.innerText = "Seu Crédito";
+                    if(chipBtn) {
+                        chipBtn.innerText = "Adicionar Itens";
+                        // Opens Modal but will be blocked there, or we can just dismiss sheet to let them shop
+                        chipBtn.onclick = function() { App.openCheckout(); }; 
+                    }
+                    if(chipLabel) chipLabel.innerText = "Crédito Disponível";
                     if(chipVal) { chipVal.innerText = `R$ ${diff}`; chipVal.style.color = "#4ade80"; }
 
                     if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Adicione produtos para usar seu crédito"; finalBtn.style.background = "#ccc"; }
                 } else {
-                    // Excess or Equal
+                    // PAYING EXTRA or EQUAL - Can finalize
                     toast.classList.remove('visible'); mAlert.classList.add('hidden');
                     
-                    if(chipBtn) chipBtn.innerText = "Finalizar Pedido";
+                    if(chipBtn) {
+                        chipBtn.innerText = "Finalizar Pedido";
+                        chipBtn.onclick = function() { App.openCheckout(); };
+                    }
                     if(chipLabel) chipLabel.innerText = "Total a Pagar";
                     if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
 
