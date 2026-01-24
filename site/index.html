@@ -79,10 +79,10 @@
             border-bottom: 1px solid #f0f0f0; display: none; 
             align-items: center; padding: 0 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
         }
         body.customizer-mode .app-header { display: flex; justify-content: center; }
         
-        /* Inner container for alignment on Desktop */
         .app-header-inner {
             width: 100%; max-width: 1200px; height: 100%;
             display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -93,6 +93,24 @@
             padding: 4px; margin-left: -4px; cursor: pointer;
         }
         
+        /* HEADER SEARCH STYLES */
+        .header-title-text { 
+            flex:1; text-align:center; font-weight:600; transition: opacity 0.2s; 
+        }
+        .header-search-wrapper {
+            flex: 1; display: none; justify-content: center; opacity: 0; transition: opacity 0.3s;
+        }
+        .header-search-input {
+            width: 100%; max-width: 320px; /* Largura Perfeita */
+            padding: 8px 14px; border-radius: 20px; border: 1px solid #ddd;
+            background: #f8fafc; font-size: 0.9rem; outline: none;
+        }
+        .header-search-input:focus { border-color: var(--primary); background: #fff; }
+
+        /* Quando rolado, troca titulo por busca */
+        .app-header.scrolled .header-title-text { display: none; }
+        .app-header.scrolled .header-search-wrapper { display: flex; opacity: 1; }
+
         /* --- 4. HERO & HOME --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         .hero { padding: 30px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
@@ -245,72 +263,45 @@
         .subcat-title { font-size: 1.1rem; margin: 0 0 12px 16px; letter-spacing: -0.3px; display: flex; }
         .subcat-pill { padding: 6px 16px; border-radius: 20px; font-weight: 700; display: inline-block; }
         
-        /* --- NOVA BARRA DE CHIPS FIXA --- */
-        .sticky-chips-bar {
-            position: -webkit-sticky; /* Safari */
-            position: sticky;
-            top: calc(var(--app-header-height) - 1px); /* Cola logo abaixo do cabeçalho */
-            z-index: 99; 
-            background: #fff;
-            padding: 12px 5px;
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            white-space: nowrap;
-            margin-bottom: 10px;
+        /* --- BARRA DE CHIPS FIXA COM SETAS --- */
+        .chips-container-wrapper {
+            position: -webkit-sticky; position: sticky;
+            top: calc(var(--app-header-height) - 1px);
+            z-index: 99; background: #fff;
+            padding: 8px 5px;
+            display: flex; align-items: center; gap: 5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            -ms-overflow-style: none; scrollbar-width: none;
+            margin-bottom: 10px;
+        }
+        .sticky-chips-bar {
+            flex: 1; display: flex; gap: 8px; overflow-x: auto;
+            white-space: nowrap; padding: 4px 2px;
+            -ms-overflow-style: none; scrollbar-width: none; scroll-behavior: smooth;
         }
         .sticky-chips-bar::-webkit-scrollbar { display: none; }
 
         .chip-btn {
-            flex: 0 0 auto;
-            padding: 10px 20px;
-            border-radius: 50px;
-            background: #f1f5f9;
-            color: #334155;
-            font-weight: 700;
-            font-size: 0.9rem;
-            border: 1px solid #cbd5e1;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.2s;
+            flex: 0 0 auto; padding: 10px 20px; border-radius: 50px;
+            background: #f1f5f9; color: #334155; font-weight: 700; font-size: 0.9rem;
+            border: 1px solid #cbd5e1; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
         }
         .chip-btn:active { background: #cbd5e1; transform: scale(0.95); }
 
-        /* --- NOVO: CAMPO DE BUSCA LOCAL --- */
-        .local-search-container {
-            padding: 0 5px 10px 5px;
-            width: 100%;
+        .scroll-arrow {
+            width: 32px; height: 32px; flex-shrink: 0;
+            background: #222; color: #fff; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1.2rem; font-weight: 700; line-height: 1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); user-select: none;
         }
-        .local-search-input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            background-color: #f8fafc;
-            color: #334155;
-            outline: none;
-            transition: all 0.2s;
-        }
-        .local-search-input:focus {
-            background-color: #fff;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(211, 26, 40, 0.1);
-        }
+        .scroll-arrow:active { transform: scale(0.9); }
 
         /* --- ESTILO PARA SUBTITULOS INTERNOS --- */
         .internal-subcat-title {
             grid-column: 1 / -1; 
-            font-size: 0.95rem;
-            color: #555;
-            font-weight: 800;
-            margin: 25px 0 10px 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid #f1f5f9;
-            padding-bottom: 4px;
+            font-size: 0.95rem; color: #555; font-weight: 800;
+            margin: 25px 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 2px solid #f1f5f9; padding-bottom: 4px;
             scroll-margin-top: 140px; 
         }
 
@@ -321,64 +312,38 @@
 
         /* NEW GRID LAYOUT CSS */
         .grid-products-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            padding: 0 0 16px 0;
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0 0 16px 0;
         }
         @media(min-width: 1024px) {
-            .grid-products-row { grid-template-columns: repeat(6, 1fr); } /* 6 Columns on Desktop */
+            .grid-products-row { grid-template-columns: repeat(6, 1fr); }
         }
 
         /* --- BOTÃO VER MAIS (DESTAQUE) --- */
         .btn-load-more {
-            width: 100%; padding: 14px; 
-            background: #ffffff; 
-            color: var(--secondary);
-            border: 2px solid #cbd5e1; /* Borda visível */
-            border-radius: 8px; 
-            font-weight: 800; /* Mais grosso */
-            font-size: 0.9rem;
-            text-transform: uppercase; /* Caixa alta */
-            margin-top: 15px; cursor: pointer; text-align: center; transition: all 0.2s;
+            width: 100%; padding: 14px; background: #ffffff; color: var(--secondary);
+            border: 2px solid #cbd5e1; border-radius: 8px; font-weight: 800;
+            font-size: 0.9rem; text-transform: uppercase; margin-top: 15px; 
+            cursor: pointer; text-align: center; transition: all 0.2s;
         }
         .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; }
         
         /* Product Card App Style (Adjusted for Grid) */
         .card-prod { 
-            width: 100%; 
-            min-width: auto; max-width: none; 
-            flex-shrink: 0; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; position: relative; 
+            width: 100%; min-width: auto; max-width: none; 
+            flex-shrink: 0; background: transparent; border: none; padding: 0; 
+            display: flex; flex-direction: column; position: relative; 
         }
         .cp-tag { 
-            position: absolute; 
-            top: 8px; 
-            left: 8px; 
-            background: #fef2f2; 
-            color: #dc2626; 
-            
-            /* --- AJUSTE TAMANHO ETIQUETA --- */
-            font-size: 0.85rem; 
-            padding: 6px 12px;  
-            
-            font-weight: 800; 
-            border-radius: 4px; 
-            z-index: 2; 
+            position: absolute; top: 8px; left: 8px; background: #fef2f2; color: #dc2626; 
+            font-size: 0.85rem; padding: 6px 12px; font-weight: 800; border-radius: 4px; z-index: 2; 
         }
         
-        /* --- AJUSTE: Texto de Quantidade na Home (Alinhado à Esquerda) --- */
         .home-qty-text {
-            text-align: left; /* Alinhado a esquerda */
-            font-size: 0.75rem; color: #555; font-weight: 600; 
-            margin-top: 4px; margin-bottom: 2px;
-            margin-left: 2px; /* Pequeno recuo para alinhar com o titulo */
+            text-align: left; font-size: 0.75rem; color: #555; font-weight: 600; 
+            margin-top: 4px; margin-bottom: 2px; margin-left: 2px; 
         }
 
-        .grid-products-row .cp-img-box {
-            background: transparent; 
-            border: none;
-            border-radius: 0;
-        }
+        .grid-products-row .cp-img-box { background: transparent; border: none; border-radius: 0; }
         
         .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
         .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
@@ -387,9 +352,8 @@
 
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px; width: 38px; height: 38px; border-radius: 50%;
-            background: var(--primary); /* Red Background */
-            border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: flex; align-items: center; justify-content: center; color: white; /* White Plus */
+            background: var(--primary); border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center; color: white;
             font-size: 1.6rem; font-weight: 300; cursor: pointer; padding-bottom: 3px; line-height: 1;
         }
         .qty-ctrl-float {
@@ -555,7 +519,11 @@
                 <div class="ah-back-btn" onclick="App.goHome()">
                     <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
                 </div>
-                <div style="flex:1; text-align:center; font-weight:600;">Personalizando</div>
+                <div class="header-title-text">Personalizando</div>
+                <div class="header-search-wrapper">
+                    <input type="text" id="header-search-input" class="header-search-input" placeholder="Buscar produto..." onkeyup="App.filterLocalList(this)">
+                </div>
+                
                 <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')">?</div>
             </div>
         </div>
@@ -712,12 +680,10 @@
                 this.container.innerHTML = '';
                 this.catIndex = 0;
                 
-                // Carrega categorias (PRINCIPAIS/PAI)
                 try {
                     let catGroups = {};
                     App.data.forEach(p => {
                          if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
-                         // AQUI: Usamos appCategory como chave principal
                          const mainKey = p.appCategory;
                          if(!catGroups[mainKey]) { catGroups[mainKey] = true; }
                     });
@@ -748,7 +714,6 @@
                 await this.showTyping();
                 this.addMessage("Agora vamos deixar a cesta do seu jeito, combinado?");
 
-                // Botão 1: Autorizar explicação
                 const id = 'act-intro';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
                     <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Combinado!</button>
@@ -757,7 +722,6 @@
                 this.scrollToBottom();
             },
 
-            // Explicação Humanizada
             async explainRules(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
@@ -773,7 +737,6 @@
                 await this.wait(2000);
                 this.addMessage("Vou mostrar a lista de produtos que já estão na sua cesta, pode ser?");
 
-                // Botão 2: Mostrar Lista
                 const id = 'act-show-list';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
                     <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Pode mostrar</button>
@@ -782,16 +745,15 @@
                 this.scrollToBottom();
             },
 
-            // Mostra a lista e depois pergunta se removeu
             async showInitialList(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
                 this.addMessage("Pode mostrar", 'user');
                 
                 await this.wait(600);
-                this.showBasketGrid(); // Mostra a lista sem rolar pro fim
+                this.showBasketGrid(); 
                 
-                await this.wait(3000); // Tempo para ler/ver a lista
+                await this.wait(3000); 
                 this.askRemovalConfirmation();
             },
 
@@ -808,9 +770,6 @@
             addMessage(text, type = 'bot') {
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
-                const lastMsg = this.container.lastElementChild;
-                // ROLAGEM AUTOMÁTICA DESATIVADA PARA NÃO ATRAPALHAR A LISTA
-                // if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
 
             async showBasketGrid() {
@@ -819,7 +778,6 @@
                 
                 const sectionId = `basket-grid-${Date.now()}`;
                 
-                // HTML COM TÍTULO
                 const html = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
                     <div class="subcat-title" style="margin-bottom:12px; font-weight:800; color:#333;">PRODUTOS DA SUA CESTA</div>
                     <div class="grid-products-row">
@@ -829,7 +787,6 @@
                 
                 this.container.insertAdjacentHTML('beforeend', html);
                 
-                // ROLAGEM AJUSTADA (Topo - 100px)
                 const element = document.getElementById(sectionId);
                 if(element) {
                     setTimeout(() => {
@@ -848,7 +805,6 @@
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                // Rolagem manual removida aqui também para não descer a tela
             },
 
             async handleRemovalYes(elemId) {
@@ -909,16 +865,12 @@
                 const niceName = App.toSmartTitleCase(catName);
                 const id = 'act-' + this.catIndex;
                 
-                // --- BOTÕES DIRETOS, SEM PERGUNTA ANTERIOR ---
                 const html = `<div id="${id}" class="chat-actions">
                      <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
                      <button class="btn-chat" onclick="ChatFlow.skipCategory('${id}')">Não, próximo</button>
                      <button class="btn-chat" onclick="ChatFlow.startCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                
-                // ROLAGEM REMOVIDA AQUI PARA NÃO DESCER A TELA
-                // this.scrollToBottom();
             },
 
             async showCategory(elemId, catName) {
@@ -928,7 +880,6 @@
                 
                 await this.showTyping();
                 
-                // FILTRO POR CATEGORIA PAI + ORDENAÇÃO POR SUBCATEGORIA
                 const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
 
@@ -949,16 +900,11 @@
                      const sectionId = `chat-sec-${Date.now()}`;
                      const htmlHeader = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
                         <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${title}</span></div>
-                        <div class="local-search-container">
-                            <input type="text" class="local-search-input" placeholder="Buscar em ${title}..." onkeyup="App.filterLocalList(this)">
-                        </div>
                      </div>`;
                      this.container.insertAdjacentHTML('beforeend', htmlHeader);
                      
-                     // CHAMA PAGINAÇÃO COM TIPO 'CHAT' (CARREGA TUDO + CHIPS)
                      App.setupPagination(sectionId, products, 'chat');
                      
-                     // SCROLL PARA O TOPO DA SEÇÃO
                      const element = document.getElementById(sectionId);
                      if(element) {
                         const headerOffset = 100;
@@ -980,7 +926,6 @@
             },
             
             async startCheckout() {
-                // Bloqueio de Crédito
                 let currentSum = 0;
                 for(let id in App.cart) { 
                     const p = App.data.find(x => x.id === id); 
@@ -1293,22 +1238,24 @@
                     // GERAÇÃO DOS CHIPS
                     const subcats = [...new Set(products.map(p => p.subCategory))];
                     if (subcats.length > 1) { // Só mostra se tiver mais de 1 subcategoria
-                        let chipsHtml = `<div class="sticky-chips-bar">`;
+                        let chipsHtml = `<div class="chips-container-wrapper">
+                            <div class="scroll-arrow" onclick="App.scrollChips(this, -1)">&#8249;</div>
+                            <div class="sticky-chips-bar">`;
                         subcats.forEach(sc => {
-                            // Cria um ID seguro para âncora
                             const safeId = 'sc-' + sc.replace(/[^a-zA-Z0-9]/g, '');
                             chipsHtml += `<button class="chip-btn" onclick="document.getElementById('${safeId}').scrollIntoView({behavior:'smooth', block:'start'});">${sc}</button>`;
                         });
-                        chipsHtml += `</div>`;
+                        chipsHtml += `</div>
+                            <div class="scroll-arrow" onclick="App.scrollChips(this, 1)">&#8250;</div>
+                        </div>`;
                         
                         // Injeta os chips LOGO APÓS o título da seção
                         setTimeout(() => {
                             const container = document.getElementById(sectionId);
                             if(container) {
-                                const titleEl = container.querySelector('.subcat-title');
+                                const titleEl = container.querySelector('.local-search-container');
                                 if(titleEl) {
-                                    // Verifica se já não foi injetado antes para evitar duplicidade
-                                    if(!container.querySelector('.sticky-chips-bar')) {
+                                    if(!container.querySelector('.chips-container-wrapper')) {
                                         titleEl.insertAdjacentHTML('afterend', chipsHtml);
                                     }
                                 }
@@ -1329,6 +1276,14 @@
                 // Initial Load
                 this.loadMore(sectionId, true);
             },
+            
+            scrollChips(arrow, dir) {
+                const wrapper = arrow.parentElement;
+                const bar = wrapper.querySelector('.sticky-chips-bar');
+                const scrollAmount = 150; 
+                bar.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+            },
+
             loadMore(sectionId, isInitial = false) {
                 const data = this.paginationStore[sectionId];
                 if(!data) return;
@@ -1408,9 +1363,15 @@
             
             // FILTRO DE BUSCA LOCAL (ADICIONADO)
             filterLocalList(input) {
+                // Encontra a lista ativa (última subcat-section visível)
+                // Como pode haver várias, pegamos a última no chat-stream
+                const chatContainer = document.getElementById('chat-stream');
+                const activeSection = chatContainer.lastElementChild.querySelector('.grid-products-row') ? chatContainer.lastElementChild : null;
+                
+                if (!activeSection) return; // Se não achar, não faz nada (segurança)
+
                 const term = input.value.toLowerCase();
-                const container = input.closest('.subcat-section');
-                const products = container.querySelectorAll('.card-prod');
+                const products = activeSection.querySelectorAll('.card-prod');
                 
                 products.forEach(p => {
                     const title = p.querySelector('.cp-title').innerText.toLowerCase();
@@ -1630,6 +1591,16 @@
         // Explicitly attach to window to avoid scope issues in HTML handlers
         window.ChatFlow = ChatFlow;
         window.App = App;
+        
+        // --- SCROLL EVENT LISTENER PARA HEADER ---
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('.app-header');
+            if(window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
         
         document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
