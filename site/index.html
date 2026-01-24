@@ -143,106 +143,82 @@
 
         /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { padding-top: calc(var(--app-header-height) + 10px); padding-bottom: 100px; min-height: 100vh; background: #ffffff; }
-        .market-header { margin: 20px 0 10px; text-align: center; }
         
-        .market-title { 
-            font-size: 1.3rem; 
-            font-weight: 500; 
-            color: var(--primary); 
-            margin-bottom: 10px; 
-            line-height: 1.3; 
-        }
-        .market-instruction { 
-            color: #444; 
-            font-size: 1.2rem; 
-            margin: 0 auto; 
-            max-width: 90%; 
-            line-height: 1.5; 
-        }
-
-        /* STICKY TOP CONTAINER */
-        #sticky-basket-container {
-            position: fixed;
-            top: var(--app-header-height);
-            left: 0; right: 0;
-            z-index: 999;
-            padding: 10px 16px; 
-            border-bottom: 1px solid #eee;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(5px);
-            transform: translateY(-150%);
-            transition: transform 0.3s ease;
-        }
-        #sticky-basket-container.visible { transform: translateY(0); }
+        /* CHAT STYLES */
+        .chat-container { display: flex; flex-direction: column; gap: 20px; padding-bottom: 140px; }
         
-        .sticky-list { display: flex; gap: 12px; overflow-x: auto; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
-        .sticky-list::-webkit-scrollbar { display: none; }
+        .chat-msg { 
+            background: #f1f5f9; padding: 16px; border-radius: 0 16px 16px 16px; 
+            max-width: 85%; align-self: flex-start; color: #334155; line-height: 1.5; font-size: 0.95rem;
+            animation: fadeIn 0.4s ease forwards; opacity: 0; transform: translateY(10px);
+            position: relative;
+        }
+        .chat-msg strong { color: var(--primary); }
 
-        #sticky-basket-container .abc-card {
-            min-width: 220px; max-width: 220px;
-            flex-direction: row; align-items: center;
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
-            padding: 6px 8px; gap: 10px; display: flex; flex-shrink: 0;
+        /* USER RESPONSE STYLE */
+        .chat-msg.user {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-radius: 16px 16px 0 16px;
         }
-        #sticky-basket-container .abc-img-box {
-            width: 50px; height: 50px; border-radius: 8px; margin: 0; background: transparent; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center; position: relative;
-        }
-        #sticky-basket-container .abc-img { width: 100%; height: 100%; object-fit: contain; }
-        #sticky-basket-container .abc-title {
-            height: auto; margin: 0; font-size: 0.75rem; -webkit-line-clamp: 2; line-height: 1.2;
-            flex: 1; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; color: #333; font-weight: 500;
-        }
-        #sticky-basket-container .abc-qty-ctrl {
-            position: static; height: 32px; box-shadow: none; border: 1px solid #cbd5e1; transform: none;
-            background: white; border-radius: 16px; display: flex; align-items: center; overflow: hidden;
-        }
-        #sticky-basket-container .qcf-btn { width: 28px; font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--primary); }
-        #sticky-basket-container .qcf-val { font-size: 0.8rem; min-width: 18px; text-align: center; font-weight: 700; }
+        .chat-msg.user strong { color: white; }
 
-        .sticky-qty-badge {
-            position: absolute; top: -5px; right: -5px;
-            background: var(--primary); color: white;
-            font-size: 0.7rem; padding: 2px 6px; border-radius: 10px;
-            font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            z-index: 5; pointer-events: none;
-        }
+        .chat-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: -10px; animation: fadeIn 0.4s ease forwards; padding-left: 5px; }
+        .btn-chat { padding: 10px 20px; background: #fff; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
+        .btn-chat.primary { background: var(--primary); color: white; }
+        .btn-chat:active { transform: scale(0.95); }
 
-        /* ACTIVE BASKET NORMAL (In Flow) */
-        #active-basket-container {
-            width: 100%; padding: 10px 0 20px; background: #ffffff; position: relative; z-index: 10;
-        }
-        .abc-list { display: flex; gap: 12px; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 10px; }
-        .abc-list::-webkit-scrollbar { display: block; height: 4px; }
-        .abc-list::-webkit-scrollbar-track { background: transparent; }
-        .abc-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .typing-indicator { display: inline-flex; gap: 4px; padding: 12px 16px; background: #f1f5f9; border-radius: 0 16px 16px 16px; width: fit-content; opacity: 0; }
+        .typing-indicator span { width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
-        #active-basket-container .abc-card {
-            min-width: 140px; max-width: 140px; display: flex; flex-direction: column; flex-shrink: 0; transition: all 0.3s ease;
+        /* CREDIT CHIP BAR */
+        .credit-chip-bar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(150%);
+            background: #1e293b; color: white; padding: 6px 8px 6px 16px; border-radius: 50px;
+            display: flex; align-items: center; gap: 12px; z-index: 9999;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 90%; max-width: 380px; justify-content: space-between;
         }
-        #active-basket-container .abc-img-box {
-            width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-            margin-bottom: 8px; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden;
+        .credit-chip-bar.visible { transform: translateX(-50%) translateY(0); }
+        .ccb-text { font-size: 0.85rem; font-weight: 500; display: flex; flex-direction: column; }
+        .ccb-val { font-weight: 700; font-size: 1rem; color: #4ade80; }
+        .ccb-btn { 
+            background: var(--primary); color: white; border-radius: 40px; padding: 10px 20px; 
+            font-weight: 700; font-size: 0.9rem; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        #active-basket-container .abc-img { width: 105%; height: 105%; object-fit: contain; }
-        #active-basket-container .abc-title {
-            font-size: 0.8rem; color: #3e3e3e; text-align: left; font-weight: 500;
-            height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2;
-            margin-bottom: 6px; width: 100%;
-        }
-        #active-basket-container .abc-qty-ctrl {
-            position: absolute; bottom: 8px; right: 8px; height: 38px; background: white; 
-            border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
-        }
-        #active-basket-container .qcf-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer; }
-        #active-basket-container .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
         /* Products Horizontal Row */
-        .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
-        .subcat-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 12px 16px; letter-spacing: -0.3px; }
+        .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; animation: fadeIn 0.5s ease forwards; }
+        .subcat-title { font-size: 1.1rem; margin: 0 0 12px 16px; letter-spacing: -0.3px; display: flex; }
+        .subcat-pill { padding: 6px 16px; border-radius: 20px; font-weight: 700; display: inline-block; }
         
+        /* Updated Scroll Btn: Small on mobile, Large on Desktop */
+        .scroll-btn {
+            position: absolute; top: 50%; transform: translateY(-50%); 
+            width: 32px; height: 32px; /* Mobile Size */
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12); display: none; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 20; color: #333; transition: all 0.3s;
+        }
+        .scroll-btn:hover { background: #fff; transform: translateY(-50%) scale(1.15); color: var(--primary); }
+        .scroll-btn.left { left: 0px; }
+        .scroll-btn.right { right: 0px; }
+
+        @media(min-width: 1024px) { 
+            .scroll-btn { display: flex; width: 48px; height: 48px; } /* Desktop Size */
+            .scroll-btn.left { left: -24px; }
+            .scroll-btn.right { right: -24px; }
+            #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 60px 20px 100px; }
+            .horizontal-products-row { margin: 0; }
+        }
+
         /* NEW GRID LAYOUT CSS */
         .grid-products-row {
             display: grid;
@@ -250,8 +226,8 @@
             gap: 16px;
             padding: 0 0 16px 0;
         }
-        @media(min-width: 768px) {
-            .grid-products-row { grid-template-columns: repeat(4, 1fr); }
+        @media(min-width: 1024px) {
+            .grid-products-row { grid-template-columns: repeat(6, 1fr); } /* 6 Columns on Desktop */
         }
 
         .btn-load-more {
@@ -269,7 +245,6 @@
         }
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #fef2f2; color: #dc2626; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
-        /* Removed background and maximized image for grid view items inside grid-products-row */
         .grid-products-row .cp-img-box {
             background: transparent; 
             border: none;
@@ -279,13 +254,13 @@
         .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
         .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
         
-        /* Specific overrides for clean grid look */
         .grid-products-row .cp-img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.05); }
 
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px; width: 38px; height: 38px; border-radius: 50%;
-            background: white; border: 1px solid #e5e5e5; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: flex; align-items: center; justify-content: center; color: var(--primary); 
+            background: var(--primary); /* Red Background */
+            border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center; color: white; /* White Plus */
             font-size: 1.6rem; font-weight: 300; cursor: pointer; padding-bottom: 3px; line-height: 1;
         }
         .qty-ctrl-float {
@@ -306,21 +281,8 @@
         }
         .cp-validity { font-size: 0.7rem; color: #777; text-align: left; margin-top: auto; }
 
-        /* Floating Cart Bar */
-        .ifood-cart-bar {
-            position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; border-top: 1px solid #f0f0f0;
-            padding: 10px 16px; z-index: 9999; display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.08); transform: translateY(100%); transition: transform 0.3s ease;
-            padding-bottom: max(10px, env(safe-area-inset-bottom));
-        }
-        .ifood-cart-bar.visible { transform: translateY(0); }
-        .icb-info { display: flex; flex-direction: column; }
-        .icb-label { font-size: 0.8rem; color: #555; margin-bottom: 2px; }
-        .icb-total { font-size: 1.2rem; font-weight: 700; color: #2e2e2e; }
-        .icb-btn { 
-            background: var(--primary); color: white; padding: 8px 16px; border-radius: 8px; 
-            font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px;
-        }
+        /* Floating Cart Bar Hidden (Replaced by Chip) */
+        .ifood-cart-bar { display: none !important; }
 
         /* --- 6. MODALS & SHEETS --- */
         .sheet-overlay { 
@@ -490,59 +452,26 @@
 
     <div id="customizer-view" class="hidden">
         
-        <div id="sticky-basket-container">
-            <div id="sticky-basket-list" class="sticky-list"></div>
-        </div>
-
         <div class="app-header">
             <div class="ah-back-btn" onclick="App.goHome()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
             </div>
-            <div id="sticky-review-btn" class="ah-sticky-btn" onclick="App.openReviewModal()">Ver Cesta 🧺</div>
-            <div class="ah-search-box">
-                <svg class="ah-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                <input type="text" class="ah-search-input" placeholder="Buscar em Mercadinho" oninput="App.renderAllLists(this.value)">
-            </div>
+            <div style="flex:1; text-align:center; font-weight:600;">Personalizando</div>
             <div class="ah-help-btn" style="padding: 0 8px; font-weight:700; color:#555; cursor:pointer;" onclick="App.openSheet('faq-sheet')">?</div>
         </div>
 
         <div class="main-content-col">
             <div class="container">
-                <div class="market-header">
-                    <h2 class="market-title" id="cust-welcome-title"></h2>
-                </div>
-
-                <div class="subcat-title" style="color:#333; text-align:center; margin-bottom:15px;">Itens da sua Cesta</div>
-
-                <div id="active-basket-container">
-                    <div class="carousel-wrapper">
-                         <div class="scroll-btn left" onclick="document.getElementById('active-basket-list').scrollBy({left: -200, behavior: 'smooth'})">
-                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
-                        </div>
-                        <div id="active-basket-list" class="abc-list"></div>
-                        <div class="scroll-btn right" onclick="document.getElementById('active-basket-list').scrollBy({left: 200, behavior: 'smooth'})">
-                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="search-anchor" style="text-align:center; margin: 30px 0 10px; padding-top: 20px; border-top: 1px dashed #e2e8f0;">
-                    <p class="market-instruction">Monte a cesta do seu jeito!<br><strong>Boas Compras 🧡🛒!</strong></p>
-                </div>
-
-                <div id="extras-container"></div>
+                <div id="chat-stream" class="chat-container"></div>
             </div>
         </div>
 
-        <div id="ifood-cart-bar" class="ifood-cart-bar">
-            <div class="icb-info">
-                <span class="icb-label">Valor Total</span>
-                <span class="icb-total" id="icb-total-val">R$ 0,00</span>
+        <div id="credit-chip" class="credit-chip-bar">
+            <div class="ccb-text">
+                <span id="ccb-label">Seu Crédito</span>
+                <span id="ccb-val" class="ccb-val">R$ 0,00</span>
             </div>
-            <div class="icb-btn" onclick="App.openCheckout()">
-                Produtos da Minha Cesta
-                <span id="cart-count-badge" style="background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; font-size:0.8rem; margin-left:6px;">0</span>
-            </div>
+            <button class="ccb-btn" onclick="App.openCheckout()">Ver Cesta</button>
         </div>
     </div>
 
@@ -677,10 +606,6 @@
                 window.addEventListener('scroll', () => {
                     const scrollPercent = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
                     this.checkRules('scroll_profundo', scrollPercent);
-                    const stickyContainer = document.getElementById('sticky-basket-container');
-                    if (stickyContainer && document.body.classList.contains('customizer-mode')) {
-                        if (window.scrollY > 180) { stickyContainer.classList.add('visible'); } else { stickyContainer.classList.remove('visible'); }
-                    }
                 }, { passive: true });
             },
             logClick(category) { this.checkRules('clique_categoria', category); },
@@ -733,6 +658,220 @@
             closeModal() { document.getElementById('marketing-modal-overlay').classList.remove('visible'); }
         };
 
+        const ChatFlow = {
+            container: null,
+            categories: [], // POPULATED DYNAMICALLY
+            catIndex: 0,
+            
+            async start() {
+                this.container = document.getElementById('chat-stream');
+                this.container.innerHTML = '';
+                this.catIndex = 0;
+                
+                // --- 1. POPULATE DYNAMIC CATEGORIES ---
+                // Extract unique appCategory from data, excluding "CESTA"
+                const uniqueCats = [...new Set(App.data.map(p => p.appCategory))];
+                this.categories = uniqueCats.filter(c => c && c !== 'undefined' && !c.includes('CESTA'));
+                
+                // Optional: Prioritize order (e.g. Mercearia first if it exists)
+                // We just keep them as extracted or simple sort.
+                // To keep smart selling, let's ensure "ALIMENTOS" or "MERCEARIA" are first if present.
+                this.categories.sort((a,b) => {
+                    if(a.includes('MERCEARIA') || a.includes('ALIMENTOS')) return -1;
+                    if(b.includes('MERCEARIA') || b.includes('ALIMENTOS')) return 1;
+                    return 0;
+                });
+
+                const hours = new Date().getHours();
+                let greeting = "Bom dia";
+                if(hours >= 12) greeting = "Boa tarde";
+                if(hours >= 18) greeting = "Boa noite";
+                
+                await this.showTyping();
+                this.addMessage(`${greeting}! Tudo bem? Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>.`);
+                
+                await this.wait(800);
+                await this.showTyping();
+                this.addMessage(`Vou te mostrar os produtos que já vêm nela. Você pode remover o que não quiser.`);
+                
+                await this.wait(500);
+                this.showBasketGrid();
+                
+                await this.wait(1000);
+                this.askRemovalConfirmation();
+            },
+            async showTyping() {
+                const id = 'typing-' + Date.now();
+                const html = `<div id="${id}" class="typing-indicator"><span></span><span></span><span></span></div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+                await this.wait(1500);
+                document.getElementById(id).remove();
+            },
+            addMessage(text, type = 'bot') {
+                const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
+                this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
+                this.scrollToBottom();
+            },
+            showBasketGrid() {
+                const ids = App.cartOrder.filter(id => App.cart[id] > 0);
+                const html = `<div class="grid-products-row" style="animation:fadeIn 0.5s ease forwards; padding-left:16px;">` + 
+                    ids.map(id => {
+                        const p = App.data.find(x => x.id === id);
+                        return p ? App.buildCard(p) : '';
+                    }).join('') + `</div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+            },
+            askRemovalConfirmation() {
+                // FIXED: Put the question in a proper chat-msg bubble
+                this.addMessage(`Você já retirou da lista os produtos que não quer?`);
+
+                const id = 'actions-removal';
+                const html = `<div id="${id}" class="chat-actions">
+                    <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+            async handleRemovalYes(elemId) {
+                document.getElementById(elemId).remove();
+                // FIXED: User response aligned to right
+                this.addMessage("Sim, já retirei.", 'user');
+                
+                let startSum = 0; 
+                for(let i in App.originalCart) { 
+                    let p = App.data.find(x => x.id === i); 
+                    if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * App.originalCart[i]; 
+                }
+                
+                let removedVal = 0;
+                for(let id in App.originalCart) {
+                    const diff = App.originalCart[id] - (App.cart[id] || 0);
+                    if(diff > 0) {
+                        const p = App.data.find(x => x.id === id);
+                        if(p) removedVal += diff * (p.isOffer ? p.offerPrice : p.valor);
+                    }
+                }
+                
+                await this.showTyping();
+                
+                if (removedVal > 0) {
+                    this.addMessage(`Perfeito! Os produtos que você tirou geraram um crédito de <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
+                    await this.wait(800);
+                    this.addMessage(`Agora você pode usar esse valor para adicionar outros produtos que preferir.`);
+                } else {
+                    this.addMessage(`Ok! Você manteve a cesta completa.`);
+                    await this.wait(800);
+                    this.addMessage(`Deseja adicionar algo extra?`);
+                }
+
+                document.getElementById('credit-chip').classList.add('visible');
+                App.updateTotal(); 
+                
+                await this.wait(1000);
+                this.offerStep(); 
+            },
+            async offerStep() {
+                const id = 'act-offers';
+                // Offers button block
+                const html = `<div id="${id}" class="chat-actions">
+                     <button class="btn-chat primary" onclick="ChatFlow.showOffers('${id}')">Ver Ofertas</button>
+                     <button class="btn-chat" onclick="ChatFlow.skipOffers('${id}')">Pular</button>
+                </div>`;
+                
+                // Message before actions
+                this.addMessage(`Antes de irmos para as seções, posso te mostrar as <strong>Ofertas do Dia</strong>?`);
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+            async showOffers(elemId) {
+                document.getElementById(elemId).remove();
+                this.addMessage("Ver Ofertas", 'user');
+                await this.showTyping();
+
+                const products = App.data.filter(p => p.isOffer);
+                this.renderChatGrid(products, "#d31a28", "OFERTAS ESPECIAIS");
+                
+                await this.wait(2000);
+                this.askNextCategory();
+            },
+            skipOffers(elemId) {
+                document.getElementById(elemId).remove();
+                this.addMessage("Pular", 'user');
+                this.askNextCategory();
+            },
+            async askNextCategory() {
+                if(this.catIndex >= this.categories.length) {
+                    this.addMessage("Finalizamos as categorias! Clique abaixo para fechar seu pedido.");
+                    return;
+                }
+                const catName = this.categories[this.catIndex];
+                await this.showTyping();
+                
+                const niceName = App.toSmartTitleCase(catName);
+                const id = 'act-' + this.catIndex;
+                
+                this.addMessage(`Que tal dar uma olhada em <strong>${niceName}</strong>?`);
+
+                const html = `<div id="${id}" class="chat-actions">
+                     <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
+                     <button class="btn-chat" onclick="ChatFlow.skipCategory('${id}')">Não, próximo</button>
+                     <button class="btn-chat" onclick="App.openCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+            async showCategory(elemId, catName) {
+                document.getElementById(elemId).remove();
+                this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`, 'user'); 
+                
+                await this.showTyping();
+                
+                const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
+                const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
+                const color = colors[this.catIndex % colors.length];
+                
+                this.renderChatGrid(products, color, App.toSmartTitleCase(catName));
+                
+                this.catIndex++;
+                await this.wait(2000); 
+                this.askNextCategory();
+            },
+            renderChatGrid(products, color, title) {
+                if(products.length > 0) {
+                     const initialLimit = 6;
+                     const hasMore = products.length > initialLimit;
+                     const visibleItems = products.slice(0, initialLimit);
+                     const hiddenItems = products.slice(initialLimit);
+                     const sectionId = `chat-sec-${Date.now()}`;
+
+                     const html = `<div class="subcat-section" style="padding-left:16px;">
+                        <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${title}</span></div>
+                        <div class="grid-products-row">
+                            ${visibleItems.map(p => App.buildCard(p)).join('')}
+                            ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
+                                ${hiddenItems.map(p => App.buildCard(p)).join('')}
+                            </div>` : ''}
+                        </div>
+                        ${hasMore ? `<div id="btn-${sectionId}" class="btn-load-more" onclick="document.getElementById('more-${sectionId}').style.display='contents'; this.style.display='none';">Ver mais ${hiddenItems.length} produtos</div>` : ''}
+                    </div>`;
+                    this.container.insertAdjacentHTML('beforeend', html);
+                } else {
+                    this.addMessage("Não encontrei itens nesta categoria hoje.");
+                }
+            },
+            skipCategory(elemId) {
+                document.getElementById(elemId).remove();
+                this.addMessage("Não, próximo", 'user');
+                this.catIndex++;
+                this.askNextCategory();
+            },
+            scrollToBottom() {
+                this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            },
+            wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+        };
+
         const App = {
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [], appliedCoupon: false,
             async init() {
@@ -751,6 +890,8 @@
                         else if (mainCat.includes('CAFÉ') || mainCat.includes('MATINAIS')) appCat = "CAFÉ DA MANHÃ E LANCHES";
                         else if (mainCat.includes('LIMPEZA') || mainCat.includes('LAVANDERIA')) appCat = "LIMPEZA E LAVANDERIA";
                         else if (mainCat.includes('HIGIENE') || mainCat.includes('PESSOAL')) appCat = "CUIDADOS PESSOAIS";
+                        else if (mainCat.includes('CALÇADO')) appCat = "CALÇADOS";
+                        else if (catRaw !== "CESTA BÁSICA") appCat = catRaw; // Fallback for unmatched categories
                         
                         let imgUrl = 'img/placeholder.jpg';
                         if(p.imagem) imgUrl = `img/produtos/${p.imagem.split('/').pop()}`;
@@ -787,9 +928,8 @@
                                     document.getElementById('home-view').classList.add('hidden');
                                     document.getElementById('customizer-view').classList.remove('hidden');
                                     document.body.classList.add('customizer-mode');
-                                    document.getElementById('cust-welcome-title').innerHTML = `Você escolheu a <br><strong>${basket.nome}</strong>`;
                                     document.getElementById('rm-limit-info').innerText = this.currentLimit;
-                                    this.renderAllLists(); this.renderActiveCarousel();
+                                    ChatFlow.start();
                                     document.body.classList.add('loaded'); MarketingApp.init();
                                     return; 
                                 }
@@ -826,18 +966,32 @@
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 if (baskets.length > 0) {
                     list.innerHTML = baskets.map(p => {
-                        const carouselId = `home-scroll-${p.id}`;
-                        let carouselHtml = '';
+                        let productsGrid = '';
                         if (p.items && p.items.length > 0) {
-                            carouselHtml = `<div class="hbc-carousel-box"><div class="scroll-btn left" onclick="document.getElementById('${carouselId}').scrollBy({left: -200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg></div><div class="hbc-carousel-wrapper" id="${carouselId}">` + 
-                            p.items.map(i => {
+                            let validItems = [];
+                            p.items.forEach(i => {
                                 const d = this.data.find(x => x.id === String(i.id));
-                                return d ? `<div class="card-prod-static"><div class="cps-img-box"><img src="${d.imagem}" class="cps-img" loading="lazy" width="100" height="100" alt="${d.nome.replace(/"/g, '"')}"></div><div class="cps-qty-text">${i.qty} Unid.</div><div class="cps-sep"></div><div class="cps-name">${d.nome}</div></div>` : '';
-                            }).join('') + `</div><div class="scroll-btn right" onclick="document.getElementById('${carouselId}').scrollBy({left: 200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></div></div>`;
+                                if(d) validItems.push({d, qty:i.qty});
+                            });
+                            
+                            const initialLimit = 6; 
+                            const hasMore = validItems.length > initialLimit;
+                            const visibleItems = validItems.slice(0, initialLimit);
+                            const hiddenItems = validItems.slice(initialLimit);
+                            const sectionId = `home-sec-${p.id}`;
+
+                            productsGrid = `<div class="grid-products-row">
+                                ${visibleItems.map(obj => `<div class="card-prod-static"><div class="cps-img-box"><img src="${obj.d.imagem}" class="cps-img" loading="lazy" width="100" height="100" alt="${obj.d.nome.replace(/"/g, '"')}"></div><div class="cps-qty-text">${obj.qty} Unid.</div><div class="cps-sep"></div><div class="cps-name">${obj.d.nome}</div></div>`).join('')}
+                                ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
+                                    ${hiddenItems.map(obj => `<div class="card-prod-static"><div class="cps-img-box"><img src="${obj.d.imagem}" class="cps-img" loading="lazy" width="100" height="100" alt="${obj.d.nome.replace(/"/g, '"')}"></div><div class="cps-qty-text">${obj.qty} Unid.</div><div class="cps-sep"></div><div class="cps-name">${obj.d.nome}</div></div>`).join('')}
+                                </div>` : ''}
+                            </div>
+                            ${hasMore ? `<div id="btn-${sectionId}" class="btn-load-more" onclick="document.getElementById('more-${sectionId}').style.display='contents'; this.style.display='none';">Ver mais ${hiddenItems.length} produtos</div>` : ''}`;
                         }
+                        
                         return `<div class="home-basket-card">
                             <div class="hbc-header"><div class="hbc-text-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-subtitle">Ítens e Quantidades</div></div><img src="${p.imagem}" class="hbc-thumb-mini" onclick="App.openPhoto('${p.imagem}', '${p.nome}')" alt="Foto"></div>
-                            ${carouselHtml}
+                            ${productsGrid}
                             <div class="hbc-footer"><div class="hbc-price-row"><div><span class="hbc-price-label">Valor da Cesta</span><span class="hbc-price-val">R$ ${p.valor.toFixed(2).replace('.',',')}</span></div></div><button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button><button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar a Cesta Normal</button></div></div>`;
                     }).join('');
                 }
@@ -866,76 +1020,27 @@
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
                 
-                document.getElementById('cust-welcome-title').innerHTML = `Você escolheu a <br><strong>${basket.nome}</strong>`;
-                
                 document.getElementById('rm-limit-info').innerText = this.currentLimit;
-                window.scrollTo(0,0); this.renderAllLists(); this.renderActiveCarousel(); this.saveState(); 
+                window.scrollTo(0,0); 
+                
+                ChatFlow.start();
+                this.saveState(); 
             },
             goHome() {
                 document.getElementById('customizer-view').classList.add('hidden');
                 document.getElementById('home-view').classList.remove('hidden');
                 document.body.classList.remove('customizer-mode');
+                document.getElementById('credit-chip').classList.remove('visible');
                 localStorage.setItem('da_state', JSON.stringify({view: 'home'}));
                 if(this.data.length > 0) this.renderHome();
             },
             renderAllLists(filter = null) {
-                const container = document.getElementById('extras-container');
+                const container = document.getElementById('chat-stream'); 
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
-                const query = filter ? filter : "";
-                
-                if (query.length > 1) {
-                    const anchor = document.getElementById('search-anchor');
-                    if(anchor) {
-                        const offset = 80;
-                        const bodyRect = document.body.getBoundingClientRect().top;
-                        const elementRect = anchor.getBoundingClientRect().top;
-                        const elementPosition = elementRect - bodyRect;
-                        const offsetPosition = elementPosition - offset;
-
-                        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-                    }
-                    products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
+                if (filter && filter.length > 1) {
+                    products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
+                    container.innerHTML = `<div class="chat-msg">Resultados da busca:</div><div class="grid-products-row" style="padding-left:16px;">${products.map(p => this.buildCard(p)).join('')}</div>`;
                 }
-
-                const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
-                const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b", "#689f38", "#afb42b", "#e65100", "#424242"];
-                let cIdx = 0, html = "";
-                const renderSection = (title, items, isSpecial = false) => {
-                     if (items.length === 0) return '';
-                     const groups = {};
-                     if (isSpecial) groups[title] = items;
-                     else items.forEach(p => { if(!groups[p.subCategory]) groups[p.subCategory] = []; groups[p.subCategory].push(p); });
-                     
-                     let sHtml = '';
-                     for (const [subName, subItems] of Object.entries(groups)) {
-                        const niceTitle = isSpecial ? title : this.toSmartTitleCase(subName);
-                        const currentColor = colors[cIdx % colors.length]; cIdx++;
-                        
-                        // LIMIT LOGIC: Show max 4 items (2 rows on mobile) initially
-                        const initialLimit = 4;
-                        const hasMore = subItems.length > initialLimit;
-                        const visibleItems = subItems.slice(0, initialLimit);
-                        const hiddenItems = subItems.slice(initialLimit);
-                        const sectionId = `section-${title}-${subName}`.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
-
-                        sHtml += `<div class="subcat-section">
-                            <div class="subcat-title" style="color:${currentColor};">${niceTitle}</div>
-                            <div class="grid-products-row">
-                                ${visibleItems.map(p => this.buildCard(p)).join('')}
-                                ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
-                                    ${hiddenItems.map(p => this.buildCard(p)).join('')}
-                                </div>` : ''}
-                            </div>
-                            ${hasMore ? `<div id="btn-${sectionId}" class="btn-load-more" onclick="document.getElementById('more-${sectionId}').style.display='contents'; this.style.display='none';">Ver mais ${hiddenItems.length} produtos</div>` : ''}
-                        </div>`;
-                     }
-                     return sHtml;
-                };
-                html += renderSection("OFERTAS", products.filter(p => p.isOffer), true);
-                html += renderSection("MAIS VENDIDOS", products.filter(p => p.isBest), true);
-                order.forEach(mainCat => { html += renderSection(mainCat, products.filter(p => p.appCategory === mainCat)); });
-                container.innerHTML = html || '<p style="text-align:center; padding:40px; color:#999;">Nada encontrado.</p>';
-                this.updateTotal();
             },
             renderIncluded(targetElement, isCheckout = false) {
                 if(!targetElement) return;
@@ -946,35 +1051,6 @@
                         return p ? this.buildCheckoutCard(p) : '';
                     }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999;">Cesta vazia</p>';
                 }
-            },
-            renderActiveCarousel() {
-                const targets = ['active-basket-list', 'sticky-basket-list'];
-                targets.forEach(targetId => {
-                    const target = document.getElementById(targetId);
-                    if(!target) return;
-                    const ids = this.cartOrder.filter(id => this.cart[id] > 0);
-                    if (ids.length === 0) { target.innerHTML = '<div style="width:100%; text-align:center; padding:10px; color:#999;">Cesta vazia</div>'; return; }
-                    const isSticky = targetId === 'sticky-basket-list';
-                    target.innerHTML = ids.map(id => {
-                        const p = this.data.find(x => x.id === id);
-                        if (!p) return '';
-                        const qty = this.cart[id] || 0;
-                        const trashIcon = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-                        const badgeHtml = isSticky ? `<div class="sticky-qty-badge">${qty}x</div>` : '';
-                        return `<div class="abc-card">
-                            <div class="abc-img-box" onclick="App.openInfo('${p.id}')">
-                                <img src="${p.imagem}" class="abc-img" alt="${p.nome}">
-                                ${badgeHtml}
-                                <div class="abc-qty-ctrl" onclick="event.stopPropagation()">
-                                    <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trashIcon:'-'}</div>
-                                    <div class="qcf-val">${qty}</div>
-                                    <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
-                                </div>
-                            </div>
-                            <div class="abc-title">${p.nome}</div>
-                        </div>`;
-                    }).join('');
-                });
             },
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
@@ -1006,7 +1082,7 @@
                 else if (isNew) { this.cartOrder = this.cartOrder.filter(x => x !== id); this.cartOrder.unshift(id); }
                 this.updateCardUI(id, newQty);
                 if(document.getElementById('checkout-modal').open) { this.renderIncluded(document.getElementById('modal-cart-list'), true); }
-                this.renderActiveCarousel(); this.updateTotal();
+                this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 this.saveState(); 
             },
@@ -1073,21 +1149,45 @@
                 document.getElementById('co-breakdown').innerHTML = bdHtml;
                 const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                 document.getElementById('co-total').innerText = txtTotal;
-                document.getElementById('icb-total-val').innerText = txtTotal;
                 document.getElementById('cart-count-badge').innerText = count;
+
+                // Update Chip & Enforce Obliged Products Rule
+                const chipBtn = document.querySelector('.ccb-btn');
+                const chipLabel = document.getElementById('ccb-label');
+                const chipVal = document.getElementById('ccb-val');
+                
                 if (basketPrice > effectiveTotal) {
+                    // HAS CREDIT - Cannot finalize yet
                     const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
                     toast.innerText = `Você tem R$ ${diff} em crédito!`; toast.classList.add('visible');
                     document.getElementById('mca-val').innerText = diff; mAlert.classList.remove('hidden');
+                    
+                    if(chipBtn) {
+                        chipBtn.innerText = "Adicionar Itens";
+                        // Opens Modal but will be blocked there, or we can just dismiss sheet to let them shop
+                        chipBtn.onclick = function() { App.openCheckout(); }; 
+                    }
+                    if(chipLabel) chipLabel.innerText = "Crédito Disponível";
+                    if(chipVal) { chipVal.innerText = `R$ ${diff}`; chipVal.style.color = "#4ade80"; }
+
                     if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Adicione produtos para usar seu crédito"; finalBtn.style.background = "#ccc"; }
-                } else if (!payMethod) { 
-                    toast.classList.remove('visible'); mAlert.classList.add('hidden');
-                    if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Selecione a forma de pagamento"; finalBtn.style.background = "#ccc"; }
                 } else {
+                    // PAYING EXTRA or EQUAL - Can finalize
                     toast.classList.remove('visible'); mAlert.classList.add('hidden');
-                    if(finalBtn) { finalBtn.disabled = false; finalBtn.innerText = "Fazer Pedido no WhatsApp"; finalBtn.style.background = "var(--primary)"; }
+                    
+                    if(chipBtn) {
+                        chipBtn.innerText = "Finalizar Pedido";
+                        chipBtn.onclick = function() { App.openCheckout(); };
+                    }
+                    if(chipLabel) chipLabel.innerText = "Total a Pagar";
+                    if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
+
+                    if (!payMethod) { 
+                        if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Selecione a forma de pagamento"; finalBtn.style.background = "#ccc"; }
+                    } else {
+                        if(finalBtn) { finalBtn.disabled = false; finalBtn.innerText = "Fazer Pedido no WhatsApp"; finalBtn.style.background = "var(--primary)"; }
+                    }
                 }
-                const bar = document.getElementById('ifood-cart-bar'); bar.classList.toggle('visible', count > 0);
             },
             openInfo(id) {
                 const p = this.data.find(x => x.id === id); if(!p) return;
