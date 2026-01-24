@@ -741,7 +741,8 @@
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
                 const lastMsg = this.container.lastElementChild;
-                // ROLAGEM AUTOMÁTICA DESATIVADA PARA NÃO ATRAPALHAR A LISTA
+                
+                // COMENTE ESTA LINHA ABAIXO PARA PARAR DE ROLAR PRA MENSAGEM:
                 // if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
 
@@ -822,6 +823,8 @@
                 
                 await this.wait(1000);
                 this.askNextCategory(); // VAI DIRETO PARA AS CATEGORIAS
+                this.scrollToBottom();
+
             },
 
             async askNextCategory() {
@@ -1107,11 +1110,12 @@
                 window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
 
-            scrollToBottom() {
-                // Rola para o fim apenas se necessário (ex: botões finais)
-                if(this.container.lastElementChild) {
-                    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
+           scrollToBottom() {
+                // COMENTE AS LINHAS DENTRO DESTA FUNÇÃO:
+                
+                // if(this.container.lastElementChild) {
+                //    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // }
             },
 
             wait(ms) { return new Promise(r => setTimeout(r, ms)); }
