@@ -693,17 +693,15 @@
             async explainRules(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage("Combinado!", 'user');
+                this.addMessage("Ok!", 'user');
 
                 await this.showTyping();
                 this.addMessage("Eu vou mostrar aqui a lista dos produtos quem vem na cesta.");
 
                 await this.wait(1600);
                 await this.showTyping();
-                this.addMessage("Você vai retirar os produtos que você não quer.");
+                this.addMessage("Você vai retirar os produtos que você não quer, beleza?.");
                                     
-                await this.wait(2000);
-                this.addMessage("E depois vamos adicionar novos produtos, beleza?");
 
                 // Botão 2: Mostrar Lista
                 const id = 'act-show-list';
@@ -718,7 +716,7 @@
             async showInitialList(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage("Pode mostrar", 'user');
+                this.addMessage("Sim", 'user');
                 
                 await this.wait(600);
                 this.showBasketGrid(); // Mostra a lista sem rolar pro fim
@@ -808,16 +806,12 @@
                 
                 if (removedVal > 0) {
                     this.addMessage(`Perfeito! O valor dos produtos que retirou foi de: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
-                    await this.wait(800);
+                    await this.wait(1600);
                     this.addMessage(`Agora, vamos adicionar novos produtos à sua cesta.`);
-                     await this.wait(800);
-                    this.addMessage(`Temos mais de 200 produtos diferentes.`);
-                    await this.wait(800);
+                    await this.wait(1600);
                     this.addMessage(`Você vai montando a cesta do seu jeito.`);
-                     await this.wait(800);
-                    this.addMessage(`Vá acompanhando o valor na parte debaixo da tela.`);
-                     await this.wait(800);
-                    this.addMessage(`Boas Compras.`);
+                    await this.wait(1300);
+                    this.addMessage(`São mais de 200 produtos diferentes. Boas Compras.`);
                 } else {
                     this.addMessage(`Ok! Você manteve a cesta completa.`);
                     await this.wait(800);
