@@ -678,12 +678,12 @@
                 
                 await this.wait(1000);
                 await this.showTyping();
-                this.addMessage("Agora vamos deixar a cesta do seu jeito, combinado?");
+                this.addMessage("Vamos deixar a cesta do seu jeito, ok?");
 
                 // Botão 1: Autorizar explicação
                 const id = 'act-intro';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Combinado!</button>
+                    <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">OK!</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -696,19 +696,19 @@
                 this.addMessage("Combinado!", 'user');
 
                 await this.showTyping();
-                this.addMessage("Primeiro você vai retirar da cesta os produtos que você não quer.");
+                this.addMessage("Eu vou mostrar aqui a lista dos produtos quem vem na cesta.");
 
                 await this.wait(1600);
                 await this.showTyping();
-                this.addMessage("Depois você terá o nosso supermercado inteiro para repor os produtos e comprar o que quiser, como se estivesse com o carrinho no corredor.");
+                this.addMessage("Você vai retirar os produtos que você não quer.");
                                     
                 await this.wait(2000);
-                this.addMessage("Vou mostrar a lista de produtos que já estão na sua cesta, pode ser?");
+                this.addMessage("E depois vamos adicionar novos produtos, beleza?");
 
                 // Botão 2: Mostrar Lista
                 const id = 'act-show-list';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Pode mostrar</button>
+                    <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Sim</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -775,7 +775,7 @@
             },
 
             askRemovalConfirmation() {
-                this.addMessage(`Você já retirou da lista os produtos que não quer?`);
+                this.addMessage(`Pronto. Você retirou da lista os produtos que não quer?`);
                 const id = 'actions-removal';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
@@ -807,9 +807,17 @@
                 await this.showTyping();
                 
                 if (removedVal > 0) {
-                    this.addMessage(`Perfeito! Os produtos que você tirou geraram um crédito de <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
+                    this.addMessage(`Perfeito! O valor dos produtos que retirou foi de: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
                     await this.wait(800);
-                    this.addMessage(`Agora você pode usar esse valor para adicionar outros produtos que preferir.`);
+                    this.addMessage(`Agora, vamos adicionar novos produtos à sua cesta.`);
+                     await this.wait(800);
+                    this.addMessage(`Temos mais de 200 produtos diferentes.`);
+                    await this.wait(800);
+                    this.addMessage(`Você vai montando a cesta do seu jeito.`);
+                     await this.wait(800);
+                    this.addMessage(`Vá acompanhando o valor na parte debaixo da tela.`);
+                     await this.wait(800);
+                    this.addMessage(`Boas Compras.`);
                 } else {
                     this.addMessage(`Ok! Você manteve a cesta completa.`);
                     await this.wait(800);
