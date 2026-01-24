@@ -7,7 +7,6 @@
     <meta name="theme-color" content="#ffffff">
     <title>Dona Antônia | Personalizar</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
     <style>
         /* --- 1. DESIGN SYSTEM & RESET --- */
         :root {
@@ -190,6 +189,17 @@
         .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; color: var(--text-sec); }
         .form-select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 1rem; margin-bottom: 15px; }
 
+        /* Fallback de Erro */
+        .error-box {
+            text-align: center; padding: 30px; background: #fef2f2; 
+            border: 1px dashed #ef4444; border-radius: 12px; margin: 20px;
+        }
+        .error-box p { color: #b91c1c; margin-bottom: 15px; font-size: 0.9rem; }
+        .file-label {
+            display: inline-block; padding: 12px 20px; background: #ef4444; color: white;
+            border-radius: 8px; font-weight: 700; cursor: pointer;
+        }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -199,7 +209,8 @@
     <div id="view-home">
         <header class="app-header">
             <div class="logo">Dona Antônia</div>
-            <div style="width:24px"></div> </header>
+            <div style="width:24px"></div>
+        </header>
 
         <div class="container">
             <div class="hero">
@@ -207,7 +218,9 @@
                 <p>Escolha, personalize e receba em casa.</p>
             </div>
             <div id="basket-list">
-                <div style="text-align:center; padding:40px; color:#999">Carregando produtos...</div>
+                <div style="text-align:center; padding:40px; color:#999">
+                    Carregando produtos...
+                </div>
             </div>
         </div>
     </div>
@@ -223,8 +236,7 @@
 
         <div class="flow-content" id="flow-feed">
             </div>
-
-        </div>
+    </div>
 
     <dialog id="modal-cart">
         <div class="cart-header">
@@ -255,83 +267,92 @@
 
     <script>
         // CONFIGURAÇÃO DO FLUXO (WIZARD)
-        // Define exatamente a ordem que o "Robô" vai apresentar as subcategorias
         const FLOW_STEPS = [
             { id: 'start', title: 'Itens da Cesta', type: 'basket_review' },
-            // Mercearia
             { id: 'graos', title: 'Arroz, Feijão e Óleo', category: 'MERCEARIA E ALIMENTOS', sub: 'ARROZ, FEIJÃO E ÓLEO' },
             { id: 'massas', title: 'Massas e Molhos', category: 'MERCEARIA E ALIMENTOS', sub: 'MASSAS E MOLHOS' },
             { id: 'temperos', title: 'Culinária e Temperos', category: 'MERCEARIA E ALIMENTOS', sub: 'CULINÁRIA E TEMPEROS' },
             { id: 'conservas', title: 'Conservas e Enlatados', category: 'MERCEARIA E ALIMENTOS', sub: 'CONSERVAS E ENLATADOS' },
-            // Café da Manhã
             { id: 'cafe', title: 'Café, Chás e Sucos', category: 'CAFÉ DA MANHÃ E LANCHES', sub: 'CAFÉ, CHÁS E SUCOS' },
             { id: 'leites', title: 'Leites e Achocolatados', category: 'CAFÉ DA MANHÃ E LANCHES', sub: 'LEITES, CEREAIS E ACHOCOLATADOS' },
             { id: 'biscoitos', title: 'Biscoitos e Snacks', category: 'CAFÉ DA MANHÃ E LANCHES', sub: 'BISCOITOS E SNACKS' },
-            // Limpeza
             { id: 'roupas', title: 'Roupas e Lavanderia', category: 'LIMPEZA E LAVANDERIA', sub: 'ROUPAS E LAVANDERIA' },
             { id: 'cozinha_limp', title: 'Cozinha e Banheiro', category: 'LIMPEZA E LAVANDERIA', sub: 'COZINHA E BANHEIRO' },
-            // Higiene
             { id: 'banho', title: 'Banho e Higiene', category: 'CUIDADOS PESSOAIS', sub: 'BANHO E HIGIENE' },
             { id: 'pessoal', title: 'Cuidados Pessoais', category: 'CUIDADOS PESSOAIS', sub: 'CUIDADOS E ESTÉTICA' },
-            // Fim
             { id: 'end', title: 'Finalizar', type: 'end' }
         ];
 
         const DonaAntoniaApp = {
             data: [],
-            cart: {}, // { id: qtd }
+            cart: {},
             activeBasket: null,
             currentStepIndex: 0,
 
-            // Inicialização
-            async init() {
-                try {
-                    // Carrega JSON (usando o nome que você forneceu)
-                    const res = await fetch('produtos (10).json');
-                    // Fallback se o nome mudar
-                    if(!res.ok) throw new Error("Arquivo não encontrado");
-                    
-                    const json = await res.json();
-                    const rawProducts = json.produtos || json;
-
-                    // Tratamento e Limpeza de Dados
-                    this.data = rawProducts.map(p => ({
-                        id: String(p.id),
-                        name: p.nome.trim(),
-                        price: parseFloat(p.valor || 0),
-                        offerPrice: parseFloat(p.Valor_Oferta || 0),
-                        isOffer: p.Oferta === 'Sim',
-                        // Separa Categoria > Subcategoria
-                        catMain: (p.categoria || "").split('>')[0].trim().toUpperCase(),
-                        catSub: (p.categoria || "").split('>')[1] ? (p.categoria || "").split('>')[1].trim().toUpperCase() : "",
-                        image: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'https://via.placeholder.com/300?text=Sem+Foto'
-                    }));
-
-                    this.renderHome();
-                } catch (err) {
-                    console.error(err);
-                    // Tenta carregar o arquivo padrao se o (10) falhar
-                    fetch('produtos.json').then(r=>r.json()).then(json => {
-                        const raw = json.produtos || json;
-                        this.data = raw.map(p => ({
-                            id: String(p.id),
-                            name: p.nome.trim(),
-                            price: parseFloat(p.valor || 0),
-                            offerPrice: parseFloat(p.Valor_Oferta || 0),
-                            isOffer: p.Oferta === 'Sim',
-                            catMain: (p.categoria || "").split('>')[0].trim().toUpperCase(),
-                            catSub: (p.categoria || "").split('>')[1] ? (p.categoria || "").split('>')[1].trim().toUpperCase() : "",
-                            image: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'https://via.placeholder.com/300?text=Sem+Foto'
-                        }));
-                        this.renderHome();
-                    }).catch(e => alert("Erro ao carregar sistema. Verifique o arquivo produtos.json"));
-                }
+            init() {
+                // Tenta carregar automaticamente
+                fetch('produtos.json')
+                    .then(r => { if(!r.ok) throw new Error(); return r.json(); })
+                    .then(json => this.processData(json))
+                    .catch(() => {
+                        // Tenta com o nome específico do seu upload
+                        fetch('produtos (10).json')
+                            .then(r => { if(!r.ok) throw new Error(); return r.json(); })
+                            .then(json => this.processData(json))
+                            .catch(() => this.showManualUpload()); // Mostra botão se falhar
+                    });
             },
 
-            // --- RENDERIZAÇÃO HOME ---
+            showManualUpload() {
+                const list = document.getElementById('basket-list');
+                list.innerHTML = `
+                    <div class="error-box">
+                        <p><strong>Não encontrei o arquivo de produtos automaticamente.</strong><br>
+                        Isso acontece por segurança do navegador ao abrir o arquivo direto.</p>
+                        <label class="file-label">
+                            📁 Carregar "produtos.json"
+                            <input type="file" hidden accept=".json" onchange="App.handleFile(this)">
+                        </label>
+                    </div>
+                `;
+            },
+
+            handleFile(input) {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        this.processData(json);
+                    } catch (err) { alert("Arquivo inválido!"); }
+                };
+                reader.readAsText(file);
+            },
+
+            processData(json) {
+                const rawProducts = json.produtos || json;
+                this.data = rawProducts.map(p => ({
+                    id: String(p.id),
+                    name: p.nome.trim(),
+                    price: parseFloat(p.valor || 0),
+                    offerPrice: parseFloat(p.Valor_Oferta || 0),
+                    isOffer: p.Oferta === 'Sim',
+                    catMain: (p.categoria || "").split('>')[0].trim().toUpperCase(),
+                    catSub: (p.categoria || "").split('>')[1] ? (p.categoria || "").split('>')[1].trim().toUpperCase() : "",
+                    image: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'https://via.placeholder.com/300?text=Sem+Foto'
+                }));
+                this.renderHome();
+            },
+
             renderHome() {
                 const listEl = document.getElementById('basket-list');
                 const baskets = this.data.filter(p => p.catMain.includes('CESTA'));
+                
+                if(baskets.length === 0) {
+                    listEl.innerHTML = '<p style="text-align:center">Nenhuma cesta encontrada.</p>';
+                    return;
+                }
 
                 listEl.innerHTML = baskets.map(b => `
                     <div class="basket-card">
@@ -357,7 +378,6 @@
                 if (!this.cart[id]) this.cart[id] = 0;
                 this.cart[id] += delta;
                 if (this.cart[id] <= 0) delete this.cart[id];
-                
                 this.updateCartUI();
                 this.refreshActiveGrids(id);
             },
@@ -378,10 +398,8 @@
             updateCartUI() {
                 const { total, count } = this.getCartMetrics();
                 const text = `R$ ${total.toFixed(2).replace('.',',')}`;
-                
                 document.getElementById('cart-total-display').innerText = text;
                 document.getElementById('modal-total-val').innerText = text;
-                
                 const pill = document.querySelector('.cart-pill');
                 if (count > 0) pill.classList.add('active'); else pill.classList.remove('active');
             },
@@ -391,29 +409,19 @@
                 this.activeBasket = this.data.find(x => x.id === basketId);
                 this.cart = {};
                 this.currentStepIndex = 0;
-
-                // Popula o carrinho inicial com os itens da cesta (se houver items no json)
-                // Assumindo que o JSON não tem a propriedade 'items' preenchida para todos,
-                // vamos iniciar zerado mas adicionar a própria cesta como item base se desejar, 
-                // ou apenas iniciar o fluxo. 
-                // A lógica anterior tentava ler basket.items. Vamos simplificar:
-                // Se a cesta tiver itens definidos no JSON, adiciona.
+                
+                // Inicializa carrinho (se possível) ou adiciona a própria cesta
                 if(this.activeBasket.items && Array.isArray(this.activeBasket.items)) {
                     this.activeBasket.items.forEach(i => {
                         this.cart[String(i.id)] = parseInt(i.qty || 1);
                     });
                 } else {
-                    // Se não tiver items definidos, adiciona a cesta em si como produto
-                    // OU assume que o usuário vai montar do zero.
-                    // Para este modelo "Personalizar", o ideal é começar com a cesta.
                     this.cart[basketId] = 1;
                 }
 
                 this.updateCartUI();
-                
                 document.getElementById('view-flow').classList.add('active');
-                document.getElementById('flow-feed').innerHTML = ''; // Limpa chat
-                
+                document.getElementById('flow-feed').innerHTML = '';
                 this.renderStep();
             },
 
@@ -426,7 +434,7 @@
             nextStep() {
                 this.currentStepIndex++;
                 if (this.currentStepIndex >= FLOW_STEPS.length) {
-                    this.openCart(); // Fim do fluxo
+                    this.openCart();
                     return;
                 }
                 this.renderStep();
@@ -436,18 +444,16 @@
                 const step = FLOW_STEPS[this.currentStepIndex];
                 const feed = document.getElementById('flow-feed');
 
-                // 1. Efeito de Digitação (Humanização)
+                // Typing Indicator
                 const typing = document.createElement('div');
                 typing.className = 'typing';
                 typing.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
                 feed.appendChild(typing);
                 feed.scrollTo(0, feed.scrollHeight);
 
-                // 2. Processa o passo após delay
                 setTimeout(() => {
                     typing.remove();
                     
-                    // Texto do Robô
                     let msg = "";
                     if (step.type === 'basket_review') {
                         msg = `Oi! Você escolheu a <strong>${this.activeBasket.name}</strong>. Veja os itens inclusos e adicione mais coisas se quiser.`;
@@ -462,31 +468,24 @@
                     msgEl.innerHTML = msg;
                     feed.appendChild(msgEl);
 
-                    // 3. Renderiza Produtos (Se houver categoria)
                     if (step.category) {
                         const products = this.getProducts(step.category, step.sub);
-                        if (products.length > 0) {
-                            feed.appendChild(this.createProductGrid(products));
-                        } else {
-                            // Se não tiver produtos nessa categoria, avisa e pula
+                        if (products.length > 0) feed.appendChild(this.createProductGrid(products));
+                        else {
                             const empty = document.createElement('div');
                             empty.className = 'msg-bot';
                             empty.innerHTML = "<small>Não tenho itens desta categoria no momento.</small>";
                             feed.appendChild(empty);
                         }
                     } else if (step.type === 'basket_review') {
-                        // Mostra o que já está no carrinho
                         const ids = Object.keys(this.cart);
                         const items = ids.map(id => this.data.find(x => x.id === id)).filter(x=>x);
                         feed.appendChild(this.createProductGrid(items));
                     }
 
-                    // 4. Renderiza Botões de Ação
                     this.renderActions(step);
-                    
                     feed.scrollTo(0, feed.scrollHeight);
-
-                }, 600); // Delay de 600ms
+                }, 600);
             },
 
             renderActions(step) {
@@ -507,25 +506,18 @@
                             <span>${btnLabel}</span> <span>➡</span>
                         </button>
                     `;
-                    // Botão Pular (Opcional, se não for review)
-                    if(step.type !== 'basket_review') {
-                         /* Pode adicionar um botão "Pular" se quiser */
-                    }
                 }
                 feed.appendChild(actionsDiv);
             },
 
-            // --- HELPER DE DADOS ---
             getProducts(mainCat, subCat) {
-                // Filtra por Categoria Principal e Subcategoria (contém)
                 return this.data.filter(p => {
                     if (p.catMain !== mainCat) return false;
                     if (subCat && !p.catSub.includes(subCat)) return false;
                     return true;
-                }).slice(0, 20); // Limite de segurança
+                }).slice(0, 20);
             },
 
-            // --- COMPONENTE GRID HTML ---
             createProductGrid(products) {
                 const grid = document.createElement('div');
                 grid.className = 'prod-grid';
@@ -537,19 +529,13 @@
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.price;
                 
-                // Botão Adicionar ou Controle Qtd
-                let actionBtn = '';
-                if (qty === 0) {
-                    actionBtn = `<div class="btn-add" onclick="App.modQty('${p.id}', 1)">+</div>`;
-                } else {
-                    actionBtn = `
-                        <div class="qty-ctrl">
+                let actionBtn = qty === 0 
+                    ? `<div class="btn-add" onclick="App.modQty('${p.id}', 1)">+</div>`
+                    : `<div class="qty-ctrl">
                             <div class="qc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
                             <div class="qc-val">${qty}</div>
                             <div class="qc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
-                        </div>
-                    `;
-                }
+                       </div>`;
 
                 return `
                     <div class="prod-card" data-pid="${p.id}">
@@ -564,25 +550,20 @@
                                 R$ ${price.toFixed(2).replace('.',',')}
                             </div>
                         </div>
-                        <div class="pc-action">
-                            ${actionBtn}
-                        </div>
+                        <div class="pc-action">${actionBtn}</div>
                     </div>
                 `;
             },
 
             refreshActiveGrids(pid) {
-                // Atualiza cards existentes na tela sem recriar o grid todo
                 const product = this.data.find(x => x.id === pid);
                 if (!product) return;
-                
                 const cards = document.querySelectorAll(`.prod-card[data-pid="${pid}"]`);
                 cards.forEach(card => {
                     card.outerHTML = this.getProductCardHTML(product);
                 });
             },
 
-            // --- CHECKOUT ---
             openCart() {
                 const modal = document.getElementById('modal-cart');
                 const list = document.getElementById('cart-items');
@@ -596,9 +577,7 @@
                         const price = p.isOffer ? p.offerPrice : p.price;
                         return `
                             <div class="cart-item">
-                                <div>
-                                    <strong>${this.cart[id]}x</strong> ${p.name}
-                                </div>
+                                <div><strong>${this.cart[id]}x</strong> ${p.name}</div>
                                 <div>R$ ${(price * this.cart[id]).toFixed(2).replace('.',',')}</div>
                             </div>
                         `;
@@ -616,27 +595,20 @@
             checkout() {
                 const { total } = this.getCartMetrics();
                 const payMethod = document.getElementById('pay-method').value;
-                
                 let msg = `*PEDIDO DONA ANTÔNIA* 🛒\n\n`;
                 msg += `*ITENS:*\n`;
-                
                 for (let id in this.cart) {
                     const p = this.data.find(x => x.id === id);
                     if(p) msg += `▪ ${this.cart[id]}x ${p.name}\n`;
                 }
-                
                 msg += `\n*TOTAL: R$ ${total.toFixed(2).replace('.',',')}*\n`;
                 msg += `Pagamento: ${payMethod}\n`;
-                msg += `(Cliente aguardando confirmação)`;
-
                 window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
             }
         };
 
-        // Atalho global
         const App = DonaAntoniaApp;
         window.onload = () => App.init();
-
     </script>
 </body>
 </html>
