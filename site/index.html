@@ -668,19 +668,25 @@
                 await this.showTyping();
                 this.addMessage(`${greeting}! Tudo bem? Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>.`);
 
-                await this.wait(800);
+                await this.wait(1600);
                 await this.showTyping();
-                this.addMessage("Agora vamos deixar a cesta do seu jeito.");
+                this.addMessage("Agora vamos deixar a cesta do seu jeito, combinado?");
+
+                 // Button
+                const id = 'act-start';
+                const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;"><button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Combinado!</button></div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
 
                 await this.wait(800);
                 await this.showTyping();
                 this.addMessage("Primeiro você vai retirar da cesta os produtos que você não quer");
 
-                await this.wait(800);
+                await this.wait(1600);
                 await this.showTyping();
                 this.addMessage("Depois você terá o nosso supermercado inteiro para repor os produtos e comprar o que quiser");
                                     
-                await this.wait(1000);
+                await this.wait(2000);
                 this.addMessage("Vou mandar novamente a lista de produtos da cesta, ok?");
 
                 // Button
