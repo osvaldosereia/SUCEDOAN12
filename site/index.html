@@ -835,14 +835,12 @@
                 if (removedVal > 0) {
                     this.addMessage(`Legal! Os produtos que retirou deu: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
                     await this.wait(1600);
-                    this.addMessage(`Agora, é só adcionar novos produtos.`);
-                    await this.wait(1600);
-                    this.addMessage(`Deixe a cesta do seu jeito e economize com os melhores preços da cidade.`);
-                   await this.wait(1800);
+                    this.addMessage(`Agora, deixe a cesta do seu jeito e economize com os melhores preços da cidade.`);
+                   await this.wait(2000);
                     this.addMessage(`Boas Compras.`);
                 } else {
                     this.addMessage(`Ok! Você manteve a cesta completa.`);
-                    await this.wait(800);
+                    await this.wait(1800);
                     this.addMessage(`Deseja adicionar algo extra?`);
                 }
 
@@ -851,7 +849,7 @@
                     App.updateTotal(); 
                 } catch(e){ console.error("Chip Error", e); }
                 
-                await this.wait(1000);
+                await this.wait(1800);
                 this.askNextCategory(); 
             },
 
