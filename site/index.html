@@ -170,6 +170,10 @@
         .btn-chat.primary { background: var(--primary); color: white; }
         .btn-chat:active { transform: scale(0.95); }
 
+        .chat-input-group { display:flex; gap:10px; width:100%; max-width:300px; margin-top:5px; }
+        .chat-input { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; outline:none; }
+        .chat-input-btn { background:var(--secondary); color:white; padding:0 15px; border-radius:8px; font-weight:600; }
+
         .typing-indicator { display: inline-flex; gap: 4px; padding: 12px 16px; background: #f1f5f9; border-radius: 0 16px 16px 16px; width: fit-content; opacity: 0; }
         .typing-indicator span { width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
         .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
@@ -345,44 +349,6 @@
             color: #334155; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; display: block;
         }
 
-        /* Checkout Modal */
-        dialog.modal-checkout { 
-            margin: auto; inset: 0; position: fixed; border: none; border-radius: 16px 16px 0 0; width: 100%; height: 90vh; 
-            max-width: 600px; bottom: 0; top: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); padding: 0; 
-            background: #fff; flex-direction: column; z-index: 10002; 
-        }
-        dialog.modal-checkout[open] { display: flex; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
-        
-        .co-header { padding: 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
-        .co-body { padding: 20px; overflow-y: auto; flex: 1; background: #f7f7f7; }
-        .co-horizontal-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 20px; }
-        
-        .co-card { min-width: 140px; max-width: 140px; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; flex-shrink: 0; }
-        .co-card .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
-        .co-card-img { width: 105%; height: 105%; object-fit: contain; }
-        .co-card-title { font-size: 0.8rem; color: #3e3e3e; text-align: left; font-weight: 500; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; margin-bottom: 6px; width: 100%; }
-
-        .co-total-row, .co-payment-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-        .co-payment-box select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; margin-top: 10px; background: white; }
-        .co-footer { padding: 16px; border-top: 1px solid #f0f0f0; background: white; }
-        .co-btn-final { width: 100%; padding: 14px; background: var(--primary); color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; text-align: center; }
-        .co-btn-final:disabled { background: #ccc; cursor: not-allowed; }
-
-        .coupon-toggle { font-size: 0.8rem; color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: underline; margin-top: 10px; display: inline-block; }
-        .coupon-box { display: flex; gap: 8px; margin-top: 10px; }
-        .coupon-input { flex: 1; padding: 8px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; text-transform: uppercase; }
-        .coupon-btn { padding: 0 16px; background: #3e3e3e; color: white; border-radius: 8px; font-weight: 600; font-size: 0.8rem; }
-        .modal-credit-box { background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center; color: #14532d; }
-        .mca-btn { background: #16a34a; color: white; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; margin-top: 5px; }
-
-        .breakdown-section-title {
-            font-size: 0.75rem; font-weight: 800; color: #64748b; 
-            margin: 10px 0 5px 0; border-bottom: 1px solid #e2e8f0; 
-            padding-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-
         /* Footer */
         .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 80px; margin-top: 40px; }
         .footer-info { text-align: center; margin-bottom: 30px; }
@@ -472,7 +438,7 @@
                 <span id="ccb-label">Seu Crédito</span>
                 <span id="ccb-val" class="ccb-val">R$ 0,00</span>
             </div>
-            <button class="ccb-btn" onclick="App.openCheckout()">Ver Cesta</button>
+            <button class="ccb-btn" onclick="ChatFlow.startCheckout()">Ver Cesta</button>
         </div>
     </div>
 
@@ -519,63 +485,6 @@
         <div id="sd-content" style="width:100%;"></div>
         <button class="sd-btn-close" onclick="App.closeSuggestion()">Fechar</button>
     </div>
-
-    <dialog id="checkout-modal" class="modal-checkout">
-        <div class="co-header">
-            <span class="co-title" style="font-weight:700">Minha Cesta</span>
-            <span class="co-close" style="font-size:1.5rem; cursor:pointer" onclick="document.getElementById('checkout-modal').close()">✕</span>
-        </div>
-        
-        <div class="co-body">
-            <div class="co-section-title" style="font-weight: 600; color: #222B49; font-size: 1.1rem; margin-bottom: 10px;">Veja os Produtos da sua Cesta</div>
-
-            <div id="modal-cart-list" class="co-horizontal-list"></div>
-
-            <div style="background:#f0f9ff; border:1px solid #e0f2fe; padding:15px; border-radius:8px; margin-bottom:20px; margin-top:10px;">
-                <h4 style="color:#0369a1; margin-bottom:5px; font-size:1.1rem;">💡 Sobre as trocas:</h4>
-                <p style="color:#334155; font-size:0.95rem; line-height:1.4; margin:0;">Você pode trocar até <strong id="rm-limit-info">X</strong> produtos e adicionar quantos quiser.</p>
-            </div>
-
-            <div id="modal-credit-alert" class="modal-credit-box hidden">
-                <div style="margin-bottom:5px">Você possui <strong>R$ <span id="mca-val">0,00</span></strong> de Crédito.</div>
-                <div style="font-size:0.8rem; margin-bottom:8px">Adicione novos produtos para aproveitar.</div>
-                <button class="mca-btn" onclick="document.getElementById('checkout-modal').close()">Ver Produtos</button>
-            </div>
-            
-            <div class="co-total-row">
-                <div id="co-breakdown" style="width:100%; margin-bottom:12px; display:flex; flex-direction:column; gap:6px;"></div>
-                <div style="width:100%; height:1px; background:#e5e7eb; margin-bottom:12px;"></div>
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
-                    <span class="co-total-label" style="font-weight:800; font-size:1.1rem;">Total a pagar</span>
-                    <span class="co-total-val" id="co-total" style="font-size:1.4rem; color:#d31a28;">R$ 0,00</span>
-                </div>
-                <div style="margin-top:12px; font-size:0.85rem; color:#717171; text-align:left; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; line-height:1.4;">
-                    Você só paga quando a cesta chegar na sua casa.
-                </div>
-                <div class="coupon-toggle" onclick="App.toggleCoupon()">Possui cupom de desconto?</div>
-                <div id="coupon-area" class="coupon-box hidden">
-                    <input type="text" id="coupon-input" class="coupon-input" placeholder="CUPOM">
-                    <button class="coupon-btn" onclick="App.applyCoupon()">Aplicar</button>
-                </div>
-            </div>
-
-            <div class="co-payment-box" style="margin-top:20px;">
-                <div class="co-section-title" style="margin-bottom:0; font-weight:600;">
-                    Como será o Pagamento? <span style="color:#b91c1c">*</span>
-                </div>
-                <select id="payment-method" onchange="App.updateTotal()">
-                    <option value="" selected disabled>Clique aqui para selecionar...</option>
-                    <option>Pix</option>
-                    <option>Dinheiro</option>
-                    <option>Cartão de Crédito (até 3x sem juros)</option>
-                    <option>Cartão de Débito</option>
-                    <option>Vale Alimentação</option>
-                </select>
-            </div>
-        </div> <div class="co-footer">
-            <button id="final-btn" class="co-btn-final" onclick="App.sendWhatsApp()">Fazer Pedido no WhatsApp</button>
-        </div>
-    </dialog>
 
     <script>
         const CONSTANTS = { 
@@ -663,17 +572,16 @@
             container: null,
             categories: [], 
             catIndex: 0,
+            checkoutState: { paymentMethod: '', couponApplied: false },
             
             async start() {
                 this.container = document.getElementById('chat-stream');
                 this.container.innerHTML = '';
                 this.catIndex = 0;
                 
-                // DYNAMIC CATEGORY EXTRACTION
                 try {
                     const uniqueCats = [...new Set(App.data.map(p => p.appCategory))];
                     this.categories = uniqueCats.filter(c => c && c !== 'undefined' && !c.toUpperCase().includes('CESTA'));
-                    // Intelligent Sort: Put Food/Essentials First
                     this.categories.sort((a,b) => {
                         const scoreA = (a.includes('MERCEARIA') || a.includes('ALIMENTOS')) ? 2 : (a.includes('LIMPEZA') ? 1 : 0);
                         const scoreB = (b.includes('MERCEARIA') || b.includes('ALIMENTOS')) ? 2 : (b.includes('LIMPEZA') ? 1 : 0);
@@ -704,7 +612,7 @@
                 const html = `<div id="${id}" class="typing-indicator"><span></span><span></span><span></span></div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
-                await this.wait(1200); // Slightly faster
+                await this.wait(1200); 
                 const el = document.getElementById(id);
                 if(el) el.remove();
             },
@@ -734,20 +642,22 @@
             async handleRemovalYes(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                
                 this.addMessage("Sim, já retirei.", 'user');
                 
-                // Safe Calc
+                let startSum = 0; 
+                for(let i in App.originalCart) { 
+                    let p = App.data.find(x => x.id === i); 
+                    if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * App.originalCart[i]; 
+                }
+                
                 let removedVal = 0;
-                try {
-                    for(let id in App.originalCart) {
-                        const diff = App.originalCart[id] - (App.cart[id] || 0);
-                        if(diff > 0) {
-                            const p = App.data.find(x => x.id === id);
-                            if(p) removedVal += diff * (p.isOffer ? p.offerPrice : p.valor);
-                        }
+                for(let id in App.originalCart) {
+                    const diff = App.originalCart[id] - (App.cart[id] || 0);
+                    if(diff > 0) {
+                        const p = App.data.find(x => x.id === id);
+                        if(p) removedVal += diff * (p.isOffer ? p.offerPrice : p.valor);
                     }
-                } catch(e){ console.log(e); }
+                }
                 
                 await this.showTyping();
                 
@@ -766,7 +676,6 @@
                     App.updateTotal(); 
                 } catch(e){ console.error("Chip Error", e); }
                 
-                // CRITICAL FIX: Ensure continuation even if errors above
                 await this.wait(1000);
                 this.offerStep(); 
             },
@@ -814,7 +723,7 @@
                 const html = `<div id="${id}" class="chat-actions">
                      <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
                      <button class="btn-chat" onclick="ChatFlow.skipCategory('${id}')">Não, próximo</button>
-                     <button class="btn-chat" onclick="App.openCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
+                     <button class="btn-chat" onclick="ChatFlow.startCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -866,6 +775,126 @@
                 this.catIndex++;
                 this.askNextCategory();
             },
+            
+            // --- NEW CHECKOUT CHAT FLOW ---
+            async startCheckout() {
+                // Hide Floating Chip
+                document.getElementById('credit-chip').classList.remove('visible');
+                
+                this.addMessage("Finalizar Agora", 'user');
+                await this.showTyping();
+                
+                let summary = `<strong>Resumo do Pedido:</strong><br><br>`;
+                
+                // Additions
+                let addedCount = 0;
+                for(let id in App.cart) {
+                    const diff = App.cart[id] - (App.originalCart[id] || 0);
+                    if(diff > 0) {
+                        const p = App.data.find(x => x.id === id);
+                        if(p) { summary += `+ ${diff}x ${p.nome}<br>`; addedCount++; }
+                    }
+                }
+                if(addedCount === 0) summary += "Nenhum item adicionado.<br>";
+                
+                summary += `<br><strong>Total:</strong> <span id="chat-total-display">...</span>`;
+                this.addMessage(summary);
+                App.updateTotal(); // Refresh value
+                
+                await this.wait(1000);
+                this.askCoupon();
+            },
+            async askCoupon() {
+                const id = 'act-coupon';
+                this.addMessage("Antes de fechar, você tem algum <strong>cupom de desconto</strong>?");
+                const html = `<div id="${id}" class="chat-actions">
+                     <button class="btn-chat primary" onclick="ChatFlow.renderCouponInput('${id}')">Sim, tenho</button>
+                     <button class="btn-chat" onclick="ChatFlow.skipCoupon('${id}')">Não tenho</button>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+            renderCouponInput(elemId) {
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
+                this.addMessage("Sim, tenho", 'user');
+                
+                const inputId = 'chat-coupon-input';
+                const html = `<div class="chat-input-group">
+                    <input type="text" id="${inputId}" class="chat-input" placeholder="Digite seu cupom" style="text-transform:uppercase;">
+                    <button class="chat-input-btn" onclick="ChatFlow.applyCouponChat('${inputId}')">Aplicar</button>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+            applyCouponChat(inputId) {
+                const val = document.getElementById(inputId).value.toUpperCase();
+                if(val === CONSTANTS.COUPON_CODE) {
+                    App.appliedCoupon = true;
+                    this.addMessage(`Cupom <strong>${val}</strong> aplicado!`, 'user');
+                    App.updateTotal();
+                    this.askPayment();
+                } else {
+                    alert("Cupom Inválido");
+                }
+            },
+            skipCoupon(elemId) {
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
+                this.addMessage("Não tenho", 'user');
+                this.askPayment();
+            },
+            async askPayment() {
+                await this.showTyping();
+                const id = 'act-payment';
+                this.addMessage("Como você prefere realizar o pagamento na entrega?");
+                
+                const methods = ["Pix", "Dinheiro", "Cartão de Crédito", "Cartão de Débito", "Vale Alimentação"];
+                let buttons = methods.map(m => `<button class="btn-chat" onclick="ChatFlow.handlePayment('${id}', '${m}')">${m}</button>`).join('');
+                
+                const html = `<div id="${id}" class="chat-actions">${buttons}</div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+            async handlePayment(elemId, method) {
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
+                this.addMessage(method, 'user');
+                this.checkoutState.paymentMethod = method;
+                
+                await this.wait(800);
+                this.finalizeOrder();
+            },
+            async finalizeOrder() {
+                await this.showTyping();
+                const totalText = document.getElementById('icb-total-val').innerText; // Get computed total
+                
+                this.addMessage(`Combinado! O total final é <strong>${totalText}</strong>. Clique abaixo para enviar o pedido.`);
+                
+                const id = 'act-finish';
+                const html = `<div id="${id}" class="chat-actions">
+                    <button class="btn-chat primary" onclick="ChatFlow.sendWhatsAppChat()" style="background:#25D366; border-color:#25D366; color:white; width:100%; justify-content:center; display:flex; align-items:center; gap:8px;">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.001.572 2.097.872 3.154.872h.001c3.181 0 5.768-2.586 5.768-5.766.001-3.18-2.585-5.767-5.766-5.767zm6.591 9.473c-.22.616-1.282 1.13-1.756 1.189-.436.054-.925.263-3.136-1.157-2.39-1.536-3.927-4.137-4.047-4.298-.119-.161-.963-1.286-.963-2.453 0-1.166.608-1.742.824-1.981.216-.239.576-.299.768-.299.192 0 .384.001.552.012.18.012.42.067.636.587.228.552.768 1.908.84 2.046.072.138.12.3.024.492-.096.192-.144.312-.288.48-.144.168-.3.234-.432.396-.144.15-.294.312-.126.6.168.288.75 1.224 1.608 1.992 1.104.984 2.04 1.29 2.328 1.428.288.138.456.12.624-.072.168-.192.72-1.05.912-1.41.192-.36.384-.3.648-.198.264.102 1.68.792 1.968.936.288.144.48.216.552.336.072.12.072.696-.144 1.312z"/></svg>
+                        Enviar Pedido no WhatsApp
+                    </button>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+            sendWhatsAppChat() {
+                const total = document.getElementById('icb-total-val').innerText;
+                let msg = `*PEDIDO: ${App.currentBasket.nome}*\n`;
+                for(let id in App.cart) { 
+                    const p = App.data.find(x => x.id === id); 
+                    msg += `${App.cart[id]}x ${p.nome}\n`; 
+                }
+                
+                if(App.appliedCoupon) msg += `\n*CUPOM APLICADO: ${CONSTANTS.COUPON_CODE}*`;
+                
+                msg += `\n*TOTAL: ${total}*\nPagamento: ${this.checkoutState.paymentMethod}`;
+                
+                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
+            },
             scrollToBottom() {
                 if(this.container.lastElementChild) {
                     this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -887,9 +916,8 @@
                         const catRaw = (p.categoria || "OUTROS").trim();
                         const parts = catRaw.split('>');
                         const mainCat = parts[0].trim().toUpperCase();
-                        let appCat = catRaw; // Default fallback
+                        let appCat = catRaw; 
                         
-                        // Robust Category Mapping
                         if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
                         else if (mainCat.includes('CAFÉ') || mainCat.includes('MATINAIS')) appCat = "CAFÉ DA MANHÃ E LANCHES";
                         else if (mainCat.includes('LIMPEZA') || mainCat.includes('LAVANDERIA')) appCat = "LIMPEZA E LAVANDERIA";
@@ -932,8 +960,6 @@
                                     document.getElementById('home-view').classList.add('hidden');
                                     document.getElementById('customizer-view').classList.remove('hidden');
                                     document.body.classList.add('customizer-mode');
-                                    document.getElementById('rm-limit-info').innerText = this.currentLimit;
-                                    // Make sure ChatFlow handles data properly
                                     setTimeout(() => ChatFlow.start(), 100);
                                     document.body.classList.add('loaded'); MarketingApp.init();
                                     return; 
@@ -1026,7 +1052,6 @@
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
                 
-                document.getElementById('rm-limit-info').innerText = this.currentLimit;
                 window.scrollTo(0,0); 
                 
                 ChatFlow.start();
@@ -1048,16 +1073,6 @@
                     container.innerHTML = `<div class="chat-msg">Resultados da busca:</div><div class="grid-products-row" style="padding-left:16px;">${products.map(p => this.buildCard(p)).join('')}</div>`;
                 }
             },
-            renderIncluded(targetElement, isCheckout = false) {
-                if(!targetElement) return;
-                const ids = this.cartOrder.filter(id => this.cart[id] > 0);
-                if (isCheckout) {
-                    targetElement.innerHTML = ids.length ? ids.map(id => {
-                        const p = this.data.find(x => x.id === id);
-                        return p ? this.buildCheckoutCard(p) : '';
-                    }).join('') : '<p style="padding:10px; width:100%; text-align:center; color:#999;">Cesta vazia</p>';
-                }
-            },
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
@@ -1066,11 +1081,6 @@
                 const qtyHtml = `<div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()"><div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trashIcon:'-'}</div><div class="qcf-val" id="qty-val-${p.id}">${qty}</div><div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div></div>`;
                 const valHtml = (p.validade && p.validade.length > 2) ? `<div class="cp-validity">Val: ${p.validade}</div>` : '';
                 return `<div class="card-prod" id="card-${p.id}">${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}<div class="cp-img-box" onclick="App.openInfo('${p.id}'); MarketingApp.logProductView('${p.id}');"><img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100" alt="${p.nome}">${btnHtml}${qtyHtml}</div><div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">R$ ${price.toFixed(2).replace('.',',')}${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}</div><div class="cp-title">${p.nome}</div>${valHtml}</div>`;
-            },
-            buildCheckoutCard(p) {
-                const qty = this.cart[p.id] || 0;
-                const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-                return `<div class="co-card"><div class="cp-img-box"><img src="${p.imagem}" class="cp-img" onclick="App.openInfo('${p.id}')" alt="${p.nome}"><div class="qty-ctrl-float" id="qty-ctrl-${p.id}" onclick="event.stopPropagation()"><div class="qcf-btn" id="btn-dec-${p.id}" onclick="App.modQty('${p.id}', -1)">${qty===1?trashIcon:'-'}</div><div class="qcf-val" id="qty-val-${p.id}">${qty}</div><div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div></div></div><div class="co-card-title" style="text-align:center; margin-top:4px;">${p.nome}</div></div>`;
             },
             countRemovals() {
                 let count = 0;
@@ -1087,7 +1097,6 @@
                 if(this.cart[id] <= 0) { delete this.cart[id]; this.cartOrder = this.cartOrder.filter(x => x !== id); } 
                 else if (isNew) { this.cartOrder = this.cartOrder.filter(x => x !== id); this.cartOrder.unshift(id); }
                 this.updateCardUI(id, newQty);
-                if(document.getElementById('checkout-modal').open) { this.renderIncluded(document.getElementById('modal-cart-list'), true); }
                 this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 this.saveState(); 
@@ -1112,15 +1121,11 @@
             },
             closeSuggestion() { document.getElementById('suggestion-drawer').classList.remove('open'); document.getElementById('suggestion-overlay').classList.remove('active'); },
             toggleCoupon() { document.getElementById('coupon-area').classList.toggle('hidden'); },
-            applyCoupon() {
-                if(document.getElementById('coupon-input').value.toUpperCase() === CONSTANTS.COUPON_CODE) { this.appliedCoupon = true; alert("Cupom Aplicado!"); this.updateTotal(); } 
-                else alert("Cupom Inválido");
-            },
             updateTotal() {
                 let sum = 0, count = 0;
                 for(let id in this.cart) { const p = this.data.find(x => x.id === id); if(p) { sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; count += this.cart[id]; } }
                 MarketingApp.logCartUpdate(sum, count);
-                const finalBtn = document.getElementById('final-btn'), mAlert = document.getElementById('modal-credit-alert'), toast = document.getElementById('credit-toast'), payMethod = document.getElementById('payment-method').value;
+                
                 if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
                     let startSum = 0; for(let i in this.originalCart) { let p = this.data.find(x => x.id === i); if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i]; }
                     this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
@@ -1128,34 +1133,16 @@
                 const basketPrice = this.currentBasket.valor, effectiveTotal = sum + this.baseFee;
                 let displayTotal = effectiveTotal > basketPrice ? (effectiveTotal - basketPrice < basketPrice * 0.02 ? basketPrice : effectiveTotal) : basketPrice;
                 if(this.appliedCoupon) displayTotal = Math.max(0, displayTotal - CONSTANTS.COUPON_VAL);
-                let bdHtml = `<div style="padding-bottom:10px; border-bottom:1px dashed #ccc; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; font-weight:700; font-size:0.9rem;"><span>Cesta ${this.currentBasket.nome}</span><span>R$ ${basketPrice.toFixed(2).replace('.', ',')}</span></div></div>`;
-                let hasRemoved = false, removedHtml = '';
-                for(let id in this.originalCart) {
-                    const diff = this.originalCart[id] - (this.cart[id] || 0);
-                    if(diff > 0) {
-                        hasRemoved = true; const p = this.data.find(x => x.id === id);
-                        if(p) { const unitVal = p.isOffer ? p.offerPrice : p.valor; removedHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#b91c1c; margin-bottom:4px;"><span>-${diff}x ${p.nome.substring(0, 25)}...</span><span>- R$ ${(unitVal * diff).toFixed(2).replace('.', ',')}</span></div>`; }
-                    }
-                }
-                if(hasRemoved) bdHtml += `<div class="breakdown-section-title">🔻 Itens Removidos</div>` + removedHtml;
-                let hasAdded = false, addedHtml = '';
-                for(let id in this.cart) {
-                    const diff = this.cart[id] - (this.originalCart[id] || 0);
-                    if(diff > 0) {
-                        hasAdded = true; const p = this.data.find(x => x.id === id);
-                        if(p) { const unitVal = p.isOffer ? p.offerPrice : p.valor; addedHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#15803d; margin-bottom:4px;"><span>+${diff}x ${p.nome.substring(0, 25)}...</span><span>+ R$ ${(unitVal * diff).toFixed(2).replace('.', ',')}</span></div>`; }
-                    }
-                }
-                if(hasAdded) bdHtml += `<div class="breakdown-section-title" style="margin-top:10px;">💚 Itens Adicionados</div>` + addedHtml;
-                if (effectiveTotal > basketPrice) {
-                    const exc = effectiveTotal - basketPrice;
-                    if (exc < basketPrice * 0.02) bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;"><span>Desconto (Cortesia)</span><span>- R$ ${exc.toFixed(2).replace('.', ',')}</span></div>`;
-                }
-                if(this.appliedCoupon) bdHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#16a34a; font-weight:600; margin-top:5px;"><span>Cupom (${CONSTANTS.COUPON_CODE})</span><span>- R$ ${CONSTANTS.COUPON_VAL.toFixed(2).replace('.', ',')}</span></div>`; 
-                document.getElementById('co-breakdown').innerHTML = bdHtml;
-                const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
-                document.getElementById('co-total').innerText = txtTotal;
                 
+                const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
+                
+                // Update invisible fields for calculation consistency
+                const icbVal = document.getElementById('icb-total-val');
+                if(icbVal) icbVal.innerText = txtTotal;
+                
+                const chatTotalDisplay = document.getElementById('chat-total-display');
+                if(chatTotalDisplay) chatTotalDisplay.innerText = txtTotal;
+
                 // --- CHIP & BUTTON LOGIC ---
                 const chipBtn = document.querySelector('.ccb-btn');
                 const chipLabel = document.getElementById('ccb-label');
@@ -1164,33 +1151,22 @@
                 if (basketPrice > effectiveTotal) {
                     // HAS CREDIT
                     const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
-                    toast.innerText = `Você tem R$ ${diff} em crédito!`; toast.classList.add('visible');
-                    document.getElementById('mca-val').innerText = diff; mAlert.classList.remove('hidden');
                     
                     if(chipBtn) {
                         chipBtn.innerText = "Adicionar Itens";
-                        chipBtn.onclick = function() { App.openCheckout(); }; 
+                        // Opens Modal but will be blocked there, or we can just dismiss sheet to let them shop
+                        chipBtn.onclick = function() { ChatFlow.showBasketGrid(); }; 
                     }
                     if(chipLabel) chipLabel.innerText = "Crédito Disponível";
                     if(chipVal) { chipVal.innerText = `R$ ${diff}`; chipVal.style.color = "#4ade80"; }
-
-                    if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Adicione produtos para usar seu crédito"; finalBtn.style.background = "#ccc"; }
                 } else {
                     // READY
-                    toast.classList.remove('visible'); mAlert.classList.add('hidden');
-                    
                     if(chipBtn) {
                         chipBtn.innerText = "Finalizar Pedido";
-                        chipBtn.onclick = function() { App.openCheckout(); };
+                        chipBtn.onclick = function() { ChatFlow.startCheckout(); };
                     }
                     if(chipLabel) chipLabel.innerText = "Total a Pagar";
                     if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
-
-                    if (!payMethod) { 
-                        if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Selecione a forma de pagamento"; finalBtn.style.background = "#ccc"; }
-                    } else {
-                        if(finalBtn) { finalBtn.disabled = false; finalBtn.innerText = "Fazer Pedido no WhatsApp"; finalBtn.style.background = "var(--primary)"; }
-                    }
                 }
             },
             openInfo(id) {
@@ -1210,18 +1186,9 @@
                 document.getElementById('info-media').innerHTML = `<img src="${imgUrl}" style="width:100%; border-radius:8px;" alt="${title}">`;
                 App.openSheet('info-sheet');
             },
-            openReviewModal() { App.openCheckout(); },
+            openReviewModal() { ChatFlow.startCheckout(); }, // Redirected to chat
             openSheet(id) { document.getElementById(id).classList.add('open'); },
             closeSheet(id) { document.getElementById(id).classList.remove('open'); },
-            openCheckout() { if(Object.keys(this.cart).length === 0) return alert("Cesta vazia."); this.renderIncluded(document.getElementById('modal-cart-list'), true); document.getElementById('checkout-modal').showModal(); },
-            sendWhatsApp() {
-                const total = document.getElementById('co-total').innerText;
-                let msg = `*PEDIDO: ${this.currentBasket.nome}*\n`;
-                for(let id in this.cart) { const p = this.data.find(x => x.id === id); msg += `${this.cart[id]}x ${p.nome}\n`; }
-                if(this.appliedCoupon) msg += `\n*CUPOM APLICADO: ${CONSTANTS.COUPON_CODE}*`;
-                msg += `\n*TOTAL: ${total}*\nPagamento: ${document.getElementById('payment-method').value}`;
-                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
-            },
             directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
         };
         // Explicitly attach to window to avoid scope issues in HTML handlers
