@@ -101,8 +101,13 @@
 
         .home-grid-container { padding: 0px 0 60px; }
         .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media(min-width: 640px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media(min-width: 1024px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); gap: 30px; } }
+        
+        /* --- AJUSTE: Home Desktop 1 Coluna para ficar largo igual chat --- */
+        @media(min-width: 640px) { .baskets-grid { grid-template-columns: 1fr; } }
+        @media(min-width: 1024px) { 
+            .baskets-grid { grid-template-columns: 1fr; gap: 40px; } 
+            .home-basket-card { max-width: 100%; } /* Garante que o card ocupe tudo */
+        }
 
         /* Home Card */
         .home-basket-card {
@@ -158,7 +163,7 @@
         }
         .chat-msg.user strong { color: white; }
 
-        /* --- BOTÕES DO CHAT (AJUSTE SOLICITADO) --- */
+        /* --- BOTÕES DO CHAT --- */
         .chat-actions { 
             display: grid; 
             grid-template-columns: 1fr 1fr; /* Duas colunas para os botões menores */
@@ -222,9 +227,18 @@
         .credit-chip-bar.visible { transform: translateX(-50%) translateY(0); }
         .ccb-text { font-size: 0.85rem; font-weight: 500; display: flex; flex-direction: column; }
         .ccb-val { font-weight: 700; font-size: 1rem; color: #4ade80; }
+        
         .ccb-btn { 
             background: var(--primary); color: white; border-radius: 40px; padding: 10px 20px; 
             font-weight: 700; font-size: 0.9rem; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        /* --- ESTILO PARA O BOTÃO DESABILITADO (AVISO) --- */
+        .ccb-btn.disabled {
+            background: #64748b; /* Cor cinza/aviso */
+            cursor: default;
+            pointer-events: none;
+            opacity: 0.9;
+            box-shadow: none;
         }
 
         /* Products Horizontal Row */
@@ -264,12 +278,19 @@
             .grid-products-row { grid-template-columns: repeat(6, 1fr); } /* 6 Columns on Desktop */
         }
 
+        /* --- BOTÃO VER MAIS (DESTAQUE) --- */
         .btn-load-more {
-            width: 100%; padding: 12px; background: #f8fafc; color: var(--secondary);
-            border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
-            margin-top: 10px; cursor: pointer; text-align: center; transition: all 0.2s;
+            width: 100%; padding: 14px; 
+            background: #ffffff; 
+            color: var(--secondary);
+            border: 2px solid #cbd5e1; /* Borda visível */
+            border-radius: 8px; 
+            font-weight: 800; /* Mais grosso */
+            font-size: 0.9rem;
+            text-transform: uppercase; /* Caixa alta */
+            margin-top: 15px; cursor: pointer; text-align: center; transition: all 0.2s;
         }
-        .btn-load-more:hover { background: #e2e8f0; }
+        .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; }
         
         /* Product Card App Style (Adjusted for Grid) */
         .card-prod { 
@@ -279,10 +300,12 @@
         }
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #fef2f2; color: #dc2626; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
-        /* Texto de Quantidade na Home (Abaixo da foto) */
+        /* --- AJUSTE: Texto de Quantidade na Home (Alinhado à Esquerda) --- */
         .home-qty-text {
-            text-align: center; font-size: 0.75rem; color: #555; font-weight: 600; 
+            text-align: left; /* Alinhado a esquerda */
+            font-size: 0.75rem; color: #555; font-weight: 600; 
             margin-top: 4px; margin-bottom: 2px;
+            margin-left: 2px; /* Pequeno recuo para alinhar com o titulo */
         }
 
         .grid-products-row .cp-img-box {
@@ -1340,14 +1363,23 @@
                 const chipLabel = document.getElementById('ccb-label');
                 const chipVal = document.getElementById('ccb-val');
                 
+                // Reset Button State
+                if(chipBtn) {
+                     chipBtn.classList.remove('disabled');
+                     chipBtn.style.opacity = "1";
+                     chipBtn.style.cursor = "pointer";
+                     chipBtn.onclick = function() { ChatFlow.startCheckout(); };
+                }
+
                 if (basketPrice > effectiveTotal) {
                     // HAS CREDIT
                     const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
                     
                     if(chipBtn) {
                         chipBtn.innerText = "Adicionar Itens";
-                        // Opens Modal but will be blocked there, or we can just dismiss sheet to let them shop
-                        chipBtn.onclick = function() { ChatFlow.showBasketGrid(); }; 
+                        // --- AJUSTE: Botão fica apenas como AVISO ---
+                        chipBtn.classList.add('disabled');
+                        chipBtn.onclick = null;
                     }
                     if(chipLabel) chipLabel.innerText = "Crédito Disponível";
                     if(chipVal) { chipVal.innerText = `R$ ${diff}`; chipVal.style.color = "#4ade80"; }
