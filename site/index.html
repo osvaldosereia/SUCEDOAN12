@@ -1,586 +1,474 @@
 <!DOCTYPE html>
-<html lang="pt-BR" dir="ltr">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-    <meta name="description" content="Peça sua Cesta Básica. Chat inteligente para montar sua cesta. Pagamento na entrega.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#ffffff">
-    <title>Dona Antônia | Cesta Básica Inteligente</title>
-
+    <title>Dona Antônia | Cestas</title>
     <style>
-        /* --- 1. CORE & RESET --- */
-        :root { 
-            --primary: #d31a28; 
-            --primary-dark: #b91c1c; 
-            --secondary: #2c3e50; 
-            --whatsapp: #25D366; 
-            --chat-bg: #e5ddd5; /* Cor de fundo estilo Zap */
-            --bubble-in: #ffffff;
-            --bubble-out: #dcf8c6;
-            --header-height: 60px; 
+        /* --- RESET & VARS --- */
+        :root {
+            --primary: #d31a28;
+            --text: #1a1a1a;
+            --gray-light: #f5f5f5;
+            --gray-med: #e0e0e0;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { margin: 0; padding: 0; font-family: var(--font-main); color: var(--text); background: #fff; }
+        img { max-width: 100%; display: block; }
+        button { border: none; background: none; font-family: inherit; cursor: pointer; }
+
+        /* --- UI COMPONENTS --- */
+        .container { max-width: 600px; margin: 0 auto; padding: 0 16px; position: relative; }
+        .hidden { display: none !important; }
         
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f4f4f5; color: #333; margin: 0; width: 100%;
-            opacity: 0; transition: opacity 0.3s;
-        }
-        body.loaded { opacity: 1; }
-        
-        /* --- 2. HEADER SIMPLIFICADO --- */
-        #main-header { 
-            position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
-            background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.05); z-index: 1000; 
+        /* Cabeçalho Minimalista */
+        header { 
+            position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(10px); border-bottom: 1px solid var(--gray-light); height: 60px;
             display: flex; align-items: center; justify-content: center;
         }
-        .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; }
-        .logo-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-
-        /* --- 3. HOMEPAGE MELHORADA --- */
-        #home-view { padding-top: 80px; padding-bottom: 40px; max-width: 1000px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
-        .hero-title { text-align: center; font-size: 1.4rem; color: var(--secondary); margin-bottom: 10px; }
-        .hero-sub { text-align: center; color: #666; margin-bottom: 30px; line-height: 1.4; }
-
-        .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media(min-width: 600px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media(min-width: 900px) { .baskets-grid { grid-template-columns: repeat(3, 1fr); } }
-
-        .basket-card {
-            background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column; transition: transform 0.2s; border: 1px solid #f0f0f0;
-        }
-        .basket-card:hover { transform: translateY(-4px); border-color: var(--primary); }
-        .bc-img-box { width: 100%; aspect-ratio: 4/3; background: #eee; position: relative; }
-        .bc-img { width: 100%; height: 100%; object-fit: cover; }
-        .bc-info { padding: 20px; display: flex; flex-direction: column; flex: 1; }
-        .bc-title { font-size: 1.3rem; font-weight: 700; color: var(--secondary); margin-bottom: 5px; }
-        .bc-price { font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-bottom: 15px; }
-        .bc-desc { font-size: 0.9rem; color: #666; margin-bottom: 20px; line-height: 1.4; flex: 1; }
-        .btn-start-chat {
-            width: 100%; padding: 14px; background: var(--secondary); color: white; border: none; 
-            border-radius: 10px; font-weight: 700; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-
-        /* --- 4. CHAT VIEW (O Robô) --- */
-        #chat-view { 
-            position: fixed; inset: 0; background: var(--chat-bg); z-index: 2000; 
-            display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s;
-        }
-        #chat-view.active { transform: translateX(0); }
-
-        .chat-header {
-            height: 60px; background: #075e54; color: white; display: flex; align-items: center; padding: 0 16px; gap: 10px; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .avatar-bot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; background: #fff; }
-        .bot-info h3 { font-size: 1rem; margin: 0; font-weight: 600; }
-        .bot-info span { font-size: 0.75rem; opacity: 0.8; }
-        .btn-close-chat { margin-left: auto; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
-
-        /* Área das Mensagens */
-        #chat-scroll-area {
-            flex: 1; overflow-y: auto; padding: 20px 16px 100px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth;
-            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* Pattern Zap opcional */
-            background-repeat: repeat; background-blend-mode: soft-light;
-        }
-
-        .bubble {
-            max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4; position: relative;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popIn { from { opacity: 0; transform: scale(0.8) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .logo { font-weight: 800; font-size: 1.2rem; color: var(--text); letter-spacing: -0.5px; }
         
-        .bubble.bot { align-self: flex-start; background: var(--bubble-in); border-top-left-radius: 0; color: #111; }
-        .bubble.user { align-self: flex-end; background: var(--bubble-out); border-top-right-radius: 0; color: #111; }
-        .bubble-time { font-size: 0.65rem; color: #999; text-align: right; margin-top: 4px; display: block; }
-
-        /* Typing indicator */
-        .typing-indicator { align-self: flex-start; background: white; padding: 10px 15px; border-radius: 20px; display: none; margin-bottom: 10px; width: fit-content; }
-        .typing-indicator span { display: inline-block; width: 6px; height: 6px; background: #ccc; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out; }
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-
-        /* Botões de Resposta (Footer) */
-        .chat-footer {
-            position: fixed; bottom: 0; left: 0; right: 0; background: #f0f0f0; padding: 10px;
-            display: flex; gap: 10px; overflow-x: auto; border-top: 1px solid #ddd; min-height: 70px; align-items: center; z-index: 2001;
+        /* Botão Flutuante de Cesta (Chat) */
+        .cart-float {
+            position: absolute; right: 16px; top: 12px; background: var(--gray-light);
+            padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
+            display: flex; align-items: center; gap: 6px; transition: 0.2s;
         }
-        .btn-option {
-            flex: 1; min-width: 120px; padding: 12px; background: var(--secondary); color: white; border: none; 
-            border-radius: 25px; font-weight: 600; font-size: 0.9rem; text-align: center; cursor: pointer; white-space: nowrap;
-        }
-        .btn-option.primary { background: var(--primary); box-shadow: 0 2px 5px rgba(211, 26, 40, 0.3); }
+        .cart-float.active { background: var(--primary); color: white; }
 
-        /* GRID DENTRO DO CHAT */
-        .chat-grid-container {
-            align-self: stretch; background: white; padding: 10px; border-radius: 12px; margin: 5px 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .cg-title { font-size: 0.85rem; font-weight: 700; color: #555; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
-        .cg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-        @media(min-width: 500px) { .cg-grid { grid-template-columns: repeat(4, 1fr); } }
+        /* --- HOME --- */
+        #view-home { padding: 30px 0 60px; }
+        .hero-txt { text-align: center; margin-bottom: 30px; }
+        .hero-txt h1 { font-size: 1.5rem; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .hero-txt p { color: #666; font-size: 0.95rem; }
 
-        /* Card Produto Mini (Chat) */
-        .mini-card { display: flex; flex-direction: column; border: 1px solid #eee; border-radius: 8px; overflow: hidden; position: relative; }
-        .mini-card.selected { border: 1px solid var(--primary); background: #fff5f5; }
-        .mc-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #fff; padding: 5px; }
-        .mc-img { width: 90%; height: 90%; object-fit: contain; }
-        .mc-info { padding: 4px; text-align: center; flex: 1; display: flex; flex-direction: column; }
-        .mc-name { font-size: 0.65rem; line-height: 1.1; margin-bottom: 2px; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.2em; }
-        .mc-price { font-size: 0.75rem; font-weight: 700; color: var(--secondary); }
+        .basket-grid { display: grid; gap: 24px; }
+        .basket-item { 
+            border-radius: 16px; overflow: hidden; background: #fff; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06); transition: transform 0.2s;
+        }
+        .basket-item:active { transform: scale(0.98); }
+        .bi-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: var(--gray-light); }
+        .bi-info { padding: 20px; }
+        .bi-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+        .bi-price { font-size: 1.3rem; color: var(--primary); font-weight: 700; margin-bottom: 15px; }
         
-        .mc-qty-ctrl { display: flex; align-items: center; justify-content: center; background: #f9f9f9; border-top: 1px solid #eee; height: 28px; }
-        .mc-btn { width: 25px; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); font-size: 1rem; }
-        .mc-val { font-size: 0.8rem; font-weight: 700; width: 20px; text-align: center; }
+        .bi-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; text-align: center; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { border: 2px solid var(--gray-med); color: var(--text); }
 
-        /* Barra de Saldo Flutuante no Topo do Chat */
-        .chat-status-bar {
-            position: absolute; top: 60px; left: 0; right: 0; background: rgba(255,255,255,0.95);
-            padding: 8px 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;
-            font-size: 0.85rem; font-weight: 600; color: #555; z-index: 100; backdrop-filter: blur(2px);
+        /* --- CHAT FLOW --- */
+        #view-chat { 
+            position: fixed; inset: 0; background: #fff; z-index: 200; 
+            display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        .csb-total { color: var(--primary); font-weight: 800; font-size: 1rem; }
-
-        /* Modal Checkout (Mantido) */
-        dialog.modal-checkout { margin: auto; inset: 0; position: fixed; border: none; border-radius: 16px 16px 0 0; width: 100%; height: 85vh; max-width: 600px; bottom: 0; top: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); padding: 0; background: #fff; flex-direction: column; z-index: 10002; }
-        dialog.modal-checkout[open] { display: flex; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
-        .co-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; }
-        .co-body { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
-        .co-footer { padding: 15px; background: white; border-top: 1px solid #eee; }
-        .btn-whatsapp { width: 100%; padding: 15px; background: var(--whatsapp); color: white; font-weight: 700; border-radius: 8px; font-size: 1rem; border: none; }
+        #view-chat.open { transform: translateX(0); }
         
-        .receipt-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px dashed #ddd; padding-bottom: 4px; }
+        .chat-scroll { flex: 1; overflow-y: auto; padding: 20px 0 80px; scroll-behavior: smooth; }
+        
+        /* Mensagens do Robô */
+        .msg-bot { 
+            margin: 15px 16px; font-size: 1.05rem; line-height: 1.5; color: #333; 
+            animation: slideIn 0.3s ease;
+        }
+        .msg-bot strong { color: var(--primary); }
+        @keyframes slideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+        /* Botões de Resposta (Inline) */
+        .options-group { 
+            display: flex; flex-wrap: wrap; gap: 10px; padding: 0 16px; margin-bottom: 30px; 
+            animation: fadeIn 0.5s ease;
+        }
+        .btn-opt {
+            flex: 1 1 45%; padding: 16px; background: #fff; border: 1px solid var(--gray-med);
+            border-radius: 12px; font-weight: 600; color: #444; text-align: left;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: all 0.2s;
+        }
+        .btn-opt.highlight { background: var(--text); color: white; border-color: var(--text); }
+        .btn-opt:active { transform: scale(0.97); }
+
+        /* GRID PRODUTOS (Minimalista) */
+        .chat-products {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
+            padding: 10px 16px 20px; animation: slideIn 0.4s ease;
+        }
+        .prod-card { position: relative; }
+        .pc-img-box { 
+            background: var(--gray-light); border-radius: 12px; aspect-ratio: 1; 
+            margin-bottom: 8px; position: relative; overflow: hidden;
+        }
+        .pc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        
+        /* Controles de Qtd */
+        .pc-ctrl {
+            position: absolute; bottom: 8px; right: 8px; background: white;
+            border-radius: 20px; display: flex; align-items: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        .pc-btn { width: 32px; height: 32px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; color: var(--primary); }
+        .pc-val { font-weight: 700; font-size: 0.9rem; min-width: 20px; text-align: center; }
+        
+        /* Quando qty = 0, mostra só botão + */
+        .pc-add-btn {
+            position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px;
+            background: white; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.5rem;
+        }
+
+        .pc-name { font-size: 0.85rem; line-height: 1.2; color: #444; margin-bottom: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .pc-price { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+        .pc-price small { color: #999; text-decoration: line-through; font-weight: 400; font-size: 0.8rem; margin-right: 4px; }
+
+        /* --- MODAL CARRINHO --- */
+        dialog {
+            width: 100%; max-width: 500px; border: none; border-radius: 20px 20px 0 0;
+            padding: 0; position: fixed; bottom: 0; margin: 0 auto;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s;
+        }
+        dialog::backdrop { background: rgba(0,0,0,0.5); }
+        @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        
+        .modal-head { padding: 20px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--gray-light); font-weight: 700; font-size: 1.1rem; }
+        .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+        .modal-foot { padding: 20px; border-top: 1px solid var(--gray-light); background: #f9f9f9; }
+        
+        .cart-line { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; }
+        .total-row { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+        
+        select { width: 100%; padding: 12px; border: 1px solid var(--gray-med); border-radius: 8px; margin-top: 5px; font-size: 1rem; background: white; }
     </style>
 </head>
 <body>
 
-    <header id="main-header">
-        <div class="logo-area" onclick="location.reload()">
-            <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-img" alt="Logo">
-            Dona Antônia
-        </div>
+<div class="container" id="view-home">
+    <header style="margin-bottom:20px; border:none; background:transparent;">
+        <div class="logo">Dona Antônia</div>
     </header>
-
-    <main id="home-view">
-        <h1 class="hero-title">Monte sua Cesta sem Complicação</h1>
-        <p class="hero-sub">Escolha um modelo base e nossa <strong>Assistente Virtual</strong> ajuda você a personalizar tudo.</p>
-        <div id="home-list" class="baskets-grid">
-            <div style="text-align:center; padding:40px; grid-column:1/-1;">Carregando cestas...</div>
-        </div>
-    </main>
-
-    <div id="chat-view">
-        <div class="chat-header">
-            <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="avatar-bot">
-            <div class="bot-info">
-                <h3>Dona Antônia (Virtual)</h3>
-                <span>Online agora</span>
-            </div>
-            <button class="btn-close-chat" onclick="ChatController.close()">×</button>
-        </div>
-
-        <div class="chat-status-bar">
-            <span>Itens: <span id="chat-count">0</span></span>
-            <span class="csb-total" id="chat-total">R$ 0,00</span>
-        </div>
-
-        <div id="chat-scroll-area">
-            <div class="typing-indicator" id="typing"><span></span><span></span><span></span></div>
-        </div>
-
-        <div class="chat-footer" id="chat-options">
-            </div>
+    
+    <div class="hero-txt">
+        <h1>Cestas Básicas & Mercado</h1>
+        <p>Praticidade para sua casa. Pague só na entrega.</p>
     </div>
 
-    <dialog id="checkout-modal" class="modal-checkout">
-        <div class="co-header">
-            Resumo do Pedido <span onclick="document.getElementById('checkout-modal').close()" style="cursor:pointer">✕</span>
+    <div class="basket-grid" id="home-list">
         </div>
-        <div class="co-body">
-            <div style="background: #fffbeb; padding: 15px; border: 1px dashed #ffd700; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 0.9rem;">
-                📝 <strong>Conferência Final</strong><br>Verifique se não esqueceu nada.
-            </div>
-            <div id="receipt-list"></div>
+</div>
+
+<div id="view-chat">
+    <header>
+        <button onclick="Chat.close()" style="position:absolute; left:16px; font-size:1.5rem;">✕</button>
+        <div class="logo">Personalizar</div>
+        <button class="cart-float" onclick="App.openCart()">
+            🛒 <span id="cart-total">R$ 0,00</span>
+        </button>
+    </header>
+
+    <div class="chat-scroll" id="chat-feed">
+        </div>
+</div>
+
+<dialog id="modal-cart">
+    <div class="modal-head">
+        Sua Lista <button onclick="document.getElementById('modal-cart').close()">✕</button>
+    </div>
+    <div class="modal-body" id="cart-list"></div>
+    <div class="modal-foot">
+        <div class="total-row">
+            <span>Total</span> <span id="modal-total" style="color:var(--primary)">R$ 0,00</span>
+        </div>
+        <div style="margin-bottom:15px">
+            <label style="font-size:0.85rem; font-weight:600;">Forma de Pagamento:</label>
+            <select id="pay-method">
+                <option>Pix na Entrega</option>
+                <option>Dinheiro</option>
+                <option>Cartão Crédito/Débito</option>
+                <option>Vale Alimentação</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="App.sendZap()">Confirmar Pedido</button>
+    </div>
+</dialog>
+
+<script>
+// DADOS DE CATEGORIAS (Ordem de Condução)
+const CATEGORY_FLOW = [
+    { key: 'MERCEARIA E ALIMENTOS', label: 'Mercearia e Alimentos' },
+    { key: 'CAFÉ DA MANHÃ E LANCHES', label: 'Café da Manhã' },
+    { key: 'LIMPEZA E LAVANDERIA', label: 'Limpeza' },
+    { key: 'CUIDADOS PESSOAIS', label: 'Higiene e Pessoal' },
+    { key: 'BAZAR E UTILIDADES', label: 'Utilidades' }
+];
+
+const App = {
+    data: [],
+    cart: {},
+    currentBasket: null,
+
+    async init() {
+        try {
+            const req = await fetch('produtos/produtos.json?v=' + Date.now());
+            const json = await req.json();
+            const raw = json.produtos || json;
             
-            <div style="margin-top: 20px; padding-top: 10px; border-top: 2px solid #333; display: flex; justify-content: space-between; font-weight: 800; font-size: 1.2rem;">
-                <span>TOTAL A PAGAR</span>
-                <span id="final-total">R$ 0,00</span>
-            </div>
-            <div style="text-align: center; margin-top: 10px; font-size: 0.85rem; color: var(--whatsapp);">
-                🔒 Pagamento somente na entrega
-            </div>
+            // Tratamento e Mapeamento
+            this.data = raw.map(p => ({
+                ...p,
+                id: String(p.id),
+                valor: parseFloat(p.valor || 0),
+                offerPrice: parseFloat(p.Valor_Oferta || 0),
+                isOffer: p.Oferta === 'Sim',
+                catMain: this.getCategoryRoot(p.categoria || ""),
+                imagem: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg'
+            }));
 
-            <div style="margin-top: 20px;">
-                <label style="font-weight: 600; font-size: 0.9rem;">Forma de Pagamento:</label>
-                <select id="pay-method" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc;">
-                    <option>Pix na Entrega</option>
-                    <option>Dinheiro</option>
-                    <option>Cartão de Crédito</option>
-                    <option>Cartão de Débito</option>
-                    <option>Vale Alimentação</option>
-                </select>
-            </div>
-        </div>
-        <div class="co-footer">
-            <button class="btn-whatsapp" onclick="App.sendWhatsapp()">Enviar Pedido no WhatsApp</button>
-        </div>
-    </dialog>
+            this.renderHome();
+        } catch(e) { alert("Erro ao carregar produtos."); console.error(e); }
+    },
 
-    <script>
-        const App = {
-            data: [],
-            cart: {},
-            baseBasket: null,
-            
-            async init() {
-                try {
-                    // Carrega produtos
-                    const res = await fetch('produtos/produtos.json?v=' + Date.now());
-                    const json = await res.json();
-                    const raw = json.produtos || json;
-                    
-                    // Tratamento simples dos dados
-                    this.data = raw.map(p => ({
-                        ...p,
-                        id: String(p.id),
-                        nome: p.nome.trim(),
-                        valor: parseFloat(p.valor || 0),
-                        offerPrice: parseFloat(p.Valor_Oferta || 0),
-                        isOffer: p.Oferta === 'Sim',
-                        appCategory: this.categorize(p.categoria || ""),
-                        imagem: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg'
-                    }));
+    getCategoryRoot(catStr) {
+        const c = catStr.toUpperCase();
+        // Mapeamento baseado na sua lista
+        if (c.includes('MERCEARIA') || c.includes('ALIMENTOS')) return 'MERCEARIA E ALIMENTOS';
+        if (c.includes('CAFÉ') || c.includes('LANCHES')) return 'CAFÉ DA MANHÃ E LANCHES';
+        if (c.includes('LIMPEZA') || c.includes('LAVANDERIA')) return 'LIMPEZA E LAVANDERIA';
+        if (c.includes('CUIDADOS') || c.includes('PESSOAIS')) return 'CUIDADOS PESSOAIS';
+        if (c.includes('BAZAR') || c.includes('UTILIDADES')) return 'BAZAR E UTILIDADES';
+        return 'OUTROS';
+    },
 
-                    this.renderHome();
-                    document.body.classList.add('loaded');
-                } catch(e) { console.error(e); alert("Erro ao carregar sistema."); }
-            },
-
-            categorize(catRaw) {
-                const c = catRaw.toUpperCase();
-                if(c.includes('ALIMENTOS') || c.includes('MERCEARIA')) return 'ALIMENTOS';
-                if(c.includes('LIMPEZA')) return 'LIMPEZA';
-                if(c.includes('HIGIENE') || c.includes('PESSOAL')) return 'HIGIENE';
-                if(c.includes('CAFÉ') || c.includes('MATINAIS')) return 'CAFE';
-                return 'OUTROS';
-            },
-
-            renderHome() {
-                const list = document.getElementById('home-list');
-                const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
-                
-                list.innerHTML = baskets.map(b => `
-                    <div class="basket-card">
-                        <div class="bc-img-box"><img src="${b.imagem}" class="bc-img" alt="${b.nome}"></div>
-                        <div class="bc-info">
-                            <div class="bc-title">${b.nome}</div>
-                            <div class="bc-price">R$ ${b.valor.toFixed(2).replace('.',',')}</div>
-                            <div class="bc-desc">Toque para personalizar itens, tirar o que não gosta e adicionar extras.</div>
-                            <button class="btn-start-chat" onclick="ChatController.start('${b.id}')">
-                                <span>💬</span> Personalizar Cesta
-                            </button>
-                        </div>
+    renderHome() {
+        const grid = document.getElementById('home-list');
+        const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
+        
+        grid.innerHTML = baskets.map(b => `
+            <div class="basket-item">
+                <img src="${b.imagem}" class="bi-img" loading="lazy">
+                <div class="bi-info">
+                    <div class="bi-title">${b.nome}</div>
+                    <div class="bi-price">R$ ${b.valor.toFixed(2).replace('.',',')}</div>
+                    <div class="bi-actions">
+                        <button class="btn btn-outline" onclick="App.directOrder('${b.id}')">Pedir Direto</button>
+                        <button class="btn btn-primary" onclick="Chat.start('${b.id}')">Personalizar</button>
                     </div>
-                `).join('');
-            },
+                </div>
+            </div>
+        `).join('');
+    },
 
-            // Funções de Carrinho
-            modQty(id, delta) {
-                if(!this.cart[id]) this.cart[id] = 0;
-                this.cart[id] += delta;
-                if(this.cart[id] <= 0) delete this.cart[id];
-                
-                // Atualiza UI global e do chat
-                this.updateChatHeader();
-                ChatController.updateGridUI(id);
-            },
+    modQty(id, delta) {
+        if(!this.cart[id]) this.cart[id] = 0;
+        this.cart[id] += delta;
+        if(this.cart[id] <= 0) delete this.cart[id];
+        
+        this.updateTotals();
+        Chat.refreshGrids(id); // Atualiza grids visíveis no chat
+    },
 
-            getCartTotal() {
-                let total = 0;
-                let count = 0;
-                for(let id in this.cart) {
-                    const p = this.data.find(x => x.id === id);
-                    if(p) {
-                        const price = p.isOffer ? p.offerPrice : p.valor;
-                        total += price * this.cart[id];
-                        count += this.cart[id];
-                    }
-                }
-                return { total, count };
-            },
-
-            updateChatHeader() {
-                const { total, count } = this.getCartTotal();
-                document.getElementById('chat-count').innerText = count;
-                document.getElementById('chat-total').innerText = "R$ " + total.toFixed(2).replace('.',',');
-                document.getElementById('final-total').innerText = "R$ " + total.toFixed(2).replace('.',',');
-            },
-
-            openCheckout() {
-                const receipt = document.getElementById('receipt-list');
-                let html = "";
-                for(let id in this.cart) {
-                    const p = this.data.find(x => x.id === id);
-                    const totalItem = (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
-                    html += `<div class="receipt-line">
-                        <span>${this.cart[id]}x ${p.nome.substring(0,25)}</span>
-                        <span>R$ ${totalItem.toFixed(2).replace('.',',')}</span>
-                    </div>`;
-                }
-                receipt.innerHTML = html;
-                document.getElementById('checkout-modal').showModal();
-            },
-
-            sendWhatsapp() {
-                const { total } = this.getCartTotal();
-                const pay = document.getElementById('pay-method').value;
-                let msg = `*PEDIDO DONA ANTÔNIA*\n`;
-                msg += `Cesta Base: ${this.baseBasket.nome}\n\n*ITENS:*\n`;
-                for(let id in this.cart) {
-                    const p = this.data.find(x => x.id === id);
-                    msg += `${this.cart[id]}x ${p.nome}\n`;
-                }
-                msg += `\n*TOTAL: R$ ${total.toFixed(2).replace('.',',')}*\n`;
-                msg += `Pagamento: ${pay}`;
-                
-                window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
+    updateTotals() {
+        let total = 0, count = 0;
+        for(let id in this.cart) {
+            const p = this.data.find(x => x.id === id);
+            if(p) {
+                total += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
+                count += this.cart[id];
             }
-        };
+        }
+        
+        // Atualiza UI
+        const txt = "R$ " + total.toFixed(2).replace('.',',');
+        document.getElementById('cart-total').innerText = txt;
+        document.getElementById('modal-total').innerText = txt;
+        
+        const btn = document.querySelector('.cart-float');
+        if(count > 0) btn.classList.add('active'); else btn.classList.remove('active');
+        
+        return total;
+    },
 
-        const ChatController = {
-            step: 0,
-            scrollArea: document.getElementById('chat-scroll-area'),
-            typing: document.getElementById('typing'),
-            optionsArea: document.getElementById('chat-options'),
-
-            start(basketId) {
-                const basket = App.data.find(p => p.id === basketId);
-                if(!basket) return;
-                
-                App.baseBasket = basket;
-                App.cart = {};
-                // Popula carrinho com itens da cesta
-                if(basket.items) {
-                    basket.items.forEach(i => {
-                        const pid = String(i.id);
-                        if(App.data.find(x => x.id === pid)) App.cart[pid] = (App.cart[pid]||0) + parseInt(i.qty||1);
-                    });
-                }
-                App.updateChatHeader();
-
-                // UI Reset
-                document.getElementById('chat-view').classList.add('active');
-                this.scrollArea.innerHTML = '';
-                this.scrollArea.appendChild(this.typing);
-                this.optionsArea.innerHTML = '';
-                
-                // Fluxo Inicial
-                this.botSay(`Olá! Tudo bem? Vi que você escolheu a **${basket.nome}**.`);
-                setTimeout(() => {
-                    this.botSay("Posso mostrar todos os produtos que já vêm nela para você conferir?");
-                    this.showOptions([
-                        { text: "👍 Sim, pode mostrar", action: () => this.stepShowIncluded() }
-                    ]);
-                }, 1000);
-            },
-
-            close() {
-                if(confirm("Sair da personalização? Seus itens serão perdidos.")) {
-                    document.getElementById('chat-view').classList.remove('active');
-                }
-            },
-
-            // --- FLUXO DE PASSOS ---
-
-            stepShowIncluded() {
-                this.botSay("Aqui estão os itens da sua cesta 👇. Se quiser tirar algo que não usa, é só clicar no botão de menos (-).");
-                
-                // Pega IDs que estão no carrinho agora
-                const ids = Object.keys(App.cart);
-                const items = ids.map(id => App.data.find(x => x.id === id));
-                
-                this.showGrid(items, "Itens da Cesta");
-                
-                setTimeout(() => {
-                    this.botSay("Quando terminar de conferir ou tirar o que não quer, clique em 'Pronto' abaixo.");
-                    this.showOptions([
-                        { text: "✅ Pronto, já conferi", action: () => this.stepAskMeat() }
-                    ]);
-                }, 1500);
-            },
-
-            stepAskMeat() {
-                this.botSay("Combinado! Atualizei o valor da sua cesta lá em cima 👆.");
-                setTimeout(() => {
-                    this.botSay("Agora me diga: está precisando de alguma mistura para o almoço? Tenho Carne Seca, Calabresa, Sardinha...");
-                    this.showOptions([
-                        { text: "🥩 Sim, ver carnes", action: () => this.showCategory('OUTROS', 'Mistura & Carnes', () => this.stepAskBreakfast()) }, // No JSON, carnes costumam estar em Outros ou Alimentos, filtrarei por nome
-                        { text: "Não preciso", action: () => this.stepAskBreakfast() }
-                    ]);
-                }, 1000);
-            },
-
-            stepAskBreakfast() {
-                this.botSay("E para o café da manhã ou lanche das crianças? O armário está abastecido de bolacha, café e leite?");
-                this.showOptions([
-                    { text: "☕ Ver Café e Lanche", action: () => this.showCategory('CAFE', 'Café da Manhã', () => this.stepAskCleaning()) },
-                    { text: "Tudo ok aqui", action: () => this.stepAskCleaning() }
-                ]);
-            },
-
-            stepAskCleaning() {
-                this.botSay("Muita gente esquece da limpeza! 🧹 O sabão em pó, água sanitária ou detergente estão em dia?");
-                this.showOptions([
-                    { text: "✨ Ver Limpeza", action: () => this.showCategory('LIMPEZA', 'Produtos de Limpeza', () => this.stepAskHygiene()) },
-                    { text: "Pular Limpeza", action: () => this.stepAskHygiene() }
-                ]);
-            },
-
-            stepAskHygiene() {
-                this.botSay("Para fechar: precisa de algo de higiene? Sabonete, pasta de dente ou papel higiênico?");
-                this.showOptions([
-                    { text: "🚿 Ver Higiene", action: () => this.showCategory('HIGIENE', 'Higiene Pessoal', () => this.stepOffers()) },
-                    { text: "Não, obrigado", action: () => this.stepOffers() }
-                ]);
-            },
-
-            stepOffers() {
-                this.botSay("Perfeito! Antes de fecharmos, separei umas **Ofertas Especiais** que estão valendo a pena hoje. Quer dar uma espiadinha?");
-                this.showOptions([
-                    { text: "🔥 Ver Ofertas", action: () => this.showOffersGrid() },
-                    { text: "Finalizar Pedido", action: () => this.stepFinalize() }
-                ]);
-            },
-
-            stepFinalize() {
-                this.botSay("Ótimo! Vamos fechar seu pedido.");
-                this.botSay("Clique no botão abaixo para ver o resumo e enviar para o meu WhatsApp.");
-                this.showOptions([
-                    { text: "📝 Ver Resumo e Enviar", action: () => App.openCheckout(), primary: true },
-                    { text: "Esqueci algo (Voltar)", action: () => this.stepOffers() }
-                ]);
-            },
-
-            // --- UTILITÁRIOS DO CHAT ---
-
-            botSay(text) {
-                // Simula digitação
-                this.typing.style.display = 'block';
-                this.scrollArea.scrollTop = this.scrollArea.scrollHeight;
-                
-                setTimeout(() => {
-                    this.typing.style.display = 'none';
-                    const div = document.createElement('div');
-                    div.className = 'bubble bot';
-                    div.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    div.innerHTML += `<span class="bubble-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
-                    this.scrollArea.insertBefore(div, this.typing);
-                    this.scrollArea.scrollTop = this.scrollArea.scrollHeight;
-                }, 600 + (text.length * 10)); // Tempo baseado no tamanho do texto
-            },
-
-            userSay(text) {
-                const div = document.createElement('div');
-                div.className = 'bubble user';
-                div.innerText = text;
-                div.innerHTML += `<span class="bubble-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
-                this.scrollArea.insertBefore(div, this.typing);
-                this.scrollArea.scrollTop = this.scrollArea.scrollHeight;
-            },
-
-            showOptions(options) {
-                this.optionsArea.innerHTML = '';
-                options.forEach(opt => {
-                    const btn = document.createElement('button');
-                    btn.className = `btn-option ${opt.primary ? 'primary' : ''}`;
-                    btn.innerText = opt.text;
-                    btn.onclick = () => {
-                        this.userSay(opt.text); // Mostra o que usuário escolheu
-                        this.optionsArea.innerHTML = ''; // Limpa botões
-                        opt.action(); // Executa ação
-                    };
-                    this.optionsArea.appendChild(btn);
-                });
-            },
-
-            showGrid(items, title) {
-                const div = document.createElement('div');
-                div.className = 'chat-grid-container';
-                div.innerHTML = `<div class="cg-title">${title}</div><div class="cg-grid"></div>`;
-                
-                const grid = div.querySelector('.cg-grid');
-                items.forEach(p => {
-                    grid.innerHTML += this.buildMiniCard(p);
-                });
-
-                this.scrollArea.insertBefore(div, this.typing);
-                this.scrollArea.scrollTop = this.scrollArea.scrollHeight;
-            },
-
-            buildMiniCard(p) {
-                const qty = App.cart[p.id] || 0;
+    openCart() {
+        const list = document.getElementById('cart-list');
+        list.innerHTML = Object.keys(this.cart).length === 0 
+            ? '<p style="text-align:center; color:#999">Cesta vazia.</p>'
+            : Object.keys(this.cart).map(id => {
+                const p = this.data.find(x => x.id === id);
+                const price = p.isOffer ? p.offerPrice : p.valor;
                 return `
-                <div class="mini-card ${qty > 0 ? 'selected' : ''}" id="mini-${p.id}">
-                    <div class="mc-img-box"><img src="${p.imagem}" class="mc-img" loading="lazy"></div>
-                    <div class="mc-info">
-                        <div class="mc-name">${p.nome}</div>
-                        <div class="mc-price">R$ ${p.isOffer ? p.offerPrice.toFixed(2) : p.valor.toFixed(2)}</div>
-                    </div>
-                    <div class="mc-qty-ctrl">
-                        <div class="mc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
-                        <div class="mc-val" id="val-${p.id}">${qty}</div>
-                        <div class="mc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
-                    </div>
+                <div class="cart-line">
+                    <span style="flex:1">${this.cart[id]}x ${p.nome}</span>
+                    <span style="font-weight:700">R$ ${(price * this.cart[id]).toFixed(2).replace('.',',')}</span>
                 </div>`;
-            },
+            }).join('');
+        document.getElementById('modal-cart').showModal();
+    },
 
-            updateGridUI(id) {
-                const card = document.getElementById(`mini-${id}`);
-                const val = document.getElementById(`val-${id}`);
-                if(card && val) {
-                    const qty = App.cart[id] || 0;
-                    val.innerText = qty;
-                    if(qty > 0) card.classList.add('selected');
-                    else card.classList.remove('selected');
-                }
-            },
+    directOrder(bid) {
+        const b = this.data.find(x => x.id === bid);
+        if(confirm(`Pedir ${b.nome} direto no WhatsApp?`)) {
+            const msg = `Olá! Quero pedir a *${b.nome}* (Padrão) de R$ ${b.valor.toFixed(2).replace('.',',')}`;
+            window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    },
 
-            // Filtros Inteligentes para mostrar no chat
-            showCategory(catKey, displayTitle, nextCallback) {
-                let items = [];
-                if(catKey === 'OUTROS') {
-                    // Tenta achar carnes e misturas
-                    items = App.data.filter(p => p.nome.includes('CARNE') || p.nome.includes('LINGUICA') || p.nome.includes('SARDINHA') || p.nome.includes('FRANGO'));
-                } else {
-                    items = App.data.filter(p => p.appCategory === catKey);
-                }
-                
-                // Pega só os primeiros 12 para não poluir
-                items = items.slice(0, 12);
+    sendZap() {
+        let msg = `*PEDIDO DONA ANTÔNIA*\n`;
+        if(this.currentBasket) msg += `Base: ${this.currentBasket.nome}\n`;
+        msg += `\n*ITENS:*\n`;
+        for(let id in this.cart) {
+            const p = this.data.find(x => x.id === id);
+            msg += `${this.cart[id]}x ${p.nome}\n`;
+        }
+        msg += `\n*TOTAL: ${document.getElementById('modal-total').innerText}*\n`;
+        msg += `Pagamento: ${document.getElementById('pay-method').value}`;
+        window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
+    }
+};
 
-                if(items.length > 0) {
-                    this.showGrid(items, displayTitle);
-                    this.botSay("Pode adicionar clicando no (+). Quando terminar essa parte, clique em 'Seguir'.");
-                    this.showOptions([{ text: "Seguir ➡", action: nextCallback }]);
-                } else {
-                    this.botSay("Ops, não encontrei itens dessa categoria no momento.");
-                    nextCallback();
-                }
-            },
+const Chat = {
+    feed: document.getElementById('chat-feed'),
+    flowIndex: 0,
 
-            showOffersGrid() {
-                const offers = App.data.filter(p => p.isOffer).slice(0, 9);
-                this.showGrid(offers, "Ofertas do Dia 🔥");
-                this.showOptions([{ text: "Pronto, finalizar", action: () => this.stepFinalize() }]);
+    start(basketId) {
+        App.currentBasket = App.data.find(x => x.id === basketId);
+        App.cart = {};
+        
+        // Popula itens iniciais
+        if(App.currentBasket.items) {
+            App.currentBasket.items.forEach(i => {
+                const pid = String(i.id);
+                if(App.data.find(x => x.id === pid)) App.cart[pid] = (App.cart[pid]||0) + parseInt(i.qty||1);
+            });
+        }
+        App.updateTotals();
+
+        // UI Open
+        document.getElementById('view-chat').classList.add('open');
+        this.feed.innerHTML = '';
+        this.flowIndex = 0;
+
+        // Início
+        this.botSay(`Você escolheu a <strong>${App.currentBasket.nome}</strong>.`);
+        this.botSay("Aqui está o que vem nela. Pode retirar o que não quiser:");
+        
+        const initialItems = Object.keys(App.cart).map(id => App.data.find(x => x.id === id));
+        this.showProductGrid(initialItems);
+
+        this.askOptions("Tudo certo com esses itens?", [
+            { text: "👍 Tudo certo, vamos seguir", next: () => this.nextCategory() }
+        ]);
+    },
+
+    nextCategory() {
+        if (this.flowIndex >= CATEGORY_FLOW.length) {
+            this.finish();
+            return;
+        }
+
+        const cat = CATEGORY_FLOW[this.flowIndex];
+        const items = App.data.filter(p => p.catMain === cat.key).slice(0, 16); // Top 16 para não travar
+        
+        this.flowIndex++;
+
+        if (items.length === 0) {
+            this.nextCategory(); // Pula se vazia
+            return;
+        }
+
+        this.botSay(`Vamos ver <strong>${cat.label}</strong>?`);
+        this.showProductGrid(items);
+        this.askOptions("Deseja algo mais daqui?", [
+            { text: "Próxima categoria ➡", next: () => this.nextCategory(), highlight: true }
+        ]);
+    },
+
+    finish() {
+        this.botSay("Finalizamos! Confira seu pedido no carrinho lá em cima 🛒 ou clique abaixo.");
+        this.askOptions("Concluir Pedido", [
+            { text: "✅ Ver Resumo e Pedir", next: () => App.openCart(), highlight: true },
+            { text: "Ver Ofertas Extras", next: () => { /* Logica extra se quiser */ App.openCart() } }
+        ]);
+    },
+
+    // UI Builders
+    botSay(html) {
+        const el = document.createElement('div');
+        el.className = 'msg-bot';
+        el.innerHTML = html;
+        this.feed.appendChild(el);
+        this.scrollToBottom();
+    },
+
+    showProductGrid(list) {
+        const el = document.createElement('div');
+        el.className = 'chat-products';
+        el.innerHTML = list.map(p => this.cardHTML(p)).join('');
+        this.feed.appendChild(el);
+    },
+
+    cardHTML(p) {
+        const qty = App.cart[p.id] || 0;
+        const price = p.isOffer ? p.offerPrice : p.valor;
+        
+        // Layout Minimalista: Imagem grande, titulo pequeno
+        return `
+        <div class="prod-card" data-pid="${p.id}">
+            <div class="pc-img-box"><img src="${p.imagem}" class="pc-img" loading="lazy"></div>
+            <div class="pc-name">${p.nome}</div>
+            <div class="pc-price">${p.isOffer ? `<small>R$${p.valor}</small>` : ''}R$ ${price.toFixed(2).replace('.',',')}</div>
+            
+            ${qty === 0 
+                ? `<div class="pc-add-btn" onclick="App.modQty('${p.id}', 1)">+</div>`
+                : `<div class="pc-ctrl">
+                    <div class="pc-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                    <div class="pc-val">${qty}</div>
+                    <div class="pc-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                   </div>`
             }
-        };
+        </div>`;
+    },
 
-        // Inicia
-        window.addEventListener('load', () => App.init());
+    refreshGrids(id) {
+        // Atualiza apenas os cards desse produto visíveis na tela (sem recriar tudo)
+        const p = App.data.find(x => x.id === id);
+        if(!p) return;
+        const cards = document.querySelectorAll(`.prod-card[data-pid="${id}"]`);
+        cards.forEach(card => {
+            card.outerHTML = this.cardHTML(p);
+        });
+    },
 
-    </script>
+    askOptions(title, options) {
+        const group = document.createElement('div');
+        group.className = 'options-group';
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = `btn-opt ${opt.highlight ? 'highlight' : ''}`;
+            btn.innerText = opt.text;
+            btn.onclick = () => {
+                group.remove(); // Remove botões após clique
+                opt.next();
+            };
+            group.appendChild(btn);
+        });
+        this.feed.appendChild(group);
+        this.scrollToBottom();
+    },
+
+    scrollToBottom() {
+        setTimeout(() => this.feed.scrollTop = this.feed.scrollHeight, 100);
+    },
+
+    close() {
+        if(confirm("Sair e perder as alterações?")) {
+            document.getElementById('view-chat').classList.remove('open');
+        }
+    }
+};
+
+window.onload = () => App.init();
+</script>
 </body>
 </html>
