@@ -102,7 +102,6 @@
         .home-grid-container { padding: 0px 0 60px; }
         .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
         
-        /* --- AJUSTE: Home Desktop 1 Coluna para ficar largo igual chat --- */
         @media(min-width: 640px) { .baskets-grid { grid-template-columns: 1fr; } }
         @media(min-width: 1024px) { 
             .baskets-grid { grid-template-columns: 1fr; gap: 40px; } 
@@ -698,13 +697,16 @@
                 await this.wait(800);
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
                 
-                // Create list of Product Objects for Pagination
                 const products = ids.map(id => App.data.find(x => x.id === id)).filter(p => p);
                 
                 const sectionId = `basket-grid-${Date.now()}`;
                 
-                // Use new Pagination System
+                // INJETAR O CONTAINER ANTES DE CHAMAR A PAGINAÇÃO
+                this.container.insertAdjacentHTML('beforeend', `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;"></div>`);
+                
                 App.setupPagination(sectionId, products, 'chat');
+                
+                document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
             },
             askRemovalConfirmation() {
                 this.addMessage(`Você já retirou da lista os produtos que não quer?`);
@@ -794,7 +796,16 @@
                 const niceName = App.toSmartTitleCase(catName);
                 const id = 'act-' + this.catIndex;
                 
-                this.addMessage(`Que tal dar uma olhada em <strong>${niceName}</strong>?`);
+                // --- FRASES ALEATÓRIAS ---
+                const phrases = [
+                    `Que tal dar uma olhada em <strong>${niceName}</strong>?`,
+                    `Agora vamos ver as opções de <strong>${niceName}</strong>?`,
+                    `Confira agora o que temos de <strong>${niceName}</strong>.`,
+                    `Deseja ver os itens de <strong>${niceName}</strong>?`
+                ];
+                const msg = phrases[Math.floor(Math.random() * phrases.length)];
+                
+                this.addMessage(msg);
 
                 const html = `<div id="${id}" class="chat-actions">
                      <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
@@ -826,13 +837,11 @@
 
                 if(products.length > 0) {
                      const sectionId = `chat-sec-${Date.now()}`;
-                     // Render Header
                      const htmlHeader = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
                         <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${title}</span></div>
                      </div>`;
                      this.container.insertAdjacentHTML('beforeend', htmlHeader);
                      
-                     // Use new Pagination System which appends to the section
                      App.setupPagination(sectionId, products, 'chat');
                      
                      document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -972,12 +981,10 @@
             skipCoupon(elemId, fromInput = false) {
                 const el = document.getElementById(elemId);
                 if(el && !fromInput) el.remove(); 
-                // Se for do input, não remove o input anterior, só segue
                 
                 if(fromInput) this.addMessage("Continuar sem cupom", 'user');
                 else this.addMessage("Não tenho", 'user');
 
-                // MENSAGEM DO GRUPO
                 this.addMessage("Sem problemas! Na próxima compra, peça para o atendente no WhatsApp te adicionar no nosso grupo de descontos.");
                 
                 setTimeout(() => {
@@ -1200,8 +1207,10 @@
                 
                 if(hasMore) {
                     const remaining = data.products.length - data.currentIndex;
+                    const nextLoadCount = Math.min(remaining, data.limit);
+                    
                     const container = document.getElementById(sectionId);
-                    container.insertAdjacentHTML('beforeend', `<div id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">Ver mais ${remaining} produtos</div>`);
+                    container.insertAdjacentHTML('beforeend', `<div id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${nextLoadCount} PRODUTOS</div>`);
                 }
 
                 // Scroll Minimal (if not initial)
@@ -1220,7 +1229,6 @@
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 if (baskets.length > 0) {
                     list.innerHTML = baskets.map(p => {
-                        let productsGrid = '';
                         let validItems = [];
                         if (p.items && p.items.length > 0) {
                             p.items.forEach(i => {
