@@ -735,11 +735,12 @@
                 if(el) el.remove();
             },
 
-            addMessage(text, type = 'bot') {
+           addMessage(text, type = 'bot') {
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
                 const lastMsg = this.container.lastElementChild;
-                // ROLAGEM AUTOMÁTICA DESATIVADA NA MENSAGEM PARA NÃO ATRAPALHAR A LISTA
+                
+                // COMENTE ESTA LINHA ABAIXO PARA PARAR DE ROLAR PRA MENSAGEM:
                 // if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
 
@@ -1140,10 +1141,11 @@
             },
 
             scrollToBottom() {
-                // Rola para o fim apenas se necessário (ex: botões finais)
-                if(this.container.lastElementChild) {
-                    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
+                // COMENTE AS LINHAS DENTRO DESTA FUNÇÃO:
+                
+                // if(this.container.lastElementChild) {
+                //    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // }
             },
 
             wait(ms) { return new Promise(r => setTimeout(r, ms)); }
