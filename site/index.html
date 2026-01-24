@@ -259,9 +259,7 @@
             white-space: nowrap;
             margin-bottom: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            /* Esconder scrollbar padrão */
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+            -ms-overflow-style: none; scrollbar-width: none;
         }
         .sticky-chips-bar::-webkit-scrollbar { display: none; }
 
@@ -280,6 +278,28 @@
         }
         .chip-btn:active { background: #cbd5e1; transform: scale(0.95); }
 
+        /* --- NOVO: CAMPO DE BUSCA LOCAL --- */
+        .local-search-container {
+            padding: 0 5px 10px 5px;
+            width: 100%;
+        }
+        .local-search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background-color: #f8fafc;
+            color: #334155;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .local-search-input:focus {
+            background-color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(211, 26, 40, 0.1);
+        }
+
         /* --- ESTILO PARA SUBTITULOS INTERNOS --- */
         .internal-subcat-title {
             grid-column: 1 / -1; 
@@ -291,7 +311,7 @@
             letter-spacing: 0.5px;
             border-bottom: 2px solid #f1f5f9;
             padding-bottom: 4px;
-            scroll-margin-top: 140px; /* Garante que o titulo nao fique escondido atras da barra */
+            scroll-margin-top: 140px; 
         }
 
         @media(min-width: 1024px) { 
@@ -330,7 +350,21 @@
             min-width: auto; max-width: none; 
             flex-shrink: 0; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; position: relative; 
         }
-        .cp-tag { position: absolute; top: 8px; left: 8px; background: #fef2f2; color: #dc2626; font-size: 0.9rem; font-weight: 700; padding: 7px 13px; border-radius: 4px; z-index: 2; }
+        .cp-tag { 
+            position: absolute; 
+            top: 8px; 
+            left: 8px; 
+            background: #fef2f2; 
+            color: #dc2626; 
+            
+            /* --- AJUSTE TAMANHO ETIQUETA --- */
+            font-size: 0.85rem; 
+            padding: 6px 12px;  
+            
+            font-weight: 800; 
+            border-radius: 4px; 
+            z-index: 2; 
+        }
         
         /* --- AJUSTE: Texto de Quantidade na Home (Alinhado à Esquerda) --- */
         .home-qty-text {
@@ -730,12 +764,19 @@
                 this.addMessage("Combinado!", 'user');
 
                 await this.showTyping();
-                this.addMessage("Primeiro retire da cesta os produtos que você não quer, ok.");
-                            
-               // Botão 2: Mostrar Lista
+                this.addMessage("Primeiro você vai retirar da cesta os produtos que você não quer.");
+
+                await this.wait(1600);
+                await this.showTyping();
+                this.addMessage("Depois você terá o nosso supermercado inteiro para repor os produtos e comprar o que quiser, como se estivesse com o carrinho no corredor.");
+                                    
+                await this.wait(2000);
+                this.addMessage("Vou mostrar a lista de produtos que já estão na sua cesta, pode ser?");
+
+                // Botão 2: Mostrar Lista
                 const id = 'act-show-list';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Ok</button>
+                    <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Pode mostrar</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -745,7 +786,7 @@
             async showInitialList(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage("Ok", 'user');
+                this.addMessage("Pode mostrar", 'user');
                 
                 await this.wait(600);
                 this.showBasketGrid(); // Mostra a lista sem rolar pro fim
@@ -801,7 +842,7 @@
             },
 
             askRemovalConfirmation() {
-                this.addMessage(`Pronto.\n\nVocê retirou os produtos?`);
+                this.addMessage(`Você já retirou da lista os produtos que não quer?`);
                 const id = 'actions-removal';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
@@ -833,14 +874,20 @@
                 await this.showTyping();
                 
                 if (removedVal > 0) {
-                    this.addMessage(`Legal! Os produtos que retirou deu: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
-                    await this.wait(1600);
-                    this.addMessage(`Agora, deixe a cesta do seu jeito e economize com os melhores preços da cidade.`);
-                   await this.wait(2000);
+                    this.addMessage(`Perfeito! O valor dos produtos que retirou foi de: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
+                    await this.wait(800);
+                    this.addMessage(`Agora, vamos adicionar novos produtos à sua cesta.`);
+                    await this.wait(800);
+                    this.addMessage(`Temos mais de 200 produtos diferentes.`);
+                    await this.wait(800);
+                    this.addMessage(`Você vai montando a cesta do seu jeito.`);
+                    await this.wait(800);
+                    this.addMessage(`Vá acompanhando o valor na parte debaixo da tela.`);
+                    await this.wait(800);
                     this.addMessage(`Boas Compras.`);
                 } else {
                     this.addMessage(`Ok! Você manteve a cesta completa.`);
-                    await this.wait(1800);
+                    await this.wait(800);
                     this.addMessage(`Deseja adicionar algo extra?`);
                 }
 
@@ -849,7 +896,7 @@
                     App.updateTotal(); 
                 } catch(e){ console.error("Chip Error", e); }
                 
-                await this.wait(1800);
+                await this.wait(1000);
                 this.askNextCategory(); 
             },
 
@@ -902,6 +949,9 @@
                      const sectionId = `chat-sec-${Date.now()}`;
                      const htmlHeader = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
                         <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${title}</span></div>
+                        <div class="local-search-container">
+                            <input type="text" class="local-search-input" placeholder="Buscar em ${title}..." onkeyup="App.filterLocalList(this)">
+                        </div>
                      </div>`;
                      this.container.insertAdjacentHTML('beforeend', htmlHeader);
                      
@@ -1129,10 +1179,7 @@
             },
 
             scrollToBottom() {
-                // ROLAGEM AUTOMATICA DESATIVADA PARA NAO QUEBRAR O FLUXO DO CHAT
-                // if(this.container.lastElementChild) {
-                //    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                // }
+                // DESATIVADO PARA NÃO DESCER A TELA AUTOMATICAMENTE
             },
 
             wait(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -1154,8 +1201,7 @@
                         const parts = catRaw.split('>');
                         const mainCat = parts[0].trim().toUpperCase();
                         
-                        // --- CORREÇÃO DA CATEGORIA ---
-                        // Usamos mainCat (ex: CALÇADOS) como padrão, e não catRaw (ex: CALÇADOS > CHINELO)
+                        // CORREÇÃO: Usar sempre a categoria principal para evitar subcategorias soltas no final
                         let appCat = mainCat; 
                         
                         if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
@@ -1360,6 +1406,22 @@
                 }
             },
             
+            // FILTRO DE BUSCA LOCAL (ADICIONADO)
+            filterLocalList(input) {
+                const term = input.value.toLowerCase();
+                const container = input.closest('.subcat-section');
+                const products = container.querySelectorAll('.card-prod');
+                
+                products.forEach(p => {
+                    const title = p.querySelector('.cp-title').innerText.toLowerCase();
+                    if(title.includes(term)) {
+                        p.style.display = 'flex';
+                    } else {
+                        p.style.display = 'none';
+                    }
+                });
+            },
+
             renderHome() {
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
