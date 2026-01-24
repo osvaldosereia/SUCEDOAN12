@@ -8766,7 +8766,7 @@
       "custo": 0.08,
       "valor": 0.15,
       "batches": [],
-      "estoque": 1000,
+      "estoque": 0,
       "estoqueFiscal": 1000,
       "peso": 0.002,
       "limit": 1000,
@@ -8801,7 +8801,21 @@
       "linkedProductCode": "",
       "comboItems": [],
       "imageSlug": "sacola-forteplas-30x48cm",
-      "hide_on_site": false
+      "hide_on_site": true,
+      "manualHistory": [
+        {
+          "date": "2026-01-24T00:32:46.457Z",
+          "type": "OUT",
+          "qty": 1000,
+          "reason": "RETIRAR DO SITE",
+          "user": "ADMIN"
+        }
+      ],
+      "varNome": [],
+      "varEan": [],
+      "expiryDate": "",
+      "entryHistory": [],
+      "salesHistory": []
     },
     {
       "id": "1768680588860281",
@@ -8814,7 +8828,7 @@
       "custo": 0.04,
       "valor": 0.08,
       "batches": [],
-      "estoque": 2000,
+      "estoque": 0,
       "estoqueFiscal": 2000,
       "peso": 0.001,
       "limit": 100,
@@ -8849,7 +8863,21 @@
       "linkedProductCode": "",
       "comboItems": [],
       "imageSlug": "sacola-forteplas-bag-30x40",
-      "hide_on_site": false
+      "hide_on_site": true,
+      "manualHistory": [
+        {
+          "date": "2026-01-24T00:32:59.665Z",
+          "type": "OUT",
+          "qty": 2000,
+          "reason": "RETIRAR DO SITE",
+          "user": "ADMIN"
+        }
+      ],
+      "varNome": [],
+      "varEan": [],
+      "expiryDate": "",
+      "entryHistory": [],
+      "salesHistory": []
     },
     {
       "id": "1768530313832076",
@@ -11636,13 +11664,13 @@
     {
       "id": "mkpesmt90.25668781951974684",
       "codigo": "P205",
-      "nome": "BARRA CEREAIS NAT MOR/AVE/CHOC 25G DP/0024",
+      "nome": "BARRA CEREAIS NATURAL MORANGO - AVEIA - CHOCOLATE 25G",
       "ean": "7898055420385",
       "categoria": "CAFÉ DA MANHÃ E LANCHES > BISCOITOS E SNACKS",
       "fornecedor": "",
       "caracteristicas": "",
       "custo": 0.9,
-      "valor": 1.6,
+      "valor": 1.5,
       "batches": [
         {
           "date": "2026-01-20",
@@ -11654,7 +11682,7 @@
       "peso": 0,
       "limit": 6,
       "Limit": 6,
-      "imagem": "",
+      "imagem": "../site/img/produtos/barra-cereais-nat-moravechoc-25gr-cesta-basica-cuiaba-varzea-grande.webp",
       "items": [],
       "personalized": false,
       "isOffer": false,
@@ -11683,19 +11711,25 @@
       "isBestSeller": false,
       "linkedProductCode": "",
       "comboItems": [],
-      "imageSlug": "barra-cereais-nat-moravechoc-25g-dp0024",
-      "hide_on_site": false
+      "imageSlug": "barra-cereais-nat-moravechoc-25gr",
+      "hide_on_site": false,
+      "varNome": [],
+      "varEan": [],
+      "expiryDate": "",
+      "entryHistory": [],
+      "salesHistory": [],
+      "manualHistory": []
     },
     {
       "id": "mkpesmt90.05355861106407911",
       "codigo": "P206",
-      "nome": "BARRA CEREAIS NATURAL CAST/AVE 25G DP/0024",
+      "nome": "BARRA CEREAIS NATURAL CASTANHA - AVEIA 25G",
       "ean": "7898055420378",
       "categoria": "CAFÉ DA MANHÃ E LANCHES > BISCOITOS E SNACKS",
       "fornecedor": "",
       "caracteristicas": "",
       "custo": 0.9,
-      "valor": 1.6,
+      "valor": 1.5,
       "batches": [
         {
           "date": "2026-01-20",
@@ -11707,7 +11741,7 @@
       "peso": 0,
       "limit": 6,
       "Limit": 6,
-      "imagem": "",
+      "imagem": "../site/img/produtos/barra-cereais-natural-castave-25g-cesta-basica-cuiaba-varzea-grande.webp",
       "items": [],
       "personalized": false,
       "isOffer": false,
@@ -11736,19 +11770,25 @@
       "isBestSeller": false,
       "linkedProductCode": "",
       "comboItems": [],
-      "imageSlug": "barra-cereais-natural-castave-25g-dp0024",
-      "hide_on_site": false
+      "imageSlug": "barra-cereais-natural-castave-25g",
+      "hide_on_site": false,
+      "varNome": [],
+      "varEan": [],
+      "expiryDate": "",
+      "entryHistory": [],
+      "salesHistory": [],
+      "manualHistory": []
     },
     {
       "id": "mkpesmt90.9141472717568699",
       "codigo": "P207",
-      "nome": "BARRA CEREAIS NAT BRI/AVE/CHOC 25G DP/0024",
+      "nome": "BARRA CEREAIS BRIGADEIRO - AVEIA - CHOCOLATE 25GR",
       "ean": "7898055420446",
       "categoria": "CAFÉ DA MANHÃ E LANCHES > BISCOITOS E SNACKS",
       "fornecedor": "",
       "caracteristicas": "",
       "custo": 0.9,
-      "valor": 1.6,
+      "valor": 1.5,
       "batches": [
         {
           "date": "2026-01-20",
@@ -11760,7 +11800,7 @@
       "peso": 0,
       "limit": 6,
       "Limit": 6,
-      "imagem": "",
+      "imagem": "../site/img/produtos/barra-cereais-nat-briavechoc-25gr-cesta-basica-cuiaba-varzea-grande.webp",
       "items": [],
       "personalized": false,
       "isOffer": false,
@@ -11789,8 +11829,14 @@
       "isBestSeller": false,
       "linkedProductCode": "",
       "comboItems": [],
-      "imageSlug": "barra-cereais-nat-briavechoc-25g-dp0024",
-      "hide_on_site": false
+      "imageSlug": "barra-cereais-nat-briavechoc-25gr",
+      "hide_on_site": false,
+      "varNome": [],
+      "varEan": [],
+      "expiryDate": "",
+      "entryHistory": [],
+      "salesHistory": [],
+      "manualHistory": []
     },
     {
       "id": "mkpesmta0.18097431306054057",
@@ -16812,10 +16858,10 @@
       "id": "mkr6c0eb0.34448097704248093",
       "codigo": "P309",
       "ean": "7898539426131",
-      "nome": "CARRINHO DE CORRIDA RODA LIVRE COLOR",
-      "custo": 0.77,
-      "valor": 1.2,
-      "estoque": 10,
+      "nome": "CARRINHO DE CORRIDA RODA LIVRE COLOR 10UN",
+      "custo": 7.7,
+      "valor": 11.89,
+      "estoque": 1,
       "unidade": "UN",
       "ncm": "95030099",
       "cest": "",
@@ -16824,7 +16870,7 @@
       "isOffer": false,
       "varNome": [],
       "varEan": [],
-      "limitQty": 0,
+      "limitQty": 1,
       "entryHistory": [
         {
           "date": "2026-01-21",
@@ -16836,7 +16882,15 @@
         }
       ],
       "salesHistory": [],
-      "manualHistory": [],
+      "manualHistory": [
+        {
+          "date": "2026-01-24T00:38:59.487Z",
+          "type": "OUT",
+          "qty": 9,
+          "reason": "CADASTRO ERRADO",
+          "user": "ADMIN"
+        }
+      ],
       "isBestSeller": false,
       "linkedProductCode": "",
       "categoria": "BAZAR E UTILIDADES > ARMARINHO",
@@ -16852,7 +16906,7 @@
       "Codigo_Produto_Ligado": "",
       "Oferta": "Não",
       "Valor_Oferta": 0,
-      "Limit": 0,
+      "Limit": 1,
       "Categoria": "BAZAR E UTILIDADES",
       "Subcategoria": "ARMARINHO"
     },
@@ -17532,7 +17586,7 @@
       "id": "mkr6c0ed0.293136234890772",
       "codigo": "P324",
       "ean": "7898745175175",
-      "nome": "NECESSAIRE DE PVC 23X11CM TRANSPARENTE COLOR",
+      "nome": "NECESSAIRE DE PVC 23X11CM TRANSPARENTE VERMELHA",
       "custo": 1.99,
       "valor": 4.9,
       "estoque": 3,
@@ -17612,8 +17666,8 @@
       "expiryDate": "",
       "comboItems": [],
       "items": [],
-      "imageSlug": "necessaire-de-pvc-23x17cm-transparente-color",
-      "imagem": "../site/img/produtos/necessaire-de-pvc-23x17cm-transparente-color-cesta-basica-cuiaba-varzea-grande.webp",
+      "imageSlug": "necessaire-de-pvc-23x17cm-transparente-color2",
+      "imagem": "../site/img/produtos/necessaire-de-pvc-23x17cm-transparente-color2-cesta-basica-cuiaba-varzea-grande.webp",
       "hide_on_site": false,
       "Mais_Vendido": "Não",
       "Tem_Ligacao": "Não",
