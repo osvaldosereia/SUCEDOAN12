@@ -12,14 +12,13 @@
         :root {
             --primary: #d31a28;        /* Vermelho Marca */
             --primary-dark: #b91c1c;
-            --accent: #22c55e;         /* Verde Sucesso/Zap */
+            --accent: #22c55e;         /* Verde Sucesso */
             --bg-app: #ffffff;
             --bg-sec: #f8f9fa;
             --text-main: #1f2937;
             --text-sec: #6b7280;
             --border: #e5e7eb;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             --radius: 12px;
             --header-h: 60px;
         }
@@ -60,7 +59,6 @@
             font-size: 0.85rem; font-weight: 700; transition: all 0.2s;
         }
         .cart-pill.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .cart-pill span { font-variant-numeric: tabular-nums; }
 
         /* --- 3. VIEW: HOME (Lista de Cestas) --- */
         #view-home { padding-top: calc(var(--header-h) + 20px); padding-bottom: 60px; }
@@ -192,12 +190,13 @@
         /* Fallback de Erro */
         .error-box {
             text-align: center; padding: 30px; background: #fef2f2; 
-            border: 1px dashed #ef4444; border-radius: 12px; margin: 20px;
+            border: 2px dashed #ef4444; border-radius: 12px; margin: 20px;
         }
-        .error-box p { color: #b91c1c; margin-bottom: 15px; font-size: 0.9rem; }
+        .error-box p { color: #b91c1c; margin-bottom: 15px; font-size: 0.9rem; line-height: 1.4; }
         .file-label {
-            display: inline-block; padding: 12px 20px; background: #ef4444; color: white;
+            display: inline-block; padding: 12px 24px; background: #ef4444; color: white;
             border-radius: 8px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -290,13 +289,13 @@
             currentStepIndex: 0,
 
             init() {
-                // Tenta carregar automaticamente
-                fetch('produtos.json')
+                // Tenta carregar na pasta correta 'produtos/' primeiro
+                fetch('produtos/produtos.json')
                     .then(r => { if(!r.ok) throw new Error(); return r.json(); })
                     .then(json => this.processData(json))
                     .catch(() => {
-                        // Tenta com o nome específico do seu upload
-                        fetch('produtos (10).json')
+                        // Tenta na raiz como segunda opção
+                        fetch('produtos.json')
                             .then(r => { if(!r.ok) throw new Error(); return r.json(); })
                             .then(json => this.processData(json))
                             .catch(() => this.showManualUpload()); // Mostra botão se falhar
@@ -307,10 +306,10 @@
                 const list = document.getElementById('basket-list');
                 list.innerHTML = `
                     <div class="error-box">
-                        <p><strong>Não encontrei o arquivo de produtos automaticamente.</strong><br>
-                        Isso acontece por segurança do navegador ao abrir o arquivo direto.</p>
+                        <p><strong>Não encontrei a lista de produtos.</strong><br>
+                        Se você abriu o arquivo direto (sem servidor), clique abaixo para carregar o arquivo "produtos.json".</p>
                         <label class="file-label">
-                            📁 Carregar "produtos.json"
+                            📁 Carregar Arquivo
                             <input type="file" hidden accept=".json" onchange="App.handleFile(this)">
                         </label>
                     </div>
@@ -338,6 +337,7 @@
                     price: parseFloat(p.valor || 0),
                     offerPrice: parseFloat(p.Valor_Oferta || 0),
                     isOffer: p.Oferta === 'Sim',
+                    // Correção na leitura de categorias do seu JSON
                     catMain: (p.categoria || "").split('>')[0].trim().toUpperCase(),
                     catSub: (p.categoria || "").split('>')[1] ? (p.categoria || "").split('>')[1].trim().toUpperCase() : "",
                     image: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'https://via.placeholder.com/300?text=Sem+Foto'
@@ -410,7 +410,7 @@
                 this.cart = {};
                 this.currentStepIndex = 0;
                 
-                // Inicializa carrinho (se possível) ou adiciona a própria cesta
+                // Inicia carrinho
                 if(this.activeBasket.items && Array.isArray(this.activeBasket.items)) {
                     this.activeBasket.items.forEach(i => {
                         this.cart[String(i.id)] = parseInt(i.qty || 1);
