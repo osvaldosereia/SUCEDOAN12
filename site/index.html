@@ -781,7 +781,7 @@
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                // Rolagem manual removida aqui também para não descer a tela
+              this.scrollToBottom();
             },
 
             async handleRemovalYes(elemId) {
@@ -823,7 +823,6 @@
                 
                 await this.wait(1000);
                 this.askNextCategory(); // VAI DIRETO PARA AS CATEGORIAS
-                this.scrollToBottom();
 
             },
 
