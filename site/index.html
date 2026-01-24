@@ -63,6 +63,8 @@
             padding: 6px 14px; border-radius: 50px; border: 1px solid #e2e8f0;
             display: flex; align-items: center; gap: 6px;
         }
+        
+        /* Help Button Style (Shared) */
         .help-btn-visible {
             width: 36px; height: 36px; background: var(--secondary); color: white;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -75,30 +77,22 @@
             position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
             background: #fff; height: var(--app-header-height);
             border-bottom: 1px solid #f0f0f0; display: none; 
-            align-items: center; padding: 0 16px; gap: 12px;
+            align-items: center; padding: 0 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        body.customizer-mode .app-header { display: flex; }
+        body.customizer-mode .app-header { display: flex; justify-content: center; }
+        
+        /* Inner container for alignment on Desktop */
+        .app-header-inner {
+            width: 100%; max-width: 1200px; height: 100%;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        }
 
         .ah-back-btn { 
             color: var(--primary); display: flex; align-items: center; justify-content: center;
             padding: 4px; margin-left: -4px; cursor: pointer;
         }
-        .ah-search-box { flex: 1; position: relative; }
-        .ah-search-input {
-            width: 100%; background: #f2f2f2; border: none; border-radius: 8px;
-            padding: 8px 12px 8px 36px; font-size: 0.9rem; color: #333; outline: none; height: 36px; 
-        }
-        .ah-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #ea1d2c; }
-
-        .ah-sticky-btn {
-            background: #3e3e3e; color: white; font-size: 0.8rem;
-            padding: 6px 12px; border-radius: 20px; font-weight: 600;
-            display: none; align-items: center; gap: 6px;
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .ah-sticky-btn.visible { display: flex; opacity: 1; }
-
+        
         /* --- 4. HERO & HOME --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
         .hero { padding: 30px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
@@ -123,9 +117,6 @@
         .hbc-subtitle { font-size: 0.95rem; color: #333; margin-top: 8px; margin-bottom: 4px; font-weight: 400; }
         .hbc-thumb-mini { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0; cursor: pointer; flex-shrink: 0; }
 
-        .hbc-carousel-box { position: relative; margin-bottom: 15px; }
-        .hbc-carousel-wrapper { overflow-x: auto; display: flex; gap: 14px; padding-bottom: 15px; scroll-behavior: smooth; }
-        
         .hbc-footer { margin-top: auto; border-top: 1px solid #f0f0f0; padding-top: 15px; display: flex; flex-direction: column; gap: 10px; }
         .hbc-price-val { font-size: 1.5rem; font-weight: 600; color: #222B49; line-height: 1; }
         .hbc-price-label { font-size: 0.80rem; color: #555; display: block; margin-bottom: 2px; }
@@ -146,7 +137,6 @@
             position: relative;
         }
         
-        /* --- NOVO ESTILO PARA RESUMO LARGO --- */
         .chat-msg.wide-summary {
             max-width: 96%; width: 100%;
             border-radius: 12px;
@@ -159,7 +149,6 @@
 
         .chat-msg strong { color: var(--primary); }
 
-        /* USER RESPONSE STYLE - Right Aligned */
         .chat-msg.user {
             align-self: flex-end;
             margin-left: auto;
@@ -169,10 +158,46 @@
         }
         .chat-msg.user strong { color: white; }
 
-        .chat-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: -10px; animation: fadeIn 0.4s ease forwards; padding-left: 5px; }
-        .btn-chat { padding: 10px 20px; background: #fff; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
-        .btn-chat.primary { background: var(--primary); color: white; }
+        /* --- BOTÕES DO CHAT (AJUSTE SOLICITADO) --- */
+        .chat-actions { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; /* Duas colunas para os botões menores */
+            gap: 10px; 
+            margin-top: -10px; 
+            animation: fadeIn 0.4s ease forwards; 
+            padding-left: 5px; 
+            width: 100%;
+        }
+
+        .btn-chat { 
+            padding: 10px 10px; 
+            background: #fff; 
+            border: 1px solid var(--primary); 
+            color: var(--primary); 
+            border-radius: 20px; 
+            font-weight: 600; 
+            font-size: 0.9rem; 
+            transition: all 0.2s; 
+            width: 100%; /* Ocupa a célula do grid */
+            display: flex; justify-content: center; align-items: center; text-align: center;
+        }
+        
+        .btn-chat.primary { 
+            background: var(--primary); 
+            color: white; 
+            grid-column: 1 / -1; /* Ocupa a linha inteira no topo */
+            padding: 14px 20px; /* Mais largo/alto */
+            font-size: 1rem;
+        }
+        
         .btn-chat:active { transform: scale(0.95); }
+
+        /* Desktop: Volta para linha única */
+        @media(min-width: 1024px) {
+            .chat-actions { display: flex; width: auto; }
+            .btn-chat { width: auto; }
+            .btn-chat.primary { width: auto; }
+        }
 
         .chat-input-group { display:flex; gap:10px; width:100%; max-width:300px; margin-top:5px; }
         .chat-input { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; outline:none; }
@@ -437,11 +462,13 @@
     <div id="customizer-view" class="hidden">
         
         <div class="app-header">
-            <div class="ah-back-btn" onclick="App.goHome()">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+            <div class="app-header-inner">
+                <div class="ah-back-btn" onclick="App.goHome()">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                </div>
+                <div style="flex:1; text-align:center; font-weight:600;">Personalizando</div>
+                <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')">?</div>
             </div>
-            <div style="flex:1; text-align:center; font-weight:600;">Personalizando</div>
-            <div class="ah-help-btn" style="padding: 0 8px; font-weight:700; color:#555; cursor:pointer;" onclick="App.openSheet('faq-sheet')">?</div>
         </div>
 
         <div class="main-content-col">
