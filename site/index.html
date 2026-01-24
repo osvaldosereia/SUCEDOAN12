@@ -145,6 +145,18 @@
             animation: fadeIn 0.4s ease forwards; opacity: 0; transform: translateY(10px);
             position: relative;
         }
+        
+        /* --- NOVO ESTILO PARA RESUMO LARGO --- */
+        .chat-msg.wide-summary {
+            max-width: 96%; width: 100%;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+        @media(min-width: 1024px) {
+            .chat-msg.wide-summary { max-width: 600px; margin: 0 auto 0 0; }
+        }
+
         .chat-msg strong { color: var(--primary); }
 
         /* USER RESPONSE STYLE - Right Aligned */
@@ -242,6 +254,15 @@
         }
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #fef2f2; color: #dc2626; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
         
+        /* Badge para quantidade na Home */
+        .home-qty-badge {
+            position: absolute; top: 6px; right: 6px; 
+            background: rgba(255, 255, 255, 0.95); 
+            color: #333; font-size: 0.75rem; font-weight: 700; 
+            padding: 3px 8px; border-radius: 8px; z-index: 5;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
         .grid-products-row .cp-img-box {
             background: transparent; 
             border: none;
@@ -579,24 +600,16 @@
                 this.catIndex = 0;
                 
                 try {
-                    // NOVA LÓGICA: Agrupar por subCategory, mas ordenar pela appCategory pai
                     let catGroups = {};
                     
                     App.data.forEach(p => {
-                         // Ignora itens de cesta na listagem
                          if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
-                         
                          const subKey = p.subCategory || "Geral";
-                         // Armazenamos a categoria Pai para usar na ordenação
-                         if(!catGroups[subKey]) {
-                             catGroups[subKey] = p.appCategory;
-                         }
+                         if(!catGroups[subKey]) { catGroups[subKey] = p.appCategory; }
                     });
 
-                    // Lista única de subcategorias
                     this.categories = Object.keys(catGroups);
                     
-                    // Ordenar: Primeiro pelo "peso" da Categoria Pai, depois alfabético da subcategoria
                     this.categories.sort((a,b) => {
                         const parentA = catGroups[a];
                         const parentB = catGroups[b];
@@ -611,8 +624,8 @@
                         const scoreA = getScore(parentA);
                         const scoreB = getScore(parentB);
                         
-                        if(scoreA !== scoreB) return scoreB - scoreA; // Maior score primeiro
-                        return a.localeCompare(b); // Alfabético
+                        if(scoreA !== scoreB) return scoreB - scoreA; 
+                        return a.localeCompare(b); 
                     });
 
                 } catch(e) { console.error("Erro categorias", e); }
@@ -639,7 +652,7 @@
                 const id = 'typing-' + Date.now();
                 const html = `<div id="${id}" class="typing-indicator"><span></span><span></span><span></span></div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom(); // Scroll suave para mostrar digitando
+                this.scrollToBottom(); 
                 await this.wait(1200); 
                 const el = document.getElementById(id);
                 if(el) el.remove();
@@ -647,20 +660,39 @@
             addMessage(text, type = 'bot') {
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
                 this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
-                // Scroll suave e mínimo, não força o rodapé se o usuário estiver lendo algo acima
                 const lastMsg = this.container.lastElementChild;
                 if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             },
             showBasketGrid() {
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
                 const sectionId = `basket-grid-${Date.now()}`;
-                const html = `<div id="${sectionId}" class="grid-products-row" style="animation:fadeIn 0.5s ease forwards; padding-left:5px;">` + 
-                    ids.map(id => {
-                        const p = App.data.find(x => x.id === id);
-                        return p ? App.buildCard(p) : '';
-                    }).join('') + `</div>`;
+                
+                // --- LÓGICA DE 2 LINHAS NO MÁXIMO (INDEPENDENTE DO DEVICE) ---
+                const isDesktop = window.innerWidth >= 1024;
+                const cols = isDesktop ? 6 : 2;
+                const initialLimit = cols * 2; // 2 Linhas exatas
+                
+                const hasMore = ids.length > initialLimit;
+                const visibleIds = ids.slice(0, initialLimit);
+                const hiddenIds = ids.slice(initialLimit);
+
+                let html = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
+                    <div class="grid-products-row">
+                        ${visibleIds.map(id => {
+                            const p = App.data.find(x => x.id === id);
+                            return p ? App.buildCard(p) : '';
+                        }).join('')}
+                        ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
+                            ${hiddenIds.map(id => {
+                                const p = App.data.find(x => x.id === id);
+                                return p ? App.buildCard(p) : '';
+                            }).join('')}
+                        </div>` : ''}
+                    </div>
+                    ${hasMore ? `<div id="btn-${sectionId}" class="btn-load-more" onclick="document.getElementById('more-${sectionId}').style.display='contents'; this.style.display='none';">Ver mais ${hiddenIds.length} produtos</div>` : ''}
+                </div>`;
+                
                 this.container.insertAdjacentHTML('beforeend', html);
-                // Scroll para o topo da lista
                 document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
             },
             askRemovalConfirmation() {
@@ -768,7 +800,6 @@
                 
                 await this.showTyping();
                 
-                // Filtro agora é por subCategory
                 const products = App.data.filter(p => p.subCategory === catName && !p.categoria.includes('CESTA'));
                 const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
                 const color = colors[this.catIndex % colors.length];
@@ -781,7 +812,11 @@
             },
             renderChatGrid(products, color, title) {
                 if(products.length > 0) {
-                     const initialLimit = 6;
+                     // --- LÓGICA DE 2 LINHAS NO MÁXIMO (INDEPENDENTE DO DEVICE) ---
+                     const isDesktop = window.innerWidth >= 1024;
+                     const cols = isDesktop ? 6 : 2;
+                     const initialLimit = cols * 2; // 2 Linhas exatas
+
                      const hasMore = products.length > initialLimit;
                      const visibleItems = products.slice(0, initialLimit);
                      const hiddenItems = products.slice(initialLimit);
@@ -799,7 +834,6 @@
                     </div>`;
                     this.container.insertAdjacentHTML('beforeend', html);
                     
-                    // Ajuste de Scroll para que o TÍTULO da seção fique no topo, não rolando tudo pro final
                     document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
 
                 } else {
@@ -814,7 +848,6 @@
                 this.askNextCategory();
             },
             
-            // --- NEW CHECKOUT CHAT FLOW (UPDATED SUMMARY) ---
             async startCheckout() {
                 // Hide Floating Chip
                 document.getElementById('credit-chip').classList.remove('visible');
@@ -822,8 +855,7 @@
                 this.addMessage("Finalizar Agora", 'user');
                 await this.showTyping();
                 
-                // LÓGICA DE RESUMO FINANCEIRO
-                let summaryHTML = `<div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:15px; width:100%;">`;
+                let summaryHTML = `<div style="padding:15px; width:100%;">`;
                 
                 // 1. Cesta Base
                 const basketName = App.currentBasket.nome;
@@ -870,11 +902,6 @@
                     summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
                 }
 
-                // 4. Balanço Final
-                // O calculo real deve ser (Base - Removidos + Adicionados)
-                // Se esse valor for menor que Base - margem, aplica Base. (Regra existente no App.updateTotal)
-                // Mas aqui vamos mostrar a matemática crua para o cliente entender
-                
                 let mathTotal = basketVal - removedTotal + addedTotal;
                 
                 summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
@@ -884,8 +911,12 @@
                 
                 summaryHTML += `</div>`; // Close box
 
-                this.addMessage(summaryHTML);
-                App.updateTotal(); // Refresh internal value just in case
+                // USANDO A NOVA CLASSE wide-summary
+                this.container.insertAdjacentHTML('beforeend', `<div class="chat-msg wide-summary">${summaryHTML}</div>`);
+                const lastMsg = this.container.lastElementChild;
+                if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                App.updateTotal(); 
                 
                 await this.wait(1500);
                 this.askCoupon();
@@ -971,7 +1002,6 @@
                     </button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                // Scroll para mostrar o botão
                 this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
             },
             sendWhatsAppChat() {
@@ -989,7 +1019,6 @@
                 window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
             scrollToBottom() {
-                // Modificado para scroll suave e não intrusivo (nearest)
                 if(this.container.lastElementChild) {
                     this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
@@ -1106,20 +1135,18 @@
                             const hiddenItems = validItems.slice(initialLimit);
                             const sectionId = `home-sec-${p.id}`;
 
-                            // AQUI: Usando o mesmo card do chat (.card-prod), mas adicionando .readonly para esconder preços
                             productsGrid = `<div class="grid-products-row">
                                 ${visibleItems.map(obj => {
-                                    // Hack simples para usar o buildCard mas injetar a classe readonly e remover eventos de clique
                                     let cardHtml = this.buildCard(obj.d);
-                                    cardHtml = cardHtml.replace('class="card-prod"', 'class="card-prod readonly"');
-                                    // Opcional: Adicionar a quantidade que vem na cesta visualmente, se desejar, mas o layout "Chat" não tem campo pra "Qty na Cesta" fixo. 
-                                    // Vou manter fiel ao chat (apenas imagem e nome).
-                                    return cardHtml;
+                                    // INJETAR O BADGE DE QUANTIDADE NA HOME
+                                    cardHtml = cardHtml.replace('<div class="cp-img-box"', `<div class="cp-img-box"><div class="home-qty-badge">${obj.qty}x</div>`);
+                                    return cardHtml.replace('class="card-prod"', 'class="card-prod readonly"');
                                 }).join('')}
                                 
                                 ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
                                     ${hiddenItems.map(obj => {
                                         let cardHtml = this.buildCard(obj.d);
+                                        cardHtml = cardHtml.replace('<div class="cp-img-box"', `<div class="cp-img-box"><div class="home-qty-badge">${obj.qty}x</div>`);
                                         return cardHtml.replace('class="card-prod"', 'class="card-prod readonly"');
                                     }).join('')}
                                 </div>` : ''}
