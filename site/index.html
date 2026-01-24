@@ -708,15 +708,13 @@
                 if(hours >= 18) greeting = "Boa noite";
                 
                 await this.showTyping();
-                this.addMessage(`${greeting}! Tudo bem? Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>.`);
+                this.addMessage(`${greeting}! Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>, certo?`);
                 
-                await this.wait(1000);
-                await this.showTyping();
-                this.addMessage("Agora vamos deixar a cesta do seu jeito, combinado?");
+               
 
                 const id = 'act-intro';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Combinado!</button>
+                    <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Sim!</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -725,21 +723,16 @@
             async explainRules(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage("Combinado!", 'user');
+                this.addMessage("Sim!", 'user');
 
+                await this.wait(1200);
                 await this.showTyping();
-                this.addMessage("Primeiro você vai retirar da cesta os produtos que você não quer.");
+                this.addMessage("Primeiro você vai retirar os produtos que não quer, ok?");
 
-                await this.wait(1600);
-                await this.showTyping();
-                this.addMessage("Depois você terá o nosso supermercado inteiro para repor os produtos e comprar o que quiser, como se estivesse com o carrinho no corredor.");
-                                    
-                await this.wait(2000);
-                this.addMessage("Vou mostrar a lista de produtos que já estão na sua cesta, pode ser?");
 
                 const id = 'act-show-list';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Pode mostrar</button>
+                    <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Ok</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -748,7 +741,7 @@
             async showInitialList(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage("Pode mostrar", 'user');
+                this.addMessage("Ok", 'user');
                 
                 await this.wait(600);
                 this.showBasketGrid(); 
@@ -1225,7 +1218,7 @@
                  return dateStr; 
             },
             
-            // --- NOVA PAGINAÇÃO CENTRALIZADA COM SUPORTE A CHIPS ---
+            // --- BLOCO CORRIGIDO PARA OS CHIPS APARECEREM E FICAREM FIXOS ---
             setupPagination(sectionId, products, type='home') {
                 const isDesktop = window.innerWidth >= 1024;
                 const cols = isDesktop ? 6 : 2;
@@ -1239,21 +1232,22 @@
                     const subcats = [...new Set(products.map(p => p.subCategory))];
                     if (subcats.length > 1) { // Só mostra se tiver mais de 1 subcategoria
                         let chipsHtml = `<div class="chips-container-wrapper">
-                            <div class="scroll-arrow" onclick="App.scrollChips(this, -1)">&#8249;</div>
+                            <div class="scroll-arrow" onclick="App.scrollChips(this, -1)">‹</div>
                             <div class="sticky-chips-bar">`;
                         subcats.forEach(sc => {
                             const safeId = 'sc-' + sc.replace(/[^a-zA-Z0-9]/g, '');
                             chipsHtml += `<button class="chip-btn" onclick="document.getElementById('${safeId}').scrollIntoView({behavior:'smooth', block:'start'});">${sc}</button>`;
                         });
                         chipsHtml += `</div>
-                            <div class="scroll-arrow" onclick="App.scrollChips(this, 1)">&#8250;</div>
+                            <div class="scroll-arrow" onclick="App.scrollChips(this, 1)">›</div>
                         </div>`;
                         
                         // Injeta os chips LOGO APÓS o título da seção
                         setTimeout(() => {
                             const container = document.getElementById(sectionId);
                             if(container) {
-                                const titleEl = container.querySelector('.local-search-container');
+                                // --- CORREÇÃO AQUI: Agora busca pelo Título, pois a busca sumiu ---
+                                const titleEl = container.querySelector('.subcat-title');
                                 if(titleEl) {
                                     if(!container.querySelector('.chips-container-wrapper')) {
                                         titleEl.insertAdjacentHTML('afterend', chipsHtml);
