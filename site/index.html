@@ -2,608 +2,130 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <meta http-equiv="X-Frame-Options" content="DENY">
     
-    <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG. Monte e personalize sua cesta. Mercadinho online com pagamento na entrega.">
-    <meta name="keywords" content="cesta básica, cuiabá, várzea grande, supermercado online, delivery alimentos, dona antônia">
-    <meta name="author" content="Dona Antônia Alimentos">
-    <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#ffffff">
-    
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia">
-    <meta property="og:description" content="Monte e personalize sua cesta básica. Pagamento na entrega.">
-    <meta property="og:site_name" content="Dona Antônia">
-    <meta property="og:locale" content="pt_BR">
+    <title>Mercearia Cuiabá - Atendimento Facilitado</title>
 
-    <title>Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia</title>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "GroceryStore",
+      "name": "Mercearia Inteligente Cuiabá",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Cuiabá",
+        "addressRegion": "MT",
+        "addressCountry": "BR"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "-15.6014",
+        "longitude": "-56.0979"
+      }
+    }
+    </script>
 
     <style>
-        /* --- 1. PERFORMANCE & RESET --- */
-        :root { 
-            --primary: #d31a28; 
-            --secondary: #3e3e3e; 
-            --whatsapp: #25D366; 
-            --bg-body: #ffffff;
-            --bg-chat: #f4f4f5;
-            --border: #e2e8f0;
-            --text-main: #1f2937;
-            --text-light: #64748b;
-            --header-h: 65px; 
-            --radius: 12px;
-        }
+        :root { --primary: #25D366; --bg: #f4f4f4; --text: #2d2d2d; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 18px; line-height: 1.5; }
         
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; outline: none; }
-        html { scroll-behavior: smooth; font-size: 16px; }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            color: var(--text-main); background-color: var(--bg-body);
-            line-height: 1.5; overflow-x: hidden;
-        }
+        /* PILAR 3: Bloqueio de Seleção */
+        body { -webkit-user-select: none; user-select: none; }
 
-        /* Utilitários */
-        .container { max-width: 1100px; margin: 0 auto; padding: 0 16px; width: 100%; }
-        img { display: block; max-width: 100%; height: auto; }
-        button { cursor: pointer; border: none; background: none; font-family: inherit; }
-        .hidden { display: none !important; }
-
-        /* --- 2. HEADER --- */
-        #main-header { 
-            position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); 
-            background: rgba(255,255,255,0.98); backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border); z-index: 1000; 
-            display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            contain: layout size;
-        }
+        .chat-box { max-width: 500px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; }
+        .content { padding: 15px; min-height: 300px; }
         
-        .header-inner { display: flex; justify-content: space-between; align-items: center; }
-        .logo-area { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--secondary); }
-        .logo-img { width: 42px; height: 42px; border-radius: 50%; background: #eee; object-fit: cover; }
-        .logo-text { font-weight: 800; font-size: 1.1rem; line-height: 1.1; display: flex; flex-direction: column; }
-        .logo-text span { font-size: 0.75rem; color: var(--primary); font-weight: 600; }
-        
-        .badge-loc { 
-            font-size: 0.8rem; background: #f1f5f9; padding: 6px 12px; border-radius: 20px; 
-            font-weight: 600; color: var(--text-light); border: 1px solid var(--border);
-            display: none; 
-        }
-        @media(min-width: 600px) { .badge-loc { display: inline-block; } }
-
-        /* --- 3. HERO & LISTA --- */
-        #view-home { padding-top: calc(var(--header-h) + 30px); padding-bottom: 60px; }
-        
-        .hero { text-align: center; margin-bottom: 40px; }
-        .hero h1 { font-size: 1.8rem; color: var(--secondary); margin-bottom: 10px; letter-spacing: -0.5px; }
-        .hero p { color: var(--text-light); font-size: 1rem; max-width: 600px; margin: 0 auto; }
-
-        .basket-grid { 
-            display: grid; grid-template-columns: 1fr; gap: 25px; 
-            content-visibility: auto; contain-intrinsic-size: 300px;
-        }
-        @media(min-width: 600px) { .basket-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media(min-width: 900px) { .basket-grid { grid-template-columns: repeat(3, 1fr); } }
-
-        .basket-card {
-            background: #fff; border: 1px solid var(--border); border-radius: 16px; 
-            overflow: hidden; display: flex; flex-direction: column;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s;
-        }
-        .basket-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        
-        .bc-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #f8fafc; }
-        .bc-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
-        .bc-title { font-size: 1.25rem; font-weight: 700; color: var(--secondary); margin-bottom: 5px; }
-        .bc-price { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 15px; }
-        .bc-info { font-size: 0.9rem; color: var(--text-light); margin-bottom: 20px; flex: 1; }
-        
+        /* Botões Gigantes para 40+ */
         .btn-action { 
-            width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 1rem;
-            text-align: center; background: var(--secondary); color: white; transition: opacity 0.2s;
+            display: block; width: 100%; padding: 18px; margin-bottom: 12px;
+            background: #fff; border: 2px solid var(--primary); border-radius: 12px;
+            font-size: 18px; font-weight: bold; cursor: pointer; text-align: left;
+            transition: 0.3s;
         }
-        .btn-action:hover { opacity: 0.9; }
-
-        /* --- 4. FAQ & FOOTER --- */
-        .faq-section { margin-top: 60px; border-top: 1px solid var(--border); padding: 40px 0; background: #fcfcfc; }
-        .faq-head { text-align: center; font-size: 1.4rem; margin-bottom: 30px; font-weight: 700; color: var(--secondary); }
+        .btn-action:active { background: var(--primary); color: white; }
         
-        details.faq-box { 
-            background: #fff; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; 
-            overflow: hidden; content-visibility: auto;
-        }
-        details.faq-box summary { 
-            padding: 16px; font-weight: 600; cursor: pointer; list-style: none; position: relative;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        details.faq-box summary::-webkit-details-marker { display: none; }
-        details.faq-box summary::after { content: '+'; font-size: 1.4rem; color: var(--primary); }
-        details.faq-box[open] summary::after { content: '-'; }
-        .faq-txt { padding: 0 16px 16px; color: var(--text-light); font-size: 0.95rem; line-height: 1.6; }
-
-        .main-footer { padding: 40px 0 20px; background: #fff; border-top: 1px solid var(--border); text-align: center; }
-        .f-links { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-        .f-link { color: var(--secondary); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-        .copy { color: #94a3b8; font-size: 0.8rem; }
-
-        /* --- 5. CHAT / PERSONALIZADOR --- */
-        #view-chat {
-            position: fixed; inset: 0; background: var(--bg-chat); z-index: 2000;
-            display: flex; flex-direction: column; transform: translateX(100%); 
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            will-change: transform;
-        }
-        #view-chat.active { transform: translateX(0); }
-
-        .chat-header {
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
-            padding: 0 16px; height: 60px; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border); flex-shrink: 0;
-        }
-        .ch-avatar { width: 36px; height: 36px; border-radius: 50%; margin-right: 10px; border: 1px solid #ddd; }
-        .ch-title { font-size: 1rem; font-weight: 700; color: var(--secondary); }
-        .ch-status { font-size: 0.75rem; color: #16a34a; font-weight: 500; }
-        .btn-close { font-size: 2rem; color: #999; line-height: 1; padding: 0 10px; }
-
-        /* Área de Mensagens */
-        .chat-scroll {
-            flex: 1; overflow-y: auto; padding: 20px 16px 140px; /* Padding extra p/ botões */
-            display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
-        }
-
-        .bubble-bot {
-            align-self: flex-start; max-width: 90%; background: #fff;
-            padding: 14px 18px; border-radius: 18px; border-top-left-radius: 4px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05); color: var(--secondary); 
-            line-height: 1.5; font-size: 1rem;
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .bubble-bot strong { color: var(--primary); }
-        @keyframes popIn { from{opacity:0; transform:scale(0.9) translateY(10px)} to{opacity:1; transform:scale(1) translateY(0)} }
-
-        /* Grid de Produtos no Chat */
-        .chat-section {
-            background: #fff; border-radius: 16px; padding: 15px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04); width: 100%;
-            scroll-margin-top: 70px; /* Importante para scroll correto */
-            animation: fadeIn 0.5s ease;
-        }
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
-        .sec-title {
-            font-size: 0.9rem; font-weight: 800; color: var(--text-light); text-transform: uppercase;
-            letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;
-        }
-
-        .prod-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media(min-width: 500px) { .prod-grid { grid-template-columns: repeat(4, 1fr); } }
-
-        .prod-card { display: flex; flex-direction: column; position: relative; }
-        .pc-img-box {
-            position: relative; aspect-ratio: 1; background: #f8fafc; border-radius: 12px;
-            margin-bottom: 6px; overflow: hidden; cursor: zoom-in;
-        }
-        .pc-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .pc-name { font-size: 0.8rem; line-height: 1.3; color: #333; height: 2.6em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 4px; }
+        .cesta-card { border: 2px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #fff9e6; }
+        .price { color: #d32f2f; font-size: 24px; font-weight: bold; }
+        .items-list { font-size: 14px; color: #555; margin-top: 10px; padding-left: 20px; }
         
-        /* Controles (+/-) */
-        .pc-ctrl {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; height: 34px;
-        }
-        .pc-btn { width: 30px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--secondary); }
-        .pc-btn.active { color: var(--primary); background: #fff5f5; }
-        .pc-val { font-weight: 700; font-size: 0.9rem; flex: 1; text-align: center; }
-
-        /* Botões de Resposta */
-        .chat-actions {
-            margin-top: 10px; display: flex; flex-direction: column; gap: 8px; width: 100%;
-        }
-        .btn-opt {
-            width: 100%; padding: 14px 20px; border-radius: 12px; font-weight: 700; font-size: 0.95rem;
-            background: #fff; color: var(--secondary); border: 1px solid #ddd;
-            display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s;
-        }
-        .btn-opt.highlight { background: var(--secondary); color: #fff; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .btn-opt:active { transform: scale(0.98); }
-
-        /* --- 6. MODAL ZOOM --- */
-        .zoom-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-        }
-        .zoom-overlay.open { opacity: 1; pointer-events: auto; }
-        .zoom-content { max-width: 90%; max-height: 85vh; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        .zoom-x { position: absolute; top: 20px; right: 20px; color: white; font-size: 2.5rem; cursor: pointer; }
-
-        /* --- 7. CHECKOUT MODAL --- */
-        dialog.modal-co {
-            margin: auto; width: 100%; max-width: 500px; border: none; border-radius: 20px 20px 0 0;
-            position: fixed; bottom: 0; padding: 0; background: #fff; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
-            z-index: 2500; animation: slideUp 0.3s;
-        }
-        dialog.modal-co::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-        @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
-        
-        .co-head { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem; }
-        .co-body { padding: 0; max-height: 60vh; overflow-y: auto; background: #fcfcfc; }
-        .co-item { padding: 12px 20px; border-bottom: 1px dashed #eee; font-size: 0.95rem; display: flex; justify-content: space-between; }
-        .co-foot { padding: 20px; background: #fff; border-top: 1px solid var(--border); }
-        .co-total { display: flex; justify-content: space-between; font-size: 1.4rem; font-weight: 800; margin-bottom: 20px; }
-        .btn-zap { width: 100%; padding: 16px; background: var(--whatsapp); color: white; font-weight: 700; border-radius: 10px; font-size: 1rem; }
-        
-        /* Fallback erro */
-        .error-box { padding: 30px; text-align: center; border: 2px dashed var(--primary); border-radius: 12px; margin: 20px; background: #fff5f5; }
-        .btn-up { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 700; margin-top: 10px; display: inline-block; cursor: pointer; }
+        .badge-cuiaba { font-size: 12px; background: #eee; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px; }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-    <header id="main-header">
-        <div class="container header-inner">
-            <a href="#" class="logo-area" onclick="location.reload()">
-                <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-img" alt="Logo">
-                <div class="logo-text">
-                    <h1>Dona Antônia</h1>
-                    <span>Cestas Básicas</span>
-                </div>
-            </a>
-            <span class="badge-loc">📍 Cuiabá & VG</span>
-        </div>
-    </header>
-
-    <main id="view-home">
-        <div class="container">
-            <section class="hero">
-                <h2>Cestas Básicas & Mercado</h2>
-                <p>Qualidade garantida e pagamento facilitado na entrega.</p>
-            </section>
+    <div class="chat-box">
+        <div class="header"> Atendente da Mercearia 👨‍🌾 </div>
+        <div class="content" id="chat-content">
+            <span class="badge-cuiaba">📍 Atendendo agora em Cuiabá, MT</span>
+            <p><strong>Olá! Tudo bem?</strong></p>
+            <p>Seja bem-vindo(a). Qual desses produtos o(a) senhor(a) quer ver primeiro?</p>
             
-            <div id="home-list" class="basket-grid">
-                <div style="grid-column:1/-1; text-align:center; padding:50px; color:#999;">Carregando produtos...</div>
-            </div>
+            <button class="btn-action" onclick="showCestas()">🧺 VER CESTAS BÁSICAS</button>
+            <button class="btn-action" onclick="showCategories()">📂 OUTROS PRODUTOS</button>
         </div>
-
-        <section class="faq-section">
-            <div class="container">
-                <h3 class="faq-head">Dúvidas Frequentes</h3>
-                <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-txt">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação.</div></details>
-                <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-txt">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
-                <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-txt">O frete é grátis para compras acima de R$ 85,00.</div></details>
-                <details class="faq-box"><summary>Posso alterar os itens?</summary><div class="faq-txt">Sim! Escolha uma cesta base e use nosso personalizador para trocar itens.</div></details>
-            </div>
-        </section>
-
-        <footer class="main-footer">
-            <div class="container">
-                <div class="f-links">
-                    <a href="https://api.whatsapp.com/send?phone=5565996813588" class="f-link">💬 Whatsapp</a>
-                    <a href="tel:5565996813588" class="f-link">📞 Ligar</a>
-                    <a href="#" class="f-link">📍 Ver Mapa</a>
-                </div>
-                <div class="copy">© 2024 Dona Antônia Alimentos.</div>
-            </div>
-        </footer>
-    </main>
-
-    <div id="view-chat">
-        <div class="chat-header">
-            <div style="display:flex;align-items:center;">
-                <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="ch-avatar">
-                <div>
-                    <div class="ch-title">Atendente Virtual</div>
-                    <div class="ch-status">● Online agora</div>
-                </div>
-            </div>
-            <button class="btn-close" onclick="App.closeChat()">×</button>
-        </div>
-
-        <div class="chat-scroll" id="chat-feed"></div>
     </div>
-
-    <div class="zoom-overlay" id="zoom-modal" onclick="this.classList.remove('open')">
-        <div class="zoom-x">×</div>
-        <img src="" class="zoom-content" id="zoom-img-tgt">
-    </div>
-
-    <dialog id="modal-co" class="modal-co">
-        <div class="co-head">
-            Resumo do Pedido <button onclick="document.getElementById('modal-co').close()">✕</button>
-        </div>
-        <div class="co-body" id="co-list"></div>
-        <div class="co-foot">
-            <div class="co-total">
-                <span>Total Final</span>
-                <span id="co-total-val" style="color:var(--primary)">R$ 0,00</span>
-            </div>
-            <div style="margin-bottom:15px;">
-                <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px;">Pagamento na Entrega:</label>
-                <select id="pay-method" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px;">
-                    <option>Pix</option>
-                    <option>Dinheiro</option>
-                    <option>Cartão Crédito/Débito</option>
-                    <option>Vale Alimentação</option>
-                </select>
-            </div>
-            <button class="btn-zap" onclick="App.sendZap()">Confirmar no WhatsApp ➡</button>
-        </div>
-    </dialog>
 
     <script>
-        const CAT_FLOW = [
-            { key: 'MERCEARIA E ALIMENTOS', label: 'Mercearia' },
-            { key: 'CAFÉ DA MANHÃ E LANCHES', label: 'Café da Manhã' },
-            { key: 'LIMPEZA E LAVANDERIA', label: 'Limpeza' },
-            { key: 'CUIDADOS PESSOAIS', label: 'Higiene' },
-            { key: 'BAZAR E UTILIDADES', label: 'Utilidades' }
+        // PILAR 3: Verificação de Domínio
+        const siteOficial = "merceariacuiaba.com.br";
+        if (window.location.hostname !== siteOficial && window.location.hostname !== "localhost") {
+            // console.warn("Atenção: Domínio não autorizado.");
+        }
+
+        // Simulação de Dados do seu JSON (Cesta Econômica detectada)
+        const cestas = [
+            {
+                nome: "CESTA ECONÔMICA",
+                valor: "R$ 85,00",
+                itens: ["Arroz Tio Alvino", "Feijão DaCasa", "Óleo Liza", "Açúcar 2kg", "Café Caboclo", "Macarrão", "Biscoito", "e mais 7 itens..."]
+            }
         ];
 
-        const App = {
-            data: [],
-            cart: {}, 
-            activeBasket: null,
-            catIdx: 0,
+        function showCestas() {
+            // PILAR 2: Data Layer (Remarketing)
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ 'event': 'view_promotion', 'promotion_name': 'Cestas Basicas' });
 
-            init() {
-                // Tenta carregar de todas as formas possíveis
-                const paths = ['produtos/produtos.json', 'produtos.json', 'produtos (10).json'];
-                
-                const tryLoad = async (idx) => {
-                    if (idx >= paths.length) { this.showUpload(); return; }
-                    try {
-                        const res = await fetch(paths[idx]);
-                        if(!res.ok) throw new Error();
-                        this.processData(await res.json());
-                    } catch(e) { tryLoad(idx + 1); }
-                };
-                tryLoad(0);
-            },
+            let html = `<h3>Nossas Cestas de Hoje:</h3>`;
+            cestas.forEach(c => {
+                html += `
+                <div class="cesta-card">
+                    <strong>${c.nome}</strong><br>
+                    <span class="price">${c.valor}</span>
+                    <ul class="items-list">
+                        ${c.itens.map(i => `<li>${i}</li>`).join('')}
+                    </ul>
+                    <button class="btn-action" style="background:var(--primary); color:white; margin-top:10px;" 
+                        onclick="finalizar('Cesta Econômica')">🛒 PEDIR ESTA CESTA</button>
+                </div>`;
+            });
+            html += `<button class="btn-action" onclick="window.location.reload()">⬅️ Voltar</button>`;
+            document.getElementById('chat-content').innerHTML = html;
+        }
 
-            showUpload() {
-                document.getElementById('home-list').innerHTML = `
-                    <div class="error-box">
-                        <h3>Não encontrei a lista de produtos</h3>
-                        <p>Se estiver abrindo o arquivo localmente, carregue o arquivo <strong>produtos.json</strong> abaixo:</p>
-                        <label class="btn-up">📂 Carregar Arquivo<input type="file" hidden accept=".json" onchange="App.loadFile(this)"></label>
-                    </div>`;
-            },
+        function showCategories() {
+            const cats = ["MERCEARIA E ALIMENTOS", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
+            let html = `<h3>Escolha uma categoria:</h3>`;
+            cats.forEach(cat => {
+                html += `<button class="btn-action" onclick="finalizar('${cat}')">👉 ${cat}</button>`;
+            });
+            html += `<button class="btn-action" onclick="window.location.reload()">⬅️ Voltar</button>`;
+            document.getElementById('chat-content').innerHTML = html;
+        }
 
-            loadFile(input) {
-                const f = input.files[0];
-                if(!f) return;
-                const r = new FileReader();
-                r.onload = e => { try { this.processData(JSON.parse(e.target.result)); } catch(z){ alert('Erro no arquivo'); } };
-                r.readAsText(f);
-            },
-
-            processData(json) {
-                const raw = json.produtos || json;
-                this.data = raw.map(p => ({
-                    id: String(p.id),
-                    name: p.nome.trim(),
-                    price: parseFloat(p.valor || 0),
-                    cat: (p.categoria || "").split('>')[0].trim().toUpperCase(),
-                    img: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'https://via.placeholder.com/300?text=Sem+Foto'
-                }));
-                this.renderHome();
-            },
-
-            renderHome() {
-                const el = document.getElementById('home-list');
-                const list = this.data.filter(p => p.cat.includes('CESTA'));
-                
-                if(list.length === 0) { el.innerHTML = '<div style="padding:40px; text-align:center;">Nenhuma cesta encontrada.</div>'; return; }
-
-                el.innerHTML = list.map(b => `
-                    <div class="basket-card">
-                        <img src="${b.img}" class="bc-img" loading="lazy">
-                        <div class="bc-body">
-                            <div class="bc-title">${b.name}</div>
-                            <div class="bc-price">R$ ${b.price.toFixed(2).replace('.',',')}</div>
-                            <div class="bc-info">Itens básicos para sua família.</div>
-                            <button class="btn-action" onclick="App.startChat('${b.id}')">Personalizar Cesta</button>
-                        </div>
-                    </div>
-                `).join('');
-            },
-
-            // --- CHAT LOGIC ---
-            startChat(bid) {
-                this.activeBasket = this.data.find(x => x.id === bid);
-                this.cart = {};
-                this.catIdx = 0;
-
-                // Carrinho inicial
-                if(this.activeBasket.items && Array.isArray(this.activeBasket.items)) {
-                    this.activeBasket.items.forEach(i => this.cart[String(i.id)] = parseInt(i.qty));
-                } else {
-                    this.cart[bid] = 1;
-                }
-
-                document.getElementById('view-chat').classList.add('active');
-                const feed = document.getElementById('chat-feed');
-                feed.innerHTML = '';
-
-                // Saudação
-                const hr = new Date().getHours();
-                const saud = hr < 12 ? 'Bom dia' : hr < 18 ? 'Boa tarde' : 'Boa noite';
-                
-                this.botSay(`${saud}! Sou a assistente virtual.`);
-                setTimeout(() => {
-                    this.botSay(`Você escolheu a <strong>${this.activeBasket.name}</strong>.`);
-                    this.botSay("Posso mostrar os produtos que já vêm nela?");
-                    this.actions([
-                        { txt: "👍 Pode sim", fn: () => this.stepShowBasket() },
-                        { txt: "Voltar", fn: () => this.closeChat() }
-                    ]);
-                }, 600);
-            },
-
-            stepShowBasket() {
-                const ids = Object.keys(this.cart);
-                const items = ids.map(id => this.data.find(x => x.id === id)).filter(x=>x);
-                
-                this.botSay("Aqui estão. Você pode alterar as quantidades se quiser:");
-                this.renderGrid(items, "ITENS DA CESTA");
-                
-                setTimeout(() => {
-                    this.askCat();
-                }, 1000);
-            },
-
-            askCat() {
-                if (this.catIdx >= CAT_FLOW.length) { this.stepFinish(); return; }
-                const c = CAT_FLOW[this.catIdx];
-                
-                this.botSay(`Quer ver opções de <strong>${c.label}</strong> para completar?`);
-                this.actions([
-                    { txt: `Ver ${c.label}`, fn: () => this.showCat(c) },
-                    { txt: "Pular categoria", fn: () => { this.catIdx++; this.askCat(); } },
-                    { txt: "✅ Finalizar Pedido", fn: () => this.checkout(), high: true }
-                ]);
-            },
-
-            showCat(c) {
-                const items = this.data.filter(p => p.cat === c.key).slice(0, 16);
-                if (items.length === 0) {
-                    this.botSay("Não tenho itens nesta categoria agora.");
-                } else {
-                    this.renderGrid(items, c.label);
-                }
-                this.catIdx++;
-                setTimeout(() => {
-                    this.actions([
-                        { txt: "Próxima Categoria ➡", fn: () => this.askCat(), high: true },
-                        { txt: "Finalizar Agora", fn: () => this.checkout() }
-                    ]);
-                }, 600);
-            },
-
-            stepFinish() {
-                this.botSay("Finalizamos a lista! Vamos conferir?");
-                this.actions([
-                    { txt: "📝 Ver Resumo e Pedir", fn: () => this.checkout(), high: true },
-                    { txt: "Revisar", fn: () => {} }
-                ]);
-            },
-
-            // --- RENDER CHAT ---
-            botSay(html) {
-                const d = document.createElement('div');
-                d.className = 'bubble-bot';
-                d.innerHTML = html;
-                document.getElementById('chat-feed').appendChild(d);
-                this.scroll();
-            },
-
-            renderGrid(items, title) {
-                const feed = document.getElementById('chat-feed');
-                const sec = document.createElement('div');
-                sec.className = 'chat-section';
-                sec.id = 'sec-' + Math.random().toString(36).substr(2,9);
-                
-                let h = `<div class="sec-title">${title}</div><div class="prod-grid">`;
-                h += items.map(p => {
-                    const q = this.cart[p.id] || 0;
-                    return `
-                    <div class="prod-card">
-                        <div class="pc-img-box" onclick="App.zoom('${p.img}')">
-                            <img src="${p.img}" class="pc-img" loading="lazy">
-                        </div>
-                        <div class="pc-name">${p.name}</div>
-                        <div class="pc-ctrl">
-                            <div class="pc-btn" onclick="App.add('${p.id}', -1, this)">-</div>
-                            <div class="pc-val" id="q-${p.id}">${q}</div>
-                            <div class="pc-btn active" onclick="App.add('${p.id}', 1, this)">+</div>
-                        </div>
-                    </div>`;
-                }).join('');
-                h += '</div>';
-                sec.innerHTML = h;
-                feed.appendChild(sec);
-                
-                // Scroll para topo da sessão
-                setTimeout(() => {
-                    sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
-            },
-
-            actions(opts) {
-                const feed = document.getElementById('chat-feed');
-                const div = document.createElement('div');
-                div.className = 'chat-actions';
-                opts.forEach(o => {
-                    const b = document.createElement('button');
-                    b.className = `btn-opt ${o.high ? 'highlight' : ''}`;
-                    b.innerHTML = `<span>${o.txt}</span>${o.high ? '<span>➡</span>' : ''}`;
-                    b.onclick = () => { div.remove(); o.fn(); };
-                    div.appendChild(b);
-                });
-                feed.appendChild(div);
-                this.scroll();
-            },
-
-            scroll() {
-                const f = document.getElementById('chat-feed');
-                setTimeout(() => f.scrollTop = f.scrollHeight, 50);
-            },
-
-            closeChat() {
-                if(confirm("Sair do atendimento?")) document.getElementById('view-chat').classList.remove('active');
-            },
-
-            // --- CART & ZOOM ---
-            add(id, d) {
-                if(!this.cart[id]) this.cart[id] = 0;
-                this.cart[id] += d;
-                if(this.cart[id] <= 0) delete this.cart[id];
-                const el = document.getElementById(`q-${id}`);
-                if(el) el.innerText = this.cart[id] || 0;
-            },
-
-            zoom(src) {
-                document.getElementById('zoom-img-tgt').src = src;
-                document.getElementById('zoom-modal').classList.add('open');
-            },
-
-            // --- CHECKOUT ---
-            checkout() {
-                const list = document.getElementById('co-list');
-                const totEl = document.getElementById('co-total-val');
-                let total = 0;
-                let h = "";
-
-                for(let id in this.cart) {
-                    const p = this.data.find(x => x.id === id);
-                    if(p) {
-                        total += p.price * this.cart[id];
-                        // SEM PREÇO UNITÁRIO, SÓ TOTAL DO PEDIDO
-                        h += `<div class="co-item">
-                                <span><strong>${this.cart[id]}x</strong> ${p.name}</span>
-                              </div>`;
-                    }
-                }
-                
-                list.innerHTML = h;
-                totEl.innerText = "R$ " + total.toFixed(2).replace('.',',');
-                document.getElementById('modal-co').showModal();
-            },
-
-            sendZap() {
-                const tot = document.getElementById('co-total-val').innerText;
-                const pay = document.getElementById('pay-method').value;
-                let msg = `*PEDIDO DONA ANTÔNIA* 🛒\n\n*ITENS:*\n`;
-                for(let id in this.cart) {
-                    const p = this.data.find(x => x.id === id);
-                    if(p) msg += `▪ ${this.cart[id]}x ${p.name}\n`;
-                }
-                msg += `\n*TOTAL FINAL: ${tot}*\nPagamento: ${pay}`;
-                window.open(`https://api.whatsapp.com/send?phone=5565996813588&text=${encodeURIComponent(msg)}`, '_blank');
+        function finalizar(item) {
+            // PILAR 2: Conversões (CAPI Ready)
+            if(typeof fbq !== 'undefined') {
+                fbq('track', 'Lead', { content_name: item, location: 'Cuiabá' });
             }
-        };
-
-        window.onload = () => App.init();
+            
+            alert("Vou te levar para o WhatsApp para terminar o pedido!");
+            window.location.href = `https://wa.me/5565999999999?text=Olá! Gostaria de pedir: ${item}`;
+        }
     </script>
+
 </body>
 </html>
