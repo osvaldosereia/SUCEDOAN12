@@ -667,13 +667,21 @@
                 
                 await this.showTyping();
                 this.addMessage(`${greeting}! Tudo bem? Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>.`);
-                
+
                 await this.wait(800);
                 await this.showTyping();
-                this.addMessage("🛒 Então vamos as compras.<br>🗑️ Primeiro retire da cesta os produtos que você não quer.<br>🎁 Depois vou te mostrar a nossa lista de produtos.");
-                
+                this.addMessage("Agora vamos deixar a cesta do seu jeito.");
+
+                await this.wait(800);
+                await this.showTyping();
+                this.addMessage("Primeiro você vai retirar da cesta os produtos que você não quer");
+
+                await this.wait(800);
+                await this.showTyping();
+                this.addMessage("Depois você terá o nosso supermercado inteiro para repor os produtos e comprar o que quiser");
+                                    
                 await this.wait(1000);
-                this.addMessage("Vou mandar novamente a lista de produos da cesta, ok?");
+                this.addMessage("Vou mandar novamente a lista de produtos da cesta, ok?");
 
                 // Button
                 const id = 'act-start';
