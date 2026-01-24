@@ -243,33 +243,45 @@
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; }
         .subcat-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 12px 16px; letter-spacing: -0.3px; }
         
-        .carousel-wrapper { position: relative; }
-        .horizontal-products-row { display: flex; gap: 20px; overflow-x: auto; padding: 0 16px 16px 16px; margin: 0 -16px; scroll-behavior: smooth; }
-        
-        .scroll-btn {
-            position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.12); display: none; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 20; color: #333; transition: all 0.3s;
+        /* NEW GRID LAYOUT CSS */
+        .grid-products-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 0 0 16px 0;
         }
-        .scroll-btn:hover { background: #fff; transform: translateY(-50%) scale(1.15); color: var(--primary); }
-        .scroll-btn.left { left: -24px; }
-        .scroll-btn.right { right: -24px; }
-        @media(min-width: 1024px) { 
-            .scroll-btn { display: flex; } 
-            #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 60px 20px 100px; }
-            .horizontal-products-row { margin: 0; }
-            #active-basket-container .scroll-btn { display: flex; }
-            #active-basket-container .scroll-btn.left { left: -20px; }
-            #active-basket-container .scroll-btn.right { right: -20px; }
+        @media(min-width: 768px) {
+            .grid-products-row { grid-template-columns: repeat(4, 1fr); }
         }
 
-        /* Product Card App Style */
-        .card-prod { width: 35vw; min-width: 145px; max-width: 190px; flex-shrink: 0; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; position: relative; }
+        .btn-load-more {
+            width: 100%; padding: 12px; background: #f8fafc; color: var(--secondary);
+            border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+            margin-top: 10px; cursor: pointer; text-align: center; transition: all 0.2s;
+        }
+        .btn-load-more:hover { background: #e2e8f0; }
+        
+        /* Product Card App Style (Adjusted for Grid) */
+        .card-prod { 
+            width: 100%; 
+            min-width: auto; max-width: none; 
+            flex-shrink: 0; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; position: relative; 
+        }
         .cp-tag { position: absolute; top: 8px; left: 8px; background: #fef2f2; color: #dc2626; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
+        
+        /* Removed background and maximized image for grid view items inside grid-products-row */
+        .grid-products-row .cp-img-box {
+            background: transparent; 
+            border: none;
+            border-radius: 0;
+        }
+        
         .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
         .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
         
+        /* Specific overrides for clean grid look */
+        .grid-products-row .cp-img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.05); }
+
         .btn-circle-add {
             position: absolute; bottom: 8px; right: 8px; width: 38px; height: 38px; border-radius: 50%;
             background: white; border: 1px solid #e5e5e5; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -871,20 +883,16 @@
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 const query = filter ? filter : "";
                 
-                // NOVO: Scroll automático para os resultados
                 if (query.length > 1) {
                     const anchor = document.getElementById('search-anchor');
                     if(anchor) {
-                        const offset = 80; // Espaço para não bater no topo
+                        const offset = 80;
                         const bodyRect = document.body.getBoundingClientRect().top;
                         const elementRect = anchor.getBoundingClientRect().top;
                         const elementPosition = elementRect - bodyRect;
                         const offsetPosition = elementPosition - offset;
 
-                        window.scrollTo({
-                            top: offsetPosition,
-                            behavior: 'smooth'
-                        });
+                        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
                     }
                     products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
                 }
@@ -897,12 +905,29 @@
                      const groups = {};
                      if (isSpecial) groups[title] = items;
                      else items.forEach(p => { if(!groups[p.subCategory]) groups[p.subCategory] = []; groups[p.subCategory].push(p); });
+                     
                      let sHtml = '';
                      for (const [subName, subItems] of Object.entries(groups)) {
-                        const rowId = `row-${title}-${subName}`.replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
                         const niceTitle = isSpecial ? title : this.toSmartTitleCase(subName);
                         const currentColor = colors[cIdx % colors.length]; cIdx++;
-                        sHtml += `<div class="subcat-section"><div class="subcat-title" style="color:${currentColor};">${niceTitle}</div><div class="carousel-wrapper"><div class="scroll-btn left" onclick="document.getElementById('${rowId}').scrollBy({left: -200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg></div><div class="horizontal-products-row" id="${rowId}">${subItems.map(p => this.buildCard(p)).join('')}</div><div class="scroll-btn right" onclick="document.getElementById('${rowId}').scrollBy({left: 200, behavior: 'smooth'})"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></div></div></div>`;
+                        
+                        // LIMIT LOGIC: Show max 4 items (2 rows on mobile) initially
+                        const initialLimit = 4;
+                        const hasMore = subItems.length > initialLimit;
+                        const visibleItems = subItems.slice(0, initialLimit);
+                        const hiddenItems = subItems.slice(initialLimit);
+                        const sectionId = `section-${title}-${subName}`.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
+
+                        sHtml += `<div class="subcat-section">
+                            <div class="subcat-title" style="color:${currentColor};">${niceTitle}</div>
+                            <div class="grid-products-row">
+                                ${visibleItems.map(p => this.buildCard(p)).join('')}
+                                ${hasMore ? `<div id="more-${sectionId}" style="display:contents; display:none;">
+                                    ${hiddenItems.map(p => this.buildCard(p)).join('')}
+                                </div>` : ''}
+                            </div>
+                            ${hasMore ? `<div id="btn-${sectionId}" class="btn-load-more" onclick="document.getElementById('more-${sectionId}').style.display='contents'; this.style.display='none';">Ver mais ${hiddenItems.length} produtos</div>` : ''}
+                        </div>`;
                      }
                      return sHtml;
                 };
