@@ -741,13 +741,14 @@
                 }
             },
             askRemovalConfirmation() {
-                this.addMessage(`Você já retirou da lista os produtos que não quer?`);
+                this.addMessage(`Eae, já retirou da cesta os produtos que não quer?`);
                 const id = 'actions-removal';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
-                this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // REMOVI A LINHA QUE ROLAVA A TELA PARA BAIXO AQUI
             },
             async handleRemovalYes(elemId) {
                 const el = document.getElementById(elemId);
