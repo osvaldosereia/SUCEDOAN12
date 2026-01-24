@@ -155,9 +155,10 @@
         }
         .chat-msg strong { color: var(--primary); }
 
-        /* USER RESPONSE STYLE */
+        /* USER RESPONSE STYLE - Right Aligned */
         .chat-msg.user {
             align-self: flex-end;
+            margin-left: auto;
             background: var(--primary);
             color: white;
             border-radius: 16px 16px 0 16px;
@@ -660,7 +661,7 @@
 
         const ChatFlow = {
             container: null,
-            categories: [], // POPULATED DYNAMICALLY
+            categories: [], 
             catIndex: 0,
             
             async start() {
@@ -668,19 +669,17 @@
                 this.container.innerHTML = '';
                 this.catIndex = 0;
                 
-                // --- 1. POPULATE DYNAMIC CATEGORIES ---
-                // Extract unique appCategory from data, excluding "CESTA"
-                const uniqueCats = [...new Set(App.data.map(p => p.appCategory))];
-                this.categories = uniqueCats.filter(c => c && c !== 'undefined' && !c.includes('CESTA'));
-                
-                // Optional: Prioritize order (e.g. Mercearia first if it exists)
-                // We just keep them as extracted or simple sort.
-                // To keep smart selling, let's ensure "ALIMENTOS" or "MERCEARIA" are first if present.
-                this.categories.sort((a,b) => {
-                    if(a.includes('MERCEARIA') || a.includes('ALIMENTOS')) return -1;
-                    if(b.includes('MERCEARIA') || b.includes('ALIMENTOS')) return 1;
-                    return 0;
-                });
+                // DYNAMIC CATEGORY EXTRACTION
+                try {
+                    const uniqueCats = [...new Set(App.data.map(p => p.appCategory))];
+                    this.categories = uniqueCats.filter(c => c && c !== 'undefined' && !c.toUpperCase().includes('CESTA'));
+                    // Intelligent Sort: Put Food/Essentials First
+                    this.categories.sort((a,b) => {
+                        const scoreA = (a.includes('MERCEARIA') || a.includes('ALIMENTOS')) ? 2 : (a.includes('LIMPEZA') ? 1 : 0);
+                        const scoreB = (b.includes('MERCEARIA') || b.includes('ALIMENTOS')) ? 2 : (b.includes('LIMPEZA') ? 1 : 0);
+                        return scoreB - scoreA;
+                    });
+                } catch(e) { console.error(e); }
 
                 const hours = new Date().getHours();
                 let greeting = "Bom dia";
@@ -705,8 +704,9 @@
                 const html = `<div id="${id}" class="typing-indicator"><span></span><span></span><span></span></div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
-                await this.wait(1500);
-                document.getElementById(id).remove();
+                await this.wait(1200); // Slightly faster
+                const el = document.getElementById(id);
+                if(el) el.remove();
             },
             addMessage(text, type = 'bot') {
                 const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
@@ -715,7 +715,7 @@
             },
             showBasketGrid() {
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
-                const html = `<div class="grid-products-row" style="animation:fadeIn 0.5s ease forwards; padding-left:16px;">` + 
+                const html = `<div class="grid-products-row" style="animation:fadeIn 0.5s ease forwards; padding-left:5px;">` + 
                     ids.map(id => {
                         const p = App.data.find(x => x.id === id);
                         return p ? App.buildCard(p) : '';
@@ -723,9 +723,7 @@
                 this.container.insertAdjacentHTML('beforeend', html);
             },
             askRemovalConfirmation() {
-                // FIXED: Put the question in a proper chat-msg bubble
                 this.addMessage(`Você já retirou da lista os produtos que não quer?`);
-
                 const id = 'actions-removal';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
@@ -734,24 +732,22 @@
                 this.scrollToBottom();
             },
             async handleRemovalYes(elemId) {
-                document.getElementById(elemId).remove();
-                // FIXED: User response aligned to right
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
+                
                 this.addMessage("Sim, já retirei.", 'user');
                 
-                let startSum = 0; 
-                for(let i in App.originalCart) { 
-                    let p = App.data.find(x => x.id === i); 
-                    if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * App.originalCart[i]; 
-                }
-                
+                // Safe Calc
                 let removedVal = 0;
-                for(let id in App.originalCart) {
-                    const diff = App.originalCart[id] - (App.cart[id] || 0);
-                    if(diff > 0) {
-                        const p = App.data.find(x => x.id === id);
-                        if(p) removedVal += diff * (p.isOffer ? p.offerPrice : p.valor);
+                try {
+                    for(let id in App.originalCart) {
+                        const diff = App.originalCart[id] - (App.cart[id] || 0);
+                        if(diff > 0) {
+                            const p = App.data.find(x => x.id === id);
+                            if(p) removedVal += diff * (p.isOffer ? p.offerPrice : p.valor);
+                        }
                     }
-                }
+                } catch(e){ console.log(e); }
                 
                 await this.showTyping();
                 
@@ -765,27 +761,28 @@
                     this.addMessage(`Deseja adicionar algo extra?`);
                 }
 
-                document.getElementById('credit-chip').classList.add('visible');
-                App.updateTotal(); 
+                try {
+                    document.getElementById('credit-chip').classList.add('visible');
+                    App.updateTotal(); 
+                } catch(e){ console.error("Chip Error", e); }
                 
+                // CRITICAL FIX: Ensure continuation even if errors above
                 await this.wait(1000);
                 this.offerStep(); 
             },
             async offerStep() {
                 const id = 'act-offers';
-                // Offers button block
+                this.addMessage(`Antes de irmos para as seções, posso te mostrar as <strong>Ofertas do Dia</strong>?`);
                 const html = `<div id="${id}" class="chat-actions">
                      <button class="btn-chat primary" onclick="ChatFlow.showOffers('${id}')">Ver Ofertas</button>
                      <button class="btn-chat" onclick="ChatFlow.skipOffers('${id}')">Pular</button>
                 </div>`;
-                
-                // Message before actions
-                this.addMessage(`Antes de irmos para as seções, posso te mostrar as <strong>Ofertas do Dia</strong>?`);
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
             },
             async showOffers(elemId) {
-                document.getElementById(elemId).remove();
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
                 this.addMessage("Ver Ofertas", 'user');
                 await this.showTyping();
 
@@ -796,7 +793,8 @@
                 this.askNextCategory();
             },
             skipOffers(elemId) {
-                document.getElementById(elemId).remove();
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
                 this.addMessage("Pular", 'user');
                 this.askNextCategory();
             },
@@ -822,7 +820,8 @@
                 this.scrollToBottom();
             },
             async showCategory(elemId, catName) {
-                document.getElementById(elemId).remove();
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
                 this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`, 'user'); 
                 
                 await this.showTyping();
@@ -845,7 +844,7 @@
                      const hiddenItems = products.slice(initialLimit);
                      const sectionId = `chat-sec-${Date.now()}`;
 
-                     const html = `<div class="subcat-section" style="padding-left:16px;">
+                     const html = `<div class="subcat-section" style="padding-left:5px;">
                         <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${title}</span></div>
                         <div class="grid-products-row">
                             ${visibleItems.map(p => App.buildCard(p)).join('')}
@@ -861,13 +860,16 @@
                 }
             },
             skipCategory(elemId) {
-                document.getElementById(elemId).remove();
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
                 this.addMessage("Não, próximo", 'user');
                 this.catIndex++;
                 this.askNextCategory();
             },
             scrollToBottom() {
-                this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                if(this.container.lastElementChild) {
+                    this.container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
             },
             wait(ms) { return new Promise(r => setTimeout(r, ms)); }
         };
@@ -885,13 +887,15 @@
                         const catRaw = (p.categoria || "OUTROS").trim();
                         const parts = catRaw.split('>');
                         const mainCat = parts[0].trim().toUpperCase();
-                        let appCat = "BAZAR E UTILIDADES"; 
+                        let appCat = catRaw; // Default fallback
+                        
+                        // Robust Category Mapping
                         if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
                         else if (mainCat.includes('CAFÉ') || mainCat.includes('MATINAIS')) appCat = "CAFÉ DA MANHÃ E LANCHES";
                         else if (mainCat.includes('LIMPEZA') || mainCat.includes('LAVANDERIA')) appCat = "LIMPEZA E LAVANDERIA";
                         else if (mainCat.includes('HIGIENE') || mainCat.includes('PESSOAL')) appCat = "CUIDADOS PESSOAIS";
                         else if (mainCat.includes('CALÇADO')) appCat = "CALÇADOS";
-                        else if (catRaw !== "CESTA BÁSICA") appCat = catRaw; // Fallback for unmatched categories
+                        else if (mainCat.includes('BAZAR')) appCat = "BAZAR E UTILIDADES";
                         
                         let imgUrl = 'img/placeholder.jpg';
                         if(p.imagem) imgUrl = `img/produtos/${p.imagem.split('/').pop()}`;
@@ -929,7 +933,8 @@
                                     document.getElementById('customizer-view').classList.remove('hidden');
                                     document.body.classList.add('customizer-mode');
                                     document.getElementById('rm-limit-info').innerText = this.currentLimit;
-                                    ChatFlow.start();
+                                    // Make sure ChatFlow handles data properly
+                                    setTimeout(() => ChatFlow.start(), 100);
                                     document.body.classList.add('loaded'); MarketingApp.init();
                                     return; 
                                 }
@@ -938,6 +943,7 @@
                     }
                     this.renderHome(); document.body.classList.add('loaded'); MarketingApp.init();
                 } catch (e) { 
+                    console.error(e);
                     document.body.classList.add('loaded');
                     document.getElementById('home-list').innerHTML = `<div style="text-align:center; padding:40px;">Erro ao carregar.<button onclick="location.reload()">Tentar Novamente</button></div>`;
                 }
@@ -1149,22 +1155,20 @@
                 document.getElementById('co-breakdown').innerHTML = bdHtml;
                 const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                 document.getElementById('co-total').innerText = txtTotal;
-                document.getElementById('cart-count-badge').innerText = count;
-
-                // Update Chip & Enforce Obliged Products Rule
+                
+                // --- CHIP & BUTTON LOGIC ---
                 const chipBtn = document.querySelector('.ccb-btn');
                 const chipLabel = document.getElementById('ccb-label');
                 const chipVal = document.getElementById('ccb-val');
                 
                 if (basketPrice > effectiveTotal) {
-                    // HAS CREDIT - Cannot finalize yet
+                    // HAS CREDIT
                     const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
                     toast.innerText = `Você tem R$ ${diff} em crédito!`; toast.classList.add('visible');
                     document.getElementById('mca-val').innerText = diff; mAlert.classList.remove('hidden');
                     
                     if(chipBtn) {
                         chipBtn.innerText = "Adicionar Itens";
-                        // Opens Modal but will be blocked there, or we can just dismiss sheet to let them shop
                         chipBtn.onclick = function() { App.openCheckout(); }; 
                     }
                     if(chipLabel) chipLabel.innerText = "Crédito Disponível";
@@ -1172,7 +1176,7 @@
 
                     if(finalBtn) { finalBtn.disabled = true; finalBtn.innerText = "Adicione produtos para usar seu crédito"; finalBtn.style.background = "#ccc"; }
                 } else {
-                    // PAYING EXTRA or EQUAL - Can finalize
+                    // READY
                     toast.classList.remove('visible'); mAlert.classList.add('hidden');
                     
                     if(chipBtn) {
@@ -1220,6 +1224,10 @@
             },
             directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
         };
+        // Explicitly attach to window to avoid scope issues in HTML handlers
+        window.ChatFlow = ChatFlow;
+        window.App = App;
+        
         document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
 </body>
