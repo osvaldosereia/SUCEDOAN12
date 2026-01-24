@@ -514,7 +514,7 @@
                     </div>
                 </div>
 
-                <div style="text-align:center; margin: 30px 0 10px; padding-top: 20px; border-top: 1px dashed #e2e8f0;">
+                <div id="search-anchor" style="text-align:center; margin: 30px 0 10px; padding-top: 20px; border-top: 1px dashed #e2e8f0;">
                     <p class="market-instruction">Monte a cesta do seu jeito!<br><strong>Boas Compras 🧡🛒!</strong></p>
                 </div>
 
@@ -854,7 +854,6 @@
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
                 
-                // AJUSTE SOLICITADO AQUI: Removido "de R$ ${val}"
                 document.getElementById('cust-welcome-title').innerHTML = `Você escolheu a <br><strong>${basket.nome}</strong>`;
                 
                 document.getElementById('rm-limit-info').innerText = this.currentLimit;
@@ -871,7 +870,25 @@
                 const container = document.getElementById('extras-container');
                 let products = this.data.filter(p => !p.categoria.includes('CESTA'));
                 const query = filter ? filter : "";
-                if (query.length > 1) products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
+                
+                // NOVO: Scroll automático para os resultados
+                if (query.length > 1) {
+                    const anchor = document.getElementById('search-anchor');
+                    if(anchor) {
+                        const offset = 80; // Espaço para não bater no topo
+                        const bodyRect = document.body.getBoundingClientRect().top;
+                        const elementRect = anchor.getBoundingClientRect().top;
+                        const elementPosition = elementRect - bodyRect;
+                        const offsetPosition = elementPosition - offset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                    products = products.filter(p => p.nome.toLowerCase().includes(query.toLowerCase()));
+                }
+
                 const order = ["MERCEARIA E ALIMENTOS", "CAFÉ DA MANHÃ E LANCHES", "LIMPEZA E LAVANDERIA", "CUIDADOS PESSOAIS", "BAZAR E UTILIDADES"];
                 const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b", "#689f38", "#afb42b", "#e65100", "#424242"];
                 let cIdx = 0, html = "";
