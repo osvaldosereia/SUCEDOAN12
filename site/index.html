@@ -859,8 +859,7 @@
                 }
 
                 await this.wait(1800);
-               this.addMessage(`Agora, monte a cesta do seu jeito.<br><br>Nossos preços são muito bons. Aproveite.`);                                
-                try {
+                this.addMessage(`<b>Agora, monte a cesta do seu jeito.</b><br><br>Nossos preços são muito bons.<br><br>Aproveite.`);                try {
                     document.getElementById('credit-chip').classList.add('visible');
                     App.updateTotal(); 
                 } catch(e){ console.error("Chip Error", e); }
