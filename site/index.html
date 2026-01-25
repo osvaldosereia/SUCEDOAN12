@@ -285,9 +285,15 @@
 
         @media(min-width: 1024px) { #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 60px 20px 100px; } }
         
-        /* GRID DE PRODUTOS AJUSTADO: 3 COLUNAS MOBILE, 9 DESKTOP */
+        /* GRID DE PRODUTOS AJUSTADO: 2 COLUNAS MOBILE NO CHAT/PRATELEIRAS, 3 COLUNAS NAS CESTAS */
         .grid-products-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 0 16px 0; }
-@media(min-width: 1024px) { .grid-products-row { grid-template-columns: repeat(6, 1fr); } }
+        #chat-stream .grid-products-row { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+        @media(min-width: 1024px) { 
+            .grid-products-row { grid-template-columns: repeat(6, 1fr); } 
+            #chat-stream .grid-products-row { grid-template-columns: repeat(6, 1fr); }
+        }
+
         /* --- BOTÃO VER MAIS (Estilo Estreito) --- */
         .btn-load-more { 
             width: auto; max-width: 220px; padding: 10px 24px; 
@@ -682,7 +688,6 @@
                 this.categoryMap = {}; 
                 
                 try {
-                    // Mapeia categorias e suas subcategorias
                     App.data.forEach(p => {
                          if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
                          const mainKey = p.appCategory;
@@ -814,120 +819,46 @@
                 App.updateTotal(); 
                 
                 await this.wait(1400);
-                this.showCorridorMenu(); 
+                this.showAllProductsAuto(); // Inicia o carregamento de todas as prateleiras
             },
 
-            async showCorridorMenu() {
-                await this.showTyping();
-                
-                if(this.visitedCorridors.length > 0) {
-                    this.addMessage("Qual o próximo corredor?");
-                } else {
-                    this.addMessage("Por qual corredor você quer começar?");
-                }
-                
-                const id = 'act-corridors-' + Date.now();
-                
-                let gridHtml = '<div class="corridor-grid">';
-                
-                if(this.categories && this.categories.length > 0) {
-                     this.categories.forEach(cat => {
-                        const isCatVisited = this.visitedCorridors.includes(cat);
-                        const mainCls = isCatVisited ? "btn-main-cat visited" : "btn-main-cat";
-                        
-                        let subHtml = "";
-                        const subCats = Array.from(this.categoryMap[cat] || []).sort();
-                        
-                        if(subCats.length > 0) {
-                            subHtml = `<div class="sub-cat-list">
-                                ${subCats.map(sub => {
-                                    const isSubVisited = this.visitedSubCats.includes(sub);
-                                    const subCls = isSubVisited ? "btn-sub-cat visited" : "btn-sub-cat";
-                                    const imgName = App.toSlug(sub);
-                                    return `
-                                    <button class="${subCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', '${sub}')">
-                                        <div class="bsc-img-container">
-                                            <img src="img/${imgName}.webp" class="bsc-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
-                                            <div class="bsc-placeholder" style="display:none;">•</div>
-                                        </div>
-                                        <span class="bsc-label">${App.toSmartTitleCase(sub)}</span>
-                                    </button>`;
-                                }).join('')}
-                            </div>`;
+            async showAllProductsAuto() {
+                // Remove seleções anteriores
+                const oldSections = document.querySelectorAll('.subcat-section:not([id^="basket-grid"])');
+                oldSections.forEach(s => s.remove());
+
+                // Itera sobre as categorias e subcategorias para mostrar tudo
+                for (let cat of this.categories) {
+                    const subCats = Array.from(this.categoryMap[cat] || []).sort();
+                    if(subCats.length > 0) {
+                        for(let sub of subCats) {
+                            await this.showCategoryAuto(cat, sub);
                         }
-
-                        gridHtml += `
-                        <div class="corridor-card">
-                            <button class="${mainCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', null)">
-                                ${App.toSmartTitleCase(cat)}
-                            </button>
-                            ${subHtml}
-                        </div>`;
-                     });
-                } else {
-                     gridHtml += `<div class="corridor-card"><button class="btn-main-cat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS', null)">Mercearia</button></div>`;
+                    } else {
+                        await this.showCategoryAuto(cat, null);
+                    }
                 }
-                
-                gridHtml += '</div>';
 
-                const html = `<div id="${id}">
-                    ${gridHtml}
-                    <div class="chat-actions" style="margin-top:20px;">
-                        <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="background:#222B49; border-color:#222B49; width:100%;">Ir para o Caixa</button>
-                    </div>
+                // Finaliza com botão de checkout
+                const finishId = 'act-finish-scroll';
+                const finishHtml = `<div id="${finishId}" class="chat-actions" style="margin-top:20px; padding: 20px 0;">
+                    <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="background:#222B49; border-color:#222B49; width:100%;">Ir para o Caixa</button>
                 </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom();
+                this.container.insertAdjacentHTML('beforeend', finishHtml);
             },
 
-           async showCategory(elemId, catName, subCatName) {
-                // 1. Remove os botões de opção anteriores para limpar a tela
-                const el = document.getElementById(elemId);
-                if(el && !elemId.startsWith('act-menu')) el.remove();
-                
-                // 2. Remove prateleiras antigas (para o chat não ficar infinito)
-                const oldSections = document.querySelectorAll('.subcat-section');
-                oldSections.forEach(section => section.remove());
-
-                // OBS: A linha que enviava a mensagem "Ir para..." foi removida aqui.
-                
-                let uniqueIdStr = catName;
-                if(subCatName) uniqueIdStr += subCatName;
+            async showCategoryAuto(catName, subCatName) {
+                let uniqueIdStr = catName + (subCatName || '');
                 const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
-                
-                // Verifica se já existe (embora tenhamos limpado acima, é bom manter a segurança)
-                const existingSection = document.getElementById(safeCatId);
-                
-                if (existingSection) {
-                    setTimeout(() => {
-                        const headerOffset = 130;
-                        const elementPosition = existingSection.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                    }, 50);
-                    
-                    if(!elemId.startsWith('act-menu')) {
-                        await this.wait(1000); // Espera um pouco menos
-                        this.showCorridorMenu();
-                    }
-                    return;
-                }
-                
-                // 3. Marca como visitado silenciosamente
-                if(!this.visitedCorridors.includes(catName)) {
-                    this.visitedCorridors.push(catName);
-                }
-                if(subCatName && !this.visitedSubCats.includes(subCatName)) {
-                    this.visitedSubCats.push(subCatName);
-                }
                 
                 let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 if(subCatName) {
                     products = products.filter(p => p.subCategory === subCatName);
                 }
+                if(products.length === 0) return;
+                
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
                 
-                // 4. Monta o Cabeçalho (Imagem + Título)
                 let htmlHeader = "";
                 if(subCatName) {
                     const imgName = App.toSlug(subCatName);
@@ -944,11 +875,42 @@
                 }
 
                 this.container.insertAdjacentHTML('beforeend', htmlHeader);
+                App.setupPagination(safeCatId, products, 'chat');
+            },
+
+           async showCategory(elemId, catName, subCatName) {
+                const el = document.getElementById(elemId);
+                if(el && !elemId.startsWith('act-menu')) el.remove();
+                const oldSections = document.querySelectorAll('.subcat-section');
+                oldSections.forEach(section => section.remove());
+
+                let uniqueIdStr = catName + (subCatName || '');
+                const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
                 
-                // 5. Renderiza os produtos
+                let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
+                if(subCatName) {
+                    products = products.filter(p => p.subCategory === subCatName);
+                }
+                products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
+                
+                let htmlHeader = "";
+                if(subCatName) {
+                    const imgName = App.toSlug(subCatName);
+                    htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
+                       <div class="subcat-title" style="display:flex; align-items:center; gap:12px;">
+                            <img src="img/${imgName}.webp" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:1px solid #e2e8f0;" onerror="this.style.display='none'">
+                            <span style="font-size:1.1rem; font-weight:700; color:#333;">${App.toSmartTitleCase(subCatName)}</span>
+                       </div>
+                    </div>`;
+                } else {
+                    htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
+                       <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${App.toSmartTitleCase(catName)}</span></div>
+                    </div>`;
+                }
+
+                this.container.insertAdjacentHTML('beforeend', htmlHeader);
                 App.setupPagination(safeCatId, products, 'chat');
                 
-                // 6. Rola a tela imediatamente
                 const element = document.getElementById(safeCatId);
                 if(element) {
                    const headerOffset = 130;
@@ -956,15 +918,8 @@
                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                 }
-                
-                // 7. Mostra o menu de prateleiras novamente em seguida
-                if(!elemId.startsWith('act-menu')) {
-                    await this.wait(800); // Tempo curto apenas para dar respiro visual
-                    this.showCorridorMenu();
-                }
             },
             
-            // --- RESUMO & CUPOM SIMPLIFICADO (LIMITADO A 20 CARACTERES) ---
             generateSummaryHTML(basketName, basketVal, mathTotal) {
                 let summaryHTML = `<div style="padding:15px; width:100%;">`;
                 summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${basketName} <span style="float:right;">R$ ${basketVal.toFixed(2).replace('.',',')}</span></div>`;
@@ -1058,8 +1013,6 @@
                 if(effectiveTotal < App.currentBasket.valor - 0.05) {
                     const diff = App.currentBasket.valor - effectiveTotal;
                     this.addMessage(`⚠️ Sua cesta ainda não está completa. Faltam <strong>R$ ${diff.toFixed(2).replace('.',',')}</strong>.`);
-                    await this.wait(1000);
-                    this.showCorridorMenu();
                     return; 
                 }
                 document.getElementById('credit-chip').classList.remove('visible');
@@ -1135,7 +1088,6 @@
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [], appliedCoupon: false,
             paginationStore: {},
             async init() {
-                // Event listener para fechar o menu ao clicar fora
                 document.addEventListener('click', (e) => {
                     const menu = document.getElementById('cat-dropdown');
                     const btn = document.getElementById('btn-cat-menu');
@@ -1214,7 +1166,6 @@
                 }));
             },
             
-            // --- MENU DE PRATELEIRAS ---
             toggleCatMenu(e) {
                 if(e) e.stopPropagation();
                 const menu = document.getElementById('cat-dropdown');
@@ -1224,7 +1175,6 @@
                     menu.classList.remove('active');
                     document.body.classList.remove('no-scroll');
                 } else {
-                    // Populate menu logic (same as corridors)
                     if (ChatFlow.categories.length > 0) {
                         let gridHtml = '<div class="corridor-grid" style="margin-top:0;">';
                         ChatFlow.categories.forEach(cat => {
@@ -1284,37 +1234,29 @@
                  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) { const [y, m, d] = dateStr.split('-'); return `${d}/${m}/${y}`; }
                  return dateStr; 
             },
-           setupPagination(sectionId, products, type='home') {
-    // Verifica se é Desktop ou Mobile
-    const isDesktop = window.innerWidth >= 1024;
-    
-    // Define colunas: 7 no desktop, 3 no mobile
-const cols = isDesktop ? 6 : 3;    
-    // Regra: Multiplo de 2x a quantidade de colunas (14 no desktop, 6 no mobile)
-    let limit = cols * 2; 
+            setupPagination(sectionId, products, type='home') {
+                const isDesktop = window.innerWidth >= 1024;
+                const cols = isDesktop ? 6 : (type === 'home' || sectionId.includes('basket-grid') ? 3 : 2);
+                
+                // Primeira carga: Apenas 1 linha
+                let limit = cols; 
 
-    this.paginationStore[sectionId] = { products, currentIndex: 0, limit, type, lastSubCat: '' };
-    this.loadMore(sectionId, true);
-},
-            scrollChips(arrow, dir) {
-                const bar = arrow.parentElement.querySelector('.sticky-chips-bar');
-                bar.scrollBy({ left: dir * 150, behavior: 'smooth' });
+                this.paginationStore[sectionId] = { products, currentIndex: 0, limit, type, lastSubCat: '', cols };
+                this.loadMore(sectionId, true);
             },
             loadMore(sectionId, isInitial = false) {
                 const data = this.paginationStore[sectionId];
                 if(!data) return;
+                
                 const nextIndex = data.currentIndex + data.limit;
                 const batch = data.products.slice(data.currentIndex, nextIndex);
                 const hasMore = nextIndex < data.products.length;
                 let batchHtml = '';
+                
                 batch.forEach(item => {
                     const p = data.type === 'home' ? item.d : item;
-                    
                     if(data.type === 'home') {
-                        let cardHtml = this.buildCard(item.d).replace(/<div class="cp-price.*?<\/div>/, '');
-                        // AQUI ESTA A LOGICA PARA EXIBIR A QUANTIDADE NA HOME
-                        const qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
-                        // RECONSTRUCAO PARA GARANTIR ORDEM CORRETA
+                        let qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
                         batchHtml += `<div class="card-prod readonly">
                             <div class="cp-img-box"><img src="${item.d.imagem}" class="cp-img" loading="lazy"></div>
                             ${qtyText}
@@ -1324,6 +1266,7 @@ const cols = isDesktop ? 6 : 3;
                         batchHtml += this.buildCard(p);
                     }
                 });
+                
                 let grid = document.querySelector(`#${sectionId} .grid-products-row`);
                 if(!grid) {
                     document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div class="grid-products-row"></div>`);
@@ -1331,6 +1274,10 @@ const cols = isDesktop ? 6 : 3;
                 }
                 grid.insertAdjacentHTML('beforeend', batchHtml);
                 data.currentIndex = nextIndex;
+                
+                // Próximas cargas: 3 linhas (conforme pedido)
+                data.limit = data.cols * 3;
+
                 const oldBtn = document.getElementById(`btn-${sectionId}`);
                 if(oldBtn) oldBtn.remove();
                 if(hasMore) {
@@ -1338,27 +1285,16 @@ const cols = isDesktop ? 6 : 3;
                     document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${count} PRODUTOS</div>`);
                 }
                 
-                // --- ROLAGEM CORRIGIDA ---
                 if(!isInitial && batch[0]) {
                     const pId = data.type === 'home' ? batch[0].d.id : batch[0].id;
                     const el = document.getElementById(`card-${pId}`);
                     if (el) {
-                        // Offset de 130px para garantir que não fique atrás do topo
                         const headerOffset = 130;
                         const elementPosition = el.getBoundingClientRect().top;
                         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                         window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                     }
                 }
-            },
-            filterLocalList(input) {
-                const term = input.value.toLowerCase();
-                const sections = document.querySelectorAll('#chat-stream .subcat-section');
-                if (sections.length === 0) return;
-                sections[sections.length - 1].querySelectorAll('.card-prod').forEach(p => {
-                    const titleEl = p.querySelector('.cp-title');
-                    if(titleEl) p.style.display = titleEl.innerText.toLowerCase().includes(term) ? 'flex' : 'none';
-                });
             },
             renderHome() {
                 const list = document.getElementById('home-list');
@@ -1398,7 +1334,6 @@ const cols = isDesktop ? 6 : 3;
                     });
                     this.originalCart = { ...this.cart };
 
-                    // CÁLCULO DA "ANCORA" DE PREÇO
                     let sumItems = 0;
                     for(let i in this.cart) {
                         let p = this.data.find(x => x.id === i);
@@ -1417,7 +1352,6 @@ const cols = isDesktop ? 6 : 3;
                 document.body.classList.add('customizer-mode');
                 
                 this.updateTotal();
-                
                 window.scrollTo(0,0); 
                 ChatFlow.start(); 
                 this.saveState(); 
@@ -1487,7 +1421,6 @@ const cols = isDesktop ? 6 : 3;
                 this.updateCardUI(id, newQty); this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 
-                // ATUALIZAÇÃO REATIVA DO CHECKOUT
                 if(ChatFlow && typeof ChatFlow.reactToCartChange === 'function') {
                     ChatFlow.reactToCartChange();
                 }
@@ -1521,7 +1454,6 @@ const cols = isDesktop ? 6 : 3;
             },
             closeSuggestion() { document.getElementById('suggestion-drawer').classList.remove('open'); document.getElementById('suggestion-overlay').classList.remove('active'); },
             
-            // --- ATUALIZAÇÃO DA BARRA INFERIOR PARA LÓGICA DE SUPERMERCADO ---
             updateTotal() {
                 let sum = 0; 
                 for(let id in this.cart) { 
@@ -1535,20 +1467,17 @@ const cols = isDesktop ? 6 : 3;
                 
                 const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                 
-                // Grava valor invisível apenas para WhatsApp
                 const headerVal = document.getElementById('icb-total-val');
-                if(headerVal) { headerVal.innerText = txtTotal; headerVal.style.display = 'none'; } // MANTIDO OCULTO
+                if(headerVal) { headerVal.innerText = txtTotal; headerVal.style.display = 'none'; }
                 
                 const basketPrice = this.currentBasket.valor;
                 const chipBtn = document.querySelector('.ccb-btn'), 
                       chipLabel = document.getElementById('ccb-label'), 
                       chipVal = document.getElementById('ccb-val');
                 
-                // Sempre mostra Total do Pedido, sem falar de crédito
                 if(chipLabel) chipLabel.innerText = "Total do Pedido";
                 if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
                 
-                // Botão de ação binário: Completar ou Finalizar
                 if (effectiveTotal < basketPrice - 0.05) {
                     if(chipBtn) { 
                         chipBtn.innerText = "Completar Cesta"; 
@@ -1587,7 +1516,7 @@ const cols = isDesktop ? 6 : 3;
         window.ChatFlow = ChatFlow; window.App = App;
         window.addEventListener('scroll', () => {
             const h = document.querySelector('.app-header');
-            if(window.scrollY > 100) h.classList.add('scrolled'); else h.classList.remove('scrolled');
+            if(h && window.scrollY > 100) h.classList.add('scrolled'); else if(h) h.classList.remove('scrolled');
         });
         document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
