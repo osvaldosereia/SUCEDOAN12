@@ -295,15 +295,34 @@
         }
 
         /* --- BOTÃO VER MAIS (Estilo Estreito) --- */
-        .btn-load-more { 
-            width: auto; max-width: 220px; padding: 10px 24px; 
-            background: #ffffff; color: var(--secondary); 
-            border: 2px solid #cbd5e1; border-radius: 50px; 
-            font-weight: 700; font-size: 0.85rem; text-transform: uppercase; 
-            margin: 20px auto; cursor: pointer; text-align: center; 
-            transition: all 0.2s; display: block; 
-        }
-        .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; transform: scale(1.05); }
+       /* --- BOTÃO VER MAIS (PADRÃO CHAT) --- */
+.btn-load-more { 
+    width: auto; 
+    max-width: 250px; 
+    padding: 12px 24px; 
+    background: var(--primary); /* Fundo Vermelho */
+    color: #ffffff;             /* Texto Branco */
+    border: none;               /* Remove a borda para seguir o padrão primary */
+    border-radius: 50px; 
+    font-weight: 700; 
+    font-size: 0.85rem; 
+    text-transform: uppercase; 
+    margin: 15px auto 25px;      /* Ajustado para manter o equilíbrio visual */
+    cursor: pointer; 
+    text-align: center; 
+    transition: all 0.2s; 
+    display: block; 
+    box-shadow: 0 4px 12px rgba(211, 26, 40, 0.2); /* Sombra suave para destaque */
+}
+
+.btn-load-more:hover { 
+    background: var(--primary-dark); /* Escurece levemente no hover */
+    transform: scale(1.03); 
+}
+
+.btn-load-more:active {
+    transform: scale(0.97); /* Efeito de clique */
+}
         
         /* --- CARD PRODUTO (Altura Generosa) --- */
         .card-prod { 
