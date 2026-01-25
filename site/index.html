@@ -18,7 +18,7 @@
             --bg-body: #ffffff;
             --border-color: #f2f2f2;
             --header-height: 70px; 
-            --app-header-height: 56px; 
+            --app-header-height: 60px; /* Aumentei um pouco para caber os botões */
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -78,7 +78,7 @@
             position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
             background: #fff; height: var(--app-header-height);
             border-bottom: 1px solid #f0f0f0; display: none; 
-            align-items: center; padding: 0 16px;
+            align-items: center; padding: 0 10px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
         }
@@ -86,20 +86,54 @@
         
         .app-header-inner {
             width: 100%; max-width: 1200px; height: 100%;
-            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
         }
 
+        /* Botão Voltar */
         .ah-back-btn { 
             color: var(--primary); display: flex; align-items: center; justify-content: center;
-            padding: 4px; margin-left: -4px; cursor: pointer;
+            padding: 6px; cursor: pointer; margin-right: 5px;
         }
-        
-        .header-title-text { flex:1; text-align:center; font-weight:600; transition: opacity 0.2s; }
-        .header-search-wrapper { flex: 1; display: none; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .header-search-input { width: 100%; max-width: 320px; padding: 8px 14px; border-radius: 20px; border: 1px solid #ddd; background: #f8fafc; font-size: 0.9rem; outline: none; }
-        .header-search-input:focus { border-color: var(--primary); background: #fff; }
-        .app-header.scrolled .header-title-text { display: none; }
-        .app-header.scrolled .header-search-wrapper { display: flex; opacity: 1; }
+
+        /* Botão Menu Categorias (Novo) */
+        .ah-cat-btn {
+            background: #f1f5f9; color: var(--secondary);
+            font-size: 0.85rem; font-weight: 700;
+            padding: 8px 12px; border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            display: flex; align-items: center; gap: 5px;
+            transition: all 0.2s;
+        }
+        .ah-cat-btn.disabled { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+        .ah-cat-btn:active { background: #e2e8f0; transform: scale(0.95); }
+
+        /* Ações Direita (Novos Botões) */
+        .ah-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        .ah-icon-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #555; background: #fff; border: 1px solid #eee;
+            transition: all 0.2s; font-size: 1.1rem;
+        }
+        .ah-icon-btn:active { transform: scale(0.9); background: #f8fafc; }
+        .ah-icon-btn.danger { color: #dc2626; border-color: #fee2e2; background: #fef2f2; }
+
+        /* Menu Retrátil (Dropdown) */
+        .cat-dropdown {
+            position: fixed; top: var(--app-header-height); left: 0; right: 0;
+            background: #fff; border-bottom: 1px solid #e2e8f0;
+            padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 1900; max-height: 60vh; overflow-y: auto;
+            transform: translateY(-150%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+        }
+        .cat-dropdown.active { transform: translateY(0); }
+        .cd-item {
+            padding: 10px; background: #f8fafc; border-radius: 8px;
+            text-align: center; font-size: 0.8rem; font-weight: 600;
+            color: #334155; border: 1px solid #e2e8f0;
+        }
+        .cd-item:active { background: #e2e8f0; }
 
         /* --- 4. HERO & HOME --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
@@ -269,9 +303,9 @@
         .card-prod { 
             width: 100%; min-width: auto; max-width: none; flex-shrink: 0; 
             background: transparent; border: none; 
-            padding: 0 0 12px 0; /* Mais espaço inferior */
+            padding: 0 0 16px 0; /* Mais respiro no final */
             display: flex; flex-direction: column; position: relative; 
-            gap: 4px; /* Espaço entre elementos internos */
+            gap: 6px; /* Espaço entre elementos internos */
         }
         
         /* ETIQUETAS PEQUENAS E NO TOPO */
@@ -309,7 +343,7 @@
         .card-action-row {
             display: flex; justify-content: flex-end;
             margin-top: -18px; /* Sobe para ficar na borda da imagem */
-            margin-right: 6px; margin-bottom: 6px;
+            margin-right: 6px; margin-bottom: 8px; /* Mais respiro */
             position: relative; z-index: 5; height: 38px;
         }
 
@@ -342,8 +376,8 @@
             font-size: 0.75rem; /* Menor */
             font-weight: 500; color: #333; 
             margin: 0 2px 4px; line-height: 1.35; 
-            min-height: 4.5em; /* Garante altura para 3 linhas */
-            display: -webkit-box; -webkit-line-clamp: 3; /* Aceita 3 linhas */
+            min-height: 6em; /* Aumentado para 4 linhas */
+            display: -webkit-box; -webkit-line-clamp: 4; /* Aceita 4 linhas */
             -webkit-box-orient: vertical; overflow: hidden; text-align: left; 
         }
         .cp-validity { font-size: 0.7rem; color: #777; text-align: left; margin-top: auto; }
@@ -453,24 +487,34 @@
     </main>
 
     <div id="customizer-view" class="hidden">
-        
         <div class="app-header">
             <div class="app-header-inner">
                 <div class="ah-back-btn" onclick="App.goHome()">
                     <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
                 </div>
-                <div class="header-title-text">Personalizando</div>
-                <div class="header-search-wrapper">
-    <input type="text" id="header-search-input" class="header-search-input" placeholder="Buscar produto..." onkeyup="App.filterLocalList(this)">
-</div>
+                
+                <button id="btn-cat-menu" class="ah-cat-btn disabled" onclick="App.toggleCatMenu()">
+                    Categorias ▾
+                </button>
 
-<div class="ah-back-btn" onclick="App.resetCart()" style="margin-right: 8px; color: #ef4444;" title="Limpar e Voltar">
-    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-</div>
-
-<div class="help-btn-visible" onclick="App.openSheet('faq-sheet')">?</div>
+                <div class="ah-actions">
+                    <button class="ah-icon-btn danger" onclick="App.resetCart()" title="Limpar Cesta">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                    <button class="ah-icon-btn" onclick="App.openSheet('faq-sheet')" title="Ajuda">
+                        ?
+                    </button>
+                    <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" title="Instagram">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    </button>
+                    <button class="ah-icon-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565996813588','_blank')" title="WhatsApp">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.017-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                    </button>
+                </div>
             </div>
         </div>
+
+        <div id="cat-dropdown" class="cat-dropdown"></div>
 
         <div class="main-content-col">
             <div class="container">
@@ -762,6 +806,11 @@
                 this.addMessage(`Combinado! Já atualizei sua cesta. Agora, <b>aproveite para levar o que falta na sua casa</b> e completar sua dispensa!`);
                 
                 document.getElementById('credit-chip').classList.add('visible');
+                
+                // Ativa botão Categorias
+                const catBtn = document.getElementById('btn-cat-menu');
+                if(catBtn) catBtn.classList.remove('disabled');
+                
                 App.updateTotal(); 
                 
                 await this.wait(1400);
@@ -846,7 +895,7 @@
                 
                 if (existingSection) {
                     setTimeout(() => {
-                        const headerOffset = 100;
+                        const headerOffset = 150;
                         const elementPosition = existingSection.getBoundingClientRect().top;
                         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                         window.scrollTo({ top: offsetPosition, behavior: "smooth" });
@@ -894,7 +943,7 @@
                 
                 const element = document.getElementById(safeCatId);
                 if(element) {
-                   const headerOffset = 100;
+                   const headerOffset = 150;
                    const elementPosition = element.getBoundingClientRect().top;
                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
@@ -952,7 +1001,6 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                         <span id="summary-total-display" style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${mathTotal.toFixed(2).replace('.',',')}</span>
                     </div>`;
                     
-                    // --- CUPOM SIMPLIFICADO ---
                     if(!App.appliedCoupon) {
                         summaryHTML += `<div id="mini-coupon-area" class="coupon-mini-box">
                             <input type="text" id="mini-coupon-input" class="mini-inp" placeholder="CUPOM DE DESCONTO">
@@ -1181,7 +1229,7 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                         let cardHtml = this.buildCard(item.d).replace(/<div class="cp-price.*?<\/div>/, '');
                         // AQUI ESTA A LOGICA PARA EXIBIR A QUANTIDADE NA HOME
                         const qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
-                        // GARANTIA QUE O TEXTO ENTRA NO LUGAR CERTO
+                        // RECONSTRUCAO PARA GARANTIR ORDEM CORRETA
                         batchHtml += `<div class="card-prod readonly">
                             <div class="cp-img-box"><img src="${item.d.imagem}" class="cp-img" loading="lazy"></div>
                             ${qtyText}
