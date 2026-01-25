@@ -163,8 +163,9 @@
         .chat-msg.wide-summary {
             max-width: 96%; width: 100%;
             border-radius: 12px;
-            background: #f8fafc;
+            background: #fff;
             border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
         }
         @media(min-width: 1024px) {
             .chat-msg.wide-summary { max-width: 600px; margin: 0 auto 0 0; }
@@ -234,110 +235,118 @@
             .btn-chat.primary { width: auto; }
         }
 
-        /* --- ESTILOS NOVOS PARA OS CORREDORES (PREMIUM) --- */
-.corridor-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-    width: 100%;
-    margin-top: 10px;
-}
-@media(min-width: 1024px) {
-    .corridor-grid { grid-template-columns: repeat(3, 1fr); }
-}
+        /* --- ESTILOS NOVOS PARA OS CORREDORES (MODERNO E CONTRASTANTE) --- */
+        .corridor-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        @media(min-width: 1024px) {
+            .corridor-grid { grid-template-columns: repeat(3, 1fr); }
+        }
 
-.corridor-card {
-    background: #fff;
-    border: 1px solid #f1f5f9;
-    border-radius: 16px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03); /* Sombra suave */
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.corridor-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-}
+        .corridor-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* Sombra mais nítida */
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .corridor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        
+        .btn-main-cat {
+            width: 100%;
+            padding: 14px 16px;
+            background: #ffffff;
+            color: #1e293b; /* Texto escuro forte */
+            font-weight: 700; /* Negrito */
+            font-size: 0.95rem;
+            /* Texto inteligente será tratado pelo JS, mas CSS fallback */
+            text-transform: capitalize; 
+            border: none;
+            border-bottom: 1px solid #f1f5f9;
+            border-left: 4px solid var(--primary); /* Identidade visual na lateral */
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-main-cat:after { content: '›'; font-size: 1.4rem; color: #cbd5e1; line-height: 1; }
+        
+        .btn-main-cat.visited { 
+            background: #f8fafc; 
+            color: #64748b; 
+            border-left-color: #cbd5e1; /* Cinza se já visitado */
+        }
+        .btn-main-cat.visited:after { content: '✓'; color: #22c55e; font-weight: 800; font-size: 1rem; }
 
-/* Botão Principal da Categoria */
-.btn-main-cat {
-    width: 100%;
-    padding: 16px;
-    background: #ffffff;
-    color: var(--secondary);
-    font-weight: 700;
-    font-size: 1rem;
-    text-transform: capitalize; /* Primeira letra maiúscula apenas */
-    border: none;
-    border-bottom: 1px solid #f1f5f9;
-    text-align: left;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-}
+        .sub-cat-list {
+            padding: 12px 16px;
+            background: #fcfcfc;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
 
-/* Ícone de seta padrão */
-.btn-main-cat:after { 
-    content: '›'; 
-    font-size: 1.4rem; 
-    color: #cbd5e1; 
-    line-height: 1;
-    transition: all 0.3s;
-}
+        .btn-sub-cat {
+            padding: 8px 14px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1; /* Borda visível */
+            color: #475569;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 6px; /* Levemente arredondado, não pill */
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sub-cat:hover { border-color: var(--primary); color: var(--primary); background: #fff0f0; }
+        
+        .btn-sub-cat.visited {
+            background: #dcfce7; /* Verde claro se visitado */
+            color: #166534;
+            border-color: #bbf7d0;
+        }
 
-/* ESTILO DE VISITADO (Categoria Principal) */
-.btn-main-cat.visited {
-    background: #f0fdf4; /* Fundo verde bem clarinho */
-    color: #166534; /* Texto verde escuro */
-    border-bottom-color: #dcfce7;
-}
-.btn-main-cat.visited:after {
-    content: '✓'; /* Troca seta por check */
-    color: #22c55e;
-    font-weight: 800;
-    font-size: 1.1rem;
-}
+        /* --- ESTILO CUPOM SIMPLIFICADO --- */
+        .coupon-mini-box {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 15px;
+            align-items: center;
+        }
+        .mini-inp {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+            text-transform: uppercase;
+        }
+        .mini-btn-ok {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
 
-.sub-cat-list {
-    padding: 12px 16px;
-    background: #fafafa;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-/* Botões das Subcategorias (Pills) */
-.btn-sub-cat {
-    padding: 8px 14px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #64748b;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-
-.btn-sub-cat:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    transform: translateY(-1px);
-}
-
-/* ESTILO DE VISITADO (Subcategoria) */
-.btn-sub-cat.visited {
-    background: #dcfce7; /* Verde claro */
-    color: #15803d;      /* Verde escuro */
-    border-color: #bbf7d0;
-    box-shadow: none;
-}
-/* --- FIM ESTILOS CORREDORES --- */
+        /* --- FIM ESTILOS --- */
 
         .chat-input-group { display:flex; gap:10px; width:100%; max-width:300px; margin-top:5px; flex-wrap: wrap; }
         .chat-input { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; outline:none; min-width: 150px; }
@@ -787,65 +796,63 @@
         const ChatFlow = {
             container: null,
             categories: [], 
-            categoryMap: {}, // Nova estrutura para mapear subcategorias
+            categoryMap: {}, 
             visitedCorridors: [], 
+            visitedSubCats: [], // Nova variável
             catIndex: 0,
             checkoutState: { paymentMethod: '', couponApplied: false },
             
-           async start() {
-    this.container = document.getElementById('chat-stream');
-    this.container.innerHTML = '';
-    this.catIndex = 0;
-    
-    // --- ATUALIZAÇÃO AQUI ---
-    this.visitedCorridors = []; // Reseta categorias visitadas
-    this.visitedSubCats = [];   // Reseta subcategorias visitadas (NOVO)
-    // ------------------------
+            async start() {
+                this.container = document.getElementById('chat-stream');
+                this.container.innerHTML = '';
+                this.catIndex = 0;
+                this.visitedCorridors = [];
+                this.visitedSubCats = []; // Reset subcats
+                this.categoryMap = {}; 
+                
+                try {
+                    // Mapeia categorias e suas subcategorias
+                    App.data.forEach(p => {
+                         if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
+                         const mainKey = p.appCategory;
+                         if(!this.categoryMap[mainKey]) { 
+                             this.categoryMap[mainKey] = new Set();
+                         }
+                         if(p.subCategory) {
+                             this.categoryMap[mainKey].add(p.subCategory);
+                         }
+                    });
+                    
+                    this.categories = Object.keys(this.categoryMap);
+                    this.categories.sort((a,b) => {
+                        const getScore = (catName) => {
+                            if(catName.includes('MERCEARIA') || catName.includes('ALIMENTOS')) return 3;
+                            if(catName.includes('MATINAIS') || catName.includes('LANCHES')) return 2;
+                            if(catName.includes('LIMPEZA')) return 1;
+                            return 0;
+                        };
+                        const scoreA = getScore(a);
+                        const scoreB = getScore(b);
+                        if(scoreA !== scoreB) return scoreB - scoreA; 
+                        return a.localeCompare(b); 
+                    });
+                } catch(e) { console.error("Erro categorias", e); }
 
-    this.categoryMap = {}; 
-    
-    try {
-        App.data.forEach(p => {
-             if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
-             const mainKey = p.appCategory;
-             if(!this.categoryMap[mainKey]) { 
-                 this.categoryMap[mainKey] = new Set();
-             }
-             if(p.subCategory) {
-                 this.categoryMap[mainKey].add(p.subCategory);
-             }
-        });
-        
-        this.categories = Object.keys(this.categoryMap);
-        this.categories.sort((a,b) => {
-            const getScore = (catName) => {
-                if(catName.includes('MERCEARIA') || catName.includes('ALIMENTOS')) return 3;
-                if(catName.includes('MATINAIS') || catName.includes('LANCHES')) return 2;
-                if(catName.includes('LIMPEZA')) return 1;
-                return 0;
-            };
-            const scoreA = getScore(a);
-            const scoreB = getScore(b);
-            if(scoreA !== scoreB) return scoreB - scoreA; 
-            return a.localeCompare(b); 
-        });
-    } catch(e) { console.error("Erro categorias", e); }
-
-    const hours = new Date().getHours();
-    let greeting = "Bom dia";
-    if(hours >= 12) greeting = "Boa tarde";
-    if(hours >= 18) greeting = "Boa noite";
-    
-    await this.showTyping();
-    this.addMessage(`${greeting}! Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>, certo?`);
-    
-    const id = 'act-intro';
-    const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-        <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Sim!</button>
-    </div>`;
-    this.container.insertAdjacentHTML('beforeend', html);
-    this.scrollToBottom();
-},
+                const hours = new Date().getHours();
+                let greeting = "Bom dia";
+                if(hours >= 12) greeting = "Boa tarde";
+                if(hours >= 18) greeting = "Boa noite";
+                
+                await this.showTyping();
+                this.addMessage(`${greeting}! Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>, certo?`);
+                
+                const id = 'act-intro';
+                const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
+                    <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Sim!</button>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
 
             async explainRules(elemId) {
                 const el = document.getElementById(elemId);
@@ -925,139 +932,132 @@
                 
                 await this.showTyping();
                 
-                // Mensagem objetiva e rápida de "Supermercado"
                 this.addMessage(`Combinado! Já atualizei sua cesta. Agora, <b>aproveite para levar o que falta na sua casa</b> e completar sua dispensa!`);
                 
                 document.getElementById('credit-chip').classList.add('visible');
-                App.updateTotal(); // Força a atualização da barra inferior
+                App.updateTotal(); 
                 
                 await this.wait(1400);
-                this.showCorridorMenu(); // Chama o menu de setores/corredores
+                this.showCorridorMenu(); 
             },
 
-           async showCorridorMenu() {
-    await this.showTyping();
-    
-    if(this.visitedCorridors.length > 0) {
-        this.addMessage("Qual o próximo corredor?");
-    } else {
-        this.addMessage("Por qual corredor você quer começar?");
-    }
-    
-    const id = 'act-corridors-' + Date.now();
-    
-    let gridHtml = '<div class="corridor-grid">';
-    
-    if(this.categories && this.categories.length > 0) {
-         this.categories.forEach(cat => {
-            // Verifica se a Categoria Principal foi visitada
-            const isCatVisited = this.visitedCorridors.includes(cat);
-            const mainCls = isCatVisited ? "btn-main-cat visited" : "btn-main-cat";
-            
-            let subHtml = "";
-            const subCats = Array.from(this.categoryMap[cat] || []).sort();
-            
-            if(subCats.length > 0) {
-                subHtml = `<div class="sub-cat-list">
-                    ${subCats.map(sub => {
-                        // Verifica se a Subcategoria foi visitada (NOVO)
-                        const isSubVisited = this.visitedSubCats.includes(sub);
-                        const subCls = isSubVisited ? "btn-sub-cat visited" : "btn-sub-cat";
-                        return `<button class="${subCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', '${sub}')">${sub}</button>`;
-                    }).join('')}
+            async showCorridorMenu() {
+                await this.showTyping();
+                
+                if(this.visitedCorridors.length > 0) {
+                    this.addMessage("Qual o próximo corredor?");
+                } else {
+                    this.addMessage("Por qual corredor você quer começar?");
+                }
+                
+                const id = 'act-corridors-' + Date.now();
+                
+                let gridHtml = '<div class="corridor-grid">';
+                
+                if(this.categories && this.categories.length > 0) {
+                     this.categories.forEach(cat => {
+                        const isCatVisited = this.visitedCorridors.includes(cat);
+                        const mainCls = isCatVisited ? "btn-main-cat visited" : "btn-main-cat";
+                        
+                        let subHtml = "";
+                        const subCats = Array.from(this.categoryMap[cat] || []).sort();
+                        
+                        if(subCats.length > 0) {
+                            subHtml = `<div class="sub-cat-list">
+                                ${subCats.map(sub => {
+                                    const isSubVisited = this.visitedSubCats.includes(sub);
+                                    const subCls = isSubVisited ? "btn-sub-cat visited" : "btn-sub-cat";
+                                    return `<button class="${subCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', '${sub}')">${App.toSmartTitleCase(sub)}</button>`;
+                                }).join('')}
+                            </div>`;
+                        }
+
+                        gridHtml += `
+                        <div class="corridor-card">
+                            <button class="${mainCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', null)">
+                                ${App.toSmartTitleCase(cat)}
+                            </button>
+                            ${subHtml}
+                        </div>`;
+                     });
+                } else {
+                     gridHtml += `<div class="corridor-card"><button class="btn-main-cat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS', null)">Mercearia</button></div>`;
+                }
+                
+                gridHtml += '</div>';
+
+                const html = `<div id="${id}">
+                    ${gridHtml}
+                    <div class="chat-actions" style="margin-top:20px;">
+                        <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="background:#222B49; border-color:#222B49; width:100%;">Ir para o Caixa</button>
+                    </div>
                 </div>`;
-            }
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
 
-            gridHtml += `
-            <div class="corridor-card">
-                <button class="${mainCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', null)">
-                    ${App.toSmartTitleCase(cat)}
-                </button>
-                ${subHtml}
-            </div>`;
-         });
-    } else {
-         gridHtml += `<div class="corridor-card"><button class="btn-main-cat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS', null)">Mercearia</button></div>`;
-    }
-    
-    gridHtml += '</div>';
-
-    const html = `<div id="${id}">
-        ${gridHtml}
-        <div class="chat-actions" style="margin-top:20px;">
-            <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="background:#222B49; border-color:#222B49; width:100%;">Ir para o Caixa</button>
-        </div>
-    </div>`;
-    this.container.insertAdjacentHTML('beforeend', html);
-    this.scrollToBottom();
-},
-
-           async showCategory(elemId, catName, subCatName) {
-    const el = document.getElementById(elemId);
-    if(el) el.remove();
-    
-    const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${subCatName}` : App.toSmartTitleCase(catName);
-    this.addMessage(`Ir para ${displayTitle}`, 'user'); 
-    
-    // ID Único
-    let uniqueIdStr = catName;
-    if(subCatName) uniqueIdStr += subCatName;
-    const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
-    
-    const existingSection = document.getElementById(safeCatId);
-    
-    if (existingSection) {
-        setTimeout(() => {
-            const headerOffset = 100;
-            const elementPosition = existingSection.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-            window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-        }, 100);
-        await this.wait(1500);
-        this.showCorridorMenu();
-        return;
-    }
-    
-    await this.showTyping();
-    
-    // --- LÓGICA DE VISITA ---
-    // Marca categoria principal como visitada
-    if(!this.visitedCorridors.includes(catName)) {
-        this.visitedCorridors.push(catName);
-    }
-    // Marca subcategoria como visitada (se houver)
-    if(subCatName && !this.visitedSubCats.includes(subCatName)) {
-        this.visitedSubCats.push(subCatName);
-    }
-    // ------------------------
-    
-    let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
-    if(subCatName) {
-        products = products.filter(p => p.subCategory === subCatName);
-    }
-    products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
-    
-    const htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
-       <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${displayTitle}</span></div>
-    </div>`;
-    this.container.insertAdjacentHTML('beforeend', htmlHeader);
-    
-    App.setupPagination(safeCatId, products, 'chat');
-    
-    const element = document.getElementById(safeCatId);
-    if(element) {
-       const headerOffset = 100;
-       const elementPosition = element.getBoundingClientRect().top;
-       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-       window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-    }
-    
-    await this.wait(2000); 
-    this.showCorridorMenu();
-},
+            async showCategory(elemId, catName, subCatName) {
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
+                
+                const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${App.toSmartTitleCase(subCatName)}` : App.toSmartTitleCase(catName);
+                this.addMessage(`Ir para ${displayTitle}`, 'user'); 
+                
+                let uniqueIdStr = catName;
+                if(subCatName) uniqueIdStr += subCatName;
+                const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
+                
+                const existingSection = document.getElementById(safeCatId);
+                
+                if (existingSection) {
+                    setTimeout(() => {
+                        const headerOffset = 100;
+                        const elementPosition = existingSection.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    }, 100);
+                    
+                    await this.wait(1500);
+                    this.showCorridorMenu();
+                    return;
+                }
+                
+                await this.showTyping();
+                
+                // Marca visita
+                if(!this.visitedCorridors.includes(catName)) {
+                    this.visitedCorridors.push(catName);
+                }
+                if(subCatName && !this.visitedSubCats.includes(subCatName)) {
+                    this.visitedSubCats.push(subCatName);
+                }
+                
+                let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
+                if(subCatName) {
+                    products = products.filter(p => p.subCategory === subCatName);
+                }
+                products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
+                
+                const htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
+                   <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${displayTitle}</span></div>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', htmlHeader);
+                
+                App.setupPagination(safeCatId, products, 'chat');
+                
+                const element = document.getElementById(safeCatId);
+                if(element) {
+                   const headerOffset = 100;
+                   const elementPosition = element.getBoundingClientRect().top;
+                   const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                   window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                }
+                
+                await this.wait(2000); 
+                this.showCorridorMenu();
+            },
             
-            // --- FUNÇÕES DE RESUMO E CUPOM (RESTAURADAS COMO NO ORIGINAL) ---
-            
+            // --- GERA RESUMO COM CUPOM SIMPLIFICADO EMBUTIDO ---
             generateSummaryHTML(basketName, basketVal, mathTotal) {
                 let summaryHTML = `<div style="padding:15px; width:100%;">`;
                 summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${basketName} <span style="float:right;">R$ ${basketVal.toFixed(2).replace('.',',')}</span></div>`;
@@ -1076,10 +1076,7 @@
 removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.substring(0, 30)}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
                     }
                 }
-                
-                if(removedTotal > 0) {
-                    summaryHTML += `<div style="margin-bottom:8px;"><strong>Itens Retirados:</strong>${removedList}</div>`;
-                }
+                if(removedTotal > 0) summaryHTML += `<div style="margin-bottom:8px;"><strong>Itens Retirados:</strong>${removedList}</div>`;
                 
                 let addedTotal = 0;
                 let addedList = "";
@@ -1095,12 +1092,8 @@ removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; just
 addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.substring(0, 30)}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
                     }
                 }
+                if(addedTotal > 0) summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
                 
-                if(addedTotal > 0) {
-                    summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
-                }
-                
-                // Validação de Mínimo
                 const minVal = App.currentBasket.valor - 0.05;
                 if (mathTotal < minVal) {
                     const missing = App.currentBasket.valor - mathTotal;
@@ -1111,12 +1104,46 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 } else {
                      summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
                         <span>Total Final:</span>
-                        <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${mathTotal.toFixed(2).replace('.',',')}</span>
+                        <span id="summary-total-display" style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${mathTotal.toFixed(2).replace('.',',')}</span>
                     </div>`;
+                    
+                    // --- CUPOM SIMPLIFICADO ---
+                    if(!App.appliedCoupon) {
+                        summaryHTML += `<div id="mini-coupon-area" class="coupon-mini-box">
+                            <input type="text" id="mini-coupon-input" class="mini-inp" placeholder="Cupom de desconto">
+                            <button class="mini-btn-ok" onclick="ChatFlow.applyCouponInline()">OK</button>
+                        </div>`;
+                    } else {
+                         summaryHTML += `<div class="coupon-mini-box" style="justify-content:center; color:#15803d; font-weight:700;">Cupom Aplicado!</div>`;
+                    }
                 }
                 
                 summaryHTML += `</div>`; 
                 return summaryHTML;
+            },
+
+            applyCouponInline() {
+                const input = document.getElementById('mini-coupon-input');
+                if(!input) return;
+                const val = input.value.toUpperCase();
+                if(val === CONSTANTS.COUPON_CODE) {
+                    App.appliedCoupon = true;
+                    // Atualiza visualmente na hora
+                    const area = document.getElementById('mini-coupon-area');
+                    if(area) area.innerHTML = `<div style="width:100%; text-align:center; color:#15803d; font-weight:700;">Cupom Aplicado!</div>`;
+                    
+                    App.updateTotal(); // Atualiza barra inferior
+                    
+                    // Tenta atualizar o total no resumo sem recarregar tudo
+                    let currentSum = 0;
+                    for(let id in App.cart) { const p = App.data.find(x => x.id === id); if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; }
+                    const newTotal = Math.max(0, (currentSum + App.baseFee) - CONSTANTS.COUPON_VAL);
+                    const disp = document.getElementById('summary-total-display');
+                    if(disp) disp.innerText = "R$ " + newTotal.toFixed(2).replace('.',',');
+                    
+                } else {
+                    alert("Cupom inválido");
+                }
             },
 
             async startCheckout() {
@@ -1144,58 +1171,10 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 
                 App.updateTotal(); 
+                
+                // Pula direto para pagamento (sem chat de cupom)
                 await this.wait(1500);
-                this.askCoupon();
-            },
-
-            async askCoupon() {
-                const id = 'act-coupon';
-                this.addMessage("Antes de fechar, você tem algum <strong>cupom de desconto</strong>?");
-                const html = `<div id="${id}" class="chat-actions">
-                     <button class="btn-chat primary" onclick="ChatFlow.renderCouponInput('${id}')">Sim, tenho</button>
-                     <button class="btn-chat" onclick="ChatFlow.skipCoupon('${id}')">Não tenho</button>
-                </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom();
-            },
-
-            renderCouponInput(elemId) {
-                const el = document.getElementById(elemId);
-                if(el) el.remove();
-                this.addMessage("Sim, tenho", 'user');
-                const inputId = 'chat-coupon-input';
-                const html = `<div class="chat-input-group">
-                    <input type="text" id="${inputId}" class="chat-input" placeholder="Digite seu cupom" style="text-transform:uppercase;">
-                    <button class="chat-input-btn" onclick="ChatFlow.applyCouponChat('${inputId}')">Aplicar</button>
-                    <div style="width:100%; text-align:center; margin-top:5px;">
-                        <button class="btn-chat" style="border:none; color:#555; font-size:0.8rem;" onclick="ChatFlow.skipCoupon('${inputId}', true)">Continuar sem cupom</button>
-                    </div>
-                </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom();
-            },
-
-            applyCouponChat(inputId) {
-                const val = document.getElementById(inputId).value.toUpperCase();
-                if(val === CONSTANTS.COUPON_CODE) {
-                    App.appliedCoupon = true;
-                    this.addMessage(`Cupom <strong>${val}</strong> aplicado!`, 'user');
-                    App.updateTotal();
-                    this.askPayment();
-                } else {
-                    alert("Cupom Inválido");
-                }
-            },
-
-            skipCoupon(elemId, fromInput = false) {
-                const el = document.getElementById(elemId);
-                if(el && !fromInput) el.remove(); 
-                if(fromInput) this.addMessage("Continuar sem cupom", 'user');
-                else this.addMessage("Não tenho", 'user');
-                this.addMessage("Sem problemas! Na próxima compra, peça para o atendente no WhatsApp te adicionar no nosso grupo de descontos.");
-                setTimeout(() => {
-                     this.askPayment();
-                }, 1200);
+                this.askPayment();
             },
 
             async askPayment() {
@@ -1326,7 +1305,7 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 }));
             },
             toSmartTitleCase(str) {
-                const smallWords = ['de', 'da', 'do', 'e', 'com', 'sem', 'para', 'na', 'no', 'em', 'ao', 'a', 'o', 'as', 'os'];
+                const smallWords = ['de', 'da', 'do', 'e', 'com', 'sem', 'para', 'na', 'no', 'em', 'ao', 'a', 'o', 'as', 'os', 'ou', 'por'];
                 const upperWords = ['kg', 'ml', 'g', 'l', 'un', 'pvc', 'uht', 'pet', 'ypê', 'sbp', 'tixan', 'qboa'];
                 return str.toLowerCase().split(' ').map((w, i) => {
                     if (upperWords.includes(w)) return w.toUpperCase();
@@ -1344,7 +1323,6 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 let limit = cols * 6; 
                 if (type === 'chat') {
                     limit = products.length; 
-                    // REMOVIDO GERAÇÃO DOS CHIPS HORIZONTAIS
                 }
                 this.paginationStore[sectionId] = { products, currentIndex: 0, limit, type, lastSubCat: '' };
                 this.loadMore(sectionId, true);
@@ -1362,7 +1340,6 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 let batchHtml = '';
                 batch.forEach(item => {
                     const p = data.type === 'home' ? item.d : item;
-                    // REMOVIDO INSERÇÃO DE TÍTULO DE SUBCATEGORIA NA LISTA (POIS JÁ FILTROU ANTES)
                     
                     if(data.type === 'home') {
                         let cardHtml = this.buildCard(item.d).replace(/<div class="cp-price.*?<\/div>/, '');
