@@ -336,24 +336,21 @@
             margin-top: 4px; margin-bottom: 2px; margin-left: 2px; 
         }
 
-/* Alterado para manter o fundo cinza e as bordas arredondadas */
-.grid-products-row .cp-img-box { border: none; }
+        .grid-products-row .cp-img-box { border: none; }
         
-.cp-img-box { 
-    width: 100%; 
-    aspect-ratio: 1; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    margin-bottom: 8px; 
-    cursor: pointer; 
-    position: relative; 
-    
-    background: #f3f4f6;  /* <--- AQUI: Mude para #e5e5e5 (cinza claro) ou #eeeeee */
-    
-    border-radius: 18px; 
-    overflow: hidden; 
-}
+        .cp-img-box { 
+            width: 100%; 
+            aspect-ratio: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 8px; 
+            cursor: pointer; 
+            position: relative; 
+            background: #f3f4f6;
+            border-radius: 18px; 
+            overflow: hidden; 
+        }
         .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
         
         .grid-products-row .cp-img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.05); }
@@ -374,15 +371,13 @@
 
         .cp-price { font-size: 1.1rem; font-weight: 600; color: #1a1a1a; margin: 0 2px 2px; text-align: left; }
         .cp-price.offer-price { color: #dc2626; }
-/* AJUSTE DO PREÇO RISCADO (Mudei de margin-right para margin-left) */
-.cp-price small { font-size: 0.7rem; text-decoration: line-through; color: #999; font-weight: 400; margin-left: 8px; }
+        .cp-price small { font-size: 0.7rem; text-decoration: line-through; color: #999; font-weight: 400; margin-left: 8px; }
 
-/* NOVA ETIQUETA DE DESCONTO (Fica ao lado da OFERTA) */
-.cp-tag-off {
-    position: absolute; top: 0px; left: 75px; /* Fica 95px da esquerda para não colar na outra */
-    background: #029939; color: #ffffff; 
-    font-size: 0.85rem; padding: 5px 10px; font-weight: 600; border-radius: 4px; z-index: 2;
-}        
+        .cp-tag-off {
+            position: absolute; top: 0px; left: 75px; /* Fica 95px da esquerda para não colar na outra */
+            background: #029939; color: #ffffff; 
+            font-size: 0.85rem; padding: 5px 10px; font-weight: 600; border-radius: 4px; z-index: 2;
+        }        
         .cp-title { 
             font-size: 0.85rem; font-weight: 400; color: #333; margin: 0 2px 4px; line-height: 1.3; 
             min-height: 4.1em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-align: left;
@@ -558,7 +553,7 @@
 
         <div id="credit-chip" class="credit-chip-bar">
             <div class="ccb-text">
-                <span id="ccb-label">Seu Crédito</span>
+                <span id="ccb-label">Total do Pedido</span>
                 <span id="ccb-val" class="ccb-val">R$ 0,00</span>
             </div>
             <button class="ccb-btn" onclick="ChatFlow.startCheckout()">Ver Cesta</button>
@@ -818,70 +813,45 @@
                 this.container.insertAdjacentHTML('beforeend', html);
             },
 
+            // --- AQUI ESTÁ A NOVA LÓGICA DO "SUPERMERCADO/CORREDORES" ---
             async handleRemovalYes(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
                 this.addMessage("Sim, já retirei.", 'user');
                 
-                // 1. Calcular o Valor Atual dos Itens no Carrinho
-                let currentSum = 0;
-                for(let id in App.cart) { 
-                    const p = App.data.find(x => x.id === id); 
-                    if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; 
-                }
-                
-                // 2. Adicionar a taxa base (embalagem/custo fixo) se houver
-                const totalAtual = currentSum + App.baseFee;
-                const valorCesta = App.currentBasket.valor;
-                
-                // 3. Calcular o Crédito Real (Saldo)
-                // Se a cesta custa 100 e o carrinho tá 95, tenho 5 de crédito.
-                // Se a cesta custa 100 e o carrinho tá 105, não tenho crédito (saldo negativo).
-                const creditoReal = valorCesta - totalAtual;
-
                 await this.showTyping();
-
-                // 4. Lógica Inteligente
-                if (creditoReal > 0.05) { 
-                    // Se sobrou dinheiro (margem de 5 centavos)
-                    await this.wait(1000);
-                    this.addMessage(`Ok, você tem <strong>R$ ${creditoReal.toFixed(2).replace('.',',')}</strong> de crédito para usar como quiser.`);
-                } else {
-                    // Se a pessoa tirou itens mas adicionou outros mais caros, o valor já passou ou empatou
-                    const diferenca = totalAtual - valorCesta;
-                    this.addMessage(`Perfeito! Atualizei sua lista.`);
-                    await this.wait(1000);
-                    if(diferenca > 0) {
-                        this.addMessage(`Como você já adicionou novos itens, o valor total da cesta subiu R$ ${diferenca.toFixed(2).replace('.',',')}.`);
-                    } else {
-                        this.addMessage(`O valor da sua cesta está completinho, exatamente o valor original.`);
-                    }
-                }
-
-                await this.wait(1800);
-                this.addMessage(`<b>Monte a cesta do seu jeito.`);                try {
-                    document.getElementById('credit-chip').classList.add('visible');
-                    App.updateTotal(); 
-                } catch(e){ console.error("Chip Error", e); }
+                
+                // Mensagem objetiva e rápida de "Supermercado"
+                this.addMessage(`Combinado! Já atualizei sua cesta. Agora, <b>aproveite para levar o que falta na sua casa</b> e completar sua dispensa!`);
+                
+                document.getElementById('credit-chip').classList.add('visible');
+                App.updateTotal(); // Força a atualização da barra inferior
                 
                 await this.wait(1400);
-                this.askNextCategory(); 
+                this.showCorridorMenu(); // Chama o menu de setores/corredores
             },
 
-            async askNextCategory() {
-                if(this.catIndex >= this.categories.length) {
-                    this.addMessage("Finalizamos as categorias! Clique abaixo para fechar seu pedido.");
-                    return;
+            async showCorridorMenu() {
+                await this.showTyping();
+                this.addMessage("Por qual corredor você quer começar?");
+                const id = 'act-corridors-' + Date.now();
+                
+                // Gera botões grandes para cada setor/categoria
+                let buttons = "";
+                if(this.categories && this.categories.length > 0) {
+                     buttons = this.categories.map(cat => 
+                        `<button class="btn-chat" style="padding:15px; text-transform:uppercase;" onclick="ChatFlow.showCategory('${id}', '${cat}')">${App.toSmartTitleCase(cat)}</button>`
+                     ).join('');
+                } else {
+                     buttons = `<button class="btn-chat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS')">Mercearia</button>`;
                 }
-                const catName = this.categories[this.catIndex];
-                const niceName = App.toSmartTitleCase(catName);
-                const id = 'act-' + this.catIndex;
-                const html = `<div id="${id}" class="chat-actions">
-                     <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
-                     <button class="btn-chat" onclick="ChatFlow.skipCategory('${id}')">Não, próximo</button>
-                     <button class="btn-chat" onclick="ChatFlow.startCheckout()" style="border-color:#333; color:#333;">Finalizar Agora</button>
+
+                const html = `<div id="${id}" class="chat-actions" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    ${buttons}
+                    <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="grid-column: 1 / -1; background:#222B49; border-color:#222B49; margin-top:5px;">Ir para o Caixa</button>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
             },
 
             async showCategory(elemId, catName) {
@@ -889,157 +859,35 @@
                 if(el) el.remove();
                 this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`, 'user'); 
                 await this.showTyping();
+                
                 const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
-                const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
-                const color = colors[this.catIndex % colors.length];
-                this.renderChatGrid(products, color, App.toSmartTitleCase(catName));
-                this.catIndex++;
+                
+                const sectionId = `chat-sec-${Date.now()}`;
+                const htmlHeader = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
+                   <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${App.toSmartTitleCase(catName)}</span></div>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', htmlHeader);
+                
+                App.setupPagination(sectionId, products, 'chat');
+                
+                const element = document.getElementById(sectionId);
+                if(element) {
+                   const headerOffset = 100;
+                   const elementPosition = element.getBoundingClientRect().top;
+                   const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                   window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                }
+                
                 await this.wait(2000); 
-                this.askNextCategory();
+                // Após mostrar os produtos, oferece novamente os corredores
+                this.showCorridorMenu();
             },
 
             async renderChatGrid(products, color, title) {
-                await this.wait(800);
-                if(products.length > 0) {
-                     const sectionId = `chat-sec-${Date.now()}`;
-                     const htmlHeader = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
-                        <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${title}</span></div>
-                     </div>`;
-                     this.container.insertAdjacentHTML('beforeend', htmlHeader);
-                     App.setupPagination(sectionId, products, 'chat');
-                     const element = document.getElementById(sectionId);
-                     if(element) {
-                        const headerOffset = 100;
-                        const elementPosition = element.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                     }
-                } else {
-                    this.addMessage("Não encontrei itens nesta categoria hoje.");
-                }
-            },
-
-            skipCategory(elemId) {
-                const el = document.getElementById(elemId);
-                if(el) el.remove();
-                this.addMessage("Não, próximo", 'user');
-                this.catIndex++;
-                this.askNextCategory();
+                // Função auxiliar mantida para compatibilidade, mas o fluxo principal usa showCategory direto
             },
             
-            // --- NOVA LÓGICA DE RESUMO DINÂMICO ---
-            
-            generateSummaryHTML(basketName, basketVal, mathTotal) {
-                let summaryHTML = `<div style="padding:15px; width:100%;">`;
-                
-                // Cabeçalho da Cesta
-                summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${basketName} <span style="float:right;">R$ ${basketVal.toFixed(2).replace('.',',')}</span></div>`;
-                
-                let removedTotal = 0;
-                let removedList = "";
-                for(let id in App.originalCart) {
-                    const originalQty = App.originalCart[id];
-                    const currentQty = App.cart[id] || 0;
-                    if(currentQty < originalQty) {
-                        const diff = originalQty - currentQty;
-                        const p = App.data.find(x => x.id === id);
-                        if(p) {
-                            const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
-                            removedTotal += val;
-removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.substring(0, 30)}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
-                    }
-                }
-                
-                if(removedTotal > 0) {
-                    summaryHTML += `<div style="margin-bottom:8px;"><strong>Itens Retirados:</strong>${removedList}</div>`;
-                }
-                
-                let addedTotal = 0;
-                let addedList = "";
-                for(let id in App.cart) {
-                    const currentQty = App.cart[id];
-                    const originalQty = App.originalCart[id] || 0;
-                    if(currentQty > originalQty) {
-                        const diff = currentQty - originalQty;
-                        const p = App.data.find(x => x.id === id);
-                        if(p) {
-                            const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
-                            addedTotal += val;
-addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.substring(0, 30)}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
-                    }
-                }
-                
-                if(addedTotal > 0) {
-                    summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
-                }
-                
-                // Validação de Mínimo
-                const minVal = App.currentBasket.valor - 0.05;
-                if (mathTotal < minVal) {
-                    const missing = App.currentBasket.valor - mathTotal;
-                     summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; color:#ef4444; font-weight:700; text-align:center;">
-                        ⚠️ FALTA R$ ${missing.toFixed(2).replace('.',',')}<br>
-                        <span style="font-size:0.85rem; font-weight:400; color:#333;">Adicione itens para completar a cesta.</span>
-                    </div>`;
-                } else {
-                     summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Total Final:</span>
-                        <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${mathTotal.toFixed(2).replace('.',',')}</span>
-                    </div>`;
-                }
-                
-                summaryHTML += `</div>`; 
-                return summaryHTML;
-            },
-
-            reactToCartChange() {
-                const summaryEl = document.getElementById('chat-checkout-summary');
-                if (!summaryEl) return; // Checkout ainda não foi gerado
-
-                // Recalcular
-                let currentSum = 0;
-                for(let id in App.cart) { 
-                    const p = App.data.find(x => x.id === id); 
-                    if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; 
-                }
-                const effectiveTotal = currentSum + App.baseFee;
-                
-                // Atualizar HTML do Resumo
-                summaryEl.innerHTML = this.generateSummaryHTML(App.currentBasket.nome, App.currentBasket.valor, effectiveTotal);
-                
-                // Verificar Validade e Controlar Botões
-                const isValid = effectiveTotal >= (App.currentBasket.valor - 0.05);
-                
-                // Elementos de ação para esconder/mostrar
-                const actCoupon = document.getElementById('act-coupon');
-                const chatCouponInput = document.getElementById('chat-coupon-input');
-                const actPayment = document.getElementById('act-payment');
-                const actFinish = document.getElementById('act-finish');
-                
-                if (!isValid) {
-                    // Esconder ações futuras se o carrinho ficou inválido
-                    if(actCoupon) actCoupon.style.display = 'none';
-                    if(chatCouponInput && chatCouponInput.parentElement) chatCouponInput.parentElement.style.display = 'none';
-                    if(actPayment) actPayment.style.display = 'none';
-                    if(actFinish) actFinish.style.display = 'none';
-                } else {
-                    // Mostrar ações se voltou a ser válido
-                    if(actCoupon) actCoupon.style.display = 'grid'; // ou flex dependendo do CSS
-                    if(chatCouponInput && chatCouponInput.parentElement) chatCouponInput.parentElement.style.display = 'flex';
-                    if(actPayment) actPayment.style.display = 'grid'; // ou flex
-                    if(actFinish) {
-                         actFinish.style.display = 'grid';
-                         // Atualizar texto do botão whatsapp para garantir
-                         const btn = actFinish.querySelector('button');
-                         if(btn) {
-                             // Não precisamos mudar o texto do botão, pois o evento onClick pega o total atualizado
-                             // Mas podemos forçar uma animaçãozinha visual
-                         }
-                    }
-                }
-            },
-
             async startCheckout() {
                 let currentSum = 0;
                 for(let id in App.cart) { 
@@ -1047,76 +895,41 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                     if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; 
                 }
                 const effectiveTotal = currentSum + App.baseFee;
+                
+                // Validação de Mínimo (Valor da Cesta Original)
                 if(effectiveTotal < App.currentBasket.valor - 0.05) {
                     const diff = App.currentBasket.valor - effectiveTotal;
-                    this.addMessage(`⚠️ Ops! Você ainda tem <strong>R$ ${diff.toFixed(2).replace('.',',')}</strong> de crédito para usar. Adicione mais produtos para completar o valor da cesta.`);
+                    this.addMessage(`⚠️ Sua cesta ainda não está completa. Adicione mais <strong>R$ ${diff.toFixed(2).replace('.',',')}</strong> para fechar o pedido.`);
                     await this.wait(1000);
-                    this.addMessage("Dê uma olhada na sua cesta ou continue navegando para escolher mais itens.");
+                    this.addMessage("Escolha mais alguns itens para completar.");
+                    this.showCorridorMenu(); // Volta para os corredores
                     return; 
                 }
-                document.getElementById('credit-chip').classList.remove('visible');
-                this.addMessage("Finalizar Agora", 'user');
+                
+                this.addMessage("Ir para o Caixa", 'user');
                 await this.showTyping();
                 
-                // Gera o HTML Inicial com ID para ser reativo
-                const summaryContent = this.generateSummaryHTML(App.currentBasket.nome, App.currentBasket.valor, effectiveTotal);
-                this.container.insertAdjacentHTML('beforeend', `<div id="chat-checkout-summary" class="chat-msg wide-summary">${summaryContent}</div>`);
+                // Gera o Resumo Final
+                let summaryHTML = `<div class="chat-msg wide-summary" style="padding:15px;">`;
+                summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${App.currentBasket.nome}</div>`;
                 
-                const lastMsg = this.container.lastElementChild;
-                if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // Itens Adicionados (Lógica visual simples)
+                let itemsList = "";
+                for(let id in App.cart) {
+                     const p = App.data.find(x => x.id === id);
+                     if(p) itemsList += `<div style="font-size:0.85rem; display:flex; justify-content:space-between; margin-bottom:4px;"><span>${App.cart[id]}x ${p.nome.substring(0, 25)}</span><span>R$ ${( (p.isOffer?p.offerPrice:p.valor)*App.cart[id] ).toFixed(2).replace('.',',')}</span></div>`;
+                }
+                summaryHTML += `<div>${itemsList}</div>`;
+                summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Total Final:</span>
+                        <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${effectiveTotal.toFixed(2).replace('.',',')}</span>
+                    </div>`;
+                summaryHTML += `</div>`;
+
+                this.container.insertAdjacentHTML('beforeend', summaryHTML);
                 App.updateTotal(); 
                 await this.wait(1500);
-                this.askCoupon();
-            },
-
-            async askCoupon() {
-                const id = 'act-coupon';
-                this.addMessage("Antes de fechar, você tem algum <strong>cupom de desconto</strong>?");
-                const html = `<div id="${id}" class="chat-actions">
-                     <button class="btn-chat primary" onclick="ChatFlow.renderCouponInput('${id}')">Sim, tenho</button>
-                     <button class="btn-chat" onclick="ChatFlow.skipCoupon('${id}')">Não tenho</button>
-                </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom();
-            },
-
-            renderCouponInput(elemId) {
-                const el = document.getElementById(elemId);
-                if(el) el.remove();
-                this.addMessage("Sim, tenho", 'user');
-                const inputId = 'chat-coupon-input';
-                const html = `<div class="chat-input-group">
-                    <input type="text" id="${inputId}" class="chat-input" placeholder="Digite seu cupom" style="text-transform:uppercase;">
-                    <button class="chat-input-btn" onclick="ChatFlow.applyCouponChat('${inputId}')">Aplicar</button>
-                    <div style="width:100%; text-align:center; margin-top:5px;">
-                        <button class="btn-chat" style="border:none; color:#555; font-size:0.8rem;" onclick="ChatFlow.skipCoupon('${inputId}', true)">Continuar sem cupom</button>
-                    </div>
-                </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom();
-            },
-
-            applyCouponChat(inputId) {
-                const val = document.getElementById(inputId).value.toUpperCase();
-                if(val === CONSTANTS.COUPON_CODE) {
-                    App.appliedCoupon = true;
-                    this.addMessage(`Cupom <strong>${val}</strong> aplicado!`, 'user');
-                    App.updateTotal();
-                    this.askPayment();
-                } else {
-                    alert("Cupom Inválido");
-                }
-            },
-
-            skipCoupon(elemId, fromInput = false) {
-                const el = document.getElementById(elemId);
-                if(el && !fromInput) el.remove(); 
-                if(fromInput) this.addMessage("Continuar sem cupom", 'user');
-                else this.addMessage("Não tenho", 'user');
-                this.addMessage("Sem problemas! Na próxima compra, peça para o atendente no WhatsApp te adicionar no nosso grupo de descontos.");
-                setTimeout(() => {
-                     this.askPayment();
-                }, 1200);
+                this.askPayment();
             },
 
             async askPayment() {
@@ -1143,7 +956,6 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
 
             async finalizeOrder() {
                 await this.showTyping();
-                // O texto aqui não importa tanto pois é estático, o botão que vale
                 this.addMessage(`Tudo pronto! Seu pedido foi fechado. Clique abaixo para enviar.`);
                 
                 const id = 'act-finish';
@@ -1377,7 +1189,6 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                     ChatFlow.catIndex = 0;
                     ChatFlow.checkoutState = { paymentMethod: '', couponApplied: false };
                     
-                    // 1. Carrega os itens na memória
                     if(basket.items) basket.items.forEach(i => {
                         let match = this.data.find(p => p.id === String(i.id));
                         if(match) { 
@@ -1387,15 +1198,12 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                     });
                     this.originalCart = { ...this.cart };
 
-                    // 2. CÁLCULO DA "ANCORA" DE PREÇO
-                    // Somamos os produtos internos
+                    // CÁLCULO DA "ANCORA" DE PREÇO
                     let sumItems = 0;
                     for(let i in this.cart) {
                         let p = this.data.find(x => x.id === i);
                         if(p) sumItems += (p.isOffer ? p.offerPrice : p.valor) * this.cart[i];
                     }
-                    
-                    // Definimos a taxa base como a diferença exata para atingir o valor da cesta.
                     this.baseFee = basket.valor - sumItems;
                 }
                 
@@ -1408,7 +1216,6 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
                 
-                // Força atualização visual imediata
                 this.updateTotal();
                 
                 window.scrollTo(0,0); 
@@ -1423,35 +1230,22 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 localStorage.setItem('da_state', JSON.stringify({view: 'home'}));
                 if(this.data.length > 0) this.renderHome();
             },
-            // ... logo após a função goHome() ...
-
             resetCart() {
                 if(!confirm("Deseja limpar sua cesta atual e voltar para o início?")) return;
-                
-                // 1. Limpa o LocalStorage
                 localStorage.removeItem('da_state');
-                
-                // 2. Reseta as variáveis internas
                 this.cart = {};
                 this.cartOrder = [];
                 this.appliedCoupon = false;
                 this.currentBasket = null;
-                
-                // 3. Força um recarregamento da página para garantir que tudo zere
-                // (É mais seguro que apenas goHome() para evitar lixo na memória do chat)
                 window.location.reload();
             },
-            
-            // ... continuação do código ...
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 
-                // CÁLCULO DA PORCENTAGEM DE DESCONTO
                 let discountTag = '';
                 if(p.isOffer && p.valor > 0) {
                     const pct = Math.round(((p.valor - p.offerPrice) / p.valor) * 100);
-                    // Adicionamos a etiqueta extra aqui
                     discountTag = `<span class="cp-tag-off">-${pct}%</span>`;
                 }
 
@@ -1489,11 +1283,7 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 this.updateCardUI(id, newQty); this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 
-                // ATUALIZAÇÃO REATIVA DO CHECKOUT
-                if(ChatFlow && typeof ChatFlow.reactToCartChange === 'function') {
-                    ChatFlow.reactToCartChange();
-                }
-                
+                // ATUALIZAÇÃO REATIVA DO CHECKOUT - Removida pois o foco mudou para corredores
                 this.saveState(); 
             },
             updateCardUI(id, qty) {
@@ -1503,14 +1293,11 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 document.querySelectorAll(`[id="qty-val-${id}"]`).forEach(v => v.innerText = qty);
                 document.querySelectorAll(`[id="btn-dec-${id}"]`).forEach(b => b.innerHTML = qty === 1 ? trash : '-');
             },
-
-            // --- REGRA DE NÃO REPETIR SUGESTÃO NA SESSÃO ---
             checkSuggestion(code) {
                 const target = String(code).trim().toUpperCase(); 
                 const p = this.data.find(x => x.id === target || (x.codigo && String(x.codigo).trim().toUpperCase() === target));
                 
                 if(p && !this.cart[p.id]) {
-                    // Verifica se já foi mostrado nesta sessão
                     const shown = JSON.parse(sessionStorage.getItem('shown_suggestions') || '[]');
                     if (shown.includes(p.id)) return;
 
@@ -1519,48 +1306,53 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                         document.getElementById('suggestion-overlay').classList.add('active');
                         document.getElementById('suggestion-drawer').classList.add('open');
                         
-                        // Salva que já foi mostrado
                         shown.push(p.id);
                         sessionStorage.setItem('shown_suggestions', JSON.stringify(shown));
                     }, 500); 
                 }
             },
-
             closeSuggestion() { document.getElementById('suggestion-drawer').classList.remove('open'); document.getElementById('suggestion-overlay').classList.remove('active'); },
+            
+            // --- ATUALIZAÇÃO DA BARRA INFERIOR PARA LÓGICA DE SUPERMERCADO ---
             updateTotal() {
-                // 1. Soma o valor atual dos produtos no carrinho
                 let sum = 0; 
                 for(let id in this.cart) { 
                     const p = this.data.find(x => x.id === id); 
                     if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; 
                 }
                 
-                // 2. Soma com a taxa base fixa (calculada ao abrir a cesta)
                 const effectiveTotal = sum + this.baseFee;
-                
-                // 3. Define o total a ser exibido (considerando cupom)
                 let displayTotal = effectiveTotal;
                 if(this.appliedCoupon) displayTotal = Math.max(0, displayTotal - CONSTANTS.COUPON_VAL);
                 
                 const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
-                document.getElementById('icb-total-val').innerText = txtTotal;
                 
-                // 4. Lógica visual da barra inferior (Chip)
+                // Atualiza cabeçalho do customizer também
+                const headerVal = document.getElementById('icb-total-val');
+                if(headerVal) { headerVal.innerText = txtTotal; headerVal.style.display = 'block'; }
+                
                 const basketPrice = this.currentBasket.valor;
                 const chipBtn = document.querySelector('.ccb-btn'), 
                       chipLabel = document.getElementById('ccb-label'), 
                       chipVal = document.getElementById('ccb-val');
                 
-                // Compara usando uma pequena margem de erro para float (0.01)
-                if (effectiveTotal < basketPrice - 0.01) {
-                    const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
-                    if(chipBtn) { chipBtn.innerText = "Adicionar Itens"; chipBtn.classList.add('disabled'); chipBtn.onclick = null; }
-                    if(chipLabel) chipLabel.innerText = "Crédito Disponível";
-                    if(chipVal) { chipVal.innerText = `R$ ${diff}`; chipVal.style.color = "#4ade80"; }
+                // Sempre mostra Total do Pedido, sem falar de crédito
+                if(chipLabel) chipLabel.innerText = "Total do Pedido";
+                if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
+                
+                // Botão de ação binário: Completar ou Finalizar
+                if (effectiveTotal < basketPrice - 0.05) {
+                    if(chipBtn) { 
+                        chipBtn.innerText = "Completar Cesta"; 
+                        chipBtn.classList.add('disabled'); 
+                        chipBtn.onclick = null; 
+                    }
                 } else {
-                    if(chipBtn) { chipBtn.innerText = "Finalizar Pedido"; chipBtn.classList.remove('disabled'); chipBtn.onclick = () => ChatFlow.startCheckout(); }
-                    if(chipLabel) chipLabel.innerText = "Total a Pagar";
-                    if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
+                    if(chipBtn) { 
+                        chipBtn.innerText = "Finalizar Pedido"; 
+                        chipBtn.classList.remove('disabled'); 
+                        chipBtn.onclick = () => ChatFlow.startCheckout(); 
+                    }
                 }
             },
             openInfo(id) {
