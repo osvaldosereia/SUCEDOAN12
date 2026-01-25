@@ -254,31 +254,106 @@
         .grid-products-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 0 16px 0; }
         @media(min-width: 1024px) { .grid-products-row { grid-template-columns: repeat(9, 1fr); } }
 
-        .btn-load-more { width: 100%; padding: 14px; background: #ffffff; color: var(--secondary); border: 2px solid #cbd5e1; border-radius: 8px; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; margin-top: 15px; cursor: pointer; text-align: center; transition: all 0.2s; }
-        .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; }
+        /* --- BOTÃO VER MAIS (Estilo Estreito) --- */
+        .btn-load-more { 
+            width: auto; /* Não ocupa 100% */
+            max-width: 220px; /* Limita largura */
+            padding: 10px 24px; 
+            background: #ffffff; 
+            color: var(--secondary); 
+            border: 2px solid #cbd5e1; 
+            border-radius: 50px; /* Mais arredondado */
+            font-weight: 700; 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+            margin: 20px auto; /* Centralizado */
+            cursor: pointer; 
+            text-align: center; 
+            transition: all 0.2s; 
+            display: block; 
+        }
+        .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; transform: scale(1.05); }
+        /* ------------------------------------- */
         
-        .card-prod { width: 100%; min-width: auto; max-width: none; flex-shrink: 0; background: transparent; border: none; padding: 0; display: flex; flex-direction: column; position: relative; }
-        .cp-tag { position: absolute; top: 0px; left: 0px; background: #dc2626; color: #ffffff; font-size: 0.85rem; padding: 5px 11px; font-weight: 600; border-radius: 4px; z-index: 2; }
-        .home-qty-text { text-align: left; font-size: 0.9rem; color: #555; font-weight: 600; margin-top: 4px; margin-bottom: 2px; margin-left: 2px; }
+        .card-prod { 
+            width: 100%; min-width: auto; max-width: none; flex-shrink: 0; 
+            background: transparent; border: none; padding: 0; 
+            display: flex; flex-direction: column; position: relative; 
+        }
+        
+        /* ETIQUETAS PEQUENAS E NO TOPO */
+        .cp-tag { 
+            position: absolute; top: 0px; left: 0px; 
+            background: #dc2626; color: #ffffff; 
+            font-size: 0.65rem; padding: 3px 8px; /* Menor */
+            font-weight: 700; border-radius: 4px; z-index: 10; 
+        }
+        .cp-tag-off { 
+            position: absolute; top: 0px; right: 0px; left: auto; /* Canto direito */
+            background: #029939; color: #ffffff; 
+            font-size: 0.65rem; padding: 3px 8px; /* Menor */
+            font-weight: 700; border-radius: 4px; z-index: 10; 
+        }
+        
+        /* QUANTIDADE EM DESTAQUE NA HOME */
+        .home-qty-text { 
+            text-align: left; 
+            font-size: 0.8rem; 
+            color: var(--primary); /* Cor de destaque */
+            font-weight: 800; 
+            margin-top: 6px; margin-bottom: 2px; margin-left: 2px; 
+        }
+
         .grid-products-row .cp-img-box { border: none; }
         
-        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; position: relative; background: #f3f4f6; border-radius: 18px; overflow: hidden; }
+        .cp-img-box { 
+            width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; 
+            margin-bottom: 8px; cursor: pointer; position: relative; 
+            background: #f3f4f6; border-radius: 18px; 
+            overflow: hidden; /* Mantém o arredondamento da imagem */
+        }
         .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
         .grid-products-row .cp-img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.05); }
 
-        .btn-circle-add { position: absolute; bottom: 8px; right: 8px; width: 38px; height: 38px; border-radius: 50%; background: var(--primary); border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.6rem; font-weight: 300; cursor: pointer; padding-bottom: 3px; line-height: 1; }
-        .qty-ctrl-float { position: absolute; bottom: 8px; right: 8px; height: 38px; background: white; border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; }
-        .qcf-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer; }
-        .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
+        /* BOTÕES DE AÇÃO FLUTUANTES (PROFISSIONAL / SEM SOBREPOSIÇÃO) */
+        .card-action-row {
+            display: flex; justify-content: flex-end;
+            margin-top: -24px; /* Sobe para ficar na divisa */
+            margin-right: 6px;
+            margin-bottom: 4px;
+            position: relative; z-index: 5;
+        }
 
-        .cp-price { font-size: 1.1rem; font-weight: 600; color: #1a1a1a; margin: 0 2px 2px; text-align: left; }
+        .btn-circle-add { 
+            position: relative; top: 0; left: 0; right: 0; bottom: 0; /* Remove absolute anterior */
+            width: 30px; height: 30px; /* Menor */
+            border-radius: 50%; background: var(--primary); border: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
+            display: flex; align-items: center; justify-content: center; 
+            color: white; font-size: 1.4rem; font-weight: 300; cursor: pointer; padding-bottom: 3px; line-height: 1; 
+        }
+        .qty-ctrl-float { 
+            position: relative; top: 0; left: 0; right: 0; bottom: 0; /* Remove absolute */
+            height: 30px; /* Menor */
+            background: white; border: 1px solid #e5e5e5; border-radius: 15px; 
+            display: flex; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; 
+        }
+        .qcf-btn { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.1rem; cursor: pointer; }
+        .qcf-val { font-size: 0.85rem; font-weight: 700; padding: 0 4px; min-width: 18px; text-align: center; }
+
+        /* FONTES MENORES */
+        .cp-price { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; margin: 0 2px 2px; text-align: left; }
         .cp-price.offer-price { color: #dc2626; }
-        .cp-price small { font-size: 0.7rem; text-decoration: line-through; color: #999; font-weight: 400; margin-left: 8px; }
-        .cp-tag-off { position: absolute; top: 0px; left: 75px; background: #029939; color: #ffffff; font-size: 0.85rem; padding: 5px 10px; font-weight: 600; border-radius: 4px; z-index: 2; }        
-        .cp-title { font-size: 0.85rem; font-weight: 400; color: #333; margin: 0 2px 4px; line-height: 1.3; min-height: 4.1em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-align: left; }
+        .cp-price small { font-size: 0.65rem; text-decoration: line-through; color: #999; font-weight: 400; margin-left: 6px; }
+        
+        .cp-title { 
+            font-size: 0.75rem; /* Menor */
+            font-weight: 500; color: #333; margin: 0 2px 4px; line-height: 1.3; 
+            min-height: 3em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: left; 
+        }
         .cp-validity { font-size: 0.7rem; color: #777; text-align: left; margin-top: auto; }
 
-        .card-prod.readonly .cp-price, .card-prod.readonly .btn-circle-add, .card-prod.readonly .qty-ctrl-float { display: none !important; }
+        .card-prod.readonly .cp-price, .card-prod.readonly .card-action-row { display: none !important; }
         .card-prod.readonly .cp-img-box { background: #f3f4f6; aspect-ratio: 1; border-radius: 18px; }
         .card-prod.readonly { pointer-events: none; }
 
@@ -1104,6 +1179,7 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                     
                     if(data.type === 'home') {
                         let cardHtml = this.buildCard(item.d).replace(/<div class="cp-price.*?<\/div>/, '');
+                        // AQUI ESTA A LOGICA PARA EXIBIR A QUANTIDADE NA HOME
                         const qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
                         batchHtml += cardHtml.replace('</div><div class="cp-title">', `</div>${qtyText}<div class="cp-title">`).replace('class="card-prod"', 'class="card-prod readonly"');
                     } else {
@@ -1233,13 +1309,17 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                     ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' + discountTag : ''}
                     <div class="cp-img-box" onclick="App.openInfo('${p.id}'); MarketingApp.logProductView('${p.id}');">
                         <img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100" alt="${p.nome}">
-                        <div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1);"> + </div>
+                    </div>
+                    
+                    <div class="card-action-row">
+                        <div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1);">+</div>
                         <div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()">
                             <div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trash:'-'}</div>
                             <div class="qcf-val" id="qty-val-${p.id}">${qty}</div>
                             <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
                         </div>
                     </div>
+
                     <div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">
                         R$ ${price.toFixed(2).replace('.',',')}
                         ${p.isOffer ? `<small>R$${p.valor.toFixed(2).replace('.',',')}</small>`:''}
