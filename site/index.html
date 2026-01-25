@@ -889,6 +889,120 @@
                 this.askNextCategory();
             },
             
+            // --- NOVA LÓGICA DE RESUMO DINÂMICO ---
+            
+            generateSummaryHTML(basketName, basketVal, mathTotal) {
+                let summaryHTML = `<div style="padding:15px; width:100%;">`;
+                
+                // Cabeçalho da Cesta
+                summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${basketName} <span style="float:right;">R$ ${basketVal.toFixed(2).replace('.',',')}</span></div>`;
+                
+                let removedTotal = 0;
+                let removedList = "";
+                for(let id in App.originalCart) {
+                    const originalQty = App.originalCart[id];
+                    const currentQty = App.cart[id] || 0;
+                    if(currentQty < originalQty) {
+                        const diff = originalQty - currentQty;
+                        const p = App.data.find(x => x.id === id);
+                        if(p) {
+                            const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
+                            removedTotal += val;
+                            removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.split(' ')[0]}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;
+                        }
+                    }
+                }
+                
+                if(removedTotal > 0) {
+                    summaryHTML += `<div style="margin-bottom:8px;"><strong>Itens Retirados:</strong>${removedList}</div>`;
+                }
+                
+                let addedTotal = 0;
+                let addedList = "";
+                for(let id in App.cart) {
+                    const currentQty = App.cart[id];
+                    const originalQty = App.originalCart[id] || 0;
+                    if(currentQty > originalQty) {
+                        const diff = currentQty - originalQty;
+                        const p = App.data.find(x => x.id === id);
+                        if(p) {
+                            const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
+                            addedTotal += val;
+                            addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.split(' ')[0]}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;
+                        }
+                    }
+                }
+                
+                if(addedTotal > 0) {
+                    summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
+                }
+                
+                // Validação de Mínimo
+                const minVal = App.currentBasket.valor - 0.05;
+                if (mathTotal < minVal) {
+                    const missing = App.currentBasket.valor - mathTotal;
+                     summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; color:#ef4444; font-weight:700; text-align:center;">
+                        ⚠️ FALTA R$ ${missing.toFixed(2).replace('.',',')}<br>
+                        <span style="font-size:0.85rem; font-weight:400; color:#333;">Adicione itens para completar a cesta.</span>
+                    </div>`;
+                } else {
+                     summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Total Final:</span>
+                        <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${mathTotal.toFixed(2).replace('.',',')}</span>
+                    </div>`;
+                }
+                
+                summaryHTML += `</div>`; 
+                return summaryHTML;
+            },
+
+            reactToCartChange() {
+                const summaryEl = document.getElementById('chat-checkout-summary');
+                if (!summaryEl) return; // Checkout ainda não foi gerado
+
+                // Recalcular
+                let currentSum = 0;
+                for(let id in App.cart) { 
+                    const p = App.data.find(x => x.id === id); 
+                    if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; 
+                }
+                const effectiveTotal = currentSum + App.baseFee;
+                
+                // Atualizar HTML do Resumo
+                summaryEl.innerHTML = this.generateSummaryHTML(App.currentBasket.nome, App.currentBasket.valor, effectiveTotal);
+                
+                // Verificar Validade e Controlar Botões
+                const isValid = effectiveTotal >= (App.currentBasket.valor - 0.05);
+                
+                // Elementos de ação para esconder/mostrar
+                const actCoupon = document.getElementById('act-coupon');
+                const chatCouponInput = document.getElementById('chat-coupon-input');
+                const actPayment = document.getElementById('act-payment');
+                const actFinish = document.getElementById('act-finish');
+                
+                if (!isValid) {
+                    // Esconder ações futuras se o carrinho ficou inválido
+                    if(actCoupon) actCoupon.style.display = 'none';
+                    if(chatCouponInput && chatCouponInput.parentElement) chatCouponInput.parentElement.style.display = 'none';
+                    if(actPayment) actPayment.style.display = 'none';
+                    if(actFinish) actFinish.style.display = 'none';
+                } else {
+                    // Mostrar ações se voltou a ser válido
+                    if(actCoupon) actCoupon.style.display = 'grid'; // ou flex dependendo do CSS
+                    if(chatCouponInput && chatCouponInput.parentElement) chatCouponInput.parentElement.style.display = 'flex';
+                    if(actPayment) actPayment.style.display = 'grid'; // ou flex
+                    if(actFinish) {
+                         actFinish.style.display = 'grid';
+                         // Atualizar texto do botão whatsapp para garantir
+                         const btn = actFinish.querySelector('button');
+                         if(btn) {
+                             // Não precisamos mudar o texto do botão, pois o evento onClick pega o total atualizado
+                             // Mas podemos forçar uma animaçãozinha visual
+                         }
+                    }
+                }
+            },
+
             async startCheckout() {
                 let currentSum = 0;
                 for(let id in App.cart) { 
@@ -906,53 +1020,11 @@
                 document.getElementById('credit-chip').classList.remove('visible');
                 this.addMessage("Finalizar Agora", 'user');
                 await this.showTyping();
-                let summaryHTML = `<div style="padding:15px; width:100%;">`;
-                const basketName = App.currentBasket.nome;
-                const basketVal = App.currentBasket.valor;
-                summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${basketName} <span style="float:right;">R$ ${basketVal.toFixed(2).replace('.',',')}</span></div>`;
-                let removedTotal = 0;
-                let removedList = "";
-                for(let id in App.originalCart) {
-                    const originalQty = App.originalCart[id];
-                    const currentQty = App.cart[id] || 0;
-                    if(currentQty < originalQty) {
-                        const diff = originalQty - currentQty;
-                        const p = App.data.find(x => x.id === id);
-                        if(p) {
-                            const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
-                            removedTotal += val;
-                            removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.split(' ')[0]}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;
-                        }
-                    }
-                }
-                if(removedTotal > 0) {
-                    summaryHTML += `<div style="margin-bottom:8px;"><strong>Itens Retirados:</strong>${removedList}</div>`;
-                }
-                let addedTotal = 0;
-                let addedList = "";
-                for(let id in App.cart) {
-                    const currentQty = App.cart[id];
-                    const originalQty = App.originalCart[id] || 0;
-                    if(currentQty > originalQty) {
-                        const diff = currentQty - originalQty;
-                        const p = App.data.find(x => x.id === id);
-                        if(p) {
-                            const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
-                            addedTotal += val;
-                            addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.split(' ')[0]}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;
-                        }
-                    }
-                }
-                if(addedTotal > 0) {
-                    summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
-                }
-                let mathTotal = basketVal - removedTotal + addedTotal;
-                summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>Total Final:</span>
-                    <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${mathTotal.toFixed(2).replace('.',',')}</span>
-                </div>`;
-                summaryHTML += `</div>`; 
-                this.container.insertAdjacentHTML('beforeend', `<div class="chat-msg wide-summary">${summaryHTML}</div>`);
+                
+                // Gera o HTML Inicial com ID para ser reativo
+                const summaryContent = this.generateSummaryHTML(App.currentBasket.nome, App.currentBasket.valor, effectiveTotal);
+                this.container.insertAdjacentHTML('beforeend', `<div id="chat-checkout-summary" class="chat-msg wide-summary">${summaryContent}</div>`);
+                
                 const lastMsg = this.container.lastElementChild;
                 if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 App.updateTotal(); 
@@ -1034,10 +1106,9 @@
 
             async finalizeOrder() {
                 await this.showTyping();
-                const totalText = document.getElementById('icb-total-val').innerText; 
-                this.addMessage(`Tudo pronto! Seu pedido está fechado no valor de <strong>${totalText}</strong>.`);
-                await this.wait(600);
-                this.addMessage(`Agora é só clicar no botão abaixo para me enviar o pedido no WhatsApp e combinarmos a entrega.`);
+                // O texto aqui não importa tanto pois é estático, o botão que vale
+                this.addMessage(`Tudo pronto! Seu pedido foi fechado. Clique abaixo para enviar.`);
+                
                 const id = 'act-finish';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.sendWhatsAppChat()" style="background:#25D366; border-color:#25D366; color:white; width:100%; justify-content:center; display:flex; align-items:center; gap:8px;">
@@ -1050,14 +1121,14 @@
             },
 
             sendWhatsAppChat() {
-                const total = document.getElementById('icb-total-val').innerText;
+                const totalText = document.getElementById('icb-total-val').innerText;
                 let msg = `*PEDIDO: ${App.currentBasket.nome}*\n`;
                 for(let id in App.cart) { 
                     const p = App.data.find(x => x.id === id); 
                     msg += `${App.cart[id]}x ${p.nome}\n`; 
                 }
                 if(App.appliedCoupon) msg += `\n*CUPOM APLICADO: ${CONSTANTS.COUPON_CODE}*`;
-                msg += `\n*TOTAL: ${total}*\nPagamento: ${this.checkoutState.paymentMethod}`;
+                msg += `\n*TOTAL: ${totalText}*\nPagamento: ${this.checkoutState.paymentMethod}`;
                 window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
 
@@ -1306,6 +1377,12 @@
                 else if (isNew) { this.cartOrder = this.cartOrder.filter(x => x !== id); this.cartOrder.unshift(id); }
                 this.updateCardUI(id, newQty); this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
+                
+                // ATUALIZAÇÃO REATIVA DO CHECKOUT
+                if(ChatFlow && typeof ChatFlow.reactToCartChange === 'function') {
+                    ChatFlow.reactToCartChange();
+                }
+                
                 this.saveState(); 
             },
             updateCardUI(id, qty) {
