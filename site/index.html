@@ -727,7 +727,7 @@
                 this.addMessage("Sim!", 'user');
                 await this.wait(1200);
                 await this.showTyping();
-                this.addMessage("Primeiro você vai retirar os produtos que não quer, ok?");
+                this.addMessage("Legal!\n\nPrimeiro retire os produtos que não quer, ok?");
                 const id = 'act-show-list';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
                     <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Ok</button>
@@ -817,9 +817,9 @@
                     await this.wait(1200);
                     this.addMessage(`Boas Compras.`);
                 } else {
-                    this.addMessage(`Ok! Você manteve a cesta completa.`);
+                    this.addMessage(`Ok!\n\nVi que nada foi retirado da cesta.`);
                     await this.wait(1200);
-                    this.addMessage(`Deseja adicionar algo extra?`);
+                    this.addMessage(`Fique a vontade para adicionar novos produtos na sua cesta.`);
                 }
                 try {
                     document.getElementById('credit-chip').classList.add('visible');
