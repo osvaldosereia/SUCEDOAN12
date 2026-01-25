@@ -895,21 +895,40 @@
                 App.setupPagination(safeCatId, products, 'chat');
             },
 
-           async showCategory(elemId, catName, subCatName) {
-                const el = document.getElementById(elemId);
-                if(el && !elemId.startsWith('act-menu')) el.remove();
-                const oldSections = document.querySelectorAll('.subcat-section');
-                oldSections.forEach(section => section.remove());
-
+          async showCategory(elemId, catName, subCatName) {
+                // 1. Gera o ID único da seção alvo (igual ao gerado no carregamento automático)
                 let uniqueIdStr = catName + (subCatName || '');
                 const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
                 
+                // 2. Verifica se essa seção JÁ EXISTE na tela
+                const existingSection = document.getElementById(safeCatId);
+                
+                if (existingSection) {
+                    // SE EXISTE: Apenas rola até ela suavemente e encerra a função
+                    const headerOffset = 130; // Espaço para o cabeçalho não cobrir o título
+                    const elementPosition = existingSection.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                    
+                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    return; // IMPORTANTE: Encerra aqui para não apagar nada!
+                }
+
+                // --- CÓDIGO DE FALLBACK (CASO NÃO EXISTA) ---
+                // Se por algum motivo a seção não existir, o código abaixo cria ela (comportamento antigo)
+                
+                const el = document.getElementById(elemId);
+                if(el && !elemId.startsWith('act-menu')) el.remove();
+                
+                // Remove seções antigas (apenas se estivermos no modo de carregar uma por uma)
+                const oldSections = document.querySelectorAll('.subcat-section');
+                oldSections.forEach(section => section.remove());
+
                 let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 if(subCatName) {
                     products = products.filter(p => p.subCategory === subCatName);
                 }
 
-                // ORDENAÇÃO ALFABÉTICA PELO NOME
+                // Ordenação Alfabética
                 products.sort((a, b) => a.nome.localeCompare(b.nome));
                 
                 let htmlHeader = "";
