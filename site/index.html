@@ -845,7 +845,7 @@
                 if (creditoReal > 0.05) { 
                     // Se sobrou dinheiro (margem de 5 centavos)
                     await this.wait(1000);
-                    this.addMessage(`Legal, você tem <strong>R$ ${creditoReal.toFixed(2).replace('.',',')}</strong> de crédito para usar como quiser.`);
+                    this.addMessage(`Ok, você tem <strong>R$ ${creditoReal.toFixed(2).replace('.',',')}</strong> de crédito para usar como quiser.`);
                 } else {
                     // Se a pessoa tirou itens mas adicionou outros mais caros, o valor já passou ou empatou
                     const diferenca = totalAtual - valorCesta;
@@ -859,7 +859,7 @@
                 }
 
                 await this.wait(1800);
-                this.addMessage(`<b>Agora, monte a cesta do seu jeito.</b><br><br>Nossos preços são muito bons.<br><br>Aproveite.`);                try {
+                this.addMessage(`<b>Monte a cesta do seu jeito.`);                try {
                     document.getElementById('credit-chip').classList.add('visible');
                     App.updateTotal(); 
                 } catch(e){ console.error("Chip Error", e); }
