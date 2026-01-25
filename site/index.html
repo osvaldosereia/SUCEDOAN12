@@ -1349,24 +1349,51 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
             openCustomizer(id) {
                 const basket = this.data.find(p => p.id === id);
                 if(!basket) return;
+                
                 if (!this.currentBasket || this.currentBasket.id !== id) {
-                    this.cart = {}; this.cartOrder = []; this.appliedCoupon = false;
+                    this.cart = {}; 
+                    this.cartOrder = []; 
+                    this.appliedCoupon = false;
                     ChatFlow.catIndex = 0;
                     ChatFlow.checkoutState = { paymentMethod: '', couponApplied: false };
+                    
+                    // 1. Carrega os itens na memória
                     if(basket.items) basket.items.forEach(i => {
                         let match = this.data.find(p => p.id === String(i.id));
-                        if(match) { this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qty || 1)); if(!this.cartOrder.includes(match.id)) this.cartOrder.push(match.id); }
+                        if(match) { 
+                            this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qty || 1)); 
+                            if(!this.cartOrder.includes(match.id)) this.cartOrder.push(match.id); 
+                        }
                     });
                     this.originalCart = { ...this.cart };
+
+                    // 2. CÁLCULO DA "ANCORA" DE PREÇO
+                    // Somamos os produtos internos
+                    let sumItems = 0;
+                    for(let i in this.cart) {
+                        let p = this.data.find(x => x.id === i);
+                        if(p) sumItems += (p.isOffer ? p.offerPrice : p.valor) * this.cart[i];
+                    }
+                    
+                    // Definimos a taxa base como a diferença exata para atingir o valor da cesta.
+                    this.baseFee = basket.valor - sumItems;
                 }
+                
                 this.currentBasket = basket;
                 const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
                 let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
                 this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
+                
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
-                window.scrollTo(0,0); ChatFlow.start(); this.saveState(); 
+                
+                // Força atualização visual imediata
+                this.updateTotal();
+                
+                window.scrollTo(0,0); 
+                ChatFlow.start(); 
+                this.saveState(); 
             },
             goHome() {
                 document.getElementById('customizer-view').classList.add('hidden');
@@ -1454,18 +1481,31 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
 
             closeSuggestion() { document.getElementById('suggestion-drawer').classList.remove('open'); document.getElementById('suggestion-overlay').classList.remove('active'); },
             updateTotal() {
-                let sum = 0; for(let id in this.cart) { const p = this.data.find(x => x.id === id); if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; }
-                if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
-                    let startSum = 0; for(let i in this.originalCart) { let p = this.data.find(x => x.id === i); if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i]; }
-                    this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
+                // 1. Soma o valor atual dos produtos no carrinho
+                let sum = 0; 
+                for(let id in this.cart) { 
+                    const p = this.data.find(x => x.id === id); 
+                    if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; 
                 }
-                const basketPrice = this.currentBasket.valor, effectiveTotal = sum + this.baseFee;
-                let displayTotal = effectiveTotal > basketPrice ? (effectiveTotal - basketPrice < basketPrice * 0.02 ? basketPrice : effectiveTotal) : basketPrice;
+                
+                // 2. Soma com a taxa base fixa (calculada ao abrir a cesta)
+                const effectiveTotal = sum + this.baseFee;
+                
+                // 3. Define o total a ser exibido (considerando cupom)
+                let displayTotal = effectiveTotal;
                 if(this.appliedCoupon) displayTotal = Math.max(0, displayTotal - CONSTANTS.COUPON_VAL);
+                
                 const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                 document.getElementById('icb-total-val').innerText = txtTotal;
-                const chipBtn = document.querySelector('.ccb-btn'), chipLabel = document.getElementById('ccb-label'), chipVal = document.getElementById('ccb-val');
-                if (basketPrice > effectiveTotal) {
+                
+                // 4. Lógica visual da barra inferior (Chip)
+                const basketPrice = this.currentBasket.valor;
+                const chipBtn = document.querySelector('.ccb-btn'), 
+                      chipLabel = document.getElementById('ccb-label'), 
+                      chipVal = document.getElementById('ccb-val');
+                
+                // Compara usando uma pequena margem de erro para float (0.01)
+                if (effectiveTotal < basketPrice - 0.01) {
                     const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
                     if(chipBtn) { chipBtn.innerText = "Adicionar Itens"; chipBtn.classList.add('disabled'); chipBtn.onclick = null; }
                     if(chipLabel) chipLabel.innerText = "Crédito Disponível";
