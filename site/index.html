@@ -359,8 +359,15 @@
 
         .cp-price { font-size: 0.95rem; font-weight: 600; color: #1a1a1a; margin: 0 2px 2px; text-align: left; }
         .cp-price.offer-price { color: #dc2626; }
-        .cp-price small { font-size: 0.7rem; text-decoration: line-through; color: #777; font-weight: 400; margin-right: 13px; }
-        
+/* AJUSTE DO PREÇO RISCADO (Mudei de margin-right para margin-left) */
+.cp-price small { font-size: 0.7rem; text-decoration: line-through; color: #999; font-weight: 400; margin-left: 8px; }
+
+/* NOVA ETIQUETA DE DESCONTO (Fica ao lado da OFERTA) */
+.cp-tag-off {
+    position: absolute; top: 8px; left: 95px; /* Fica 95px da esquerda para não colar na outra */
+    background: #dcfce7; color: #16a34a; /* Verde Suave */
+    font-size: 0.85rem; padding: 6px 10px; font-weight: 800; border-radius: 4px; z-index: 2;
+}        
         .cp-title { 
             font-size: 0.95rem; font-weight: 400; color: #333; margin: 0 2px 4px; line-height: 1.3; 
             min-height: 4.1em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-align: left;
@@ -1426,8 +1433,35 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
+                
+                // CÁLCULO DA PORCENTAGEM DE DESCONTO
+                let discountTag = '';
+                if(p.isOffer && p.valor > 0) {
+                    const pct = Math.round(((p.valor - p.offerPrice) / p.valor) * 100);
+                    // Adicionamos a etiqueta extra aqui
+                    discountTag = `<span class="cp-tag-off">-${pct}%</span>`;
+                }
+
                 const trash = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-                return `<div class="card-prod" id="card-${p.id}">${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}<div class="cp-img-box" onclick="App.openInfo('${p.id}'); MarketingApp.logProductView('${p.id}');"><img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100" alt="${p.nome}"><div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1);"> + </div><div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()"><div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trash:'-'}</div><div class="qcf-val" id="qty-val-${p.id}">${qty}</div><div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div></div></div><div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">R$ ${price.toFixed(2).replace('.',',')}${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}</div><div class="cp-title">${p.nome}</div>${(p.validade) ? `<div class="cp-validity">Val: ${p.validade}</div>` : ''}</div>`;
+                
+                return `<div class="card-prod" id="card-${p.id}">
+                    ${p.isOffer ? '<span class="cp-tag">OFERTA</span>' + discountTag : ''}
+                    <div class="cp-img-box" onclick="App.openInfo('${p.id}'); MarketingApp.logProductView('${p.id}');">
+                        <img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100" alt="${p.nome}">
+                        <div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1);"> + </div>
+                        <div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()">
+                            <div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trash:'-'}</div>
+                            <div class="qcf-val" id="qty-val-${p.id}">${qty}</div>
+                            <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                        </div>
+                    </div>
+                    <div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">
+                        R$ ${price.toFixed(2).replace('.',',')}
+                        ${p.isOffer ? `<small>R$${p.valor.toFixed(2).replace('.',',')}</small>`:''}
+                    </div>
+                    <div class="cp-title">${p.nome}</div>
+                    ${(p.validade) ? `<div class="cp-validity">Val: ${p.validade}</div>` : ''}
+                </div>`;
             },
             modQty(id, delta) {
                 const p = this.data.find(x => x.id === id);
