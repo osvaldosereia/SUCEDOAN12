@@ -792,7 +792,7 @@
             },
 
             askRemovalConfirmation() {
-                this.addMessage(`Você já retirou da lista os produtos que não quer?`);
+                this.addMessage(`Legal, retirou os produtos que não quer?`);
                 const id = 'actions-removal';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
@@ -823,20 +823,15 @@
                 await this.showTyping();
                 
                 if (removedVal > 0) {
-                    this.addMessage(`Perfeito! O valor dos produtos que retirou foi de: <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong>.`);
-                    await this.wait(800);
-                    this.addMessage(`Agora, vamos adicionar novos produtos à sua cesta.`);
-                    await this.wait(800);
-                    this.addMessage(`Temos mais de 200 produtos diferentes.`);
-                    await this.wait(800);
-                    this.addMessage(`Você vai montando a cesta do seu jeito.`);
-                    await this.wait(800);
-                    this.addMessage(`Vá acompanhando o valor na parte debaixo da tela.`);
-                    await this.wait(800);
+                    this.addMessage(`Perfeito!\n\nAgora você tem <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong> de crédito para adicionar de novos produtos.`);
+                    await this.wait(1800);
+                    
+                    this.addMessage(`Agora, monte a cesta do seu jeito como estivesse em um supermercado.`);
+                    await this.wait(1200);
                     this.addMessage(`Boas Compras.`);
                 } else {
                     this.addMessage(`Ok! Você manteve a cesta completa.`);
-                    await this.wait(800);
+                    await this.wait(1200);
                     this.addMessage(`Deseja adicionar algo extra?`);
                 }
 
@@ -845,7 +840,7 @@
                     App.updateTotal(); 
                 } catch(e){ console.error("Chip Error", e); }
                 
-                await this.wait(1000);
+                await this.wait(1400);
                 this.askNextCategory(); 
             },
 
