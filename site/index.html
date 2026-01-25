@@ -64,13 +64,14 @@
             display: flex; align-items: center; gap: 6px;
         }
         
-        /* Help Button Style (Shared) */
+        /* Help Button Style - Agora em Verde WhatsApp */
         .help-btn-visible {
             width: 36px; height: 36px; background: #25D366; color: white;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-left: 10px;
+            margin-left: 10px; transition: transform 0.2s, background 0.2s;
         }
+        .help-btn-visible:active { transform: scale(0.9); background: #128C7E; }
 
         /* --- 3. APP HEADER (Customizer) --- */
         .app-header {
@@ -101,7 +102,7 @@
             flex: 1; display: none; justify-content: center; opacity: 0; transition: opacity 0.3s;
         }
         .header-search-input {
-            width: 100%; max-width: 320px; /* Largura Perfeita */
+            width: 100%; max-width: 320px; 
             padding: 8px 14px; border-radius: 20px; border: 1px solid #ddd;
             background: #f8fafc; font-size: 0.9rem; outline: none;
         }
@@ -183,7 +184,7 @@
         /* --- BOTÕES DO CHAT --- */
         .chat-actions { 
             display: grid; 
-            grid-template-columns: 1fr 1fr; /* Duas colunas para os botões menores */
+            grid-template-columns: 1fr 1fr; 
             gap: 10px; 
             margin-top: -10px; 
             animation: fadeIn 0.4s ease forwards; 
@@ -200,21 +201,20 @@
             font-weight: 600; 
             font-size: 0.9rem; 
             transition: all 0.2s; 
-            width: 100%; /* Ocupa a célula do grid */
+            width: 100%; 
             display: flex; justify-content: center; align-items: center; text-align: center;
         }
         
         .btn-chat.primary { 
             background: var(--primary); 
             color: white; 
-            grid-column: 1 / -1; /* Ocupa a linha inteira no topo */
-            padding: 14px 20px; /* Mais largo/alto */
+            grid-column: 1 / -1; 
+            padding: 14px 20px; 
             font-size: 1rem;
         }
         
         .btn-chat:active { transform: scale(0.95); }
 
-        /* Desktop: Volta para linha única */
         @media(min-width: 1024px) {
             .chat-actions { display: flex; width: auto; }
             .btn-chat { width: auto; }
@@ -249,21 +249,18 @@
             background: var(--primary); color: white; border-radius: 40px; padding: 10px 20px; 
             font-weight: 700; font-size: 0.9rem; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        /* --- ESTILO PARA O BOTÃO DESABILITADO (AVISO) --- */
         .ccb-btn.disabled {
-            background: #64748b; /* Cor cinza/aviso */
+            background: #64748b; 
             cursor: default;
             pointer-events: none;
             opacity: 0.9;
             box-shadow: none;
         }
 
-        /* Products Horizontal Row */
         .subcat-section { margin-bottom: 30px; margin-top: 20px; position: relative; animation: fadeIn 0.5s ease forwards; }
         .subcat-title { font-size: 1.1rem; margin: 0 0 12px 16px; letter-spacing: -0.3px; display: flex; }
         .subcat-pill { padding: 6px 16px; border-radius: 20px; font-weight: 700; display: inline-block; }
         
-        /* --- BARRA DE CHIPS FIXA COM SETAS --- */
         .chips-container-wrapper {
             position: -webkit-sticky; position: sticky;
             top: calc(var(--app-header-height) - 1px);
@@ -296,7 +293,6 @@
         }
         .scroll-arrow:active { transform: scale(0.9); }
 
-        /* --- ESTILO PARA SUBTITULOS INTERNOS --- */
         .internal-subcat-title {
             grid-column: 1 / -1; 
             font-size: 0.95rem; color: #555; font-weight: 800;
@@ -310,7 +306,6 @@
             .horizontal-products-row { margin: 0; }
         }
 
-        /* NEW GRID LAYOUT CSS */
         .grid-products-row {
             display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0 0 16px 0;
         }
@@ -318,7 +313,6 @@
             .grid-products-row { grid-template-columns: repeat(6, 1fr); }
         }
 
-        /* --- BOTÃO VER MAIS (DESTAQUE) --- */
         .btn-load-more {
             width: 100%; padding: 14px; background: #ffffff; color: var(--secondary);
             border: 2px solid #cbd5e1; border-radius: 8px; font-weight: 800;
@@ -327,7 +321,6 @@
         }
         .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; }
         
-        /* Product Card App Style (Adjusted for Grid) */
         .card-prod { 
             width: 100%; min-width: auto; max-width: none; 
             flex-shrink: 0; background: transparent; border: none; padding: 0; 
@@ -374,17 +367,14 @@
         }
         .cp-validity { font-size: 0.7rem; color: #777; text-align: left; margin-top: auto; }
 
-        /* --- STYLES FOR READONLY CARDS (HOME) --- */
         .card-prod.readonly .cp-price,
         .card-prod.readonly .btn-circle-add, 
         .card-prod.readonly .qty-ctrl-float { display: none !important; }
         .card-prod.readonly .cp-img-box { background: #f3f4f6; aspect-ratio: 1; border-radius: 18px; }
         .card-prod.readonly { pointer-events: none; }
 
-        /* Floating Cart Bar Hidden (Replaced by Chip) */
         .ifood-cart-bar { display: none !important; }
 
-        /* --- 6. MODALS & SHEETS --- */
         .sheet-overlay { 
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000; opacity: 0; 
             pointer-events: none; transition: opacity 0.3s; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
@@ -411,7 +401,6 @@
         }
         .faq-whatsapp-btn:active { transform: scale(0.98); }
 
-        /* Toasts */
         .credit-toast {
             position: fixed; top: 75px; left: 50%; transform: translate(-50%, 0);
             background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(6px); color: #fff;
@@ -421,7 +410,6 @@
         }
         .credit-toast.visible { opacity: 1; visibility: visible; }
 
-        /* Marketing Modal */
         .mk-modal-overlay {
             position: fixed; inset: 0; z-index: 12500; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
             display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s;
@@ -437,7 +425,6 @@
         .mk-btn { background: var(--secondary); color: white; padding: 12px; border-radius: 8px; width: 100%; font-weight: 700; margin-bottom: 10px; display: block; text-decoration: none; }
         .mk-close { color: #999; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
 
-        /* Side Drawer */
         .side-drawer-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.4s;
         }
@@ -454,7 +441,6 @@
             color: #334155; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; display: block;
         }
 
-        /* Footer */
         .main-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 40px 0 80px; margin-top: 40px; }
         .footer-info { text-align: center; margin-bottom: 30px; }
         .footer-info h3 { font-size: 1.2rem; margin-bottom: 10px; color: var(--secondary); }
@@ -585,7 +571,6 @@
                 <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras.</div></details>
                 <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá.</div></details>
             </div>
-            
             <div style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 5px; text-align: center;">
                 <p style="font-size: 0.85rem; color: #666; margin-bottom: 12px;">Ainda precisa de ajuda?</p>
                 <a href="https://api.whatsapp.com/send?phone=5565996813588&text=Olá, tenho uma dúvida sobre as cestas." target="_blank" class="faq-whatsapp-btn">
@@ -728,8 +713,6 @@
                 await this.showTyping();
                 this.addMessage(`${greeting}! Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>, certo?`);
                 
-               
-
                 const id = 'act-intro';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
                     <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Sim!</button>
@@ -742,12 +725,9 @@
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
                 this.addMessage("Sim!", 'user');
-
                 await this.wait(1200);
                 await this.showTyping();
                 this.addMessage("Primeiro você vai retirar os produtos que não quer, ok?");
-
-
                 const id = 'act-show-list';
                 const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
                     <button class="btn-chat primary" onclick="ChatFlow.showInitialList('${id}')">Ok</button>
@@ -760,10 +740,8 @@
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
                 this.addMessage("Ok", 'user');
-                
                 await this.wait(600);
                 this.showBasketGrid(); 
-                
                 await this.wait(3000); 
                 this.askRemovalConfirmation();
             },
@@ -786,18 +764,14 @@
             async showBasketGrid() {
                 const ids = App.cartOrder.filter(id => App.cart[id] > 0);
                 const products = ids.map(id => App.data.find(x => x.id === id)).filter(p => p);
-                
                 const sectionId = `basket-grid-${Date.now()}`;
-                
                 const html = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
                     <div class="subcat-title" style="margin-bottom:12px; font-weight:800; color:#333;">PRODUTOS DA SUA CESTA</div>
                     <div class="grid-products-row">
                         ${products.map(p => App.buildCard(p)).join('')}
                     </div>
                 </div>`;
-                
                 this.container.insertAdjacentHTML('beforeend', html);
-                
                 const element = document.getElementById(sectionId);
                 if(element) {
                     setTimeout(() => {
@@ -822,13 +796,11 @@
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
                 this.addMessage("Sim, já retirei.", 'user');
-                
                 let startSum = 0; 
                 for(let i in App.originalCart) { 
                     let p = App.data.find(x => x.id === i); 
                     if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * App.originalCart[i]; 
                 }
-                
                 let removedVal = 0;
                 for(let id in App.originalCart) {
                     const diff = App.originalCart[id] - (App.cart[id] || 0);
@@ -837,13 +809,10 @@
                         if(p) removedVal += diff * (p.isOffer ? p.offerPrice : p.valor);
                     }
                 }
-                
                 await this.showTyping();
-                
                 if (removedVal > 0) {
                     this.addMessage(`Perfeito!\n\nAgora você tem <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong> de crédito para adicionar de novos produtos.`);
                     await this.wait(1800);
-                    
                     this.addMessage(`Agora, monte a cesta do seu jeito como estivesse em um supermercado.`);
                     await this.wait(1200);
                     this.addMessage(`Boas Compras.`);
@@ -852,12 +821,10 @@
                     await this.wait(1200);
                     this.addMessage(`Deseja adicionar algo extra?`);
                 }
-
                 try {
                     document.getElementById('credit-chip').classList.add('visible');
                     App.updateTotal(); 
                 } catch(e){ console.error("Chip Error", e); }
-                
                 await this.wait(1400);
                 this.askNextCategory(); 
             },
@@ -870,7 +837,6 @@
                 const catName = this.categories[this.catIndex];
                 const niceName = App.toSmartTitleCase(catName);
                 const id = 'act-' + this.catIndex;
-                
                 const html = `<div id="${id}" class="chat-actions">
                      <button class="btn-chat primary" onclick="ChatFlow.showCategory('${id}', '${catName}')">Ver ${niceName}</button>
                      <button class="btn-chat" onclick="ChatFlow.skipCategory('${id}')">Não, próximo</button>
@@ -883,17 +849,12 @@
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
                 this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`, 'user'); 
-                
                 await this.showTyping();
-                
                 const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
-
                 const colors = ["#5d4037", "#455a64", "#512da8", "#1976d2", "#00796b", "#c2185b"];
                 const color = colors[this.catIndex % colors.length];
-                
                 this.renderChatGrid(products, color, App.toSmartTitleCase(catName));
-                
                 this.catIndex++;
                 await this.wait(2000); 
                 this.askNextCategory();
@@ -901,16 +862,13 @@
 
             async renderChatGrid(products, color, title) {
                 await this.wait(800);
-
                 if(products.length > 0) {
                      const sectionId = `chat-sec-${Date.now()}`;
                      const htmlHeader = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
                         <div class="subcat-title"><span class="subcat-pill" style="color:${color}; background-color:${color}1a;">${title}</span></div>
                      </div>`;
                      this.container.insertAdjacentHTML('beforeend', htmlHeader);
-                     
                      App.setupPagination(sectionId, products, 'chat');
-                     
                      const element = document.getElementById(sectionId);
                      if(element) {
                         const headerOffset = 100;
@@ -938,7 +896,6 @@
                     if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; 
                 }
                 const effectiveTotal = currentSum + App.baseFee;
-                
                 if(effectiveTotal < App.currentBasket.valor - 0.05) {
                     const diff = App.currentBasket.valor - effectiveTotal;
                     this.addMessage(`⚠️ Ops! Você ainda tem <strong>R$ ${diff.toFixed(2).replace('.',',')}</strong> de crédito para usar. Adicione mais produtos para completar o valor da cesta.`);
@@ -946,18 +903,13 @@
                     this.addMessage("Dê uma olhada na sua cesta ou continue navegando para escolher mais itens.");
                     return; 
                 }
-
                 document.getElementById('credit-chip').classList.remove('visible');
-                
                 this.addMessage("Finalizar Agora", 'user');
                 await this.showTyping();
-                
                 let summaryHTML = `<div style="padding:15px; width:100%;">`;
-                
                 const basketName = App.currentBasket.nome;
                 const basketVal = App.currentBasket.valor;
                 summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${basketName} <span style="float:right;">R$ ${basketVal.toFixed(2).replace('.',',')}</span></div>`;
-                
                 let removedTotal = 0;
                 let removedList = "";
                 for(let id in App.originalCart) {
@@ -976,7 +928,6 @@
                 if(removedTotal > 0) {
                     summaryHTML += `<div style="margin-bottom:8px;"><strong>Itens Retirados:</strong>${removedList}</div>`;
                 }
-
                 let addedTotal = 0;
                 let addedList = "";
                 for(let id in App.cart) {
@@ -995,22 +946,16 @@
                 if(addedTotal > 0) {
                     summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
                 }
-
                 let mathTotal = basketVal - removedTotal + addedTotal;
-                
                 summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
                     <span>Total Final:</span>
                     <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${mathTotal.toFixed(2).replace('.',',')}</span>
                 </div>`;
-                
                 summaryHTML += `</div>`; 
-
                 this.container.insertAdjacentHTML('beforeend', `<div class="chat-msg wide-summary">${summaryHTML}</div>`);
                 const lastMsg = this.container.lastElementChild;
                 if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
                 App.updateTotal(); 
-                
                 await this.wait(1500);
                 this.askCoupon();
             },
@@ -1030,7 +975,6 @@
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
                 this.addMessage("Sim, tenho", 'user');
-                
                 const inputId = 'chat-coupon-input';
                 const html = `<div class="chat-input-group">
                     <input type="text" id="${inputId}" class="chat-input" placeholder="Digite seu cupom" style="text-transform:uppercase;">
@@ -1058,12 +1002,9 @@
             skipCoupon(elemId, fromInput = false) {
                 const el = document.getElementById(elemId);
                 if(el && !fromInput) el.remove(); 
-                
                 if(fromInput) this.addMessage("Continuar sem cupom", 'user');
                 else this.addMessage("Não tenho", 'user');
-
                 this.addMessage("Sem problemas! Na próxima compra, peça para o atendente no WhatsApp te adicionar no nosso grupo de descontos.");
-                
                 setTimeout(() => {
                      this.askPayment();
                 }, 1200);
@@ -1073,10 +1014,8 @@
                 await this.showTyping();
                 const id = 'act-payment';
                 this.addMessage("Como você prefere realizar o pagamento na entrega?");
-                
                 const methods = ["Pix", "Dinheiro", "Cartão de Crédito", "Cartão de Débito", "Vale Alimentação"];
                 let buttons = methods.map(m => `<button class="btn-chat" onclick="ChatFlow.handlePayment('${id}', '${m}')">${m}</button>`).join('');
-                
                 const html = `<div id="${id}" class="chat-actions">${buttons}</div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
@@ -1087,10 +1026,8 @@
                 if(el) el.remove();
                 this.addMessage(method, 'user');
                 this.checkoutState.paymentMethod = method;
-                
                 await this.wait(800);
                 this.addMessage(`Perfeito! Deixei anotado aqui que o pagamento será em <strong>${method}</strong>.`);
-                
                 await this.wait(1000);
                 this.finalizeOrder();
             },
@@ -1098,11 +1035,9 @@
             async finalizeOrder() {
                 await this.showTyping();
                 const totalText = document.getElementById('icb-total-val').innerText; 
-                
                 this.addMessage(`Tudo pronto! Seu pedido está fechado no valor de <strong>${totalText}</strong>.`);
                 await this.wait(600);
                 this.addMessage(`Agora é só clicar no botão abaixo para me enviar o pedido no WhatsApp e combinarmos a entrega.`);
-                
                 const id = 'act-finish';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.sendWhatsAppChat()" style="background:#25D366; border-color:#25D366; color:white; width:100%; justify-content:center; display:flex; align-items:center; gap:8px;">
@@ -1121,24 +1056,18 @@
                     const p = App.data.find(x => x.id === id); 
                     msg += `${App.cart[id]}x ${p.nome}\n`; 
                 }
-                
                 if(App.appliedCoupon) msg += `\n*CUPOM APLICADO: ${CONSTANTS.COUPON_CODE}*`;
-                
                 msg += `\n*TOTAL: ${total}*\nPagamento: ${this.checkoutState.paymentMethod}`;
-                
                 window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, '_blank');
             },
 
-            scrollToBottom() {
-                // DESATIVADO PARA NÃO DESCER A TELA AUTOMATICAMENTE
-            },
+            scrollToBottom() { },
 
             wait(ms) { return new Promise(r => setTimeout(r, ms)); }
         };
 
         const App = {
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [], appliedCoupon: false,
-            // Armazena dados de paginação
             paginationStore: {},
             async init() {
                 try {
@@ -1146,25 +1075,19 @@
                     if (!res.ok) throw new Error("Erro ao carregar dados.");
                     const content = await res.json();
                     const raw = content.produtos || content;
-                    
                     this.data = raw.map(p => {
                         const catRaw = (p.categoria || "OUTROS").trim();
                         const parts = catRaw.split('>');
                         const mainCat = parts[0].trim().toUpperCase();
-                        
-                        // CORREÇÃO: Usar sempre a categoria principal para evitar subcategorias soltas no final
                         let appCat = mainCat; 
-                        
                         if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
                         else if (mainCat.includes('CAFÉ') || mainCat.includes('MATINAIS')) appCat = "CAFÉ DA MANHÃ E LANCHES";
                         else if (mainCat.includes('LIMPEZA') || mainCat.includes('LAVANDERIA')) appCat = "LIMPEZA E LAVANDERIA";
                         else if (mainCat.includes('HIGIENE') || mainCat.includes('PESSOAL')) appCat = "CUIDADOS PESSOAIS";
                         else if (mainCat.includes('CALÇADO')) appCat = "CALÇADOS";
                         else if (mainCat.includes('BAZAR')) appCat = "BAZAR E UTILIDADES";
-                        
                         let imgUrl = 'img/placeholder.jpg';
                         if(p.imagem) imgUrl = `img/produtos/${p.imagem.split('/').pop()}`;
-                        
                         return {
                             ...p, id: String(p.id), codigo: String(p.codigo || ""),
                             nome: this.toSmartTitleCase(p.nome.trim()).replace(/\*(.*?)\*/g, '<strong>$1</strong>'), 
@@ -1177,7 +1100,6 @@
                             categoria: catRaw.toUpperCase(), isBest: (p.Mais_Vendido === 'Sim')
                         };
                     });
-                    
                     const saved = localStorage.getItem('da_state');
                     if (saved) {
                         try {
@@ -1230,20 +1152,14 @@
                  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) { const [y, m, d] = dateStr.split('-'); return `${d}/${m}/${y}`; }
                  return dateStr; 
             },
-            
-            // --- BLOCO CORRIGIDO PARA OS CHIPS APARECEREM E FICAREM FIXOS ---
             setupPagination(sectionId, products, type='home') {
                 const isDesktop = window.innerWidth >= 1024;
                 const cols = isDesktop ? 6 : 2;
-                let limit = cols * 6; // Padrão: 6 linhas
-                
-                // NO CHAT: CARREGA TUDO DE UMA VEZ PARA FUNCIONAR OS CHIPS
+                let limit = cols * 6; 
                 if (type === 'chat') {
-                    limit = products.length; // Limite é o total
-                    
-                    // GERAÇÃO DOS CHIPS
+                    limit = products.length; 
                     const subcats = [...new Set(products.map(p => p.subCategory))];
-                    if (subcats.length > 1) { // Só mostra se tiver mais de 1 subcategoria
+                    if (subcats.length > 1) {
                         let chipsHtml = `<div class="chips-container-wrapper">
                             <div class="scroll-arrow" onclick="App.scrollChips(this, -1)">‹</div>
                             <div class="sticky-chips-bar">`;
@@ -1254,12 +1170,9 @@
                         chipsHtml += `</div>
                             <div class="scroll-arrow" onclick="App.scrollChips(this, 1)">›</div>
                         </div>`;
-                        
-                        // Injeta os chips LOGO APÓS o título da seção
                         setTimeout(() => {
                             const container = document.getElementById(sectionId);
                             if(container) {
-                                // --- CORREÇÃO AQUI: Agora busca pelo Título, pois a busca sumiu ---
                                 const titleEl = container.querySelector('.subcat-title');
                                 if(titleEl) {
                                     if(!container.querySelector('.chips-container-wrapper')) {
@@ -1270,152 +1183,77 @@
                         }, 50);
                     }
                 }
-                
-                // Save to store
-                this.paginationStore[sectionId] = {
-                    products: products,
-                    currentIndex: 0,
-                    limit: limit,
-                    type: type,
-                    lastSubCat: '' // Rastreio para cabeçalho de subcategoria
-                };
-                
-                // Initial Load
+                this.paginationStore[sectionId] = { products, currentIndex: 0, limit, type, lastSubCat: '' };
                 this.loadMore(sectionId, true);
             },
-            
             scrollChips(arrow, dir) {
-                const wrapper = arrow.parentElement;
-                const bar = wrapper.querySelector('.sticky-chips-bar');
-                const scrollAmount = 150; 
-                bar.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+                const bar = arrow.parentElement.querySelector('.sticky-chips-bar');
+                bar.scrollBy({ left: dir * 150, behavior: 'smooth' });
             },
-
             loadMore(sectionId, isInitial = false) {
                 const data = this.paginationStore[sectionId];
                 if(!data) return;
-                
                 const nextIndex = data.currentIndex + data.limit;
                 const batch = data.products.slice(data.currentIndex, nextIndex);
                 const hasMore = nextIndex < data.products.length;
-                
-                // Generate HTML for batch
-                let html = '';
-                
-                // --- INJECTION OF SUB-HEADERS LOGIC ---
                 let batchHtml = '';
                 batch.forEach(item => {
                     const p = data.type === 'home' ? item.d : item;
-                    
-                    // Check for subcategory change (CHAT ONLY)
                     if(data.type === 'chat' && p.subCategory && p.subCategory !== data.lastSubCat) {
                         data.lastSubCat = p.subCategory;
                         const safeId = 'sc-' + p.subCategory.replace(/[^a-zA-Z0-9]/g, '');
-                        // Adiciona ID para o chip funcionar e style para compensar a barra fixa
                         batchHtml += `<div id="${safeId}" class="internal-subcat-title">${p.subCategory}</div>`;
                     }
-
                     if(data.type === 'home') {
-                        let cardHtml = this.buildCard(item.d);
-                        cardHtml = cardHtml.replace(/<div class="cp-price.*?<\/div>/, '');
+                        let cardHtml = this.buildCard(item.d).replace(/<div class="cp-price.*?<\/div>/, '');
                         const qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
-                        cardHtml = cardHtml.replace('</div><div class="cp-title">', `</div>${qtyText}<div class="cp-title">`);
-                        batchHtml += cardHtml.replace('class="card-prod"', 'class="card-prod readonly"');
+                        batchHtml += cardHtml.replace('</div><div class="cp-title">', `</div>${qtyText}<div class="cp-title">`).replace('class="card-prod"', 'class="card-prod readonly"');
                     } else {
                         batchHtml += this.buildCard(p);
                     }
                 });
-                
-                html = batchHtml;
-
-                // Append to grid
                 let grid = document.querySelector(`#${sectionId} .grid-products-row`);
                 if(!grid) {
-                    // Create grid if not exists (first run)
-                    const container = document.getElementById(sectionId);
-                    container.insertAdjacentHTML('beforeend', `<div class="grid-products-row"></div>`);
-                    grid = container.querySelector('.grid-products-row');
+                    document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div class="grid-products-row"></div>`);
+                    grid = document.querySelector(`#${sectionId} .grid-products-row`);
                 }
-                
-                // Append items
-                grid.insertAdjacentHTML('beforeend', html);
-                
-                // Update Index
+                grid.insertAdjacentHTML('beforeend', batchHtml);
                 data.currentIndex = nextIndex;
-
-                // Handle Button
-                let btn = document.getElementById(`btn-${sectionId}`);
-                if(btn) btn.remove(); // Remove old button
-                
+                const oldBtn = document.getElementById(`btn-${sectionId}`);
+                if(oldBtn) oldBtn.remove();
                 if(hasMore) {
-                    const remaining = data.products.length - data.currentIndex;
-                    const nextLoadCount = Math.min(remaining, data.limit);
-                    
-                    const container = document.getElementById(sectionId);
-                    container.insertAdjacentHTML('beforeend', `<div id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${nextLoadCount} PRODUTOS</div>`);
+                    const count = Math.min(data.products.length - data.currentIndex, data.limit);
+                    document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${count} PRODUTOS</div>`);
                 }
-
-                // Scroll Logic (Modified for "Ver Mais")
-                if(!isInitial) {
-                    const firstItem = batch[0];
-                    if (firstItem) {
-                        const pId = data.type === 'home' ? firstItem.d.id : firstItem.id;
-                        const el = document.getElementById(`card-${pId}`);
-                        if (el) {
-                             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                    }
+                if(!isInitial && batch[0]) {
+                    const pId = data.type === 'home' ? batch[0].d.id : batch[0].id;
+                    const el = document.getElementById(`card-${pId}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             },
-            
-            // --- FUNÇÃO DE BUSCA CORRIGIDA ---
             filterLocalList(input) {
                 const term = input.value.toLowerCase();
-                
-                // 1. Encontra todas as seções de produtos que já apareceram no chat
                 const sections = document.querySelectorAll('#chat-stream .subcat-section');
-                
-                // Se não tiver nenhuma lista na tela, para aqui
                 if (sections.length === 0) return;
-                
-                // 2. Pega a ÚLTIMA seção (a que está ativa agora no final da conversa)
-                const activeSection = sections[sections.length - 1]; 
-                
-                // 3. Filtra os produtos DESSA seção específica
-                const products = activeSection.querySelectorAll('.card-prod');
-                
-                products.forEach(p => {
+                sections[sections.length - 1].querySelectorAll('.card-prod').forEach(p => {
                     const titleEl = p.querySelector('.cp-title');
-                    if(titleEl) {
-                        const title = titleEl.innerText.toLowerCase();
-                        // Mostra ou esconde baseada no nome
-                        p.style.display = title.includes(term) ? 'flex' : 'none';
-                    }
+                    if(titleEl) p.style.display = titleEl.innerText.toLowerCase().includes(term) ? 'flex' : 'none';
                 });
             },
-
             renderHome() {
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 if (baskets.length > 0) {
                     list.innerHTML = baskets.map(p => {
                         let validItems = [];
-                        if (p.items && p.items.length > 0) {
-                            p.items.forEach(i => {
-                                const d = this.data.find(x => x.id === String(i.id));
-                                if(d) validItems.push({d, qty:i.qty});
-                            });
-                        }
-                        
-                        // ID unique for this section
+                        if (p.items) p.items.forEach(i => {
+                            const d = this.data.find(x => x.id === String(i.id));
+                            if(d) validItems.push({d, qty:i.qty});
+                        });
                         const sectionId = `home-sec-${p.id}`;
-                        
-                        // Just setup structure, content comes from pagination init
                         setTimeout(() => App.setupPagination(sectionId, validItems, 'home'), 0);
-
                         return `<div class="home-basket-card">
                             <div class="hbc-header"><div class="hbc-text-col"><h2 class="hbc-title">${p.nome}</h2><div class="hbc-subtitle">Ítens e Quantidades</div></div><img src="${p.imagem}" class="hbc-thumb-mini" onclick="App.openPhoto('${p.imagem}', '${p.nome}')" alt="Foto"></div>
-                            
                             <div id="${sectionId}"></div> <div class="hbc-footer"><div class="hbc-price-row"><div><span class="hbc-price-label">Valor da Cesta</span><span class="hbc-price-val">R$ ${p.valor.toFixed(2).replace('.',',')}</span></div></div><button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button><button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar a Cesta Normal</button></div></div>`;
                     }).join('');
                 }
@@ -1423,38 +1261,24 @@
             openCustomizer(id) {
                 const basket = this.data.find(p => p.id === id);
                 if(!basket) return;
-
                 if (!this.currentBasket || this.currentBasket.id !== id) {
-                    // RESET CHAT STATE
-                    this.cart = {}; 
-                    this.cartOrder = []; 
-                    this.appliedCoupon = false;
+                    this.cart = {}; this.cartOrder = []; this.appliedCoupon = false;
                     ChatFlow.catIndex = 0;
                     ChatFlow.checkoutState = { paymentMethod: '', couponApplied: false };
-                    
-                    if(basket.items) {
-                        basket.items.forEach(i => {
-                            let match = this.data.find(p => p.id === String(i.id));
-                            if(match) { this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qty || 1)); if(!this.cartOrder.includes(match.id)) this.cartOrder.push(match.id); }
-                        });
-                    }
+                    if(basket.items) basket.items.forEach(i => {
+                        let match = this.data.find(p => p.id === String(i.id));
+                        if(match) { this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qty || 1)); if(!this.cartOrder.includes(match.id)) this.cartOrder.push(match.id); }
+                    });
                     this.originalCart = { ...this.cart };
                 }
-
                 this.currentBasket = basket;
                 const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
                 let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
                 this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
-                
                 document.getElementById('home-view').classList.add('hidden');
                 document.getElementById('customizer-view').classList.remove('hidden');
                 document.body.classList.add('customizer-mode');
-                
-                window.scrollTo(0,0); 
-                
-                // Ensure Chat Starts Fresh if it's a new basket
-                ChatFlow.start();
-                this.saveState(); 
+                window.scrollTo(0,0); ChatFlow.start(); this.saveState(); 
             },
             goHome() {
                 document.getElementById('customizer-view').classList.add('hidden');
@@ -1464,67 +1288,59 @@
                 localStorage.setItem('da_state', JSON.stringify({view: 'home'}));
                 if(this.data.length > 0) this.renderHome();
             },
-            renderAllLists(filter = null) {
-                const container = document.getElementById('chat-stream'); 
-                let products = this.data.filter(p => !p.categoria.includes('CESTA'));
-                if (filter && filter.length > 1) {
-                    products = products.filter(p => p.nome.toLowerCase().includes(filter.toLowerCase()));
-                    container.innerHTML = `<div class="chat-msg">Resultados da busca:</div><div class="grid-products-row" style="padding-left:16px;">${products.map(p => this.buildCard(p)).join('')}</div>`;
-                }
-            },
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
-                const btnHtml = `<div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1); MarketingApp.logClick('${p.subCategory}');"> + </div>`; 
-                const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-                const qtyHtml = `<div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()"><div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trashIcon:'-'}</div><div class="qcf-val" id="qty-val-${p.id}">${qty}</div><div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div></div>`;
-                const valHtml = (p.validade && p.validade.length > 2) ? `<div class="cp-validity">Val: ${p.validade}</div>` : '';
-                return `<div class="card-prod" id="card-${p.id}">${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}<div class="cp-img-box" onclick="App.openInfo('${p.id}'); MarketingApp.logProductView('${p.id}');"><img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100" alt="${p.nome}">${btnHtml}${qtyHtml}</div><div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">R$ ${price.toFixed(2).replace('.',',')}${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}</div><div class="cp-title">${p.nome}</div>${valHtml}</div>`;
-            },
-            countRemovals() {
-                let count = 0;
-                for(let id in this.originalCart) { if (this.originalCart[id] > 0 && (!this.cart[id] || this.cart[id] === 0)) count++; }
-                return count;
+                const trash = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+                return `<div class="card-prod" id="card-${p.id}">${p.isOffer ? '<span class="cp-tag">OFERTA</span>' : ''}<div class="cp-img-box" onclick="App.openInfo('${p.id}'); MarketingApp.logProductView('${p.id}');"><img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100" alt="${p.nome}"><div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1);"> + </div><div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()"><div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trash:'-'}</div><div class="qcf-val" id="qty-val-${p.id}">${qty}</div><div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div></div></div><div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">R$ ${price.toFixed(2).replace('.',',')}${p.isOffer ? `<small>R$${p.valor.toFixed(2)}</small>`:''}</div><div class="cp-title">${p.nome}</div>${(p.validade) ? `<div class="cp-validity">Val: ${p.validade}</div>` : ''}</div>`;
             },
             modQty(id, delta) {
                 const p = this.data.find(x => x.id === id);
                 if(!this.cart[id]) this.cart[id] = 0;
                 const isNew = this.cart[id] === 0, newQty = this.cart[id] + delta;
                 if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
-                if (this.originalCart[id] && delta < 0 && newQty === 0 && this.countRemovals() >= this.currentLimit) return alert(`Limite de ${this.currentLimit} trocas atingido.`);
+                let removed = 0; for(let i in this.originalCart) if(this.originalCart[i] > 0 && (!this.cart[i] || this.cart[i] === 0)) removed++;
+                if (this.originalCart[id] && delta < 0 && newQty === 0 && removed >= this.currentLimit) return alert(`Limite de ${this.currentLimit} trocas atingido.`);
                 this.cart[id] = newQty;
                 if(this.cart[id] <= 0) { delete this.cart[id]; this.cartOrder = this.cartOrder.filter(x => x !== id); } 
                 else if (isNew) { this.cartOrder = this.cartOrder.filter(x => x !== id); this.cartOrder.unshift(id); }
-                this.updateCardUI(id, newQty);
-                this.updateTotal();
+                this.updateCardUI(id, newQty); this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 this.saveState(); 
             },
             updateCardUI(id, qty) {
-                const trashIcon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+                const trash = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
                 document.querySelectorAll(`[id="btn-add-${id}"]`).forEach(b => b.classList.toggle('hidden', qty > 0));
                 document.querySelectorAll(`[id="qty-ctrl-${id}"]`).forEach(c => c.classList.toggle('hidden', qty <= 0));
                 document.querySelectorAll(`[id="qty-val-${id}"]`).forEach(v => v.innerText = qty);
-                document.querySelectorAll(`[id="btn-dec-${id}"]`).forEach(b => b.innerHTML = qty === 1 ? trashIcon : '-');
+                document.querySelectorAll(`[id="btn-dec-${id}"]`).forEach(b => b.innerHTML = qty === 1 ? trash : '-');
             },
+
+            // --- REGRA DE NÃO REPETIR SUGESTÃO NA SESSÃO ---
             checkSuggestion(code) {
                 const target = String(code).trim().toUpperCase(); 
                 const p = this.data.find(x => x.id === target || (x.codigo && String(x.codigo).trim().toUpperCase() === target));
+                
                 if(p && !this.cart[p.id]) {
+                    // Verifica se já foi mostrado nesta sessão
+                    const shown = JSON.parse(sessionStorage.getItem('shown_suggestions') || '[]');
+                    if (shown.includes(p.id)) return;
+
                     setTimeout(() => {
                         document.getElementById('sd-content').innerHTML = `<div style="width:180px; margin:0 auto;">${this.buildCard(p)}</div>`;
                         document.getElementById('suggestion-overlay').classList.add('active');
                         document.getElementById('suggestion-drawer').classList.add('open');
+                        
+                        // Salva que já foi mostrado
+                        shown.push(p.id);
+                        sessionStorage.setItem('shown_suggestions', JSON.stringify(shown));
                     }, 500); 
                 }
             },
+
             closeSuggestion() { document.getElementById('suggestion-drawer').classList.remove('open'); document.getElementById('suggestion-overlay').classList.remove('active'); },
-            toggleCoupon() { document.getElementById('coupon-area').classList.toggle('hidden'); },
             updateTotal() {
-                let sum = 0, count = 0;
-                for(let id in this.cart) { const p = this.data.find(x => x.id === id); if(p) { sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; count += this.cart[id]; } }
-                MarketingApp.logCartUpdate(sum, count);
-                
+                let sum = 0; for(let id in this.cart) { const p = this.data.find(x => x.id === id); if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; }
                 if(this.baseFee === 0 && Object.keys(this.cart).length > 0) {
                     let startSum = 0; for(let i in this.originalCart) { let p = this.data.find(x => x.id === i); if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * this.originalCart[i]; }
                     this.baseFee = Math.max(0, this.currentBasket.valor - startSum);
@@ -1532,47 +1348,16 @@
                 const basketPrice = this.currentBasket.valor, effectiveTotal = sum + this.baseFee;
                 let displayTotal = effectiveTotal > basketPrice ? (effectiveTotal - basketPrice < basketPrice * 0.02 ? basketPrice : effectiveTotal) : basketPrice;
                 if(this.appliedCoupon) displayTotal = Math.max(0, displayTotal - CONSTANTS.COUPON_VAL);
-                
                 const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
-                
-                // Update invisible fields for calculation consistency
-                const icbVal = document.getElementById('icb-total-val');
-                if(icbVal) icbVal.innerText = txtTotal;
-                
-                const chatTotalDisplay = document.getElementById('chat-total-display');
-                if(chatTotalDisplay) chatTotalDisplay.innerText = txtTotal;
-
-                // --- CHIP & BUTTON LOGIC ---
-                const chipBtn = document.querySelector('.ccb-btn');
-                const chipLabel = document.getElementById('ccb-label');
-                const chipVal = document.getElementById('ccb-val');
-                
-                // Reset Button State
-                if(chipBtn) {
-                     chipBtn.classList.remove('disabled');
-                     chipBtn.style.opacity = "1";
-                     chipBtn.style.cursor = "pointer";
-                     chipBtn.onclick = function() { ChatFlow.startCheckout(); };
-                }
-
+                document.getElementById('icb-total-val').innerText = txtTotal;
+                const chipBtn = document.querySelector('.ccb-btn'), chipLabel = document.getElementById('ccb-label'), chipVal = document.getElementById('ccb-val');
                 if (basketPrice > effectiveTotal) {
-                    // HAS CREDIT
                     const diff = (basketPrice - effectiveTotal).toFixed(2).replace('.',',');
-                    
-                    if(chipBtn) {
-                        chipBtn.innerText = "Adicionar Itens";
-                        // --- AJUSTE: Botão fica apenas como AVISO ---
-                        chipBtn.classList.add('disabled');
-                        chipBtn.onclick = null;
-                    }
+                    if(chipBtn) { chipBtn.innerText = "Adicionar Itens"; chipBtn.classList.add('disabled'); chipBtn.onclick = null; }
                     if(chipLabel) chipLabel.innerText = "Crédito Disponível";
                     if(chipVal) { chipVal.innerText = `R$ ${diff}`; chipVal.style.color = "#4ade80"; }
                 } else {
-                    // READY
-                    if(chipBtn) {
-                        chipBtn.innerText = "Finalizar Pedido";
-                        chipBtn.onclick = function() { ChatFlow.startCheckout(); };
-                    }
+                    if(chipBtn) { chipBtn.innerText = "Finalizar Pedido"; chipBtn.classList.remove('disabled'); chipBtn.onclick = () => ChatFlow.startCheckout(); }
                     if(chipLabel) chipLabel.innerText = "Total a Pagar";
                     if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
                 }
@@ -1586,36 +1371,25 @@
                     desc = `<div style="background:#fef2f2; border:1px solid #fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:15px; text-align:center;"><div style="font-weight:800; font-size:1.1rem; margin-bottom:4px;">${percent}% OFF</div><span style="text-decoration:line-through; color:#7f1d1d; font-size:0.9rem; margin-right:8px;">R$ ${p.valor.toFixed(2).replace('.',',')}</span><span style="font-weight:800; font-size:1.2rem; color:#dc2626;">R$ ${p.offerPrice.toFixed(2).replace('.',',')}</span></div>` + desc;
                 }
                 document.getElementById('info-body').innerHTML = desc;
-                document.getElementById('info-media').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%; border-radius:8px;" alt="${p.nome}">` : '';
+                document.getElementById('info-media').innerHTML = `<img src="${p.imagem}" style="width:100%; border-radius:8px;" alt="${p.nome}">`;
                 App.openSheet('info-sheet');
             },
-            openPhoto(imgUrl, title) {
+            openPhoto(url, title) {
                 document.getElementById('info-title').innerText = title; document.getElementById('info-body').innerHTML = ''; 
-                document.getElementById('info-media').innerHTML = `<img src="${imgUrl}" style="width:100%; border-radius:8px;" alt="${title}">`;
+                document.getElementById('info-media').innerHTML = `<img src="${url}" style="width:100%; border-radius:8px;" alt="${title}">`;
                 App.openSheet('info-sheet');
             },
-            openReviewModal() { ChatFlow.startCheckout(); }, // Redirected to chat
             openSheet(id) { document.getElementById(id).classList.add('open'); },
             closeSheet(id) { document.getElementById(id).classList.remove('open'); },
             directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
         };
-        // Explicitly attach to window to avoid scope issues in HTML handlers
-        window.ChatFlow = ChatFlow;
-        window.App = App;
-        
-        // --- SCROLL EVENT LISTENER PARA HEADER ---
+        window.ChatFlow = ChatFlow; window.App = App;
         window.addEventListener('scroll', () => {
-            const header = document.querySelector('.app-header');
-            if(window.scrollY > 100) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
+            const h = document.querySelector('.app-header');
+            if(window.scrollY > 100) h.classList.add('scrolled'); else h.classList.remove('scrolled');
         });
-        
         document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
-    
     <div id="icb-total-val" style="display:none;"></div>
 </body>
 </html>
