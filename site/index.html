@@ -1350,24 +1350,28 @@
                 }
             },
             
-            // FILTRO DE BUSCA LOCAL (ADICIONADO)
+            // --- FUNÇÃO DE BUSCA CORRIGIDA ---
             filterLocalList(input) {
-                // Encontra a lista ativa (última subcat-section visível)
-                // Como pode haver várias, pegamos a última no chat-stream
-                const chatContainer = document.getElementById('chat-stream');
-                const activeSection = chatContainer.lastElementChild.querySelector('.grid-products-row') ? chatContainer.lastElementChild : null;
-                
-                if (!activeSection) return; // Se não achar, não faz nada (segurança)
-
                 const term = input.value.toLowerCase();
+                
+                // 1. Encontra todas as seções de produtos que já apareceram no chat
+                const sections = document.querySelectorAll('#chat-stream .subcat-section');
+                
+                // Se não tiver nenhuma lista na tela, para aqui
+                if (sections.length === 0) return;
+                
+                // 2. Pega a ÚLTIMA seção (a que está ativa agora no final da conversa)
+                const activeSection = sections[sections.length - 1]; 
+                
+                // 3. Filtra os produtos DESSA seção específica
                 const products = activeSection.querySelectorAll('.card-prod');
                 
                 products.forEach(p => {
-                    const title = p.querySelector('.cp-title').innerText.toLowerCase();
-                    if(title.includes(term)) {
-                        p.style.display = 'flex';
-                    } else {
-                        p.style.display = 'none';
+                    const titleEl = p.querySelector('.cp-title');
+                    if(titleEl) {
+                        const title = titleEl.innerText.toLowerCase();
+                        // Mostra ou esconde baseada no nome
+                        p.style.display = title.includes(term) ? 'flex' : 'none';
                     }
                 });
             },
