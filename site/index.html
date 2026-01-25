@@ -256,61 +256,51 @@
 
         /* --- BOTÃO VER MAIS (Estilo Estreito) --- */
         .btn-load-more { 
-            width: auto; /* Não ocupa 100% */
-            max-width: 220px; /* Limita largura */
-            padding: 10px 24px; 
-            background: #ffffff; 
-            color: var(--secondary); 
-            border: 2px solid #cbd5e1; 
-            border-radius: 50px; /* Mais arredondado */
-            font-weight: 700; 
-            font-size: 0.85rem; 
-            text-transform: uppercase; 
-            margin: 20px auto; /* Centralizado */
-            cursor: pointer; 
-            text-align: center; 
-            transition: all 0.2s; 
-            display: block; 
+            width: auto; max-width: 220px; padding: 10px 24px; 
+            background: #ffffff; color: var(--secondary); 
+            border: 2px solid #cbd5e1; border-radius: 50px; 
+            font-weight: 700; font-size: 0.85rem; text-transform: uppercase; 
+            margin: 20px auto; cursor: pointer; text-align: center; 
+            transition: all 0.2s; display: block; 
         }
         .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; transform: scale(1.05); }
-        /* ------------------------------------- */
         
+        /* --- CARD PRODUTO (Altura Generosa) --- */
         .card-prod { 
             width: 100%; min-width: auto; max-width: none; flex-shrink: 0; 
-            background: transparent; border: none; padding: 0; 
+            background: transparent; border: none; 
+            padding: 0 0 12px 0; /* Mais espaço inferior */
             display: flex; flex-direction: column; position: relative; 
+            gap: 4px; /* Espaço entre elementos internos */
         }
         
         /* ETIQUETAS PEQUENAS E NO TOPO */
         .cp-tag { 
             position: absolute; top: 0px; left: 0px; 
             background: #dc2626; color: #ffffff; 
-            font-size: 0.65rem; padding: 3px 8px; /* Menor */
+            font-size: 0.65rem; padding: 3px 8px; 
             font-weight: 700; border-radius: 4px; z-index: 10; 
         }
         .cp-tag-off { 
-            position: absolute; top: 0px; right: 0px; left: auto; /* Canto direito */
+            position: absolute; top: 0px; right: 0px; left: auto; 
             background: #029939; color: #ffffff; 
-            font-size: 0.65rem; padding: 3px 8px; /* Menor */
+            font-size: 0.65rem; padding: 3px 8px; 
             font-weight: 700; border-radius: 4px; z-index: 10; 
         }
         
         /* QUANTIDADE EM DESTAQUE NA HOME */
         .home-qty-text { 
-            text-align: left; 
-            font-size: 0.8rem; 
-            color: var(--primary); /* Cor de destaque */
-            font-weight: 800; 
-            margin-top: 6px; margin-bottom: 2px; margin-left: 2px; 
+            text-align: left; font-size: 0.8rem; color: var(--primary); 
+            font-weight: 800; margin-top: 8px; margin-bottom: 2px; margin-left: 2px; display: block;
         }
 
         .grid-products-row .cp-img-box { border: none; }
         
         .cp-img-box { 
             width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; 
-            margin-bottom: 8px; cursor: pointer; position: relative; 
-            background: #f3f4f6; border-radius: 18px; 
-            overflow: hidden; /* Mantém o arredondamento da imagem */
+            margin-bottom: 0px; /* Sem margem para o botão subir */
+            cursor: pointer; position: relative; 
+            background: #f3f4f6; border-radius: 18px; overflow: hidden; 
         }
         .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; }
         .grid-products-row .cp-img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.05); }
@@ -318,38 +308,43 @@
         /* BOTÕES DE AÇÃO FLUTUANTES (PROFISSIONAL / SEM SOBREPOSIÇÃO) */
         .card-action-row {
             display: flex; justify-content: flex-end;
-            margin-top: -24px; /* Sobe para ficar na divisa */
-            margin-right: 6px;
-            margin-bottom: 4px;
-            position: relative; z-index: 5;
+            margin-top: -18px; /* Sobe para ficar na borda da imagem */
+            margin-right: 6px; margin-bottom: 6px;
+            position: relative; z-index: 5; height: 38px;
         }
 
         .btn-circle-add { 
-            position: relative; top: 0; left: 0; right: 0; bottom: 0; /* Remove absolute anterior */
-            width: 30px; height: 30px; /* Menor */
+            position: relative; top: 0; left: 0; right: 0; bottom: 0; 
+            width: 38px; height: 38px; /* Maior */
             border-radius: 50%; background: var(--primary); border: none; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
             display: flex; align-items: center; justify-content: center; 
-            color: white; font-size: 1.4rem; font-weight: 300; cursor: pointer; padding-bottom: 3px; line-height: 1; 
+            color: white; font-size: 1.6rem; font-weight: 300; cursor: pointer; padding-bottom: 3px; line-height: 1; 
         }
         .qty-ctrl-float { 
-            position: relative; top: 0; left: 0; right: 0; bottom: 0; /* Remove absolute */
-            height: 30px; /* Menor */
-            background: white; border: 1px solid #e5e5e5; border-radius: 15px; 
+            position: relative; top: 0; left: 0; right: 0; bottom: 0; 
+            height: 38px; /* Maior */
+            background: white; border: 1px solid #e5e5e5; border-radius: 19px; 
             display: flex; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; 
         }
-        .qcf-btn { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.1rem; cursor: pointer; }
-        .qcf-val { font-size: 0.85rem; font-weight: 700; padding: 0 4px; min-width: 18px; text-align: center; }
+        .qcf-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer; }
+        .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
-        /* FONTES MENORES */
-        .cp-price { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; margin: 0 2px 2px; text-align: left; }
+        /* FONTES MENORES E ESPAÇAMENTO */
+        .cp-price { 
+            font-size: 0.95rem; font-weight: 700; color: #1a1a1a; 
+            margin: 6px 2px 2px; text-align: left; 
+        }
         .cp-price.offer-price { color: #dc2626; }
         .cp-price small { font-size: 0.65rem; text-decoration: line-through; color: #999; font-weight: 400; margin-left: 6px; }
         
         .cp-title { 
             font-size: 0.75rem; /* Menor */
-            font-weight: 500; color: #333; margin: 0 2px 4px; line-height: 1.3; 
-            min-height: 3em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: left; 
+            font-weight: 500; color: #333; 
+            margin: 0 2px 4px; line-height: 1.35; 
+            min-height: 4.5em; /* Garante altura para 3 linhas */
+            display: -webkit-box; -webkit-line-clamp: 3; /* Aceita 3 linhas */
+            -webkit-box-orient: vertical; overflow: hidden; text-align: left; 
         }
         .cp-validity { font-size: 0.7rem; color: #777; text-align: left; margin-top: auto; }
 
@@ -361,6 +356,11 @@
         .sheet-overlay.open { opacity: 1; pointer-events: auto; }
         .sheet-box { background: #fff; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; padding: 20px; }
         .sheet-overlay.open .sheet-box { transform: translateY(0); }
+        
+        /* SCROLL VISIVEL NO MODAL */
+        .sheet-box::-webkit-scrollbar { width: 6px; display: block; }
+        .sheet-box::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        
         @media(min-width: 768px) { .sheet-box { max-width: 500px; margin-bottom: 20px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); } }
         
         details.faq-box { margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
@@ -1181,7 +1181,12 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                         let cardHtml = this.buildCard(item.d).replace(/<div class="cp-price.*?<\/div>/, '');
                         // AQUI ESTA A LOGICA PARA EXIBIR A QUANTIDADE NA HOME
                         const qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
-                        batchHtml += cardHtml.replace('</div><div class="cp-title">', `</div>${qtyText}<div class="cp-title">`).replace('class="card-prod"', 'class="card-prod readonly"');
+                        // GARANTIA QUE O TEXTO ENTRA NO LUGAR CERTO
+                        batchHtml += `<div class="card-prod readonly">
+                            <div class="cp-img-box"><img src="${item.d.imagem}" class="cp-img" loading="lazy"></div>
+                            ${qtyText}
+                            <div class="cp-title">${item.d.nome}</div>
+                        </div>`;
                     } else {
                         batchHtml += this.buildCard(p);
                     }
