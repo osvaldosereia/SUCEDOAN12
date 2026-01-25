@@ -863,7 +863,7 @@
 
             // --- FUNÇÃO PRINCIPAL: RENDERIZA O FEED DE CARROSSEIS ---
             async renderStoreFeed() {
-                // 1. Limpa prateleiras antigas para evitar duplicação
+                // 1. Limpa prateleiras antigas
                 const oldSections = document.querySelectorAll('.carousel-section');
                 oldSections.forEach(s => s.remove());
 
@@ -871,32 +871,26 @@
                 let feedHTML = '';
                 
                 for(const cat of this.categories) {
-                    // Ordena subcategorias
                     const subCats = Array.from(this.categoryMap[cat] || []).sort();
                     
                     for(const sub of subCats) {
-                        // Filtra produtos dessa subcategoria
                         const products = App.data.filter(p => p.appCategory === cat && p.subCategory === sub && !p.categoria.includes('CESTA'));
                         
                         if(products.length > 0) {
                             const sectionId = 'carousel-' + App.toSlug(sub);
                             const imgName = App.toSlug(sub);
                             
-                            // Monta o cabeçalho (Imagem redonda + Nome)
                             const headerHTML = `
                                 <div class="carousel-header">
                                     <img src="img/${imgName}.webp" onerror="this.style.display='none'">
                                     <h3>${App.toSmartTitleCase(sub)}</h3>
                                 </div>`;
                             
-                            // Monta os cards dos produtos
                             let cardsHTML = '';
                             products.forEach(p => {
-                                // buildCard com lazy loading ativado
                                 cardsHTML += App.buildCard(p, true); 
                             });
 
-                            // Monta a estrutura do carrossel com setas
                             const carouselHTML = `
                                 <div class="carousel-section" id="${sectionId}">
                                     ${headerHTML}
@@ -909,7 +903,6 @@
                                     </div>
                                 </div>
                             `;
-                            
                             feedHTML += carouselHTML;
                         }
                     }
@@ -921,9 +914,7 @@
                 // 4. Inicializa Lazy Loader
                 setTimeout(() => App.initLazyLoader(), 100);
 
-                // 5. Adiciona a pergunta final + botões de navegação
-                await this.wait(500);
-                this.showCorridorButtons();
+                // REMOVIDO: A chamada de showCorridorButtons() que ficava aqui
             },
 
             async showCorridorButtons() {
@@ -981,31 +972,46 @@
             },
 
             async showCategory(elemId, catName, subCatName) {
-                // ... (Mantive a lógica anterior de limpeza e exibição da categoria escolhida)
-                // Se o usuário clicar num botão específico, mostra a view de grade daquela categoria
-                // Isso permite navegação detalhada se ele quiser sair do "feed geral"
                 const el = document.getElementById(elemId);
                 if(el && !elemId.startsWith('act-menu')) el.remove();
                 
-                const oldSections = document.querySelectorAll('.subcat-section, .carousel-section'); // Limpa carrosseis tb
+                const oldSections = document.querySelectorAll('.subcat-section, .carousel-section');
                 oldSections.forEach(section => section.remove());
 
-                // ... (Resto da função showCategory permanece igual para exibir a grade da categoria específica)
-                // ... (Código omitido para brevidade, mas está na versão completa abaixo)
+                // Exibe título se não veio do menu
+                const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${App.toSmartTitleCase(subCatName)}` : App.toSmartTitleCase(catName);
+                // if(!elemId.startsWith('act-menu')) this.addMessage(`Ir para ${displayTitle}`, 'user'); // Opcional: manter ou remover msg do usuario
                 
-                // Mas para garantir que funcione, vou incluir a versão completa abaixo.
                 let uniqueIdStr = catName;
                 if(subCatName) uniqueIdStr += subCatName;
                 const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
                 
-                const htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
-                   <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${App.toSmartTitleCase(subCatName || catName)}</span></div>
-                </div>`;
+                // if(!elemId.startsWith('act-menu')) await this.showTyping(); // Opcional
                 
-                this.container.insertAdjacentHTML('beforeend', htmlHeader);
+                // Marca visita
+                if(!this.visitedCorridors.includes(catName)) { this.visitedCorridors.push(catName); }
+                if(subCatName && !this.visitedSubCats.includes(subCatName)) { this.visitedSubCats.push(subCatName); }
                 
                 let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 if(subCatName) products = products.filter(p => p.subCategory === subCatName);
+                products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
+                
+                let htmlHeader = "";
+                if(subCatName) {
+                    const imgName = App.toSlug(subCatName);
+                    htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
+                       <div class="subcat-title" style="display:flex; align-items:center; gap:12px;">
+                            <img src="img/${imgName}.webp" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:1px solid #e2e8f0;" onerror="this.style.display='none'">
+                            <span style="font-size:1.1rem; font-weight:700; color:#333;">${App.toSmartTitleCase(subCatName)}</span>
+                       </div>
+                    </div>`;
+                } else {
+                    htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
+                       <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${App.toSmartTitleCase(catName)}</span></div>
+                    </div>`;
+                }
+
+                this.container.insertAdjacentHTML('beforeend', htmlHeader);
                 
                 App.setupPagination(safeCatId, products, 'chat');
                 
@@ -1017,8 +1023,7 @@
                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                 }
                 
-                await this.wait(2000); 
-                this.showCorridorButtons(); // Chama os botões de novo
+                // REMOVIDO: A chamada de showCorridorButtons() que ficava aqui
             },
             
             // --- RESUMO COMPACTO ---
