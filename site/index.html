@@ -18,7 +18,7 @@
             --bg-body: #ffffff;
             --border-color: #f2f2f2;
             --header-height: 70px; 
-            --app-header-height: 60px; /* Aumentei um pouco para caber os botões */
+            --app-header-height: 60px; 
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -95,7 +95,7 @@
             padding: 6px; cursor: pointer; margin-right: 5px;
         }
 
-        /* Botão Menu Categorias (Novo) */
+        /* Botão Menu Categorias (Agora Prateleiras) */
         .ah-cat-btn {
             background: #f1f5f9; color: var(--secondary);
             font-size: 0.85rem; font-weight: 700;
@@ -107,7 +107,7 @@
         .ah-cat-btn.disabled { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
         .ah-cat-btn:active { background: #e2e8f0; transform: scale(0.95); }
 
-        /* Ações Direita (Novos Botões) */
+        /* Ações Direita */
         .ah-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
         .ah-icon-btn {
             width: 36px; height: 36px; border-radius: 50%;
@@ -131,7 +131,7 @@
         .cd-item {
             padding: 10px; background: #f8fafc; border-radius: 8px;
             text-align: center; font-size: 0.8rem; font-weight: 600;
-            color: #334155; border: 1px solid #e2e8f0;
+            color: #334155; border: 1px solid #e2e8f0; cursor: pointer;
         }
         .cd-item:active { background: #e2e8f0; }
 
@@ -494,7 +494,7 @@
                 </div>
                 
                 <button id="btn-cat-menu" class="ah-cat-btn disabled" onclick="App.toggleCatMenu()">
-                    Categorias ▾
+                    Prateleiras ▾
                 </button>
 
                 <div class="ah-actions">
@@ -882,10 +882,11 @@
 
             async showCategory(elemId, catName, subCatName) {
                 const el = document.getElementById(elemId);
-                if(el) el.remove();
+                // Se o ID for de navegação via menu, não remove nada (pois nao existe mensagem)
+                if(el && !elemId.startsWith('act-menu')) el.remove();
                 
                 const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${App.toSmartTitleCase(subCatName)}` : App.toSmartTitleCase(catName);
-                this.addMessage(`Ir para ${displayTitle}`, 'user'); 
+                if(!elemId.startsWith('act-menu')) this.addMessage(`Ir para ${displayTitle}`, 'user'); 
                 
                 let uniqueIdStr = catName;
                 if(subCatName) uniqueIdStr += subCatName;
@@ -901,12 +902,14 @@
                         window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                     }, 100);
                     
-                    await this.wait(1500);
-                    this.showCorridorMenu();
+                    if(!elemId.startsWith('act-menu')) {
+                        await this.wait(1500);
+                        this.showCorridorMenu();
+                    }
                     return;
                 }
                 
-                await this.showTyping();
+                if(!elemId.startsWith('act-menu')) await this.showTyping();
                 
                 if(!this.visitedCorridors.includes(catName)) {
                     this.visitedCorridors.push(catName);
@@ -949,8 +952,10 @@
                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                 }
                 
-                await this.wait(2000); 
-                this.showCorridorMenu();
+                if(!elemId.startsWith('act-menu')) {
+                    await this.wait(2000); 
+                    this.showCorridorMenu();
+                }
             },
             
             // --- RESUMO & CUPOM SIMPLIFICADO ---
@@ -1189,6 +1194,24 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                     basketId: this.currentBasket ? this.currentBasket.id : null, cart: this.cart, cartOrder: this.cartOrder
                 }));
             },
+            
+            // --- NOVO: FUNÇÃO PARA CONTROLAR O MENU DE PRATELEIRAS ---
+            toggleCatMenu() {
+                const menu = document.getElementById('cat-dropdown');
+                if (menu.classList.contains('active')) {
+                    menu.classList.remove('active');
+                    return;
+                }
+                // Se ainda não foi populado
+                if (ChatFlow.categories.length > 0) {
+                    let html = ChatFlow.categories.map(cat => {
+                        return `<div class="cd-item" onclick="App.toggleCatMenu(); ChatFlow.showCategory('act-menu-nav', '${cat}', null)">${App.toSmartTitleCase(cat)}</div>`;
+                    }).join('');
+                    menu.innerHTML = html;
+                }
+                menu.classList.add('active');
+            },
+            
             toSmartTitleCase(str) {
                 const smallWords = ['de', 'da', 'do', 'e', 'com', 'sem', 'para', 'na', 'no', 'em', 'ao', 'a', 'o', 'as', 'os'];
                 const upperWords = ['kg', 'ml', 'g', 'l', 'un', 'pvc', 'uht', 'pet', 'ypê', 'sbp', 'tixan', 'qboa'];
@@ -1252,10 +1275,18 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                     const count = Math.min(data.products.length - data.currentIndex, data.limit);
                     document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${count} PRODUTOS</div>`);
                 }
+                
+                // --- ROLAGEM CORRIGIDA ---
                 if(!isInitial && batch[0]) {
                     const pId = data.type === 'home' ? batch[0].d.id : batch[0].id;
                     const el = document.getElementById(`card-${pId}`);
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    if (el) {
+                        // Offset de 130px para garantir que não fique atrás do topo
+                        const headerOffset = 130;
+                        const elementPosition = el.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    }
                 }
             },
             filterLocalList(input) {
