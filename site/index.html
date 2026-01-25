@@ -185,18 +185,28 @@
         .btn-main-cat.visited { background: #f8fafc; color: #64748b; border-left-color: #cbd5e1; }
         .btn-main-cat.visited:after { content: '✓'; color: #22c55e; font-weight: 800; font-size: 1rem; }
 
-        .sub-cat-list {
-            padding: 12px 16px; background: #ffffff;
-            display: flex; flex-wrap: wrap; gap: 16px; /* Mais espaço para os redondos */
-            justify-content: flex-start;
-        }
+        /* --- AJUSTE: GRID DE 3 COLUNAS PARA SUBCATEGORIAS --- */
+.sub-cat-list {
+    padding: 16px 12px;
+    background: #ffffff;
+    display: grid; /* Mudamos de Flex para Grid */
+    grid-template-columns: repeat(3, 1fr); /* Cria 3 colunas de tamanho igual */
+    gap: 12px; /* Espaço entre os botões */
+    justify-items: center; /* Centraliza o botão dentro da célula */
+}
 
-        /* Botão Subcategoria Redondo Estilo iFood */
-        .btn-sub-cat {
-            display: flex; flex-direction: column; align-items: center;
-            width: 80px; background: transparent; border: none; cursor: pointer;
-            transition: all 0.2s;
-        }
+/* Botão Subcategoria Redondo */
+.btn-sub-cat {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    width: 100%; /* O botão usa 100% da largura da célula do grid */
+    background: transparent; 
+    border: none; 
+    cursor: pointer;
+    transition: all 0.2s;
+}
+/* ----------------------------------------------------- */
         .btn-sub-cat:active { transform: scale(0.95); opacity: 0.8; }
 
         .bsc-img-container {
