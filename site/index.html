@@ -1245,57 +1245,52 @@
                 this.loadMore(sectionId, true);
             },
             loadMore(sectionId, isInitial = false) {
-                const data = this.paginationStore[sectionId];
-                if(!data) return;
-                
-                const nextIndex = data.currentIndex + data.limit;
-                const batch = data.products.slice(data.currentIndex, nextIndex);
-                const hasMore = nextIndex < data.products.length;
-                let batchHtml = '';
-                
-                batch.forEach(item => {
-                    const p = data.type === 'home' ? item.d : item;
-                    if(data.type === 'home') {
-                        let qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
-                        batchHtml += `<div class="card-prod readonly">
-                            <div class="cp-img-box"><img src="${item.d.imagem}" class="cp-img" loading="lazy"></div>
-                            ${qtyText}
-                            <div class="cp-title">${item.d.nome}</div>
-                        </div>`;
-                    } else {
-                        batchHtml += this.buildCard(p);
-                    }
-                });
-                
-                let grid = document.querySelector(`#${sectionId} .grid-products-row`);
-                if(!grid) {
-                    document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div class="grid-products-row"></div>`);
-                    grid = document.querySelector(`#${sectionId} .grid-products-row`);
-                }
-                grid.insertAdjacentHTML('beforeend', batchHtml);
-                data.currentIndex = nextIndex;
-                
-                // Próximas cargas: 3 linhas (conforme pedido)
-                data.limit = data.cols * 3;
+    const data = this.paginationStore[sectionId];
+    if(!data) return;
+    
+    const nextIndex = data.currentIndex + data.limit;
+    const batch = data.products.slice(data.currentIndex, nextIndex);
+    const hasMore = nextIndex < data.products.length;
+    let batchHtml = '';
+    
+    batch.forEach(item => {
+        const p = data.type === 'home' ? item.d : item;
+        if(data.type === 'home') {
+            let qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
+            batchHtml += `<div class="card-prod readonly">
+                <div class="cp-img-box"><img src="${item.d.imagem}" class="cp-img" loading="lazy"></div>
+                ${qtyText}
+                <div class="cp-title">${item.d.nome}</div>
+            </div>`;
+        } else {
+            batchHtml += this.buildCard(p);
+        }
+    });
+    
+    let grid = document.querySelector(`#${sectionId} .grid-products-row`);
+    if(!grid) {
+        document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div class="grid-products-row"></div>`);
+        grid = document.querySelector(`#${sectionId} .grid-products-row`);
+    }
+    
+    grid.insertAdjacentHTML('beforeend', batchHtml);
+    data.currentIndex = nextIndex;
+    
+    // Próximas cargas: 3 linhas (conforme solicitado anteriormente)
+    data.limit = data.cols * 3;
 
-                const oldBtn = document.getElementById(`btn-${sectionId}`);
-                if(oldBtn) oldBtn.remove();
-                if(hasMore) {
-                    const count = Math.min(data.products.length - data.currentIndex, data.limit);
-                    document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${count} PRODUTOS</div>`);
-                }
-                
-                if(!isInitial && batch[0]) {
-                    const pId = data.type === 'home' ? batch[0].d.id : batch[0].id;
-                    const el = document.getElementById(`card-${pId}`);
-                    if (el) {
-                        const headerOffset = 130;
-                        const elementPosition = el.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                    }
-                }
-            },
+    const oldBtn = document.getElementById(`btn-${sectionId}`);
+    if(oldBtn) oldBtn.remove();
+    
+    if(hasMore) {
+        const count = Math.min(data.products.length - data.currentIndex, data.limit);
+        // Usamos type="button" para evitar qualquer comportamento de submit acidental
+        document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<button type="button" id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${count} PRODUTOS</button>`);
+    }
+    
+    // REMOVIDO: O bloco de Window.scrollTo que causava o pulo para o topo.
+    // O navegador agora mantém a posição do usuário enquanto os itens carregam abaixo.
+},
             renderHome() {
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
