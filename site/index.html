@@ -932,7 +932,7 @@
                 
                 await this.showTyping();
                 
-                this.addMessage(`Combinado! Já atualizei sua cesta. Agora, <b>aproveite para levar o que falta na sua casa</b> e completar sua dispensa!`);
+                this.addMessage(`Ok! Atualizei sua cesta.<br><br>Agora, <b>aproveite para levar o que falta na sua casa</b> e completar sua dispensa!`);
                 
                 document.getElementById('credit-chip').classList.add('visible');
                 App.updateTotal(); 
@@ -947,7 +947,7 @@
                 if(this.visitedCorridors.length > 0) {
                     this.addMessage("Qual o próximo corredor?");
                 } else {
-                    this.addMessage("Por qual corredor você quer começar?");
+                    this.addMessage("Veja abaixo todos os nossos produtos");
                 }
                 
                 const id = 'act-corridors-' + Date.now();
