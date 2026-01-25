@@ -164,7 +164,7 @@
             .btn-chat.primary { width: auto; }
         }
 
-        /* --- ESTILOS CORREDORES IFOOD (REDONDOS) --- */
+        /* --- ESTILOS CORREDORES --- */
         .corridor-grid { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; margin-top: 10px; }
         @media(min-width: 1024px) { .corridor-grid { grid-template-columns: repeat(3, 1fr); } }
 
@@ -185,47 +185,30 @@
         .btn-main-cat.visited { background: #f8fafc; color: #64748b; border-left-color: #cbd5e1; }
         .btn-main-cat.visited:after { content: '✓'; color: #22c55e; font-weight: 800; font-size: 1rem; }
 
-        /* --- AJUSTE: GRID DE 3 COLUNAS PARA SUBCATEGORIAS --- */
-.sub-cat-list {
-    padding: 16px 12px;
-    background: #ffffff;
-    display: grid; /* Mudamos de Flex para Grid */
-    grid-template-columns: repeat(3, 1fr); /* Cria 3 colunas de tamanho igual */
-    gap: 12px; /* Espaço entre os botões */
-    justify-items: center; /* Centraliza o botão dentro da célula */
-}
+        .sub-cat-list {
+            padding: 16px 12px;
+            background: #ffffff;
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 12px; 
+            justify-items: center; 
+        }
 
-/* Botão Subcategoria Redondo */
-.btn-sub-cat {
-    display: flex; 
-    flex-direction: column; 
-    align-items: center;
-    width: 100%; /* O botão usa 100% da largura da célula do grid */
-    background: transparent; 
-    border: none; 
-    cursor: pointer;
-    transition: all 0.2s;
-}
-/* ----------------------------------------------------- */
+        .btn-sub-cat {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; background: transparent; border: none; cursor: pointer;
+            transition: all 0.2s;
+        }
         .btn-sub-cat:active { transform: scale(0.95); opacity: 0.8; }
 
         .bsc-img-container {
-    width: 95px;
-    height: 95px;
-    border-radius: 50%;
-    overflow: hidden; 
-    margin-bottom: 8px;
-    background: #f1f5f9; /* Fundo cinza leve apenas se a imagem não carregar */
-    border: none;        /* Sem contorno */
-    box-shadow: none;    /* Sem sombra */
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-}
+            width: 95px; height: 95px; border-radius: 50%;
+            overflow: hidden; margin-bottom: 8px;
+            background: #f1f5f9; border: none; box-shadow: none;
+            display: flex; align-items: center; justify-content: center;
+        }
         
         .bsc-img { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* Fallback para quando não tem imagem */
         .bsc-placeholder { font-size: 1.5rem; color: #cbd5e1; }
 
         .bsc-label {
@@ -234,10 +217,7 @@
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
 
-        /* Visitado (borda verde) */
-        .btn-sub-cat.visited .bsc-img-container {
-            border: 2px solid #22c55e;
-        }
+        .btn-sub-cat.visited .bsc-img-container { border: 2px solid #22c55e; }
         .btn-sub-cat.visited .bsc-label { color: #166534; font-weight: 700; }
 
         /* --- FIM ESTILOS CORREDORES --- */
@@ -269,8 +249,10 @@
         .internal-subcat-title { grid-column: 1 / -1; font-size: 0.95rem; color: #555; font-weight: 800; margin: 25px 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 4px; scroll-margin-top: 140px; }
 
         @media(min-width: 1024px) { #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 60px 20px 100px; } }
-        .grid-products-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0 0 16px 0; }
-        @media(min-width: 1024px) { .grid-products-row { grid-template-columns: repeat(6, 1fr); } }
+        
+        /* GRID DE PRODUTOS AJUSTADO: 3 COLUNAS MOBILE, 9 DESKTOP */
+        .grid-products-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 0 16px 0; }
+        @media(min-width: 1024px) { .grid-products-row { grid-template-columns: repeat(9, 1fr); } }
 
         .btn-load-more { width: 100%; padding: 14px; background: #ffffff; color: var(--secondary); border: 2px solid #cbd5e1; border-radius: 8px; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; margin-top: 15px; cursor: pointer; text-align: center; transition: all 0.2s; }
         .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; }
@@ -815,9 +797,22 @@
                 }
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
                 
-                const htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
-                   <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${displayTitle}</span></div>
-                </div>`;
+                // HEADER COM IMAGEM SE FOR SUBCATEGORIA
+                let htmlHeader = "";
+                if(subCatName) {
+                    const imgName = App.toSlug(subCatName);
+                    htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
+                       <div class="subcat-title" style="display:flex; align-items:center; gap:12px;">
+                            <img src="img/${imgName}.webp" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:1px solid #e2e8f0;" onerror="this.style.display='none'">
+                            <span style="font-size:1.1rem; font-weight:700; color:#333;">${App.toSmartTitleCase(subCatName)}</span>
+                       </div>
+                    </div>`;
+                } else {
+                    htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
+                       <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${App.toSmartTitleCase(catName)}</span></div>
+                    </div>`;
+                }
+
                 this.container.insertAdjacentHTML('beforeend', htmlHeader);
                 
                 App.setupPagination(safeCatId, products, 'chat');
@@ -1071,42 +1066,25 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                     basketId: this.currentBasket ? this.currentBasket.id : null, cart: this.cart, cartOrder: this.cartOrder
                 }));
             },
-            
-            // --- FUNÇÃO PARA GERAR NOME DE ARQUIVO DA IMAGEM ---
-            toSlug(text) {
-                return text.toString().toLowerCase()
-                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
-                    .replace(/\s+/g, '-')     // espaços para -
-                    .replace(/[^\w\-]+/g, '') // remove não palavras
-                    .replace(/\-\-+/g, '-')   // múltiplos - para um só
-                    .replace(/^-+/, '')       // trim - do início
-                    .replace(/-+$/, '');      // trim - do fim
-            },
-
-            // --- INTELIGÊNCIA DE TEXTO (CAIXA ALTA/BAIXA) ---
             toSmartTitleCase(str) {
-                if(!str) return "";
-                const smallWords = ['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'sem', 'para', 'na', 'no', 'em', 'ao', 'a', 'o', 'as', 'os', 'ou', 'por', 'um', 'uma'];
-                const upperWords = ['kg', 'ml', 'g', 'l', 'un', 'pvc', 'uht', 'pet', 'ypê', 'sbp', 'tixan', 'qboa', 'bombril', 'p', 'm', 'g', 'gg', 'xg'];
-                
+                const smallWords = ['de', 'da', 'do', 'e', 'com', 'sem', 'para', 'na', 'no', 'em', 'ao', 'a', 'o', 'as', 'os'];
+                const upperWords = ['kg', 'ml', 'g', 'l', 'un', 'pvc', 'uht', 'pet', 'ypê', 'sbp', 'tixan', 'qboa'];
                 return str.toLowerCase().split(' ').map((w, i) => {
-                    // Mantém acentos
                     if (upperWords.includes(w)) return w.toUpperCase();
                     if (smallWords.includes(w) && i !== 0) return w;
                     return w.charAt(0).toUpperCase() + w.slice(1);
                 }).join(' ');
+            },
+            toSlug(text) {
+                return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
             },
             formatDateBr(dateStr) {
                  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) { const [y, m, d] = dateStr.split('-'); return `${d}/${m}/${y}`; }
                  return dateStr; 
             },
             setupPagination(sectionId, products, type='home') {
-                const isDesktop = window.innerWidth >= 1024;
-                const cols = isDesktop ? 6 : 2;
-                let limit = cols * 6; 
-                if (type === 'chat') {
-                    limit = products.length; 
-                }
+                // PAGINAÇÃO DE 9 EM 9
+                let limit = 9;
                 this.paginationStore[sectionId] = { products, currentIndex: 0, limit, type, lastSubCat: '' };
                 this.loadMore(sectionId, true);
             },
