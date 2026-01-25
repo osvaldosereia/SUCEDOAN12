@@ -234,6 +234,73 @@
             .btn-chat.primary { width: auto; }
         }
 
+        /* --- ESTILOS NOVOS PARA OS CORREDORES (MOBILE 1 COL, DESKTOP 3 COL) --- */
+        .corridor-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            width: 100%;
+            margin-top: 5px;
+        }
+        @media(min-width: 1024px) {
+            .corridor-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .corridor-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        
+        .btn-main-cat {
+            width: 100%;
+            padding: 12px 10px; /* Botão não muito alto */
+            background: #fff;
+            color: var(--secondary);
+            font-weight: 800;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            border: none;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-main-cat:after { content: '›'; font-size: 1.2rem; color: #999; }
+        .btn-main-cat.visited { color: #64748b; background: #f8fafc; }
+
+        .sub-cat-list {
+            padding: 10px;
+            background: #fcfcfc;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .btn-sub-cat {
+            padding: 6px 12px; /* Subcategoria compacta */
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            color: #555;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sub-cat:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-sub-cat:active { transform: scale(0.95); background: #eee; }
+
+        /* --- FIM ESTILOS CORREDORES --- */
+
         .chat-input-group { display:flex; gap:10px; width:100%; max-width:300px; margin-top:5px; flex-wrap: wrap; }
         .chat-input { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; outline:none; min-width: 150px; }
         .chat-input-btn { background:var(--secondary); color:white; padding:10px 15px; border-radius:8px; font-weight:600; border: none; cursor: pointer; }
@@ -275,37 +342,10 @@
         .subcat-pill { padding: 6px 16px; border-radius: 20px; font-weight: 700; display: inline-block; }
         
         .chips-container-wrapper {
-            position: -webkit-sticky; position: sticky;
-            top: calc(var(--app-header-height) - 1px);
-            z-index: 99; background: #fff;
-            padding: 8px 5px;
-            display: flex; align-items: center; gap: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            margin-bottom: 10px;
+            /* REMOVIDO CONFORME SOLICITAÇÃO */
+            display: none;
         }
-        .sticky-chips-bar {
-            flex: 1; display: flex; gap: 8px; overflow-x: auto;
-            white-space: nowrap; padding: 4px 2px;
-            -ms-overflow-style: none; scrollbar-width: none; scroll-behavior: smooth;
-        }
-        .sticky-chips-bar::-webkit-scrollbar { display: none; }
-
-        .chip-btn {
-            flex: 0 0 auto; padding: 10px 20px; border-radius: 50px;
-            background: #f1f5f9; color: #334155; font-weight: 700; font-size: 0.9rem;
-            border: 1px solid #cbd5e1; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
-        }
-        .chip-btn:active { background: #cbd5e1; transform: scale(0.95); }
-
-        .scroll-arrow {
-            width: 32px; height: 32px; flex-shrink: 0;
-            background: #222; color: #fff; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 1.2rem; font-weight: 700; line-height: 1;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); user-select: none;
-        }
-        .scroll-arrow:active { transform: scale(0.9); }
-
+        
         .internal-subcat-title {
             grid-column: 1 / -1; 
             font-size: 0.95rem; color: #555; font-weight: 800;
@@ -709,7 +749,8 @@
         const ChatFlow = {
             container: null,
             categories: [], 
-            visitedCorridors: [], // Nova variável para rastrear
+            categoryMap: {}, // Nova estrutura para mapear subcategorias
+            visitedCorridors: [], 
             catIndex: 0,
             checkoutState: { paymentMethod: '', couponApplied: false },
             
@@ -718,15 +759,22 @@
                 this.container.innerHTML = '';
                 this.catIndex = 0;
                 this.visitedCorridors = [];
+                this.categoryMap = {}; // Reset mapa
                 
                 try {
-                    let catGroups = {};
+                    // Mapeia categorias e suas subcategorias
                     App.data.forEach(p => {
                          if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
                          const mainKey = p.appCategory;
-                         if(!catGroups[mainKey]) { catGroups[mainKey] = true; }
+                         if(!this.categoryMap[mainKey]) { 
+                             this.categoryMap[mainKey] = new Set();
+                         }
+                         if(p.subCategory) {
+                             this.categoryMap[mainKey].add(p.subCategory);
+                         }
                     });
-                    this.categories = Object.keys(catGroups);
+                    
+                    this.categories = Object.keys(this.categoryMap);
                     this.categories.sort((a,b) => {
                         const getScore = (catName) => {
                             if(catName.includes('MERCEARIA') || catName.includes('ALIMENTOS')) return 3;
@@ -848,7 +896,6 @@
             async showCorridorMenu() {
                 await this.showTyping();
                 
-                // Mudar a frase se já visitou algum corredor
                 if(this.visitedCorridors.length > 0) {
                     this.addMessage("Qual o próximo corredor?");
                 } else {
@@ -857,37 +904,62 @@
                 
                 const id = 'act-corridors-' + Date.now();
                 
-                // Gera botões. Se já visitou, aplica classe especial
-                let buttons = "";
+                // --- NOVA LÓGICA DE GRID HIERÁRQUICO ---
+                let gridHtml = '<div class="corridor-grid">';
+                
                 if(this.categories && this.categories.length > 0) {
-                     buttons = this.categories.map(cat => {
+                     this.categories.forEach(cat => {
                         const isVisited = this.visitedCorridors.includes(cat);
-                        const cls = isVisited ? "btn-chat visited" : "btn-chat";
-                        return `<button class="${cls}" style="padding:15px; text-transform:uppercase;" onclick="ChatFlow.showCategory('${id}', '${cat}')">${App.toSmartTitleCase(cat)}</button>`;
-                     }).join('');
-                } else {
-                     buttons = `<button class="btn-chat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS')">Mercearia</button>`;
-                }
+                        const mainCls = isVisited ? "btn-main-cat visited" : "btn-main-cat";
+                        
+                        let subHtml = "";
+                        const subCats = Array.from(this.categoryMap[cat] || []).sort();
+                        
+                        if(subCats.length > 0) {
+                            subHtml = `<div class="sub-cat-list">
+                                ${subCats.map(sub => `<button class="btn-sub-cat" onclick="ChatFlow.showCategory('${id}', '${cat}', '${sub}')">${sub}</button>`).join('')}
+                            </div>`;
+                        }
 
-                const html = `<div id="${id}" class="chat-actions" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    ${buttons}
-                    <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="grid-column: 1 / -1; background:#222B49; border-color:#222B49; margin-top:5px;">Ir para o Caixa</button>
+                        gridHtml += `
+                        <div class="corridor-card">
+                            <button class="${mainCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', null)">
+                                ${App.toSmartTitleCase(cat)}
+                            </button>
+                            ${subHtml}
+                        </div>`;
+                     });
+                } else {
+                     gridHtml += `<div class="corridor-card"><button class="btn-main-cat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS', null)">Mercearia</button></div>`;
+                }
+                
+                gridHtml += '</div>';
+
+                const html = `<div id="${id}">
+                    ${gridHtml}
+                    <div class="chat-actions" style="margin-top:20px;">
+                        <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="background:#222B49; border-color:#222B49; width:100%;">Ir para o Caixa</button>
+                    </div>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', html);
                 this.scrollToBottom();
             },
 
-            async showCategory(elemId, catName) {
+            async showCategory(elemId, catName, subCatName) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage(`Ir para ${App.toSmartTitleCase(catName)}`, 'user'); 
                 
-                // LÓGICA DE ROLAGEM SE JÁ EXISTIR
-                const safeCatId = 'sec-cat-' + catName.replace(/[^a-zA-Z0-9]/g, '');
+                const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${subCatName}` : App.toSmartTitleCase(catName);
+                this.addMessage(`Ir para ${displayTitle}`, 'user'); 
+                
+                // ID Único baseado na Categoria + Subcategoria (se houver)
+                let uniqueIdStr = catName;
+                if(subCatName) uniqueIdStr += subCatName;
+                const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
+                
                 const existingSection = document.getElementById(safeCatId);
                 
                 if (existingSection) {
-                    // Se já existe, só rola até ele
                     setTimeout(() => {
                         const headerOffset = 100;
                         const elementPosition = existingSection.getBoundingClientRect().top;
@@ -900,19 +972,21 @@
                     return;
                 }
                 
-                // Se não existe, renderiza
                 await this.showTyping();
                 
-                // Marca como visitado
                 if(!this.visitedCorridors.includes(catName)) {
                     this.visitedCorridors.push(catName);
                 }
                 
-                const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
+                // Filtra produtos: Se tiver subcategoria, filtra por ela também.
+                let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
+                if(subCatName) {
+                    products = products.filter(p => p.subCategory === subCatName);
+                }
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
                 
                 const htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
-                   <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${App.toSmartTitleCase(catName)}</span></div>
+                   <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${displayTitle}</span></div>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', htmlHeader);
                 
@@ -947,7 +1021,7 @@
                         if(p) {
                             const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
                             removedTotal += val;
-removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.substring(0, 20)}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
+removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.substring(0, 30)}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
                     }
                 }
                 
@@ -966,7 +1040,7 @@ removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; just
                         if(p) {
                             const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
                             addedTotal += val;
-addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.substring(0, 20)}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
+addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.substring(0, 30)}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
                     }
                 }
                 
@@ -1014,7 +1088,6 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 const summaryContent = this.generateSummaryHTML(App.currentBasket.nome, App.currentBasket.valor, effectiveTotal);
                 this.container.insertAdjacentHTML('beforeend', `<div id="chat-checkout-summary" class="chat-msg wide-summary">${summaryContent}</div>`);
                 
-                // ROLA PARA O INICIO DO RESUMO PARA O CLIENTE VER TUDO
                 const lastMsg = this.container.lastElementChild;
                 if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 
@@ -1219,30 +1292,7 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 let limit = cols * 6; 
                 if (type === 'chat') {
                     limit = products.length; 
-                    const subcats = [...new Set(products.map(p => p.subCategory))];
-                    if (subcats.length > 1) {
-                        let chipsHtml = `<div class="chips-container-wrapper">
-                            <div class="scroll-arrow" onclick="App.scrollChips(this, -1)">‹</div>
-                            <div class="sticky-chips-bar">`;
-                        subcats.forEach(sc => {
-                            const safeId = 'sc-' + sc.replace(/[^a-zA-Z0-9]/g, '');
-                            chipsHtml += `<button class="chip-btn" onclick="document.getElementById('${safeId}').scrollIntoView({behavior:'smooth', block:'start'});">${sc}</button>`;
-                        });
-                        chipsHtml += `</div>
-                            <div class="scroll-arrow" onclick="App.scrollChips(this, 1)">›</div>
-                        </div>`;
-                        setTimeout(() => {
-                            const container = document.getElementById(sectionId);
-                            if(container) {
-                                const titleEl = container.querySelector('.subcat-title');
-                                if(titleEl) {
-                                    if(!container.querySelector('.chips-container-wrapper')) {
-                                        titleEl.insertAdjacentHTML('afterend', chipsHtml);
-                                    }
-                                }
-                            }
-                        }, 50);
-                    }
+                    // REMOVIDO GERAÇÃO DOS CHIPS HORIZONTAIS
                 }
                 this.paginationStore[sectionId] = { products, currentIndex: 0, limit, type, lastSubCat: '' };
                 this.loadMore(sectionId, true);
@@ -1260,11 +1310,8 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 let batchHtml = '';
                 batch.forEach(item => {
                     const p = data.type === 'home' ? item.d : item;
-                    if(data.type === 'chat' && p.subCategory && p.subCategory !== data.lastSubCat) {
-                        data.lastSubCat = p.subCategory;
-                        const safeId = 'sc-' + p.subCategory.replace(/[^a-zA-Z0-9]/g, '');
-                        batchHtml += `<div id="${safeId}" class="internal-subcat-title">${p.subCategory}</div>`;
-                    }
+                    // REMOVIDO INSERÇÃO DE TÍTULO DE SUBCATEGORIA NA LISTA (POIS JÁ FILTROU ANTES)
+                    
                     if(data.type === 'home') {
                         let cardHtml = this.buildCard(item.d).replace(/<div class="cp-price.*?<\/div>/, '');
                         const qtyText = `<div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div>`;
