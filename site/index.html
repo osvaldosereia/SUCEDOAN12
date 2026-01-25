@@ -876,9 +876,11 @@
                 }
                 if(products.length === 0) return;
                 
-                products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
+                // ORDENAÇÃO ALFABÉTICA PELO NOME
+                products.sort((a, b) => a.nome.localeCompare(b.nome));
                 
                 let htmlHeader = "";
+                // ... restante da função continua igual
                 if(subCatName) {
                     const imgName = App.toSlug(subCatName);
                     htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
@@ -897,7 +899,7 @@
                 App.setupPagination(safeCatId, products, 'chat');
             },
 
-           async showCategory(elemId, catName, subCatName) {
+          async showCategory(elemId, catName, subCatName) {
                 const el = document.getElementById(elemId);
                 if(el && !elemId.startsWith('act-menu')) el.remove();
                 const oldSections = document.querySelectorAll('.subcat-section');
@@ -910,9 +912,12 @@
                 if(subCatName) {
                     products = products.filter(p => p.subCategory === subCatName);
                 }
-                products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
+
+                // ORDENAÇÃO ALFABÉTICA PELO NOME
+                products.sort((a, b) => a.nome.localeCompare(b.nome));
                 
                 let htmlHeader = "";
+                // ... restante da função continua igual
                 if(subCatName) {
                     const imgName = App.toSlug(subCatName);
                     htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
