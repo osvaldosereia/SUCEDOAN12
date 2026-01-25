@@ -788,7 +788,7 @@
             },
 
             askRemovalConfirmation() {
-                this.addMessage(`Legal, retirou os produtos que não quer?`);
+                this.addMessage(`Ok, retirou os produtos que não quer?`);
                 const id = 'actions-removal';
                 const html = `<div id="${id}" class="chat-actions">
                     <button class="btn-chat primary" onclick="ChatFlow.handleRemovalYes('${id}')">Sim, já retirei</button>
@@ -803,7 +803,7 @@
                 
                 await this.showTyping();
                 
-                this.addMessage(`Combinado! Já atualizei sua cesta. Agora, <b>aproveite para levar o que falta na sua casa</b> e completar sua dispensa!`);
+                this.addMessage(`Blz! Atualizei sua cesta. Agora, fique a vontade para repor e adicionar os produtos que quiser!`);
                 
                 document.getElementById('credit-chip').classList.add('visible');
                 
