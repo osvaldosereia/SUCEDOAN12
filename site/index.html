@@ -234,72 +234,110 @@
             .btn-chat.primary { width: auto; }
         }
 
-        /* --- ESTILOS NOVOS PARA OS CORREDORES (MOBILE 1 COL, DESKTOP 3 COL) --- */
-        .corridor-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-            width: 100%;
-            margin-top: 5px;
-        }
-        @media(min-width: 1024px) {
-            .corridor-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
+        /* --- ESTILOS NOVOS PARA OS CORREDORES (PREMIUM) --- */
+.corridor-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    width: 100%;
+    margin-top: 10px;
+}
+@media(min-width: 1024px) {
+    .corridor-grid { grid-template-columns: repeat(3, 1fr); }
+}
 
-        .corridor-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-        }
-        
-        .btn-main-cat {
-            width: 100%;
-            padding: 12px 10px; /* Botão não muito alto */
-            background: #fff;
-            color: var(--secondary);
-            font-weight: 800;
-            font-size: 0.95rem;
-            text-transform: uppercase;
-            border: none;
-            border-bottom: 1px solid #f1f5f9;
-            text-align: left;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .btn-main-cat:after { content: '›'; font-size: 1.2rem; color: #999; }
-        .btn-main-cat.visited { color: #64748b; background: #f8fafc; }
+.corridor-card {
+    background: #fff;
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03); /* Sombra suave */
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.corridor-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+}
 
-        .sub-cat-list {
-            padding: 10px;
-            background: #fcfcfc;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+/* Botão Principal da Categoria */
+.btn-main-cat {
+    width: 100%;
+    padding: 16px;
+    background: #ffffff;
+    color: var(--secondary);
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: capitalize; /* Primeira letra maiúscula apenas */
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
 
-        .btn-sub-cat {
-            padding: 6px 12px; /* Subcategoria compacta */
-            background: #fff;
-            border: 1px solid #cbd5e1;
-            color: #555;
-            font-size: 0.8rem;
-            font-weight: 600;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-sub-cat:hover { border-color: var(--primary); color: var(--primary); }
-        .btn-sub-cat:active { transform: scale(0.95); background: #eee; }
+/* Ícone de seta padrão */
+.btn-main-cat:after { 
+    content: '›'; 
+    font-size: 1.4rem; 
+    color: #cbd5e1; 
+    line-height: 1;
+    transition: all 0.3s;
+}
 
-        /* --- FIM ESTILOS CORREDORES --- */
+/* ESTILO DE VISITADO (Categoria Principal) */
+.btn-main-cat.visited {
+    background: #f0fdf4; /* Fundo verde bem clarinho */
+    color: #166534; /* Texto verde escuro */
+    border-bottom-color: #dcfce7;
+}
+.btn-main-cat.visited:after {
+    content: '✓'; /* Troca seta por check */
+    color: #22c55e;
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.sub-cat-list {
+    padding: 12px 16px;
+    background: #fafafa;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Botões das Subcategorias (Pills) */
+.btn-sub-cat {
+    padding: 8px 14px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.btn-sub-cat:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* ESTILO DE VISITADO (Subcategoria) */
+.btn-sub-cat.visited {
+    background: #dcfce7; /* Verde claro */
+    color: #15803d;      /* Verde escuro */
+    border-color: #bbf7d0;
+    box-shadow: none;
+}
+/* --- FIM ESTILOS CORREDORES --- */
 
         .chat-input-group { display:flex; gap:10px; width:100%; max-width:300px; margin-top:5px; flex-wrap: wrap; }
         .chat-input { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; outline:none; min-width: 150px; }
@@ -754,56 +792,60 @@
             catIndex: 0,
             checkoutState: { paymentMethod: '', couponApplied: false },
             
-            async start() {
-                this.container = document.getElementById('chat-stream');
-                this.container.innerHTML = '';
-                this.catIndex = 0;
-                this.visitedCorridors = [];
-                this.categoryMap = {}; // Reset mapa
-                
-                try {
-                    // Mapeia categorias e suas subcategorias
-                    App.data.forEach(p => {
-                         if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
-                         const mainKey = p.appCategory;
-                         if(!this.categoryMap[mainKey]) { 
-                             this.categoryMap[mainKey] = new Set();
-                         }
-                         if(p.subCategory) {
-                             this.categoryMap[mainKey].add(p.subCategory);
-                         }
-                    });
-                    
-                    this.categories = Object.keys(this.categoryMap);
-                    this.categories.sort((a,b) => {
-                        const getScore = (catName) => {
-                            if(catName.includes('MERCEARIA') || catName.includes('ALIMENTOS')) return 3;
-                            if(catName.includes('MATINAIS') || catName.includes('LANCHES')) return 2;
-                            if(catName.includes('LIMPEZA')) return 1;
-                            return 0;
-                        };
-                        const scoreA = getScore(a);
-                        const scoreB = getScore(b);
-                        if(scoreA !== scoreB) return scoreB - scoreA; 
-                        return a.localeCompare(b); 
-                    });
-                } catch(e) { console.error("Erro categorias", e); }
+           async start() {
+    this.container = document.getElementById('chat-stream');
+    this.container.innerHTML = '';
+    this.catIndex = 0;
+    
+    // --- ATUALIZAÇÃO AQUI ---
+    this.visitedCorridors = []; // Reseta categorias visitadas
+    this.visitedSubCats = [];   // Reseta subcategorias visitadas (NOVO)
+    // ------------------------
 
-                const hours = new Date().getHours();
-                let greeting = "Bom dia";
-                if(hours >= 12) greeting = "Boa tarde";
-                if(hours >= 18) greeting = "Boa noite";
-                
-                await this.showTyping();
-                this.addMessage(`${greeting}! Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>, certo?`);
-                
-                const id = 'act-intro';
-                const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Sim!</button>
-                </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom();
-            },
+    this.categoryMap = {}; 
+    
+    try {
+        App.data.forEach(p => {
+             if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
+             const mainKey = p.appCategory;
+             if(!this.categoryMap[mainKey]) { 
+                 this.categoryMap[mainKey] = new Set();
+             }
+             if(p.subCategory) {
+                 this.categoryMap[mainKey].add(p.subCategory);
+             }
+        });
+        
+        this.categories = Object.keys(this.categoryMap);
+        this.categories.sort((a,b) => {
+            const getScore = (catName) => {
+                if(catName.includes('MERCEARIA') || catName.includes('ALIMENTOS')) return 3;
+                if(catName.includes('MATINAIS') || catName.includes('LANCHES')) return 2;
+                if(catName.includes('LIMPEZA')) return 1;
+                return 0;
+            };
+            const scoreA = getScore(a);
+            const scoreB = getScore(b);
+            if(scoreA !== scoreB) return scoreB - scoreA; 
+            return a.localeCompare(b); 
+        });
+    } catch(e) { console.error("Erro categorias", e); }
+
+    const hours = new Date().getHours();
+    let greeting = "Bom dia";
+    if(hours >= 12) greeting = "Boa tarde";
+    if(hours >= 18) greeting = "Boa noite";
+    
+    await this.showTyping();
+    this.addMessage(`${greeting}! Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>, certo?`);
+    
+    const id = 'act-intro';
+    const html = `<div id="${id}" class="chat-actions" style="margin-top:5px;">
+        <button class="btn-chat primary" onclick="ChatFlow.explainRules('${id}')">Sim!</button>
+    </div>`;
+    this.container.insertAdjacentHTML('beforeend', html);
+    this.scrollToBottom();
+},
 
             async explainRules(elemId) {
                 const el = document.getElementById(elemId);
@@ -893,116 +935,126 @@
                 this.showCorridorMenu(); // Chama o menu de setores/corredores
             },
 
-            async showCorridorMenu() {
-                await this.showTyping();
-                
-                if(this.visitedCorridors.length > 0) {
-                    this.addMessage("Qual o próximo corredor?");
-                } else {
-                    this.addMessage("Por qual corredor você quer começar?");
-                }
-                
-                const id = 'act-corridors-' + Date.now();
-                
-                // --- NOVA LÓGICA DE GRID HIERÁRQUICO ---
-                let gridHtml = '<div class="corridor-grid">';
-                
-                if(this.categories && this.categories.length > 0) {
-                     this.categories.forEach(cat => {
-                        const isVisited = this.visitedCorridors.includes(cat);
-                        const mainCls = isVisited ? "btn-main-cat visited" : "btn-main-cat";
-                        
-                        let subHtml = "";
-                        const subCats = Array.from(this.categoryMap[cat] || []).sort();
-                        
-                        if(subCats.length > 0) {
-                            subHtml = `<div class="sub-cat-list">
-                                ${subCats.map(sub => `<button class="btn-sub-cat" onclick="ChatFlow.showCategory('${id}', '${cat}', '${sub}')">${sub}</button>`).join('')}
-                            </div>`;
-                        }
-
-                        gridHtml += `
-                        <div class="corridor-card">
-                            <button class="${mainCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', null)">
-                                ${App.toSmartTitleCase(cat)}
-                            </button>
-                            ${subHtml}
-                        </div>`;
-                     });
-                } else {
-                     gridHtml += `<div class="corridor-card"><button class="btn-main-cat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS', null)">Mercearia</button></div>`;
-                }
-                
-                gridHtml += '</div>';
-
-                const html = `<div id="${id}">
-                    ${gridHtml}
-                    <div class="chat-actions" style="margin-top:20px;">
-                        <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="background:#222B49; border-color:#222B49; width:100%;">Ir para o Caixa</button>
-                    </div>
+           async showCorridorMenu() {
+    await this.showTyping();
+    
+    if(this.visitedCorridors.length > 0) {
+        this.addMessage("Qual o próximo corredor?");
+    } else {
+        this.addMessage("Por qual corredor você quer começar?");
+    }
+    
+    const id = 'act-corridors-' + Date.now();
+    
+    let gridHtml = '<div class="corridor-grid">';
+    
+    if(this.categories && this.categories.length > 0) {
+         this.categories.forEach(cat => {
+            // Verifica se a Categoria Principal foi visitada
+            const isCatVisited = this.visitedCorridors.includes(cat);
+            const mainCls = isCatVisited ? "btn-main-cat visited" : "btn-main-cat";
+            
+            let subHtml = "";
+            const subCats = Array.from(this.categoryMap[cat] || []).sort();
+            
+            if(subCats.length > 0) {
+                subHtml = `<div class="sub-cat-list">
+                    ${subCats.map(sub => {
+                        // Verifica se a Subcategoria foi visitada (NOVO)
+                        const isSubVisited = this.visitedSubCats.includes(sub);
+                        const subCls = isSubVisited ? "btn-sub-cat visited" : "btn-sub-cat";
+                        return `<button class="${subCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', '${sub}')">${sub}</button>`;
+                    }).join('')}
                 </div>`;
-                this.container.insertAdjacentHTML('beforeend', html);
-                this.scrollToBottom();
-            },
+            }
 
-            async showCategory(elemId, catName, subCatName) {
-                const el = document.getElementById(elemId);
-                if(el) el.remove();
-                
-                const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${subCatName}` : App.toSmartTitleCase(catName);
-                this.addMessage(`Ir para ${displayTitle}`, 'user'); 
-                
-                // ID Único baseado na Categoria + Subcategoria (se houver)
-                let uniqueIdStr = catName;
-                if(subCatName) uniqueIdStr += subCatName;
-                const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
-                
-                const existingSection = document.getElementById(safeCatId);
-                
-                if (existingSection) {
-                    setTimeout(() => {
-                        const headerOffset = 100;
-                        const elementPosition = existingSection.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                    }, 100);
-                    
-                    await this.wait(1500);
-                    this.showCorridorMenu();
-                    return;
-                }
-                
-                await this.showTyping();
-                
-                if(!this.visitedCorridors.includes(catName)) {
-                    this.visitedCorridors.push(catName);
-                }
-                
-                // Filtra produtos: Se tiver subcategoria, filtra por ela também.
-                let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
-                if(subCatName) {
-                    products = products.filter(p => p.subCategory === subCatName);
-                }
-                products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
-                
-                const htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
-                   <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${displayTitle}</span></div>
-                </div>`;
-                this.container.insertAdjacentHTML('beforeend', htmlHeader);
-                
-                App.setupPagination(safeCatId, products, 'chat');
-                
-                const element = document.getElementById(safeCatId);
-                if(element) {
-                   const headerOffset = 100;
-                   const elementPosition = element.getBoundingClientRect().top;
-                   const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                   window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                }
-                
-                await this.wait(2000); 
-                this.showCorridorMenu();
-            },
+            gridHtml += `
+            <div class="corridor-card">
+                <button class="${mainCls}" onclick="ChatFlow.showCategory('${id}', '${cat}', null)">
+                    ${App.toSmartTitleCase(cat)}
+                </button>
+                ${subHtml}
+            </div>`;
+         });
+    } else {
+         gridHtml += `<div class="corridor-card"><button class="btn-main-cat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS', null)">Mercearia</button></div>`;
+    }
+    
+    gridHtml += '</div>';
+
+    const html = `<div id="${id}">
+        ${gridHtml}
+        <div class="chat-actions" style="margin-top:20px;">
+            <button class="btn-chat primary" onclick="ChatFlow.startCheckout()" style="background:#222B49; border-color:#222B49; width:100%;">Ir para o Caixa</button>
+        </div>
+    </div>`;
+    this.container.insertAdjacentHTML('beforeend', html);
+    this.scrollToBottom();
+},
+
+           async showCategory(elemId, catName, subCatName) {
+    const el = document.getElementById(elemId);
+    if(el) el.remove();
+    
+    const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${subCatName}` : App.toSmartTitleCase(catName);
+    this.addMessage(`Ir para ${displayTitle}`, 'user'); 
+    
+    // ID Único
+    let uniqueIdStr = catName;
+    if(subCatName) uniqueIdStr += subCatName;
+    const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
+    
+    const existingSection = document.getElementById(safeCatId);
+    
+    if (existingSection) {
+        setTimeout(() => {
+            const headerOffset = 100;
+            const elementPosition = existingSection.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+        }, 100);
+        await this.wait(1500);
+        this.showCorridorMenu();
+        return;
+    }
+    
+    await this.showTyping();
+    
+    // --- LÓGICA DE VISITA ---
+    // Marca categoria principal como visitada
+    if(!this.visitedCorridors.includes(catName)) {
+        this.visitedCorridors.push(catName);
+    }
+    // Marca subcategoria como visitada (se houver)
+    if(subCatName && !this.visitedSubCats.includes(subCatName)) {
+        this.visitedSubCats.push(subCatName);
+    }
+    // ------------------------
+    
+    let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
+    if(subCatName) {
+        products = products.filter(p => p.subCategory === subCatName);
+    }
+    products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
+    
+    const htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
+       <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${displayTitle}</span></div>
+    </div>`;
+    this.container.insertAdjacentHTML('beforeend', htmlHeader);
+    
+    App.setupPagination(safeCatId, products, 'chat');
+    
+    const element = document.getElementById(safeCatId);
+    if(element) {
+       const headerOffset = 100;
+       const elementPosition = element.getBoundingClientRect().top;
+       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+       window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+    }
+    
+    await this.wait(2000); 
+    this.showCorridorMenu();
+},
             
             // --- FUNÇÕES DE RESUMO E CUPOM (RESTAURADAS COMO NO ORIGINAL) ---
             
