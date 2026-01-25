@@ -1106,13 +1106,13 @@
             async startCheckout() { /* ... mesmo codigo ... */ 
                 let currentSum = 0; for(let id in App.cart) { const p = App.data.find(x => x.id === id); if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; }
                 const effectiveTotal = currentSum + App.baseFee;
-                if(effectiveTotal < App.currentBasket.valor - 0.05) {
+               if(effectiveTotal < App.currentBasket.valor - 0.05) {
                     const diff = App.currentBasket.valor - effectiveTotal;
                     this.addMessage(`⚠️ Sua cesta ainda não está completa. Faltam <strong>R$ ${diff.toFixed(2).replace('.',',')}</strong>.`);
-                    await this.wait(1000);
-                    // this.showCorridorMenu(); // Agora chama os botoes
-                    this.showCorridorButtons();
+                    // REMOVIDO: this.showCorridorButtons();
+                    // O cliente deve usar o menu "Prateleiras" ou rolar o feed existente.
                     return; 
+                }
                 }
                 document.getElementById('credit-chip').classList.remove('visible');
                 this.addMessage("Finalizar Agora", 'user');
