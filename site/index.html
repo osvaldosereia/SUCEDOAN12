@@ -818,9 +818,8 @@
                 // 4. Lógica Inteligente
                 if (creditoReal > 0.05) { 
                     // Se sobrou dinheiro (margem de 5 centavos)
-                    this.addMessage(`Perfeito!\n\nO valor atual dos seus itens é R$ ${totalAtual.toFixed(2).replace('.',',')}.`);
                     await this.wait(1000);
-                    this.addMessage(`Isso significa que você ainda tem <strong>R$ ${creditoReal.toFixed(2).replace('.',',')}</strong> de crédito para adicionar novos produtos sem pagar nada a mais.`);
+                    this.addMessage(`Legal, você tem <strong>R$ ${creditoReal.toFixed(2).replace('.',',')}</strong> de crédito para usar como quiser.`);
                 } else {
                     // Se a pessoa tirou itens mas adicionou outros mais caros, o valor já passou ou empatou
                     const diferenca = totalAtual - valorCesta;
@@ -834,7 +833,9 @@
                 }
 
                 await this.wait(1800);
-                this.addMessage(`Agora, deseja passear pelas categorias para ver se esqueceu algo?`);
+                this.addMessage(`Agora, monte a cesta do seu jeito como estivesse em um supermercado.`);
+                await this.wait(1000);
+                this.addMessage(`Boas Compras.`);
                 
                 try {
                     document.getElementById('credit-chip').classList.add('visible');
