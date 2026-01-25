@@ -333,13 +333,15 @@
         .btn-load-more:hover { background: #f1f5f9; border-color: var(--secondary); color: #000; transform: scale(1.05); }
         
         /* --- CARD PRODUTO (Altura Generosa) --- */
-        .card-prod { 
-            width: 100%; min-width: 160px; max-width: 180px; flex-shrink: 0; 
-            background: transparent; border: none; 
-            padding: 0 0 16px 0; 
-            display: flex; flex-direction: column; position: relative; 
-            gap: 6px; 
-        }
+       .card-prod { 
+    width: 100%; 
+    /* Removidos min-width e max-width para respeitar as 3 colunas do grid */
+    flex-shrink: 0; 
+    background: transparent; border: none; 
+    padding: 0 0 16px 0; 
+    display: flex; flex-direction: column; position: relative; 
+    gap: 6px; 
+}
         
         /* ETIQUETAS PEQUENAS E NO TOPO */
         .cp-tag { 
@@ -369,7 +371,7 @@
             cursor: pointer; position: relative; 
             background: #f3f4f6; border-radius: 18px; overflow: hidden; 
         }
-        .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; transition: opacity 0.3s; opacity: 0; }
+        .cp-img { width: 105%; height: 105%; object-fit: contain; border-radius: 18px; transition: opacity 0.3s; opacity: 1; }
         .cp-img.loaded { opacity: 1; }
         .grid-products-row .cp-img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.05); }
 
