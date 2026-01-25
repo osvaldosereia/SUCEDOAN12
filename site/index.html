@@ -880,24 +880,40 @@
                 this.scrollToBottom();
             },
 
-            async showCategory(elemId, catName, subCatName) {
+           async showCategory(elemId, catName, subCatName) {
+                // 1. Remove os botões de opção anteriores para limpar a tela
                 const el = document.getElementById(elemId);
-                // Se for clicado pelo menu, não remove mensagem anterior para manter fluxo
                 if(el && !elemId.startsWith('act-menu')) el.remove();
                 
-                // LIMPA PRATELEIRAS ANTIGAS PARA NÃO FICAR LONGO
+                // 2. Remove prateleiras antigas (para o chat não ficar infinito)
                 const oldSections = document.querySelectorAll('.subcat-section');
                 oldSections.forEach(section => section.remove());
 
-                const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${App.toSmartTitleCase(subCatName)}` : App.toSmartTitleCase(catName);
-                if(!elemId.startsWith('act-menu')) this.addMessage(`Ir para ${displayTitle}`, 'user'); 
+                // OBS: A linha que enviava a mensagem "Ir para..." foi removida aqui.
                 
                 let uniqueIdStr = catName;
                 if(subCatName) uniqueIdStr += subCatName;
                 const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
                 
-                if(!elemId.startsWith('act-menu')) await this.showTyping();
+                // Verifica se já existe (embora tenhamos limpado acima, é bom manter a segurança)
+                const existingSection = document.getElementById(safeCatId);
                 
+                if (existingSection) {
+                    setTimeout(() => {
+                        const headerOffset = 130;
+                        const elementPosition = existingSection.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    }, 50);
+                    
+                    if(!elemId.startsWith('act-menu')) {
+                        await this.wait(1000); // Espera um pouco menos
+                        this.showCorridorMenu();
+                    }
+                    return;
+                }
+                
+                // 3. Marca como visitado silenciosamente
                 if(!this.visitedCorridors.includes(catName)) {
                     this.visitedCorridors.push(catName);
                 }
@@ -911,7 +927,7 @@
                 }
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
                 
-                // HEADER COM IMAGEM SE FOR SUBCATEGORIA
+                // 4. Monta o Cabeçalho (Imagem + Título)
                 let htmlHeader = "";
                 if(subCatName) {
                     const imgName = App.toSlug(subCatName);
@@ -929,8 +945,10 @@
 
                 this.container.insertAdjacentHTML('beforeend', htmlHeader);
                 
+                // 5. Renderiza os produtos
                 App.setupPagination(safeCatId, products, 'chat');
                 
+                // 6. Rola a tela imediatamente
                 const element = document.getElementById(safeCatId);
                 if(element) {
                    const headerOffset = 130;
@@ -939,9 +957,11 @@
                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                 }
                 
-                // SEMPRE CHAMA O MENU DE CORREDORES NOVAMENTE NO FINAL
-                await this.wait(2000); 
-                this.showCorridorMenu();
+                // 7. Mostra o menu de prateleiras novamente em seguida
+                if(!elemId.startsWith('act-menu')) {
+                    await this.wait(800); // Tempo curto apenas para dar respiro visual
+                    this.showCorridorMenu();
+                }
             },
             
             // --- RESUMO & CUPOM SIMPLIFICADO (LIMITADO A 20 CARACTERES) ---
