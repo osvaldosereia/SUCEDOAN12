@@ -212,6 +212,19 @@
             padding: 14px 20px; 
             font-size: 1rem;
         }
+
+        /* Estilo para botão visitado */
+        .btn-chat.visited {
+            background: #f1f5f9;
+            color: #64748b;
+            border-color: #cbd5e1;
+            font-weight: 500;
+        }
+        .btn-chat.visited:after {
+            content: '✓';
+            margin-left: 5px;
+            font-weight: bold;
+        }
         
         .btn-chat:active { transform: scale(0.95); }
 
@@ -696,6 +709,7 @@
         const ChatFlow = {
             container: null,
             categories: [], 
+            visitedCorridors: [], // Nova variável para rastrear
             catIndex: 0,
             checkoutState: { paymentMethod: '', couponApplied: false },
             
@@ -703,6 +717,7 @@
                 this.container = document.getElementById('chat-stream');
                 this.container.innerHTML = '';
                 this.catIndex = 0;
+                this.visitedCorridors = [];
                 
                 try {
                     let catGroups = {};
@@ -813,7 +828,6 @@
                 this.container.insertAdjacentHTML('beforeend', html);
             },
 
-            // --- AQUI ESTÁ A NOVA LÓGICA DO "SUPERMERCADO/CORREDORES" ---
             async handleRemovalYes(elemId) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
@@ -833,15 +847,24 @@
 
             async showCorridorMenu() {
                 await this.showTyping();
-                this.addMessage("Por qual corredor você quer começar?");
+                
+                // Mudar a frase se já visitou algum corredor
+                if(this.visitedCorridors.length > 0) {
+                    this.addMessage("Qual o próximo corredor?");
+                } else {
+                    this.addMessage("Por qual corredor você quer começar?");
+                }
+                
                 const id = 'act-corridors-' + Date.now();
                 
-                // Gera botões grandes para cada setor/categoria
+                // Gera botões. Se já visitou, aplica classe especial
                 let buttons = "";
                 if(this.categories && this.categories.length > 0) {
-                     buttons = this.categories.map(cat => 
-                        `<button class="btn-chat" style="padding:15px; text-transform:uppercase;" onclick="ChatFlow.showCategory('${id}', '${cat}')">${App.toSmartTitleCase(cat)}</button>`
-                     ).join('');
+                     buttons = this.categories.map(cat => {
+                        const isVisited = this.visitedCorridors.includes(cat);
+                        const cls = isVisited ? "btn-chat visited" : "btn-chat";
+                        return `<button class="${cls}" style="padding:15px; text-transform:uppercase;" onclick="ChatFlow.showCategory('${id}', '${cat}')">${App.toSmartTitleCase(cat)}</button>`;
+                     }).join('');
                 } else {
                      buttons = `<button class="btn-chat" onclick="ChatFlow.showCategory('${id}', 'MERCEARIA E ALIMENTOS')">Mercearia</button>`;
                 }
@@ -857,21 +880,45 @@
             async showCategory(elemId, catName) {
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
-                this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`, 'user'); 
+                this.addMessage(`Ir para ${App.toSmartTitleCase(catName)}`, 'user'); 
+                
+                // LÓGICA DE ROLAGEM SE JÁ EXISTIR
+                const safeCatId = 'sec-cat-' + catName.replace(/[^a-zA-Z0-9]/g, '');
+                const existingSection = document.getElementById(safeCatId);
+                
+                if (existingSection) {
+                    // Se já existe, só rola até ele
+                    setTimeout(() => {
+                        const headerOffset = 100;
+                        const elementPosition = existingSection.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    }, 100);
+                    
+                    await this.wait(1500);
+                    this.showCorridorMenu();
+                    return;
+                }
+                
+                // Se não existe, renderiza
                 await this.showTyping();
+                
+                // Marca como visitado
+                if(!this.visitedCorridors.includes(catName)) {
+                    this.visitedCorridors.push(catName);
+                }
                 
                 const products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 products.sort((a,b) => a.subCategory.localeCompare(b.subCategory));
                 
-                const sectionId = `chat-sec-${Date.now()}`;
-                const htmlHeader = `<div id="${sectionId}" class="subcat-section" style="padding-left:5px;">
+                const htmlHeader = `<div id="${safeCatId}" class="subcat-section" style="padding-left:5px;">
                    <div class="subcat-title"><span class="subcat-pill" style="background:#eee; color:#333;">${App.toSmartTitleCase(catName)}</span></div>
                 </div>`;
                 this.container.insertAdjacentHTML('beforeend', htmlHeader);
                 
-                App.setupPagination(sectionId, products, 'chat');
+                App.setupPagination(safeCatId, products, 'chat');
                 
-                const element = document.getElementById(sectionId);
+                const element = document.getElementById(safeCatId);
                 if(element) {
                    const headerOffset = 100;
                    const elementPosition = element.getBoundingClientRect().top;
@@ -880,14 +927,72 @@
                 }
                 
                 await this.wait(2000); 
-                // Após mostrar os produtos, oferece novamente os corredores
                 this.showCorridorMenu();
             },
-
-            async renderChatGrid(products, color, title) {
-                // Função auxiliar mantida para compatibilidade, mas o fluxo principal usa showCategory direto
-            },
             
+            // --- FUNÇÕES DE RESUMO E CUPOM (RESTAURADAS COMO NO ORIGINAL) ---
+            
+            generateSummaryHTML(basketName, basketVal, mathTotal) {
+                let summaryHTML = `<div style="padding:15px; width:100%;">`;
+                summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${basketName} <span style="float:right;">R$ ${basketVal.toFixed(2).replace('.',',')}</span></div>`;
+                
+                let removedTotal = 0;
+                let removedList = "";
+                for(let id in App.originalCart) {
+                    const originalQty = App.originalCart[id];
+                    const currentQty = App.cart[id] || 0;
+                    if(currentQty < originalQty) {
+                        const diff = originalQty - currentQty;
+                        const p = App.data.find(x => x.id === id);
+                        if(p) {
+                            const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
+                            removedTotal += val;
+removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.substring(0, 30)}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
+                    }
+                }
+                
+                if(removedTotal > 0) {
+                    summaryHTML += `<div style="margin-bottom:8px;"><strong>Itens Retirados:</strong>${removedList}</div>`;
+                }
+                
+                let addedTotal = 0;
+                let addedList = "";
+                for(let id in App.cart) {
+                    const currentQty = App.cart[id];
+                    const originalQty = App.originalCart[id] || 0;
+                    if(currentQty > originalQty) {
+                        const diff = currentQty - originalQty;
+                        const p = App.data.find(x => x.id === id);
+                        if(p) {
+                            const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
+                            addedTotal += val;
+addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.substring(0, 30)}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
+                    }
+                }
+                
+                if(addedTotal > 0) {
+                    summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
+                }
+                
+                // Validação de Mínimo
+                const minVal = App.currentBasket.valor - 0.05;
+                if (mathTotal < minVal) {
+                    const missing = App.currentBasket.valor - mathTotal;
+                     summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; color:#ef4444; font-weight:700; text-align:center;">
+                        ⚠️ FALTA R$ ${missing.toFixed(2).replace('.',',')}<br>
+                        <span style="font-size:0.85rem; font-weight:400; color:#333;">Adicione itens para completar a cesta.</span>
+                    </div>`;
+                } else {
+                     summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Total Final:</span>
+                        <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${mathTotal.toFixed(2).replace('.',',')}</span>
+                    </div>`;
+                }
+                
+                summaryHTML += `</div>`; 
+                return summaryHTML;
+            },
+
             async startCheckout() {
                 let currentSum = 0;
                 for(let id in App.cart) { 
@@ -895,41 +1000,77 @@
                     if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; 
                 }
                 const effectiveTotal = currentSum + App.baseFee;
-                
-                // Validação de Mínimo (Valor da Cesta Original)
                 if(effectiveTotal < App.currentBasket.valor - 0.05) {
                     const diff = App.currentBasket.valor - effectiveTotal;
-                    this.addMessage(`⚠️ Sua cesta ainda não está completa. Adicione mais <strong>R$ ${diff.toFixed(2).replace('.',',')}</strong> para fechar o pedido.`);
+                    this.addMessage(`⚠️ Sua cesta ainda não está completa. Faltam <strong>R$ ${diff.toFixed(2).replace('.',',')}</strong>.`);
                     await this.wait(1000);
-                    this.addMessage("Escolha mais alguns itens para completar.");
-                    this.showCorridorMenu(); // Volta para os corredores
+                    this.showCorridorMenu();
                     return; 
                 }
-                
-                this.addMessage("Ir para o Caixa", 'user');
+                document.getElementById('credit-chip').classList.remove('visible');
+                this.addMessage("Finalizar Agora", 'user');
                 await this.showTyping();
                 
-                // Gera o Resumo Final
-                let summaryHTML = `<div class="chat-msg wide-summary" style="padding:15px;">`;
-                summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${App.currentBasket.nome}</div>`;
+                const summaryContent = this.generateSummaryHTML(App.currentBasket.nome, App.currentBasket.valor, effectiveTotal);
+                this.container.insertAdjacentHTML('beforeend', `<div id="chat-checkout-summary" class="chat-msg wide-summary">${summaryContent}</div>`);
                 
-                // Itens Adicionados (Lógica visual simples)
-                let itemsList = "";
-                for(let id in App.cart) {
-                     const p = App.data.find(x => x.id === id);
-                     if(p) itemsList += `<div style="font-size:0.85rem; display:flex; justify-content:space-between; margin-bottom:4px;"><span>${App.cart[id]}x ${p.nome.substring(0, 25)}</span><span>R$ ${( (p.isOffer?p.offerPrice:p.valor)*App.cart[id] ).toFixed(2).replace('.',',')}</span></div>`;
-                }
-                summaryHTML += `<div>${itemsList}</div>`;
-                summaryHTML += `<div style="border-top:2px solid #333; margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Total Final:</span>
-                        <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ ${effectiveTotal.toFixed(2).replace('.',',')}</span>
-                    </div>`;
-                summaryHTML += `</div>`;
-
-                this.container.insertAdjacentHTML('beforeend', summaryHTML);
+                // ROLA PARA O INICIO DO RESUMO PARA O CLIENTE VER TUDO
+                const lastMsg = this.container.lastElementChild;
+                if(lastMsg) lastMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
                 App.updateTotal(); 
                 await this.wait(1500);
-                this.askPayment();
+                this.askCoupon();
+            },
+
+            async askCoupon() {
+                const id = 'act-coupon';
+                this.addMessage("Antes de fechar, você tem algum <strong>cupom de desconto</strong>?");
+                const html = `<div id="${id}" class="chat-actions">
+                     <button class="btn-chat primary" onclick="ChatFlow.renderCouponInput('${id}')">Sim, tenho</button>
+                     <button class="btn-chat" onclick="ChatFlow.skipCoupon('${id}')">Não tenho</button>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+
+            renderCouponInput(elemId) {
+                const el = document.getElementById(elemId);
+                if(el) el.remove();
+                this.addMessage("Sim, tenho", 'user');
+                const inputId = 'chat-coupon-input';
+                const html = `<div class="chat-input-group">
+                    <input type="text" id="${inputId}" class="chat-input" placeholder="Digite seu cupom" style="text-transform:uppercase;">
+                    <button class="chat-input-btn" onclick="ChatFlow.applyCouponChat('${inputId}')">Aplicar</button>
+                    <div style="width:100%; text-align:center; margin-top:5px;">
+                        <button class="btn-chat" style="border:none; color:#555; font-size:0.8rem;" onclick="ChatFlow.skipCoupon('${inputId}', true)">Continuar sem cupom</button>
+                    </div>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+                this.scrollToBottom();
+            },
+
+            applyCouponChat(inputId) {
+                const val = document.getElementById(inputId).value.toUpperCase();
+                if(val === CONSTANTS.COUPON_CODE) {
+                    App.appliedCoupon = true;
+                    this.addMessage(`Cupom <strong>${val}</strong> aplicado!`, 'user');
+                    App.updateTotal();
+                    this.askPayment();
+                } else {
+                    alert("Cupom Inválido");
+                }
+            },
+
+            skipCoupon(elemId, fromInput = false) {
+                const el = document.getElementById(elemId);
+                if(el && !fromInput) el.remove(); 
+                if(fromInput) this.addMessage("Continuar sem cupom", 'user');
+                else this.addMessage("Não tenho", 'user');
+                this.addMessage("Sem problemas! Na próxima compra, peça para o atendente no WhatsApp te adicionar no nosso grupo de descontos.");
+                setTimeout(() => {
+                     this.askPayment();
+                }, 1200);
             },
 
             async askPayment() {
@@ -1283,7 +1424,11 @@
                 this.updateCardUI(id, newQty); this.updateTotal();
                 if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
                 
-                // ATUALIZAÇÃO REATIVA DO CHECKOUT - Removida pois o foco mudou para corredores
+                // ATUALIZAÇÃO REATIVA DO CHECKOUT
+                if(ChatFlow && typeof ChatFlow.reactToCartChange === 'function') {
+                    ChatFlow.reactToCartChange();
+                }
+                
                 this.saveState(); 
             },
             updateCardUI(id, qty) {
@@ -1327,9 +1472,9 @@
                 
                 const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
                 
-                // Atualiza cabeçalho do customizer também
+                // Grava valor invisível apenas para WhatsApp
                 const headerVal = document.getElementById('icb-total-val');
-                if(headerVal) { headerVal.innerText = txtTotal; headerVal.style.display = 'block'; }
+                if(headerVal) { headerVal.innerText = txtTotal; headerVal.style.display = 'none'; } // MANTIDO OCULTO
                 
                 const basketPrice = this.currentBasket.valor;
                 const chipBtn = document.querySelector('.ccb-btn'), 
