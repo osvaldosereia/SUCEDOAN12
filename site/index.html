@@ -95,7 +95,7 @@
             padding: 6px; cursor: pointer; margin-right: 5px;
         }
 
-        /* Botão Menu Categorias (Agora Prateleiras) */
+        /* Botão Menu Categorias */
         .ah-cat-btn {
             background: #f1f5f9; color: var(--secondary);
             font-size: 0.85rem; font-weight: 700;
@@ -123,17 +123,25 @@
             position: fixed; top: var(--app-header-height); left: 0; right: 0;
             background: #fff; border-bottom: 1px solid #e2e8f0;
             padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            z-index: 1900; max-height: 60vh; overflow-y: auto;
+            z-index: 1900; max-height: 70vh; overflow-y: auto;
             transform: translateY(-150%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+            display: flex; flex-direction: column; gap: 8px; /* Lista vertical */
         }
         .cat-dropdown.active { transform: translateY(0); }
+        
+        .cd-group-title {
+            font-size: 0.8rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;
+            margin-top: 10px; margin-bottom: 4px; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px;
+        }
+        
         .cd-item {
-            padding: 10px; background: #f8fafc; border-radius: 8px;
-            text-align: center; font-size: 0.8rem; font-weight: 600;
+            padding: 12px; background: #f8fafc; border-radius: 8px;
+            text-align: left; font-size: 0.9rem; font-weight: 600;
             color: #334155; border: 1px solid #e2e8f0; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
         }
         .cd-item:active { background: #e2e8f0; }
+        .cd-item.sub { font-size: 0.85rem; font-weight: 500; margin-left: 10px; border-left: 3px solid #cbd5e1; }
 
         /* --- 4. HERO & HOME --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
@@ -807,7 +815,7 @@
                 
                 document.getElementById('credit-chip').classList.add('visible');
                 
-                // Ativa botão Categorias
+                // Ativa botão Prateleiras
                 const catBtn = document.getElementById('btn-cat-menu');
                 if(catBtn) catBtn.classList.remove('disabled');
                 
@@ -882,32 +890,19 @@
 
             async showCategory(elemId, catName, subCatName) {
                 const el = document.getElementById(elemId);
-                // Se o ID for de navegação via menu, não remove nada (pois nao existe mensagem)
+                // Se for clicado pelo menu, não remove mensagem anterior para manter fluxo
                 if(el && !elemId.startsWith('act-menu')) el.remove();
                 
+                // LIMPA PRATELEIRAS ANTIGAS PARA NÃO FICAR LONGO
+                const oldSections = document.querySelectorAll('.subcat-section');
+                oldSections.forEach(section => section.remove());
+
                 const displayTitle = subCatName ? `${App.toSmartTitleCase(catName)} > ${App.toSmartTitleCase(subCatName)}` : App.toSmartTitleCase(catName);
                 if(!elemId.startsWith('act-menu')) this.addMessage(`Ir para ${displayTitle}`, 'user'); 
                 
                 let uniqueIdStr = catName;
                 if(subCatName) uniqueIdStr += subCatName;
                 const safeCatId = 'sec-cat-' + uniqueIdStr.replace(/[^a-zA-Z0-9]/g, '');
-                
-                const existingSection = document.getElementById(safeCatId);
-                
-                if (existingSection) {
-                    setTimeout(() => {
-                        const headerOffset = 150;
-                        const elementPosition = existingSection.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                    }, 100);
-                    
-                    if(!elemId.startsWith('act-menu')) {
-                        await this.wait(1500);
-                        this.showCorridorMenu();
-                    }
-                    return;
-                }
                 
                 if(!elemId.startsWith('act-menu')) await this.showTyping();
                 
@@ -946,19 +941,18 @@
                 
                 const element = document.getElementById(safeCatId);
                 if(element) {
-                   const headerOffset = 150;
+                   const headerOffset = 130;
                    const elementPosition = element.getBoundingClientRect().top;
                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                 }
                 
-                if(!elemId.startsWith('act-menu')) {
-                    await this.wait(2000); 
-                    this.showCorridorMenu();
-                }
+                // SEMPRE CHAMA O MENU DE CORREDORES NOVAMENTE NO FINAL
+                await this.wait(2000); 
+                this.showCorridorMenu();
             },
             
-            // --- RESUMO & CUPOM SIMPLIFICADO ---
+            // --- RESUMO & CUPOM SIMPLIFICADO (LIMITADO A 20 CARACTERES) ---
             generateSummaryHTML(basketName, basketVal, mathTotal) {
                 let summaryHTML = `<div style="padding:15px; width:100%;">`;
                 summaryHTML += `<div style="border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px; font-weight:700; color:#333;">${basketName} <span style="float:right;">R$ ${basketVal.toFixed(2).replace('.',',')}</span></div>`;
@@ -973,7 +967,9 @@
                         if(p) {
                             const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
                             removedTotal += val;
-removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.substring(0, 30)}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
+                            const shortName = p.nome.substring(0, 20) + (p.nome.length>20?'...':'');
+                            removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${shortName}</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        
+                        }
                     }
                 }
                 if(removedTotal > 0) summaryHTML += `<div style="margin-bottom:8px;"><strong>Itens Retirados:</strong>${removedList}</div>`;
@@ -988,7 +984,9 @@ removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; just
                         if(p) {
                             const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
                             addedTotal += val;
-addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.substring(0, 30)}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
+                            const shortName = p.nome.substring(0, 20) + (p.nome.length>20?'...':'');
+                            addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${shortName}</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        
+                        }
                     }
                 }
                 if(addedTotal > 0) summaryHTML += `<div style="margin-bottom:8px; border-top:1px dashed #eee; padding-top:8px;"><strong>Itens Adicionados:</strong>${addedList}</div>`;
@@ -1195,18 +1193,32 @@ addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justif
                 }));
             },
             
-            // --- NOVO: FUNÇÃO PARA CONTROLAR O MENU DE PRATELEIRAS ---
+            // --- MENU DE PRATELEIRAS ---
             toggleCatMenu() {
                 const menu = document.getElementById('cat-dropdown');
                 if (menu.classList.contains('active')) {
                     menu.classList.remove('active');
                     return;
                 }
-                // Se ainda não foi populado
+                
                 if (ChatFlow.categories.length > 0) {
-                    let html = ChatFlow.categories.map(cat => {
-                        return `<div class="cd-item" onclick="App.toggleCatMenu(); ChatFlow.showCategory('act-menu-nav', '${cat}', null)">${App.toSmartTitleCase(cat)}</div>`;
-                    }).join('');
+                    let html = '';
+                    ChatFlow.categories.forEach(cat => {
+                        html += `<div class="cd-group-title">${App.toSmartTitleCase(cat)}</div>`;
+                        
+                        // Botão Categoria Principal
+                        html += `<div class="cd-item" onclick="App.toggleCatMenu(); ChatFlow.showCategory('act-menu', '${cat}', null)">
+                            Ver tudo de ${App.toSmartTitleCase(cat)}
+                        </div>`;
+                        
+                        // Subcategorias
+                        const subs = Array.from(ChatFlow.categoryMap[cat] || []).sort();
+                        subs.forEach(sub => {
+                            html += `<div class="cd-item sub" onclick="App.toggleCatMenu(); ChatFlow.showCategory('act-menu', '${cat}', '${sub}')">
+                                ${App.toSmartTitleCase(sub)}
+                            </div>`;
+                        });
+                    });
                     menu.innerHTML = html;
                 }
                 menu.classList.add('active');
