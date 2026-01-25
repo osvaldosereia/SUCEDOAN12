@@ -811,9 +811,9 @@
                 }
                 await this.showTyping();
                 if (removedVal > 0) {
-                    this.addMessage(`Perfeito!\n\nAgora você tem <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong> de crédito para adicionar de novos produtos.`);
+                    this.addMessage(`Perfeito!\n\nVocê tem <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong> de crédito para adicionar de novos produtos.`);
                     await this.wait(1800);
-                    this.addMessage(`Agora, monte a cesta do seu jeito como estivesse em um supermercado.`);
+                    this.addMessage(`Monte a cesta como estivesse em um supermercado.`);
                     await this.wait(1200);
                     this.addMessage(`Boas Compras.`);
                 } else {
