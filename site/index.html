@@ -833,10 +833,8 @@
                 }
 
                 await this.wait(1800);
-                this.addMessage(`Agora, monte a cesta do seu jeito.\n\nAproveite, os preços dos nossos produtos são bem melhores do que os dos supermercados.`);
-                await this.wait(2000);
-                this.addMessage(`Boas Compras.`);
-                
+                this.addMessage(`Agora, monte a cesta do seu jeito.<b>Nossos preços são são muito bons. Aproveite.`);
+                                
                 try {
                     document.getElementById('credit-chip').classList.add('visible');
                     App.updateTotal(); 
