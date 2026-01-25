@@ -466,6 +466,21 @@
         .f-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff; color: var(--secondary); font-weight: 600; font-size: 0.8rem; text-decoration: none; text-align: center; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
         .f-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #cbd5e1; }
         .copyright { text-align: center; font-size: 0.8rem; color: #475569; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 10px; }
+   
+/* --- AJUSTE: TAMANHO DOS CARDS NO CARROSSEL --- */
+.carousel-track .card-prod {
+    min-width: 135px !important; /* Tamanho mais compacto */
+    max-width: 135px !important; /* Trava a largura */
+    width: 135px;
+    padding: 0 0 10px 0; /* Ajuste leve no espaçamento */
+}
+
+/* Opcional: Ajuste a fonte do título só no carrossel se achar necessário */
+.carousel-track .cp-title {
+    font-size: 0.7rem; 
+    min-height: 2.8em; /* Altura menor já que o card é menor */
+}
+        
     </style>
 </head>
 <body>
