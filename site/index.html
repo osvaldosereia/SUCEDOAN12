@@ -908,8 +908,7 @@
                         if(p) {
                             const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
                             removedTotal += val;
-                            removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.split(' ')[0]}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;
-                        }
+removedList += `<div style="font-size:0.85rem; color:#ef4444; display:flex; justify-content:space-between;"><span>- ${diff}x ${p.nome.substring(0, 30)}...</span><span>- R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
                     }
                 }
                 
@@ -928,8 +927,7 @@
                         if(p) {
                             const val = (p.isOffer ? p.offerPrice : p.valor) * diff;
                             addedTotal += val;
-                            addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.split(' ')[0]}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;
-                        }
+addedList += `<div style="font-size:0.85rem; color:#22c55e; display:flex; justify-content:space-between;"><span>+ ${diff}x ${p.nome.substring(0, 30)}...</span><span>+ R$ ${val.toFixed(2).replace('.',',')}</span></div>`;                        }
                     }
                 }
                 
