@@ -796,35 +796,51 @@
                 const el = document.getElementById(elemId);
                 if(el) el.remove();
                 this.addMessage("Sim, já retirei.", 'user');
-                let startSum = 0; 
-                for(let i in App.originalCart) { 
-                    let p = App.data.find(x => x.id === i); 
-                    if(p) startSum += (p.isOffer ? p.offerPrice : p.valor) * App.originalCart[i]; 
+                
+                // 1. Calcular o Valor Atual dos Itens no Carrinho
+                let currentSum = 0;
+                for(let id in App.cart) { 
+                    const p = App.data.find(x => x.id === id); 
+                    if(p) currentSum += (p.isOffer ? p.offerPrice : p.valor) * App.cart[id]; 
                 }
-                let removedVal = 0;
-                for(let id in App.originalCart) {
-                    const diff = App.originalCart[id] - (App.cart[id] || 0);
-                    if(diff > 0) {
-                        const p = App.data.find(x => x.id === id);
-                        if(p) removedVal += diff * (p.isOffer ? p.offerPrice : p.valor);
+                
+                // 2. Adicionar a taxa base (embalagem/custo fixo) se houver
+                const totalAtual = currentSum + App.baseFee;
+                const valorCesta = App.currentBasket.valor;
+                
+                // 3. Calcular o Crédito Real (Saldo)
+                // Se a cesta custa 100 e o carrinho tá 95, tenho 5 de crédito.
+                // Se a cesta custa 100 e o carrinho tá 105, não tenho crédito (saldo negativo).
+                const creditoReal = valorCesta - totalAtual;
+
+                await this.showTyping();
+
+                // 4. Lógica Inteligente
+                if (creditoReal > 0.05) { 
+                    // Se sobrou dinheiro (margem de 5 centavos)
+                    this.addMessage(`Perfeito!\n\nO valor atual dos seus itens é R$ ${totalAtual.toFixed(2).replace('.',',')}.`);
+                    await this.wait(1000);
+                    this.addMessage(`Isso significa que você ainda tem <strong>R$ ${creditoReal.toFixed(2).replace('.',',')}</strong> de crédito para adicionar novos produtos sem pagar nada a mais.`);
+                } else {
+                    // Se a pessoa tirou itens mas adicionou outros mais caros, o valor já passou ou empatou
+                    const diferenca = totalAtual - valorCesta;
+                    this.addMessage(`Perfeito! Atualizei sua lista.`);
+                    await this.wait(1000);
+                    if(diferenca > 0) {
+                        this.addMessage(`Como você já adicionou novos itens, o valor total da cesta subiu R$ ${diferenca.toFixed(2).replace('.',',')}.`);
+                    } else {
+                        this.addMessage(`O valor da sua cesta está completinho, exatamente o valor original.`);
                     }
                 }
-                await this.showTyping();
-                if (removedVal > 0) {
-                    this.addMessage(`Perfeito!\n\nVocê tem <strong>R$ ${removedVal.toFixed(2).replace('.',',')}</strong> de crédito para adicionar de novos produtos.`);
-                    await this.wait(1800);
-                    this.addMessage(`Monte a cesta como estivesse em um supermercado.`);
-                    await this.wait(1200);
-                    this.addMessage(`Boas Compras.`);
-                } else {
-                    this.addMessage(`Ok!\n\nVi que nada foi retirado da cesta.`);
-                    await this.wait(1200);
-                    this.addMessage(`Fique a vontade para adicionar novos produtos na sua cesta.`);
-                }
+
+                await this.wait(1800);
+                this.addMessage(`Agora, deseja passear pelas categorias para ver se esqueceu algo?`);
+                
                 try {
                     document.getElementById('credit-chip').classList.add('visible');
                     App.updateTotal(); 
                 } catch(e){ console.error("Chip Error", e); }
+                
                 await this.wait(1400);
                 this.askNextCategory(); 
             },
