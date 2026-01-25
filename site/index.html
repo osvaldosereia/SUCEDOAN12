@@ -401,6 +401,16 @@
         details.faq-box summary { font-weight: 600; cursor: pointer; list-style: none; padding: 15px; background: #f8fafc; }
         .faq-text { padding: 15px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
 
+        /* WhatsApp Button in FAQ */
+        .faq-whatsapp-btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; padding: 16px; margin-top: 10px; border-radius: 12px;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white; text-decoration: none; font-weight: 700; font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); transition: transform 0.2s;
+        }
+        .faq-whatsapp-btn:active { transform: scale(0.98); }
+
         /* Toasts */
         .credit-toast {
             position: fixed; top: 75px; left: 50%; transform: translate(-50%, 0);
@@ -568,12 +578,20 @@
                 <h3 style="margin:0; color:var(--secondary);">Dúvidas Frequentes</h3>
                 <span onclick="App.closeSheet('faq-sheet')" style="font-size:1.5rem; color:#999; cursor:pointer">✕</span>
             </div>
-            <div style="overflow-y:auto; padding-bottom:20px;">
+            <div style="overflow-y:auto; padding-bottom:10px;">
                 <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-text">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação.</div></details>
                 <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
                 <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
                 <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras.</div></details>
                 <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá.</div></details>
+            </div>
+            
+            <div style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 5px; text-align: center;">
+                <p style="font-size: 0.85rem; color: #666; margin-bottom: 12px;">Ainda precisa de ajuda?</p>
+                <a href="https://api.whatsapp.com/send?phone=5565996813588&text=Olá, tenho uma dúvida sobre as cestas." target="_blank" class="faq-whatsapp-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.001.572 2.097.872 3.154.872h.001c3.181 0 5.768-2.586 5.768-5.766.001-3.18-2.585-5.767-5.766-5.767zm6.591 9.473c-.22.616-1.282 1.13-1.756 1.189-.436.054-.925.263-3.136-1.157-2.39-1.536-3.927-4.137-4.047-4.298-.119-.161-.963-1.286-.963-2.453 0-1.166.608-1.742.824-1.981.216-.239.576-.299.768-.299.192 0 .384.001.552.012.18.012.42.067.636.587.228.552.768 1.908.84 2.046.072.138.12.3.024.492-.096.192-.144.312-.288.48-.144.168-.3.234-.432.396-.144.15-.294.312-.126.6.168.288.75 1.224 1.608 1.992 1.104.984 2.04 1.29 2.328 1.428.288.138.456.12.624-.072.168-.192.72-1.05.912-1.41.192-.36.384-.3.648-.198.264.102 1.68.792 1.968.936.288.144.48.216.552.336.072.12.072.696-.144 1.312z"/></svg>
+                    Falar com Atendente
+                </a>
             </div>
         </div>
     </div>
