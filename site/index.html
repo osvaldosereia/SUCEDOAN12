@@ -287,7 +287,7 @@
         
         /* GRID DE PRODUTOS AJUSTADO: 3 COLUNAS MOBILE, 9 DESKTOP */
         .grid-products-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 0 16px 0; }
-          @media(min-width: 1024px) { .grid-products-row { grid-template-columns: repeat(7, 1fr); } }
+@media(min-width: 1024px) { .grid-products-row { grid-template-columns: repeat(6, 1fr); } }
         /* --- BOTÃO VER MAIS (Estilo Estreito) --- */
         .btn-load-more { 
             width: auto; max-width: 220px; padding: 10px 24px; 
@@ -1289,8 +1289,7 @@
     const isDesktop = window.innerWidth >= 1024;
     
     // Define colunas: 7 no desktop, 3 no mobile
-    const cols = isDesktop ? 7 : 3;
-    
+const cols = isDesktop ? 6 : 3;    
     // Regra: Multiplo de 2x a quantidade de colunas (14 no desktop, 6 no mobile)
     let limit = cols * 2; 
 
