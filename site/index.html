@@ -146,9 +146,12 @@
         .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
         
         @media(min-width: 640px) { .baskets-grid { grid-template-columns: 1fr; } }
+       /* Localize e substitua este bloco de media query */
         @media(min-width: 1024px) { 
-            .baskets-grid { grid-template-columns: 1fr; gap: 40px; } 
-            /* No layout novo, queremos que o card ocupe o espaço disponível, sem max-width restritivo */
+            .baskets-grid { 
+                grid-template-columns: repeat(3, 1fr); /* AQUI MUDA PARA 3 COLUNAS */
+                gap: 30px; /* Ajustei o espaço para ficar proporcional */
+            } 
             .home-basket-card { max-width: 100%; } 
         }
 
