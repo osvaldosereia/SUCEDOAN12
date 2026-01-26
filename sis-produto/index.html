@@ -1,820 +1,124 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS | Estoque Ultra-Performance</title>
+    <title>Filtro de Contatos CSV</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        /* --- CORE: RESET & VARIABLES --- */
-        :root {
-            --bg: #f8fafc; --surface: #ffffff; --text: #0f172a; --text-sec: #64748b;
-            --primary: #2563eb; --accent: #059669; --danger: #ef4444; --warn: #d97706;
-            --border: #e2e8f0; --radius: 6px; --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-            --font-stack: system-ui, -apple-system, sans-serif;
-        }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #0f172a; --surface: #1e293b; --text: #f1f5f9; --text-sec: #94a3b8;
-                --primary: #3b82f6; --border: #334155; --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
-            }
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-        body { font-family: var(--font-stack); background: var(--bg); color: var(--text); padding-bottom: 80px; font-size: 14px; }
-        
-        /* --- LAYOUT --- */
-        header { 
-            position: sticky; top: 0; z-index: 50; background: var(--surface); 
-            padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); box-shadow: var(--shadow);
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
-        }
-        h1 { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase; }
-        .controls { display: flex; gap: 0.5rem; align-items: center; }
-        
-        main { max-width: 1200px; margin: 0 auto; padding: 1rem; }
-        
-        /* --- COMPONENTS --- */
-        button {
-            cursor: pointer; padding: 0 1rem; height: 40px; border: none; border-radius: var(--radius);
-            font-weight: 600; font-size: 0.85rem; transition: all 0.15s;
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
-        }
-        button:active { transform: translateY(1px); }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-success { background: var(--accent); color: white; }
-        .btn-sm { height: 28px; padding: 0 0.5rem; font-size: 0.75rem; }
-
-        /* --- GRID SYSTEM --- */
-        .product-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;
-            margin-top: 1rem;
-        }
-        .card {
-            background: var(--surface); padding: 1rem; border-radius: var(--radius);
-            border: 1px solid var(--border); box-shadow: var(--shadow);
-            display: flex; flex-direction: column; gap: 0.5rem; position: relative;
-            transition: transform 0.2s;
-        }
-        .card:hover { border-color: var(--primary); }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .card-title { font-weight: 700; font-size: 0.95rem; line-height: 1.3; color: var(--text); }
-        .card-meta { font-size: 0.75rem; color: var(--text-sec); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-        
-        .badge { 
-            padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; 
-            background: var(--bg); border: 1px solid var(--border);
-        }
-        .bg-st { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
-        
-        .stats-row { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: auto; 
-            padding-top: 0.75rem; border-top: 1px solid var(--border);
-        }
-        .stat-item { display: flex; flex-direction: column; }
-        .stat-label { font-size: 0.7rem; color: var(--text-sec); }
-        .stat-val { font-weight: 700; font-size: 1rem; }
-        .val-money { color: var(--primary); }
-
-        /* --- MODAL --- */
-        dialog {
-            background: var(--surface); color: var(--text); border: none; border-radius: var(--radius);
-            width: 95%; max-width: 700px; padding: 0; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-            margin: auto; position: fixed; inset: 0;
-        }
-        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
-        .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
-        .modal-body { padding: 1.5rem; max-height: 75vh; overflow-y: auto; }
-        .modal-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem; background: var(--bg); }
-
-        /* --- FORMS --- */
-        .form-grid { display: grid; gap: 1rem; }
-        .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
-        label { font-size: 0.75rem; font-weight: 700; color: var(--text-sec); text-transform: uppercase; }
-        input, select {
-            padding: 0.6rem; background: var(--bg); border: 1px solid var(--border);
-            border-radius: var(--radius); color: var(--text); font-size: 0.9rem; width: 100%;
-        }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
-        
-        /* --- TABS --- */
-        .tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
-        .tab-btn {
-            background: none; border: none; padding: 0.5rem 0; color: var(--text-sec);
-            font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; 
-        }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; animation: fadeIn 0.2s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- UTILS --- */
-        .hidden { display: none !important; }
-        .file-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .file-wrapper input { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
-        
-        /* Listas Internas */
-        .list-group { list-style: none; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-        .list-item { 
-            padding: 0.5rem; display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border); background: var(--bg); font-size: 0.85rem;
-        }
-        .list-item:last-child { border-bottom: none; }
-        
-        /* Log Visuals */
-        .log-in { color: var(--accent); font-weight: bold; }
-        .log-out { color: var(--danger); font-weight: bold; }
-
-        /* Toast Notification */
-        #toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: #333; color: white; padding: 10px 20px; border-radius: 30px;
-            font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
-        }
-        #toast.show { opacity: 1; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .container { max-width: 900px; margin-top: 50px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-download { display: none; } /* Escondido até filtrar */
     </style>
 </head>
 <body>
 
-<header>
-    <div style="display:flex; align-items:center; gap:10px;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        <h1>SISTEMAS <span style="color:var(--text-sec); font-weight:400;">Estoque</span></h1>
-    </div>
-    
-    <div class="controls">
-        <div class="file-wrapper">
-            <button class="btn-outline">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                Importar XML/CSV
-            </button>
-            <input type="file" id="fileInput" accept=".xml,.csv" multiple>
+<div class="container">
+    <div class="card p-4">
+        <h2 class="text-center mb-4">📱 Filtro de Contatos</h2>
+        <p class="text-muted text-center">Coloque o arquivo <b>contacts (2).csv</b> na mesma pasta e carregue-o abaixo:</p>
+        
+        <div class="mb-3">
+            <input type="file" id="csvFile" class="form-control" accept=".csv">
         </div>
-        <button class="btn-primary" onclick="app.openModal()">+ Produto</button>
-    </div>
-</header>
 
-<main>
-    <div style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <input type="text" id="searchBox" placeholder="🔍 Buscar por Nome, EAN, Fornecedor ou Nota..." onkeyup="app.render()" style="max-width: 400px;">
-        <div style="margin-left:auto; display:flex; gap:0.5rem">
-            <button class="btn-outline btn-sm" onclick="app.exportDB()">💾 Backup</button>
-            <button class="btn-outline btn-sm" onclick="app.clearDB()" style="color:var(--danger); border-color:var(--danger)">🗑 Limpar Tudo</button>
+        <div class="input-group mb-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="Digite nome ou telefone para filtrar...">
+            <button class="btn btn-primary" onclick="filtrar()">Filtrar</button>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span id="status" class="badge bg-secondary">Aguardando arquivo...</span>
+            <button id="downloadBtn" class="btn btn-success btn-download" onclick="baixarFiltrados()">📥 Baixar Filtrados</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover mt-3">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Labels</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTable">
+                    </tbody>
+            </table>
         </div>
     </div>
-    
-    <div id="loading" class="hidden" style="text-align:center; padding:2rem; color:var(--text-sec);">Processando arquivos...</div>
-    <div id="grid" class="product-grid"></div>
-</main>
-
-<dialog id="productDialog">
-    <div class="modal-header">
-        <h3 id="modalTitle">Detalhes do Produto</h3>
-        <button class="btn-sm btn-outline" onclick="document.getElementById('productDialog').close()">✕ ESC</button>
-    </div>
-    <form id="productForm" onsubmit="event.preventDefault(); app.saveProduct();">
-        <div class="modal-body">
-            <div class="tabs">
-                <button type="button" class="tab-btn active" onclick="app.tab('geral')">1. Cadastro</button>
-                <button type="button" class="tab-btn" onclick="app.tab('fiscal')">2. Fiscal</button>
-                <button type="button" class="tab-btn" onclick="app.tab('estoque')">3. Estoque & Mov.</button>
-            </div>
-
-            <div id="tab-geral" class="tab-pane active form-grid">
-                <div class="cols-2">
-                    <div class="form-group"><label>Cód. Interno</label><input type="text" id="code" required></div>
-                    <div class="form-group"><label>EAN (GTIN)</label><input type="text" id="ean"></div>
-                </div>
-                <div class="form-group"><label>Nome do Produto</label><input type="text" id="name" required></div>
-                <div class="cols-3">
-                    <div class="form-group"><label>Categoria</label><input type="text" id="category"></div>
-                    <div class="form-group"><label>Unidade</label><input type="text" id="unit" placeholder="UN, CX..."></div>
-                    <div class="form-group"><label>Peso (kg)</label><input type="number" step="0.001" id="weight"></div>
-                </div>
-                
-                <div class="cols-2" style="background:var(--bg); padding:1rem; border-radius:var(--radius); border:1px solid var(--border);">
-                    <div class="form-group">
-                        <label>Custo Unit. (R$)</label>
-                        <input type="number" step="0.0001" id="cost" oninput="app.calcMargin()">
-                    </div>
-                    <div class="form-group">
-                        <label style="color:var(--primary)">Preço Venda (R$)</label>
-                        <input type="number" step="0.01" id="price" oninput="app.calcMargin()" required style="font-weight:bold;">
-                    </div>
-                    <div class="form-group"><label>Margem (%)</label><input type="text" id="margin" readonly tabindex="-1"></div>
-                    <div class="form-group" style="display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="offer" style="width:auto;"> <label for="offer" style="margin:0; cursor:pointer">Em Oferta</label>
-                    </div>
-                </div>
-
-                <div class="form-group"><label>Fornecedor Principal</label><input type="text" id="supplier"></div>
-                
-                <div class="form-group" style="margin-top:0.5rem">
-                    <div style="display:flex; gap:10px; align-items:center; padding:10px; border:1px solid var(--border); border-radius:var(--radius);">
-                        <input type="checkbox" id="isCombo" onchange="app.toggleComboUI()" style="width:auto;">
-                        <div>
-                            <label style="margin:0; cursor:pointer" for="isCombo">Este produto é um KIT/COMBO</label>
-                            <div style="font-size:0.75rem; color:var(--text-sec)">Composto por outros produtos do estoque.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tab-fiscal" class="tab-pane form-grid">
-                <div class="cols-2">
-                    <div class="form-group"><label>NCM</label><input type="text" id="ncm"></div>
-                    <div class="form-group"><label>CEST</label><input type="text" id="cest"></div>
-                </div>
-                <div class="cols-2">
-                    <div class="form-group"><label>CFOP Entrada</label><input type="text" id="cfop"></div>
-                    <div class="form-group"><label>CST/CSOSN</label><input type="text" id="cst"></div>
-                </div>
-                <div class="form-group">
-                    <div style="display:flex; gap:10px; align-items:center; background:#fff7ed; padding:10px; border-radius:var(--radius); border:1px solid #ffedd5;">
-                        <input type="checkbox" id="isST" style="width:auto;">
-                        <label for="isST" style="color:#c2410c; margin:0; cursor:pointer;">Produto Sujeito a Substituição Tributária (ST)</label>
-                    </div>
-                </div>
-                <div class="form-group"><label>Última Nota Fiscal (NFe)</label><input type="text" id="lastNFe"></div>
-            </div>
-
-            <div id="tab-estoque" class="tab-pane form-grid">
-                <div id="stock-normal-ui">
-                    <div class="cols-2">
-                        <div class="form-group"><label>Estoque Atual</label><input type="number" id="qty" style="font-weight:bold;"></div>
-                        <div class="form-group"><label>Estoque Mínimo</label><input type="number" id="minQty"></div>
-                    </div>
-
-                    <div style="margin-top:1.5rem; background:var(--bg); padding:1rem; border-radius:var(--radius); border:1px solid var(--border);">
-                        <label style="color:var(--primary); margin-bottom:0.5rem; display:block;">Nova Movimentação Manual</label>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr 2fr auto; gap:0.5rem;">
-                            <select id="movType">
-                                <option value="in">Entrada (+)</option>
-                                <option value="out">Saída (-)</option>
-                            </select>
-                            <input type="number" id="movQty" placeholder="Qtd">
-                            <input type="text" id="movNote" placeholder="Motivo (Ex: Ajuste, Quebra)">
-                            <button type="button" class="btn-success" onclick="app.addMovement()">Registrar</button>
-                        </div>
-                    </div>
-
-                    <div style="margin-top:1rem;">
-                        <label>Histórico de Movimentações</label>
-                        <ul id="historyList" class="list-group" style="max-height: 200px; overflow-y: auto;"></ul>
-                    </div>
-
-                    <div style="margin-top:1.5rem; border-top:1px dashed var(--border); padding-top:1rem;">
-                        <label>Controle de Lotes (Opcional)</label>
-                        <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
-                            <input type="date" id="batchDate">
-                            <input type="number" id="batchQty" placeholder="Qtd">
-                            <button type="button" class="btn-primary" onclick="app.addBatch()">Add Lote</button>
-                        </div>
-                        <ul id="batchList" class="list-group"></ul>
-                    </div>
-                </div>
-
-                <div id="stock-combo-ui" class="hidden">
-                    <div style="background:var(--bg); padding:1rem; border-radius:var(--radius); margin-bottom:1rem;">
-                        <label>Composição do Kit</label>
-                        <div style="display:flex; gap:0.5rem; margin-top:0.5rem; margin-bottom:0.5rem;">
-                            <input type="text" id="comboSearch" placeholder="Digite ID ou Nome do item...">
-                            <input type="number" id="comboQty" placeholder="Qtd" style="width:80px">
-                            <button type="button" class="btn-primary" onclick="app.addComboItem()">Incluir</button>
-                        </div>
-                        <ul id="comboList" class="list-group"></ul>
-                    </div>
-                    <div style="font-size:0.8rem; color:var(--text-sec)">* O estoque do kit é virtual, calculado com base na disponibilidade dos itens.</div>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-danger" id="btnDelete" onclick="app.deleteProduct()">Excluir</button>
-            <button type="submit" class="btn-primary">Salvar Alterações</button>
-        </div>
-    </form>
-</dialog>
-
-<div id="toast">Operação realizada com sucesso</div>
+</div>
 
 <script>
-/* * SISTEMA V2 - XML ENGINE & STOCK CONTROL
- * Autor: SISTEMAS (AI)
- */
+    let dadosCompletos = [];
+    let dadosFiltrados = [];
 
-const app = {
-    data: [],
-    editingId: null,
-
-    init() {
-        const db = localStorage.getItem('sys_v2_db');
-        if (db) this.data = JSON.parse(db);
-        this.render();
-        document.getElementById('fileInput').addEventListener('change', (e) => this.handleFiles(e));
-    },
-
-    save() {
-        localStorage.setItem('sys_v2_db', JSON.stringify(this.data));
-        this.render();
-    },
-
-    toast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 3000);
-    },
-
-    // --- FILE HANDLER ENGINE ---
-    async handleFiles(e) {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
-
-        document.getElementById('loading').classList.remove('hidden');
-        document.getElementById('grid').classList.add('hidden');
-
-        let countNew = 0;
-        let countUpd = 0;
-
-        for (const file of files) {
-            const content = await file.text();
-            if (file.name.toLowerCase().endsWith('.xml')) {
-                const res = this.parseXML(content);
-                countNew += res.new; countUpd += res.upd;
-            } else {
-                const res = this.parseCSV(content);
-                countNew += res.new; countUpd += res.upd;
-            }
-        }
-
-        this.save();
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('grid').classList.remove('hidden');
-        this.toast(`Importação: ${countNew} novos, ${countUpd} atualizados.`);
-        e.target.value = ''; 
-    },
-
-    parseXML(xmlString) {
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(xmlString, "text/xml");
-        
-        const nNF = xml.querySelector('ide > nNF')?.textContent || '';
-        const emitente = xml.querySelector('emit > xNome')?.textContent || '';
-        const dataEmissao = xml.querySelector('ide > dhEmi')?.textContent?.split('T')[0] || new Date().toISOString().split('T')[0];
-
-        const dets = xml.querySelectorAll('det');
-        let cNew = 0, cUpd = 0;
-
-        dets.forEach(det => {
-            const prod = det.querySelector('prod');
-            const imposto = det.querySelector('imposto');
-            
-            const ean = prod.querySelector('cEAN')?.textContent;
-            const codigo = prod.querySelector('cProd')?.textContent;
-            const nome = prod.querySelector('xProd')?.textContent;
-            const ncm = prod.querySelector('NCM')?.textContent;
-            const cfop = prod.querySelector('CFOP')?.textContent;
-            const uCom = prod.querySelector('uCom')?.textContent;
-            const qCom = parseFloat(prod.querySelector('qCom')?.textContent || 0);
-            const vUnCom = parseFloat(prod.querySelector('vUnCom')?.textContent || 0);
-            const cest = prod.querySelector('CEST')?.textContent || '';
-
-            let loteInfo = null;
-            const rastro = prod.querySelector('rastro');
-            if (rastro) {
-                loteInfo = { date: rastro.querySelector('dVal')?.textContent || '', qty: qCom };
-            }
-
-            let isST = false;
-            const icms = imposto?.querySelector('ICMS');
-            if (icms) {
-                const tagsST = ['ICMS10', 'ICMS30', 'ICMS60', 'ICMS70', 'ICMSSN201', 'ICMSSN202', 'ICMSSN500'];
-                tagsST.forEach(tag => { if (icms.querySelector(tag)) isST = true; });
-                if (cfop === '5405') isST = true;
-            }
-
-            let existing = null;
-            if (ean && ean !== 'SEM GTIN') existing = this.data.find(p => p.ean === ean);
-            if (!existing) existing = this.data.find(p => p.id === codigo);
-
-            if (existing) {
-                existing.qty += qCom;
-                existing.cost = vUnCom;
-                existing.lastNFe = nNF;
-                existing.cfop = cfop;
-                
-                // Add Movement Log for XML Import
-                if(!existing.history) existing.history = [];
-                existing.history.push({
-                    date: new Date().toISOString(), type: 'in', qty: qCom, note: `NFe ${nNF} - XML`
-                });
-
-                if (loteInfo && loteInfo.date) {
-                    if (!existing.batches) existing.batches = [];
-                    existing.batches.push(loteInfo);
-                }
-                cUpd++;
-            } else {
-                const newProd = {
-                    id: codigo,
-                    ean: (ean && ean !== 'SEM GTIN') ? ean : '',
-                    name: nome,
-                    category: 'XML Import',
-                    unit: uCom,
-                    cost: vUnCom,
-                    price: vUnCom * 1.5,
-                    qty: qCom,
-                    ncm: ncm,
-                    cest: cest,
-                    cfop: cfop,
-                    isST: isST,
-                    supplier: emitente,
-                    lastNFe: nNF,
-                    batches: loteInfo && loteInfo.date ? [loteInfo] : [],
-                    history: [{ date: new Date().toISOString(), type: 'in', qty: qCom, note: `NFe ${nNF} - Inicial` }],
-                    active: true,
-                    isCombo: false
-                };
-                this.data.push(newProd);
-                cNew++;
+    // 1. Ler o arquivo CSV quando selecionado
+    document.getElementById('csvFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                dadosCompletos = results.data;
+                document.getElementById('status').innerText = `${dadosCompletos.length} contatos carregados.`;
+                document.getElementById('status').className = "badge bg-success";
             }
         });
+    });
 
-        return { new: cNew, upd: cUpd };
-    },
-
-    parseCSV(csvText) {
-        const lines = csvText.split('\n').filter(l => l.trim());
-        let cNew = 0, cUpd = 0;
-        const start = lines[0].includes('Internal Code') ? 1 : 0;
+    // 2. Lógica de Filtro
+    function filtrar() {
+        const termo = document.getElementById('searchInput').value.toLowerCase();
         
-        for (let i = start; i < lines.length; i++) {
-            const row = lines[i].split(';');
-            if (row.length < 3) continue;
+        dadosFiltrados = dadosCompletos.filter(contato => {
+            const nome = (contato['First Name'] || "") + " " + (contato['Last Name'] || "");
+            const tel1 = contato['Phone 1 - Value'] || "";
+            const tel2 = contato['Phone 2 - Value'] || "";
 
-            const clean = (s) => s ? s.replace(/[="]/g, '').trim() : '';
-            const num = (s) => s ? parseFloat(s.replace('.','').replace(',','.')) || 0 : 0;
-
-            const p = {
-                id: clean(row[0]),
-                active: clean(row[1]) === 'Habilitado',
-                name: clean(row[3]),
-                ncm: clean(row[4]),
-                price: num(row[row.length-1])
-            };
-
-            const idx = this.data.findIndex(x => x.id === p.id);
-            if (idx >= 0) {
-                this.data[idx].price = p.price;
-                this.data[idx].active = p.active;
-                cUpd++;
-            } else {
-                this.data.push({
-                    ...p, 
-                    qty: 0, cost: 0, category: clean(row[2]), 
-                    cfop: clean(row[5]), cst: clean(row[6]),
-                    isST: false, batches: [], history: []
-                });
-                cNew++;
-            }
-        }
-        return { new: cNew, upd: cUpd };
-    },
-
-    // --- UI HELPERS ---
-    render() {
-        const grid = document.getElementById('grid');
-        grid.innerHTML = '';
-        const term = document.getElementById('searchBox').value.toLowerCase();
-
-        const filtered = this.data.filter(p => 
-            (p.name && p.name.toLowerCase().includes(term)) || 
-            (p.id && p.id.toLowerCase().includes(term)) ||
-            (p.ean && p.ean.includes(term)) ||
-            (p.supplier && p.supplier.toLowerCase().includes(term)) ||
-            (p.lastNFe && p.lastNFe.includes(term))
-        ).slice(0, 50);
-
-        filtered.forEach(p => {
-            const el = document.createElement('div');
-            el.className = `card ${!p.active ? 'opacity-50' : ''}`;
-            el.onclick = () => this.openModal(p.id);
-            
-            const isLow = p.minQty && p.qty <= p.minQty;
-            
-            el.innerHTML = `
-                <div class="card-header">
-                    <span class="card-meta">#${p.id}</span>
-                    <div style="display:flex; gap:4px">
-                        ${p.isST ? '<span class="badge bg-st">ST</span>' : ''}
-                        ${p.isCombo ? '<span class="badge" style="background:#f3e8ff; color:#7e22ce">KIT</span>' : ''}
-                    </div>
-                </div>
-                <div class="card-title">${p.name}</div>
-                <div class="card-meta">${p.category || 'Geral'} • ${p.supplier || '-'}</div>
-                
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <span class="stat-label">PREÇO</span>
-                        <span class="stat-val val-money">R$ ${parseFloat(p.price||0).toFixed(2)}</span>
-                    </div>
-                    <div class="stat-item" style="align-items:flex-end">
-                        <span class="stat-label">ESTOQUE</span>
-                        <span class="stat-val" style="color:${isLow ? 'var(--danger)' : 'var(--text)'}">${p.qty || 0} ${p.unit||''}</span>
-                    </div>
-                </div>
-            `;
-            grid.appendChild(el);
+            return nome.toLowerCase().includes(termo) || 
+                   tel1.includes(termo) || 
+                   tel2.includes(termo);
         });
-    },
 
-    openModal(id = null) {
-        this.editingId = id;
-        const dialog = document.getElementById('productDialog');
-        const form = document.getElementById('productForm');
-        form.reset();
-        document.getElementById('batchList').innerHTML = '';
-        document.getElementById('comboList').innerHTML = '';
-        document.getElementById('historyList').innerHTML = '';
-        this.tab('geral');
-
-        if (id) {
-            const p = this.data.find(x => x.id === id);
-            if (!p) return;
-
-            // Basic Fields
-            const fields = ['code','ean','name','category','unit','weight','cost','price','supplier','ncm','cest','cfop','cst','lastNFe','minQty','qty'];
-            fields.forEach(f => {
-                if(document.getElementById(f)) document.getElementById(f).value = (f === 'code' ? p.id : p[f]) || '';
-            });
-
-            // Checkboxes
-            document.getElementById('offer').checked = p.offer || false;
-            document.getElementById('isST').checked = p.isST || false;
-            document.getElementById('isCombo').checked = p.isCombo || false;
-
-            // Arrays
-            if (p.batches) p.batches.forEach(b => this.addBatchRow(b));
-            if (p.comboItems) p.comboItems.forEach(c => this.addComboRow(c));
-            
-            // History
-            if (p.history) {
-                // Show last 10
-                p.history.slice(-10).reverse().forEach(h => this.addHistoryRow(h));
-            }
-
-            this.calcMargin();
-            this.toggleComboUI();
-            document.getElementById('btnDelete').classList.remove('hidden');
-            document.getElementById('modalTitle').innerText = 'Editar Produto';
-        } else {
-            document.getElementById('code').value = Date.now().toString().slice(-6);
-            document.getElementById('qty').value = 0;
-            document.getElementById('btnDelete').classList.add('hidden');
-            document.getElementById('modalTitle').innerText = 'Novo Produto';
-            this.toggleComboUI();
-        }
-        dialog.showModal();
-    },
-
-    // --- MANUAL MOVEMENT LOGIC ---
-    addMovement() {
-        const type = document.getElementById('movType').value;
-        const qtyVal = parseFloat(document.getElementById('movQty').value);
-        const note = document.getElementById('movNote').value;
-        const currentStock = parseFloat(document.getElementById('qty').value) || 0;
-
-        if (!qtyVal || qtyVal <= 0) {
-            alert('Digite uma quantidade válida.');
-            return;
-        }
-
-        // 1. Update UI Input
-        let newStock = currentStock;
-        if (type === 'in') newStock += qtyVal;
-        else newStock -= qtyVal;
+        exibirTabela(dadosFiltrados);
         
-        document.getElementById('qty').value = newStock;
-
-        // 2. Add to Visual List (History)
-        const moveData = {
-            date: new Date().toISOString(),
-            type: type,
-            qty: qtyVal,
-            note: note || 'Ajuste Manual'
-        };
-        this.addHistoryRow(moveData);
-
-        // Clear inputs
-        document.getElementById('movQty').value = '';
-        document.getElementById('movNote').value = '';
-    },
-
-    addHistoryRow(h) {
-        const ul = document.getElementById('historyList');
-        const li = document.createElement('li');
-        li.className = 'list-item';
-        
-        // Formata data e hora
-        const d = new Date(h.date);
-        const dateStr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        
-        li.dataset.json = JSON.stringify(h); // Guarda dados para salvar depois
-        li.innerHTML = `
-            <div style="display:flex; flex-direction:column;">
-                <span style="font-size:0.75rem; color:var(--text-sec)">${dateStr}</span>
-                <span>${h.note}</span>
-            </div>
-            <div class="${h.type === 'in' ? 'log-in' : 'log-out'}">
-                ${h.type === 'in' ? '+' : '-'}${h.qty}
-            </div>
-        `;
-        // Insert at top
-        ul.prepend(li);
-    },
-
-    saveProduct() {
-        const getVal = id => document.getElementById(id).value;
-        const getNum = id => parseFloat(getVal(id)) || 0;
-        const getBool = id => document.getElementById(id).checked;
-
-        const p = {
-            id: getVal('code'),
-            ean: getVal('ean'),
-            name: getVal('name'),
-            category: getVal('category'),
-            unit: getVal('unit'),
-            weight: getVal('weight'),
-            cost: getNum('cost'),
-            price: getNum('price'),
-            offer: getBool('offer'),
-            supplier: getVal('supplier'),
-            
-            ncm: getVal('ncm'),
-            cest: getVal('cest'),
-            cfop: getVal('cfop'),
-            cst: getVal('cst'),
-            isST: getBool('isST'),
-            lastNFe: getVal('lastNFe'),
-            
-            qty: getNum('qty'), // NOW SAVES MANUAL INPUT DIRECTLY
-            minQty: getNum('minQty'),
-            isCombo: getBool('isCombo'),
-            active: true,
-
-            batches: Array.from(document.querySelectorAll('#batchList li')).map(li => ({
-                date: li.dataset.date, qty: parseFloat(li.dataset.qty)
-            })),
-            comboItems: Array.from(document.querySelectorAll('#comboList li')).map(li => ({
-                id: li.dataset.id, qty: parseFloat(li.dataset.qty)
-            })),
-            // Rebuild history from UI list + current movements
-            history: Array.from(document.querySelectorAll('#historyList li')).map(li => JSON.parse(li.dataset.json)).reverse()
-        };
-
-        if (this.editingId) {
-            const idx = this.data.findIndex(x => x.id === this.editingId);
-            // Merge old history if needed, but here we just grab from UI
-            // Better strategy: keep old history in memory and just append new ones? 
-            // Simplified: The UI list contains everything we need for now.
-            // But wait, the UI clears on modal open. We need to preserve full history.
-            // FIX: We rely on the object `p.history` being passed correctly.
-            // Since we render previous history in `openModal`, the `<ul>` has the data.
-            this.data[idx] = p;
-        } else {
-            this.data.push(p);
-        }
-
-        this.save();
-        document.getElementById('productDialog').close();
-        this.toast('Produto salvo!');
-    },
-
-    deleteProduct() {
-        if(confirm('Tem certeza? Isso não pode ser desfeito.')) {
-            this.data = this.data.filter(p => p.id !== this.editingId);
-            this.save();
-            document.getElementById('productDialog').close();
-            this.toast('Produto removido.');
-        }
-    },
-
-    clearDB() {
-        if(confirm('ATENÇÃO: Isso apagará TODOS os dados!')) {
-            this.data = [];
-            this.save();
-        }
-    },
-    
-    exportDB() {
-        const str = JSON.stringify(this.data);
-        const blob = new Blob([str], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `backup_estoque_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-    },
-
-    // --- LOGIC UI ---
-    tab(name) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(`tab-${name}`).classList.add('active');
-        const idx = {'geral':0, 'fiscal':1, 'estoque':2}[name];
-        document.querySelectorAll('.tab-btn')[idx].classList.add('active');
-    },
-
-    calcMargin() {
-        const cost = parseFloat(document.getElementById('cost').value) || 0;
-        const price = parseFloat(document.getElementById('price').value) || 0;
-        if(price > 0 && cost > 0) {
-            const m = ((price - cost) / price) * 100;
-            document.getElementById('margin').value = m.toFixed(1) + '%';
-        } else {
-            document.getElementById('margin').value = '-';
-        }
-    },
-
-    toggleComboUI() {
-        const isCombo = document.getElementById('isCombo').checked;
-        if(isCombo) {
-            document.getElementById('stock-normal-ui').classList.add('hidden');
-            document.getElementById('stock-combo-ui').classList.remove('hidden');
-        } else {
-            document.getElementById('stock-normal-ui').classList.remove('hidden');
-            document.getElementById('stock-combo-ui').classList.add('hidden');
-        }
-    },
-
-    addBatch() {
-        const date = document.getElementById('batchDate').value;
-        const qty = document.getElementById('batchQty').value;
-        if(date && qty) {
-            this.addBatchRow({date, qty});
-            document.getElementById('batchQty').value = '';
-        }
-    },
-
-    addBatchRow(b) {
-        const ul = document.getElementById('batchList');
-        const li = document.createElement('li');
-        li.className = 'list-item';
-        li.dataset.date = b.date;
-        li.dataset.qty = b.qty;
-        
-        const isExp = new Date(b.date) < new Date();
-        li.innerHTML = `
-            <div>
-                <strong>${new Date(b.date).toLocaleDateString('pt-BR')}</strong>
-                ${isExp ? '<span style="color:var(--danger);font-size:0.7em">(Vencido)</span>' : ''}
-            </div>
-            <div>
-                Qtd: <b>${b.qty}</b>
-                <button type="button" class="btn-sm btn-outline" style="margin-left:8px; color:var(--danger)" onclick="this.closest('li').remove()">X</button>
-            </div>
-        `;
-        ul.appendChild(li);
-    },
-
-    addComboItem() {
-        const term = document.getElementById('comboSearch').value;
-        const qty = document.getElementById('comboQty').value;
-        if(!term || !qty) return;
-
-        const p = this.data.find(x => x.id === term || x.name.toLowerCase().includes(term.toLowerCase()));
-        if(p) {
-            this.addComboRow({id: p.id, qty, name: p.name});
-            document.getElementById('comboSearch').value = '';
-            document.getElementById('comboQty').value = '';
-        } else {
-            alert('Produto não encontrado!');
-        }
-    },
-
-    addComboRow(c) {
-        const ul = document.getElementById('comboList');
-        const p = this.data.find(x => x.id === c.id);
-        const name = p ? p.name : (c.name || 'Desconhecido');
-        
-        const li = document.createElement('li');
-        li.className = 'list-item';
-        li.dataset.id = c.id;
-        li.dataset.qty = c.qty;
-        li.innerHTML = `
-            <span>${name}</span>
-            <div>
-                x${c.qty}
-                <button type="button" class="btn-sm btn-outline" onclick="this.closest('li').remove()">X</button>
-            </div>
-        `;
-        ul.appendChild(li);
+        // Mostrar botão de download se houver resultados
+        const btn = document.getElementById('downloadBtn');
+        btn.style.display = dadosFiltrados.length > 0 ? 'block' : 'none';
     }
-};
 
-app.init();
+    // 3. Exibir na tela
+    function exibirTabela(lista) {
+        const corpoTabela = document.getElementById('resultTable');
+        corpoTabela.innerHTML = "";
+
+        lista.forEach(c => {
+            const row = `<tr>
+                <td>${c['First Name'] || ''} ${c['Last Name'] || ''}</td>
+                <td>${c['Phone 1 - Value'] || ''}</td>
+                <td>${c['Labels'] || ''}</td>
+            </tr>`;
+            corpoTabela.innerHTML += row;
+        });
+    }
+
+    // 4. Gerar Download do CSV Filtrado
+    function baixarFiltrados() {
+        const csvParaBaixar = Papa.unparse(dadosFiltrados);
+        const blob = new Blob([csvParaBaixar], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", "contatos_filtrados.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 </script>
+
 </body>
 </html>
