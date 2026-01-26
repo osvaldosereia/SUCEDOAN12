@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS | Sandbox Pro Path-Mapping</title>
+    <title>SISTEMAS | Sandbox Pro Universal</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -35,10 +35,9 @@
         }
         .upload-zone:hover { border-color: var(--primary); background: #1e293b; }
 
-        /* Lista de Arquivos com Input de Rota */
         .file-item {
             display: grid;
-            grid-template-columns: 1fr 2fr auto;
+            grid-template-columns: 1.5fr 2fr auto;
             gap: 10px;
             align-items: center;
             background: #0f172a;
@@ -63,7 +62,6 @@
             font-size: 1.1rem; font-weight: 800; cursor: pointer; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
         }
 
-        /* Preview Mode */
         #preview-frame { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; display: none; z-index: 10; background: white; }
         #back-btn {
             position: fixed; bottom: 20px; left: 20px; z-index: 100;
@@ -79,19 +77,19 @@
 <div id="ui-wrapper">
     <header style="margin-bottom: 2rem;">
         <h1>SISTEMAS <span style="color: var(--primary)">SANDBOX</span></h1>
-        <p style="opacity: 0.7;">Ambiente de simulação de diretórios e fetch local</p>
+        <p style="opacity: 0.7;">Arraste o index.html e outros arquivos (fotos, jsons, etc) para simular um servidor.</p>
     </header>
 
     <div class="card">
-        <h2>1. Código HTML (Index)</h2>
-        <textarea id="code-editor" placeholder="Cole o HTML aqui ou arraste o arquivo abaixo..."></textarea>
+        <h2>1. Código HTML Principal</h2>
+        <textarea id="code-editor" placeholder="Cole o HTML aqui ou arraste um arquivo .html..."></textarea>
     </div>
 
     <div class="card">
-        <h2>2. Arquivos de Dados (JSON)</h2>
+        <h2>2. Recursos e Arquivos de Suporte</h2>
         <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-            <p>Clique ou arraste arquivos .json e .html</p>
-            <input type="file" id="file-input" multiple accept=".html,.json" class="hidden">
+            <p>Clique ou arraste qualquer arquivo aqui (imagens, vídeos, pdf, json)</p>
+            <input type="file" id="file-input" multiple class="hidden">
         </div>
         <div id="file-list"></div>
     </div>
@@ -106,23 +104,37 @@
 <iframe id="preview-frame"></iframe>
 
 <script>
-    const storage = { html: "", files: {} }; // files: { id: { name, content, virtualPath } }
+    const storage = { html: "", files: {} };
     const editor = document.getElementById('code-editor');
     const fileListDiv = document.getElementById('file-list');
 
+    // Converte arquivos binários para String Base64 para que possam ser injetados no iframe
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
     async function handleFiles(files) {
         for (const file of files) {
-            const content = await file.text();
             const id = Math.random().toString(36).substr(2, 9);
             
-            if (file.name === 'index.html') {
+            // Se for um HTML, assumimos que é o código principal
+            if (file.name.endsWith('.html')) {
+                const content = await file.text();
                 editor.value = content;
                 storage.html = content;
-            } else if (file.name.endsWith('.json')) {
+            } else {
+                // Qualquer outro tipo de arquivo vai para a lista de "assets"
+                const base64Data = await fileToBase64(file);
                 storage.files[id] = {
                     name: file.name,
-                    content: JSON.parse(content),
-                    virtualPath: file.name // Caminho padrão é o nome do arquivo
+                    type: file.type,
+                    data: base64Data,
+                    virtualPath: file.name
                 };
                 renderFileList();
             }
@@ -136,8 +148,10 @@
             const div = document.createElement('div');
             div.className = 'file-item';
             div.innerHTML = `
-                <span style="font-size: 0.8rem; font-weight: bold;">${file.name}</span>
-                <input type="text" value="${file.virtualPath}" placeholder="Rota (ex: folder/data.json)" 
+                <span style="font-size: 0.75rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">
+                    ${file.name}
+                </span>
+                <input type="text" value="${file.virtualPath}" placeholder="Caminho/Rota" 
                     oninput="storage.files['${id}'].virtualPath = this.value">
                 <button onclick="delete storage.files['${id}']; renderFileList()" style="background:none; border:none; color:#ff4444; cursor:pointer;">✕</button>
             `;
@@ -149,41 +163,45 @@
 
     document.getElementById('run-btn').onclick = () => {
         const html = editor.value;
-        if (!html) return alert("Insira o HTML!");
+        if (!html) return alert("Por favor, insira o código HTML no editor!");
 
-        // Mapeia os caminhos virtuais para o objeto de mock
         const mockMap = {};
         Object.values(storage.files).forEach(f => {
-            mockMap[f.virtualPath] = f.content;
+            mockMap[f.virtualPath] = { data: f.data, type: f.type };
         });
 
         const injection = `
             <script>
-                const _MOCK_DATA = ${JSON.stringify(mockMap)};
-                const _originalFetch = window.fetch;
-                window.fetch = async (input, init) => {
-                    let url = typeof input === 'string' ? input : input.url;
-                    
-                    // Normaliza a URL para bater com o virtualPath (remove ./ e / iniciais para comparar)
-                    const cleanUrl = url.replace(/^\\.\\//, '').replace(/^\\//, '');
-                    
-                    // Busca exata ou busca pelo final do caminho
-                    const match = Object.keys(_MOCK_DATA).find(path => 
-                        path === cleanUrl || url.endsWith(path)
-                    );
+                (function() {
+                    const _MOCK_FILES = ${JSON.stringify(mockMap)};
+                    const _originalFetch = window.fetch;
 
-                    if (match) {
-                        console.log('Sandbox: Roteando fetch para path virtual:', match);
-                        return new Response(JSON.stringify(_MOCK_DATA[match]), {
-                            status: 200,
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                    }
-                    return _originalFetch(input, init);
-                };
+                    window.fetch = async (input, init) => {
+                        let url = typeof input === 'string' ? input : input.url;
+                        const cleanUrl = url.replace(/^\\.\\//, '').replace(/^\\//, '');
+                        
+                        const match = Object.keys(_MOCK_FILES).find(path => 
+                            path === cleanUrl || url.endsWith(path)
+                        );
+
+                        if (match) {
+                            console.log('Sandbox: Interceptando fetch para:', match);
+                            const fileData = _MOCK_FILES[match];
+                            // Converte Base64 para Blob para que o fetch responda como um arquivo real
+                            const res = await _originalFetch(fileData.data);
+                            const blob = await res.blob();
+                            return new Response(blob, {
+                                status: 200,
+                                headers: { 'Content-Type': fileData.type }
+                            });
+                        }
+                        return _originalFetch(input, init);
+                    };
+                })();
             <\/script>
         `;
 
+        // Insere o mock logo no início do <head> para garantir que intercepte tudo
         const finalCode = html.includes('<head>') ? html.replace('<head>', '<head>' + injection) : injection + html;
         const blob = new Blob([finalCode], { type: 'text/html' });
         
@@ -194,7 +212,7 @@
         document.getElementById('back-btn').style.display = 'flex';
     };
 
-    // Drag & Drop
+    // Suporte para Drag & Drop
     const dz = document.querySelector('.upload-zone');
     dz.ondragover = (e) => { e.preventDefault(); dz.style.borderColor = 'var(--primary)'; };
     dz.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
