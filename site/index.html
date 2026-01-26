@@ -1177,8 +1177,14 @@
                     if (!res.ok) throw new Error("Erro ao carregar dados.");
                     const content = await res.json();
                     const raw = content.produtos || content;
-                    this.data = raw.map(p => {
-                        const catRaw = (p.categoria || "OUTROS").trim();
+this.data = raw
+    .filter(p => {
+        // Filtra estoque > 0 e se possui link de imagem válido
+        const temEstoque = parseFloat(p.Estoque || p.estoque || 0) > 0;
+        const temFoto = p.imagem && p.imagem !== "" && p.imagem !== "0" && p.imagem !== null;
+        return temEstoque && temFoto;
+    })
+    .map(p => {                        const catRaw = (p.categoria || "OUTROS").trim();
                         const parts = catRaw.split('>');
                         const mainCat = parts[0].trim().toUpperCase();
                         let appCat = mainCat; 
