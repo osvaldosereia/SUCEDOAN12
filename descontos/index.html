@@ -9,26 +9,6 @@
     <meta name="facebook-domain-verification" content="sa60eslx69a2vs9jaojicyissuoueq" />
     <link rel="canonical" href="https://www.donaantonia.com.br">
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "Super Cestas Dona Antônia",
-      "image": "https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif",
-      "telephone": ["+5565998150975"],
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "R. Trinta, 105",
-        "addressLocality": "Jardim Nossa Sra. Aparecida",
-        "addressRegion": "MT",
-        "postalCode": "78090-660",
-        "addressCountry": "BR"
-      },
-      "url": "https://www.donaantonia.com.br",
-      "priceRange": "$$"
-    }
-    </script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
@@ -64,36 +44,67 @@
         .logo-header { width: 75px; height: 75px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; top: 15px; }
         .brand h1 { font-size: 16px; font-weight: 700; margin-left: 15px; }
 
-        /* CATALOG */
-        .catalog-container { padding: 8px; max-width: 600px; margin: 0 auto; }
+        /* CATALOG GRID SYSTEM */
+        .catalog-container { 
+            padding: 20px 15px; 
+            max-width: 1200px; 
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr; /* Mobile: 1 Coluna */
+            gap: 20px;
+        }
 
-        /* DIDACTIC */
-        .didactic-section { padding: 16px 8px; }
-        .didactic-slide { background: white; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-card); border-top: 6px solid var(--primary); }
-        .ds-title { font-size: 17px; font-weight: 800; text-align: center; margin-bottom: 15px; }
-        .ds-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 14px; font-weight: 500; }
-        .ds-icon { color: var(--success); font-size: 20px; }
+        /* Desktop: 3 Colunas */
+        @media (min-width: 1024px) {
+            .catalog-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 30px;
+                padding: 40px 20px;
+            }
+        }
 
-        /* CARDS */
-        .product-section { background: white; border-radius: 20px; box-shadow: var(--shadow-card); margin-bottom: 20px; overflow: hidden; }
-        .p-main-content { padding: 16px; }
-        .p-title { font-size: 22px; font-weight: 800; margin: 0 0 15px; }
-        .basket-hero-img { width: 100%; border-radius: 15px; display: block; }
+        /* DIDACTIC SECTION (Ocupa largura total na grelha) */
+        .didactic-section { grid-column: 1 / -1; margin: 10px 0; }
+        .didactic-slide { 
+            background: white; border-radius: 20px; padding: 25px; 
+            box-shadow: var(--shadow-card); border-top: 6px solid var(--primary);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .ds-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--text-main); }
+        .ds-items-wrapper { 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%;
+        }
+        .ds-item { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+        .ds-icon { color: var(--success); font-size: 22px; }
+
+        /* PRODUCT CARDS */
+        .product-section { 
+            background: white; border-radius: 24px; box-shadow: var(--shadow-card); 
+            overflow: hidden; display: flex; flex-direction: column;
+            transition: transform 0.3s ease; border: 1px solid rgba(0,0,0,0.05);
+        }
+        @media (min-width: 1024px) {
+            .product-section:hover { transform: translateY(-5px); }
+        }
+
+        .p-main-content { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+        .p-title { font-size: 20px; font-weight: 800; margin: 0 0 15px; text-align: center; }
+        .basket-hero-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 16px; margin-bottom: 15px; background: #f8fafc; }
         
         .opt-row { 
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-medium);
-            margin: 12px 0; cursor: pointer; transition: 0.2s;
+            padding: 14px; border-radius: 14px; border: 1.5px solid var(--border-medium);
+            margin: 8px 0; cursor: pointer; transition: 0.2s;
         }
         .opt-row.selected { border-color: var(--success); background: #f0fdf4; }
         .price-tag { font-size: 18px; font-weight: 800; color: var(--text-main); }
 
-        /* BUTTONS */
-        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 14px; }
+        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 14px; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.8; }
         .btn-primary { background: var(--primary-gradient); color: white; }
         .btn-success { background: var(--success-gradient); color: white; }
 
-        /* MODAL LISTA */
+        /* MODAL */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
@@ -101,31 +112,28 @@
         }
         .modal-overlay.active { display: flex; }
         .modal-card { 
-            background: white; width: 100%; max-width: 700px; border-radius: 24px; 
-            max-height: 90vh; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;
+            background: white; width: 100%; max-width: 750px; border-radius: 28px; 
+            max-height: 85vh; overflow-y: auto; position: relative;
         }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .modal-header { position: sticky; top: 0; background: white; padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .modal-body { padding: 20px; }
+        .modal-header { position: sticky; top: 0; background: white; padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .modal-body { padding: 25px; }
         
-        /* GRID DE PRODUTOS NO MODAL */
-        .list-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+        .list-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
         @media (min-width: 600px) { .list-grid { grid-template-columns: 1fr 1fr; } }
 
-        .cat-title { font-size: 14px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-        .product-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 14px; }
-        .qty-badge { background: #f1f5f9; color: #475569; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 11px; min-width: 35px; text-align: center; }
+        .cat-title { font-size: 13px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .product-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 14px; color: #334155; }
+        .qty-badge { background: #eff6ff; color: #2563eb; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 11px; min-width: 38px; text-align: center; }
 
         /* FOOTER */
-        .app-footer { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; z-index: 100; display: flex; gap: 10px; }
-        .footer-btn { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .app-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; z-index: 100; display: flex; gap: 12px; }
+        .footer-btn { flex: 1; height: 54px; border-radius: 27px; border: none; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-size: 13px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
     </style>
 </head>
 <body>
 
     <header class="app-header">
-        <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-header">
+        <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-header" alt="Logo">
         <div class="brand"><h1>Dona Antônia</h1></div>
     </header>
 
@@ -139,23 +147,23 @@
     <div id="modal-items" class="modal-overlay" onclick="if(event.target===this) closeModal('items')">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="m-title" style="margin:0">Itens da Cesta</h3>
-                <button onclick="closeModal('items')" style="background:none; border:none; font-size:24px;"><i class="ph-bold ph-x"></i></button>
+                <h3 id="m-title" style="margin:0; font-weight: 800;">Itens da Cesta</h3>
+                <button onclick="closeModal('items')" style="background:none; border:none; font-size:24px; cursor:pointer;"><i class="ph-bold ph-x"></i></button>
             </div>
             <div class="modal-body">
                 <div id="m-content" class="list-grid"></div>
-                <button id="m-order-btn" class="btn btn-success" style="margin-top:30px">ENCOMENDAR VIA WHATSAPP</button>
+                <button id="m-order-btn" class="btn btn-success" style="margin-top:30px; font-size: 16px;">PEDIR NO WHATSAPP</button>
             </div>
         </div>
     </div>
 
     <div id="modal-company" class="modal-overlay" onclick="if(event.target===this) closeModal('company')">
-        <div class="modal-card" style="max-width:400px; text-align:center; padding:30px;">
-             <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width:80px; border-radius:50%; margin-bottom:15px;">
+        <div class="modal-card" style="max-width:400px; text-align:center; padding:35px;">
+             <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width:90px; border-radius:50%; margin-bottom:15px; border: 3px solid #eee;">
              <h2 style="margin:0">Atendimento</h2>
-             <p style="color:var(--text-sec)">Cuiabá e Várzea Grande</p>
+             <p style="color:var(--text-sec); margin-bottom: 25px;">Cuiabá e Várzea Grande</p>
              <a href="https://api.whatsapp.com/send?phone=5565998150975" class="btn btn-success" style="text-decoration:none">CHAMAR NO WHATSAPP</a>
-             <button onclick="closeModal('company')" class="btn" style="background:#f1f5f9; color:#475569">FECHAR</button>
+             <button onclick="closeModal('company')" class="btn" style="background:#f1f5f9; color:#475569; margin-top: 15px;">VOLTAR</button>
         </div>
     </div>
 
@@ -252,11 +260,11 @@
             let html = '';
             const order = ['GRANDE', 'MEDIA', 'PEQUENA', 'MINI', 'ECONOMICA'];
 
-            order.forEach(key => {
+            order.forEach((key, index) => {
                 const basket = BASKETS[key];
                 const optionsHtml = basket.opts.map((o, i) => `
                     <div class="opt-row ${o.sel ? 'selected' : ''}" onclick="selectOption('${key}', ${i})">
-                        <span>${o.n}</span>
+                        <span style="font-size: 13px; font-weight: 500;">${o.n}</span>
                         <span class="price-tag">${o.p}</span>
                     </div>
                 `).join('');
@@ -265,20 +273,24 @@
                     <section class="product-section">
                         <div class="p-main-content">
                             <h2 class="p-title">${basket.name}</h2>
-                            <img src="${basket.img}" class="basket-hero-img">
-                            ${optionsHtml}
-                            <button class="btn btn-primary" onclick="openItemsModal('${key}')"><i class="ph-bold ph-list-bullets"></i> VER LISTA DE PRODUTOS</button>
-                            <button class="btn btn-success" onclick="orderWhatsApp('${key}')"><i class="ph-bold ph-whatsapp-logo"></i> COMPRAR AGORA</button>
+                            <img src="${basket.img}" class="basket-hero-img" alt="${basket.name}">
+                            <div style="flex-grow: 1;">${optionsHtml}</div>
+                            <button class="btn btn-primary" onclick="openItemsModal('${key}')"><i class="ph-bold ph-list-bullets"></i> LISTA DE PRODUTOS</button>
+                            <button class="btn btn-success" onclick="orderWhatsApp('${key}')"><i class="ph-bold ph-whatsapp-logo"></i> COMPRAR</button>
                         </div>
                     </section>
                 `;
-                if(key === 'GRANDE') html += `
+                
+                // Seção Didática após as duas primeiras cestas (fica no meio no desktop)
+                if(key === 'MEDIA') html += `
                     <div class="didactic-section">
                         <div class="didactic-slide">
-                            <div class="ds-title">Por que comprar conosco?</div>
-                            <div class="ds-item"><i class="ph-fill ph-check-circle ds-icon"></i> Entrega Grátis em Cuiabá e VG</div>
-                            <div class="ds-item"><i class="ph-fill ph-check-circle ds-icon"></i> Pagamento apenas na entrega</div>
-                            <div class="ds-item"><i class="ph-fill ph-check-circle ds-icon"></i> Produtos de marcas selecionadas</div>
+                            <div class="ds-title">Diferenciais Dona Antônia</div>
+                            <div class="ds-items-wrapper">
+                                <div class="ds-item"><i class="ph-fill ph-truck ds-icon"></i> Entrega Grátis em Cuiabá e VG</div>
+                                <div class="ds-item"><i class="ph-fill ph-hand-coins ds-icon"></i> Pague somente ao receber</div>
+                                <div class="ds-item"><i class="ph-fill ph-seal-check ds-icon"></i> Marcas de Alta Qualidade</div>
+                            </div>
                         </div>
                     </div>`;
             });
