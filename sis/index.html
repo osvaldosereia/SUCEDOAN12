@@ -36,8 +36,11 @@
             background-color: var(--bg-body);
             overflow-x: hidden;
         }
+        
+        /* Classe para travar rolagem quando modal abre */
+        body.no-scroll { overflow: hidden !important; height: 100vh; }
 
-        /* Otimização de renderização */
+        /* Performance */
         .catalog-container, .hero-banner-section { content-visibility: auto; contain-intrinsic-size: 1000px; }
 
         .hidden { display: none !important; }
@@ -49,14 +52,13 @@
         body.customizer-mode #main-view { display: none !important; }
         body.customizer-mode #customizer-view { display: block !important; }
         body.customizer-mode { background: #fff; overflow-y: auto; }
-        body.no-scroll { overflow: hidden !important; }
 
         /* --- 2. HEADER --- */
         #main-header { 
             position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
             background: #ffffff; border-bottom: 1px solid #f0f0f0; z-index: 1000; 
             display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            contain: layout size; /* Performance */
+            contain: layout size; 
         }
         body.customizer-mode #main-header { display: none; }
         
@@ -84,19 +86,25 @@
         .hb-dot.active { background: var(--primary); width: 20px; border-radius: 4px; }
         @media(min-width: 1024px) { .hb-card { flex: 0 0 32%; } }
 
-        /* Carrossel Ofertas */
+        /* --- CARROSSEL OFERTAS --- */
         .offers-section { margin-bottom: 40px; position: relative; padding: 0 15px; max-width: 1200px; margin: 0 auto 30px; }
         .offers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .offers-title { font-size: 1.2rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+        
         .carousel-track { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 20px) / 3); gap: 10px; overflow-x: auto; padding-bottom: 10px; }
         @media(max-width: 768px) { .carousel-track { grid-auto-columns: calc((100% - 20px) / 2.5); } }
+        /* Ajuste Desktop: 6 imagens */
+        @media(min-width: 1024px) { .carousel-track { grid-auto-columns: calc((100% - 50px) / 6); } }
         
-        .offer-card-simple { display: flex; flex-direction: column; background: #fff; padding: 10px; border-radius: 12px; border: 1px solid #e5e7eb; position: relative; cursor: pointer; }
-        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; }
+        .offer-card-simple { display: flex; flex-direction: column; background: #fff; padding: 10px; border-radius: 12px; border: 1px solid #e5e7eb; position: relative; cursor: default; }
+        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; z-index: 1; }
         .cp-img { width: 100%; height: 100%; object-fit: contain; }
         .cp-price { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; }
         .cp-price.offer-price { color: #dc2626; }
-        .cp-tag-off { position: absolute; top: 5px; right: 5px; background: #029939; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+        
+        /* Ajuste Etiqueta Oferta (Z-Index alto para ficar por cima) */
+        .cp-tag-off { position: absolute; top: 5px; right: 5px; background: #029939; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; z-index: 10; pointer-events: none; }
+        
         .cp-title { font-size: 0.75rem; color: #333; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
         /* --- CATALOGO HOME --- */
@@ -167,8 +175,9 @@
 
         .card-prod { position: relative; display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border: none; background: transparent; }
         
-        /* Botões de Ação (Z-Index Corrigido para evitar falha no clique) */
-        .card-action-row { display: flex; justify-content: flex-end; margin-top: -24px; margin-right: 6px; margin-bottom: 2px; position: relative; z-index: 50; height: 32px; pointer-events: auto; }
+        /* Botões de Ação (+ e -) */
+        /* Z-index 20 garante que fique acima da imagem (Z-index 1) e etiqueta (Z-index 10) */
+        .card-action-row { display: flex; justify-content: flex-end; margin-top: -24px; margin-right: 6px; margin-bottom: 2px; position: relative; z-index: 20; height: 32px; pointer-events: auto; }
         .btn-circle-add { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; line-height: 1; padding-bottom: 3px; user-select: none; }
         .qty-ctrl-float { background: white; border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center; height: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; user-select: none; }
         .qcf-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer; font-weight: 700; }
@@ -183,13 +192,10 @@
         .ccb-btn { background: var(--primary); color: white; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; border: none; }
         .ccb-btn.disabled { background: #64748b; opacity: 0.8; pointer-events: none; }
 
-        /* Footer Home */
-        .app-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; z-index: 100; display: flex; gap: 12px; }
-        body.customizer-mode .app-footer { display: none; }
-        .footer-btn { flex: 1; height: 54px; border-radius: 27px; border: none; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-size: 13px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); cursor: pointer; }
+        /* Footer Home REMOVIDO conforme solicitado */
 
-        /* Modais (Correção Modal Perdido) */
-        /* Importante: display none por padrão para não ocupar espaço no DOM */
+        /* Modais */
+        /* Display none padrão para não ocupar espaço */
         .sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000; opacity: 0; transition: opacity 0.3s; flex-direction: column; justify-content: flex-end; align-items: center; pointer-events: none; }
         .sheet-overlay.open { display: flex; opacity: 1; pointer-events: auto; }
         
@@ -229,7 +235,7 @@
             
             <div class="header-actions">
                 <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" title="Instagram" aria-label="Instagram">
-                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                 </button>
                 <button class="ah-icon-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565996813588','_blank')" title="WhatsApp" aria-label="Whatsapp">
                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.017-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
@@ -284,9 +290,8 @@
                     </button>
                     <button class="ah-icon-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565996813588','_blank')" style="width:32px; height:32px;">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.017-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                    </button>
-                    <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')" style="width:32px; height:32px; font-size:1rem; margin-left:0;">?</div>
-                </div>
+                </button>
+                <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')" style="width:32px; height:32px; font-size:1rem; margin-left:0;">?</div>
             </div>
         </div>
 
@@ -304,11 +309,6 @@
             <button class="ccb-btn" onclick="ChatFlow.startCheckout()">Ver Cesta</button>
         </div>
     </div>
-
-    <footer class="app-footer">
-        <button onclick="openModal('company')" class="footer-btn" style="background:#111827"><i class="ph-bold ph-phone"></i> Contatos</button>
-        <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="footer-btn" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)"><i class="ph-bold ph-instagram-logo"></i> Instagram</a>
-    </footer>
 
     <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
         <div class="sheet-box">
@@ -476,6 +476,33 @@
                 
                 let summary = `<div style="font-weight:700; margin-bottom:10px;">Resumo do Pedido</div>`;
                 summary += `<div><strong>Base:</strong> ${App.currentBasket.nome}</div>`;
+                
+                // Diferenças
+                let adds = [], rems = [];
+                for(let id in App.cart) {
+                    const qty = App.cart[id];
+                    const orig = App.originalCart[id] || 0;
+                    if(qty > orig) {
+                        const p = App.data.find(x => x.id === id);
+                        adds.push(`${qty - orig}x ${p.nome}`);
+                    }
+                }
+                for(let id in App.originalCart) {
+                    const orig = App.originalCart[id];
+                    const curr = App.cart[id] || 0;
+                    if(curr < orig) {
+                        const p = App.data.find(x => x.id === id);
+                        rems.push(`${orig - curr}x ${p.nome}`);
+                    }
+                }
+
+                if(rems.length > 0) {
+                     summary += `<div style="margin-top:10px; color:#ef4444; font-size:0.9rem;"><strong>Itens Removidos:</strong><br>${rems.join('<br>')}</div>`;
+                }
+                if(adds.length > 0) {
+                     summary += `<div style="margin-top:10px; color:#15803d; font-size:0.9rem;"><strong>Itens Adicionados:</strong><br>${adds.join('<br>')}</div>`;
+                }
+
                 summary += `<div style="margin-top:15px; font-size:1.2rem; font-weight:800; color:var(--primary); text-align:right;">Total: R$ ${total.toFixed(2).replace('.',',')}</div>`;
                 
                 this.container.insertAdjacentHTML('beforeend', `<div class="chat-msg wide-summary">${summary}</div>`);
@@ -491,13 +518,32 @@
                 document.getElementById('act-pay').remove();
                 this.addMessage(method, 'user');
                 
-                const cartItems = [];
-                for(let id in App.cart) {
-                    const p = App.data.find(x=>x.id===id);
-                    if(p) cartItems.push(`${App.cart[id]}x ${p.nome}`);
-                }
                 const total = document.getElementById('ccb-val').innerText;
-                const msg = `*NOVO PEDIDO PERSONALIZADO*\nBase: ${App.currentBasket.nome}\n\n*ITENS:*\n${cartItems.join('\n')}\n\n*TOTAL: ${total}*\nPagamento: ${method}`;
+                
+                // Gera listas para o WhatsApp
+                let adds = [], rems = [];
+                for(let id in App.cart) {
+                    const qty = App.cart[id];
+                    const orig = App.originalCart[id] || 0;
+                    if(qty > orig) {
+                        const p = App.data.find(x => x.id === id);
+                        adds.push(`${qty - orig}x ${p.nome}`);
+                    }
+                }
+                for(let id in App.originalCart) {
+                    const orig = App.originalCart[id];
+                    const curr = App.cart[id] || 0;
+                    if(curr < orig) {
+                        const p = App.data.find(x => x.id === id);
+                        rems.push(`${orig - curr}x ${p.nome}`);
+                    }
+                }
+
+                let msg = `*NOVO PEDIDO PERSONALIZADO*\nBase: ${App.currentBasket.nome}\n`;
+                if(rems.length) msg += `\n*REMOVIDOS:*\n${rems.join('\n')}`;
+                if(adds.length) msg += `\n*ADICIONADOS:*\n${adds.join('\n')}`;
+                
+                msg += `\n\n*TOTAL: ${total}*\nPagamento: ${method}`;
                 
                 setTimeout(() => window.location.href = `https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, 1000);
             },
@@ -542,11 +588,8 @@
             },
 
             setupPagination(sectionId, products) {
-                // Mobile: 2 colunas. Desktop: 4 colunas.
                 const isDesktop = window.innerWidth >= 768;
                 const cols = isDesktop ? 4 : 2;
-                
-                // Configuração: Começar com 2 linhas, carregar mais 4 linhas
                 const initialLimit = cols * 2; 
                 const loadStep = cols * 4; 
 
@@ -581,7 +624,6 @@
                 if(isUpdate && firstNewItemId) {
                     const el = document.getElementById(firstNewItemId);
                     if(el) {
-                         // Offset de 80px (header + margem)
                          const offset = 80;
                          const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
                          window.scrollTo({top: top, behavior: 'smooth'});
@@ -589,13 +631,11 @@
                 }
 
                 store.currentIndex = nextLimit;
-                store.currentLimit = store.step; // Próximos carregamentos usarão o step maior
+                store.currentLimit = store.step;
 
-                // Remove botão antigo se existir
                 const oldBtn = document.getElementById(`btn-${sectionId}`);
                 if(oldBtn) oldBtn.remove();
 
-                // Adiciona botão se houver mais
                 if(store.currentIndex < store.products.length) {
                     const remaining = store.products.length - store.currentIndex;
                     const btnHtml = `<button id="btn-${sectionId}" class="btn-load-more" onclick="App.renderPagedSection('${sectionId}', true)">Ver Mais (${remaining})</button>`;
@@ -626,9 +666,11 @@
                 const track = document.getElementById('offers-track');
                 document.getElementById('offers-carousel-container').classList.remove('hidden');
                 track.innerHTML = offers.map(p => `
-                    <div class="offer-card-simple" onclick="App.openCustomizerForOffer('${p.id}')">
-                        <span class="cp-tag-off">OFERTA</span>
-                        <div class="cp-img-box"><img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100"></div>
+                    <div class="offer-card-simple">
+                        <div class="cp-img-box">
+                            <img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100">
+                            <span class="cp-tag-off">OFERTA</span>
+                        </div>
                         <div class="cp-price offer-price">R$ ${p.offerPrice.toFixed(2).replace('.',',')} <small>R$ ${p.valor.toFixed(2).replace('.',',')}</small></div>
                         <div class="cp-title">${p.nome}</div>
                     </div>
@@ -669,6 +711,8 @@
                         if(!this.cartOrder.includes(pid)) this.cartOrder.push(pid);
                     });
                 }
+                this.originalCart = { ...this.cart }; // Copia para comparação futura
+                
                 let sumItems = 0;
                 for(let pid in this.cart) {
                     const p = this.data.find(x => x.id === pid);
@@ -742,6 +786,8 @@
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 // Importante: stopPropagation nos botões para não abrir a foto
+                // ID tratado para evitar erros
+                const safeId = String(p.id);
                 return `
                 <div class="card-prod" ${domId ? `id="${domId}"` : ''}>
                     <div class="cp-img-box" onclick="App.openPhoto('${p.imagem}', '${p.nome}')">
@@ -750,16 +796,17 @@
                     </div>
                     
                     <div class="card-action-row">
-                        <div id="btn-add-${p.id}" class="btn-circle-add ${qty>0?'hidden':''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1)">+</div>
-                        <div id="qty-ctrl-${p.id}" class="qty-ctrl-float" style="display:${qty>0?'flex':'none'}" onclick="event.stopPropagation()">
-                            <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">-</div>
-                            <div id="qty-val-${p.id}" class="qcf-val">${qty}</div>
-                            <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                        <div id="btn-add-${safeId}" class="btn-circle-add ${qty>0?'hidden':''}" onclick="event.stopPropagation(); App.modQty('${safeId}', 1)">+</div>
+                        <div id="qty-ctrl-${safeId}" class="qty-ctrl-float" style="display:${qty>0?'flex':'none'}" onclick="event.stopPropagation()">
+                            <div class="qcf-btn" onclick="App.modQty('${safeId}', -1)">-</div>
+                            <div id="qty-val-${safeId}" class="qcf-val">${qty}</div>
+                            <div class="qcf-btn" onclick="App.modQty('${safeId}', 1)">+</div>
                         </div>
                     </div>
 
                     <div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">
                         R$ ${price.toFixed(2).replace('.',',')}
+                        ${p.isOffer ? `<small>R$${p.valor.toFixed(2).replace('.',',')}</small>` : ''}
                     </div>
                     <div class="cp-title">${p.nome}</div>
                 </div>`;
@@ -802,9 +849,18 @@
                 }
             },
 
-            openPhoto(url, title) { /* Implementar Visualizador de Foto se necessário */ }, 
-            openSheet(id) { document.getElementById(id).classList.add('open'); },
-            closeSheet(id) { document.getElementById(id).classList.remove('open'); },
+            openPhoto(url, title) { /* Implementar Visualizador se necessário */ }, 
+            
+            // Travamento de rolagem nos modais
+            openSheet(id) { 
+                document.getElementById(id).classList.add('open'); 
+                document.body.classList.add('no-scroll');
+            },
+            closeSheet(id) { 
+                document.getElementById(id).classList.remove('open'); 
+                document.body.classList.remove('no-scroll');
+            },
+            
             directOrder(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); },
             toSmartTitleCase(str) { return str.toLowerCase().replace(/(?:^|\s)\w/g, function(match) { return match.toUpperCase(); }); },
             toSlug(text) { return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w\-]+/g, ''); },
@@ -829,8 +885,14 @@
             }
         };
 
-        function openModal(id) { document.getElementById(`modal-${id}`).classList.add('active'); }
-        function closeModal(id) { document.getElementById(`modal-${id}`).classList.remove('active'); }
+        function openModal(id) { 
+            document.getElementById(`modal-${id}`).classList.add('active'); 
+            document.body.classList.add('no-scroll');
+        }
+        function closeModal(id) { 
+            document.getElementById(`modal-${id}`).classList.remove('active'); 
+            document.body.classList.remove('no-scroll');
+        }
 
         document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
