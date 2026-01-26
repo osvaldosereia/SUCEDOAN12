@@ -13,63 +13,78 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        /* --- 1. CORE & RESET (Do index.html) --- */
+        /* --- CORE & RESET --- */
         :root {
-            --primary: #2563EB;
-            --primary-dark: #1D4ED8;
-            --primary-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+            --primary: #d31a28; /* Cor original Dona Antonia */
+            --primary-dark: #b91c1c;
+            --secondary: #3e3e3e;
             --success: #10B981;
-            --success-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            --surface: #FFFFFF;
             --background: #F3F4F6;
-            --text-main: #111827;
-            --text-sec: #6B7280;
+            --text-main: #222222;
             --border-medium: #E5E7EB;
             --header-h: 70px;
-            --app-header-height: 60px; /* Do index (1) */
+            --app-header-height: 60px;
             --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: var(--background); color: var(--text-main); padding-bottom: 0; width: 100%; overflow-x: hidden; }
         
-        /* Utilitários do index (1) */
         .hidden { display: none !important; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; width: 100%; }
         button { cursor: pointer; border: none; font-family: inherit; background: none; }
+        img { display: block; max-width: 100%; height: auto; }
         
-        /* Customizer Mode Toggle */
+        /* Modos de Visualização */
         body.customizer-mode #main-view { display: none !important; }
         body.customizer-mode #customizer-view { display: block !important; }
         body.customizer-mode { background: #fff; overflow-y: auto; }
         body.no-scroll { overflow: hidden !important; }
 
-        /* --- 2. HEADER PRINCIPAL (Do index.html) --- */
-        .app-header {
-            height: var(--header-h); background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-medium);
-            display: flex; align-items: center; justify-content: center; 
-            position: sticky; top: 0; z-index: 1000;
+        /* --- HEADER PRINCIPAL (Estilo Index 1) --- */
+        #main-header { 
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); 
+            background: #ffffff; border-bottom: 1px solid #f0f0f0; z-index: 1000; 
+            display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
         }
-        body.customizer-mode .app-header { display: none; } /* Esconde no modo chat */
+        body.customizer-mode #main-header { display: none; }
+        
+        .header-inner { display: flex; justify-content: space-between; align-items: center; height: 100%; width: 100%; }
+        .logo-container { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--secondary); }
+        .logo-text-col { display: flex; flex-direction: column; justify-content: center; }
+        .logo-name { font-weight: 700; font-size: 1.1rem; line-height: 1.1; }
+        .logo-slogan { font-size: 0.65rem; color: #555; font-weight: 500; letter-spacing: 0.5px; } 
+        .logo-brand-img { width: 53px; height: 53px; border-radius: 50%; object-fit: cover; }
 
-        .logo-header { width: 75px; height: 75px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; top: 15px; object-fit: cover; }
-        .brand h1 { font-size: 16px; font-weight: 700; margin-left: 15px; color: var(--text-main); }
+        /* Botões do Header */
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .ah-icon-btn { 
+            width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            color: #555; background: #fff; border: 1px solid #e2e8f0; transition: all 0.2s; font-size: 1.1rem; 
+        }
+        .ah-icon-btn:active { transform: scale(0.9); background: #f8fafc; }
+        
+        .help-btn-visible {
+            width: 36px; height: 36px; background: #25D366; color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-left: 10px; transition: transform 0.2s, background 0.2s;
+        }
+        .help-btn-visible:active { transform: scale(0.9); background: #128C7E; }
 
-        /* --- 3. HERO BANNER & OFERTAS (Importado do index 1) --- */
-        .hero-banner-section { padding: 20px 0; background: #ffffff; border-bottom: 1px solid #f0f0f0; margin-bottom: 20px; overflow: hidden; }
+        /* --- HERO BANNER & OFERTAS --- */
+        .hero-banner-section { padding: 20px 0; background: #ffffff; border-bottom: 1px solid #f0f0f0; margin-bottom: 20px; overflow: hidden; margin-top: var(--header-h); }
         .hb-track { display: flex; gap: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; padding: 10px 4px 20px; scrollbar-width: none; }
         .hb-track::-webkit-scrollbar { display: none; }
         .hb-card { flex: 0 0 100%; scroll-snap-align: center; background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%); border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); min-height: 100px; }
-        .hb-icon { width: 50px; height: 50px; background: #eff6ff; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+        .hb-icon { width: 50px; height: 50px; background: #fef2f2; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
         .hb-text { font-size: 1rem; font-weight: 600; color: #334155; line-height: 1.4; }
         .hb-indicators { display: flex; justify-content: center; gap: 6px; margin-top: -10px; padding-bottom: 10px; }
         .hb-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.3s; }
         .hb-dot.active { background: var(--primary); width: 20px; border-radius: 4px; }
-        
         @media(min-width: 1024px) { .hb-card { flex: 0 0 32%; } }
 
-        /* Carrossel de Ofertas */
+        /* Carrossel */
         .offers-section { margin-bottom: 40px; position: relative; padding: 0 15px; max-width: 1200px; margin: 0 auto 30px; }
         .offers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .offers-title { font-size: 1.2rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px; }
@@ -77,15 +92,14 @@
         @media(max-width: 768px) { .carousel-track { grid-auto-columns: calc((100% - 20px) / 2.5); } }
         
         .offer-card-simple { display: flex; flex-direction: column; background: #fff; padding: 10px; border-radius: 12px; border: 1px solid #e5e7eb; position: relative; cursor: pointer; }
-        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+        .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; }
         .cp-img { width: 100%; height: 100%; object-fit: contain; }
         .cp-price { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; }
         .cp-price.offer-price { color: #dc2626; }
-        .cp-price small { font-size: 0.65rem; text-decoration: line-through; color: #999; margin-left: 6px; }
-        .cp-tag-off { position: absolute; top: 5px; right: 5px; background: #10B981; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+        .cp-tag-off { position: absolute; top: 5px; right: 5px; background: #029939; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
         .cp-title { font-size: 0.75rem; color: #333; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* --- 4. CATALOG GRID SYSTEM (Estilo do index.html) --- */
+        /* --- CATALOGO HOME --- */
         .catalog-container { padding: 20px 15px 120px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media (min-width: 1024px) { .catalog-container { grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 40px 20px; } }
 
@@ -94,106 +108,141 @@
             overflow: hidden; display: flex; flex-direction: column;
             transition: transform 0.3s ease; border: 1px solid rgba(0,0,0,0.05);
         }
-        .product-section:hover { transform: translateY(-5px); }
-
         .p-main-content { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
         .p-title { font-size: 20px; font-weight: 800; margin: 0 0 15px; text-align: center; color: var(--text-main); }
         .basket-hero-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 16px; margin-bottom: 15px; background: #f8fafc; }
         .price-display { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-align: center; margin-bottom: 15px; }
         
-        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 14px; transition: opacity 0.2s; text-transform: uppercase; }
-        .btn:active { opacity: 0.8; }
-        .btn-primary { background: var(--primary-gradient); color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); }
+        .btn { width: 100%; padding: 16px; border-radius: 50px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 14px; transition: opacity 0.2s; text-transform: uppercase; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(211, 26, 40, 0.2); }
         .btn-outline { background: #fff; border: 2px solid var(--primary); color: var(--primary); }
-        .btn-success { background: var(--success-gradient); color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
+        .btn-success { background: var(--secondary); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
-        /* --- 5. MODAL LISTA DE PRODUTOS (Estilo do index.html) --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-            z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-card { 
-            background: white; width: 100%; max-width: 600px; border-radius: 28px; 
-            max-height: 85vh; overflow-y: auto; position: relative; display: flex; flex-direction: column;
-        }
-        .modal-header { position: sticky; top: 0; background: white; padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .modal-body { padding: 25px; overflow-y: auto; }
-        
-        .list-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        .cat-title { font-size: 13px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #e5e7eb; padding-bottom: 5px; }
-        .product-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 14px; color: #334155; }
-        .qty-badge { background: #eff6ff; color: #2563eb; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 12px; min-width: 38px; text-align: center; }
-
-        /* --- 6. CUSTOMIZER & CHAT (Do index 1) --- */
+        /* --- CUSTOMIZER & CHAT --- */
         #customizer-view { padding-top: 70px; padding-bottom: 100px; min-height: 100vh; background: #ffffff; display: none; }
         
         .cust-header {
             position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
             background: #fff; height: 60px; border-bottom: 1px solid #f0f0f0; 
             display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .ah-back-btn { color: var(--primary); padding: 10px; cursor: pointer; display: flex; align-items: center; }
-        .ah-cat-btn { background: #f1f5f9; color: var(--text-main); font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; }
+        .cust-header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        
+        .ah-back-btn { color: var(--primary); padding: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .ah-cat-btn { background: #f1f5f9; color: var(--secondary); font-weight: 700; padding: 8px 25px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
         
         .chat-container { display: flex; flex-direction: column; gap: 20px; padding: 20px 16px 140px; max-width: 800px; margin: 0 auto; }
         .chat-msg { background: #f1f5f9; padding: 16px; border-radius: 0 16px 16px 16px; max-width: 85%; align-self: flex-start; color: #334155; line-height: 1.5; font-size: 1rem; animation: fadeIn 0.4s ease; }
         .chat-msg.user { align-self: flex-end; margin-left: auto; background: var(--primary); color: white; border-radius: 16px 16px 0 16px; }
         .chat-msg.wide-summary { max-width: 100%; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        
         .chat-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; animation: fadeIn 0.4s ease; }
-        .btn-chat { padding: 12px; background: #fff; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; font-weight: 600; text-align: center; cursor: pointer; }
-        .btn-chat.primary { background: var(--primary); color: white; grid-column: 1 / -1; }
         
-        /* Grid de Produtos no Chat */
+        .btn-chat { padding: 12px; background: #fff; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; font-weight: 600; text-align: center; cursor: pointer; width: 100%; }
+        .btn-chat.primary { background: var(--primary); color: white; grid-column: 1 / -1; }
+
+        /* Categorias Dropdown (Index 1 Style) */
+        .cat-dropdown {
+            position: fixed; top: 60px; left: 0; right: 0; background: #fff; z-index: 1900; max-height: 75vh; overflow-y: auto; padding: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); transform: translateY(-150%); transition: transform 0.3s;
+        }
+        .cat-dropdown.active { transform: translateY(0); }
+        
+        .corridor-grid { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; }
+        @media(min-width: 768px) { .corridor-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        .corridor-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .btn-main-cat { width: 100%; padding: 14px 16px; background: #ffffff; color: #1e293b; font-weight: 700; font-size: 0.95rem; text-transform: capitalize; border: none; border-bottom: 1px solid #f1f5f9; border-left: 4px solid var(--primary); text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .btn-main-cat:after { content: '›'; font-size: 1.4rem; color: #cbd5e1; line-height: 1; }
+        
+        .sub-cat-list { padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f8fafc; }
+        .btn-sub-cat { display: flex; flex-direction: column; align-items: center; background: transparent; border: none; cursor: pointer; gap: 5px; }
+        .bsc-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0; }
+        .bsc-label { font-size: 0.7rem; color: #64748b; font-weight: 600; text-align: center; line-height: 1.2; }
+
+        /* Grid Produtos */
         .grid-products-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
         @media(min-width: 768px) { .grid-products-row { grid-template-columns: repeat(4, 1fr); } }
         
-        .card-prod { position: relative; display: flex; flex-direction: column; gap: 4px; padding-bottom: 10px; }
-        .btn-circle-add { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; position: absolute; right: 0; bottom: 35px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; z-index: 10; }
-        .qty-ctrl-float { position: absolute; right: 0; bottom: 35px; background: white; border: 1px solid #e5e5e5; border-radius: 20px; display: flex; align-items: center; height: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 10; }
-        .qcf-btn { width: 30px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); cursor: pointer; height: 100%; }
-        .qcf-val { padding: 0 5px; font-weight: 700; font-size: 0.9rem; }
+        .subcat-title { font-size: 1rem; font-weight: 800; color: var(--secondary); margin-bottom: 8px; margin-top: 20px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Categorias Dropdown */
-        .cat-dropdown { position: fixed; top: 60px; left: 0; right: 0; background: #fff; z-index: 1900; max-height: 75vh; overflow-y: auto; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transform: translateY(-150%); transition: transform 0.3s; }
-        .cat-dropdown.active { transform: translateY(0); }
-        .corridor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .btn-main-cat { width: 100%; padding: 12px; text-align: left; background: #f8fafc; border-left: 4px solid var(--primary); font-weight: 700; font-size: 0.9rem; }
+        .card-prod { position: relative; display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border: none; background: transparent; }
+        
+        /* Botões de + e - (Z-Index Corrigido) */
+        .card-action-row { display: flex; justify-content: flex-end; margin-top: -24px; margin-right: 6px; margin-bottom: 2px; position: relative; z-index: 20; height: 32px; pointer-events: auto; }
+        .btn-circle-add { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; line-height: 1; padding-bottom: 3px; }
+        .qty-ctrl-float { background: white; border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center; height: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; }
+        .qcf-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer; font-weight: 700; }
+        .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
-        /* Credit Chip (Total Flutuante) */
+        .btn-load-more { width: 100%; max-width: 200px; margin: 15px auto; padding: 10px; background: #fff; border: 1px solid var(--primary); color: var(--primary); border-radius: 50px; font-weight: 700; font-size: 0.8rem; display: block; text-transform: uppercase; }
+
+        /* Credit Chip */
         .credit-chip-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(150%); background: #1e293b; color: white; padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; justify-content: space-between; gap: 15px; z-index: 9999; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 90%; max-width: 400px; transition: transform 0.3s; }
         .credit-chip-bar.visible { transform: translateX(-50%) translateY(0); }
         .ccb-val { font-weight: 700; color: #4ade80; font-size: 1.1rem; }
-        .ccb-btn { background: var(--primary); color: white; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .ccb-btn { background: var(--primary); color: white; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; border: none; }
         .ccb-btn.disabled { background: #64748b; opacity: 0.8; pointer-events: none; }
 
-        /* --- 7. FOOTER HOME (Do index.html) --- */
+        /* Footer Home */
         .app-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; z-index: 100; display: flex; gap: 12px; }
         body.customizer-mode .app-footer { display: none; }
         .footer-btn { flex: 1; height: 54px; border-radius: 27px; border: none; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-size: 13px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); cursor: pointer; }
+
+        /* Sheets/Modals */
+        .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000; opacity: 0; pointer-events: none; transition: opacity 0.3s; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+        .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+        .sheet-box { background: #fff; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; padding: 20px; max-width: 600px; }
+        .sheet-overlay.open .sheet-box { transform: translateY(0); margin-bottom: 0; }
+        @media(min-width: 768px) { .sheet-overlay.open .sheet-box { margin-bottom: 20px; border-radius: 20px; } }
+        
+        details.faq-box { margin-bottom: 10px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+        details.faq-box summary { font-weight: 600; cursor: pointer; padding: 15px; background: #f8fafc; list-style: none; }
+        .faq-text { padding: 15px; font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
+
+        /* Modal Lista de Produtos */
+        .list-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .cat-title { font-size: 13px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #e5e7eb; padding-bottom: 5px; }
+        .product-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 14px; color: #334155; }
+        .qty-badge { background: #eff6ff; color: #2563eb; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 12px; min-width: 38px; text-align: center; }
 
         @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(10px); } }
     </style>
 </head>
 <body id="body-root">
 
-    <header class="app-header">
-        <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-header" alt="Logo">
-        <div class="brand"><h1>Dona Antônia</h1></div>
+    <header id="main-header">
+        <div class="container header-inner">
+            <a href="#" class="logo-container" onclick="location.reload()">
+                <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo">
+                <div class="logo-text-col">
+                    <span class="logo-name">Dona Antônia</span>
+                    <span class="logo-slogan">A Melhor Cesta da Cidade</span>
+                </div>
+            </a>
+            
+            <div class="header-actions">
+                <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" title="Instagram">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                </button>
+                <button class="ah-icon-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565996813588','_blank')" title="WhatsApp">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.017-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                </button>
+                <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')">?</div>
+            </div>
+        </div>
     </header>
 
     <main id="main-view">
         <section class="hero-banner-section">
             <div class="container">
                 <div id="hero-banner-track" class="hb-track">
-                    <div class="hb-card"><div class="hb-icon"><i class="ph-fill ph-map-pin"></i></div><div class="hb-text">Atendemos Cuiabá e<br>Várzea Grande</div></div>
-                    <div class="hb-card"><div class="hb-icon"><i class="ph-fill ph-package"></i></div><div class="hb-text">9 Opções de<br>Cestas Básicas</div></div>
-                    <div class="hb-card"><div class="hb-icon"><i class="ph-fill ph-hand-coins"></i></div><div class="hb-text">Pague somente<br>na Entrega</div></div>
-                    <div class="hb-card"><div class="hb-icon"><i class="ph-fill ph-truck"></i></div><div class="hb-text">Não Cobramos<br>Taxa de Entrega</div></div>
-                    <div class="hb-card"><div class="hb-icon"><i class="ph-fill ph-credit-card"></i></div><div class="hb-text">3x Sem Juros<br>no Cartão</div></div>
-                    <div class="hb-card"><div class="hb-icon"><i class="ph-fill ph-clock-afternoon"></i></div><div class="hb-text">Peça até 9h e<br>Receba Hoje</div></div>
+                    <div class="hb-card"><div class="hb-icon">📍</div><div class="hb-text">Atendemos Cuiabá e<br>Várzea Grande</div></div>
+                    <div class="hb-card"><div class="hb-icon">📦</div><div class="hb-text">9 Opções de<br>Cestas Básicas</div></div>
+                    <div class="hb-card"><div class="hb-icon">🏠</div><div class="hb-text">Pague somente<br>na Entrega</div></div>
+                    <div class="hb-card"><div class="hb-icon">🚚</div><div class="hb-text">Não Cobramos<br>Taxa de Entrega</div></div>
+                    <div class="hb-card"><div class="hb-icon">💳</div><div class="hb-text">3x Sem Juros<br>no Cartão</div></div>
+                    <div class="hb-card"><div class="hb-icon">🚀</div><div class="hb-text">Peça até 9h e<br>Receba Hoje</div></div>
                 </div>
                 <div class="hb-indicators"><div class="hb-dot active"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div></div>
             </div>
@@ -201,7 +250,7 @@
 
         <div id="offers-carousel-container" class="offers-section hidden">
             <div class="offers-header">
-                <div class="offers-title"><i class="ph-fill ph-fire" style="color:var(--primary); margin-right:5px;"></i> Ofertas Especiais</div>
+                <div class="offers-title">🔥 Ofertas Especiais</div>
             </div>
             <div id="offers-track" class="carousel-track"></div>
         </div>
@@ -213,9 +262,27 @@
 
     <div id="customizer-view">
         <div class="cust-header">
-            <div class="ah-back-btn" onclick="App.goHome()"><i class="ph-bold ph-caret-left"></i> Voltar</div>
-            <button id="btn-cat-menu" class="ah-cat-btn" onclick="App.toggleCatMenu(event)">Prateleiras ▾</button>
-            <div style="width:50px;"></div> </div>
+            <div class="cust-header-inner">
+                <div style="display:flex; align-items:center;">
+                    <div class="ah-back-btn" onclick="App.goHome()">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <button id="btn-cat-menu" class="ah-cat-btn" onclick="App.toggleCatMenu(event)">
+                        Prateleiras ▾
+                    </button>
+                </div>
+
+                <div class="header-actions">
+                    <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" style="width:32px; height:32px;">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    </button>
+                    <button class="ah-icon-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565996813588','_blank')" style="width:32px; height:32px;">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.017-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                    </button>
+                    <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')" style="width:32px; height:32px; font-size:1rem; margin-left:0;">?</div>
+                </div>
+            </div>
+        </div>
 
         <div id="cat-dropdown" class="cat-dropdown"></div>
 
@@ -236,6 +303,22 @@
         <button onclick="openModal('company')" class="footer-btn" style="background:#111827"><i class="ph-bold ph-phone"></i> Contatos</button>
         <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="footer-btn" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)"><i class="ph-bold ph-instagram-logo"></i> Instagram</a>
     </footer>
+
+    <div id="faq-sheet" class="sheet-overlay" onclick="if(event.target===this) App.closeSheet('faq-sheet')">
+        <div class="sheet-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                <h3 style="margin:0; color:var(--secondary);">Dúvidas Frequentes</h3>
+                <span onclick="App.closeSheet('faq-sheet')" style="font-size:1.5rem; color:#999; cursor:pointer">✕</span>
+            </div>
+            <div style="overflow-y:auto; padding-bottom:10px;">
+                <details class="faq-box"><summary>Quais as formas de pagamento?</summary><div class="faq-text">Aceitamos pagamento na entrega via Dinheiro, Pix, Cartão de Crédito, Cartão de Débito e Vale Alimentação.</div></details>
+                <details class="faq-box"><summary>Qual o prazo de entrega?</summary><div class="faq-text">Entregamos em até 24 horas úteis após a confirmação do pedido para Cuiabá e Várzea Grande.</div></details>
+                <details class="faq-box"><summary>A entrega é grátis?</summary><div class="faq-text">O frete é grátis para compras acima de R$ 85,00. Para valores menores, consulte a taxa no checkout.</div></details>
+                <details class="faq-box"><summary>Posso alterar os itens da cesta?</summary><div class="faq-text">Sim! Você pode personalizar sua cesta trocando itens ou adicionando produtos extras.</div></details>
+                <details class="faq-box"><summary>Vocês têm loja física?</summary><div class="faq-text">Sim, estamos localizados no bairro Jardim Nossa Senhora Aparecida em Cuiabá.</div></details>
+            </div>
+        </div>
+    </div>
 
     <div id="modal-items" class="modal-overlay" onclick="if(event.target===this) closeModal('items')">
         <div class="modal-card">
@@ -265,9 +348,8 @@
             COUPON_VAL: 5.00
         };
 
-        // --- LÓGICA DO CHAT E PERSONALIZAÇÃO ---
         const ChatFlow = {
-            container: null, categories: [], categoryMap: {}, visitedCorridors: [], 
+            container: null, categories: [], categoryMap: {}, 
             checkoutState: { paymentMethod: '', couponApplied: false },
             
             async start() {
@@ -275,7 +357,7 @@
                 this.container.innerHTML = '';
                 this.categoryMap = {}; 
                 
-                // Agrupa categorias
+                // Mapeia Categorias e Subcategorias
                 App.data.forEach(p => {
                      if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
                      const mainKey = p.appCategory;
@@ -290,7 +372,6 @@
                 this.addMessage(`${greeting}! Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>.`);
                 this.addMessage(`Quer personalizar ou prefere encomendar a cesta normal?`, 'bot');
 
-                // Botões iniciais
                 const html = `<div id="act-intro" class="chat-actions">
                     <button class="btn-chat" onclick="ChatFlow.quickOrder()">Encomendar Normal</button>
                     <button class="btn-chat primary" onclick="ChatFlow.startCustomization('act-intro')">Personalizar</button>
@@ -338,34 +419,43 @@
             },
 
             async showAllProductsAuto() {
+                // Itera sobre Categorias Principais
                 for (let cat of this.categories) {
                     const subCats = Array.from(this.categoryMap[cat] || []).sort();
+                    // Itera sobre Subcategorias (que viram as seções)
                     if(subCats.length > 0) {
                         for(let sub of subCats) await this.showCategorySection(cat, sub);
                     } else {
                         await this.showCategorySection(cat, null);
                     }
                 }
-                // Botão Finalizar
+                
                 this.container.insertAdjacentHTML('beforeend', `<div class="chat-actions" style="margin-top:20px; padding-bottom:40px;"><button class="btn-chat primary" onclick="ChatFlow.startCheckout()">Ir para o Caixa</button></div>`);
             },
 
             showCategorySection(catName, subCatName) {
+                // Filtra produtos
                 let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
                 if(subCatName) products = products.filter(p => p.subCategory === subCatName);
                 if(products.length === 0) return;
                 
                 products.sort((a, b) => a.nome.localeCompare(b.nome));
                 
-                const title = subCatName ? subCatName : catName;
+                // ID Único da seção
+                const uniqueId = `sec-${(catName+subCatName).replace(/[^a-zA-Z0-9]/g, '')}`;
+                const title = subCatName ? subCatName : catName; // Título é a Subcategoria se existir
+                
+                // Cria o HTML da seção vazio inicialmente
                 const html = `
-                <div id="sec-${title.replace(/\s/g,'')}" style="margin-top:20px;">
-                    <div class="cat-title">${App.toSmartTitleCase(title)}</div>
-                    <div class="grid-products-row">
-                        ${products.map(p => App.buildCard(p)).join('')}
-                    </div>
+                <div id="${uniqueId}" style="margin-top:20px;">
+                    <div class="subcat-title">${App.toSmartTitleCase(title)}</div>
+                    <div class="grid-products-row"></div>
                 </div>`;
+                
                 this.container.insertAdjacentHTML('beforeend', html);
+                
+                // Inicia Paginação (2 linhas iniciais)
+                App.setupPagination(uniqueId, products);
             },
 
             async startCheckout() {
@@ -378,15 +468,8 @@
                 this.addMessage("Finalizar Pedido", 'user');
                 await this.wait(500);
                 
-                // Resumo
                 let summary = `<div style="font-weight:700; margin-bottom:10px;">Resumo do Pedido</div>`;
                 summary += `<div><strong>Base:</strong> ${App.currentBasket.nome}</div>`;
-                
-                // Diferenças
-                let added = [], removed = [];
-                // Lógica simplificada de diff
-                // (Para brevidade, vamos listar apenas o total final)
-                
                 summary += `<div style="margin-top:15px; font-size:1.2rem; font-weight:800; color:var(--primary); text-align:right;">Total: R$ ${total.toFixed(2).replace('.',',')}</div>`;
                 
                 this.container.insertAdjacentHTML('beforeend', `<div class="chat-msg wide-summary">${summary}</div>`);
@@ -408,28 +491,21 @@
                     if(p) cartItems.push(`${App.cart[id]}x ${p.nome}`);
                 }
                 const total = document.getElementById('ccb-val').innerText;
-                
                 const msg = `*NOVO PEDIDO PERSONALIZADO*\nBase: ${App.currentBasket.nome}\n\n*ITENS:*\n${cartItems.join('\n')}\n\n*TOTAL: ${total}*\nPagamento: ${method}`;
                 
-                setTimeout(() => {
-                     window.location.href = `https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`;
-                }, 1000);
+                setTimeout(() => window.location.href = `https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, 1000);
             },
 
             wait(ms) { return new Promise(r => setTimeout(r, ms)); }
         };
 
-        // --- APLICAÇÃO PRINCIPAL ---
         const App = {
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, cartOrder: [],
-            bannerInterval: null,
+            paginationStore: {}, bannerInterval: null,
 
             async init() {
                 try {
-                    // Banner Rotativo
                     this.initHeroBanner();
-
-                    // Carregar Dados
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
                     const content = await res.json();
                     const raw = content.produtos || content;
@@ -438,7 +514,6 @@
                         const catRaw = (p.categoria || "OUTROS").trim();
                         const parts = catRaw.split('>');
                         const mainCat = parts[0].trim().toUpperCase();
-                        
                         let appCat = mainCat; 
                         if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
                         else if (mainCat.includes('LIMPEZA')) appCat = "LIMPEZA E HIGIENE";
@@ -456,38 +531,65 @@
 
                     this.renderHome();
                     this.renderOffers();
+                } catch (e) { console.error(e); }
+            },
 
-                } catch (e) {
-                    console.error(e);
-                    document.getElementById('catalog-mount').innerHTML = '<div style="text-align:center">Erro ao carregar produtos.</div>';
+            setupPagination(sectionId, products) {
+                // Mobile: 2 colunas. Desktop: 4 colunas.
+                const isDesktop = window.innerWidth >= 768;
+                const cols = isDesktop ? 4 : 2;
+                
+                // Configuração: Começar com 2 linhas, carregar mais 4 linhas
+                const initialLimit = cols * 2; 
+                const loadStep = cols * 4; 
+
+                this.paginationStore[sectionId] = { 
+                    products, currentIndex: 0, 
+                    currentLimit: initialLimit, step: loadStep 
+                };
+                
+                this.renderPagedSection(sectionId);
+            },
+
+            renderPagedSection(sectionId) {
+                const store = this.paginationStore[sectionId];
+                if(!store) return;
+
+                const nextLimit = store.currentIndex + store.currentLimit;
+                const batch = store.products.slice(store.currentIndex, nextLimit);
+                const container = document.querySelector(`#${sectionId} .grid-products-row`);
+                
+                // Renderiza batch atual
+                const html = batch.map(p => this.buildCard(p)).join('');
+                container.insertAdjacentHTML('beforeend', html);
+                
+                store.currentIndex = nextLimit;
+                store.currentLimit = store.step; // Próximos carregamentos usarão o step maior
+
+                // Remove botão antigo se existir
+                const oldBtn = document.getElementById(`btn-${sectionId}`);
+                if(oldBtn) oldBtn.remove();
+
+                // Adiciona botão se houver mais
+                if(store.currentIndex < store.products.length) {
+                    const remaining = store.products.length - store.currentIndex;
+                    const btnHtml = `<button id="btn-${sectionId}" class="btn-load-more" onclick="App.renderPagedSection('${sectionId}')">Ver Mais (${remaining})</button>`;
+                    document.getElementById(sectionId).insertAdjacentHTML('beforeend', btnHtml);
                 }
             },
 
             renderHome() {
                 const container = document.getElementById('catalog-mount');
-                const baskets = this.data.filter(p => p.categoria.includes('CESTA'));
-                
-                // Ordenar por valor (decrescente) ou lógica específica se preferir
-                baskets.sort((a,b) => b.valor - a.valor);
-
+                const baskets = this.data.filter(p => p.categoria.includes('CESTA')).sort((a,b) => b.valor - a.valor);
                 container.innerHTML = baskets.map(p => `
                     <section class="product-section">
                         <div class="p-main-content">
                             <h2 class="p-title">${p.nome}</h2>
                             <img src="${p.imagem}" class="basket-hero-img" alt="${p.nome}">
                             <div class="price-display">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
-                            
-                            <button class="btn btn-outline" onclick="App.openBasketList('${p.id}')">
-                                <i class="ph-bold ph-list-bullets"></i> VER LISTA DE PRODUTOS
-                            </button>
-                            
-                            <button class="btn btn-primary" onclick="App.openCustomizer('${p.id}')">
-                                <i class="ph-bold ph-magic-wand"></i> PERSONALIZAR CESTA
-                            </button>
-
-                            <button class="btn btn-success" onclick="App.directOrder('${p.nome}')">
-                                <i class="ph-bold ph-whatsapp-logo"></i> COMPRAR AGORA
-                            </button>
+                            <button class="btn btn-outline" onclick="App.openBasketList('${p.id}')"><i class="ph-bold ph-list-bullets"></i> VER LISTA DE PRODUTOS</button>
+                            <button class="btn btn-primary" onclick="App.openCustomizer('${p.id}')"><i class="ph-bold ph-magic-wand"></i> PERSONALIZAR CESTA</button>
+                            <button class="btn btn-success" onclick="App.directOrder('${p.nome}')"><i class="ph-bold ph-whatsapp-logo"></i> COMPRAR AGORA</button>
                         </div>
                     </section>
                 `).join('');
@@ -496,10 +598,8 @@
             renderOffers() {
                 const offers = this.data.filter(p => p.isOffer);
                 if(offers.length === 0) return;
-                
                 const track = document.getElementById('offers-track');
                 document.getElementById('offers-carousel-container').classList.remove('hidden');
-                
                 track.innerHTML = offers.map(p => `
                     <div class="offer-card-simple" onclick="App.openCustomizerForOffer('${p.id}')">
                         <span class="cp-tag-off">OFERTA</span>
@@ -513,40 +613,30 @@
             openBasketList(id) {
                 const basket = this.data.find(p => p.id === id);
                 if(!basket) return;
-
                 document.getElementById('m-title').innerText = basket.nome;
-                let html = '';
-                
-                // Separação fictícia baseada em categorias dos produtos vinculados
                 let foodHtml = '', cleanHtml = '';
-
                 if(basket.items) {
                     basket.items.forEach(item => {
                         const prod = this.data.find(x => x.id === String(item.id));
                         if(prod) {
                             const line = `<div class="product-item"><span class="qty-badge">${item.qty}</span> ${prod.nome}</div>`;
-                            if(prod.appCategory.includes('LIMPEZA')) cleanHtml += line;
-                            else foodHtml += line;
+                            if(prod.appCategory.includes('LIMPEZA')) cleanHtml += line; else foodHtml += line;
                         }
                     });
                 }
-
+                let html = '';
                 if(foodHtml) html += `<div class="cat-title"><i class="ph-fill ph-bowl-food"></i> Alimentos</div>${foodHtml}`;
                 if(cleanHtml) html += `<div class="cat-title"><i class="ph-fill ph-drop"></i> Limpeza e Higiene</div>${cleanHtml}`;
-
-                document.getElementById('m-content').innerHTML = html || '<p style="text-align:center; padding:20px;">Lista indisponível no momento.</p>';
+                document.getElementById('m-content').innerHTML = html || '<p style="text-align:center; padding:20px;">Lista indisponível.</p>';
                 openModal('items');
             },
 
             openCustomizer(id) {
                 const basket = this.data.find(p => p.id === id);
                 if(!basket) return;
-
                 this.currentBasket = basket;
                 this.cart = {};
                 this.cartOrder = [];
-                
-                // Popula o carrinho inicial
                 if(basket.items) {
                     basket.items.forEach(i => {
                         const pid = String(i.id);
@@ -554,28 +644,22 @@
                         if(!this.cartOrder.includes(pid)) this.cartOrder.push(pid);
                     });
                 }
-                
-                // Calcula taxa base (Valor da Cesta - Soma dos produtos individuais)
                 let sumItems = 0;
                 for(let pid in this.cart) {
                     const p = this.data.find(x => x.id === pid);
                     if(p) sumItems += (p.isOffer ? p.offerPrice : p.valor) * this.cart[pid];
                 }
                 this.baseFee = basket.valor - sumItems;
-
-                // Troca de View
                 document.body.classList.add('customizer-mode');
                 window.scrollTo(0,0);
                 this.updateTotal();
                 ChatFlow.start();
             },
             
-            openCustomizerForOffer(id) {
-                alert("Para aproveitar as ofertas, adicione-as dentro da personalização da sua cesta!");
-            },
+            openCustomizerForOffer(id) { alert("Adicione ofertas na personalização da cesta!"); },
 
             goHome() {
-                if(confirm("Sair da personalização? Seu progresso será perdido.")) {
+                if(confirm("Sair da personalização?")) {
                     document.body.classList.remove('customizer-mode');
                     document.getElementById('credit-chip').classList.remove('visible');
                 }
@@ -590,22 +674,24 @@
                 } else if(!this.cartOrder.includes(id)) {
                     this.cartOrder.unshift(id);
                 }
-                
-                // Atualiza UI do card
+                this.updateCardUI(id);
+                this.updateTotal();
+            },
+
+            updateCardUI(id) {
+                const qty = this.cart[id] || 0;
                 const btnAdd = document.querySelectorAll(`#btn-add-${id}`);
                 const ctrl = document.querySelectorAll(`#qty-ctrl-${id}`);
                 const val = document.querySelectorAll(`#qty-val-${id}`);
                 
-                if(this.cart[id] > 0) {
+                if(qty > 0) {
                     btnAdd.forEach(e => e.classList.add('hidden'));
-                    ctrl.forEach(e => e.style.display = 'flex'); // Force flex override
-                    val.forEach(e => e.innerText = this.cart[id]);
+                    ctrl.forEach(e => e.style.display = 'flex'); 
+                    val.forEach(e => e.innerText = qty);
                 } else {
                     btnAdd.forEach(e => e.classList.remove('hidden'));
                     ctrl.forEach(e => e.style.display = 'none');
                 }
-
-                this.updateTotal();
             },
 
             updateTotal() {
@@ -615,10 +701,8 @@
                     if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
                 }
                 const total = Math.max(0, sum + this.baseFee);
-                
                 const el = document.getElementById('ccb-val');
                 if(el) el.innerText = "R$ " + total.toFixed(2).replace('.',',');
-                
                 const btn = document.querySelector('.ccb-btn');
                 if(total < this.currentBasket.valor - 0.05) {
                     btn.classList.add('disabled');
@@ -632,19 +716,21 @@
             buildCard(p) {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
-                
+                // Importante: stopPropagation nos botões para não abrir a foto
                 return `
                 <div class="card-prod">
-                    <div class="cp-img-box">
+                    <div class="cp-img-box" onclick="App.openPhoto('${p.imagem}', '${p.nome}')">
                         <img src="${p.imagem}" class="cp-img" loading="lazy">
                         ${p.isOffer ? '<span class="cp-tag-off">OFERTA</span>' : ''}
                     </div>
                     
-                    <div id="btn-add-${p.id}" class="btn-circle-add ${qty>0?'hidden':''}" onclick="App.modQty('${p.id}', 1)">+</div>
-                    <div id="qty-ctrl-${p.id}" class="qty-ctrl-float" style="display:${qty>0?'flex':'none'}">
-                        <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">-</div>
-                        <div id="qty-val-${p.id}" class="qcf-val">${qty}</div>
-                        <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                    <div class="card-action-row">
+                        <div id="btn-add-${p.id}" class="btn-circle-add ${qty>0?'hidden':''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1)">+</div>
+                        <div id="qty-ctrl-${p.id}" class="qty-ctrl-float" style="display:${qty>0?'flex':'none'}" onclick="event.stopPropagation()">
+                            <div class="qcf-btn" onclick="App.modQty('${p.id}', -1)">-</div>
+                            <div id="qty-val-${p.id}" class="qcf-val">${qty}</div>
+                            <div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div>
+                        </div>
                     </div>
 
                     <div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">
@@ -654,36 +740,49 @@
                 </div>`;
             },
             
-            directOrder(name) {
-                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank');
-            },
-
             toggleCatMenu(e) {
                 if(e) e.stopPropagation();
                 const menu = document.getElementById('cat-dropdown');
                 menu.classList.toggle('active');
                 if(menu.classList.contains('active')) {
+                    // Renderiza Categorias e Subcategorias
                     menu.innerHTML = `<div class="corridor-grid">
-                        ${ChatFlow.categories.map(c => `
-                            <button class="btn-main-cat" onclick="App.scrollToCat('${c}')">${this.toSmartTitleCase(c)}</button>
-                        `).join('')}
+                        ${ChatFlow.categories.map(cat => {
+                            const subCats = Array.from(ChatFlow.categoryMap[cat] || []).sort();
+                            let subHtml = '';
+                            if(subCats.length > 0) {
+                                subHtml = `<div class="sub-cat-list">${subCats.map(sub => `
+                                    <button class="btn-sub-cat" onclick="App.scrollToSection('sec-${(cat+sub).replace(/[^a-zA-Z0-9]/g, '')}')">
+                                        <img src="img/${App.toSlug(sub)}.webp" class="bsc-img" onerror="this.style.display='none'">
+                                        <span class="bsc-label">${App.toSmartTitleCase(sub)}</span>
+                                    </button>
+                                `).join('')}</div>`;
+                            }
+                            return `<div class="corridor-card">
+                                <button class="btn-main-cat">${App.toSmartTitleCase(cat)}</button>
+                                ${subHtml}
+                            </div>`;
+                        }).join('')}
                     </div>`;
                 }
             },
 
-            scrollToCat(cat) {
+            scrollToSection(id) {
                 document.getElementById('cat-dropdown').classList.remove('active');
-                // Lógica simplificada: tenta achar o ID da seção. 
-                // Nota: As seções são criadas dinamicamente no chat. Se não existir, não rola.
-                // Em um app real, precisaria forçar a criação da seção.
-                alert("Role o chat para encontrar a categoria " + cat);
+                const el = document.getElementById(id);
+                if(el) {
+                    const offset = 80; 
+                    const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+                    window.scrollTo({top: top, behavior: 'smooth'});
+                }
             },
 
-            toSmartTitleCase(str) {
-                return str.toLowerCase().replace(/(?:^|\s)\w/g, function(match) {
-                    return match.toUpperCase();
-                });
-            },
+            openPhoto(url, title) { alert("Foto: " + title); }, 
+            openSheet(id) { document.getElementById(id).classList.add('open'); },
+            closeSheet(id) { document.getElementById(id).classList.remove('open'); },
+            directOrder(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); },
+            toSmartTitleCase(str) { return str.toLowerCase().replace(/(?:^|\s)\w/g, function(match) { return match.toUpperCase(); }); },
+            toSlug(text) { return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w\-]+/g, ''); },
 
             initHeroBanner() {
                 const track = document.getElementById('hero-banner-track');
