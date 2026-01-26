@@ -121,7 +121,7 @@
             transform: scale(0.98);
         }
 
-        /* Área de Entrada (Input) */
+        /* Área de Entrada */
         #input-area {
             padding: 20px;
             border-top: 1px solid #ddd;
@@ -227,12 +227,20 @@
             border: none;
         }
 
-        /* Player de Audio */
+        /* Player de Audio - CORRIGIDO */
         audio {
             width: 100%;
-            height: 45px;
+            height: 50px; /* Garante altura suficiente */
             margin-top: 5px;
             outline: none;
+            border-radius: 5px;
+        }
+        
+        .audio-label {
+            font-size: 14px; 
+            font-weight: bold; 
+            margin-bottom: 5px; 
+            display: block;
         }
 
         /* Botão do WhatsApp final */
@@ -402,42 +410,56 @@
             // 1. Mostra "Gravando..."
             const gravandoMsg = addBotMessage("Gravando áudio...");
             
-            // 2. Espera 5 segundos, apaga e manda Audio 1
+            // 2. Espera 5 segundos
             setTimeout(() => {
-                gravandoMsg.remove(); 
+                gravandoMsg.remove(); // Remove o balão de "Gravando..."
                 
-                // AUDIO 1: Procura 'audio.mp3' na raiz
+                // AUDIO 1: (Arquivo audio.mp3 na mesma pasta)
                 sendAudioPlayer("audio.mp3", "audio1");
 
-                // 3. Espera 10 segundos e manda Audio 2
+                // 3. Espera 10 segundos
                 setTimeout(() => {
-                    // AUDIO 2: Procura 'audio2.mp3' na raiz
+                    // AUDIO 2: (Arquivo audio2.mp3 na mesma pasta)
                     sendAudioPlayer("audio2.mp3", "audio2");
 
-                    // 4. Espera 10 segundos e encerra
+                    // 4. Encerramento
                     setTimeout(() => {
                         finalizeChat();
                     }, 10000);
 
-                }, 10000); // 10s entre audios
+                }, 10000); 
 
-            }, 5000); // 5s de "gravando"
+            }, 5000); 
         }
 
         function sendAudioPlayer(src, id) {
-            // Player configurado para MP3 (audio/mpeg)
+            // Adicionei um texto "Mensagem de voz" para garantir que o balão apareça
+            // mesmo se o player der erro.
             const audioHtml = `
-                <audio id="${id}" controls autoplay>
-                    <source src="${src}" type="audio/mpeg">
-                    Seu navegador não suporta áudio.
-                </audio>
+                <div>
+                    <span class="audio-label">🔊 Mensagem de voz:</span>
+                    <audio id="${id}" controls autoplay style="width: 100%;">
+                        <source src="${src}" type="audio/mpeg">
+                        <source src="${src}" type="audio/mp4">
+                        Seu navegador não suporta áudio.
+                    </audio>
+                </div>
             `;
             const div = addBotMessage(audioHtml);
             
             const player = document.getElementById(id);
             if(player) {
-                // Tenta dar play. Se o navegador bloquear, o cliente clica no play.
-                player.play().catch(e => console.log("Aguardando clique no play"));
+                // Tenta dar play automático
+                player.play().catch(e => {
+                    console.log("Autoplay bloqueado. O usuário deve clicar no play.");
+                });
+                
+                // Se der erro ao carregar o arquivo (nome errado, pasta errada)
+                player.onerror = function() {
+                    console.log("Erro ao carregar áudio: " + src);
+                    // Avisa visualmente se deu erro
+                    // div.innerHTML += "<br><small style='color:red'>Erro: arquivo não encontrado</small>";
+                }
             }
         }
 
@@ -474,7 +496,6 @@
         function updateModalImage() {
             const imgElement = document.getElementById('modal-img');
             let suffix = currentPhotoIndex === 0 ? "" : "1";
-            // Busca imagens na pasta 'img/'
             imgElement.src = `img/${currentBasket}${suffix}.webp`;
         }
 
