@@ -226,32 +226,33 @@
         }
         .home-basket-card:hover { transform: translateY(-5px); }
 
-        .hbc-photo-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 12px;
-        }
-        .hbc-photo-container img { width: 100%; height: 100%; object-fit: cover; }
-        .hbc-photo-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-        }
-        .hbc-photo-overlay h2 {
-            color: white;
-            font-size: 1.4rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            margin: 0;
-        }
+        /* Container da Foto (Simples) */
+.hbc-photo-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    border: 1px solid #f0f0f0;
+}
+
+.hbc-photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Título antes da cesta, centralizado */
+.hbc-title-top {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--secondary);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+/* Remova a classe .hbc-photo-overlay pois não será mais usada */
 
         .hbc-price { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; }
         
@@ -1327,35 +1328,34 @@
             },
 
             /* --- NOVO RENDERHOME --- */
-            renderHome() {
-                const list = document.getElementById('home-list');
-                const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
+           renderHome() {
+    const list = document.getElementById('home-list');
+    const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
+    
+    if (baskets.length > 0) {
+        list.innerHTML = baskets.map(p => {
+            return `
+            <div class="home-basket-card">
+                <h2 class="hbc-title-top">${p.nome}</h2>
+
+                <div class="hbc-photo-container">
+                    <img src="${p.imagem}" alt="${p.nome}" loading="lazy">
+                </div>
+
+                <div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
+
+                <button class="btn-view-list" onclick="App.openBasketPreview('${p.id}')">
+                    📦 Ver lista de produtos
+                </button>
                 
-                if (baskets.length > 0) {
-                    list.innerHTML = baskets.map(p => {
-                        return `
-                        <div class="home-basket-card">
-                            <div class="hbc-photo-container">
-                                <img src="${p.imagem}" alt="${p.nome}" loading="lazy">
-                                <div class="hbc-photo-overlay">
-                                    <h2>${p.nome}</h2>
-                                </div>
-                            </div>
-
-                            <div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
-
-                            <button class="btn-view-list" onclick="App.openBasketPreview('${p.id}')">
-                                📦 Ver lista de produtos
-                            </button>
-                            
-                            <div class="hbc-actions-grid">
-                                <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button>
-                                <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar a Cesta Normal</button>
-                            </div>
-                        </div>`;
-                    }).join('');
-                }
-            },
+                <div class="hbc-actions-grid">
+                    <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button>
+                    <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar a Cesta Normal</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+},
 
             /* --- NOVO OPENBASKETPREVIEW --- */
             openBasketPreview(id) {
