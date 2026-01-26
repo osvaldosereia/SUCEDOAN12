@@ -412,15 +412,17 @@
             
             // 2. Espera 5 segundos
             setTimeout(() => {
-                gravandoMsg.remove(); // Remove o balão de "Gravando..."
+                gravandoMsg.remove(); 
                 
-                // AUDIO 1: (Arquivo audio.mp3 na mesma pasta)
-                sendAudioPlayer("audio.mp3", "audio1");
+                // TESTE: Usando um áudio da internet para garantir que toca
+                // Se tocar, o problema era o seu arquivo local
+                addBotMessage("Testando com áudio online:");
+                sendAudioPlayer("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "audio1");
 
                 // 3. Espera 10 segundos
                 setTimeout(() => {
-                    // AUDIO 2: (Arquivo audio2.mp3 na mesma pasta)
-                    sendAudioPlayer("audio2.mp3", "audio2");
+                    // Manda o segundo (mesmo link só para teste)
+                    sendAudioPlayer("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "audio2");
 
                     // 4. Encerramento
                     setTimeout(() => {
