@@ -2,779 +2,418 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Cestas Dona Antônia | Logística</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            main: '#c2185b', // Rosa Dona Antônia
-                            dark: '#8c1141',
-                            light: '#fce4ec',
-                            accent: '#2e7d32', // Verde Carvalima
-                            whatsapp: '#25D366'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Osvaldo Ofertas</title>
     <style>
-        /* Tabela estilo Planilha */
-        .spreadsheet-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; white-space: nowrap; }
-        .spreadsheet-table td { white-space: nowrap; }
-        .spreadsheet-container { max-height: 70vh; overflow: auto; border: 1px solid #e5e7eb; }
-        /* Scrollbar fina */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-thumb { background: #ccc; borderRadius: 4px; }
-        /* Foto grande no mobile */
-        .mobile-house-photo { width: 100%; height: 250px; object-fit: cover; border-radius: 8px 8px 0 0; }
-        /* Estado cancelado */
-        .row-cancelled { background-color: #f3f4f6; color: #9ca3af; }
-        .row-cancelled td { text-decoration: line-through; }
-        .row-cancelled .no-strike { text-decoration: none; }
-        /* Accordion Vizinho */
-        details.neighbor-details summary { list-style: none; }
-        details.neighbor-details summary::-webkit-details-marker { display: none; }
+        /* --- ESTILO VISUAL (CSS) --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fonte moderna e limpa */
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #phone-container {
+            width: 100%;
+            max-width: 600px; /* Limita a largura para parecer um app */
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        /* Cabeçalho */
+        header {
+            background-color: #008060; /* Verde agradável */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        /* Área do Chat */
+        #chat-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto; /* Permite rolar a tela */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Balões de Mensagem */
+        .message {
+            padding: 15px 20px;
+            border-radius: 20px;
+            font-size: 18px; /* Fonte maior para leitura fácil */
+            line-height: 1.4;
+            max-width: 80%;
+            animation: fadeIn 0.5s;
+        }
+
+        .bot-msg {
+            background-color: #e9e9eb;
+            color: black;
+            align-self: flex-start; /* Alinha à esquerda */
+            border-bottom-left-radius: 5px;
+        }
+
+        .user-msg {
+            background-color: #008060;
+            color: white;
+            align-self: flex-end; /* Alinha à direita */
+            border-bottom-right-radius: 5px;
+        }
+
+        /* Área de Entrada (Input) */
+        #input-area {
+            padding: 20px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            outline: none;
+        }
+
+        button.send-btn {
+            background-color: #008060;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
+        /* Botões de Opções (Cestas) */
+        .options-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto; /* Rolagem horizontal se não couber */
+            padding-bottom: 10px;
+            width: 100%;
+        }
+
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #008060;
+            color: #008060;
+            padding: 15px 25px;
+            font-size: 16px;
+            border-radius: 15px;
+            cursor: pointer;
+            white-space: nowrap; /* Não quebra linha no texto do botão */
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .option-btn:hover {
+            background-color: #008060;
+            color: white;
+        }
+
+        /* Modal / Slide de Fotos */
+        #photo-modal {
+            display: none; /* Começa escondido */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #modal-img {
+            max-width: 90%;
+            max-height: 60vh;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 40px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            background: white;
+            border: none;
+            font-size: 40px; /* Setas bem grandes */
+            padding: 10px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        /* Player de Audio */
+        audio {
+            width: 100%;
+            height: 50px;
+            margin-top: 10px;
+        }
+
+        /* Botão do WhatsApp final */
+        .whatsapp-btn {
+            background-color: #25D366;
+            color: white;
+            text-decoration: none;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Animação suave */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans text-sm h-screen flex flex-col overflow-hidden">
+<body>
 
-    <!-- HEADER -->
-    <header class="bg-white border-b border-gray-200 shadow-sm z-20 flex-none">
-        <div class="px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-brand-main text-white p-2 rounded-lg shadow-md">
-                    <i class="fa-solid fa-basket-shopping text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight text-brand-main">Super Cestas Dona Antônia</h1>
-                    <p class="text-xs text-gray-500 font-semibold">Logística Carvalima <span class="text-brand-accent text-[10px] bg-green-100 px-1 rounded border border-green-200">PARCEIRO</span></p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-2">
-                <!-- Seletor de Perfil -->
-                <select id="userRole" onchange="App.switchRole(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-brand-main focus:border-brand-main block p-2">
-                    <option value="admin">👑 Admin (Dona Antônia)</option>
-                    <optgroup label="Motoristas" id="driverSelectOptions">
-                        <!-- Preenchido via JS -->
-                    </optgroup>
-                </select>
-            </div>
-        </div>
-    </header>
+    <div id="phone-container">
+        <header>
+            Osvaldo da Propaganda
+        </header>
 
-    <!-- LAYOUT PRINCIPAL -->
-    <div class="flex flex-1 overflow-hidden">
-        
-        <!-- SIDEBAR (Apenas Admin) -->
-        <aside id="sidebar" class="w-16 md:w-56 bg-white border-r border-gray-200 flex-none flex flex-col hidden md:flex transition-all duration-300">
-            <nav class="p-2 space-y-1 mt-4 flex-1">
-                <button onclick="App.setTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600">
-                    <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span class="hidden md:inline">Visão Geral</span>
-                </button>
-                
-                <button onclick="App.setTab('entregas')" id="btn-entregas" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600 font-bold bg-brand-light text-brand-main">
-                    <i class="fa-solid fa-truck-ramp-box w-5 text-center"></i> <span class="hidden md:inline">Entregas do Mês</span>
-                </button>
-
-                <button onclick="App.setTab('funcionarios')" id="btn-funcionarios" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-brand-light hover:text-brand-dark flex items-center gap-3 transition-colors text-gray-600">
-                    <i class="fa-solid fa-users w-5 text-center"></i> <span class="hidden md:inline">Base Funcionários</span>
-                </button>
-                
-                <hr class="my-2 border-gray-200">
-                
-                <button onclick="App.setTab('configuracoes')" id="btn-configuracoes" class="nav-btn w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 hover:text-gray-800 flex items-center gap-3 transition-colors text-gray-600">
-                    <i class="fa-solid fa-gears w-5 text-center"></i> <span class="hidden md:inline">Configurações</span>
-                </button>
-            </nav>
-            <div class="p-4 border-t border-gray-200 space-y-2">
-                <div class="text-xs text-gray-500 mb-1">Configurar Zap Admin:</div>
-                <input type="tel" id="adminPhoneConfig" onchange="App.setAdminPhone(this.value)" class="w-full text-xs border rounded p-1" placeholder="65999999999">
-            </div>
-        </aside>
-
-        <!-- AREA DE CONTEUDO -->
-        <main class="flex-1 overflow-auto bg-gray-50 p-4 relative">
-            
-            <!-- VIEW: DASHBOARD -->
-            <div id="view-dashboard" class="hidden max-w-5xl mx-auto">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">📊 Visão Geral</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                        <p class="text-xs text-gray-500 font-bold uppercase">Total na Rota</p>
-                        <p class="text-2xl font-bold text-gray-800" id="dashTotal">0</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-400">
-                        <p class="text-xs text-gray-500 font-bold uppercase">Pendentes</p>
-                        <p class="text-2xl font-bold text-yellow-600" id="dashPending">0</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-                        <p class="text-xs text-gray-500 font-bold uppercase">Entregues</p>
-                        <p class="text-2xl font-bold text-green-600" id="dashDone">0</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-gray-400">
-                        <p class="text-xs text-gray-500 font-bold uppercase">Canceladas/Faltas</p>
-                        <p class="text-2xl font-bold text-gray-500" id="dashCancelled">0</p>
-                    </div>
-                </div>
-                <h3 class="font-bold text-gray-700 mb-4">Progresso por Rota Ativa</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dashRoutesList"></div>
+        <div id="chat-content">
             </div>
 
-            <!-- VIEW: ENTREGAS DO MÊS (LOGISTICA) -->
-            <div id="view-entregas" class="hidden h-full flex flex-col">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">📦 Entregas Ativas (Mês Atual)</h2>
-                    <div class="flex gap-2">
-                        <button onclick="App.generateReportCarvalima()" class="bg-brand-accent hover:bg-green-700 text-white px-3 py-2 rounded shadow text-xs font-bold mr-2">
-                            <i class="fa-solid fa-file-excel"></i> Relatório Carvalima
-                        </button>
-                        <button onclick="App.openModal('modalEntrega')" class="bg-brand-main hover:bg-brand-dark text-white px-3 py-2 rounded shadow text-xs font-bold">
-                            + Lançar Avulso
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white p-3 rounded-t-lg border border-gray-200 flex flex-wrap gap-3 items-center text-xs">
-                    <label class="font-bold text-gray-600">Filtros:</label>
-                    <select id="filterRoute" onchange="App.renderDeliveriesTable()" class="border rounded p-1">
-                        <option value="">Todas as Rotas</option>
-                    </select>
-                    <select id="filterStatus" onchange="App.renderDeliveriesTable()" class="border rounded p-1">
-                        <option value="">Status (Todos)</option>
-                        <option value="pendente">Pendentes</option>
-                        <option value="entregue">Entregues</option>
-                        <option value="cancelada">Suspensas/Canceladas</option>
-                    </select>
-                    <input type="text" id="searchTable" onkeyup="App.renderDeliveriesTable()" placeholder="Buscar..." class="border rounded p-1 w-48">
-                </div>
-
-                <div class="spreadsheet-container bg-white shadow rounded-b-lg flex-1">
-                    <table class="w-full text-left border-collapse spreadsheet-table">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 border-b">Cód.</th>
-                                <th class="px-4 py-3 border-b">Nome</th>
-                                <th class="px-4 py-3 border-b">Rota</th>
-                                <th class="px-4 py-3 border-b">Status</th>
-                                <th class="px-4 py-3 border-b">Entregue Em</th>
-                                <th class="px-4 py-3 border-b">Recebido Por</th>
-                                <th class="px-4 py-3 border-b text-center">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBodyEntregas" class="text-xs"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- VIEW: BASE FUNCIONÁRIOS (MASTER) -->
-            <div id="view-funcionarios" class="hidden h-full flex flex-col">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">👥 Base de Funcionários (Master)</h2>
-                    <div class="flex gap-2">
-                         <button onclick="App.openModal('modalImportFunc')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded shadow text-xs font-bold">
-                            <i class="fa-solid fa-upload"></i> Importar JSON
-                        </button>
-                        <button onclick="App.openEmployeeModal()" class="bg-brand-main hover:bg-brand-dark text-white px-3 py-2 rounded shadow text-xs font-bold">
-                            + Novo Cadastro
-                        </button>
-                    </div>
-                </div>
-                <div class="bg-white p-3 rounded-t-lg border border-gray-200 flex items-center gap-2">
-                    <i class="fa-solid fa-search text-gray-400"></i>
-                    <input type="text" id="searchFunc" onkeyup="App.renderEmployeesTable()" placeholder="Buscar por Nome ou Código..." class="w-full text-sm outline-none">
-                </div>
-                <div class="spreadsheet-container bg-white shadow rounded-b-lg flex-1">
-                    <table class="w-full text-left border-collapse spreadsheet-table">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 border-b">Foto</th>
-                                <th class="px-4 py-3 border-b">Cód.</th>
-                                <th class="px-4 py-3 border-b">Nome</th>
-                                <th class="px-4 py-3 border-b">Endereço</th>
-                                <th class="px-4 py-3 border-b">Telefone</th>
-                                <th class="px-4 py-3 border-b">Vizinhos</th>
-                                <th class="px-4 py-3 border-b text-center">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBodyFuncionarios" class="text-xs"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- VIEW: CONFIGURAÇÕES (AGRUPADA) -->
-            <div id="view-configuracoes" class="hidden max-w-5xl mx-auto space-y-6">
-                
-                <!-- ROTAS -->
-                <div class="bg-white rounded shadow p-4">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h3 class="font-bold text-gray-700">🗺️ Gestão de Rotas</h3>
-                        <button onclick="App.openModal('modalRota')" class="bg-brand-main text-white px-3 py-1 rounded text-xs">+ Nova Rota</button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="gridRotas"></div>
-                </div>
-
-                <!-- MOTORISTAS -->
-                <div class="bg-white rounded shadow p-4">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h3 class="font-bold text-gray-700">🚚 Motoristas</h3>
-                        <button onclick="App.openModal('modalMotorista')" class="bg-brand-main text-white px-3 py-1 rounded text-xs">+ Novo Motorista</button>
-                    </div>
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-50 text-xs uppercase text-gray-500"><tr><th class="px-4 py-2">Nome</th><th class="px-4 py-2">Tel</th><th class="px-4 py-2">Ações</th></tr></thead>
-                        <tbody id="listMotoristas"></tbody>
-                    </table>
-                </div>
-
-                <!-- IMPORTAR/EXPORTAR -->
-                <div class="bg-white rounded shadow p-4">
-                    <h3 class="font-bold text-gray-700 mb-4 border-b pb-2">💾 Dados do Sistema</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 class="font-bold text-brand-main text-xs mb-2">Gerar Entregas via Base Master</h4>
-                            <p class="text-[10px] text-gray-500 mb-2">Cole os CÓDIGOS para gerar as entregas deste mês. Ex: <code>["001", "005"]</code></p>
-                            <textarea id="jsonInputCodes" class="w-full border p-2 text-xs h-20 rounded font-mono bg-gray-50" placeholder='["1001", "1002", "1003"]'></textarea>
-                            <button onclick="App.importByCodes()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-xs hover:bg-blue-700">Gerar Entregas</button>
-                        </div>
-                        <div class="flex flex-col justify-center items-start border-l pl-6">
-                            <button onclick="App.exportData()" class="bg-gray-700 text-white px-4 py-3 rounded text-sm hover:bg-gray-800 w-full mb-2">
-                                <i class="fa-solid fa-download mr-2"></i> Backup Completo do Sistema (JSON)
-                            </button>
-                            <p class="text-[10px] text-gray-500">Guarda todos os dados (Rotas, Motoristas, Funcionários).</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: MOBILE (MOTORISTA) -->
-            <div id="view-driver-mobile" class="hidden pb-20">
-                <div class="bg-brand-main text-white p-4 rounded-b-xl shadow-lg mb-4 sticky top-0 z-30">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h2 class="font-bold text-lg" id="driverWelcome">Olá, Motorista</h2>
-                            <p class="text-xs opacity-90">Sua rota de hoje:</p>
-                        </div>
-                        <select id="driverRouteFilter" onchange="App.renderDriverView()" class="text-xs text-black p-1 rounded font-bold">
-                            <!-- Rotas do motorista -->
-                        </select>
-                    </div>
-                </div>
-                
-                <div id="driverDeliveriesList" class="px-4 space-y-4">
-                    <!-- Cards Mobile -->
-                </div>
-            </div>
-
-        </main>
-    </div>
-
-    <!-- MODAIS -->
-    
-    <!-- Modal Cadastro Funcionário (Master) - CORRIGIDO ID NO FORM -->
-    <div id="modalFuncionario" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <!-- Adicionado ID formFuncionario para o reset funcionar -->
-        <form id="formFuncionario" onsubmit="App.saveEmployee(event)" class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Funcionário</h3>
-            <input type="hidden" name="id" id="empId"> 
-            
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div><label class="block text-xs font-bold mb-1">Cód. Func.</label><input type="text" name="codigo" id="empCodigo" required class="w-full border rounded p-2 text-sm"></div>
-                <div><label class="block text-xs font-bold mb-1">Nome Completo</label><input type="text" name="nome" id="empNome" required class="w-full border rounded p-2 text-sm"></div>
-            </div>
-            <div class="mb-4"><label class="block text-xs font-bold mb-1">Endereço Fixo</label><input type="text" name="endereco" id="empEndereco" required class="w-full border rounded p-2 text-sm"></div>
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div><label class="block text-xs font-bold mb-1">Bairro</label><input type="text" name="bairro" id="empBairro" class="w-full border rounded p-2 text-sm"></div>
-                <div><label class="block text-xs font-bold mb-1">Cidade</label><input type="text" name="cidade" id="empCidade" value="Cuiabá" class="w-full border rounded p-2 text-sm"></div>
-            </div>
-            
-            <div class="border-t border-b py-3 my-3 bg-gray-50 p-2 rounded">
-                <label class="block text-xs font-bold mb-2 text-brand-main">📞 Contatos & Vizinhos</label>
-                
-                <div class="mb-2">
-                    <label class="block text-[10px] text-gray-500 font-bold">Celular do Funcionário</label>
-                    <input type="tel" name="tel1" id="empTel1" class="w-full border rounded p-1 text-sm bg-white" placeholder="(65) 9...">
-                </div>
-
-                <div class="grid grid-cols-2 gap-2 mt-2">
-                    <div class="col-span-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Vizinho 1</div>
-                    <div><input type="text" id="empNomeViz1" class="w-full border rounded p-1 text-sm bg-white" placeholder="Nome Vizinho 1"></div>
-                    <div><input type="tel" id="empTelViz1" class="w-full border rounded p-1 text-sm bg-white" placeholder="Zap Vizinho 1"></div>
-                    
-                    <div class="col-span-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Vizinho 2</div>
-                    <div><input type="text" id="empNomeViz2" class="w-full border rounded p-1 text-sm bg-white" placeholder="Nome Vizinho 2"></div>
-                    <div><input type="tel" id="empTelViz2" class="w-full border rounded p-1 text-sm bg-white" placeholder="Zap Vizinho 2"></div>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label class="block text-xs font-bold mb-1">Foto da Casa (URL)</label>
-                <input type="url" name="fotoCasa" id="empFoto" placeholder="https://..." class="w-full border rounded p-2 text-sm">
-            </div>
-
-            <div class="flex justify-end gap-2">
-                <button type="button" onclick="App.closeModal('modalFuncionario')" class="px-4 py-2 rounded border hover:bg-gray-50 text-sm">Cancelar</button>
-                <button type="submit" class="px-4 py-2 rounded bg-brand-main text-white font-bold hover:bg-brand-dark text-sm">Salvar</button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Modal Importar Funcionários -->
-    <div id="modalImportFunc" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-            <h3 class="font-bold mb-4 text-brand-main">Importar Funcionários (JSON)</h3>
-            <p class="text-xs text-gray-500 mb-2">Formato esperado: <code>[{"codigo":"001", "nome":"Fulano", "endereco":"Rua X", ...}]</code></p>
-            <textarea id="jsonImportFunc" class="w-full border p-2 text-xs h-32 rounded font-mono bg-gray-50 mb-4" placeholder='[{"codigo":"1010", "nome":"Ana", "endereco":"Rua A, 10"}]'></textarea>
-            <div class="flex justify-end gap-2">
-                <button onclick="App.closeModal('modalImportFunc')" class="border px-4 py-2 rounded text-sm">Cancelar</button>
-                <button onclick="App.importEmployees()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Importar</button>
-            </div>
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="Escreva seu nome aqui...">
+            <button class="send-btn" onclick="processInput()">Enviar</button>
         </div>
     </div>
 
-    <!-- Modal Nova Entrega (Lançamento) -->
-    <div id="modalEntrega" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <form onsubmit="App.saveDelivery(event)" class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 class="text-lg font-bold mb-4">Lançar Entrega (Avulsa)</h3>
-            <div class="mb-4">
-                <label class="block text-xs font-bold mb-1">Buscar Funcionário</label>
-                <select id="selectEmployeeDelivery" onchange="App.fillDeliveryForm(this.value)" class="w-full border rounded p-2 text-sm bg-gray-50">
-                    <option value="">Selecione para preencher...</option>
-                </select>
-            </div>
-            <hr class="my-4">
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div><label class="block text-xs font-bold mb-1">Cód.</label><input type="text" name="codigo" id="delCodigo" required class="w-full border rounded p-2 text-sm bg-gray-100" readonly></div>
-                <div><label class="block text-xs font-bold mb-1">Nome</label><input type="text" name="nome" id="delNome" required class="w-full border rounded p-2 text-sm bg-gray-100" readonly></div>
-            </div>
-            <div class="mb-4"><label class="block text-xs font-bold mb-1">Rota de Entrega</label><select name="rotaId" id="selectRouteModal" class="w-full border rounded p-2 text-sm"></select></div>
-            <div class="flex justify-end gap-2"><button type="button" onclick="App.closeModal('modalEntrega')" class="px-4 py-2 rounded border hover:bg-gray-50 text-sm">Cancelar</button><button type="submit" class="px-4 py-2 rounded bg-brand-main text-white font-bold text-sm">Lançar na Rota</button></div>
-        </form>
+    <div id="photo-modal">
+        <button class="close-modal" onclick="closeModal()">X Fechar</button>
+        <img id="modal-img" src="" alt="Cesta">
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevPhoto()">&#8592;</button> <button class="nav-btn" onclick="nextPhoto()">&#8594;</button> </div>
     </div>
 
-    <!-- Modais Genéricos -->
-    <div id="modalRota" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4"><form onsubmit="App.saveRoute(event)" class="bg-white rounded-lg shadow-xl w-full max-w-md p-6"><h3 class="font-bold mb-4">Nova Rota</h3><input type="text" name="nome" placeholder="Nome" class="w-full border rounded p-2 mb-2"><select name="motoristaId" id="selectDriverModal" class="w-full border rounded p-2 mb-2"></select><input type="date" name="dataPrevisao" class="w-full border rounded p-2 mb-4"><div class="flex justify-end gap-2"><button type="button" onclick="App.closeModal('modalRota')" class="border p-2 rounded">Cancelar</button><button class="bg-brand-main text-white p-2 rounded">Salvar</button></div></form></div>
-    <div id="modalMotorista" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4"><form onsubmit="App.saveDriver(event)" class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6"><h3 class="font-bold mb-4">Novo Motorista</h3><input type="text" name="nome" placeholder="Nome" class="w-full border rounded p-2 mb-2"><input type="tel" name="telefone" placeholder="Tel" class="w-full border rounded p-2 mb-4"><div class="flex justify-end gap-2"><button type="button" onclick="App.closeModal('modalMotorista')" class="border p-2 rounded">Cancelar</button><button class="bg-brand-main text-white p-2 rounded">Salvar</button></div></form></div>
-    <div id="modalConfirmMobile" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center p-4"><div class="bg-white w-full max-w-sm p-6 rounded-lg shadow-2xl"><h3 class="text-lg font-bold text-gray-800 mb-1">Entregar Cesta?</h3><p class="text-sm text-gray-500 mb-4">Func: <span id="confMobName" class="font-bold text-black"></span></p><div class="mb-4"><label class="block text-xs font-bold mb-1 text-gray-700">Quem recebeu?</label><div class="flex gap-2 mb-2"><input type="text" id="receiverNameInput" placeholder="Nome de quem recebeu" class="flex-1 border rounded p-2 text-sm"><button type="button" onclick="App.fillReceiverSelf()" class="bg-gray-200 text-xs px-3 py-2 rounded font-bold">O Próprio</button></div></div><div class="flex gap-2 mt-4 pt-4 border-t"><button onclick="document.getElementById('modalConfirmMobile').classList.add('hidden')" class="flex-1 py-3 border rounded">Cancelar</button><button onclick="App.confirmDeliveryMobile()" class="flex-1 py-3 bg-brand-whatsapp text-white rounded font-bold hover:bg-green-600 shadow-md">Confirmar</button></div></div></div>
-
-<script>
-const App = {
-    key: 'dona_antonia_db_v9', // Versão Atualizada
-    db: { employees: [], deliveries: [], routes: [], drivers: [], adminPhone: '' },
-    currentUser: 'admin',
-    currentTab: 'dashboard',
-    tempId: null,
-    tempName: null,
-    genericHouse: 'https://cdn-icons-png.flaticon.com/512/619/619032.png',
-
-    init() {
-        this.load();
-        if (this.db.employees.length === 0) this.seedData();
-        this.updateSelectors();
-        if(this.db.adminPhone) document.getElementById('adminPhoneConfig').value = this.db.adminPhone;
-        this.switchRole('admin');
-    },
-
-    load() {
-        const stored = localStorage.getItem(this.key);
-        if (stored) {
-            try { 
-                const parsed = JSON.parse(stored);
-                if (!parsed.employees) parsed.employees = [];
-                this.db = parsed;
-            } catch (e) { console.error("Erro load", e); }
-        }
-    },
-
-    save() {
-        localStorage.setItem(this.key, JSON.stringify(this.db));
-        this.updateSelectors();
-        if(this.currentUser === 'admin') this.setTab(this.currentTab);
-        else this.renderDriverView();
-    },
-
-    seedData() {
-        this.db.drivers = [
-            { id: 'd1', nome: 'Carlos (Região Sul)', telefone: '65999991111' },
-            { id: 'd2', nome: 'Marcos (Região Norte)', telefone: '65999992222' }
-        ];
-        this.db.routes = [
-            { id: 'r1', nome: 'Rota 01 - Pedra 90/Tijucal', motoristaId: 'd1', dataPrevisao: '2026-01-15' },
-            { id: 'r2', nome: 'Rota 02 - CPA/Centro', motoristaId: 'd2', dataPrevisao: '2026-01-16' }
-        ];
-        // 5 Cadastros Completos com Vizinhos
-        this.db.employees = [
-            { id: 101, codigo: '1001', nome: 'João da Silva', endereco: 'Rua 30, Qd 15, Casa 02', bairro: 'Pedra 90', cidade: 'Cuiabá', tel1: '65992001001', nomeViz1: 'Dona Maria', telViz1: '65992002002', nomeViz2: 'Seu Zé', telViz2: '65992002003', fotoCasa: this.genericHouse },
-            { id: 102, codigo: '1002', nome: 'Maria Aparecida', endereco: 'Rua Pernambuco, 550', bairro: 'CPA 2', cidade: 'Cuiabá', tel1: '65992003003', nomeViz1: 'Cláudia (Frente)', telViz1: '65992004004', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse },
-            { id: 103, codigo: '1003', nome: 'Pedro Henrique', endereco: 'Av. Brasil, 1200', bairro: 'Santa Rosa', cidade: 'Cuiabá', tel1: '65992005005', nomeViz1: 'Portaria', telViz1: '65992005006', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse },
-            { id: 104, codigo: '1004', nome: 'Ana Clara', endereco: 'Rua dos Lírios, 88', bairro: 'Tijucal', cidade: 'Cuiabá', tel1: '65992006006', nomeViz1: 'Sônia', telViz1: '65992007007', nomeViz2: 'Bia', telViz2: '65992008008', fotoCasa: this.genericHouse },
-            { id: 105, codigo: '1005', nome: 'Lucas Mendes', endereco: 'Rua Cândido Mariano, 400', bairro: 'Centro', cidade: 'Cuiabá', tel1: '65992009009', nomeViz1: '', telViz1: '', nomeViz2: '', telViz2: '', fotoCasa: this.genericHouse }
-        ];
+    <script>
+        /* --- LÓGICA DO PROGRAMA (JAVASCRIPT) --- */
         
-        // Gerar 5 Entregas: 3 Pendentes, 2 Entregues
-        this.db.deliveries = [];
-        // 3 Pendentes
-        this.db.deliveries.push({ id: 1, employeeId: 101, codigo: '1001', nome: 'João da Silva', rotaId: 'r1', status: 'pendente', entregueEm: null, recebidoPor: '' });
-        this.db.deliveries.push({ id: 2, employeeId: 102, codigo: '1002', nome: 'Maria Aparecida', rotaId: 'r2', status: 'pendente', entregueEm: null, recebidoPor: '' });
-        this.db.deliveries.push({ id: 3, employeeId: 103, codigo: '1003', nome: 'Pedro Henrique', rotaId: 'r2', status: 'pendente', entregueEm: null, recebidoPor: '' });
-        // 2 Entregues
-        this.db.deliveries.push({ id: 4, employeeId: 104, codigo: '1004', nome: 'Ana Clara', rotaId: 'r1', status: 'entregue', entregueEm: '05/01/2026 14:30', recebidoPor: 'Própria' });
-        this.db.deliveries.push({ id: 5, employeeId: 105, codigo: '1005', nome: 'Lucas Mendes', rotaId: 'r2', status: 'entregue', entregueEm: '05/01/2026 15:00', recebidoPor: 'Portaria' });
+        let userName = "";
+        let currentBasket = ""; // Qual cesta está sendo vista
+        let currentPhotoIndex = 0; // 0 ou 1 (são 2 fotos)
+        const chatContent = document.getElementById('chat-content');
+        const inputArea = document.getElementById('input-area');
+        const userInput = document.getElementById('user-input');
 
-        this.save();
-    },
-
-    // --- CADASTRO FUNCIONÁRIOS (MASTER) ---
-    openEmployeeModal(id = null) {
-        document.getElementById('empId').value = '';
-        // CORREÇÃO: Resetar o FORM e não a DIV
-        document.getElementById('formFuncionario').reset();
-        
-        if (id) {
-            const emp = this.db.employees.find(e => e.id === id);
-            if (emp) {
-                document.getElementById('empId').value = emp.id;
-                document.getElementById('empCodigo').value = emp.codigo;
-                document.getElementById('empNome').value = emp.nome;
-                document.getElementById('empEndereco').value = emp.endereco;
-                document.getElementById('empBairro').value = emp.bairro;
-                document.getElementById('empCidade').value = emp.cidade;
-                document.getElementById('empTel1').value = emp.tel1;
-                document.getElementById('empNomeViz1').value = emp.nomeViz1 || '';
-                document.getElementById('empTelViz1').value = emp.telViz1 || '';
-                document.getElementById('empNomeViz2').value = emp.nomeViz2 || '';
-                document.getElementById('empTelViz2').value = emp.telViz2 || '';
-                document.getElementById('empFoto').value = emp.fotoCasa;
-            }
-        }
-        this.openModal('modalFuncionario');
-    },
-
-    saveEmployee(e) {
-        e.preventDefault();
-        const f = e.target;
-        const id = document.getElementById('empId').value;
-        
-        const empData = {
-            codigo: document.getElementById('empCodigo').value,
-            nome: document.getElementById('empNome').value,
-            endereco: document.getElementById('empEndereco').value,
-            bairro: document.getElementById('empBairro').value,
-            cidade: document.getElementById('empCidade').value,
-            tel1: document.getElementById('empTel1').value,
-            nomeViz1: document.getElementById('empNomeViz1').value,
-            telViz1: document.getElementById('empTelViz1').value,
-            nomeViz2: document.getElementById('empNomeViz2').value,
-            telViz2: document.getElementById('empTelViz2').value,
-            fotoCasa: document.getElementById('empFoto').value
+        // Passo 1: Iniciar conversa
+        window.onload = function() {
+            addBotMessage("Olá, eu sou o Osvaldo da propaganda.");
+            setTimeout(() => {
+                addBotMessage("Qual o seu nome?");
+            }, 1000);
         };
 
-        if (id) {
-            const index = this.db.employees.findIndex(e => e.id == id);
-            if (index !== -1) {
-                this.db.employees[index] = { ...this.db.employees[index], ...empData };
-            }
-        } else {
-            this.db.employees.push({ id: Date.now(), ...empData });
+        // Função para adicionar mensagem do Robô
+        function addBotMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'message bot-msg';
+            div.innerHTML = text; // Usa innerHTML para permitir botões dentro da msg
+            chatContent.appendChild(div);
+            scrollToBottom();
         }
-        this.save();
-        this.closeModal('modalFuncionario');
-        // Reset correto do form
-        document.getElementById('formFuncionario').reset();
-    },
 
-    importEmployees() {
-        const raw = document.getElementById('jsonImportFunc').value;
-        if(!raw) return alert("Cole o JSON primeiro.");
-        try {
-            const list = JSON.parse(raw);
-            let count = 0;
-            list.forEach(emp => {
-                if(!this.db.employees.find(e => e.codigo == emp.codigo)) {
-                    this.db.employees.push({
-                        id: Date.now() + Math.random(),
-                        codigo: emp.codigo,
-                        nome: emp.nome,
-                        endereco: emp.endereco || '',
-                        bairro: emp.bairro || '',
-                        cidade: emp.cidade || 'Cuiabá',
-                        tel1: emp.tel1 || '',
-                        nomeViz1: emp.nomeViz1 || '',
-                        telViz1: emp.telViz1 || '',
-                        fotoCasa: emp.fotoCasa || this.genericHouse
-                    });
-                    count++;
-                }
+        // Função para adicionar mensagem do Usuário
+        function addUserMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'message user-msg';
+            div.textContent = text;
+            chatContent.appendChild(div);
+            scrollToBottom();
+        }
+
+        // Rola a tela para a última mensagem
+        function scrollToBottom() {
+            chatContent.scrollTop = chatContent.scrollHeight;
+        }
+
+        // Processa o que o usuário escreveu
+        function processInput() {
+            const text = userInput.value.trim();
+            if (text === "") return;
+
+            // Se ainda não temos o nome, esse input é o nome
+            if (!userName) {
+                userName = text;
+                addUserMessage(userName);
+                userInput.value = "";
+                inputArea.style.display = 'none'; // Esconde o teclado para focar nos botões
+                
+                setTimeout(() => {
+                    addBotMessage(`Legal, ${userName}, vou te mandar as nossas cestas para você conhecer.`);
+                    showBasketButtons();
+                }, 1000);
+            }
+        }
+
+        // Mostra os 5 botões de cestas
+        function showBasketButtons() {
+            const container = document.createElement('div');
+            container.className = 'options-container';
+
+            const cestas = [
+                { id: 'grande', label: 'Cesta Grande' },
+                { id: 'media', label: 'Cesta Média' },
+                { id: 'pequena', label: 'Cesta Pequena' },
+                { id: 'mini', label: 'Cesta Mini' },
+                { id: 'economica', label: 'Cesta Econômica' }
+            ];
+
+            cestas.forEach(cesta => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = cesta.label;
+                btn.onclick = () => openModal(cesta.id);
+                container.appendChild(btn);
             });
-            alert(`${count} funcionários importados com sucesso!`);
-            this.save();
-            this.closeModal('modalImportFunc');
-            this.renderEmployeesTable();
-        } catch(e) { alert("Erro no formato JSON: " + e.message); }
-    },
 
-    renderEmployeesTable() {
-        const tbody = document.getElementById('tableBodyFuncionarios');
-        tbody.innerHTML = '';
-        const search = document.getElementById('searchFunc').value.toLowerCase();
-        
-        this.db.employees.filter(e => e.nome.toLowerCase().includes(search) || e.codigo.includes(search)).forEach(e => {
-            const img = e.fotoCasa ? `<img src="${e.fotoCasa}" class="w-8 h-8 rounded-full object-cover">` : '<div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">🏠</div>';
-            const viz1 = e.nomeViz1 ? `${e.nomeViz1}` : '';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message bot-msg';
+            msgDiv.style.width = '100%';
+            msgDiv.style.background = 'transparent'; // Remove fundo cinza para os botões ficarem soltos
+            msgDiv.style.padding = '0';
             
-            tbody.innerHTML += `
-                <tr class="bg-white border-b hover:bg-gray-50">
-                    <td class="px-4 py-3">${img}</td>
-                    <td class="px-4 py-3 font-mono">${e.codigo}</td>
-                    <td class="px-4 py-3 font-bold">${e.nome}</td>
-                    <td class="px-4 py-3 text-xs">${e.endereco}, ${e.bairro}</td>
-                    <td class="px-4 py-3 text-xs">${e.tel1}</td>
-                    <td class="px-4 py-3 text-xs text-gray-500">${viz1}</td>
-                    <td class="px-4 py-3 text-center flex justify-center gap-2">
-                        <button onclick="App.openEmployeeModal(${e.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="if(confirm('Excluir cadastro?')) { App.db.employees = App.db.employees.filter(x=>x.id!=${e.id}); App.save(); }" class="text-red-400 hover:text-red-600 bg-red-50 p-1 rounded"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
-        });
-    },
+            msgDiv.appendChild(container);
+            chatContent.appendChild(msgDiv);
+            scrollToBottom();
 
-    // --- RELATORIO CARVALIMA ---
-    generateReportCarvalima() {
-        // Filtrar apenas entregues
-        const reportData = this.db.deliveries
-            .filter(d => d.status === 'entregue')
-            .map(d => ({
-                Codigo_Funcionario: d.codigo,
-                Nome_Funcionario: d.nome,
-                Data_Hora_Entrega: d.entregueEm,
-                Quem_Recebeu: d.recebidoPor
-            }));
-        
-        if(reportData.length === 0) return alert("Nenhuma entrega realizada para gerar relatório.");
-
-        const jsonStr = JSON.stringify(reportData, null, 2);
-        const blob = new Blob([jsonStr], {type : 'application/json'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `RELATORIO_CARVALIMA_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-    },
-
-    // --- ENTREGAS (LOGISTICA) ---
-    toggleDeliveryStatus(id) {
-        const d = this.db.deliveries.find(x => x.id === id);
-        if (d) {
-            if (d.status === 'cancelada') {
-                d.status = 'pendente';
-            } else {
-                if(confirm("Suspender entrega para este funcionário nesta rota?")) {
-                    d.status = 'cancelada';
-                }
-            }
-            this.save();
+            // Agenda o próximo passo (pergunta do áudio) após um tempo
+            // Vamos esperar o usuário ver as fotos primeiro? 
+            // O pedido diz "Espere alguns segundos e envie". Vamos disparar após 15 segundos ou se ele fechar o modal.
+            setTimeout(askForAudioPermission, 8000); 
         }
-    },
 
-    renderDeliveriesTable() {
-        const tbody = document.getElementById('tableBodyEntregas'); tbody.innerHTML = '';
-        const filterR = document.getElementById('filterRoute').value;
-        const filterS = document.getElementById('filterStatus').value;
-        const search = document.getElementById('searchTable').value.toLowerCase();
+        let audioAsked = false;
 
-        this.db.deliveries.filter(d => {
-            if (filterR && d.rotaId !== filterR) return false;
-            if (filterS && d.status !== filterS) return false;
-            if (search && !d.nome.toLowerCase().includes(search)) return false;
-            return true;
-        }).forEach(d => {
-            const rName = this.db.routes.find(r=>r.id===d.rotaId)?.nome || '-';
-            const isDone = d.status === 'entregue';
-            const isCancelled = d.status === 'cancelada';
+        function askForAudioPermission() {
+            if(audioAsked) return; // Não pergunta duas vezes
+            audioAsked = true;
+
+            addBotMessage(`${userName}, eu tenho um desconto, vou te mandar um audio, pode ser?`);
             
-            let statusBadge = '';
-            if(isDone) statusBadge = '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">Entregue</span>';
-            else if(isCancelled) statusBadge = '<span class="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded">Suspensa</span>';
-            else statusBadge = '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Pendente</span>';
-
-            const actionBtn = isCancelled 
-                ? `<button onclick="App.toggleDeliveryStatus(${d.id})" class="text-green-500 hover:bg-green-50 p-1 rounded no-strike" title="Reativar Entrega"><i class="fa-solid fa-rotate-left"></i></button>`
-                : `<button onclick="App.toggleDeliveryStatus(${d.id})" class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded" title="Suspender Entrega"><i class="fa-solid fa-ban"></i></button>`;
-
-            tbody.innerHTML += `
-                <tr class="bg-white border-b hover:bg-gray-50 ${isCancelled ? 'row-cancelled' : ''}">
-                    <td class="px-4 py-3">${d.codigo}</td>
-                    <td class="px-4 py-3 font-bold">${d.nome}</td>
-                    <td class="px-4 py-3 text-xs">${rName}</td>
-                    <td class="px-4 py-3 no-strike">${statusBadge}</td>
-                    <td class="px-4 py-3 text-xs">${d.entregueEm||'-'}</td>
-                    <td class="px-4 py-3 text-xs">${d.recebidoPor||'-'}</td>
-                    <td class="px-4 py-3 text-center flex justify-center gap-2 no-strike">
-                        ${actionBtn}
-                        <button onclick="App.db.deliveries=App.db.deliveries.filter(x=>x.id!=${d.id});App.save();" class="text-red-300 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
-        });
-    },
-
-    fillDeliveryForm(empId) {
-        if(!empId) return;
-        const emp = this.db.employees.find(e => e.id == empId);
-        if(emp) {
-            document.getElementById('delCodigo').value = emp.codigo;
-            document.getElementById('delNome').value = emp.nome;
+            // Botão OK
+            const btnDiv = document.createElement('div');
+            btnDiv.className = 'message user-msg';
+            btnDiv.style.cursor = 'pointer';
+            btnDiv.textContent = "OK, pode mandar";
+            btnDiv.onclick = function() {
+                this.onclick = null; // Desativa clique duplo
+                sendAudioMessage();
+            };
+            chatContent.appendChild(btnDiv);
+            scrollToBottom();
         }
-    },
-    saveDelivery(e) {
-        e.preventDefault();
-        const f = e.target;
-        const codigo = f.codigo.value;
-        const emp = this.db.employees.find(e => e.codigo == codigo);
-        this.db.deliveries.push({ id: Date.now(), employeeId: emp ? emp.id : null, codigo: codigo, nome: f.nome.value, rotaId: f.rotaId.value, status: 'pendente', entregueEm: null, recebidoPor: '' });
-        this.save();
-        this.closeModal('modalEntrega');
-        f.reset();
-    },
 
-    // --- DASHBOARD & MOBILE ---
-    renderDashboard() {
-        const total = this.db.deliveries.length;
-        const done = this.db.deliveries.filter(d=>d.status==='entregue').length;
-        const cancelled = this.db.deliveries.filter(d=>d.status==='cancelada').length;
-        const pending = total - done - cancelled;
-
-        document.getElementById('dashTotal').innerText = total; 
-        document.getElementById('dashPending').innerText = pending; 
-        document.getElementById('dashDone').innerText = done;
-        document.getElementById('dashCancelled').innerText = cancelled;
-        
-        const list = document.getElementById('dashRoutesList'); list.innerHTML = '';
-        this.db.routes.forEach(r => {
-            const activeDeliveries = this.db.deliveries.filter(d=>d.rotaId===r.id && d.status!=='cancelada');
-            const rt = activeDeliveries.length;
-            const rd = activeDeliveries.filter(d=>d.status==='entregue').length;
-            const pct = rt?Math.round((rd/rt)*100):0;
-            list.innerHTML += `<div class="bg-white p-3 rounded border flex justify-between items-center"><span class="font-bold text-sm text-gray-700">${r.nome}</span><span class="font-bold text-brand-main">${pct}%</span></div>`;
-        });
-    },
-
-    renderDriverView() {
-        const container = document.getElementById('driverDeliveriesList'); container.innerHTML = '';
-        const routeFilter = document.getElementById('driverRouteFilter');
-        const myRoutes = this.db.routes.filter(r => r.motoristaId == this.currentUser);
-        if (routeFilter.options.length === 0 && myRoutes.length > 0) myRoutes.forEach(r => routeFilter.innerHTML += `<option value="${r.id}">${r.nome}</option>`);
-        const selectedRouteId = routeFilter.value || (myRoutes[0] ? myRoutes[0].id : null);
-        if (!selectedRouteId) { container.innerHTML = '<div class="text-center text-gray-500 mt-10 p-4">Sem rotas atribuídas.</div>'; return; }
-
-        const deliveries = this.db.deliveries.filter(d => d.rotaId === selectedRouteId && d.status !== 'cancelada');
-        deliveries.sort((a,b) => a.status === 'entregue' ? 1 : -1);
-
-        deliveries.forEach(d => {
-            const emp = this.db.employees.find(e => e.codigo == d.codigo) || {};
-            const isDone = d.status === 'entregue';
-            const tel = emp.tel1 || '';
-            const photoHTML = emp.fotoCasa ? `<img src="${emp.fotoCasa}" class="mobile-house-photo">` : `<div class="mobile-house-photo bg-gray-200 flex items-center justify-center text-gray-400"><i class="fa-solid fa-house text-4xl"></i></div>`;
+        function sendAudioMessage() {
+            addBotMessage("Enviando áudio...");
             
-            let neighborsHTML = '';
-            if((emp.nomeViz1 && emp.telViz1) || (emp.nomeViz2 && emp.telViz2)) {
-                let list = '';
-                if(emp.nomeViz1 && emp.telViz1) {
-                    const msg = `Olá ${emp.nomeViz1}, a cesta do ${emp.nome} está chegando e ele pediu pra entregar na sua casa. Pode receber?`;
-                    const link = `https://wa.me/55${emp.telViz1.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
-                    list += `<a href="${link}" target="_blank" class="block bg-white border p-2 rounded mb-1 text-xs text-green-700 hover:bg-green-50 flex justify-between items-center"><span><i class="fa-regular fa-user"></i> ${emp.nomeViz1}</span><span><i class="fa-brands fa-whatsapp"></i> Chamar</span></a>`;
-                }
-                if(emp.nomeViz2 && emp.telViz2) {
-                    const msg = `Olá ${emp.nomeViz2}, a cesta do ${emp.nome} está chegando e ele pediu pra entregar na sua casa. Pode receber?`;
-                    const link = `https://wa.me/55${emp.telViz2.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
-                    list += `<a href="${link}" target="_blank" class="block bg-white border p-2 rounded mb-1 text-xs text-green-700 hover:bg-green-50 flex justify-between items-center"><span><i class="fa-regular fa-user"></i> ${emp.nomeViz2}</span><span><i class="fa-brands fa-whatsapp"></i> Chamar</span></a>`;
-                }
-                neighborsHTML = `<details class="neighbor-details mb-3"><summary class="bg-red-50 text-red-600 text-xs font-bold p-2 rounded border border-red-100 cursor-pointer text-center hover:bg-red-100 select-none"><i class="fa-solid fa-bullhorn"></i> SOCORRO! Ninguém atende?</summary><div class="mt-2 bg-gray-50 p-2 rounded border border-gray-200"><p class="text-[10px] text-gray-500 mb-2 uppercase font-bold">Falar com Vizinhos:</p>${list}</div></details>`;
-            }
+            setTimeout(() => {
+                const audioContainer = document.createElement('div');
+                audioContainer.className = 'message bot-msg';
+                
+                // NOTA: Substitua 'seu_audio.mp3' pelo nome do seu arquivo real na pasta
+                const audioHtml = `
+                    <audio id="promoAudio" controls autoplay>
+                        <source src="audio_promocao.mp3" type="audio/mpeg">
+                        Seu celular não suporta este áudio.
+                    </audio>
+                `;
+                audioContainer.innerHTML = audioHtml;
+                chatContent.appendChild(audioContainer);
+                scrollToBottom();
 
-            container.innerHTML += `
-                <div class="bg-white rounded-lg shadow-md border overflow-hidden ${isDone ? 'opacity-80' : ''}">
-                    ${!isDone ? photoHTML : ''}
-                    <div class="p-4">
-                        <div class="flex justify-between items-start mb-2"><div><span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-1 rounded">#${d.codigo}</span><h3 class="font-bold text-gray-800 text-lg leading-tight">${d.nome}</h3></div>${isDone ? '<i class="fa-solid fa-check-circle text-green-500 text-xl"></i>' : ''}</div>
-                        <p class="text-sm text-gray-600 mb-2"><i class="fa-solid fa-location-dot text-red-400"></i> ${emp.endereco || 'Endereço não cadastrado'}</p><p class="text-xs text-gray-500 mb-3 ml-4">${emp.bairro || ''}</p>
-                        ${!isDone ? `
-                            <div class="grid grid-cols-2 gap-2 mb-3"><a href="https://wa.me/55${tel.replace(/\D/g,'')}" target="_blank" class="bg-green-100 text-green-800 py-2 rounded text-center text-xs font-bold border border-green-200"><i class="fa-brands fa-whatsapp"></i> Zap</a><a href="tel:${tel}" class="bg-blue-100 text-blue-800 py-2 rounded text-center text-xs font-bold border border-blue-200"><i class="fa-solid fa-phone"></i> Ligar</a></div>
-                            ${neighborsHTML}
-                            <button onclick="App.openConfirmMobile('${d.id}', '${d.nome}')" class="w-full bg-brand-main text-white py-3 rounded-lg text-sm font-bold shadow hover:bg-brand-dark">ENTREGAR</button>
-                        ` : `<div class="bg-green-50 p-2 rounded border border-green-100 text-xs text-green-800 mt-2"><strong>Entregue:</strong> ${d.entregueEm}<br><strong>Recebido por:</strong> ${d.recebidoPor}</div>`}
-                    </div>
-                </div>`;
-        });
-    },
+                // Detectar fim do áudio
+                const player = document.getElementById('promoAudio');
+                player.onended = function() {
+                    finalizeChat();
+                };
 
-    // --- UTILITARIOS ---
-    importByCodes() {
-        const raw = document.getElementById('jsonInputCodes').value; if(!raw) return;
-        try {
-            const codes = JSON.parse(raw); let count = 0;
-            codes.forEach(code => {
-                const emp = this.db.employees.find(e => e.codigo == code);
-                if(emp) {
-                    const exists = this.db.deliveries.find(d => d.codigo == code && d.status != 'cancelada');
-                    if(!exists) {
-                        this.db.deliveries.push({ id: Date.now() + Math.random(), employeeId: emp.id, codigo: emp.codigo, nome: emp.nome, rotaId: '', status: 'pendente', entregueEm: null, recebidoPor: '' });
-                        count++;
-                    }
-                }
-            });
-            alert(`${count} entregas geradas!`); this.save();
-        } catch(e) { alert("Erro JSON: " + e.message); }
-    },
-    
-    // Config e Renderers Aux
-    setAdminPhone(val) { this.db.adminPhone = val.replace(/\D/g, ''); this.save(); },
-    switchRole(role) { this.currentUser = role; const sb=document.getElementById('sidebar'); if(role==='admin'){sb.classList.remove('hidden');document.getElementById('view-driver-mobile').classList.add('hidden');this.setTab('dashboard');}else{sb.classList.add('hidden');document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-driver-mobile').classList.remove('hidden');const d=this.db.drivers.find(x=>x.id==role);document.getElementById('driverWelcome').innerText=`Olá, ${d?d.nome.split(' ')[0]:''}`;this.renderDriverView();} },
-    setTab(tab) {
-        if(this.currentUser!=='admin')return; this.currentTab=tab;
-        document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('bg-brand-light','text-brand-main','bg-gray-100','text-gray-800');b.classList.add('text-gray-600')});
-        document.getElementById(`btn-${tab}`).classList.add(tab==='configuracoes'?'bg-gray-100':'bg-brand-light', tab==='configuracoes'?'text-gray-800':'text-brand-main');
-        document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden')); document.getElementById(`view-${tab}`).classList.remove('hidden');
-        if(tab==='dashboard')this.renderDashboard(); if(tab==='funcionarios')this.renderEmployeesTable(); if(tab==='entregas')this.renderDeliveriesTable(); if(tab==='configuracoes'){this.renderRoutesGrid();this.renderDriversList();}
-    },
-    updateSelectors() {
-        const opts=document.getElementById('driverSelectOptions'); opts.innerHTML=''; this.db.drivers.forEach(d=>opts.innerHTML+=`<option value="${d.id}">🚚 ${d.nome}</option>`);
-        const rSel=document.getElementById('selectRouteModal'); if(rSel){rSel.innerHTML='';this.db.routes.forEach(r=>rSel.innerHTML+=`<option value="${r.id}">${r.nome}</option>`);}
-        const drvSel=document.getElementById('selectDriverModal'); if(drvSel){drvSel.innerHTML='';this.db.drivers.forEach(d=>drvSel.innerHTML+=`<option value="${d.id}">${d.nome}</option>`);}
-        const empSel=document.getElementById('selectEmployeeDelivery'); if(empSel){empSel.innerHTML='<option value="">Selecione...</option>';this.db.employees.forEach(e=>empSel.innerHTML+=`<option value="${e.id}">${e.nome} (${e.codigo})</option>`);}
-        const rFilt=document.getElementById('filterRoute'); if(rFilt){rFilt.innerHTML='<option value="">Todas as Rotas</option>';this.db.routes.forEach(r=>rFilt.innerHTML+=`<option value="${r.id}">${r.nome}</option>`);}
-    },
-    
-    // Aux Renderers
-    renderRoutesGrid() { const g=document.getElementById('gridRotas');g.innerHTML='';this.db.routes.forEach(r=>{g.innerHTML+=`<div class="bg-gray-50 p-4 rounded border text-xs"><b>${r.nome}</b><br><span class="text-gray-500">Prev: ${r.dataPrevisao}</span><button onclick="App.db.routes=App.db.routes.filter(x=>x.id!='${r.id}');App.save();" class="float-right text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></div>`})},
-    renderDriversList() { const l=document.getElementById('listMotoristas');l.innerHTML='';this.db.drivers.forEach(d=>{l.innerHTML+=`<tr class="border-b"><td class="px-4 py-2">${d.nome}</td><td class="px-4 py-2">${d.telefone}</td><td class="px-4 py-2"><button onclick="App.db.drivers=App.db.drivers.filter(x=>x.id!='${d.id}');App.save();" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></td></tr>`})},
+            }, 1500);
+        }
 
-    // Mobile Confirmation
-    openConfirmMobile(id,nome){this.tempId=id;this.tempName=nome;document.getElementById('confMobName').innerText=nome;document.getElementById('receiverNameInput').value='';document.getElementById('modalConfirmMobile').classList.remove('hidden');},
-    fillReceiverSelf(){document.getElementById('receiverNameInput').value=this.tempName;},
-    confirmDeliveryMobile(){
-        if(!this.tempId)return; const rec=document.getElementById('receiverNameInput').value.trim();if(!rec)return alert("Quem recebeu?");
-        const t=this.db.deliveries.find(d=>d.id==this.tempId);
-        if(t){t.status='entregue';t.recebidoPor=rec;t.entregueEm=new Date().toLocaleString('pt-BR');this.save();if(this.db.adminPhone)window.open(`https://wa.me/55${this.db.adminPhone}?text=${encodeURIComponent(`✅ Entregue: ${t.nome}\nRecebido por: ${rec}`)}`,'_blank');}
-        document.getElementById('modalConfirmMobile').classList.add('hidden');this.renderDriverView();
-    },
+        function finalizeChat() {
+            setTimeout(() => {
+                addBotMessage("Me manda um oi no whatsapp pra salvar meu contato. Obrigado.");
+                
+                // Botão WhatsApp
+                const msgWpp = `Oi, eu sou o ${userName}, vou salvar seu contato. O Osvaldo me garantiu um sabão em pó omo a mais na minha próxima compra. Obrigado`;
+                const encodedMsg = encodeURIComponent(msgWpp);
+                const numeroWpp = "5511999999999"; // COLOQUE SEU NÚMERO AQUI
 
-    // Save Handlers
-    saveRoute(e){e.preventDefault();this.db.routes.push({id:'r'+Date.now(),nome:e.target.nome.value,motoristaId:e.target.motoristaId.value,dataPrevisao:e.target.dataPrevisao.value});this.save();this.closeModal('modalRota');e.target.reset();},
-    saveDriver(e){e.preventDefault();this.db.drivers.push({id:'d'+Date.now(),nome:e.target.nome.value,telefone:e.target.telefone.value});this.save();this.closeModal('modalMotorista');e.target.reset();},
-    openModal(id){document.getElementById(id).classList.remove('hidden');}, closeModal(id){document.getElementById(id).classList.add('hidden');},
-    exportData(){const blob=new Blob([JSON.stringify(this.db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup.json';a.click();}
-};
+                const wppBtn = `<a href="https://wa.me/${numeroWpp}?text=${encodedMsg}" class="whatsapp-btn" target="_blank">
+                    Falar no WhatsApp
+                </a>`;
 
-document.addEventListener('DOMContentLoaded', () => App.init());
-</script>
+                addBotMessage(wppBtn);
+            }, 1000);
+        }
+
+        // --- LÓGICA DO SLIDE DE FOTOS (MODAL) ---
+
+        function openModal(cestaId) {
+            currentBasket = cestaId;
+            currentPhotoIndex = 0; // Começa na primeira foto
+            updateModalImage();
+            document.getElementById('photo-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('photo-modal').style.display = 'none';
+        }
+
+        function updateModalImage() {
+            const imgElement = document.getElementById('modal-img');
+            // Lógica do nome: se index é 0 -> "grande.webp", se index é 1 -> "grande1.webp"
+            let suffix = currentPhotoIndex === 0 ? "" : "1";
+            imgElement.src = `img/${currentBasket}${suffix}.webp`;
+        }
+
+        function nextPhoto() {
+            // Alterna entre 0 e 1
+            currentPhotoIndex = currentPhotoIndex === 0 ? 1 : 0;
+            updateModalImage();
+        }
+
+        function prevPhoto() {
+            // Alterna entre 0 e 1
+            currentPhotoIndex = currentPhotoIndex === 0 ? 1 : 0;
+            updateModalImage();
+        }
+
+    </script>
 </body>
 </html>
