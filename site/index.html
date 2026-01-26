@@ -174,7 +174,7 @@
         .hb-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.3s; }
         .hb-dot.active { background: var(--primary); width: 20px; border-radius: 4px; }
 
-        .home-grid-container { padding: 0px 0 60px; }
+        .home-grid-container { padding: 10px 16 60px; }
         .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
 
         /* --- CARROSSEL DE OFERTAS --- */
@@ -215,15 +215,17 @@
         .offer-card-simple:hover .cp-img-box { transform: translateY(-2px); }
 
         /* --- NOVO ESTILO CARD CESTA (HOME) --- */
-        .home-basket-card {
-            background: #fff; 
-            border-radius: 20px; 
-            padding: 15px;
-            border: 1px solid #eee;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
+       .home-basket-card {
+    background: #fff; 
+    border-radius: 20px; 
+    padding: 20px; /* Aumentamos de 15px para 20px para o conteúdo "respirar" melhor */
+    border: 1px solid #eee;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+    margin: 0 auto; /* Centraliza o card */
+    max-width: 400px; /* Evita que o card fique gigante em telas de tablet ou celulares muito largos */
+}
         .home-basket-card:hover { transform: translateY(-5px); }
 
         /* Container da Foto (Simples) */
