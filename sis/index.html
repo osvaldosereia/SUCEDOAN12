@@ -3,78 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS | Sandbox Pro</title>
+    <title>SISTEMAS | Sandbox Pro Path-Mapping</title>
     <style>
         :root {
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --primary: #0f172a;
-            --accent: #059669;
-            --text: #334155;
-            --border: #e2e8f0;
-            --radius: 12px;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #38bdf8;
+            --accent: #22c55e;
+            --text: #f1f5f9;
+            --border: #334155;
+            --radius: 8px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { height: 100%; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.4; }
 
-        #ui-wrapper { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        #ui-wrapper { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+        
+        .card { background: var(--surface); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        
+        h2 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 1rem; }
 
-        .card {
-            background: var(--surface);
-            padding: 1.5rem;
-            border-radius: var(--radius);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            margin-bottom: 1rem;
+        textarea { 
+            width: 100%; height: 200px; padding: 1rem; background: #000; color: #0f0; 
+            border: 1px solid var(--border); border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.85rem;
         }
 
-        textarea {
-            width: 100%;
-            height: 300px;
-            margin-top: 0.5rem;
-            padding: 1rem;
+        .upload-zone { 
+            border: 2px dashed var(--border); padding: 2rem; text-align: center; border-radius: var(--radius); 
+            cursor: pointer; transition: 0.3s; margin-bottom: 1rem;
+        }
+        .upload-zone:hover { border-color: var(--primary); background: #1e293b; }
+
+        /* Lista de Arquivos com Input de Rota */
+        .file-item {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 10px;
+            align-items: center;
+            background: #0f172a;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 5px;
             border: 1px solid var(--border);
-            border-radius: 8px;
-            font-family: monospace;
-            resize: vertical;
+        }
+
+        .file-item input {
             background: #1e293b;
-            color: #f8fafc;
+            border: 1px solid var(--primary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
         }
-
-        .upload-zone {
-            border: 2px dashed var(--border);
-            padding: 1.5rem;
-            text-align: center;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .upload-zone:hover { border-color: var(--primary); background: #f1f5f9; }
-
-        .file-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 1rem 0; }
-        .file-tag { background: #e2e8f0; padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; font-weight: bold; }
 
         .btn-run {
-            width: 100%;
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 1rem;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);
+            position: sticky; bottom: 20px; width: 100%; background: var(--accent);
+            color: #000; border: none; padding: 1.2rem; border-radius: var(--radius);
+            font-size: 1.1rem; font-weight: 800; cursor: pointer; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
         }
 
-        /* Fullscreen View */
+        /* Preview Mode */
         #preview-frame { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; display: none; z-index: 10; background: white; }
-        
         #back-btn {
             position: fixed; bottom: 20px; left: 20px; z-index: 100;
             width: 50px; height: 50px; border-radius: 50%; background: var(--primary);
             display: none; align-items: center; justify-content: center; border: none; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
         .hidden { display: none !important; }
@@ -83,103 +77,127 @@
 <body>
 
 <div id="ui-wrapper">
-    <header style="text-align: center; margin-bottom: 2rem;">
-        <h1>SISTEMAS Sandbox</h1>
-        <p>Cole seu código ou suba arquivos de índice e dados</p>
+    <header style="margin-bottom: 2rem;">
+        <h1>SISTEMAS <span style="color: var(--primary)">SANDBOX</span></h1>
+        <p style="opacity: 0.7;">Ambiente de simulação de diretórios e fetch local</p>
     </header>
 
     <div class="card">
-        <label style="font-weight: 600;">HTML Principal (index.html)</label>
-        <textarea id="code-editor" placeholder="Cole seu código HTML aqui..."></textarea>
+        <h2>1. Código HTML (Index)</h2>
+        <textarea id="code-editor" placeholder="Cole o HTML aqui ou arraste o arquivo abaixo..."></textarea>
     </div>
 
     <div class="card">
-        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-            <p>📁 Arraste arquivos <strong>JSON</strong> ou o <strong>index.html</strong> aqui</p>
+        <h2>2. Arquivos de Dados (JSON)</h2>
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+            <p>Clique ou arraste arquivos .json e .html</p>
             <input type="file" id="file-input" multiple accept=".html,.json" class="hidden">
         </div>
-        <div id="file-list" class="file-list"></div>
+        <div id="file-list"></div>
     </div>
 
-    <button class="btn-run" id="run-btn">Lançar App</button>
+    <button class="btn-run" id="run-btn">CONFIGURAR E LANÇAR</button>
 </div>
 
 <button id="back-btn" onclick="location.reload()">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 </button>
 
 <iframe id="preview-frame"></iframe>
 
 <script>
-    const state = { html: "", data: {} };
+    const storage = { html: "", files: {} }; // files: { id: { name, content, virtualPath } }
     const editor = document.getElementById('code-editor');
-    const fileList = document.getElementById('file-list');
-    const runBtn = document.getElementById('run-btn');
+    const fileListDiv = document.getElementById('file-list');
 
-    async function processFiles(files) {
+    async function handleFiles(files) {
         for (const file of files) {
-            const name = file.name;
             const content = await file.text();
+            const id = Math.random().toString(36).substr(2, 9);
             
-            if (name === 'index.html') {
-                state.html = content;
+            if (file.name === 'index.html') {
                 editor.value = content;
-            } else if (name.endsWith('.json')) {
-                try {
-                    state.data[name] = JSON.parse(content);
-                    const tag = document.createElement('span');
-                    tag.className = 'file-tag';
-                    tag.textContent = `📦 ${name}`;
-                    fileList.appendChild(tag);
-                } catch(e) { console.error("Erro no JSON:", name); }
+                storage.html = content;
+            } else if (file.name.endsWith('.json')) {
+                storage.files[id] = {
+                    name: file.name,
+                    content: JSON.parse(content),
+                    virtualPath: file.name // Caminho padrão é o nome do arquivo
+                };
+                renderFileList();
             }
         }
     }
 
-    document.getElementById('file-input').onchange = (e) => processFiles(e.target.files);
-    
-    // Drag and Drop
-    const dz = document.getElementById('drop-zone');
-    ['dragover', 'drop'].forEach(evt => dz.addEventListener(evt, e => {
-        e.preventDefault();
-        if(evt === 'drop') processFiles(e.dataTransfer.files);
-    }));
+    function renderFileList() {
+        fileListDiv.innerHTML = '';
+        Object.keys(storage.files).forEach(id => {
+            const file = storage.files[id];
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.innerHTML = `
+                <span style="font-size: 0.8rem; font-weight: bold;">${file.name}</span>
+                <input type="text" value="${file.virtualPath}" placeholder="Rota (ex: folder/data.json)" 
+                    oninput="storage.files['${id}'].virtualPath = this.value">
+                <button onclick="delete storage.files['${id}']; renderFileList()" style="background:none; border:none; color:#ff4444; cursor:pointer;">✕</button>
+            `;
+            fileListDiv.appendChild(div);
+        });
+    }
 
-    runBtn.onclick = () => {
-        const htmlContent = editor.value || state.html;
-        if (!htmlContent) return alert("Adicione o código HTML primeiro!");
+    document.getElementById('file-input').onchange = (e) => handleFiles(e.target.files);
 
-        const iframe = document.getElementById('preview-frame');
-        
-        // Mock do Fetch Engine
+    document.getElementById('run-btn').onclick = () => {
+        const html = editor.value;
+        if (!html) return alert("Insira o HTML!");
+
+        // Mapeia os caminhos virtuais para o objeto de mock
+        const mockMap = {};
+        Object.values(storage.files).forEach(f => {
+            mockMap[f.virtualPath] = f.content;
+        });
+
         const injection = `
             <script>
-                const _MOCK_DB = ${JSON.stringify(state.data)};
-                const _nativeFetch = window.fetch;
-                window.fetch = async (url, init) => {
-                    const path = (typeof url === 'string' ? url : url.url).split('/').pop();
-                    if (_MOCK_DB[path]) {
-                        return new Response(JSON.stringify(_MOCK_DB[path]), {
+                const _MOCK_DATA = ${JSON.stringify(mockMap)};
+                const _originalFetch = window.fetch;
+                window.fetch = async (input, init) => {
+                    let url = typeof input === 'string' ? input : input.url;
+                    
+                    // Normaliza a URL para bater com o virtualPath (remove ./ e / iniciais para comparar)
+                    const cleanUrl = url.replace(/^\\.\\//, '').replace(/^\\//, '');
+                    
+                    // Busca exata ou busca pelo final do caminho
+                    const match = Object.keys(_MOCK_DATA).find(path => 
+                        path === cleanUrl || url.endsWith(path)
+                    );
+
+                    if (match) {
+                        console.log('Sandbox: Roteando fetch para path virtual:', match);
+                        return new Response(JSON.stringify(_MOCK_DATA[match]), {
                             status: 200,
                             headers: { 'Content-Type': 'application/json' }
                         });
                     }
-                    return _nativeFetch(url, init);
+                    return _originalFetch(input, init);
                 };
             <\/script>
         `;
 
-        const finalCode = htmlContent.includes('<head>') 
-            ? htmlContent.replace('<head>', '<head>' + injection)
-            : injection + htmlContent;
-
+        const finalCode = html.includes('<head>') ? html.replace('<head>', '<head>' + injection) : injection + html;
         const blob = new Blob([finalCode], { type: 'text/html' });
-        iframe.src = URL.createObjectURL(blob);
         
-        document.getElementById('ui-wrapper').classList.add('hidden');
+        const iframe = document.getElementById('preview-frame');
+        iframe.src = URL.createObjectURL(blob);
         iframe.style.display = 'block';
+        document.getElementById('ui-wrapper').classList.add('hidden');
         document.getElementById('back-btn').style.display = 'flex';
     };
+
+    // Drag & Drop
+    const dz = document.querySelector('.upload-zone');
+    dz.ondragover = (e) => { e.preventDefault(); dz.style.borderColor = 'var(--primary)'; };
+    dz.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
 </script>
 
 </body>
