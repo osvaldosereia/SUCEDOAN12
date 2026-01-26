@@ -254,21 +254,48 @@
 
 /* Remova a classe .hbc-photo-overlay pois não será mais usada */
 
-        .hbc-price { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; }
-        
-        .btn-view-list {
-            background: #f1f5f9;
-            color: #475569;
-            padding: 10px 15px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            width: 100%;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-view-list:hover { background: #e2e8f0; }
+      /* Localize e substitua estas classes no seu CSS */
+.hbc-price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 0 5px;
+}
+
+.hbc-item-count {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #64748b; /* Um cinza elegante */
+}
+
+.hbc-price { 
+    font-size: 1.4rem; 
+    font-weight: 800; 
+    color: var(--primary); 
+    margin-bottom: 0; /* Remove a margem antiga */
+}
+
+/* Destaque no Botão Ver Lista */
+.btn-view-list {
+    background: #f1f5f9;
+    color: var(--primary); /* Mudança para a cor principal */
+    border: 1px solid #e2e8f0;
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 800; /* Mais negrito */
+    margin-bottom: 15px;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.btn-view-list:hover { 
+    background: var(--primary); 
+    color: white; 
+}
 
         .hbc-actions-grid { display: flex; flex-direction: column; gap: 10px; }
 
