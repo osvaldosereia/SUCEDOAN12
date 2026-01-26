@@ -147,10 +147,22 @@
         
         @media(min-width: 640px) { .baskets-grid { grid-template-columns: 1fr; } }
        /* Localize e substitua este bloco de media query */
+        /* Ajuste de Colunas no Desktop */
         @media(min-width: 1024px) { 
+            /* 1. Na Home (dentro dos cards): Mantém 3 colunas, igual ao mobile */
+            .grid-products-row { 
+                grid-template-columns: repeat(3, 1fr); 
+            } 
+            
+            /* 2. No Chat (que ocupa a tela toda): Usa 6 colunas para aproveitar o espaço */
+            #chat-stream .grid-products-row { 
+                grid-template-columns: repeat(6, 1fr); 
+            }
+
+            /* 3. Layout dos Cards da Home (já ajustado anteriormente) */
             .baskets-grid { 
-                grid-template-columns: repeat(3, 1fr); /* AQUI MUDA PARA 3 COLUNAS */
-                gap: 30px; /* Ajustei o espaço para ficar proporcional */
+                grid-template-columns: repeat(3, 1fr); 
+                gap: 30px; 
             } 
             .home-basket-card { max-width: 100%; } 
         }
