@@ -1,51 +1,62 @@
 <!DOCTYPE html>
-<html lang="pt-BR" itemscope itemtype="https://schema.org/LocalBusiness">
+<html lang="pt-BR" dir="ltr" itemscope itemtype="https://schema.org/LocalBusiness">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-    <title>Super Cestas Dona Antônia | Cuiabá e Várzea Grande</title>
-    <meta name="description" content="Cestas Básicas de Alta Qualidade em Cuiabá e VG. Monte e personalize sua cesta online.">
+    
+    <meta name="description" content="Peça sua Cesta Básica em Cuiabá e VG. Monte e personalize sua cesta. Mercadinho online com pagamento na entrega.">
     <meta name="theme-color" content="#ffffff">
+    <title>Cestas Básicas em Cuiabá e Várzea Grande | Dona Antônia</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        /* --- CORE & RESET --- */
-        :root {
-            --primary: #d31a28; /* Cor original Dona Antonia */
-            --primary-dark: #b91c1c;
-            --secondary: #3e3e3e;
-            --success: #10B981;
-            --background: #F3F4F6;
-            --text-main: #222222;
-            --border-medium: #E5E7EB;
-            --header-h: 70px;
-            --app-header-height: 60px;
-            --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        /* --- 1. CORE & RESET --- */
+        :root { 
+            --primary: #d31a28; 
+            --primary-dark: #b91c1c; 
+            --secondary: #3e3e3e; 
+            --text-main: #222222; 
+            --bg-body: #ffffff;
+            --border-color: #f2f2f2;
+            --header-height: 70px; 
+            --shadow-card: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; background: var(--bg-body); }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            color: var(--text-main); width: 100%; margin: 0;
+            background-color: var(--bg-body);
+            overflow-x: hidden;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--background); color: var(--text-main); padding-bottom: 0; width: 100%; overflow-x: hidden; }
-        
+        /* Otimização de renderização */
+        .catalog-container, .hero-banner-section { content-visibility: auto; contain-intrinsic-size: 1000px; }
+
         .hidden { display: none !important; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; width: 100%; }
-        button { cursor: pointer; border: none; font-family: inherit; background: none; }
         img { display: block; max-width: 100%; height: auto; }
-        
+        button { cursor: pointer; border: none; font-family: inherit; background: none; }
+
         /* Modos de Visualização */
         body.customizer-mode #main-view { display: none !important; }
         body.customizer-mode #customizer-view { display: block !important; }
         body.customizer-mode { background: #fff; overflow-y: auto; }
         body.no-scroll { overflow: hidden !important; }
 
-        /* --- HEADER PRINCIPAL (Estilo Index 1) --- */
+        /* --- 2. HEADER --- */
         #main-header { 
-            position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); 
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); 
             background: #ffffff; border-bottom: 1px solid #f0f0f0; z-index: 1000; 
             display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            contain: layout size; /* Performance */
         }
         body.customizer-mode #main-header { display: none; }
         
@@ -56,24 +67,13 @@
         .logo-slogan { font-size: 0.65rem; color: #555; font-weight: 500; letter-spacing: 0.5px; } 
         .logo-brand-img { width: 53px; height: 53px; border-radius: 50%; object-fit: cover; }
 
-        /* Botões do Header */
         .header-actions { display: flex; align-items: center; gap: 8px; }
-        .ah-icon-btn { 
-            width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            color: #555; background: #fff; border: 1px solid #e2e8f0; transition: all 0.2s; font-size: 1.1rem; 
-        }
+        .ah-icon-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #555; background: #fff; border: 1px solid #e2e8f0; transition: all 0.2s; font-size: 1.1rem; }
         .ah-icon-btn:active { transform: scale(0.9); background: #f8fafc; }
-        
-        .help-btn-visible {
-            width: 36px; height: 36px; background: #25D366; color: white;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-left: 10px; transition: transform 0.2s, background 0.2s;
-        }
-        .help-btn-visible:active { transform: scale(0.9); background: #128C7E; }
+        .help-btn-visible { width: 36px; height: 36px; background: #25D366; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-left: 10px; transition: transform 0.2s, background 0.2s; }
 
-        /* --- HERO BANNER & OFERTAS --- */
-        .hero-banner-section { padding: 20px 0; background: #ffffff; border-bottom: 1px solid #f0f0f0; margin-bottom: 20px; overflow: hidden; margin-top: var(--header-h); }
+        /* --- 3. HERO BANNER --- */
+        .hero-banner-section { padding: 20px 0; background: #ffffff; border-bottom: 1px solid #f0f0f0; margin-bottom: 20px; overflow: hidden; margin-top: var(--header-height); }
         .hb-track { display: flex; gap: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; padding: 10px 4px 20px; scrollbar-width: none; }
         .hb-track::-webkit-scrollbar { display: none; }
         .hb-card { flex: 0 0 100%; scroll-snap-align: center; background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%); border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); min-height: 100px; }
@@ -84,7 +84,7 @@
         .hb-dot.active { background: var(--primary); width: 20px; border-radius: 4px; }
         @media(min-width: 1024px) { .hb-card { flex: 0 0 32%; } }
 
-        /* Carrossel */
+        /* Carrossel Ofertas */
         .offers-section { margin-bottom: 40px; position: relative; padding: 0 15px; max-width: 1200px; margin: 0 auto 30px; }
         .offers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .offers-title { font-size: 1.2rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px; }
@@ -141,7 +141,7 @@
         .btn-chat { padding: 12px; background: #fff; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; font-weight: 600; text-align: center; cursor: pointer; width: 100%; }
         .btn-chat.primary { background: var(--primary); color: white; grid-column: 1 / -1; }
 
-        /* Categorias Dropdown (Index 1 Style) */
+        /* Categorias Dropdown */
         .cat-dropdown {
             position: fixed; top: 60px; left: 0; right: 0; background: #fff; z-index: 1900; max-height: 75vh; overflow-y: auto; padding: 20px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); transform: translateY(-150%); transition: transform 0.3s;
@@ -153,7 +153,6 @@
 
         .corridor-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
         .btn-main-cat { width: 100%; padding: 14px 16px; background: #ffffff; color: #1e293b; font-weight: 700; font-size: 0.95rem; text-transform: capitalize; border: none; border-bottom: 1px solid #f1f5f9; border-left: 4px solid var(--primary); text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .btn-main-cat:after { content: '›'; font-size: 1.4rem; color: #cbd5e1; line-height: 1; }
         
         .sub-cat-list { padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f8fafc; }
         .btn-sub-cat { display: flex; flex-direction: column; align-items: center; background: transparent; border: none; cursor: pointer; gap: 5px; }
@@ -168,10 +167,10 @@
 
         .card-prod { position: relative; display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border: none; background: transparent; }
         
-        /* Botões de + e - (Z-Index Corrigido) */
-        .card-action-row { display: flex; justify-content: flex-end; margin-top: -24px; margin-right: 6px; margin-bottom: 2px; position: relative; z-index: 20; height: 32px; pointer-events: auto; }
-        .btn-circle-add { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; line-height: 1; padding-bottom: 3px; }
-        .qty-ctrl-float { background: white; border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center; height: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; }
+        /* Botões de Ação (Z-Index Corrigido para evitar falha no clique) */
+        .card-action-row { display: flex; justify-content: flex-end; margin-top: -24px; margin-right: 6px; margin-bottom: 2px; position: relative; z-index: 50; height: 32px; pointer-events: auto; }
+        .btn-circle-add { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; line-height: 1; padding-bottom: 3px; user-select: none; }
+        .qty-ctrl-float { background: white; border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center; height: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; user-select: none; }
         .qcf-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer; font-weight: 700; }
         .qcf-val { font-size: 0.9rem; font-weight: 700; padding: 0 4px; min-width: 20px; text-align: center; }
 
@@ -189,9 +188,11 @@
         body.customizer-mode .app-footer { display: none; }
         .footer-btn { flex: 1; height: 54px; border-radius: 27px; border: none; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-size: 13px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); cursor: pointer; }
 
-        /* Sheets/Modals */
-        .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000; opacity: 0; pointer-events: none; transition: opacity 0.3s; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
-        .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+        /* Modais (Correção Modal Perdido) */
+        /* Importante: display none por padrão para não ocupar espaço no DOM */
+        .sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 11000; opacity: 0; transition: opacity 0.3s; flex-direction: column; justify-content: flex-end; align-items: center; pointer-events: none; }
+        .sheet-overlay.open { display: flex; opacity: 1; pointer-events: auto; }
+        
         .sheet-box { background: #fff; width: 100%; border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; padding: 20px; max-width: 600px; }
         .sheet-overlay.open .sheet-box { transform: translateY(0); margin-bottom: 0; }
         @media(min-width: 768px) { .sheet-overlay.open .sheet-box { margin-bottom: 20px; border-radius: 20px; } }
@@ -200,8 +201,13 @@
         details.faq-box summary { font-weight: 600; cursor: pointer; padding: 15px; background: #f8fafc; list-style: none; }
         .faq-text { padding: 15px; font-size: 0.95rem; line-height: 1.5; border-top: 1px solid #eee; }
 
-        /* Modal Lista de Produtos */
-        .list-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        /* Modal Lista */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 15px; }
+        .modal-overlay.active { display: flex; }
+        .modal-card { background: white; width: 100%; max-width: 600px; border-radius: 28px; max-height: 85vh; overflow-y: auto; position: relative; display: flex; flex-direction: column; }
+        .modal-header { position: sticky; top: 0; background: white; padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .modal-body { padding: 25px; overflow-y: auto; }
+
         .cat-title { font-size: 13px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #e5e7eb; padding-bottom: 5px; }
         .product-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 14px; color: #334155; }
         .qty-badge { background: #eff6ff; color: #2563eb; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 12px; min-width: 38px; text-align: center; }
@@ -214,7 +220,7 @@
     <header id="main-header">
         <div class="container header-inner">
             <a href="#" class="logo-container" onclick="location.reload()">
-                <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo">
+                <img src="https://donaantonia.com.br/site/img/produtos/logo-cesta-basica-dona-antonia-cesta-basica-cuiaba-varzea-grande.webp" class="logo-brand-img" alt="Logo" width="53" height="53">
                 <div class="logo-text-col">
                     <span class="logo-name">Dona Antônia</span>
                     <span class="logo-slogan">A Melhor Cesta da Cidade</span>
@@ -222,10 +228,10 @@
             </a>
             
             <div class="header-actions">
-                <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" title="Instagram">
+                <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" title="Instagram" aria-label="Instagram">
                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                 </button>
-                <button class="ah-icon-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565996813588','_blank')" title="WhatsApp">
+                <button class="ah-icon-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565996813588','_blank')" title="WhatsApp" aria-label="Whatsapp">
                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.017-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
                 </button>
                 <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')">?</div>
@@ -523,7 +529,8 @@
                             nome: this.toSmartTitleCase(p.nome.trim()), 
                             valor: parseFloat(p.valor || 0), offerPrice: parseFloat(p.Valor_Oferta || 0),
                             isOffer: (p.Oferta === 'Sim'), appCategory: appCat, subCategory: parts.length > 1 ? parts[1].trim() : null, 
-                            imagem: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg',
+                            // Correção da Path da imagem
+                            imagem: p.imagem ? `../site/img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg',
                             limit: parseInt(p.Limit || p.limit || 0),
                             categoria: catRaw.toUpperCase()
                         };
@@ -548,10 +555,10 @@
                     currentLimit: initialLimit, step: loadStep 
                 };
                 
-                this.renderPagedSection(sectionId);
+                this.renderPagedSection(sectionId, false);
             },
 
-            renderPagedSection(sectionId) {
+            renderPagedSection(sectionId, isUpdate = false) {
                 const store = this.paginationStore[sectionId];
                 if(!store) return;
 
@@ -559,10 +566,28 @@
                 const batch = store.products.slice(store.currentIndex, nextLimit);
                 const container = document.querySelector(`#${sectionId} .grid-products-row`);
                 
+                // Marca o primeiro novo item para scroll
+                const firstNewItemId = batch.length > 0 ? `item-${batch[0].id}-${Date.now()}` : null;
+
                 // Renderiza batch atual
-                const html = batch.map(p => this.buildCard(p)).join('');
+                const html = batch.map((p, idx) => {
+                   const uniqueId = idx === 0 ? firstNewItemId : '';
+                   return this.buildCard(p, uniqueId);
+                }).join('');
+                
                 container.insertAdjacentHTML('beforeend', html);
                 
+                // Scroll para manter contexto abaixo da top bar
+                if(isUpdate && firstNewItemId) {
+                    const el = document.getElementById(firstNewItemId);
+                    if(el) {
+                         // Offset de 80px (header + margem)
+                         const offset = 80;
+                         const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+                         window.scrollTo({top: top, behavior: 'smooth'});
+                    }
+                }
+
                 store.currentIndex = nextLimit;
                 store.currentLimit = store.step; // Próximos carregamentos usarão o step maior
 
@@ -573,7 +598,7 @@
                 // Adiciona botão se houver mais
                 if(store.currentIndex < store.products.length) {
                     const remaining = store.products.length - store.currentIndex;
-                    const btnHtml = `<button id="btn-${sectionId}" class="btn-load-more" onclick="App.renderPagedSection('${sectionId}')">Ver Mais (${remaining})</button>`;
+                    const btnHtml = `<button id="btn-${sectionId}" class="btn-load-more" onclick="App.renderPagedSection('${sectionId}', true)">Ver Mais (${remaining})</button>`;
                     document.getElementById(sectionId).insertAdjacentHTML('beforeend', btnHtml);
                 }
             },
@@ -585,7 +610,7 @@
                     <section class="product-section">
                         <div class="p-main-content">
                             <h2 class="p-title">${p.nome}</h2>
-                            <img src="${p.imagem}" class="basket-hero-img" alt="${p.nome}">
+                            <img src="${p.imagem}" class="basket-hero-img" alt="${p.nome}" width="300" height="300">
                             <div class="price-display">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
                             <button class="btn btn-outline" onclick="App.openBasketList('${p.id}')"><i class="ph-bold ph-list-bullets"></i> VER LISTA DE PRODUTOS</button>
                             <button class="btn btn-primary" onclick="App.openCustomizer('${p.id}')"><i class="ph-bold ph-magic-wand"></i> PERSONALIZAR CESTA</button>
@@ -603,7 +628,7 @@
                 track.innerHTML = offers.map(p => `
                     <div class="offer-card-simple" onclick="App.openCustomizerForOffer('${p.id}')">
                         <span class="cp-tag-off">OFERTA</span>
-                        <div class="cp-img-box"><img src="${p.imagem}" class="cp-img" loading="lazy"></div>
+                        <div class="cp-img-box"><img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100"></div>
                         <div class="cp-price offer-price">R$ ${p.offerPrice.toFixed(2).replace('.',',')} <small>R$ ${p.valor.toFixed(2).replace('.',',')}</small></div>
                         <div class="cp-title">${p.nome}</div>
                     </div>
@@ -713,14 +738,14 @@
                 }
             },
 
-            buildCard(p) {
+            buildCard(p, domId = '') {
                 const qty = this.cart[p.id] || 0;
                 const price = p.isOffer ? p.offerPrice : p.valor;
                 // Importante: stopPropagation nos botões para não abrir a foto
                 return `
-                <div class="card-prod">
+                <div class="card-prod" ${domId ? `id="${domId}"` : ''}>
                     <div class="cp-img-box" onclick="App.openPhoto('${p.imagem}', '${p.nome}')">
-                        <img src="${p.imagem}" class="cp-img" loading="lazy">
+                        <img src="${p.imagem}" class="cp-img" loading="lazy" width="150" height="150">
                         ${p.isOffer ? '<span class="cp-tag-off">OFERTA</span>' : ''}
                     </div>
                     
@@ -753,7 +778,7 @@
                             if(subCats.length > 0) {
                                 subHtml = `<div class="sub-cat-list">${subCats.map(sub => `
                                     <button class="btn-sub-cat" onclick="App.scrollToSection('sec-${(cat+sub).replace(/[^a-zA-Z0-9]/g, '')}')">
-                                        <img src="img/${App.toSlug(sub)}.webp" class="bsc-img" onerror="this.style.display='none'">
+                                        <img src="../site/img/produtos/${App.toSlug(sub)}.webp" class="bsc-img" onerror="this.style.display='none'">
                                         <span class="bsc-label">${App.toSmartTitleCase(sub)}</span>
                                     </button>
                                 `).join('')}</div>`;
@@ -777,7 +802,7 @@
                 }
             },
 
-            openPhoto(url, title) { alert("Foto: " + title); }, 
+            openPhoto(url, title) { /* Implementar Visualizador de Foto se necessário */ }, 
             openSheet(id) { document.getElementById(id).classList.add('open'); },
             closeSheet(id) { document.getElementById(id).classList.remove('open'); },
             directOrder(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); },
