@@ -44,6 +44,28 @@
         .logo-header { width: 75px; height: 75px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; top: 15px; }
         .brand h1 { font-size: 16px; font-weight: 700; margin-left: 15px; }
 
+        /* BANNER ROTATIVO (NOVO) */
+        .info-bar {
+            background: #1f2937; /* Cinza escuro */
+            color: #f9fafb;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .info-slide {
+            animation: slideUpFade 0.5s ease-out forwards;
+            padding: 0 10px;
+        }
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* CATALOG GRID SYSTEM */
         .catalog-container { 
             padding: 20px 15px; 
@@ -136,6 +158,8 @@
         <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-header" alt="Logo">
         <div class="brand"><h1>Dona Antônia</h1></div>
     </header>
+
+    <div id="info-banner" class="info-bar"></div>
 
     <main id="catalog-mount" class="catalog-container"></main>
 
@@ -254,6 +278,25 @@
                 limpeza: []
             }
         };
+
+        // --- LÓGICA DO BANNER ROTATIVO (NOVA) ---
+        const bannerMsgs = [
+            "<i class='ph-fill ph-truck'></i> Entregamos em Cuiabá e VG",
+            "<i class='ph-fill ph-credit-card'></i> Parcele em até 3x sem juros no cartão de crédito",
+            "<i class='ph-fill ph-money'></i> Não cobramos taxa de entrega"
+        ];
+        let bannerIdx = 0;
+
+        function cycleBanner() {
+            const el = document.getElementById('info-banner');
+            el.innerHTML = `<span class="info-slide">${bannerMsgs[bannerIdx]}</span>`;
+            bannerIdx = (bannerIdx + 1) % bannerMsgs.length;
+        }
+        
+        // Inicia e troca a cada 3.5 segundos
+        cycleBanner();
+        setInterval(cycleBanner, 3500);
+        // ------------------------------------------
 
         function renderAll() {
             const container = document.getElementById('catalog-mount');
