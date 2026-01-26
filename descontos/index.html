@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" itemscope itemtype="https://schema.org/LocalBusiness">
 <head>
-    <!-- 
-        ================================================================
-        PILLAR 1: CORE WEB VITALS & SEO (HIGH PERFORMANCE)
-        ================================================================
-    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>Super Cestas Dona Antônia | Cuiabá e Várzea Grande</title>
@@ -15,7 +10,6 @@
     <meta name="facebook-domain-verification" content="sa60eslx69a2vs9jaojicyissuoueq" />
     <link rel="canonical" href="https://www.donaantonia.com.br">
 
-    <!-- Schema Markup LocalBusiness -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -33,20 +27,14 @@
       },
       "geo": { "@type": "GeoCoordinates", "latitude": -15.6014, "longitude": -56.0979 },
       "url": "https://www.donaantonia.com.br",
-      "sameAs": [
-        "https://www.facebook.com/super.cestas.cuiaba",
-        "https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/"
-      ],
       "priceRange": "$$"
     }
     </script>
 
-    <!-- PERFORMANCE HINTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://unpkg.com">
 
-    <!-- PILLAR 2: DATA LAYER & PIXEL -->
     <script>
         !function(f,b,e,v,n,t,s)
         {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -67,21 +55,11 @@
         }
     </script>
 
-    <!-- PILLAR 3: SECURITY -->
-    <script>
-        (function() {
-            document.addEventListener('contextmenu', e => e.preventDefault());
-            document.addEventListener('dragstart', e => e.preventDefault());
-        })();
-    </script>
-
-    <!-- LIBS -->
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            /* PALETA DE CORES */
             --primary: #2563EB;
             --primary-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
             --success: #10B981;
@@ -94,8 +72,6 @@
             --border-medium: #E5E7EB;
             --header-h: 70px;
             --footer-h: 80px;
-            
-            /* Shadows para profundidade */
             --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
@@ -119,366 +95,157 @@
             display: flex; align-items: center; justify-content: center; 
             padding: 0 16px; gap: 12px;
             position: sticky; top: 0; z-index: 50;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            overflow: visible; /* Garante que a logo possa vazar */
         }
         .logo-header { 
-            /* Logo 3x maior e flutuante */
             width: 80px; height: 80px; 
             border-radius: 50%; object-fit: cover; 
             border: 4px solid white; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
-            
-            /* Efeito de sobreposição (Hang over) */
-            position: relative;
-            top: 15px; /* Empurra para baixo para vazar a barra */
-            flex-shrink: 0; /* Impede que amasse */
-            z-index: 60; /* Fica acima de tudo */
+            position: relative; top: 15px; flex-shrink: 0; z-index: 60;
         }
-        .brand h1 { 
-            font-size: 16px; font-weight: 700; 
-            margin: 0; color: var(--text-main); 
-            letter-spacing: -0.3px;
+        .brand h1 { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+
+        /* CATALOG CONTAINER */
+        .catalog-container { 
+            padding: 8px; max-width: 600px; margin: 0 auto; 
         }
 
-        /* --- DIDACTIC SLIDE (Compactado) --- */
-        .didactic-section {
-            padding: 16px 8px 8px 8px; /* Reduzido de 24px/16px */
-            max-width: 600px; 
-            margin: 16px auto; /* Reduzido de 20px */
-        }
-
+        /* DIDACTIC SECTION */
+        .didactic-section { padding: 16px 8px; max-width: 600px; margin: 16px auto; }
         .didactic-slide {
-            background: #FFFFFF;
-            border-radius: 20px;
-            padding: 20px; /* Aumentado um pouco para respiro */
-            box-shadow: var(--shadow-card);
-            border: 1px solid #E5E7EB;
-            position: relative;
-            overflow: hidden;
+            background: #FFFFFF; border-radius: 20px; padding: 20px;
+            box-shadow: var(--shadow-card); border: 1px solid #E5E7EB;
+            position: relative; overflow: hidden;
         }
-        
         .didactic-slide::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
             background: linear-gradient(90deg, #2563EB, #10B981);
         }
-
-        .ds-title {
-            font-size: 18px; font-weight: 800; color: #111827;
-            margin: 0 0 20px 0; line-height: 1.3; text-align: center;
-        }
-
-        .ds-list {
-            display: flex; flex-direction: column; gap: 16px; /* Aumentado gap para clareza */
-        }
-
-        .ds-item {
-            display: flex; align-items: flex-start; gap: 14px;
-        }
-
+        .ds-title { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 20px; }
+        .ds-list { display: flex; flex-direction: column; gap: 16px; }
+        .ds-item { display: flex; align-items: flex-start; gap: 14px; }
         .ds-number {
-            background: #EFF6FF; color: #2563EB;
-            width: 36px; height: 36px; /* Levemente maior */
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 800; font-size: 16px; flex-shrink: 0;
-            border: 1px solid #BFDBFE;
-            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+            background: #EFF6FF; color: #2563EB; width: 36px; height: 36px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; border: 1px solid #BFDBFE;
         }
+        .ds-item-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .ds-item-desc { font-size: 13px; color: #6B7280; font-weight: 500; }
 
-        /* NOVOS ESTILOS DE TEXTO DIDATICO */
-        .ds-content {
-            display: flex; flex-direction: column;
-        }
-        .ds-item-title {
-            font-size: 15px; font-weight: 700; color: #111827;
-            margin-bottom: 4px; line-height: 1.2;
-        }
-        .ds-item-desc {
-            font-size: 13px; color: #6B7280; font-weight: 500;
-            line-height: 1.4;
-        }
-
-        /* --- CATALOG CONTAINER (Margens laterais reduzidas) --- */
-        .catalog-container { 
-            padding: 8px; /* Reduzido de 16px para 8px */
-            max-width: 600px; margin: 0 auto; 
-        }
-        
-        /* --- PRODUCT CARD (Margem inferior reduzida) --- */
+        /* PRODUCT CARDS */
         .product-section {
-            background: var(--surface); 
-            border-radius: 20px; /* Levemente reduzido para acompanhar o layout mais compacto */
-            box-shadow: var(--shadow-card);
-            margin-bottom: 16px; /* Reduzido de 30px */
-            overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.03);
+            background: var(--surface); border-radius: 20px; 
+            box-shadow: var(--shadow-card); margin-bottom: 16px; 
+            overflow: hidden; border: 1px solid rgba(0,0,0,0.03);
         }
+        .p-main-content { padding: 16px; }
+        .p-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .p-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+        .p-badge { background: #F3F4F6; color: var(--text-sec); padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .basket-hero-img { width: 100%; border-radius: 16px; margin-bottom: 16px; }
 
-        .p-main-content { padding: 16px; position: relative; } /* Reduzido de 24px */
-
-        .p-title-row { 
-            display: flex; justify-content: space-between; align-items: flex-start; 
-            margin-bottom: 12px; /* Reduzido */
-        }
-        .p-title { 
-            font-size: 20px; font-weight: 800; color: var(--text-main); 
-            margin: 0; letter-spacing: -0.5px; 
-        }
-        .p-badge {
-            background: #F3F4F6; color: var(--text-sec); 
-            padding: 4px 8px; border-radius: 6px; 
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-        }
-
-        .basket-hero-img {
-            width: 100%; height: auto; aspect-ratio: 1/1; 
-            border-radius: 16px; object-fit: cover; 
-            background: #f9fafb; margin-bottom: 16px; /* Reduzido */
-            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);
-        }
-
-        /* OPÇÕES */
-        .p-options-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; } /* Gap e Margin reduzidos */
         .opt-row {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 16px; border-radius: 12px;
-            border: 1px solid var(--border-medium); background: white;
-            transition: all 0.2s;
-            cursor: pointer; 
+            padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-medium);
+            margin-bottom: 8px; cursor: pointer; transition: 0.2s;
         }
-        .opt-row.selected {
-            border-color: var(--success); background: #F0FDF4;
-            box-shadow: 0 0 0 1px var(--success);
-        }
-        .opt-info { display: flex; flex-direction: column; }
-        .opt-name { font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 2px; }
-        .opt-price { display: flex; align-items: center; gap: 8px; }
-        .price-old { text-decoration: line-through; color: #9CA3AF; font-size: 12px; }
-        .price-new { font-size: 16px; font-weight: 800; color: var(--text-main); }
-        .opt-row.selected .price-new { color: var(--success-dark); }
+        .opt-row.selected { border-color: var(--success); background: #F0FDF4; box-shadow: 0 0 0 1px var(--success); }
+        .price-new { font-size: 16px; font-weight: 800; }
 
-        /* BOTOES */
         .btn-action-main {
-            width: 100%; background: var(--primary-gradient); color: white;
-            padding: 16px; /* Levemente reduzido */
-            border: none; border-radius: 16px;
+            width: 100%; padding: 16px; border: none; border-radius: 16px;
             font-size: 14px; font-weight: 700; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-            transition: transform 0.1s;
+            margin-top: 10px; transition: transform 0.1s;
         }
-        .btn-action-main:active { transform: scale(0.98); }
-        .btn-whatsapp { 
-            background: var(--success-gradient); 
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); 
-        }
+        .btn-whatsapp { background: var(--success-gradient); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); }
+        .btn-outline { background: #f8fafc; color: var(--text-main); border: 1px solid var(--border-medium); }
 
-        /* CONTEUDO EXPANSÍVEL (Padding reduzido) */
-        .p-expand-content { background: #FAFAFA; border-top: 1px solid #F3F4F6; padding: 16px; }
-        
-        /* ATUALIZADO: Grid em 2 Colunas (Gap reduzido) */
-        .items-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px; /* Reduzido de 12px */
-        }
-        
-        /* ATUALIZADO: Card maior e fontes maiores (Padding reduzido) */
-        .item-card {
-            background: white; border-radius: 12px; padding: 8px 4px; /* Reduzido de 12px 8px */
-            text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-            border: 1px solid rgba(0,0,0,0.02);
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-        }
-        .item-img { 
-            width: 100%; aspect-ratio: 1/1; object-fit: contain; margin-bottom: 8px; 
-            mix-blend-mode: multiply; 
-        }
-        .item-qty { 
-            display: inline-block; background: #EFF6FF; color: #2563EB; 
-            font-size: 11px; /* Aumentado */
-            font-weight: 700; padding: 4px 8px; border-radius: 100px; 
-            margin-bottom: 6px;
-        }
-        .item-name { 
-            font-size: 13px; /* Aumentado */
-            font-weight: 600; color: var(--text-main); line-height: 1.3; 
-        }
-
-        .section-separator-title {
-            text-align: center; margin: 40px 0 20px; position: relative;
-        }
-        .section-separator-title span {
-            background: var(--background); padding: 0 16px;
-            position: relative; z-index: 1; font-size: 12px; font-weight: 700; color: var(--text-sec); 
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        .section-separator-title::after {
-            content: ''; position: absolute; top: 50%; left: 10%; right: 10%;
-            height: 1px; background: #E5E7EB; z-index: 0;
-        }
-
-        /* VINHETA ESCURA DISCRETA PARA FOOTER */
-        .footer-vignette {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            height: 120px;
-            background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
-            pointer-events: none; /* Deixa clicar através dela */
-            z-index: 90;
-        }
-
-        /* FOOTER FLUTUANTE ATUALIZADO (Mais baixo) */
-        .app-footer {
-            position: fixed; bottom: 10px; /* Mais perto da base */
-            left: 50%; transform: translateX(-50%);
-            width: calc(100% - 20px); max-width: 500px; 
-            z-index: 100;
-            display: flex; gap: 10px; 
-        }
-        .btn-footer-half {
-            flex: 1; 
-            background: #111827; color: white;
-            padding: 14px; border-radius: 50px; border: none;
-            font-size: 13px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Sombra ajustada */
-            text-decoration: none; 
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        .btn-footer-half:active { transform: scale(0.96); }
-        .btn-instagram-footer {
-            background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D);
-            box-shadow: 0 4px 10px rgba(193, 53, 132, 0.4);
-        }
-
-        /* --- MODALS --- */
+        /* MODAL SYSTEM (Items & Company) */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);
-            z-index: 2000; display: flex; align-items: flex-end; justify-content: center;
-            opacity: 0; pointer-events: none; transition: 0.3s;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px);
+            z-index: 2000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: 0.3s; padding: 20px;
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         
         .modal-card {
-            background: white; width: 100%; max-width: 500px;
-            border-radius: 24px 24px 0 0; max-height: 90vh; overflow-y: auto;
-            transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            padding-bottom: 30px;
+            background: white; width: 100%; max-width: 800px;
+            border-radius: 24px; max-height: 85vh; overflow-y: auto;
+            transform: scale(0.9); transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
         }
-        .modal-overlay.active .modal-card { transform: translateY(0); }
-        .modal-handle { width: 40px; height: 5px; background: #E5E7EB; border-radius: 100px; margin: 12px auto; }
+        .modal-overlay.active .modal-card { transform: scale(1); }
 
-        .company-profile { padding: 0 24px 24px; text-align: center; }
-        .cp-logo { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 12px; border: 4px solid white; box-shadow: var(--shadow-card); margin-top: -40px; background: white;}
-        .cp-bg { height: 100px; background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border-radius: 12px; margin: 10px 10px 0; }
-        
-        .contact-pill {
-            display: flex; align-items: center; gap: 12px;
-            padding: 16px; background: white; border: 1px solid var(--border-medium);
-            border-radius: 16px; margin-bottom: 12px; text-decoration: none; color: var(--text-main);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s;
+        /* ITEM GRID IN MODAL */
+        .items-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); /* Default Mobile */
+            gap: 12px; padding: 20px;
         }
-        .contact-pill:active { background: #F9FAFB; transform: scale(0.98); }
-        
-        .social-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-        .social-btn {
-            padding: 16px; border-radius: 16px; text-align: center; text-decoration: none;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border: 1px solid transparent;
+        @media (min-width: 768px) {
+            .items-grid { grid-template-columns: repeat(4, 1fr); } /* Desktop 4 Colunas */
+            .catalog-container { max-width: 800px; }
         }
-        .sb-fb { background: #EFF6FF; color: #1877F2; }
-        .sb-ig { background: #FFF1F2; color: #E1306C; }
 
+        .item-card {
+            background: #f9fafb; border-radius: 12px; padding: 12px 8px;
+            text-align: center; border: 1px solid #f1f5f9;
+        }
+        .item-img { width: 100%; aspect-ratio: 1/1; object-fit: contain; margin-bottom: 8px; mix-blend-mode: multiply; }
+        .item-qty { background: #EFF6FF; color: #2563EB; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 100px; }
+        .item-name { font-size: 13px; font-weight: 600; margin-top: 6px; }
+
+        /* FOOTER */
+        .footer-vignette { position: fixed; bottom: 0; width: 100%; height: 100px; background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); pointer-events: none; z-index: 90; }
+        .app-footer { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 500px; z-index: 100; display: flex; gap: 10px; }
+        .btn-footer-half { flex: 1; background: #111827; color: white; padding: 14px; border-radius: 50px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border: none; cursor: pointer; }
+        .btn-instagram-footer { background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D); }
     </style>
 </head>
 <body>
 
-    <!-- HEADER -->
     <header class="app-header">
-        <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" 
-             class="logo-header" alt="Logo Dona Antônia" onerror="this.src='https://placehold.co/50x50'">
+        <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-header" alt="Logo">
         <div class="brand"><h1>Super Cestas Dona Antônia</h1></div>
     </header>
 
-    <!-- CATALOG MOUNT POINT -->
-    <main id="catalog-mount" class="catalog-container">
-        <!-- JS INJECTION (BASKETS + DIDACTIC SECTION) -->
-    </main>
+    <main id="catalog-mount" class="catalog-container"></main>
 
-    <!-- VINHETA DE FUNDO PARA OS BOTOES -->
     <div class="footer-vignette"></div>
-
-    <!-- FOOTER FLUTUANTE DUPLO -->
     <footer class="app-footer">
-        <!-- Botão 1: Contato (Modal) -->
-        <button onclick="openModal('company')" class="btn-footer-half">
-            <i class="ph-bold ph-buildings" style="font-size:18px;"></i> Contatos
-        </button>
-
-        <!-- Botão 2: Instagram (Link Direto) -->
-        <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="btn-footer-half btn-instagram-footer" onclick="trackEvent('ClickFooterSocial', {network: 'Instagram'})">
-            <i class="ph-bold ph-instagram-logo" style="font-size:18px;"></i> Instagram
-        </a>
+        <button onclick="openModal('company')" class="btn-footer-half"><i class="ph-bold ph-buildings"></i> Contatos</button>
+        <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="btn-footer-half btn-instagram-footer"><i class="ph-bold ph-instagram-logo"></i> Instagram</a>
     </footer>
 
-    <!-- MODAL COMPANY -->
-    <div id="modal-company" class="modal-overlay" onclick="if(event.target===this) closeModal('company')">
+    <div id="modal-items" class="modal-overlay" onclick="if(event.target===this) closeModal('items')">
         <div class="modal-card">
-            <div class="modal-handle"></div>
-            <button onclick="closeModal('company')" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:24px; color:#9CA3AF; cursor:pointer;"><i class="ph-bold ph-x"></i></button>
-
-            <!-- Creative Profile Header -->
-            <div class="cp-bg"></div>
-            <div class="company-profile">
-                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="cp-logo" onerror="this.src='https://placehold.co/80x80'">
-                <h2 style="font-size:20px; margin:0 0 4px; font-weight:800;">Dona Antônia</h2>
-                <p style="margin:0 0 12px; font-size:12px; color:#6B7280;">Super Cestas Básicas • Desde 2023</p>
-                
-                <!-- Address -->
-                <p style="margin:0 0 24px; font-size:13px; color:#374151; display:flex; align-items:center; justify-content:center; gap:6px;">
-                    <i class="ph-fill ph-map-pin" style="color:#EF4444; font-size:18px;"></i>
-                    R. Trinta, 105 - Jardim Nossa Sra. Aparecida<br>Cuiabá - MT, 78090-660
-                </p>
-
-                <!-- Action Buttons -->
-                <!-- WhatsApp Only as requested -->
-                <a href="https://api.whatsapp.com/send?phone=5565998150975&text=Ol%C3%A1%2C%20gostaria%20de%20fazer%20um%20pedido." target="_blank" class="contact-pill" onclick="trackEvent('ClickWhatsApp', {number: '99815-0975'})" style="border-color:#10B981; background:#F0FDF4;">
-                    <i class="ph-fill ph-whatsapp-logo" style="font-size:24px; color:#10B981;"></i>
-                    <div style="text-align:left;">
-                        <span style="font-size:10px; font-weight:700; color:#059669; text-transform:uppercase;">Falar no WhatsApp</span>
-                        <div style="font-size:16px; font-weight:800; color:#047857;">(65) 99815-0975</div>
-                    </div>
-                </a>
-
-                <!-- Google Review -->
-                <a href="https://g.page/r/CaIREJtO1L6WEBE/review" target="_blank" class="contact-pill" style="margin-top:12px; border-color:#EAB308; background:#FEFCE8;" onclick="trackEvent('ClickReview', {type: 'Google'})">
-                    <i class="ph-fill ph-star" style="font-size:24px; color:#EAB308;"></i>
-                    <div style="text-align:left;">
-                        <span style="font-size:10px; font-weight:700; color:#CA8A04; text-transform:uppercase;">Avalie-nos</span>
-                        <div style="font-size:14px; font-weight:700; color:#854D0E;">Dar 5 Estrelas no Google</div>
-                    </div>
-                </a>
-
-                <div class="social-grid">
-                    <a href="https://www.facebook.com/super.cestas.cuiaba" target="_blank" class="social-btn sb-fb" onclick="trackEvent('ClickSocial', {network: 'Facebook'})">
-                        <i class="ph-bold ph-facebook-logo" style="font-size:24px; margin-bottom:8px;"></i>
-                        <span style="font-size:11px; font-weight:700;">Facebook</span>
-                    </a>
-                    <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="social-btn sb-ig" onclick="trackEvent('ClickSocial', {network: 'Instagram'})">
-                        <i class="ph-bold ph-instagram-logo" style="font-size:24px; margin-bottom:8px;"></i>
-                        <span style="font-size:11px; font-weight:700;">Instagram</span>
-                    </a>
-                </div>
+            <div style="padding: 24px 24px 10px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 10; border-bottom: 1px solid #eee;">
+                <h3 id="modal-basket-name" style="margin:0; font-weight:800;">Itens da Cesta</h3>
+                <button onclick="closeModal('items')" style="background:none; border:none; font-size:24px; cursor:pointer;"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <div id="modal-items-content" class="items-grid"></div>
+            <div style="padding: 20px;">
+                <button id="modal-order-btn" class="btn-action-main btn-whatsapp">PEDIR ESTA CESTA</button>
             </div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <div id="modal-company" class="modal-overlay" onclick="if(event.target===this) closeModal('company')">
+        <div class="modal-card" style="max-width: 450px;">
+            <div style="padding: 40px 24px 24px; text-align: center;">
+                <button onclick="closeModal('company')" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:24px; cursor:pointer;"><i class="ph-bold ph-x"></i></button>
+                <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width:80px; height:80px; border-radius:50%; border:4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom:15px;">
+                <h2 style="margin:0">Dona Antônia</h2>
+                <p style="color:var(--text-sec); font-size:14px;">Cuiabá e Várzea Grande</p>
+                <br>
+                <a href="https://api.whatsapp.com/send?phone=5565998150975" class="btn-action-main btn-whatsapp" style="text-decoration:none">FALAR NO WHATSAPP</a>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- DATA ---
         const BASKETS = {
             'GRANDE': {
                 name: 'Cesta Grande',
@@ -569,86 +336,11 @@
             }
         };
 
-        const STATE = {
-            revealed: { 'PEQUENA': true }
-        };
-
-        // --- HTML DO CARD DIDÁTICO (ATUALIZADO E REDESENHADO) ---
-        const DIDACTIC_SECTION_HTML = `
-        <section class="didactic-section">
-            <div class="didactic-slide">
-                <h2 class="ds-title">6 Coisas que você precisa saber antes de pedir:</h2>
-                
-                <div class="ds-list">
-                    <!-- Item 1 -->
-                    <div class="ds-item">
-                        <div class="ds-number">1</div>
-                        <div class="ds-content">
-                            <div class="ds-item-title">Entrega em Cuiabá e VG</div>
-                            <div class="ds-item-desc">Atendemos toda a região. Consulte a disponibilidade para o seu bairro.</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Item 2 -->
-                    <div class="ds-item">
-                        <div class="ds-number">2</div>
-                        <div class="ds-content">
-                            <div class="ds-item-title">Pagamento na Entrega</div>
-                            <div class="ds-item-desc">Segurança total para você: pague somente quando receber a cesta na sua casa.</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Item 3 -->
-                    <div class="ds-item">
-                        <div class="ds-number">3</div>
-                        <div class="ds-content">
-                            <div class="ds-item-title">Entrega Grátis</div>
-                            <div class="ds-item-desc">Pedindo pela manhã, entregamos no mesmo dia. E não cobramos taxa extra.</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Item 4 -->
-                    <div class="ds-item">
-                        <div class="ds-number">4</div>
-                        <div class="ds-content">
-                            <div class="ds-item-title">Personalize sua Cesta</div>
-                            <div class="ds-item-desc">Troque os produtos que você não usa por outros que você precisa mais.</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Item 5 -->
-                    <div class="ds-item">
-                        <div class="ds-number">5</div>
-                        <div class="ds-content">
-                            <div class="ds-item-title">Somente Marcas Boas</div>
-                            <div class="ds-item-desc">Garantia de qualidade para sua família economizar tempo e dinheiro.</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Item 6 -->
-                    <div class="ds-item">
-                        <div class="ds-number">6</div>
-                        <div class="ds-content">
-                            <div class="ds-item-title">Facilidade no Pagamento</div>
-                            <div class="ds-item-desc">Parcelamos em 3x sem juros e aceitamos cartões Alimentação e Refeição.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        `;
-
-        // --- IMAGENS ---
         function getImg(n) {
             const low = n.toLowerCase();
             const f = 'img/alimento/';
             const c = 'img/limpeza/';
-            
-            // Prioridade Alta
-            if(low.includes('arroz tio alvino')) return f + 'arroztioalvino.jpg';
-            if(low.includes('café premiado')) return f + 'cafepremiado.webp';
-
-            // Alimentos
+            if(low.includes('tio alvino')) return f + 'arroztioalvino.jpg';
             if(low.includes('arroz')) return f + 'Arroz Koblenz 5kg.webp';
             if(low.includes('açúcar')) return f + 'açucar doce dia 2 kg.webp';
             if(low.includes('bolacha')) return f + 'bolacha mybit.webp';
@@ -656,153 +348,98 @@
             if(low.includes('café') && low.includes('500')) return f + 'cafe caboclo 500g.webp';
             if(low.includes('café')) return f + 'cafe caboclo 250g.webp';
             if(low.includes('espaguete')) return f + 'espaguete qdelicia.webp';
-            if(low.includes('farinha')) return f + 'farinha de mandioca.webp';
             if(low.includes('feijão')) return f + 'feijão da casa.webp';
-            if(low.includes('milho')) return f + 'milho verde predileta.webp';
-            if(low.includes('miojo')) return f + 'miojo apti.webp';
-            if(low.includes('molho')) return f + 'molho fugini.webp';
-            if(low.includes('óleo')) return f + 'oleo de soja liza.webp';
-            if(low.includes('ovo')) return f + 'ovo duzia.jpg';
-            if(low.includes('sal')) return f + 'sal.webp';
-            if(low.includes('suco')) return f + 'suco frisco.webp';
-            if(low.includes('tempero')) return f + 'tempero tio jonas.jpg';
-            if(low.includes('trigo')) return f + 'trigo vitoriosa.webp';
-
-            // Limpeza
-            if(low.includes('creme')) return c + 'Creme Dental Sorriso 70g.webp';
-            if(low.includes('desinfetante')) return c + 'Desinfetante Remmus 2L.webp';
             if(low.includes('detergente')) return c + 'Detergente Ype 500ml.webp';
-            if(low.includes('qboa')) return c + 'Qboa 1 Litro.webp';
-            if(low.includes('amaciante')) return c + 'amaciante ype 2L.webp';
-            if(low.includes('louça')) return c + 'esponja de lavar louça.webp';
-            if(low.includes('aço')) return c + 'lã de aço assolan.webp';
-            if(low.includes('papel')) return c + 'papel higienico.webp';
-            if(low.includes('sabonete')) return c + 'sabonete palmolive 85g.webp';
-            if(low.includes('barra')) return c + 'sabão barra ype 900g.webp';
-            if(low.includes('sabão pó') || low.includes('omo')) return c + 'sabão em pó omo 800g.webp';
-            
+            if(low.includes('omo')) return c + 'sabão em pó omo 800g.webp';
             return `https://placehold.co/100x100/e2e8f0/64748b?text=${n.substring(0,3).toUpperCase()}`;
         }
 
-        // --- RENDERIZADOR PREMIUM ---
+        const DIDACTIC_SECTION_HTML = `
+        <section class="didactic-section">
+            <div class="didactic-slide">
+                <h2 class="ds-title">6 Coisas que você precisa saber antes de pedir:</h2>
+                <div class="ds-list">
+                    <div class="ds-item"><div class="ds-number">1</div><div class="ds-content"><div class="ds-item-title">Entrega em Cuiabá e VG</div><div class="ds-item-desc">Atendemos toda a região com agilidade.</div></div></div>
+                    <div class="ds-item"><div class="ds-number">2</div><div class="ds-content"><div class="ds-item-title">Pagamento na Entrega</div><div class="ds-item-desc">Segurança total: pague somente ao receber.</div></div></div>
+                    <div class="ds-item"><div class="ds-number">3</div><div class="ds-content"><div class="ds-item-title">Entrega Grátis</div><div class="ds-item-desc">Consulte condições para seu bairro.</div></div></div>
+                </div>
+            </div>
+        </section>`;
+
         function renderAll() {
             const container = document.getElementById('catalog-mount');
             let html = '';
-
-            const keys = ['PEQUENA', 'ECONOMICA', 'MINI', 'MEDIA', 'GRANDE'];
+            // Sequência da maior para a menor
+            const keys = ['GRANDE', 'MEDIA', 'PEQUENA', 'MINI', 'ECONOMICA'];
 
             keys.forEach((key) => {
                 const data = BASKETS[key];
-                const isRevealed = STATE.revealed[key];
-                
-                // Opções
                 const optsHtml = data.opts.map((o, idx) => `
                     <div class="opt-row ${o.sel ? 'selected' : ''}" onclick="selectOption('${key}', ${idx})">
-                        <div class="opt-info">
-                            <span class="opt-name">${o.n.replace('Com ','')}</span>
-                            <div class="opt-price">
-                                <span class="price-old">${o.norm}</span>
-                                <span class="price-new">${o.desc}</span>
-                            </div>
+                        <div style="display:flex; flex-direction:column">
+                            <span style="font-size:12px; font-weight:600; color:var(--text-sec)">${o.n.replace('Com ','')}</span>
+                            <span class="price-new">${o.desc}</span>
                         </div>
                         <i class="ph-fill ${o.sel ? 'ph-check-circle' : 'ph-circle'}" style="color:${o.sel?'var(--success)':'#D1D5DB'}; font-size:24px;"></i>
                     </div>
                 `).join('');
-                
-                // Itens
-                const itemsHtml = data.items.map(i => {
-                    const qtyText = i.q === 1 ? '1 un' : `${i.q} un`;
-                    let imgName = i.n;
-                    if(i.n.toLowerCase().includes('arroz')) {
-                        const sel = data.opts.find(o => o.sel);
-                        if(sel && sel.n.includes('Tio Alvino')) imgName = 'Arroz Tio Alvino';
-                        if(sel && sel.n.includes('Koblenz')) imgName = 'Arroz Koblenz';
-                    }
 
-                    return `
-                    <div class="item-card">
-                        <img src="${getImg(imgName)}" class="item-img" loading="lazy" alt="${i.n}">
-                        <span class="item-qty">${qtyText}</span>
-                        <div class="item-name">${i.n}</div>
-                    </div>
-                `}).join('');
-
-                const btnHtml = isRevealed 
-                    ? `<button onclick="order('${key}')" class="btn-action-main btn-whatsapp">
-                         <i class="ph-bold ph-whatsapp-logo" style="font-size:20px;"></i> PEDIR NO WHATSAPP
-                       </button>`
-                    : `<button onclick="reveal('${key}')" class="btn-action-main">
-                         <i class="ph-bold ph-caret-down" style="font-size:20px;"></i> VER TODOS OS ITENS
-                       </button>`;
-
-                // Montagem do Card da Cesta
                 html += `
-                    <section class="product-section" id="basket-${key}">
+                    <section class="product-section">
                         <div class="p-main-content">
                             <div class="p-title-row">
                                 <h2 class="p-title">${data.name}</h2>
-                                <span class="p-badge">Entrega Grátis</span>
+                                <span class="p-badge">Qualidade Premium</span>
                             </div>
-                            
-                            <img src="${data.img}" class="basket-hero-img" alt="${data.name}" loading="lazy">
-                            
+                            <img src="${data.img}" class="basket-hero-img" alt="${data.name}">
                             <div class="p-options-list">${optsHtml}</div>
-                            ${btnHtml}
-                        </div>
-                        
-                        <div class="p-expand-content" style="display:${isRevealed ? 'block' : 'none'}">
-                            <div style="text-align:center; margin-bottom:16px; font-size:12px; font-weight:700; color:var(--text-sec); text-transform:uppercase; letter-spacing:1px;">
-                                Itens Inclusos
-                            </div>
-                            <div class="items-grid">${itemsHtml}</div>
+                            <button onclick="openItemsModal('${key}')" class="btn-action-main btn-outline">
+                                <i class="ph-bold ph-list-magnifying-glass"></i> VER TODOS OS ITENS
+                            </button>
+                            <button onclick="order('${key}')" class="btn-action-main btn-whatsapp">
+                                <i class="ph-bold ph-whatsapp-logo"></i> PEDIR NO WHATSAPP
+                            </button>
                         </div>
                     </section>
                 `;
-
-                // LOGICA DE INJEÇÃO DO CARD DIDÁTICO
-                // Insere APÓS a Cesta Pequena (que é a primeira do array 'keys')
-                if (key === 'PEQUENA') {
-                    html += DIDACTIC_SECTION_HTML;
-                }
+                if (key === 'GRANDE') html += DIDACTIC_SECTION_HTML;
             });
-
             container.innerHTML = html;
         }
 
-        // --- AÇÕES ---
+        function openItemsModal(key) {
+            const data = BASKETS[key];
+            const content = document.getElementById('modal-items-content');
+            document.getElementById('modal-basket-name').innerText = `Itens da ${data.name}`;
+            
+            content.innerHTML = data.items.map(i => `
+                <div class="item-card">
+                    <img src="${getImg(i.n)}" class="item-img" alt="${i.n}">
+                    <span class="item-qty">${i.q} un</span>
+                    <div class="item-name">${i.n}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-order-btn').onclick = () => order(key);
+            openModal('items');
+        }
+
         function selectOption(key, idx) {
             BASKETS[key].opts.forEach((o, i) => o.sel = i === idx);
             renderAll();
-        }
-
-        function reveal(key) {
-            STATE.revealed[key] = true;
-            renderAll(); 
-            trackEvent('ViewContent', { content_name: key });
         }
 
         function order(key) {
             const data = BASKETS[key];
             const opt = data.opts.find(o => o.sel); 
             const msg = `Olá, gostaria de encomendar a ${data.name} (${opt.n}) por ${opt.desc}.`;
-            const url = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
-            
-            trackEvent('Lead', { value: parseFloat(opt.desc.replace('R$ ','').replace(',','.')), currency: 'BRL' });
-            window.location.href = url;
+            window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
         }
 
-        // --- MODAL ---
-        function openModal(id) {
-            document.getElementById(`modal-${id}`).classList.add('active');
-            trackEvent('OpenModal', { modal_id: id });
-        }
-        function closeModal(id) {
-            document.getElementById(`modal-${id}`).classList.remove('active');
-        }
+        function openModal(id) { document.getElementById(`modal-${id}`).classList.add('active'); }
+        function closeModal(id) { document.getElementById(`modal-${id}`).classList.remove('active'); }
 
-        // Init
         renderAll();
-
     </script>
 </body>
 </html>
