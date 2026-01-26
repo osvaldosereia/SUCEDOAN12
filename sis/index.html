@@ -1,528 +1,250 @@
-<script>
-    const CONSTANTS = { 
-        PHONE: "5565996813588",
-        LIMITS: { 'econômica': 5, 'economica': 5, 'mini': 7, 'pequena': 9, 'média': 11, 'media': 11, 'grande': 13 }
-    };
-
-    const ChatFlow = {
-        container: null, categories: [], categoryMap: {}, 
-        checkoutState: { paymentMethod: '', couponApplied: false },
-        
-        async start() {
-            this.container = document.getElementById('chat-stream');
-            if(!this.container) return;
-            this.container.innerHTML = '';
-            this.categoryMap = {}; 
-            
-            if(App.data && App.data.length) {
-                App.data.forEach(p => {
-                        if(!p || !p.appCategory || p.categoria.includes('CESTA')) return;
-                        const mainKey = p.appCategory;
-                        if(!this.categoryMap[mainKey]) this.categoryMap[mainKey] = new Set();
-                        if(p.subCategory) this.categoryMap[mainKey].add(p.subCategory);
-                });
-            }
-            this.categories = Object.keys(this.categoryMap).sort();
-
-            const hours = new Date().getHours();
-            let greeting = hours < 12 ? "Bom dia" : (hours < 18 ? "Boa tarde" : "Boa noite");
-            
-            this.addMessage(`${greeting}! Vi que você escolheu a <strong>${App.currentBasket.nome}</strong>.`);
-            this.addMessage(`Quer personalizar ou prefere encomendar a cesta normal?`, 'bot');
-
-            const html = `<div id="act-intro" class="chat-actions">
-                <button class="btn-chat" onclick="ChatFlow.quickOrder()">Encomendar Normal</button>
-                <button class="btn-chat primary" onclick="ChatFlow.startCustomization('act-intro')">Personalizar</button>
-            </div>`;
-            this.container.insertAdjacentHTML('beforeend', html);
-        },
-
-        quickOrder() {
-            const msg = `Olá, quero encomendar a ${App.currentBasket.nome} normal.`;
-            window.location.href = `https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`;
-        },
-
-        async startCustomization(elemId) {
-            const el = document.getElementById(elemId);
-            if(el) el.remove();
-            this.addMessage("Personalizar", 'user');
-            await this.wait(300);
-            this.addMessage("Primeiro, retire o que não quer da sua cesta:");
-            this.showBasketGrid();
-            
-            const id = 'act-removed';
-            this.container.insertAdjacentHTML('beforeend', `<div id="${id}" class="chat-actions" style="margin-top:15px;"><button class="btn-chat primary" onclick="ChatFlow.confirmRemoval('${id}')">Pronto, já retirei</button></div>`);
-        },
-
-        async confirmRemoval(id) {
-            const el = document.getElementById(id);
-            if(el) el.remove();
-            this.addMessage("Pronto, já retirei", 'user');
-            document.getElementById('credit-chip').classList.add('visible');
-            App.updateTotal();
-            await this.wait(400);
-            this.addMessage("Agora, toque numa categoria abaixo para adicionar itens:");
-            
-            // MUDANÇA IMPORTANTE: Em vez de carregar tudo, carrega o menu
-            this.showCategoryMenu();
-        },
-
-        addMessage(text, type = 'bot') {
-            const className = type === 'user' ? 'chat-msg user' : 'chat-msg';
-            this.container.insertAdjacentHTML('beforeend', `<div class="${className}">${text}</div>`);
-            // Scroll suave para o fim
-            requestAnimationFrame(() => {
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            });
-        },
-
-        showBasketGrid() {
-            // Usa o productMap para ser instantâneo
-            const ids = App.cartOrder.filter(id => App.cart[id] > 0);
-            const products = ids.map(id => App.productMap.get(id)).filter(p => p);
-            const html = `<div class="grid-products-row">${products.map(p => App.buildCard(p)).join('')}</div>`;
-            this.container.insertAdjacentHTML('beforeend', html);
-        },
-
-        // NOVA FUNÇÃO: Menu de categorias dentro do chat para não travar
-        showCategoryMenu() {
-            const menuId = 'chat-cat-menu-' + Date.now();
-            const html = `
-            <div id="${menuId}" class="corridor-grid" style="margin-top:15px;">
-                ${this.categories.map(cat => `
-                    <button class="btn-main-cat" onclick="ChatFlow.loadCategoryInChat('${cat}', '${menuId}')">
-                        ${App.toSmartTitleCase(cat)}
-                        <span>▾</span>
-                    </button>
-                `).join('')}
-                <div class="chat-actions" style="grid-column: 1/-1; margin-top:20px;">
-                    <button class="btn-chat primary" onclick="ChatFlow.startCheckout()">Ir para o Caixa</button>
-                </div>
-            </div>`;
-            this.container.insertAdjacentHTML('beforeend', html);
-        },
-
-        loadCategoryInChat(catName, menuId) {
-            // Remove o menu anterior para limpar a tela ou mantém, dependendo do gosto.
-            // Aqui vamos adicionar a seção abaixo.
-            this.addMessage(`Ver ${App.toSmartTitleCase(catName)}`, 'user');
-            
-            // Pequeno delay para UX
-            setTimeout(() => {
-                const subCats = Array.from(this.categoryMap[catName] || []).sort();
-                
-                // Se tiver subcategorias, carrega todas. Se não, carrega a geral.
-                if(subCats.length > 0) {
-                    subCats.forEach(sub => this.showCategorySection(catName, sub));
-                } else {
-                    this.showCategorySection(catName, null);
-                }
-
-                // Adiciona botão para voltar ou ver outra
-                const navId = 'nav-' + Date.now();
-                this.container.insertAdjacentHTML('beforeend', `
-                    <div id="${navId}" class="chat-actions" style="margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
-                         <button class="btn-chat" onclick="document.getElementById('${navId}').remove(); ChatFlow.showCategoryMenu()">Ver Outras Categorias</button>
-                         <button class="btn-chat primary" onclick="ChatFlow.startCheckout()">Ir para o Caixa</button>
-                    </div>
-                `);
-            }, 300);
-        },
-
-        showCategorySection(catName, subCatName) {
-            let products = App.data.filter(p => p.appCategory === catName && !p.categoria.includes('CESTA'));
-            if(subCatName) products = products.filter(p => p.subCategory === subCatName);
-            if(products.length === 0) return;
-            
-            products.sort((a, b) => a.nome.localeCompare(b.nome));
-            const subId = subCatName ? subCatName : "geral";
-            const uniqueId = `sec-${(catName+subId).replace(/[^a-zA-Z0-9]/g, '')}`;
-            const title = subCatName ? subCatName : catName; 
-            
-            const html = `
-            <div id="${uniqueId}" style="margin-top:20px; animation: fadeIn 0.5s ease;">
-                <div class="subcat-title">${App.toSmartTitleCase(title)}</div>
-                <div class="grid-products-row"></div>
-            </div>`;
-            this.container.insertAdjacentHTML('beforeend', html);
-            App.setupPagination(uniqueId, products);
-        },
-
-        async startCheckout() {
-            const totalText = document.getElementById('ccb-val').innerText;
-            const total = parseFloat(totalText.replace('R$ ','').replace(',','.'));
-            
-            if(total < App.currentBasket.valor - 0.05) {
-                alert("Sua cesta ainda não atingiu o valor mínimo original. Adicione mais itens.");
-                return;
-            }
-            
-            document.getElementById('credit-chip').classList.remove('visible');
-            this.addMessage("Finalizar Pedido", 'user');
-            await this.wait(500);
-            
-            let summary = `<div style="font-weight:700; margin-bottom:10px;">Resumo do Pedido</div>`;
-            summary += `<div><strong>Base:</strong> ${App.currentBasket.nome}</div>`;
-            
-            let adds = [], rems = [];
-            for(let id in App.cart) {
-                const qty = App.cart[id];
-                const orig = App.originalCart[id] || 0;
-                if(qty > orig) {
-                    const p = App.productMap.get(id);
-                    if(p) adds.push(`${qty - orig}x ${p.nome}`);
-                }
-            }
-            for(let id in App.originalCart) {
-                const orig = App.originalCart[id];
-                const curr = App.cart[id] || 0;
-                if(curr < orig) {
-                    const p = App.productMap.get(id);
-                    if(p) rems.push(`${orig - curr}x ${p.nome}`);
-                }
-            }
-
-            if(rems.length > 0) summary += `<div style="margin-top:10px; color:#ef4444; font-size:0.9rem;"><strong>Removidos:</strong><br>${rems.join('<br>')}</div>`;
-            if(adds.length > 0) summary += `<div style="margin-top:10px; color:#15803d; font-size:0.9rem;"><strong>Adicionados:</strong><br>${adds.join('<br>')}</div>`;
-            summary += `<div style="margin-top:15px; font-size:1.2rem; font-weight:800; color:var(--primary); text-align:right;">Total: ${totalText}</div>`;
-            
-            this.container.insertAdjacentHTML('beforeend', `<div class="chat-msg wide-summary">${summary}</div>`);
-            await this.wait(1000);
-            this.addMessage("Como prefere pagar na entrega?");
-            const methods = ["Pix", "Dinheiro", "Cartão", "Vale Alimentação"];
-            const btns = methods.map(m => `<button class="btn-chat" onclick="ChatFlow.finish('${m}')">${m}</button>`).join('');
-            this.container.insertAdjacentHTML('beforeend', `<div id="act-pay" class="chat-actions">${btns}</div>`);
-        },
-
-        finish(method) {
-            const el = document.getElementById('act-pay');
-            if(el) el.remove();
-            this.addMessage(method, 'user');
-            const total = document.getElementById('ccb-val').innerText;
-            
-            let adds = [], rems = [];
-            for(let id in App.cart) {
-                const qty = App.cart[id];
-                const orig = App.originalCart[id] || 0;
-                if(qty > orig) {
-                    const p = App.productMap.get(id);
-                    if(p) adds.push(`${qty - orig}x ${p.nome}`);
-                }
-            }
-            for(let id in App.originalCart) {
-                const orig = App.originalCart[id];
-                const curr = App.cart[id] || 0;
-                if(curr < orig) {
-                    const p = App.productMap.get(id);
-                    if(p) rems.push(`${orig - curr}x ${p.nome}`);
-                }
-            }
-
-            let msg = `*NOVO PEDIDO PERSONALIZADO*\nBase: ${App.currentBasket.nome}\n`;
-            if(rems.length) msg += `\n*REMOVIDOS:*\n${rems.join('\n')}`;
-            if(adds.length) msg += `\n*ADICIONADOS:*\n${adds.join('\n')}`;
-            msg += `\n\n*TOTAL: ${total}*\nPagamento: ${method}`;
-            
-            setTimeout(() => window.location.href = `https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`, 1000);
-        },
-
-        wait(ms) { return new Promise(r => setTimeout(r, ms)); }
-    };
-
-    const App = {
-        data: [], productMap: new Map(), cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, cartOrder: [],
-        paginationStore: {}, bannerInterval: null,
-
-        async init() {
-            try {
-                this.initHeroBanner();
-                const res = await fetch('produtos/produtos.json?v=' + Date.now());
-                const content = await res.json();
-                const raw = content.produtos || content;
-                
-                if(!Array.isArray(raw)) throw new Error("Formato inválido");
-
-                // Processa dados e cria o Mapa de Produtos (Performance O(1))
-                this.productMap = new Map();
-                
-                this.data = raw.map(p => {
-                    try {
-                        const catRaw = (p.categoria || "OUTROS").trim();
-                        const parts = catRaw.split('>');
-                        const mainCat = parts[0].trim().toUpperCase();
-                        let appCat = mainCat; 
-                        if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
-                        else if (mainCat.includes('LIMPEZA')) appCat = "LIMPEZA E HIGIENE";
-                        
-                        const processed = {
-                            ...p, id: String(p.id),
-                            nome: this.toSmartTitleCase(p.nome.trim()), 
-                            valor: parseFloat(p.valor || 0), 
-                            offerPrice: parseFloat(p.Valor_Oferta || 0),
-                            isOffer: (p.Oferta === 'Sim'), 
-                            appCategory: appCat, 
-                            subCategory: parts.length > 1 ? parts[1].trim() : null, 
-                            imagem: p.imagem ? `../site/img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg',
-                            categoria: catRaw.toUpperCase(),
-                            items: p.items || [] 
-                        };
-                        
-                        this.productMap.set(processed.id, processed);
-                        return processed;
-                    } catch(err) { return null; }
-                }).filter(x => x !== null);
-
-                this.renderHome();
-                this.renderOffers();
-            } catch (e) { 
-                console.error("Erro critico:", e);
-                const mount = document.getElementById('catalog-mount');
-                if(mount) mount.innerHTML = '<div style="text-align:center; padding:20px;">Erro ao carregar dados.</div>';
-            }
-        },
-
-        setupPagination(sectionId, products) {
-            const isDesktop = window.innerWidth >= 768;
-            const initialLimit = isDesktop ? 8 : 4; 
-            this.paginationStore[sectionId] = { products, currentIndex: 0, currentLimit: initialLimit, step: initialLimit };
-            this.renderPagedSection(sectionId, false);
-        },
-
-        renderPagedSection(sectionId, isUpdate = false) {
-            const store = this.paginationStore[sectionId];
-            if(!store) return;
-            const batch = store.products.slice(store.currentIndex, store.currentIndex + store.currentLimit);
-            const container = document.querySelector(`#${sectionId} .grid-products-row`);
-            if(!container) return;
-
-            const html = batch.map(p => this.buildCard(p)).join('');
-            container.insertAdjacentHTML('beforeend', html);
-
-            store.currentIndex += batch.length;
-            const oldBtn = document.getElementById(`btn-${sectionId}`);
-            if(oldBtn) oldBtn.remove();
-
-            if(store.currentIndex < store.products.length) {
-                const btnHtml = `<button id="btn-${sectionId}" class="btn-load-more" onclick="App.renderPagedSection('${sectionId}', true)">Ver Mais</button>`;
-                document.getElementById(sectionId).insertAdjacentHTML('beforeend', btnHtml);
-            }
-        },
-
-        renderHome() {
-            const container = document.getElementById('catalog-mount');
-            if(!container) return;
-            const baskets = this.data.filter(p => p.categoria.includes('CESTA')).sort((a,b) => b.valor - a.valor);
-            container.innerHTML = baskets.map(p => `
-                <section class="product-section">
-                    <div class="p-main-content">
-                        <h2 class="p-title">${p.nome}</h2>
-                        <img src="${p.imagem}" class="basket-hero-img" alt="${p.nome}" width="300" height="300">
-                        <div class="price-display">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
-                        <button class="btn btn-outline" onclick="App.openBasketList('${p.id}')"><i class="ph-bold ph-list-bullets"></i> VER LISTA DE PRODUTOS</button>
-                        <button class="btn btn-primary" onclick="App.openCustomizer('${p.id}')"><i class="ph-bold ph-magic-wand"></i> PERSONALIZAR CESTA</button>
-                        <button class="btn btn-success" onclick="App.directOrder('${p.nome}')"><i class="ph-bold ph-whatsapp-logo"></i> COMPRAR AGORA</button>
-                    </div>
-                </section>
-            `).join('');
-        },
-
-        renderOffers() {
-            const offers = this.data.filter(p => p.isOffer);
-            const track = document.getElementById('offers-track');
-            if(!track || offers.length === 0) return;
-            document.getElementById('offers-carousel-container').classList.remove('hidden');
-            track.innerHTML = offers.map(p => `
-                <div class="offer-card-simple no-click">
-                    <div class="cp-img-box">
-                        <img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100">
-                        <span class="cp-tag-off">OFERTA</span>
-                    </div>
-                    <div class="cp-price offer-price">
-                        R$ ${p.offerPrice.toFixed(2).replace('.',',')} 
-                        <span class="old-price">R$${p.valor.toFixed(2).replace('.',',')}</span>
-                    </div>
-                    <div class="cp-title">${p.nome}</div>
-                </div>
-            `).join('');
-        },
-
-        openBasketList(id) {
-            // CORREÇÃO DE PERFORMANCE: Usa productMap em vez de find
-            const basket = this.productMap.get(id); 
-            if(!basket) return;
-            
-            document.getElementById('m-title').innerText = basket.nome;
-            let foodHtml = '', cleanHtml = '';
-            
-            if(basket.items && basket.items.length > 0) {
-                basket.items.forEach(item => {
-                    const prod = this.productMap.get(String(item.id));
-                    const name = prod ? prod.nome : `Produto #${item.id}`;
-                    const line = `<div class="product-item"><span class="qty-badge">${item.qty}</span> ${name}</div>`;
-                    if(prod && prod.appCategory.includes('LIMPEZA')) cleanHtml += line; else foodHtml += line;
-                });
-            }
-            
-            let html = '';
-            if(foodHtml) html += `<div class="cat-title">Alimentos</div>${foodHtml}`;
-            if(cleanHtml) html += `<div class="cat-title">Limpeza</div>${cleanHtml}`;
-            
-            document.getElementById('m-content').innerHTML = html || '<p>Lista não disponível.</p>';
-            openModal('items');
-        },
-
-        openCustomizer(id) {
-            const basket = this.productMap.get(id);
-            if(!basket) return;
-            this.currentBasket = basket;
-            this.cart = {};
-            this.cartOrder = [];
-            
-            if(basket.items) {
-                basket.items.forEach(i => {
-                    const pid = String(i.id);
-                    this.cart[pid] = (this.cart[pid] || 0) + parseInt(i.qty);
-                    if(!this.cartOrder.includes(pid)) this.cartOrder.push(pid);
-                });
-            }
-            this.originalCart = { ...this.cart }; 
-            
-            let sumItems = 0;
-            for(let pid in this.cart) {
-                const p = this.productMap.get(pid);
-                if(p) sumItems += (p.isOffer ? p.offerPrice : p.valor) * this.cart[pid];
-            }
-            this.baseFee = basket.valor - sumItems;
-            
-            // Ativa o modo
-            document.body.classList.add('customizer-mode');
-            window.scrollTo(0,0);
-            this.updateTotal();
-            ChatFlow.start();
-        },
-
-        goHome() {
-            if(confirm("Sair da personalização?")) {
-                document.body.classList.remove('customizer-mode');
-                document.getElementById('credit-chip').classList.remove('visible');
-                window.scrollTo(0,0);
-            }
-        },
-
-        modQty(id, delta) {
-            if(!this.cart[id]) this.cart[id] = 0;
-            this.cart[id] += delta;
-            if(this.cart[id] <= 0) {
-                delete this.cart[id];
-                this.cartOrder = this.cartOrder.filter(x => x !== id);
-            } else if(!this.cartOrder.includes(id)) {
-                this.cartOrder.unshift(id);
-            }
-            this.updateCardUI(id);
-            this.updateTotal();
-        },
-
-        updateCardUI(id) {
-            const qty = this.cart[id] || 0;
-            const btns = document.querySelectorAll(`[id^="btn-add-${id}"]`);
-            const ctrls = document.querySelectorAll(`[id^="qty-ctrl-${id}"]`);
-            const vals = document.querySelectorAll(`[id^="qty-val-${id}"]`);
-            
-            btns.forEach(b => qty > 0 ? b.classList.add('hidden') : b.classList.remove('hidden'));
-            ctrls.forEach(c => c.style.display = qty > 0 ? 'flex' : 'none');
-            vals.forEach(v => v.innerText = qty);
-        },
-
-        updateTotal() {
-            let sum = 0;
-            for(let id in this.cart) {
-                const p = this.productMap.get(id);
-                if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
-            }
-            const total = Math.max(0, sum + this.baseFee);
-            const el = document.getElementById('ccb-val');
-            if(el) el.innerText = "R$ " + total.toFixed(2).replace('.',',');
-            const btn = document.querySelector('.ccb-btn');
-            if(btn && total < this.currentBasket.valor - 0.05) {
-                btn.classList.add('disabled');
-                btn.innerText = `Falta R$ ${(this.currentBasket.valor - total).toFixed(2)}`;
-            } else if(btn) {
-                btn.classList.remove('disabled');
-                btn.innerText = "Ver Cesta";
-            }
-        },
-
-        buildCard(p) {
-            const qty = this.cart[p.id] || 0;
-            const price = p.isOffer ? p.offerPrice : p.valor;
-            const safeId = String(p.id);
-            return `
-            <div class="card-prod">
-                <div class="cp-img-box">
-                    <img src="${p.imagem}" class="cp-img" loading="lazy">
-                    ${p.isOffer ? '<span class="cp-tag-off">OFERTA</span>' : ''}
-                </div>
-                <div class="card-action-row">
-                    <div id="btn-add-${safeId}" class="btn-circle-add ${qty>0?'hidden':''}" onclick="App.modQty('${safeId}', 1)">+</div>
-                    <div id="qty-ctrl-${safeId}" class="qty-ctrl-float" style="display:${qty>0?'flex':'none'}">
-                        <div class="qcf-btn" onclick="App.modQty('${safeId}', -1)">-</div>
-                        <div id="qty-val-${safeId}" class="qcf-val">${qty}</div>
-                        <div class="qcf-btn" onclick="App.modQty('${safeId}', 1)">+</div>
-                    </div>
-                </div>
-                <div class="cp-price ${p.isOffer?'offer-price':''}">R$ ${price.toFixed(2).replace('.',',')}</div>
-                <div class="cp-title">${p.nome}</div>
-            </div>`;
-        },
-        
-        toggleCatMenu(e) {
-            if(e) e.stopPropagation();
-            const menu = document.getElementById('cat-dropdown');
-            menu.classList.toggle('active');
-            if(menu.classList.contains('active')) {
-                menu.innerHTML = `<div class="corridor-grid">
-                    ${ChatFlow.categories.map(cat => {
-                        const subs = Array.from(ChatFlow.categoryMap[cat] || []).sort();
-                        return `<div class="corridor-card">
-                            <button class="btn-main-cat" onclick="App.scrollToSection('sec-${(cat+ (subs.length?subs[0]:'')).replace(/[^a-zA-Z0-9]/g, '')}')">${this.toSmartTitleCase(cat)}</button>
-                            <div class="sub-cat-list">${subs.map(s => `<button class="btn-sub-cat" onclick="App.scrollToSection('sec-${(cat+s).replace(/[^a-zA-Z0-9]/g, '')}')"><span class="bsc-label">${this.toSmartTitleCase(s)}</span></button>`).join('')}</div>
-                        </div>`;
-                    }).join('')}
-                </div>`;
-            }
-        },
-
-        scrollToSection(id) {
-            document.getElementById('cat-dropdown').classList.remove('active');
-            // Se o elemento não existir no chat, carrega a categoria primeiro
-            const el = document.getElementById(id);
-            if(el) {
-                window.scrollTo({top: el.offsetTop - 80, behavior: 'smooth'});
-            } else {
-                alert("Por favor, selecione a categoria no chat primeiro.");
-            }
-        },
-        
-        openSheet(id) { document.getElementById(id).classList.add('open'); document.body.classList.add('no-scroll'); },
-        closeSheet(id) { document.getElementById(id).classList.remove('open'); document.body.classList.remove('no-scroll'); },
-        directOrder(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Olá, quero pedir a ' + name)}`, '_blank'); },
-        toSmartTitleCase(str) { return str ? str.toLowerCase().replace(/(?:^|\s)\w/g, m => m.toUpperCase()) : ''; },
-
-        initHeroBanner() {
-            const track = document.getElementById('hero-banner-track');
-            if(!track) return;
-            let index = 0;
-            this.bannerInterval = setInterval(() => {
-                index = (index + 1) % 6;
-                track.scrollTo({ left: index * (track.offsetWidth * 0.8), behavior: 'smooth' });
-                const dots = document.querySelectorAll('.hb-dot');
-                dots.forEach((d, i) => i === index ? d.classList.add('active') : d.classList.remove('active'));
-            }, 4000);
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMAS | Web Sandbox v1.0</title>
+    <style>
+        :root {
+            --bg: #f4f4f9;
+            --surface: #ffffff;
+            --primary: #2563eb;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--surface);
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        main {
+            flex: 1;
+            max-width: 1000px;
+            margin: 2rem auto;
+            width: 95%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .upload-area {
+            background: var(--surface);
+            padding: 2rem;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+
+        .upload-area:hover { border-color: var(--primary); }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .file-card {
+            background: var(--bg);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 44px;
+            width: 100%;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #preview-container {
+            display: none;
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            flex-direction: column;
+            height: 70vh;
+        }
+
+        .preview-header {
+            padding: 0.75rem;
+            background: #334155;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .hidden { display: none !important; }
+
+        svg { width: 20px; height: 20px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Web Sandbox Express</h1>
+    <p>Teste seus arquivos Index + JSON instantaneamente</p>
+</header>
+
+<main>
+    <section class="upload-area" id="drop-zone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px; height:48px; color: var(--primary); margin-bottom: 1rem;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-7 5-5 5 5m-5-5v12"/>
+        </svg>
+        <p>Arraste seu <strong>index.html</strong> e arquivos <strong>.json</strong> aqui</p>
+        <input type="file" id="file-input" multiple accept=".html,.json" class="hidden">
+        <button onclick="document.getElementById('file-input').click()" style="margin-top: 1rem; width: auto;">Selecionar Arquivos</button>
+        
+        <div id="file-list" class="file-grid"></div>
+    </section>
+
+    <button id="run-btn" disabled onclick="renderApp()">
+        Fazer "Deploy" e Rodar
+    </button>
+
+    <div id="preview-container">
+        <div class="preview-header">
+            <span>Ambiente de Teste Ativo</span>
+            <button onclick="location.reload()" style="width: auto; padding: 4px 12px; font-size: 0.8rem; background: #ef4444;">Encerrar</button>
+        </div>
+        <iframe id="sandbox-iframe"></iframe>
+    </div>
+</main>
+
+<script>
+    const state = {
+        html: null,
+        data: {}
     };
 
-    function openModal(id) { document.getElementById(`modal-${id}`).classList.add('active'); document.body.classList.add('no-scroll'); }
-    function closeModal(id) { document.getElementById(`modal-${id}`).classList.remove('active'); document.body.classList.remove('no-scroll'); }
+    const fileInput = document.getElementById('file-input');
+    const fileList = document.getElementById('file-list');
+    const runBtn = document.getElementById('run-btn');
+    const previewContainer = document.getElementById('preview-container');
+    const iframe = document.getElementById('sandbox-iframe');
 
-    document.addEventListener('DOMContentLoaded', () => App.init());
+    fileInput.onchange = (e) => handleFiles(e.target.files);
+
+    async function handleFiles(files) {
+        fileList.innerHTML = '';
+        const fileArray = Array.from(files);
+
+        for (const file of fileArray) {
+            const card = document.createElement('div');
+            card.className = 'file-card';
+            card.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                ${file.name}
+            `;
+            fileList.appendChild(card);
+
+            if (file.name === 'index.html') {
+                state.html = await file.text();
+            } else if (file.name.endsWith('.json')) {
+                const content = await file.text();
+                try {
+                    state.data[file.name] = JSON.parse(content);
+                } catch (e) {
+                    console.error(`Erro no JSON ${file.name}:`, e);
+                }
+            }
+        }
+        
+        runBtn.disabled = !state.html;
+    }
+
+    function renderApp() {
+        if (!state.html) return;
+
+        // Injeta o script de interceptação de JSON no HTML original
+        // Isso simula o carregamento de arquivos JSON locais como se fossem respostas de rede
+        const injectionScript = `
+            <script>
+                const MOCK_DATA = ${JSON.stringify(state.data)};
+                const originalFetch = window.fetch;
+                window.fetch = async (url, options) => {
+                    const filename = url.split('/').pop();
+                    if (MOCK_DATA[filename]) {
+                        console.log('Sandbox: Interceptando fetch para', filename);
+                        return {
+                            ok: true,
+                            json: async () => MOCK_DATA[filename],
+                            text: async () => JSON.stringify(MOCK_DATA[filename])
+                        };
+                    }
+                    return originalFetch(url, options);
+                };
+            <\/script>
+        `;
+
+        const finalHtml = state.html.replace('<head>', '<head>' + injectionScript);
+        
+        const blob = new Blob([finalHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        
+        previewContainer.style.display = 'flex';
+        iframe.src = url;
+        
+        document.getElementById('drop-zone').classList.add('hidden');
+        runBtn.classList.add('hidden');
+        
+        window.scrollTo({ top: previewContainer.offsetTop - 20, behavior: 'smooth' });
+    }
+
+    // Drag and Drop support
+    const dropZone = document.getElementById('drop-zone');
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(name => {
+        dropZone.addEventListener(name, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    dropZone.addEventListener('drop', e => {
+        handleFiles(e.dataTransfer.files);
+    });
 </script>
+
+</body>
+</html>
