@@ -406,7 +406,7 @@
             }, 500);
         }
 
-        function startAudioSequence() {
+      function startAudioSequence() {
             // 1. Mostra "Gravando..."
             const gravandoMsg = addBotMessage("Gravando áudio...");
             
@@ -414,15 +414,14 @@
             setTimeout(() => {
                 gravandoMsg.remove(); 
                 
-                // TESTE: Usando um áudio da internet para garantir que toca
-                // Se tocar, o problema era o seu arquivo local
-                addBotMessage("Testando com áudio online:");
-                sendAudioPlayer("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "audio1");
+                // VOLTAMOS PARA O SEU ARQUIVO REAL
+                // Importante: O arquivo audio.mp3 deve estar na mesma pasta do index.html
+                sendAudioPlayer("audio.mp3", "audio1");
 
                 // 3. Espera 10 segundos
                 setTimeout(() => {
-                    // Manda o segundo (mesmo link só para teste)
-                    sendAudioPlayer("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "audio2");
+                    // Manda o segundo áudio
+                    sendAudioPlayer("audio2.mp3", "audio2");
 
                     // 4. Encerramento
                     setTimeout(() => {
