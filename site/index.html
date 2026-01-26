@@ -111,11 +111,68 @@
         .cat-dropdown::-webkit-scrollbar-track { background: #f1f5f9; }
         .cat-dropdown::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 4px; border: 2px solid #f1f5f9; }
 
-        /* --- 4. HERO & HOME --- */
+        /* --- 4. HERO BANNER ROTATIVO (NOVO) --- */
         #home-view { padding-top: var(--header-height); background: #f7f7f7; min-height: 100vh; }
-        .hero { padding: 30px 0 35px; text-align: center; border-bottom: 1px solid #f0f0f0; background: #ffffff; margin-bottom: 20px; }
-        .hero h1 { font-size: 1.3rem; line-height: 1.2; color: var(--primary); margin-bottom: 10px; font-weight: 600; }
-        .hero p { color: var(--text-light); font-size: 1rem; margin: 0 auto; line-height: 1.5; }
+        
+        .hero-banner-section {
+            padding: 20px 0;
+            background: #ffffff;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .hb-track {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            scroll-snap-type: x mandatory;
+            padding: 10px 4px 20px; /* Padding bottom for scrollbar/shadow */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .hb-track::-webkit-scrollbar { display: none; }
+
+        .hb-card {
+            flex: 0 0 100%; /* Mobile: 1 por vez */
+            scroll-snap-align: center;
+            background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transition: transform 0.3s ease;
+            min-height: 100px;
+        }
+        .hb-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+
+        .hb-icon {
+            width: 50px; height: 50px;
+            background: #fef2f2;
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .hb-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #334155;
+            line-height: 1.4;
+        }
+        
+        /* Indicadores de página (bolinhas) */
+        .hb-indicators {
+            display: flex; justify-content: center; gap: 6px; margin-top: -10px; padding-bottom: 10px;
+        }
+        .hb-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.3s; }
+        .hb-dot.active { background: var(--primary); width: 20px; border-radius: 4px; }
 
         .home-grid-container { padding: 0px 0 60px; }
         .baskets-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
@@ -322,6 +379,10 @@
             .nav-arrow { width: 40px; height: 40px; opacity: 1; pointer-events: auto; } 
             .nav-prev { left: -20px; }
             .nav-next { right: -20px; }
+            
+            /* Banner Hero Desktop: 3 cards */
+            .hb-card { flex: 0 0 32%; }
+
             #customizer-view:not(.hidden) { max-width: 1200px; margin: 0 auto; padding: 60px 20px 100px; }
             .chat-actions { display: flex; width: auto; }
             .btn-chat { width: auto; }
@@ -358,10 +419,37 @@
     </header>
 
     <main id="home-view">
-        <section class="hero">
+        <section class="hero-banner-section">
             <div class="container">
-                <h1>Olá! Escolha a cesta ideal para a sua família.</h1>
-                <p>Encomende ela normal ou personalize.</p>
+                <div id="hero-banner-track" class="hb-track">
+                    <div class="hb-card">
+                        <div class="hb-icon">📦</div>
+                        <div class="hb-text">9 Opções de<br>Cestas Básicas</div>
+                    </div>
+                    <div class="hb-card">
+                        <div class="hb-icon">🏠</div>
+                        <div class="hb-text">Pague somente<br>na Entrega</div>
+                    </div>
+                    <div class="hb-card">
+                        <div class="hb-icon">🚚</div>
+                        <div class="hb-text">Não Cobramos<br>Taxa de Entrega</div>
+                    </div>
+                    <div class="hb-card">
+                        <div class="hb-icon">💳</div>
+                        <div class="hb-text">3x Sem Juros<br>no Cartão</div>
+                    </div>
+                    <div class="hb-card">
+                        <div class="hb-icon">🍽️</div>
+                        <div class="hb-text">Aceitamos Vales<br>Alimentação</div>
+                    </div>
+                    <div class="hb-card">
+                        <div class="hb-icon">🚀</div>
+                        <div class="hb-text">Peça até 9h e<br>Receba Hoje</div>
+                    </div>
+                </div>
+                <div class="hb-indicators" id="hb-dots">
+                    <div class="hb-dot active"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div>
+                </div>
             </div>
         </section>
         
@@ -1018,6 +1106,8 @@
         const App = {
             data: [], cart: {}, currentBasket: null, baseFee: 0, originalCart: {}, currentLimit: 99, cartOrder: [], appliedCoupon: false,
             paginationStore: {},
+            bannerInterval: null,
+
             async init() {
                 document.addEventListener('click', (e) => {
                     const menu = document.getElementById('cat-dropdown');
@@ -1026,6 +1116,9 @@
                         App.toggleCatMenu(null);
                     }
                 });
+
+                // Inicializa o banner rotativo
+                this.initHeroBanner();
 
                 try {
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
@@ -1058,7 +1151,6 @@
                         };
                     });
                     
-                    // --- REINSERIDO A ORDENAÇÃO ALFABÉTICA GLOBAL ---
                     this.data.sort((a, b) => a.nome.localeCompare(b.nome));
 
                     const saved = localStorage.getItem('da_state');
@@ -1097,6 +1189,37 @@
                     document.getElementById('home-list').innerHTML = `<div style="text-align:center; padding:40px;">Erro ao carregar.<button onclick="location.reload()">Tentar Novamente</button></div>`;
                 }
             },
+
+            initHeroBanner() {
+                const track = document.getElementById('hero-banner-track');
+                const dots = document.querySelectorAll('.hb-dot');
+                if(!track) return;
+
+                let index = 0;
+                const total = 6;
+                const isDesktop = window.innerWidth >= 1024;
+                const step = isDesktop ? 3 : 1; 
+
+                const scrollNext = () => {
+                    index = (index + step) % total;
+                    if(isDesktop && index > total - 3) index = 0;
+                    
+                    const cardWidth = track.querySelector('.hb-card').offsetWidth;
+                    const gap = 16;
+                    track.scrollTo({ left: index * (cardWidth + gap), behavior: 'smooth' });
+                    
+                    dots.forEach(d => d.classList.remove('active'));
+                    if(dots[index]) dots[index].classList.add('active');
+                };
+
+                this.bannerInterval = setInterval(scrollNext, 3500);
+
+                // Stop on interaction
+                const stopAuto = () => { if(this.bannerInterval) clearInterval(this.bannerInterval); };
+                track.addEventListener('touchstart', stopAuto, {passive: true});
+                track.addEventListener('mousedown', stopAuto);
+            },
+
             saveState() {
                 localStorage.setItem('da_state', JSON.stringify({
                     view: document.body.classList.contains('customizer-mode') ? 'customizer' : 'home',
@@ -1175,10 +1298,7 @@
             setupPagination(sectionId, products, type='home') {
                 const isDesktop = window.innerWidth >= 1024;
                 const cols = isDesktop ? 6 : (type === 'home' || sectionId.includes('basket-grid') ? 3 : 2);
-                
-                // Primeira carga: Apenas 1 linha
                 let limit = cols; 
-
                 this.paginationStore[sectionId] = { products, currentIndex: 0, limit, type, lastSubCat: '', cols };
                 this.loadMore(sectionId, true);
             },
@@ -1213,8 +1333,6 @@
             
             grid.insertAdjacentHTML('beforeend', batchHtml);
             data.currentIndex = nextIndex;
-            
-            // Define o limite para as próximas cargas: 3 linhas (3x2 colunas mobile / 3x6 colunas desktop)
             data.limit = data.cols * 3;
 
             const oldBtn = document.getElementById(`btn-${sectionId}`);
@@ -1243,16 +1361,13 @@
                         return `
                         <div class="home-basket-card">
                             <img src="${p.imagem}" class="hbc-img-large" onclick="App.openPhoto('${p.imagem}', '${p.nome}')" alt="${p.nome}">
-                            
                             <div class="hbc-content">
                                 <div class="hbc-main-info">
                                     <h2 class="hbc-title">${p.nome}</h2>
                                     <div class="hbc-price-highlight">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
                                 </div>
-                                
                                 <div class="hbc-subtitle">Itens e Quantidades</div>
                                 <div id="${sectionId}"></div>
-                                
                                 <div class="hbc-actions">
                                     <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button>
                                     <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar a Cesta Normal</button>
@@ -1284,7 +1399,6 @@
                         <div class="cp-img-box">
                             <img src="${p.imagem}" class="cp-img" alt="${p.nome}" loading="lazy">
                         </div>
-                        
                         <div class="cp-price offer-price" style="margin-top:5px;">
                             R$ ${p.offerPrice.toFixed(2).replace('.',',')}
                             <small>R$${p.valor.toFixed(2).replace('.',',')}</small>
