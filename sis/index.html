@@ -38,7 +38,7 @@
         }
         
         /* Utilitários */
-        body.no-scroll { overflow: hidden !important; height: 100vh; }
+        body.no-scroll { overflow: hidden !important; height: 100vh; touch-action: none; }
         .hidden { display: none !important; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; width: 100%; }
         img { display: block; max-width: 100%; height: auto; }
@@ -93,17 +93,17 @@
         @media(min-width: 1024px) { .carousel-track { grid-auto-columns: calc((100% - 50px) / 6); } }
         
         .offer-card-simple { display: flex; flex-direction: column; background: #fff; padding: 10px; border-radius: 12px; border: 1px solid #e5e7eb; position: relative; cursor: default; }
-        
+        .offer-card-simple.no-click { pointer-events: none; } /* Desabilita cliques */
+
+        /* Z-Index revisado: Etiqueta > Imagem */
         .cp-img-box { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; z-index: 1; }
         .cp-img { width: 100%; height: 100%; object-fit: contain; }
         
-        /* Etiqueta por cima da foto */
-        .cp-tag-off { position: absolute; top: 5px; right: 5px; background: #029939; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; z-index: 10; pointer-events: none; }
+        .cp-tag-off { position: absolute; top: 5px; right: 5px; background: #029939; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; z-index: 20; }
         
         .cp-price { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; }
         .cp-price.offer-price { color: #dc2626; }
-        /* Preço antigo riscado cinza */
-        .old-price { font-size: 0.7rem; text-decoration: line-through; color: #9ca3af; margin-left: 6px; font-weight: 400; }
+        .old-price { font-size: 0.75rem; text-decoration: line-through; color: #9ca3af; margin-left: 6px; font-weight: 400; }
         
         .cp-title { font-size: 0.75rem; color: #333; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
@@ -176,8 +176,9 @@
         .card-prod { position: relative; display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border: none; background: transparent; }
         
         /* Botões de Ação (+ e -) */
-        /* Z-index 50 garante que fique acima de tudo no card */
+        /* Z-index 50 garante prioridade no clique. */
         .card-action-row { display: flex; justify-content: flex-end; margin-top: -24px; margin-right: 6px; margin-bottom: 2px; position: relative; z-index: 50; height: 32px; pointer-events: auto; }
+        
         .btn-circle-add { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; line-height: 1; padding-bottom: 3px; user-select: none; }
         .qty-ctrl-float { background: white; border: 1px solid #e5e5e5; border-radius: 19px; display: flex; align-items: center; height: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; user-select: none; }
         .qcf-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer; font-weight: 700; }
@@ -232,10 +233,58 @@
             
             <div class="header-actions">
                 <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" title="Instagram" aria-label="Instagram">
-                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                 </button>
                 <button class="ah-icon-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565996813588','_blank')" title="WhatsApp" aria-label="Whatsapp">
                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.017-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                </button>
+                <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')" style="width:32px; height:32px; font-size:1rem; margin-left:0;">?</div>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-view">
+        <section class="hero-banner-section">
+            <div class="container">
+                <div id="hero-banner-track" class="hb-track">
+                    <div class="hb-card"><div class="hb-icon">📍</div><div class="hb-text">Atendemos Cuiabá e<br>Várzea Grande</div></div>
+                    <div class="hb-card"><div class="hb-icon">📦</div><div class="hb-text">9 Opções de<br>Cestas Básicas</div></div>
+                    <div class="hb-card"><div class="hb-icon">🏠</div><div class="hb-text">Pague somente<br>na Entrega</div></div>
+                    <div class="hb-card"><div class="hb-icon">🚚</div><div class="hb-text">Não Cobramos<br>Taxa de Entrega</div></div>
+                    <div class="hb-card"><div class="hb-icon">💳</div><div class="hb-text">3x Sem Juros<br>no Cartão</div></div>
+                    <div class="hb-card"><div class="hb-icon">🚀</div><div class="hb-text">Peça até 9h e<br>Receba Hoje</div></div>
+                </div>
+                <div class="hb-indicators"><div class="hb-dot active"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div><div class="hb-dot"></div></div>
+            </div>
+        </section>
+
+        <div id="offers-carousel-container" class="offers-section hidden">
+            <div class="offers-header">
+                <div class="offers-title">🔥 Ofertas Especiais</div>
+            </div>
+            <div id="offers-track" class="carousel-track"></div>
+        </div>
+
+        <div id="catalog-mount" class="catalog-container">
+            <div style="text-align:center; padding:40px; grid-column:1/-1;">Carregando Cestas...</div>
+        </div>
+    </main>
+
+    <div id="customizer-view">
+        <div class="cust-header">
+            <div class="cust-header-inner">
+                <div style="display:flex; align-items:center;">
+                    <div class="ah-back-btn" onclick="App.goHome()">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <button id="btn-cat-menu" class="ah-cat-btn" onclick="App.toggleCatMenu(event)">
+                        Prateleiras ▾
+                    </button>
+                </div>
+
+                <div class="header-actions">
+                    <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" style="width:32px; height:32px;">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                 </button>
                 <div class="help-btn-visible" onclick="App.openSheet('faq-sheet')" style="width:32px; height:32px; font-size:1rem; margin-left:0;">?</div>
             </div>
@@ -310,12 +359,14 @@
                 this.categoryMap = {}; 
                 
                 // Mapeia Categorias e Subcategorias com segurança
-                App.data.forEach(p => {
-                     if(!p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
-                     const mainKey = p.appCategory;
-                     if(!this.categoryMap[mainKey]) this.categoryMap[mainKey] = new Set();
-                     if(p.subCategory) this.categoryMap[mainKey].add(p.subCategory);
-                });
+                if(App.data && App.data.length) {
+                    App.data.forEach(p => {
+                         if(!p || !p.appCategory || p.appCategory === 'undefined' || p.categoria.includes('CESTA')) return;
+                         const mainKey = p.appCategory;
+                         if(!this.categoryMap[mainKey]) this.categoryMap[mainKey] = new Set();
+                         if(p.subCategory) this.categoryMap[mainKey].add(p.subCategory);
+                    });
+                }
                 this.categories = Object.keys(this.categoryMap).sort();
 
                 const hours = new Date().getHours();
@@ -440,7 +491,7 @@
                     const orig = App.originalCart[id] || 0;
                     if(qty > orig) {
                         const p = App.data.find(x => x.id === id);
-                        adds.push(`${qty - orig}x ${p.nome}`);
+                        if(p) adds.push(`${qty - orig}x ${p.nome}`);
                     }
                 }
                 
@@ -450,7 +501,7 @@
                     const curr = App.cart[id] || 0;
                     if(curr < orig) {
                         const p = App.data.find(x => x.id === id);
-                        rems.push(`${orig - curr}x ${p.nome}`);
+                        if(p) rems.push(`${orig - curr}x ${p.nome}`);
                     }
                 }
 
@@ -485,7 +536,7 @@
                     const orig = App.originalCart[id] || 0;
                     if(qty > orig) {
                         const p = App.data.find(x => x.id === id);
-                        adds.push(`${qty - orig}x ${p.nome}`);
+                        if(p) adds.push(`${qty - orig}x ${p.nome}`);
                     }
                 }
                 for(let id in App.originalCart) {
@@ -493,7 +544,7 @@
                     const curr = App.cart[id] || 0;
                     if(curr < orig) {
                         const p = App.data.find(x => x.id === id);
-                        rems.push(`${orig - curr}x ${p.nome}`);
+                        if(p) rems.push(`${orig - curr}x ${p.nome}`);
                     }
                 }
 
@@ -516,38 +567,47 @@
             async init() {
                 try {
                     this.initHeroBanner();
-                    // Carregamento de dados
+                    // Carregamento de dados com timestamp para evitar cache
                     const res = await fetch('produtos/produtos.json?v=' + Date.now());
                     const content = await res.json();
                     const raw = content.produtos || content;
                     
+                    if(!Array.isArray(raw)) throw new Error("Formato inválido");
+
                     this.data = raw.map(p => {
-                        const catRaw = (p.categoria || "OUTROS").trim();
-                        const parts = catRaw.split('>');
-                        const mainCat = parts[0].trim().toUpperCase();
-                        
-                        let appCat = mainCat; 
-                        if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
-                        else if (mainCat.includes('LIMPEZA')) appCat = "LIMPEZA E HIGIENE";
-                        
-                        return {
-                            ...p, id: String(p.id),
-                            nome: this.toSmartTitleCase(p.nome.trim()), 
-                            valor: parseFloat(p.valor || 0), 
-                            offerPrice: parseFloat(p.Valor_Oferta || 0),
-                            isOffer: (p.Oferta === 'Sim'), 
-                            appCategory: appCat, 
-                            subCategory: parts.length > 1 ? parts[1].trim() : null, 
-                            // Caminho da imagem ajustado
-                            imagem: p.imagem ? `../site/img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg',
-                            limit: parseInt(p.Limit || p.limit || 0),
-                            categoria: catRaw.toUpperCase()
-                        };
-                    });
+                        try {
+                            const catRaw = (p.categoria || "OUTROS").trim();
+                            const parts = catRaw.split('>');
+                            const mainCat = parts[0].trim().toUpperCase();
+                            
+                            let appCat = mainCat; 
+                            if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
+                            else if (mainCat.includes('LIMPEZA')) appCat = "LIMPEZA E HIGIENE";
+                            
+                            return {
+                                ...p, id: String(p.id),
+                                nome: this.toSmartTitleCase(p.nome.trim()), 
+                                valor: parseFloat(p.valor || 0), 
+                                offerPrice: parseFloat(p.Valor_Oferta || 0),
+                                isOffer: (p.Oferta === 'Sim'), 
+                                appCategory: appCat, 
+                                subCategory: parts.length > 1 ? parts[1].trim() : null, 
+                                // Caminho da imagem ajustado
+                                imagem: p.imagem ? `../site/img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg',
+                                limit: parseInt(p.Limit || p.limit || 0),
+                                categoria: catRaw.toUpperCase()
+                            };
+                        } catch(err) {
+                            return null; // Pula produto com erro
+                        }
+                    }).filter(x => x !== null); // Remove nulos
 
                     this.renderHome();
                     this.renderOffers();
-                } catch (e) { console.error("Erro init:", e); }
+                } catch (e) { 
+                    console.error("Erro critico init:", e);
+                    document.getElementById('catalog-mount').innerHTML = '<div style="text-align:center; padding:20px;">Erro ao carregar sistema. Tente recarregar.</div>';
+                }
             },
 
             setupPagination(sectionId, products) {
@@ -582,7 +642,7 @@
                 
                 container.insertAdjacentHTML('beforeend', html);
                 
-                // Scroll suave para o novo item (mantendo contexto)
+                // Scroll suave para o novo item
                 if(isUpdate && firstNewItemId) {
                     setTimeout(() => {
                         const el = document.getElementById(firstNewItemId);
@@ -631,7 +691,7 @@
                 document.getElementById('offers-carousel-container').classList.remove('hidden');
                 
                 track.innerHTML = offers.map(p => `
-                    <div class="offer-card-simple">
+                    <div class="offer-card-simple no-click">
                         <div class="cp-img-box">
                             <img src="${p.imagem}" class="cp-img" loading="lazy" width="100" height="100">
                             <span class="cp-tag-off">OFERTA</span>
@@ -661,7 +721,7 @@
                                 if(prod.appCategory && prod.appCategory.includes('LIMPEZA')) cleanHtml += line; else foodHtml += line;
                             } else {
                                 // Fallback se o produto não for encontrado no JSON
-                                foodHtml += `<div class="product-item"><span class="qty-badge">${item.qty}</span> (Produto ID ${item.id})</div>`;
+                                foodHtml += `<div class="product-item"><span class="qty-badge">${item.qty}</span> (Item ${item.id})</div>`;
                             }
                         });
                     }
@@ -769,7 +829,7 @@
                 
                 return `
                 <div class="card-prod" ${domId ? `id="${domId}"` : ''}>
-                    <div class="cp-img-box" onclick="App.openPhoto('${p.imagem}', '${p.nome}')">
+                    <div class="cp-img-box" style="pointer-events:none;" onclick="App.openPhoto('${p.imagem}', '${p.nome}')">
                         <img src="${p.imagem}" class="cp-img" loading="lazy" width="150" height="150">
                         ${p.isOffer ? '<span class="cp-tag-off">OFERTA</span>' : ''}
                     </div>
@@ -826,8 +886,6 @@
                     window.scrollTo({top: top, behavior: 'smooth'});
                 }
             },
-
-            openPhoto(url, title) { /* Placeholder para zoom */ }, 
             
             openSheet(id) { 
                 document.getElementById(id).classList.add('open'); 
@@ -839,8 +897,8 @@
             },
             
             directOrder(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); },
-            toSmartTitleCase(str) { return str.toLowerCase().replace(/(?:^|\s)\w/g, function(match) { return match.toUpperCase(); }); },
-            toSlug(text) { return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w\-]+/g, ''); },
+            toSmartTitleCase(str) { return str ? str.toLowerCase().replace(/(?:^|\s)\w/g, function(match) { return match.toUpperCase(); }) : ''; },
+            toSlug(text) { return text ? text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w\-]+/g, '') : ''; },
 
             initHeroBanner() {
                 const track = document.getElementById('hero-banner-track');
