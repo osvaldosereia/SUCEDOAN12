@@ -376,6 +376,7 @@
             chatContent.appendChild(msgDiv);
             scrollToBottom();
 
+            // Espera 30 segundos
             setTimeout(askForAudioPermission, 30000); 
         }
 
@@ -401,16 +402,16 @@
             // 1. Mostra "Gravando..."
             const gravandoMsg = addBotMessage("Gravando áudio...");
             
-            // 2. Espera 5 segundos, apaga e manda Audio 1 (NA MESMA PASTA DO HTML)
+            // 2. Espera 5 segundos, apaga e manda Audio 1
             setTimeout(() => {
                 gravandoMsg.remove(); 
                 
-                // CAMINHO CORRIGIDO: Agora aponta direto para o arquivo, sem 'img/'
+                // AUDIO 1: Procura 'audio.mp3' na raiz
                 sendAudioPlayer("audio.mp3", "audio1");
 
                 // 3. Espera 10 segundos e manda Audio 2
                 setTimeout(() => {
-                    // ATENÇÃO: Tenha o arquivo audio2.mp3 na mesma pasta do HTML
+                    // AUDIO 2: Procura 'audio2.mp3' na raiz
                     sendAudioPlayer("audio2.mp3", "audio2");
 
                     // 4. Espera 10 segundos e encerra
@@ -424,15 +425,10 @@
         }
 
         function sendAudioPlayer(src, id) {
-            // Verifica a extensão para saber se é mp3 ou mp4
-            let type = "audio/mpeg"; // Padrão MP3
-            if(src.endsWith(".mp4")) {
-                type = "audio/mp4";
-            }
-
+            // Player configurado para MP3 (audio/mpeg)
             const audioHtml = `
                 <audio id="${id}" controls autoplay>
-                    <source src="${src}" type="${type}">
+                    <source src="${src}" type="audio/mpeg">
                     Seu navegador não suporta áudio.
                 </audio>
             `;
@@ -440,7 +436,8 @@
             
             const player = document.getElementById(id);
             if(player) {
-                player.play().catch(e => console.log("Autoplay bloqueado pelo navegador"));
+                // Tenta dar play. Se o navegador bloquear, o cliente clica no play.
+                player.play().catch(e => console.log("Aguardando clique no play"));
             }
         }
 
@@ -449,7 +446,8 @@
             
             const msgWpp = `Oi, eu sou o ${userName}, vou salvar seu contato. O Osvaldo me garantiu um sabão em pó omo a mais na minha próxima compra. Obrigado`;
             const encodedMsg = encodeURIComponent(msgWpp);
-            // ATENÇÃO: Coloque seu número correto aqui
+            
+            // SEU NÚMERO AQUI
             const numeroWpp = "5565999999999"; 
 
             const wppBtn = `<a href="https://wa.me/${numeroWpp}?text=${encodedMsg}" class="whatsapp-btn" target="_blank">
@@ -476,6 +474,7 @@
         function updateModalImage() {
             const imgElement = document.getElementById('modal-img');
             let suffix = currentPhotoIndex === 0 ? "" : "1";
+            // Busca imagens na pasta 'img/'
             imgElement.src = `img/${currentBasket}${suffix}.webp`;
         }
 
