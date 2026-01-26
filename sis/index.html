@@ -1,497 +1,300 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SISTEMA V3 | Lite</title>
-<style>
-:root {
-    --primary: #2563eb; --primary-dark: #1e40af;
-    --success: #16a34a; --danger: #dc2626; --warning: #ca8a04;
-    --bg: #f1f5f9; --surface: #ffffff; --border: #cbd5e1;
-    --text: #0f172a; --text-light: #64748b;
-    --radius: 6px; --shadow: 0 1px 3px rgba(0,0,0,0.1);
-    --font-stack: system-ui, -apple-system, sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-body { font-family: var(--font-stack); background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; font-size: 13px; }
-/* Layout */
-aside { width: 220px; background: #0f172a; color: #94a3b8; display: flex; flex-direction: column; z-index: 10; flex-shrink: 0; }
-.brand { height: 60px; display: flex; align-items: center; padding: 0 1.5rem; color: #fff; font-weight: 700; border-bottom: 1px solid #1e293b; }
-.nav { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
-.nav-btn { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: var(--radius); color: inherit; text-decoration: none; cursor: pointer; transition: 0.2s; border: none; background: transparent; width: 100%; text-align: left; font-size: 0.9rem; }
-.nav-btn:hover, .nav-btn.active { background: var(--primary); color: #fff; }
-.nav-btn svg { width: 18px; height: 18px; fill: currentColor; }
-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-header { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; }
-.view { display: none; padding: 1.5rem; height: calc(100vh - 60px); overflow: hidden; flex-direction: column; gap: 1rem; }
-.view.active { display: flex; }
-/* Components */
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; }
-.full-h { height: 100%; }
-.c-head { padding: 10px 15px; background: #f8fafc; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-.c-body { padding: 15px; overflow-y: auto; flex: 1; }
-.row { display: flex; gap: 10px; } .col { flex: 1; }
-input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem; margin-bottom: 10px; }
-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
-label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-light); margin-bottom: 3px; text-transform: uppercase; }
-.btn { padding: 8px 12px; border-radius: var(--radius); border: none; cursor: pointer; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
-.btn-primary { background: var(--primary); color: #fff; } .btn-primary:hover { background: var(--primary-dark); }
-.btn-success { background: var(--success); color: #fff; }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-ghost { background: transparent; color: var(--text-light); } .btn-ghost:hover { background: #e2e8f0; color: var(--text); }
-/* Tables */
-.table-wrap { overflow: auto; flex: 1; }
-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-th { text-align: left; background: #f8fafc; padding: 10px; font-size: 0.75rem; color: var(--text-light); position: sticky; top: 0; border-bottom: 1px solid var(--border); }
-td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
-tr:hover { background: #f8fafc; }
-.badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: #e2e8f0; color: var(--text-light); }
-.badge.blue { background: #dbeafe; color: var(--primary); }
-/* Dialog */
-dialog { margin: auto; padding: 0; border: none; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-width: 600px; width: 90%; }
-dialog::backdrop { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); }
-.modal-head { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
-.modal-body { padding: 15px; max-height: 70vh; overflow-y: auto; }
-.modal-foot { padding: 10px 15px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
-/* Util */
-.grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.search-box { position: relative; width: 250px; }
-.search-box input { padding-left: 30px; margin: 0; }
-.search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 14px; opacity: 0.5; }
-.split { display: grid; grid-template-columns: 300px 1fr; gap: 1rem; height: 100%; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>Super Cestas Dona Antônia | Cuiabá e Várzea Grande</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
+
+    <style>
+        /* --- ESTILOS BASE DO INDEX ATUAL --- */
+        :root {
+            --primary: #d31a28; /* Vermelho do Index 1 para manter identidade */
+            --primary-gradient: linear-gradient(135deg, #d31a28 0%, #b91c1c 100%);
+            --success: #10B981;
+            --background: #F3F4F6;
+            --text-main: #111827;
+            --header-h: 70px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--background); color: var(--text-main); }
+        body.customizer-mode { background: #fff; }
+        .hidden { display: none !important; }
+
+        /* HEADER */
+        .app-header {
+            height: var(--header-h); background: #fff; border-bottom: 1px solid #eee;
+            display: flex; align-items: center; justify-content: center; position: sticky; top: 0; z-index: 1000;
+        }
+        .logo-header { width: 60px; height: 60px; border-radius: 50%; }
+
+        /* HERO BANNER (DO INDEX 1) */
+        .hero-banner-section { padding: 20px 0; background: #fff; overflow: hidden; border-bottom: 1px solid #eee; }
+        .hb-track { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 10px; scrollbar-width: none; }
+        .hb-track::-webkit-scrollbar { display: none; }
+        .hb-card { flex: 0 0 85%; scroll-snap-align: center; background: #f8fafc; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #e2e8f0; }
+        @media(min-width: 1024px) { .hb-card { flex: 0 0 30%; } }
+        .hb-icon { font-size: 1.5rem; }
+        .hb-text { font-weight: 600; font-size: 0.9rem; }
+
+        /* CARROSSEL OFERTAS (DO INDEX 1) */
+        .offers-section { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .carousel-track { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
+        .offer-mini-card { flex: 0 0 140px; background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; }
+        .offer-mini-card img { width: 100%; border-radius: 8px; }
+
+        /* GRID DE CESTAS */
+        .catalog-container { padding: 20px; display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        @media (min-width: 1024px) { .catalog-container { grid-template-columns: repeat(3, 1fr); } }
+
+        .product-section { background: white; border-radius: 24px; box-shadow: 0 10px 15px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; border: 1px solid #eee; }
+        .p-main-content { padding: 20px; display: flex; flex-direction: column; height: 100%; }
+        .basket-hero-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 16px; }
+        
+        /* CHAT / CUSTOMIZER (DO INDEX 1) */
+        #customizer-view { padding: 20px; max-width: 800px; margin: 0 auto; }
+        .chat-msg { background: #f1f5f9; padding: 15px; border-radius: 0 15px 15px 15px; margin-bottom: 15px; max-width: 85%; }
+        .chat-msg.user { background: var(--primary); color: white; margin-left: auto; border-radius: 15px 15px 0 15px; }
+        .chat-actions { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+        .btn-chat { padding: 12px; border: 1px solid var(--primary); border-radius: 10px; background: #fff; color: var(--primary); font-weight: 600; }
+        .btn-chat.primary { grid-column: 1/-1; background: var(--primary); color: #fff; }
+
+        /* BARRA DE TOTAL FIXA */
+        .credit-chip-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 15px 25px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center; width: 90%; max-width: 400px; z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+
+        /* GRID PRODUTOS NO CHAT */
+        .grid-products-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .card-prod { background: #f8fafc; padding: 10px; border-radius: 12px; text-align: center; position: relative; }
+        .card-prod img { width: 100%; border-radius: 8px; }
+        .qty-ctrl-float { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px; }
+        .btn-circle-add { background: var(--primary); color: #fff; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 0 auto; }
+    </style>
 </head>
 <body>
 
-<aside>
-    <div class="brand">SISTEMA V3 <span style="font-size:0.6rem; opacity:0.5; margin-left:5px;">LITE</span></div>
-    <nav class="nav">
-        <button onclick="App.nav('cliente')" class="nav-btn active" id="nav-cliente">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> Clientes
-        </button>
-        <button onclick="App.nav('catalogo')" class="nav-btn" id="nav-catalogo">
-            <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg> Catálogo
-        </button>
-        <button onclick="App.nav('logistica')" class="nav-btn" id="nav-logistica">
-            <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg> Logística
-        </button>
-        <button onclick="App.nav('venda')" class="nav-btn" id="nav-venda">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg> Vendas
-        </button>
-    </nav>
-    <div style="padding:1rem; border-top:1px solid #1e293b; margin-top:auto;">
-        <button onclick="DB.backup()" class="btn btn-ghost" style="width:100%; justify-content:center; color:#64748b; font-size:0.75rem;">Backup Dados</button>
-        <input type="file" id="restore" style="display:none" onchange="DB.restore(this)">
-        <button onclick="document.getElementById('restore').click()" class="btn btn-ghost" style="width:100%; justify-content:center; color:#64748b; font-size:0.75rem;">Restaurar</button>
-    </div>
-</aside>
-
-<main>
-    <header>
-        <h2 id="page-title" style="font-size:1.1rem;">Clientes</h2>
-        <div style="font-family:monospace; color:var(--text-light);" id="clock">00:00</div>
+    <header class="app-header">
+        <div id="header-home-content" style="display: flex; align-items: center;">
+            <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-header" alt="Logo">
+            <h1 style="font-size: 18px; margin-left: 10px;">Dona Antônia</h1>
+        </div>
+        <div id="header-customizer-content" class="hidden">
+            <button onclick="App.goHome()" style="background:none; border:none; font-size: 20px; cursor:pointer;"><i class="ph ph-arrow-left"></i> Voltar</button>
+        </div>
     </header>
 
-    <div id="view-cliente" class="view active">
-        <div class="split">
-            <div class="card full-h">
-                <div class="c-head">Novo / Editar <button onclick="UI.clearForm('cliente')" class="btn-ghost">Limpar</button></div>
-                <div class="c-body">
-                    <form id="form-cliente" onsubmit="App.save('cliente', event)">
-                        <input type="hidden" id="c-id">
-                        <div class="grid-form">
-                            <div><label>Código</label><input type="text" id="c-codigo" readonly placeholder="Auto"></div>
-                            <div><label>Rota</label><select id="c-rota"><option value="CX">CX</option><option value="VG">VG</option><option value="CBA">CBA</option><option value="CPA">CPA</option></select></div>
-                        </div>
-                        <label>Nome</label><input type="text" id="c-nome" required>
-                        <div class="grid-form">
-                            <div><label>Tel</label><input type="text" id="c-tel"></div>
-                            <div><label>Cidade</label><select id="c-cidade"><option>Cuiabá</option><option>Várzea Grande</option></select></div>
-                        </div>
-                        <label>Bairro</label><input type="text" id="c-bairro">
-                        <label>Endereço</label><textarea id="c-endereco" rows="2"></textarea>
-                        <button class="btn btn-primary" style="width:100%; justify-content:center;">Salvar</button>
-                    </form>
-                </div>
+    <main id="home-view">
+        <section class="hero-banner-section">
+            <div id="hero-banner-track" class="hb-track">
+                <div class="hb-card"><span class="hb-icon">🚚</span><div class="hb-text">Entrega Grátis<br>Cuiabá e VG</div></div>
+                <div class="hb-card"><span class="hb-icon">🏠</span><div class="hb-text">Pague apenas<br>na Entrega</div></div>
+                <div class="hb-card"><span class="hb-icon">💳</span><div class="hb-text">3x Sem Juros<br>no Cartão</div></div>
+                <div class="hb-card"><span class="hb-icon">🚀</span><div class="hb-text">Peça até 9h<br>Receba Hoje</div></div>
             </div>
-            <div class="card full-h">
-                <div class="c-head">
-                    <div class="search-box">
-                        <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                        <input type="text" placeholder="Buscar cliente..." oninput="UI.render('cliente', this.value)">
-                    </div>
-                    <span id="count-cliente" class="badge">0</span>
-                </div>
-                <div class="table-wrap"><table id="table-cliente"></table></div>
-            </div>
+        </section>
+
+        <section id="offers-container" class="offers-section hidden">
+            <h3 style="margin-bottom: 10px;"><i class="ph ph-fire" style="color:red"></i> Ofertas do Dia</h3>
+            <div id="offers-track" class="carousel-track"></div>
+        </section>
+
+        <div id="catalog-mount" class="catalog-container"></div>
+    </main>
+
+    <div id="customizer-view" class="hidden">
+        <div id="chat-stream"></div>
+    </div>
+
+    <div id="credit-chip" class="credit-chip-bar hidden">
+        <div>
+            <div style="font-size: 11px; opacity: 0.8;">Total do Pedido</div>
+            <div id="ccb-val" style="font-weight: 800; font-size: 18px;">R$ 0,00</div>
         </div>
+        <button onclick="ChatFlow.startCheckout()" style="background:var(--primary); color:#fff; border:none; padding:10px 20px; border-radius:25px; font-weight:700;">Finalizar</button>
     </div>
 
-    <div id="view-catalogo" class="view">
-        <div class="card full-h">
-            <div class="c-head">
-                <div style="display:flex; gap:10px;">
-                    <div class="search-box">
-                        <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                        <input type="text" placeholder="Buscar produto..." oninput="UI.render('catalogo', this.value)">
-                    </div>
-                    <button onclick="Cat.edit()" class="btn btn-primary">+ Novo Produto</button>
-                    <button onclick="Export.products()" class="btn btn-ghost">JSON</button>
-                </div>
-                <span id="count-catalogo" class="badge">0</span>
-            </div>
-            <div class="table-wrap"><table id="table-catalogo"></table></div>
-        </div>
-    </div>
+    <script>
+        // --- CONSTANTES E DADOS ---
+        const CONSTANTS = { 
+            PHONE: "5565996813588",
+            LIMITS: { 'economica': 5, 'mini': 7, 'pequena': 9, 'media': 11, 'grande': 13 }
+        };
 
-    <div id="view-logistica" class="view">
-        <div class="split">
-            <div style="display:flex; flex-direction:column; gap:1rem;">
-                <div class="card">
-                    <div class="c-head">Importar XML/JSON</div>
-                    <div class="c-body">
-                        <input type="file" id="import-file" accept=".json">
-                        <button onclick="Logistics.processFile()" class="btn btn-primary" style="width:100%">Processar</button>
-                    </div>
-                </div>
-                <div class="card" style="flex:1">
-                    <div class="c-head">Ajuste Manual</div>
-                    <div class="c-body">
-                        <form onsubmit="App.save('entrada', event)">
-                            <label>Produto</label><select id="e-prod" required></select>
-                            <div class="grid-form">
-                                <div><label>Qtd (+/-)</label><input type="number" id="e-qtd" required></div>
-                                <div><label>Custo</label><input type="number" step="0.01" id="e-custo"></div>
-                            </div>
-                            <label>Tipo</label><select id="e-tipo"><option value="fisico">Físico</option><option value="fiscal">Fiscal</option></select>
-                            <button class="btn btn-warning" style="width:100%; justify-content:center; color:#fff;">Registrar Movimento</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div class="card full-h">
-                <div class="c-head">Histórico de Movimentação</div>
-                <div class="table-wrap"><table id="table-logistica"></table></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-venda" class="view">
-        <div class="split">
-            <div class="card full-h">
-                <div class="c-head" style="background:var(--success); color:#fff">PDV - Novo Pedido</div>
-                <div class="c-body" style="display:flex; flex-direction:column;">
-                    <form onsubmit="POS.finish(event)">
-                        <label>Cliente</label><select id="v-cli" required></select>
-                        <div style="background:#f8fafc; padding:10px; border:1px solid var(--border); border-radius:var(--radius); margin:10px 0;">
-                            <label>Adicionar Item</label>
-                            <div style="display:flex; gap:5px;">
-                                <select id="v-prod" style="margin:0; flex:1;"></select>
-                                <input type="number" id="v-qtd" value="1" style="margin:0; width:60px;">
-                                <button type="button" onclick="POS.add()" class="btn btn-primary">+</button>
-                            </div>
-                        </div>
-                        <div id="v-cart" style="flex:1; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; overflow-y:auto; padding:5px; height:200px;">
-                            <div style="text-align:center; color:#94a3b8; padding:1rem;">Carrinho vazio</div>
-                        </div>
-                        <div class="grid-form">
-                            <div><label>Rota</label><select id="v-rota"><option>CX</option><option>VG</option></select></div>
-                            <div><label>Pagamento</label><select id="v-pag"><option>Dinheiro</option><option>Pix</option></select></div>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-weight:700; font-size:1.2rem;">
-                            <span>Total</span><span id="v-total">R$ 0,00</span>
-                        </div>
-                        <button class="btn btn-success" style="width:100%; justify-content:center;">Finalizar Venda</button>
-                    </form>
-                </div>
-            </div>
-            <div class="card full-h">
-                <div class="c-head">Histórico de Vendas</div>
-                <div class="table-wrap"><table id="table-venda"></table></div>
-            </div>
-        </div>
-    </div>
-</main>
-
-<dialog id="modal-produto">
-    <div class="modal-head"><span>Dados do Produto</span> <button onclick="document.getElementById('modal-produto').close()" class="btn-ghost">✕</button></div>
-    <div class="modal-body">
-        <form id="form-produto">
-            <input type="hidden" id="p-id">
-            <div class="grid-form">
-                <div><label>Código</label><input type="text" id="p-codigo" readonly placeholder="Auto"></div>
-                <div><label>EAN (Barras)</label><input type="text" id="p-ean"></div>
-            </div>
-            <label>Nome do Produto</label><input type="text" id="p-nome" required>
-            <div class="grid-form">
-                <div><label>Categoria</label><input type="text" id="p-cat" list="dl-cat"></div>
-                <div><label>Fornecedor</label><input type="text" id="p-forn"></div>
-            </div>
-            <div class="grid-form" style="background:#f0fdf4; padding:10px; border-radius:6px; margin-bottom:10px;">
-                <div><label>Custo (R$)</label><input type="number" step="0.01" id="p-custo"></div>
-                <div><label>Venda (R$)</label><input type="number" step="0.01" id="p-valor"></div>
-            </div>
-            <div class="grid-form">
-                <div><label>Estoque Físico</label><input type="number" id="p-est"></div>
-                <div><label>Estoque Fiscal</label><input type="number" id="p-est-fisc"></div>
-            </div>
-            <label>Detalhes (NCM/CEST/Obs)</label><textarea id="p-obs" rows="2"></textarea>
-        </form>
-        <datalist id="dl-cat"></datalist>
-    </div>
-    <div class="modal-foot">
-        <button type="button" onclick="Cat.delete()" class="btn btn-danger">Excluir</button>
-        <button type="button" onclick="Cat.save()" class="btn btn-primary">Salvar Produto</button>
-    </div>
-</dialog>
-
-<script>
-const $ = id => document.getElementById(id);
-const DB = {
-    key: 'sys_lite_v3',
-    get: () => JSON.parse(localStorage.getItem(DB.key)) || { cliente:[], produto:[], venda:[], entrada:[] },
-    set: (d) => localStorage.setItem(DB.key, JSON.stringify(d)),
-    save: (t, item) => {
-        const d = DB.get();
-        if(item.id) { const i = d[t].findIndex(x => x.id === item.id); if(i > -1) d[t][i] = item; else d[t].push(item); } 
-        else { item.id = Date.now().toString(); if(t !== 'entrada' && !item.codigo) item.codigo = DB.code(t); d[t].push(item); }
-        DB.set(d); return d;
-    },
-    del: (t, id) => { const d = DB.get(); d[t] = d[t].filter(x => x.id !== id); DB.set(d); return d; },
-    code: (t) => {
-        const d = DB.get(); const list = d[t] || [];
-        let max = 0; list.forEach(i => { const n = parseInt(i.codigo?.replace(/\D/g,'')||0); if(n>max) max=n; });
-        const pre = t==='produto'?'P':(t==='cliente'?'C':'V');
-        return `${pre}${String(max+1).padStart(3,'0')}`;
-    },
-    backup: () => {
-        const blob = new Blob([JSON.stringify(DB.get())], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${Date.now()}.json`; a.click();
-    },
-    restore: (input) => {
-        const file = input.files[0]; if(!file) return;
-        const reader = new FileReader();
-        reader.onload = e => { localStorage.setItem(DB.key, e.target.result); location.reload(); };
-        reader.readAsText(file);
-    }
-};
-
-const UI = {
-    render: (view, filter = '') => {
-        const d = DB.get();
-        const f = filter.toLowerCase();
-        if(view === 'cliente') {
-            const list = d.cliente.filter(c => c.nome.toLowerCase().includes(f) || c.codigo.toLowerCase().includes(f));
-            $('count-cliente').innerText = list.length;
-            $('table-cliente').innerHTML = `<thead><tr><th>Cod</th><th>Nome</th><th>Cidade</th><th>Ação</th></tr></thead><tbody>` + 
-                list.map(c => `<tr><td><b>${c.codigo}</b></td><td>${c.nome}</td><td>${c.cidade}</td><td><button onclick="App.edit('cliente','${c.id}')" class="btn-ghost">✎</button></td></tr>`).join('') + `</tbody>`;
-        }
-        if(view === 'catalogo') {
-            const list = d.produto.filter(p => p.nome.toLowerCase().includes(f) || p.codigo.toLowerCase().includes(f));
-            $('count-catalogo').innerText = list.length;
-            $('table-catalogo').innerHTML = `<thead><tr><th>Cod</th><th>Produto</th><th>Cat</th><th>Preço</th><th>Estoque</th><th>Ação</th></tr></thead><tbody>` + 
-                list.map(p => `<tr><td><b>${p.codigo}</b></td><td>${p.nome}</td><td>${p.categoria||'-'}</td><td>R$ ${Number(p.valor).toFixed(2)}</td><td>${p.estoque}</td><td><button onclick="Cat.edit('${p.id}')" class="btn-ghost">✎</button></td></tr>`).join('') + `</tbody>`;
+        const App = {
+            data: [], cart: {}, currentBasket: null, baseFee: 0,
             
-            // Populate Datalist for categories
-            const cats = [...new Set(d.produto.map(p => p.categoria).filter(Boolean))];
-            $('dl-cat').innerHTML = cats.map(c => `<option value="${c}">`).join('');
-        }
-        if(view === 'logistica') {
-            const list = d.entrada.sort((a,b) => b.date - a.date).slice(0, 50);
-            $('table-logistica').innerHTML = `<thead><tr><th>Data</th><th>Produto</th><th>Qtd</th><th>Tipo</th></tr></thead><tbody>` +
-                list.map(l => {
-                    const p = d.produto.find(x => x.id === l.prodId);
-                    return `<tr><td>${new Date(l.date).toLocaleDateString()}</td><td>${p?p.nome:'?'}</td><td style="color:${l.qty<0?'red':'green'}"><b>${l.qty}</b></td><td>${l.dest}</td></tr>`;
-                }).join('') + `</tbody>`;
-        }
-        if(view === 'venda') {
-            const list = d.venda.sort((a,b) => b.date - a.date).slice(0, 50);
-            $('table-venda').innerHTML = `<thead><tr><th>Ped</th><th>Cliente</th><th>Total</th><th>Data</th></tr></thead><tbody>` +
-                list.map(v => {
-                    const c = d.cliente.find(x => x.id === v.cliId);
-                    return `<tr><td><b>${v.codigo}</b></td><td>${c?c.nome:'Consumers'}</td><td style="color:green">R$ ${v.total.toFixed(2)}</td><td>${new Date(v.date).toLocaleString()}</td></tr>`
-                }).join('') + `</tbody>`;
-        }
-    },
-    clearForm: (t) => { $(`form-${t}`).reset(); $(`${t.charAt(0)}-id`).value = ''; },
-    fill: (prefix, data) => {
-        for(let k in data) { const el = $(`${prefix}-${k}`); if(el) el.value = data[k]; }
-        $(`${prefix}-id`).value = data.id;
-    }
-};
+            async init() {
+                try {
+                    const res = await fetch('produtos/produtos.json?v=' + Date.now());
+                    const raw = await res.json();
+                    this.data = (raw.produtos || raw).map(p => ({
+                        ...p,
+                        id: String(p.id),
+                        nome: p.nome,
+                        valor: parseFloat(p.valor || 0),
+                        offerPrice: parseFloat(p.Valor_Oferta || 0),
+                        isOffer: p.Oferta === 'Sim',
+                        imagem: p.imagem ? `img/produtos/${p.imagem.split('/').pop()}` : 'img/placeholder.jpg',
+                        categoria: p.categoria.toUpperCase()
+                    }));
 
-const App = {
-    nav: (view) => {
-        document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
-        $(`view-${view}`).classList.add('active');
-        $(`nav-${view}`).classList.add('active');
-        $('page-title').innerText = view.charAt(0).toUpperCase() + view.slice(1);
-        UI.render(view);
-        if(view === 'logistica') {
-            $('e-prod').innerHTML = '<option value="">Prod...</option>' + DB.get().produto.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
-        }
-        if(view === 'venda') {
-            $('v-cli').innerHTML = DB.get().cliente.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-            $('v-prod').innerHTML = '<option value="">Prod...</option>' + DB.get().produto.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
-        }
-    },
-    save: (type, e) => {
-        e.preventDefault();
-        let obj = {};
-        if(type === 'cliente') {
-            obj = {
-                id: $('c-id').value, codigo: $('c-codigo').value, nome: $('c-nome').value, rota: $('c-rota').value,
-                tel: $('c-tel').value, cidade: $('c-cidade').value, bairro: $('c-bairro').value, endereco: $('c-endereco').value
-            };
-        } else if (type === 'entrada') {
-            const prodId = $('e-prod').value;
-            const qty = Number($('e-qtd').value);
-            if(!prodId || !qty) return;
-            const db = DB.get();
-            const prod = db.produto.find(p => p.id === prodId);
-            if(prod) {
-                const dest = $('e-tipo').value;
-                if(dest === 'fisico') prod.estoque = (Number(prod.estoque)||0) + qty;
-                else prod.estoqueFiscal = (Number(prod.estoqueFiscal)||0) + qty;
-                prod.custo = Number($('e-custo').value) || prod.custo;
+                    this.renderHome();
+                    this.renderOffers();
+                    this.initHeroBanner();
+                } catch (e) { console.error("Erro ao carregar dados", e); }
+            },
+
+            initHeroBanner() {
+                const track = document.getElementById('hero-banner-track');
+                setInterval(() => {
+                    if(track.scrollLeft + track.offsetWidth >= track.scrollWidth) track.scrollTo({left: 0, behavior: 'smooth'});
+                    else track.scrollBy({left: 200, behavior: 'smooth'});
+                }, 3000);
+            },
+
+            renderOffers() {
+                const offers = this.data.filter(p => p.isOffer);
+                if(offers.length === 0) return;
+                document.getElementById('offers-container').classList.remove('hidden');
+                document.getElementById('offers-track').innerHTML = offers.map(p => `
+                    <div class="offer-mini-card">
+                        <img src="${p.imagem}">
+                        <div style="font-size: 11px; font-weight: 700; margin-top:5px;">${p.nome}</div>
+                        <div style="color:var(--primary); font-weight:800;">R$ ${p.offerPrice.toFixed(2)}</div>
+                    </div>
+                `).join('');
+            },
+
+            renderHome() {
+                const baskets = this.data.filter(p => p.categoria.includes('CESTA'));
+                document.getElementById('catalog-mount').innerHTML = baskets.map(p => `
+                    <section class="product-section">
+                        <div class="p-main-content">
+                            <h2 style="text-align:center; margin-bottom:15px;">${p.nome}</h2>
+                            <img src="${p.imagem}" class="basket-hero-img">
+                            <div style="margin: 15px 0; font-weight: 800; font-size: 24px; text-align:center;">R$ ${p.valor.toFixed(2)}</div>
+                            <button class="btn-chat primary" onclick="App.openCustomizer('${p.id}')" style="cursor:pointer; width:100%; margin-bottom:10px;">PERSONALIZAR CESTA</button>
+                            <button onclick="App.directOrder('${p.nome}')" style="background:var(--success); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; width:100%;">PEDIR NORMAL</button>
+                        </div>
+                    </section>
+                `).join('');
+            },
+
+            openCustomizer(id) {
+                const basket = this.data.find(x => x.id === id);
+                this.currentBasket = basket;
+                this.cart = {};
                 
-                // Salva entrada e produto atualizado
-                db.entrada.push({ id: Date.now().toString(), prodId, qty, dest, date: Date.now() });
-                const idx = db.produto.findIndex(p => p.id === prod.id);
-                db.produto[idx] = prod;
-                DB.set(db);
-                alert('Movimento registrado!');
-                $('form-entrada').reset();
-                UI.render('logistica');
-                return; 
+                // Monta o carrinho inicial baseado nos itens da cesta
+                if(basket.items) {
+                    basket.items.forEach(i => {
+                        this.cart[String(i.id)] = parseInt(i.qty);
+                    });
+                }
+
+                document.getElementById('home-view').classList.add('hidden');
+                document.getElementById('customizer-view').classList.remove('hidden');
+                document.getElementById('header-home-content').classList.add('hidden');
+                document.getElementById('header-customizer-content').classList.remove('hidden');
+                document.getElementById('credit-chip').classList.remove('hidden');
+                
+                ChatFlow.start();
+                this.updateTotal();
+            },
+
+            goHome() {
+                location.reload(); // Forma mais simples de resetar o estado
+            },
+
+            updateTotal() {
+                let sum = 0;
+                for(let id in this.cart) {
+                    const p = this.data.find(x => x.id === id);
+                    if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id];
+                }
+                document.getElementById('ccb-val').innerText = `R$ ${sum.toFixed(2)}`;
+            },
+
+            directOrder(name) {
+                const msg = encodeURIComponent(`Olá! Gostaria de pedir a ${name} normal.`);
+                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${msg}`);
             }
-        }
-        if(type !== 'entrada') {
-            DB.save(type, obj);
-            UI.clearForm(type);
-            UI.render(type);
-        }
-    },
-    edit: (t, id) => {
-        const item = DB.get()[t].find(x => x.id === id);
-        if(item) {
-            if(t === 'cliente') UI.fill('c', item);
-        }
-    }
-};
-
-const Cat = {
-    edit: (id) => {
-        $('form-produto').reset();
-        if(id) {
-            const p = DB.get().produto.find(x => x.id === id);
-            UI.fill('p', p);
-        }
-        $('modal-produto').showModal();
-    },
-    save: () => {
-        const obj = {
-            id: $('p-id').value, codigo: $('p-codigo').value, ean: $('p-ean').value, nome: $('p-nome').value,
-            categoria: $('p-cat').value, fornecedor: $('p-forn').value, custo: $('p-custo').value,
-            valor: $('p-valor').value, estoque: $('p-est').value, estoqueFiscal: $('p-est-fisc').value, obs: $('p-obs').value
         };
-        DB.save('produto', obj);
-        $('modal-produto').close();
-        UI.render('catalogo');
-    },
-    delete: () => {
-        const id = $('p-id').value;
-        if(id && confirm('Excluir?')) { DB.del('produto', id); $('modal-produto').close(); UI.render('catalogo'); }
-    }
-};
 
-const POS = {
-    cart: [],
-    add: () => {
-        const pid = $('v-prod').value;
-        const qtd = Number($('v-qtd').value);
-        if(!pid || qtd < 1) return;
-        const p = DB.get().produto.find(x => x.id === pid);
-        if(p) {
-            POS.cart.push({ id: p.id, nome: p.nome, price: Number(p.valor), qty: qtd });
-            POS.render();
-        }
-    },
-    render: () => {
-        const c = $('v-cart');
-        if(POS.cart.length === 0) c.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:1rem;">Carrinho vazio</div>';
-        else c.innerHTML = POS.cart.map((i, idx) => `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px;"><span>${i.qty}x ${i.nome}</span><span>${(i.qty*i.price).toFixed(2)} <button onclick="POS.rem(${idx})" style="color:red; border:none; background:none; cursor:pointer;">x</button></span></div>`).join('');
-        const total = POS.cart.reduce((a, b) => a + (b.qty * b.price), 0);
-        $('v-total').innerText = `R$ ${total.toFixed(2)}`;
-    },
-    rem: (i) => { POS.cart.splice(i, 1); POS.render(); },
-    finish: (e) => {
-        e.preventDefault();
-        if(POS.cart.length === 0) return alert('Carrinho vazio');
-        const total = POS.cart.reduce((a, b) => a + (b.qty * b.price), 0);
-        const venda = {
-            id: Date.now().toString(), codigo: DB.code('venda'), date: Date.now(),
-            cliId: $('v-cli').value, total: total, items: POS.cart, rota: $('v-rota').value, pag: $('v-pag').value
+        const ChatFlow = {
+            container: null,
+            
+            async start() {
+                this.container = document.getElementById('chat-stream');
+                this.container.innerHTML = '';
+                this.addMessage(`Excelente escolha! Vamos personalizar sua <strong>${App.currentBasket.nome}</strong>?`);
+                this.showInitialActions();
+            },
+
+            addMessage(text, type = 'bot') {
+                const cls = type === 'user' ? 'chat-msg user' : 'chat-msg';
+                this.container.insertAdjacentHTML('beforeend', `<div class="${cls}">${text}</div>`);
+            },
+
+            showInitialActions() {
+                const html = `
+                <div class="chat-actions">
+                    <button class="btn-chat primary" onclick="ChatFlow.showBasketItems()">Sim, vamos lá!</button>
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', html);
+            },
+
+            showBasketItems() {
+                this.addMessage("Sim, vamos lá!", "user");
+                this.addMessage("Aqui estão os itens da sua cesta. Você pode remover o que não quiser clicando no lixo ou sinal de menos.");
+                
+                const products = Object.keys(App.cart).map(id => App.data.find(x => x.id === id));
+                const gridHtml = `<div class="grid-products-row">
+                    ${products.map(p => `
+                        <div class="card-prod" id="cp-${p.id}">
+                            <img src="${p.imagem}">
+                            <div style="font-size:10px; margin:5px 0;">${p.nome}</div>
+                            <div class="qty-ctrl-float">
+                                <button onclick="ChatFlow.modQty('${p.id}', -1)">-</button>
+                                <span id="qty-${p.id}">${App.cart[p.id]}</span>
+                                <button onclick="ChatFlow.modQty('${p.id}', 1)">+</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>`;
+                this.container.insertAdjacentHTML('beforeend', gridHtml);
+            },
+
+            modQty(id, delta) {
+                const current = App.cart[id] || 0;
+                const newVal = current + delta;
+                if(newVal <= 0) delete App.cart[id];
+                else App.cart[id] = newVal;
+                
+                const span = document.getElementById(`qty-${id}`);
+                if(span) span.innerText = App.cart[id] || 0;
+                if(newVal <= 0) document.getElementById(`cp-${id}`).style.opacity = '0.3';
+                else document.getElementById(`cp-${id}`).style.opacity = '1';
+
+                App.updateTotal();
+            },
+
+            startCheckout() {
+                let msg = `*MEU PEDIDO: ${App.currentBasket.nome}*\n\n`;
+                for(let id in App.cart) {
+                    const p = App.data.find(x => x.id === id);
+                    msg += `- ${App.cart[id]}x ${p.nome}\n`;
+                }
+                msg += `\n*TOTAL: ${document.getElementById('ccb-val').innerText}*`;
+                window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent(msg)}`);
+            }
         };
-        const db = DB.get();
-        // Baixa de estoque
-        POS.cart.forEach(item => {
-            const pIdx = db.produto.findIndex(p => p.id === item.id);
-            if(pIdx > -1) db.produto[pIdx].estoque -= item.qty;
-        });
-        db.venda.push(venda);
-        DB.set(db);
-        POS.cart = []; POS.render();
-        alert('Venda Realizada!');
-        UI.render('venda');
-    }
-};
 
-const Logistics = {
-    processFile: () => {
-        const file = $('import-file').files[0];
-        if(!file) return alert('Selecione JSON');
-        const r = new FileReader();
-        r.onload = e => {
-            try {
-                const data = JSON.parse(e.target.result);
-                if(!Array.isArray(data)) throw new Error('Não é array');
-                const db = DB.get();
-                let count = 0;
-                data.forEach(item => {
-                    const code = item.codigo || item.id; 
-                    const exist = db.produto.find(p => p.codigo == code || p.ean == item.EAN);
-                    if(exist) {
-                        exist.estoque += Number(item.qtd || 1);
-                    } else {
-                        db.produto.push({
-                            id: Date.now() + Math.random(), codigo: DB.code('produto'), 
-                            nome: item.nome || item.xProd, valor: 0, custo: 0, estoque: Number(item.qtd||1)
-                        });
-                    }
-                    count++;
-                });
-                DB.set(db);
-                alert(`${count} itens processados.`);
-                UI.render('catalogo');
-            } catch(err) { alert('Erro JSON'); }
-        };
-        r.readAsText(file);
-    }
-};
-
-const Export = {
-    products: () => {
-        const data = DB.get().produto;
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'produtos.json'; a.click();
-    }
-};
-
-window.onload = () => { App.nav('cliente'); setInterval(()=>$('clock').innerText=new Date().toLocaleTimeString().slice(0,5), 1000); };
-</script>
+        document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
 </body>
 </html>
-
-```
