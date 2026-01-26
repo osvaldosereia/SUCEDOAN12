@@ -215,23 +215,89 @@
         .offer-card-simple:hover .cp-img-box { transform: translateY(-2px); }
 
         /* --- CARD CESTA (HOME) --- */
+       /* --- ESTILO HÍBRIDO (FOTO ESQUERDA + INFO DIREITA + GRID ABAIXO) --- */
         .home-basket-card {
-            background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s;
-            padding: 0; color: #333; margin-bottom: 30px; border: 1px solid #f0f0f0;
+            background: #fff; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            padding: 0; 
+            color: #333; 
+            margin-bottom: 30px;
+            border: 1px solid #f0f0f0;
         }
-        .home-basket-card:hover { transform: translateY(-4px); box-shadow: 0 12px 25px rgba(0,0,0,0.12); }
+        .home-basket-card:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 12px 25px rgba(0,0,0,0.12); 
+        }
 
-        .hbc-img-large { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; cursor: pointer; }
-        .hbc-content { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .hbc-main-info { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; gap: 10px; }
-        .hbc-title { font-size: 1.4rem; font-weight: 800; color: #222B49; line-height: 1.1; margin: 0; text-transform: capitalize; }
-        .hbc-price-highlight { font-size: 1.4rem; font-weight: 800; color: var(--primary); white-space: nowrap; }
-        .hbc-subtitle { font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 10px; }
-        .hbc-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        /* Container do Topo (Foto + Texto) */
+        .hbc-header-row {
+            display: flex;
+            padding: 15px 15px 5px 15px; /* Espaço interno */
+            gap: 15px;
+            align-items: center;
+        }
 
-        .btn-home-cust { width: 100%; padding: 12px; background: #ffffff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
-        .btn-home-order { width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.9rem; }
+        /* Foto Quadrada Lateral */
+        .hbc-img-side {
+            width: 110px;
+            height: 110px;
+            border-radius: 12px;
+            object-fit: cover;
+            flex-shrink: 0; /* Não deixa a imagem esmagar */
+            cursor: pointer;
+            border: 1px solid #f1f5f9;
+        }
+
+        /* Coluna de Texto na Direita */
+        .hbc-info-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .hbc-title { 
+            font-size: 1.25rem; 
+            font-weight: 800; 
+            color: #222B49; 
+            line-height: 1.1; 
+            margin: 0; 
+            text-transform: capitalize;
+        }
+
+        .hbc-price-highlight { 
+            font-size: 1.3rem; 
+            font-weight: 800; 
+            color: var(--primary); 
+        }
+
+        .hbc-subtitle { 
+            font-size: 0.8rem; 
+            color: #64748b; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            margin-top: 5px;
+        }
+
+        /* Área dos Produtos e Botões */
+        .hbc-body {
+            padding: 10px 15px 20px 15px;
+        }
+
+        .hbc-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #f1f5f9;
+        }
 
         /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { padding-top: calc(var(--app-header-height) + 10px); padding-bottom: 100px; min-height: 100vh; background: #ffffff; }
@@ -1351,7 +1417,7 @@
                 document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<button type="button" id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${count} PRODUTOS</button>`);
             }
         },
-            renderHome() {
+           renderHome() {
                 const list = document.getElementById('home-list');
                 const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
                 
@@ -1368,14 +1434,19 @@
                         
                         return `
                         <div class="home-basket-card">
-                            <img src="${p.imagem}" class="hbc-img-large" onclick="App.openPhoto('${p.imagem}', '${p.nome}')" alt="${p.nome}">
-                            <div class="hbc-content">
-                                <div class="hbc-main-info">
+                            <div class="hbc-header-row">
+                                <img src="${p.imagem}" class="hbc-img-side" onclick="App.openPhoto('${p.imagem}', '${p.nome}')" alt="${p.nome}">
+                                
+                                <div class="hbc-info-col">
                                     <h2 class="hbc-title">${p.nome}</h2>
                                     <div class="hbc-price-highlight">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
+                                    <div class="hbc-subtitle">Itens e Quantidades:</div>
                                 </div>
-                                <div class="hbc-subtitle">Itens e Quantidades</div>
+                            </div>
+                            
+                            <div class="hbc-body">
                                 <div id="${sectionId}"></div>
+                                
                                 <div class="hbc-actions">
                                     <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button>
                                     <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar a Cesta Normal</button>
