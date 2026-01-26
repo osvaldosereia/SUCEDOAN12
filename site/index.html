@@ -148,20 +148,20 @@
         @media(min-width: 640px) { .baskets-grid { grid-template-columns: 1fr; } }
        /* Localize e substitua este bloco de media query */
         /* Ajuste de Colunas no Desktop */
-        @media(min-width: 1024px) { 
-            /* 1. Na Home (dentro dos cards): Mantém 3 colunas, igual ao mobile */
+      @media(min-width: 1024px) { 
+            /* 1. Na Home (dentro dos cards): Mantém 3 colunas, FORÇADO com !important */
             .grid-products-row { 
-                grid-template-columns: repeat(3, 1fr); 
+                grid-template-columns: repeat(3, 1fr) !important; 
             } 
             
-            /* 2. No Chat (que ocupa a tela toda): Usa 6 colunas para aproveitar o espaço */
+            /* 2. No Chat (que ocupa a tela toda): Usa 6 colunas, FORÇADO com !important */
             #chat-stream .grid-products-row { 
-                grid-template-columns: repeat(6, 1fr); 
+                grid-template-columns: repeat(6, 1fr) !important; 
             }
 
-            /* 3. Layout dos Cards da Home (já ajustado anteriormente) */
+            /* 3. Layout dos Cards da Home: 3 Cestas por linha */
             .baskets-grid { 
-                grid-template-columns: repeat(3, 1fr); 
+                grid-template-columns: repeat(3, 1fr) !important; 
                 gap: 30px; 
             } 
             .home-basket-card { max-width: 100%; } 
@@ -248,9 +248,7 @@
         }
 
         .btn-home-cust { width: 100%; padding: 12px; background: #ffffff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
-        .btn-home-order { width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.9rem; }
-
-        /* --- 5. CUSTOMIZER VIEW --- */
+        .btn-home-order { width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.9rem; } /* --- 5. CUSTOMIZER VIEW --- */
         #customizer-view { padding-top: calc(var(--app-header-height) + 10px); padding-bottom: 100px; min-height: 100vh; background: #ffffff; }
         
         .chat-container { display: flex; flex-direction: column; gap: 20px; padding-bottom: 140px; }
