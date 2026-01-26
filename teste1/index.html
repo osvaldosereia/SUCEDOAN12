@@ -181,7 +181,7 @@
         </div>
         <div style="overflow-x:auto;">
             <table>
-                <col width="40"> <col width="80"> <col width="50"> <col width="auto"> <col width="130"> <col width="130"> <col width="90"> <col width="90"> <col width="90"> <col width="160">
+                <col width="40"> <col width="80"> <col width="50"> <col width="auto"> <col width="160"> <col width="130"> <col width="90"> <col width="90"> <col width="90"> <col width="160">
                 <thead>
                     <tr>
                         <th><input type="checkbox" onchange="App.toggleAllCheck(this.checked)"></th>
@@ -565,6 +565,16 @@ const App = {
         document.querySelectorAll('.prod-check').forEach(c => c.checked = checked);
     },
 
+    // --- NOVA FUNÇÃO DE EDIÇÃO INLINE ---
+    updateInlineCat: (id, newVal) => {
+        const p = DB.data.produtos.find(x => x.id === id);
+        if(p) {
+            p.categoria = newVal.toUpperCase();
+            DB.save();
+        }
+    },
+    // ------------------------------------
+
     calcMargin: (trigger) => {
         const cost = parseFloat(document.getElementById('p-custo').value) || 0;
         const priceEl = document.getElementById('p-valor');
@@ -642,7 +652,17 @@ const App = {
                     <div style="font-weight:700; font-size:1rem;">${p.nome}</div>
                     <small style="color:#64748b;">${p.ean||'SEM GTIN'}</small>
                 </td>
-                <td><span style="background:#f1f5f9; padding:4px; border-radius:4px; font-size:0.8rem;">${p.categoria||'-'}</span></td>
+                
+                <td>
+                    <input 
+                        type="text" 
+                        list="dl-cats" 
+                        value="${p.categoria||''}" 
+                        onchange="App.updateInlineCat('${p.id}', this.value)" 
+                        placeholder="SEM CATEGORIA"
+                        style="width:100%; font-size:0.8rem; padding:4px 8px; border:1px solid #cbd5e1; border-radius:4px; background:#f8fafc; color:#334155; font-weight:600;"
+                    >
+                </td>
                 <td style="font-size:0.85rem; color:#475569;">${lastSup.substring(0, 20)}</td>
                 <td style="text-align:center; font-weight:bold; color:#1d4ed8; font-size:1.1rem;">${p.estoque} <span style="font-size:0.8rem; color:#64748b;">${p.unidade}</span></td>
                 <td style="text-align:right">${parseFloat(p.custo).toFixed(2)}</td>
