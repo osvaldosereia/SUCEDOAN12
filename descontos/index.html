@@ -44,14 +44,14 @@
         .logo-header { width: 75px; height: 75px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; top: 15px; }
         .brand h1 { font-size: 16px; font-weight: 700; margin-left: 15px; }
 
-        /* BANNER ROTATIVO (NOVO) */
+        /* BANNER ROTATIVO (ATUALIZADO: Altura Dobrada) */
         .info-bar {
-            background: #1f2937; /* Cinza escuro */
+            background: #1f2937;
             color: #f9fafb;
-            font-size: 13px;
+            font-size: 14px; /* Aumentei um pouco a fonte */
             font-weight: 600;
             text-align: center;
-            height: 38px;
+            height: 76px; /* Altura dobrada (era 38px) */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -59,7 +59,8 @@
         }
         .info-slide {
             animation: slideUpFade 0.5s ease-out forwards;
-            padding: 0 10px;
+            padding: 0 15px;
+            line-height: 1.4;
         }
         @keyframes slideUpFade {
             from { opacity: 0; transform: translateY(10px); }
@@ -72,11 +73,10 @@
             max-width: 1200px; 
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 1fr; /* Mobile: 1 Coluna */
+            grid-template-columns: 1fr;
             gap: 20px;
         }
 
-        /* Desktop: 3 Colunas */
         @media (min-width: 1024px) {
             .catalog-container {
                 grid-template-columns: repeat(3, 1fr);
@@ -85,7 +85,7 @@
             }
         }
 
-        /* DIDACTIC SECTION (Ocupa largura total na grelha) */
+        /* DIDACTIC SECTION */
         .didactic-section { grid-column: 1 / -1; margin: 10px 0; }
         .didactic-slide { 
             background: white; border-radius: 20px; padding: 25px; 
@@ -113,13 +113,19 @@
         .p-title { font-size: 20px; font-weight: 800; margin: 0 0 15px; text-align: center; }
         .basket-hero-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 16px; margin-bottom: 15px; background: #f8fafc; }
         
+        /* LINHA DE OPÇÕES E PREÇO (ATUALIZADA) */
         .opt-row { 
             display: flex; align-items: center; justify-content: space-between;
-            padding: 14px; border-radius: 14px; border: 1.5px solid var(--border-medium);
+            padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--border-medium);
             margin: 8px 0; cursor: pointer; transition: 0.2s;
         }
         .opt-row.selected { border-color: var(--success); background: #f0fdf4; }
-        .price-tag { font-size: 18px; font-weight: 800; color: var(--text-main); }
+        
+        /* Estilos de preço Promocional */
+        .price-container { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+        .price-old { font-size: 12px; text-decoration: line-through; color: #9ca3af; margin-bottom: 2px; }
+        .price-new { font-size: 17px; font-weight: 800; color: var(--text-main); }
+        .opt-row.selected .price-new { color: var(--success-dark); }
 
         .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 14px; transition: opacity 0.2s; }
         .btn:active { opacity: 0.8; }
@@ -192,11 +198,15 @@
     </div>
 
     <script>
+        // Estrutura de dados atualizada com preços 'old' (antigo) e 'new' (novo)
         const BASKETS = {
             'GRANDE': {
                 name: 'Cesta Grande',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
-                opts: [{ n: 'Com Arroz Tio Alvino', p: 'R$ 355', sel: true }, { n: 'Com Arroz Koblenz', p: 'R$ 365' }],
+                opts: [
+                    { n: 'Com Arroz Tio Alvino', old: 'R$ 380', new: 'R$ 355', sel: true }, 
+                    { n: 'Com Arroz Koblenz', old: 'R$ 390', new: 'R$ 365' }
+                ],
                 alimentos: [
                     {q:'4', n:'Arroz de 5kg'}, {q:'3', n:'Açúcar Cristal 2kg'}, {q:'4', n:'Óleo de Soja 900ml'},
                     {q:'4', n:'Feijão da Casa 1kg'}, {q:'1', n:'Café Caboclo 500g'}, {q:'3', n:'Espaguetes 500g'},
@@ -214,7 +224,10 @@
             'MEDIA': {
                 name: 'Cesta Média',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
-                opts: [{ n: 'Com Arroz Tio Alvino', p: 'R$ 300', sel: true }, { n: 'Com Arroz Koblenz', p: 'R$ 305' }],
+                opts: [
+                    { n: 'Com Arroz Tio Alvino', old: 'R$ 320', new: 'R$ 300', sel: true }, 
+                    { n: 'Com Arroz Koblenz', old: 'R$ 325', new: 'R$ 305' }
+                ],
                 alimentos: [
                     {q:'3', n:'Arroz de 5kg'}, {q:'2', n:'Açúcar Cristal 2kg'}, {q:'3', n:'Óleo de Soja 900ml'},
                     {q:'3', n:'Feijão da Casa 1kg'}, {q:'1', n:'Café Caboclo 500g'}, {q:'12', n:'Ovos'},
@@ -232,7 +245,10 @@
             'PEQUENA': {
                 name: 'Cesta Pequena',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
-                opts: [{ n: 'Com Arroz Tio Alvino', p: 'R$ 205', sel: true }, { n: 'Com Arroz Koblenz', p: 'R$ 210' }],
+                opts: [
+                    { n: 'Com Arroz Tio Alvino', old: 'R$ 215', new: 'R$ 205', sel: true }, 
+                    { n: 'Com Arroz Koblenz', old: 'R$ 220', new: 'R$ 210' }
+                ],
                 alimentos: [
                     {q:'2', n:'Arroz de 5kg'}, {q:'1', n:'Açúcar Cristal 2kg'}, {q:'2', n:'Óleo de Soja 900ml'},
                     {q:'2', n:'Feijão da Casa 1kg'}, {q:'1', n:'Café Caboclo 250g'}, {q:'12', n:'Ovos'},
@@ -250,7 +266,10 @@
             'MINI': {
                 name: 'Cesta Mini',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
-                opts: [{ n: 'Com Arroz Tio Alvino', p: 'R$ 160', sel: true }, { n: 'Com Arroz Koblenz', p: 'R$ 165' }],
+                opts: [
+                    { n: 'Com Arroz Tio Alvino', old: 'R$ 165', new: 'R$ 160', sel: true }, 
+                    { n: 'Com Arroz Koblenz', old: 'R$ 170', new: 'R$ 165' }
+                ],
                 alimentos: [
                     {q:'1', n:'Arroz de 5kg'}, {q:'1', n:'Açúcar Cristal 2kg'}, {q:'2', n:'Óleo de Soja 900ml'},
                     {q:'2', n:'Feijão da Casa 1kg'}, {q:'1', n:'Café Caboclo 250g'}, {q:'1', n:'Espaguete de 500g'},
@@ -267,7 +286,7 @@
             'ECONOMICA': {
                 name: 'Cesta Econômica',
                 img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
-                opts: [{ n: 'Preço Único', p: 'R$ 85', sel: true }],
+                opts: [{ n: 'Preço Único', old: 'R$ 85', new: 'R$ 80', sel: true }],
                 alimentos: [
                     {q:'1', n:'Arroz Tio Bonini 5kg'}, {q:'1', n:'Açúcar Cristal 2kg'}, {q:'1', n:'Óleo de Soja 900ml'},
                     {q:'1', n:'Feijão Dona Dê 1kg'}, {q:'1', n:'Café Premiado 250g'}, {q:'1', n:'Espaguete de 400g'},
@@ -279,7 +298,6 @@
             }
         };
 
-        // --- LÓGICA DO BANNER ROTATIVO (NOVA) ---
         const bannerMsgs = [
             "<i class='ph-fill ph-truck'></i> Entregamos em Cuiabá e VG",
             "<i class='ph-fill ph-credit-card'></i> Parcele em até 3x sem juros no cartão de crédito",
@@ -293,10 +311,8 @@
             bannerIdx = (bannerIdx + 1) % bannerMsgs.length;
         }
         
-        // Inicia e troca a cada 3.5 segundos
         cycleBanner();
         setInterval(cycleBanner, 3500);
-        // ------------------------------------------
 
         function renderAll() {
             const container = document.getElementById('catalog-mount');
@@ -308,7 +324,10 @@
                 const optionsHtml = basket.opts.map((o, i) => `
                     <div class="opt-row ${o.sel ? 'selected' : ''}" onclick="selectOption('${key}', ${i})">
                         <span style="font-size: 13px; font-weight: 500;">${o.n}</span>
-                        <span class="price-tag">${o.p}</span>
+                        <div class="price-container">
+                            <span class="price-old">De ${o.old}</span>
+                            <span class="price-new">Por ${o.new}</span>
+                        </div>
                     </div>
                 `).join('');
 
@@ -324,7 +343,6 @@
                     </section>
                 `;
                 
-                // Seção Didática após as duas primeiras cestas (fica no meio no desktop)
                 if(key === 'MEDIA') html += `
                     <div class="didactic-section">
                         <div class="didactic-slide">
@@ -367,7 +385,8 @@
         function orderWhatsApp(key) {
             const b = BASKETS[key];
             const opt = b.opts.find(o => o.sel);
-            const msg = `Olá! Gostaria de encomendar a ${b.name} (${opt.n}) no valor de ${opt.p}.`;
+            // Atualizado para usar opt.new (preço promocional)
+            const msg = `Olá! Gostaria de encomendar a ${b.name} (${opt.n}) no valor de ${opt.new}.`;
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
         }
 
