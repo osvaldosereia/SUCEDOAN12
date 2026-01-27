@@ -6,10 +6,10 @@
     <title>Dona Antonia - Cestas</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        /* --- ESTILO VISUAL WHATSAPP (CSS) --- */
+        /* --- ESTILO GERAL --- */
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #d1d7db; /* Fundo cinza da área de trabalho */
+            background-color: #d1d7db;
             margin: 0;
             display: flex;
             justify-content: center;
@@ -19,8 +19,7 @@
         #phone-container {
             width: 100%;
             max-width: 600px;
-            background-color: #efe7dd; /* Bege clássico do WhatsApp */
-            /* Imagem de fundo padrão do WhatsApp (opcional, mas dá o toque final) */
+            background-color: #efe7dd; /* Bege WhatsApp */
             background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
             background-repeat: repeat;
             display: flex;
@@ -32,7 +31,7 @@
 
         /* --- CABEÇALHO --- */
         header {
-            background-color: #008069; /* Verde Oficial */
+            background-color: #008069;
             color: white;
             padding: 10px 15px;
             display: flex;
@@ -42,282 +41,149 @@
             z-index: 10;
         }
 
-        .back-btn {
-            font-size: 24px;
-            cursor: pointer;
-            margin-right: 5px;
-        }
+        .back-btn { font-size: 24px; cursor: pointer; margin-right: 5px; }
 
         .logo-circle {
-            width: 40px;
-            height: 40px;
-            background-color: white;
-            border-radius: 50%;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-shrink: 0;
+            width: 40px; height: 40px;
+            background-color: white; border-radius: 50%;
+            overflow: hidden; display: flex; justify-content: center; align-items: center; flex-shrink: 0;
         }
+        .logo-circle img { width: 100%; height: 100%; object-fit: cover; }
 
-        .logo-circle img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .header-info { display: flex; flex-direction: column; flex: 1; }
+        .company-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .status { font-size: 12px; opacity: 0.8; }
+        .header-icons { display: flex; gap: 15px; }
 
-        .header-info {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
-
-        .company-name {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .status {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .header-icons {
-            display: flex;
-            gap: 15px;
-        }
-
-        /* --- ÁREA DO CHAT --- */
+        /* --- CHAT --- */
         #chat-content {
             flex: 1;
-            padding: 20px 15px; /* Espaçamento lateral */
+            padding: 20px 15px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px; /* Espaço menor entre balões */
+            gap: 8px;
             padding-bottom: 90px;
         }
 
-        /* Balões de Mensagem */
+        /* Balões */
         .message {
             padding: 8px 10px;
             border-radius: 7.5px;
             font-size: 16px;
             line-height: 19px;
-            max-width: 75%;
+            max-width: 85%; /* Um pouco mais largo para caber o player */
             position: relative;
             box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
             animation: fadeIn 0.3s;
             word-wrap: break-word;
         }
 
-        /* Mensagem do Robô (Esquerda - Branco) */
+        /* Robô (Branco) */
         .bot-msg {
             background-color: #ffffff;
             color: #111b21;
             align-self: flex-start;
-            border-top-left-radius: 0; /* Canto quadrado para o rabicho */
+            border-top-left-radius: 0;
             margin-left: 8px;
         }
-
-        /* Rabicho do Robô */
         .bot-msg::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -8px;
-            width: 0;
-            height: 0;
-            border: 8px solid transparent;
-            border-top-color: #ffffff;
-            border-right: 0;
-            margin-top: -0px;
+            content: ""; position: absolute; top: 0; left: -8px; width: 0; height: 0;
+            border: 8px solid transparent; border-top-color: #ffffff; border-right: 0; margin-top: -0px;
         }
 
-        /* Mensagem do Usuário (Direita - Verde Claro) */
+        /* Usuário (Verde) */
         .user-msg {
             background-color: #d9fdd3;
             color: #111b21;
             align-self: flex-end;
             border-top-right-radius: 0;
             margin-right: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end; /* Para alinhar o tick */
+            display: flex; flex-direction: column; align-items: flex-end;
         }
-
-        /* Rabicho do Usuário */
         .user-msg::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: -8px;
-            width: 0;
-            height: 0;
-            border: 8px solid transparent;
-            border-top-color: #d9fdd3;
-            border-left: 0;
-            margin-top: -0px;
+            content: ""; position: absolute; top: 0; right: -8px; width: 0; height: 0;
+            border: 8px solid transparent; border-top-color: #d9fdd3; border-left: 0; margin-top: -0px;
         }
 
-        /* Horário e Ticks */
         .msg-meta {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 3px;
-            margin-top: 2px;
-            font-size: 11px;
-            color: #667781;
-            float: right;
-            margin-left: 10px;
-            position: relative;
-            top: 4px;
+            display: flex; justify-content: flex-end; align-items: center; gap: 3px;
+            margin-top: 4px; font-size: 11px; color: #667781; float: right; margin-left: 10px;
         }
+        .tick { font-size: 14px; color: #53bdeb; }
 
-        .tick {
-            font-size: 14px;
-            color: #53bdeb; /* Azul do visto */
-        }
-
-        /* --- BOTÕES DAS CESTAS --- */
-        .options-container {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            width: 100%;
-        }
-
-        .option-btn {
-            background-color: #ffffff;
-            color: #008069;
-            border: none;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: 500;
-            text-align: center;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f2f5;
-            width: 100%;
-        }
-        .option-btn:hover { background-color: #f5f5f5; }
-        .option-btn:first-child { border-top-left-radius: 7.5px; border-top-right-radius: 7.5px; }
-        .option-btn:last-child { border-bottom-left-radius: 7.5px; border-bottom-right-radius: 7.5px; border-bottom: none; }
-
-        /* --- ÁREA DE INPUT (Roda pé) --- */
-        #input-area {
-            padding: 10px;
-            background-color: #f0f2f5;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 12px 15px;
-            font-size: 16px;
-            border: none;
-            border-radius: 25px;
-            outline: none;
-            background: white;
-        }
-
-        button.send-btn {
-            background-color: #008069;
-            color: white;
-            border: none;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-
-        /* --- PLAYER DE ÁUDIO ESTILO WHATSAPP --- */
+        /* --- PLAYER DE ÁUDIO ESTILO WHATSAPP (Ajustado) --- */
         .wa-audio-player {
             display: flex;
             align-items: center;
-            gap: 10px;
-            width: 260px; /* Largura padrão */
-            padding: 5px 0;
+            gap: 8px;
+            min-width: 250px; /* Garante largura */
+            height: 50px;
         }
         
-        /* Ícone do perfil/fone no áudio */
         .audio-avatar {
-            width: 45px;
-            height: 45px;
+            width: 42px; height: 42px;
             border-radius: 50%;
-            background-color: #ff9800; /* Laranja padrão para áudio ou foto */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            position: relative;
+            background-color: #ff9800; /* Laranja do audio */
+            display: flex; justify-content: center; align-items: center;
+            color: white; position: relative; flex-shrink: 0;
         }
         
         .mic-icon-small {
-            position: absolute;
-            bottom: 0;
-            right: -2px;
-            font-size: 14px;
-            color: #667781;
+            position: absolute; bottom: -2px; right: -2px;
+            font-size: 16px; color: #667781;
+            background: white; border-radius: 50%; padding: 1px;
         }
 
-        /* O player nativo disfarçado */
         audio {
-            flex: 1;
+            flex: 1; /* Ocupa o resto do espaço */
             height: 40px;
             outline: none;
         }
         
-        /* Truque para deixar o player nativo mais limpo (Chrome/Webkit) */
+        /* Tenta deixar o player nativo transparente para fundir com o balão */
         audio::-webkit-media-controls-panel {
-            background-color: transparent; 
+            background-color: #ffffff; /* Cor do balão do bot */
         }
-        
-        /* Botão do WhatsApp final */
-        .whatsapp-btn {
-            background-color: #25D366;
-            color: white;
-            text-decoration: none;
-            padding: 14px;
-            border-radius: 25px;
-            text-align: center;
-            display: block;
-            margin-top: 5px;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        audio::-webkit-media-controls-enclosure {
+            background-color: #ffffff;
         }
 
-        /* --- MODAL FOTOS --- */
+        /* --- BOTÕES --- */
+        .options-container { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+        .option-btn {
+            background-color: #ffffff; color: #008069; border: none; padding: 12px;
+            font-size: 16px; font-weight: 500; text-align: center; cursor: pointer;
+            border-bottom: 1px solid #f0f2f5; width: 100%;
+        }
+        .option-btn:hover { background-color: #f5f5f5; }
+
+        /* --- INPUT --- */
+        #input-area {
+            padding: 10px; background-color: #f0f2f5; display: flex; align-items: center;
+            gap: 10px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box;
+        }
+        input[type="text"] {
+            flex: 1; padding: 12px 15px; font-size: 16px; border: none; border-radius: 25px; outline: none; background: white;
+        }
+        button.send-btn {
+            background-color: #008069; color: white; border: none; width: 45px; height: 45px;
+            border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* --- MODAL --- */
         #photo-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.95);
-            z-index: 2000;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.95); z-index: 2000;
+            flex-direction: column; justify-content: center; align-items: center;
         }
         #modal-img { max-width: 95%; max-height: 55vh; border-radius: 5px; }
         .nav-buttons { display: flex; gap: 50px; width: 100%; justify-content: center; margin-top: 20px;}
         .nav-btn { background: #008069; color: white; border: none; font-size: 30px; padding: 15px 30px; border-radius: 50px; cursor: pointer; }
         .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 20px; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 30px; cursor: pointer; border: none; }
+        .whatsapp-btn { background-color: #25D366; color: white; text-decoration: none; padding: 14px; border-radius: 25px; text-align: center; display: block; margin-top: 5px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -361,22 +227,16 @@
     </div>
 
     <script>
-        /* --- LÓGICA DO PROGRAMA (Mesma de antes) --- */
-        
+        /* --- LÓGICA --- */
         let userName = "";
         let currentBasket = "";
         let currentPhotoIndex = 0;
-        
         const chatContent = document.getElementById('chat-content');
-        const inputArea = document.getElementById('input-area');
         const userInput = document.getElementById('user-input');
 
         window.onload = function() {
-            // Data e hora atual para o horário da mensagem
             addBotMessage("Olá, eu sou o Osvaldo da propaganda.");
-            setTimeout(() => {
-                addBotMessage("Qual o seu nome?");
-            }, 1000);
+            setTimeout(() => addBotMessage("Qual o seu nome?"), 1000);
         };
 
         function getCurrentTime() {
@@ -387,10 +247,7 @@
         function addBotMessage(htmlContent) {
             const div = document.createElement('div');
             div.className = 'message bot-msg';
-            
-            // Adiciona o HTML e o horário
             div.innerHTML = `${htmlContent} <span class="msg-meta">${getCurrentTime()}</span>`;
-            
             chatContent.appendChild(div);
             scrollToBottom();
             return div; 
@@ -400,30 +257,22 @@
             const div = document.createElement('div');
             div.className = 'message user-msg';
             if(isButton) div.style.cursor = "pointer";
-            
-            // Texto + Horário + Check Azul
             div.innerHTML = `${text} <span class="msg-meta">${getCurrentTime()} <span class="material-icons tick">done_all</span></span>`;
-            
             chatContent.appendChild(div);
             scrollToBottom();
             return div;
         }
 
-        function scrollToBottom() {
-            chatContent.scrollTop = chatContent.scrollHeight;
-        }
+        function scrollToBottom() { chatContent.scrollTop = chatContent.scrollHeight; }
 
         function processInput() {
             const text = userInput.value.trim();
             if (text === "") return;
-
             if (!userName) {
                 userName = text;
                 addUserMessage(userName);
                 userInput.value = "";
-                // Esconde o input para focar na conversa
                 document.getElementById('input-area').style.display = 'none';
-                
                 setTimeout(() => {
                     addBotMessage(`Legal, ${userName}, vou te mandar as nossas cestas para você conhecer.`);
                     showBasketButtons();
@@ -434,7 +283,6 @@
         function showBasketButtons() {
             const container = document.createElement('div');
             container.className = 'options-container';
-
             const cestas = [
                 { id: 'grande', label: 'Cesta Grande' },
                 { id: 'media', label: 'Cesta Média' },
@@ -442,7 +290,6 @@
                 { id: 'mini', label: 'Cesta Mini' },
                 { id: 'economica', label: 'Cesta Econômica' }
             ];
-
             cestas.forEach(cesta => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
@@ -450,28 +297,19 @@
                 btn.onclick = () => openModal(cesta.id);
                 container.appendChild(btn);
             });
-
-            // Cria um balão transparente/sem fundo para a lista
             const msgDiv = document.createElement('div');
-            msgDiv.style.width = '70%'; 
-            msgDiv.style.marginLeft = '10px';
-            msgDiv.style.marginBottom = '10px';
-            
+            msgDiv.style.width = '70%'; msgDiv.style.marginLeft = '10px'; msgDiv.style.marginBottom = '10px';
             msgDiv.appendChild(container);
             chatContent.appendChild(msgDiv);
             scrollToBottom();
-
             setTimeout(askForAudioPermission, 30000); 
         }
 
         let audioAsked = false;
-
         function askForAudioPermission() {
             if(audioAsked) return;
             audioAsked = true;
-
             addBotMessage(`${userName}, eu tenho um desconto, vou te mandar um audio, pode ser?`);
-            
             setTimeout(() => {
                 const btn = addUserMessage("OK, pode mandar", true);
                 btn.onclick = function() {
@@ -484,39 +322,42 @@
 
         function startAudioSequence() {
             const gravandoMsg = addBotMessage("<i>gravando áudio...</i>");
-            
             setTimeout(() => {
                 gravandoMsg.remove(); 
-                sendAudioPlayer("audio.mp3", "audio1"); // SEU ARQUIVO AQUI
-
+                sendAudioPlayer("audio.mp3", "audio1");
                 setTimeout(() => {
-                    sendAudioPlayer("audio2.mp3", "audio2"); // SEU ARQUIVO AQUI
-
-                    setTimeout(() => {
-                        finalizeChat();
-                    }, 10000);
+                    sendAudioPlayer("audio2.mp3", "audio2");
+                    setTimeout(() => finalizeChat(), 10000);
                 }, 10000); 
             }, 5000); 
         }
 
         function sendAudioPlayer(src, id) {
-            // AQUI ESTÁ A MÁGICA DO VISUAL WHATSAPP
-            // Criamos um layout com ícone de fone + player nativo
             const audioHtml = `
                 <div class="wa-audio-player">
                     <div class="audio-avatar">
                         <span class="material-icons">headset</span>
                         <span class="material-icons mic-icon-small">mic</span>
                     </div>
-                    <audio id="${id}" controls controlsList="nodownload noplaybackrate">
+                    <audio id="${id}" controls controlsList="nodownload">
                         <source src="${src}" type="audio/mpeg">
                         <source src="${src}" type="audio/mp4">
+                        Seu navegador não suporta áudio.
                     </audio>
                 </div>
             `;
             const div = addBotMessage(audioHtml);
-            
             const player = document.getElementById(id);
+            
+            // Adiciona um aviso se o arquivo não for achado (Diagnóstico)
+            player.onerror = function() {
+                console.log("Erro ao carregar: " + src);
+                const errorMsg = document.createElement('div');
+                errorMsg.style.color = 'red'; errorMsg.style.fontSize = '12px'; errorMsg.style.marginTop = '5px';
+                errorMsg.textContent = "Erro: Arquivo não encontrado (verifique o nome)";
+                div.appendChild(errorMsg);
+            };
+
             if(player) {
                 player.play().catch(e => { console.log("Aguardando play manual"); });
             }
@@ -524,37 +365,18 @@
 
         function finalizeChat() {
             addBotMessage("Me manda um oi no whatsapp pra salvar meu contato. Obrigado.");
-            
             const msgWpp = `Oi, eu sou o ${userName}, vou salvar seu contato. O Osvaldo me garantiu um sabão em pó omo a mais na minha próxima compra. Obrigado`;
             const encodedMsg = encodeURIComponent(msgWpp);
             const numeroWpp = "5565999999999"; 
-
-            const wppBtn = `<a href="https://wa.me/${numeroWpp}?text=${encodedMsg}" class="whatsapp-btn" target="_blank">
-                <span class="material-icons" style="vertical-align: middle; margin-right:5px;">chat</span>
-                Falar no WhatsApp
-            </a>`;
-
-            setTimeout(() => {
-                addBotMessage(wppBtn);
-            }, 1000);
+            const wppBtn = `<a href="https://wa.me/${numeroWpp}?text=${encodedMsg}" class="whatsapp-btn" target="_blank"><span class="material-icons" style="vertical-align: middle; margin-right:5px;">chat</span>Falar no WhatsApp</a>`;
+            setTimeout(() => addBotMessage(wppBtn), 1000);
         }
 
-        // --- LÓGICA DO SLIDE (MANTIDA) ---
-        function openModal(cestaId) {
-            currentBasket = cestaId;
-            currentPhotoIndex = 0;
-            updateModalImage();
-            document.getElementById('photo-modal').style.display = 'flex';
-        }
+        function openModal(cestaId) { currentBasket = cestaId; currentPhotoIndex = 0; updateModalImage(); document.getElementById('photo-modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('photo-modal').style.display = 'none'; }
-        function updateModalImage() {
-            const imgElement = document.getElementById('modal-img');
-            let suffix = currentPhotoIndex === 0 ? "" : "1";
-            imgElement.src = `img/${currentBasket}${suffix}.webp`;
-        }
+        function updateModalImage() { document.getElementById('modal-img').src = `img/${currentBasket}${currentPhotoIndex === 0 ? "" : "1"}.webp`; }
         function nextPhoto() { currentPhotoIndex = currentPhotoIndex === 0 ? 1 : 0; updateModalImage(); }
         function prevPhoto() { currentPhotoIndex = currentPhotoIndex === 0 ? 1 : 0; updateModalImage(); }
-
     </script>
 </body>
 </html>
