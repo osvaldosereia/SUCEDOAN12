@@ -1,149 +1,176 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat Mobile Interativo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Dona Antonia</title>
     <style>
-        /* --- ESTILOS (CSS) --- */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        /* Estilização Geral - Estilo Bubble Chat */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Top Bar */
+        .top-bar { background-color: #075e54; color: white; padding: 10px; display: flex; align-items: center; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .top-bar img { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 1px solid #fff; }
+        .top-bar span { font-weight: bold; font-size: 18px; }
 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            height: 100dvh; 
-            display: flex;
-            flex-direction: column;
-        }
+        /* Área do Chat */
+        #chat-container { flex: 1; padding: 70px 15px 20px 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        /* Balões de Mensagem */
+        .msg { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; position: relative; margin-bottom: 5px; }
+        .bot { background-color: white; align-self: flex-start; border-top-left-radius: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .user-input-area { padding: 10px; background: white; display: flex; gap: 10px; border-top: 1px solid #ddd; }
+        .input-text { flex: 1; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; outline: none; }
+        .btn-send { background: #25d366; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
 
-        #chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            /* Suaviza a rolagem */
-            scroll-behavior: smooth; 
-        }
+        /* Imagens e Figurinas */
+        .sticker { width: 100px; display: block; margin-bottom: 5px; }
+        .btn-action { background-color: #34b7f1; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
 
-        .mensagem {
-            max-width: 80%;
-            background-color: #fff;
-            padding: 12px 16px;
-            border-radius: 15px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            font-size: 18px; 
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
+        /* Modal do Slide de Imagens */
+        #modal-slide { display: none; position: fixed; z-index: 2000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); text-align: center; }
+        .slide-img { max-width: 90%; max-height: 70%; margin-top: 50px; }
+        .controls { margin-top: 20px; }
+        .btn-ctrl { background: white; border: none; padding: 15px; margin: 0 10px; font-size: 20px; cursor: pointer; border-radius: 5px; }
+        .btn-close { position: absolute; top: 20px; right: 20px; background: red; color: white; border: none; padding: 10px; cursor: pointer; }
 
-        /* Estilo para as mensagens que tu envias */
-        .minha-mensagem {
-            background-color: #dcf8c6;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-
-        /* Estilo para as mensagens recebidas/sistema */
-        .mensagem-bot {
-            background-color: #ffffff;
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
-        }
-
-        #input-area {
-            background-color: #fff;
-            padding: 15px;
-            border-top: 1px solid #ccc;
-            display: flex;
-            gap: 10px;
-            position: sticky; 
-            bottom: 0;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            outline: none;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 25px;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-        }
-
-        button:active {
-            background-color: #0056b3;
-        }
+        /* Reprodutor de Áudio Estilo WhatsApp */
+        .audio-player { display: flex; align-items: center; background: #dcf8c6; padding: 10px; border-radius: 10px; min-width: 200px; }
+        .play-btn { font-size: 24px; cursor: pointer; margin-right: 10px; }
     </style>
 </head>
 <body>
 
+    <div class="top-bar">
+        <img src="logo.webp" alt="Logo">
+        <span>Dona Antonia Cestas Básicas</span>
+    </div>
+
     <div id="chat-container">
-        <div class="mensagem mensagem-bot">
-            Olá! Sou o teu assistente. Escreve algo abaixo para testar o envio!
+        </div>
+
+    <div class="user-input-area" id="input-zone">
+        <input type="text" id="user-name" class="input-text" placeholder="Digite seu nome...">
+        <button class="btn-send" onclick="startConversation()">➤</button>
+    </div>
+
+    <div id="modal-slide">
+        <button class="btn-close" onclick="closeSlide()">FECHAR X</button>
+        <img id="img-display" class="slide-img" src="" alt="Cesta">
+        <div class="controls">
+            <button class="btn-ctrl" onclick="changeImg(-1)">◀ Anterior</button>
+            <button class="btn-ctrl" onclick="changeImg(1)">Próxima ▶</button>
         </div>
     </div>
 
-    <div id="input-area">
-        <input type="text" id="campo-texto" placeholder="Escreva aqui...">
-        <button id="btn-enviar">Enviar</button>
-    </div>
-
     <script>
-        // Selecionamos os elementos pelos IDs que criamos acima
-        const botao = document.getElementById('btn-enviar');
-        const input = document.getElementById('campo-texto');
-        const container = document.getElementById('chat-container');
+        const chatContainer = document.getElementById('chat-container');
+        const inputZone = document.getElementById('input-zone');
+        let clienteNome = "";
+        
+        // Lista de imagens das cestas
+        const imagensCestas = ["cesta1.webp", "cesta2.webp", "cesta3.webp"];
+        let currentImgIndex = 0;
 
-        // Função para adicionar a mensagem no ecrã
-        function enviarMensagem() {
-            const mensagemTexto = input.value.trim();
+        // Função para adicionar mensagem ao chat
+        function addMessage(text, type = 'bot', isSticker = false) {
+            const div = document.createElement('div');
+            div.className = `msg ${type}`;
+            if (isSticker) {
+                div.innerHTML = `<img src="${text}" class="sticker">`;
+            } else {
+                div.innerHTML = text;
+            }
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
 
-            if (mensagemTexto !== "") {
-                // 1. Criar o elemento da mensagem
-                const novaDiv = document.createElement('div');
-                novaDiv.classList.add('mensagem', 'minha-mensagem');
-                novaDiv.textContent = mensagemTexto;
+        // Saudação Inicial
+        window.onload = () => {
+            const hour = new Date().getHours();
+            let saudacao = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+            
+            setTimeout(() => {
+                addMessage("ola.webp", 'bot', true);
+                addMessage(`${saudacao}! Me chamo Osvaldo. Qual é o seu nome?`);
+            }, 500);
+        };
 
-                // 2. Colocar a mensagem dentro do chat
-                container.appendChild(novaDiv);
+        // Lógica após digitar o nome
+        function startConversation() {
+            clienteNome = document.getElementById('user-name').value;
+            if (clienteNome.trim() === "") return;
 
-                // 3. Limpar o campo de texto
-                input.value = "";
+            inputZone.style.display = 'none'; // Esconde o input após receber o nome
+            addMessage(clienteNome, 'user');
 
-                // 4. Rolar para baixo automaticamente
-                container.scrollTop = container.scrollHeight;
+            setTimeout(() => {
+                addMessage(`${clienteNome}, vou te mandar as fotos e as listas de produtos das nossas cestas agora. Pode ser?`);
+                addMessage(`<button class="btn-action" onclick="openSlide()">VER CESTAS BÁSICAS</button>`);
                 
-                // (Opcional) Focar novamente no input para continuar a escrever
-                input.focus();
+                // Aguarda 10 segundos para perguntar do áudio
+                setTimeout(askForAudio, 10000);
+            }, 1000);
+        }
+
+        // Slide de Imagens
+        function openSlide() {
+            document.getElementById('modal-slide').style.display = 'block';
+            updateSlide();
+        }
+
+        function closeSlide() {
+            document.getElementById('modal-slide').style.display = 'none';
+        }
+
+        function updateSlide() {
+            document.getElementById('img-display').src = imagensCestas[currentImgIndex];
+        }
+
+        function changeImg(dir) {
+            currentImgIndex += dir;
+            if (currentImgIndex < 0) currentImgIndex = imagensCestas.length - 1;
+            if (currentImgIndex >= imagensCestas.length) currentImgIndex = 0;
+            updateSlide();
+        }
+
+        // Parte do Áudio
+        function askForAudio() {
+            addMessage(`${clienteNome}, posso te enviar um áudio rapidinho explicando como funciona a compra?`);
+            
+            setTimeout(() => {
+                // Simula o envio do áudio
+                const audioHTML = `
+                    <div class="audio-player">
+                        <span class="play-btn" onclick="playAudio(this)">▶️</span>
+                        <span>Mensagem de voz (0:30)</span>
+                        <audio id="main-audio" src="audio.mp3"></audio>
+                    </div>
+                `;
+                addMessage(audioHTML);
+                
+                // Aguarda o tempo do áudio + delay para mensagem final
+                setTimeout(finalStep, 10000);
+            }, 2000);
+        }
+
+        function playAudio(btn) {
+            const audio = document.getElementById('main-audio');
+            if (audio.paused) {
+                audio.play();
+                btn.innerText = "⏸️";
+            } else {
+                audio.pause();
+                btn.innerText = "▶️";
             }
         }
 
-        // Listener para o clique no botão
-        botao.addEventListener('click', enviarMensagem);
-
-        // Listener para a tecla Enter
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                enviarMensagem();
-            }
-        });
+        function finalStep() {
+            addMessage("obrigado.webp", 'bot', true);
+            addMessage(`${clienteNome}, me mande um oi no WhatsApp para salvar nosso contato.`);
+            addMessage(`Na sua próxima compra vou te mandar **1 café de brinde**! ☕`);
+            addMessage(`<button class="btn-action" style="background:#25d366" onclick="window.open('https://wa.me/SEUNUMERO')">CHAMAR NO WHATSAPP</button>`);
+        }
     </script>
-
 </body>
 </html>
