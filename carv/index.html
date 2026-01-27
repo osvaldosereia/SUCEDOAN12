@@ -1,575 +1,125 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dona Antonia</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Chat Mobile Ajustado</title>
     <style>
-        /* --- RESET E BASE (Estilo Apple Clean) --- */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f2f2f7; /* Cinza Apple */
+        /* Reset básico */
+        * {
+            box-sizing: border-box;
             margin: 0;
-            display: flex;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
+            padding: 0;
         }
 
-        #app-container {
-            width: 100%;
-            max-width: 500px;
-            background-color: #ffffff;
+        /* O corpo ocupa a altura total dinâmica do ecrã */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            height: 100dvh; /* dvh ajusta-se melhor ao mobile que vh */
             display: flex;
             flex-direction: column;
-            position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* --- CABEÇALHO (Ajustado) --- */
-        header {
-            background-color: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #e5e5ea;
-            padding: 10px 15px;
-            position: absolute;
-            top: 0;
-            width: 100%;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* Espalha os itens */
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1; /* Ocupa o espaço disponível */
-        }
-
-        .header-logo {
-            width: 45px; height: 45px; border-radius: 50%; object-fit: cover;
-            border: 1px solid #eee;
-        }
-
-        .header-text {
-            display: flex; flex-direction: column;
-        }
-        
-        .header-title {
-            font-size: 16px; font-weight: 700; color: #000;
-        }
-        
-        .header-subtitle {
-            font-size: 11px; color: #666; margin-top: 2px;
-            max-width: 180px; line-height: 1.2;
-        }
-
-        .btn-save-contact {
-            background-color: #e5e5ea;
-            color: #008060;
-            font-size: 11px;
-            font-weight: bold;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 15px;
-            text-decoration: none;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-
-        /* --- ÁREA DE CHAT --- */
-        #chat-content {
-            flex: 1;
-            padding: 85px 15px 100px 15px; 
-            overflow-y: auto;
+        /* Área das mensagens (ocupa o espaço livre) */
+        #chat-container {
+            flex: 1; /* Ocupa todo o espaço sobrando */
+            overflow-y: auto; /* Permite rolar se houver muitas mensagens */
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            scroll-behavior: smooth;
+            gap: 15px;
         }
 
-        /* --- BALÕES --- */
-        .message {
-            padding: 12px 16px;
-            border-radius: 18px;
-            font-size: 16px;
-            line-height: 1.4;
-            max-width: 85%;
-            position: relative;
-            animation: slideIn 0.3s ease-out;
-            word-wrap: break-word;
-        }
-
-        /* Robô (Esquerda) */
-        .bot-msg {
-            background-color: #f0f0f5;
-            color: #000;
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-
-        /* Usuário (Direita) */
-        .user-msg {
-            background-color: #008060; /* Verde Marca */
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-
-        /* --- BOTÕES INTERATIVOS (Estilo Chatbot) --- */
-        .action-container {
-            width: 100%;
-            display: flex;
-            justify-content: flex-end; /* Alinhado a direita (lado do cliente) */
-            margin: 5px 0;
-            animation: fadeIn 0.5s;
-        }
-
-        .action-btn {
-            background-color: white;
-            color: #008060;
-            border: 2px solid #008060;
-            padding: 12px 24px;
-            font-size: 15px;
-            font-weight: 600;
-            border-radius: 20px;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.2s;
-            text-align: center;
-            border-bottom-right-radius: 4px; /* Pontinha igual msg do usuario */
-        }
-
-        .action-btn:active {
-            background-color: #008060;
-            color: white;
-            transform: scale(0.98);
-        }
-
-        /* Botão Instagram (Destaque) */
-        .btn-insta {
-            border-color: #E1306C;
-            color: #E1306C;
-        }
-
-        /* Botão Grupo (Destaque) */
-        .btn-group {
-            background-color: #25D366;
-            color: white;
-            border: none;
-            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
-        }
-
-        /* --- PLAYER WHATSAPP --- */
-        .wa-player-wrapper {
-            background-color: white; 
-            border-radius: 10px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 5px;
-            max-width: 100%;
-            border: 1px solid #e5e5ea;
-        }
-        
-        .bot-msg .wa-player-wrapper { border: none; background: transparent; }
-
-        .audio-avatar {
-            width: 42px; height: 42px;
-            border-radius: 50%;
-            background-color: #ff9800;
-            display: flex; justify-content: center; align-items: center;
-            color: white; position: relative; flex-shrink: 0;
-        }
-
-        .mic-icon-small {
-            position: absolute; bottom: 0; right: -2px;
-            font-size: 14px; color: #555; background: white; border-radius: 50%;
-        }
-
-        audio {
-            height: 40px;
-            width: 180px; 
-            outline: none;
-        }
-        audio::-webkit-media-controls-enclosure { background-color: transparent; }
-        audio::-webkit-media-controls-panel { background-color: transparent; }
-
-        /* --- INPUT AREA --- */
-        #input-area {
-            position: absolute;
-            bottom: 0; width: 100%;
+        /* Estilo das mensagens e TAMANHO DA LETRA */
+        .mensagem {
+            background-color: #fff;
             padding: 15px;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid #e5e5ea;
-            display: flex; gap: 10px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            
+            /* AQUI: Letras maiores conforme pedido */
+            font-size: 18px; 
+            line-height: 1.5;
         }
 
+        /* Estilo para as mensagens enviadas pelo utilizador (opcional) */
+        .minha-mensagem {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+        }
+
+        /* Área de input fixa no fundo */
+        #input-area {
+            background-color: #fff;
+            padding: 15px;
+            border-top: 1px solid #ccc;
+            display: flex;
+            gap: 10px;
+            
+            /* Garante que fica na base */
+            position: sticky; 
+            bottom: 0;
+        }
+
+        /* Campo de escrever */
         input[type="text"] {
-            flex: 1;
-            padding: 12px 15px;
-            font-size: 16px;
-            border: 1px solid #e5e5ea;
+            width: 100%;
+            padding: 15px; /* Área de toque maior */
+            font-size: 16px; /* Letra do input também maior */
+            border: 1px solid #ddd;
             border-radius: 20px;
             outline: none;
-            background: #f2f2f7;
         }
 
-        .send-btn {
-            background: #008060; color: white;
-            border: none; width: 45px; height: 45px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
         }
 
-        /* --- MODAL (Galeria) --- */
-        #photo-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: black; z-index: 2000;
-            flex-direction: column; justify-content: center; align-items: center;
+        /* Estilo simples para os players de áudio */
+        audio {
+            width: 100%;
+            margin-top: 5px;
         }
-        #modal-img { max-width: 100%; max-height: 70vh; object-fit: contain; }
-        
-        .modal-controls {
-            position: absolute; bottom: 40px; display: flex; gap: 40px;
-        }
-        .nav-btn {
-            background: rgba(255,255,255,0.2); color: white; border: none;
-            width: 60px; height: 60px; border-radius: 50%; font-size: 30px; cursor: pointer;
-        }
-        .close-modal {
-            position: absolute; top: 20px; right: 20px;
-            color: white; background: rgba(50,50,50,0.5); border: none;
-            padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer;
-        }
-
-        /* Botão Final */
-        .final-btn {
-            background-color: #008060; color: white; text-decoration: none;
-            padding: 15px; border-radius: 12px; text-align: center; display: block;
-            font-weight: bold; margin-top: 10px;
-            box-shadow: 0 4px 10px rgba(0, 128, 96, 0.3);
-        }
-
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div id="app-container">
-        <header>
-            <div class="header-left">
-                <img src="img/logo.png" class="header-logo" onerror="this.style.background='#ccc'">
-                <div class="header-text">
-                    <span class="header-title">Dona Antonia</span>
-                    <span class="header-subtitle">A melhor cesta básica de Cuiabá e VG</span>
-                </div>
-            </div>
-            <button class="btn-save-contact" onclick="saveContact()">Salvar Contato</button>
-        </header>
-
-        <div id="chat-content">
-            </div>
-
-        <div id="input-area">
-            <input type="text" id="user-input" placeholder="Digite seu nome...">
-            <button class="send-btn" onclick="processInput()">
-                <span class="material-icons">arrow_upward</span>
-            </button>
+    <div id="chat-container">
+        <div class="mensagem">
+            Olá! O tamanho da letra está melhor agora?
         </div>
-    </div>
-
-    <div id="photo-modal">
-        <button class="close-modal" onclick="closeModal()">Fechar</button>
-        <img id="modal-img" src="" alt="Produto">
-        <div class="modal-controls">
-            <button class="nav-btn" onclick="prevPhoto()">&#8592;</button>
-            <button class="nav-btn" onclick="nextPhoto()">&#8594;</button>
-        </div>
-    </div>
-
-    <script>
-        /* --- CONFIGURAÇÃO --- */
-        const whatsappNumber = "5565998150975"; 
-        const instagramLink = "https://instagram.com/donaantonia"; // COLOQUE SEU INSTAGRAM
-        const groupLink = "https://chat.whatsapp.com/SEU_LINK_DO_GRUPO"; // LINK DO GRUPO
         
-        // Fotos da galeria
-        const galleryImages = [
-            "foto1.webp", 
-            "foto2.webp", 
-            "foto3.webp", 
-            "foto4.webp",
-            "foto5.webp"
-        ];
+        <div class="mensagem minha-mensagem">
+            Sim, e a caixa de texto não some!
+        </div>
 
-        /* --- SISTEMA --- */
-        let userName = "";
-        let photoIndex = 0;
-        const chatContent = document.getElementById('chat-content');
-        const inputArea = document.getElementById('input-area');
-        const userInput = document.getElementById('user-input');
+        <div class="mensagem">
+            <p>Ouvir áudio 1:</p>
+            <audio controls>
+                <source src="audio.mp3" type="audio/mpeg">
+                Seu navegador não suporta áudio.
+            </audio>
+        </div>
 
-        window.onload = function() {
-            botSay("Olá, eu sou o Osvaldo da propaganda.");
-            setTimeout(() => botSay("Qual o seu nome?"), 1000);
-        };
+        <div class="mensagem minha-mensagem">
+            <p>Minha resposta (Audio 2):</p>
+            <audio controls>
+                <source src="audio1.mp3" type="audio/mpeg">
+                Seu navegador não suporta áudio.
+            </audio>
+        </div>
+    </div>
 
-        function botSay(text, delay = 0) {
-            setTimeout(() => {
-                const div = document.createElement('div');
-                div.className = 'message bot-msg';
-                div.innerHTML = text;
-                chatContent.appendChild(div);
-                scrollToBottom();
-            }, delay);
-        }
+    <div id="input-area">
+        <input type="text" placeholder="Escreva aqui...">
+        <button>Enviar</button>
+    </div>
 
-        function userSay(text) {
-            const div = document.createElement('div');
-            div.className = 'message user-msg';
-            div.textContent = text;
-            chatContent.appendChild(div);
-            scrollToBottom();
-        }
-
-        // Botão de Ação do Usuário (Lado Direito)
-        function showActionButton(text, styleClass, callback, shouldDisappear = true) {
-            const container = document.createElement('div');
-            container.className = 'action-container';
-            
-            const btn = document.createElement('button');
-            btn.className = `action-btn ${styleClass}`;
-            btn.textContent = text;
-            btn.onclick = function() {
-                if(shouldDisappear) {
-                    container.remove(); // Remove o botão se for configurado pra sumir
-                } else {
-                    // Se não sumir, dá um feedback visual que clicou (opcional)
-                    btn.style.opacity = "0.6";
-                }
-                
-                // Manda mensagem do usuário visualmente para confirmar
-                if(shouldDisappear) userSay(text); 
-                
-                callback();
-            };
-            
-            container.appendChild(btn);
-            chatContent.appendChild(container);
-            scrollToBottom();
-        }
-
-        function scrollToBottom() {
-            chatContent.scrollTop = chatContent.scrollHeight;
-        }
-
-        function processInput() {
-            const text = userInput.value.trim();
-            if (text === "") return;
-
-            if (!userName) {
-                userName = text;
-                userSay(userName);
-                userInput.value = "";
-                inputArea.style.display = 'none'; // Some o teclado
-                
-                setTimeout(() => {
-                    botSay(`Legal, ${userName}, toque abaixo para ver nossos produtos.`);
-                    
-                    setTimeout(() => {
-                        // Botão que NÃO SOME (shouldDisappear = false)
-                        showActionButton("Ver Produtos e Valores", "", openGallery, false);
-                    }, 1000);
-
-                }, 800);
-            }
-        }
-
-        function saveContact() {
-            // Cria um arquivo VCF simples para baixar
-            alert("Redirecionando para o WhatsApp para salvar contato...");
-            window.open(`https://wa.me/${whatsappNumber}`, '_blank');
-        }
-
-        // --- GALERIA ---
-        function openGallery() {
-            photoIndex = 0;
-            updatePhoto();
-            document.getElementById('photo-modal').style.display = 'flex';
-        }
-
-        function updatePhoto() {
-            if(galleryImages.length > 0) {
-                document.getElementById('modal-img').src = `img/${galleryImages[photoIndex]}`;
-            }
-        }
-
-        function nextPhoto() {
-            photoIndex++; if(photoIndex >= galleryImages.length) photoIndex = 0;
-            updatePhoto();
-        }
-
-        function prevPhoto() {
-            photoIndex--; if(photoIndex < 0) photoIndex = galleryImages.length - 1;
-            updatePhoto();
-        }
-
-        function closeModal() {
-            document.getElementById('photo-modal').style.display = 'none';
-            // Quando fechar a galeria, segue o fluxo
-            startPostGalleryFlow();
-        }
-
-        // --- FLUXO PÓS-GALERIA ---
-        let flowStarted = false;
-        function startPostGalleryFlow() {
-            if(flowStarted) return;
-            flowStarted = true;
-
-            // Espera 10 segundos
-            setTimeout(() => {
-                botSay(`${userName}, eu tenho um desconto especial. Posso te mandar um áudio explicando?`);
-                
-                setTimeout(() => {
-                    showActionButton("OK, pode mandar", "", askInstagram, true);
-                }, 1000);
-
-            }, 10000); 
-        }
-
-        // --- PASSO INSTAGRAM ---
-        function askInstagram() {
-            botSay("Enquanto eu gravo o áudio, segue a gente no instagram pra não perder as ofertas:");
-            
-            setTimeout(() => {
-                // Botão com link externo
-                const container = document.createElement('div');
-                container.className = 'action-container';
-                const btn = document.createElement('a'); // Link mesmo
-                btn.className = `action-btn btn-insta`;
-                btn.textContent = "Abrir Instagram";
-                btn.href = instagramLink;
-                btn.target = "_blank";
-                btn.style.textDecoration = "none";
-                
-                container.appendChild(btn);
-                chatContent.appendChild(container);
-                scrollToBottom();
-
-                // Começa a "gravação" de 20 segundos
-                startRecordingWait();
-
-            }, 800);
-        }
-
-        function startRecordingWait() {
-             const gravandoMsg = document.createElement('div');
-             gravandoMsg.className = 'message bot-msg';
-             gravandoMsg.innerHTML = "<i>gravando áudio...</i>";
-             
-             // Espera um pouco antes de mostrar o "gravando" para dar tempo de ler o insta
-             setTimeout(() => {
-                 chatContent.appendChild(gravandoMsg);
-                 scrollToBottom();
-
-                 // 20 SEGUNDOS GRAVANDO
-                 setTimeout(() => {
-                     gravandoMsg.remove();
-                     startAudioSequence();
-                 }, 20000); 
-
-             }, 2000);
-        }
-
-        // --- ÁUDIOS (1 e 2) ---
-        function startAudioSequence() {
-            // Áudio 1
-            sendWhatsAppPlayer("audio.mp3", "player1");
-            
-            // Espera e manda Áudio 2
-            setTimeout(() => {
-                sendWhatsAppPlayer("audio.mp3", "player2");
-                
-                // Manda convite do Grupo
-                setTimeout(() => {
-                    offerGroup();
-                }, 10000); // 10s depois do audio 2
-
-            }, 10000); // 10s depois do audio 1
-        }
-
-        // --- GRUPO E FINALIZAÇÃO ---
-        function offerGroup() {
-            botSay(`${userName}, entra no nosso grupo de desconto, vale muito a pena.`);
-            
-            setTimeout(() => {
-                // Botão Link para Grupo
-                const container = document.createElement('div');
-                container.className = 'action-container';
-                const btn = document.createElement('a'); 
-                btn.className = `action-btn btn-group`;
-                btn.textContent = "Entrar no Grupo VIP";
-                btn.href = groupLink;
-                btn.target = "_blank";
-                btn.style.textDecoration = "none";
-                
-                container.appendChild(btn);
-                chatContent.appendChild(container);
-                scrollToBottom();
-
-                // Finaliza
-                setTimeout(() => {
-                    finalizeChat();
-                }, 5000);
-
-            }, 1000);
-        }
-
-        function finalizeChat() {
-            botSay("Me chama no WhatsApp para garantir seu desconto:");
-            
-            const msg = `Oi, sou ${userName}, vim pelo site do Osvaldo. Quero ver as cestas!`;
-            const link = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
-            
-            setTimeout(() => {
-                const btnHtml = `
-                    <a href="${link}" class="final-btn" target="_blank">
-                        <span class="material-icons" style="vertical-align: middle;">chat</span>
-                        Chamar no WhatsApp
-                    </a>
-                `;
-                botSay(btnHtml);
-            }, 1000);
-        }
-
-        function sendWhatsAppPlayer(src, id) {
-            const html = `
-                <div class="wa-player-wrapper">
-                    <div class="audio-avatar">
-                        <span class="material-icons">headset</span>
-                        <span class="material-icons mic-icon-small">mic</span>
-                    </div>
-                    <audio id="${id}" controls controlsList="nodownload">
-                        <source src="${src}" type="audio/mpeg">
-                    </audio>
-                </div>
-            `;
-            botSay(html);
-            
-            setTimeout(() => {
-                const p = document.getElementById(id);
-                if(p) p.play().catch(e => console.log("Play manual necessário"));
-            }, 500);
-        }
-
-    </script>
 </body>
 </html>
