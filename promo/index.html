@@ -9,7 +9,7 @@
         :root {
             --primary: #000000;
             --bg-chat: #ffffff;
-            --light-gray: #f4f4f4;
+            --light-gray: #f4f4f4
             --green-zap: #25d366;
             --blue-link: #007bff;
         }
@@ -362,7 +362,7 @@
             const h = new Date().getHours();
             const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
             await speak("ola.webp", "sticker", 500);
-            await speak(`${saudacao}! Sou o Osvaldo, da Dona Antonia.`);
+            await speak(`${saudacao}! Sou o Osvaldo, da Cesta Básica Dona Antonia.`);
             await speak("Qual é o seu nome?");
         };
 
