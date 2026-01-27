@@ -9,7 +9,7 @@
         :root {
             --primary: #000000;
             --bg-chat: #ffffff;
-            --light-gray: #f4f4f4
+            --light-gray: #f4f4f4;
             --green-zap: #25d366;
             --blue-link: #007bff;
         }
@@ -34,6 +34,7 @@
             height: 75px; 
             border-bottom: 1px solid #eee; 
             z-index: 100;
+            flex-shrink: 0;
         }
 
         .brand { display: flex; align-items: center; gap: 12px; }
@@ -55,6 +56,7 @@
             display: flex; flex-direction: column; gap: 12px; 
             background-image: radial-gradient(#f1f1f1 1px, transparent 1px);
             background-size: 20px 20px;
+            padding-bottom: 40px; /* Espaço extra no final */
         }
 
         .msg-row { display: flex; width: 100%; margin-bottom: 5px; }
@@ -70,23 +72,6 @@
         .user-bubble { background: #000; color: #fff; border-radius: 18px 18px 4px 18px; text-align: left; }
         
         .sticker { width: 150px; display: block; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
-
-        /* --- INPUT (RODAPÉ) --- */
-        footer { 
-            padding: 15px 20px 25px 20px; background: #fff; 
-            border-top: 1px solid #eee; z-index: 100;
-        }
-        .input-wrapper { 
-            background: #f5f5f5; border-radius: 30px; 
-            padding: 5px 10px 5px 20px; display: flex; align-items: center; 
-        }
-        .input-wrapper input { flex: 1; border: none; background: transparent; padding: 12px 0; font-size: 16px; outline: none; }
-        .send-btn { 
-            background: #000; color: #fff; border: none; 
-            width: 42px; height: 42px; border-radius: 50%; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            font-size: 20px; margin-left: 10px;
-        }
 
         /* --- BOTÕES DE AÇÃO --- */
         .action-btn {
@@ -168,7 +153,7 @@
         .play-icon { font-size: 24px; cursor: pointer; color: #000; }
         
         /* Indicador de Digitando */
-        #typing { font-size: 13px; color: #888; padding: 0 20px 10px; font-style: italic; display: none; }
+        #typing { font-size: 13px; color: #888; padding: 10px 20px; font-style: italic; display: none; }
 
     </style>
 </head>
@@ -196,13 +181,6 @@
         </main>
     <div id="typing">Osvaldo está digitando...</div>
 
-    <footer id="input-area">
-        <div class="input-wrapper">
-            <input type="text" id="msg-input" placeholder="Digite seu nome...">
-            <button class="send-btn" onclick="userSend()">➤</button>
-        </div>
-    </footer>
-
     <div id="modal-overlay">
         <div class="modal-top">
             <button class="close-modal" onclick="closeModal()">✕</button>
@@ -212,7 +190,7 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO DOS PRODUTOS (Dados extraídos das imagens fornecidas)
+        // CONFIGURAÇÃO DOS PRODUTOS
         const BASKETS = [
             {
                 id: 'grande',
@@ -317,8 +295,6 @@
         // VARIÁVEIS DE ESTADO
         const chat = document.getElementById('chat');
         const typing = document.getElementById('typing');
-        const inputArea = document.getElementById('input-area');
-        let userName = "";
         let hasSelectedBasket = false;
         let idleTimer = null;
         let isModalOpen = false;
@@ -344,8 +320,7 @@
                 html = `<img src="${content}" class="sticker">`;
             } 
             else if (type === 'text') {
-                let txt = content.replace(new RegExp(userName, 'gi'), `<b>${userName}</b>`);
-                html = `<div class="bubble bot-bubble">${txt}</div>`;
+                html = `<div class="bubble bot-bubble">${content}</div>`;
             }
             else if (type === 'html') {
                 html = `<div class="bubble bot-bubble" style="width:100%">${content}</div>`;
@@ -356,45 +331,24 @@
             scrollChat();
         }
 
-        // INICIO
+        // INICIO - FLUXO MODIFICADO (SEM NOME)
         window.onload = async () => {
             renderCards();
             const h = new Date().getHours();
             const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+            
             await speak("ola.webp", "sticker", 500);
             await speak(`${saudacao}! Sou o Osvaldo, da Cesta Básica Dona Antonia.`);
-            await speak("Qual é o seu nome?");
+            await speak(`Toque no botão abaixo para ver as fotos e listas.`);
+            await speak(`<button class="action-btn" onclick="openModal()">📦 VER CESTAS BÁSICAS</button>`, "html");
+
+            // Timer de 10 segundos inicia direto
+            idleTimer = setTimeout(() => {
+                if(!isModalOpen && !hasSelectedBasket) {
+                    advanceToPayment('timeout');
+                }
+            }, 10000);
         };
-
-        // INPUT DO USUARIO
-        async function userSend() {
-            const inp = document.getElementById('msg-input');
-            const val = inp.value.trim();
-            if(!val) return;
-            
-            inp.value = "";
-            const row = document.createElement('div');
-            row.className = "msg-row user"; 
-            row.innerHTML = `<div class="bubble user-bubble">${val}</div>`;
-            chat.appendChild(row);
-            scrollChat();
-
-            if(!userName) {
-                userName = val;
-                inputArea.style.display = 'none';
-                
-                await speak(`Prazer, ${userName}!`);
-                await speak(`Toque no botão abaixo para ver as fotos e listas.`);
-                await speak(`<button class="action-btn" onclick="openModal()">📦 VER CESTAS BÁSICAS</button>`, "html");
-
-                // Timer de 10 segundos
-                idleTimer = setTimeout(() => {
-                    if(!isModalOpen && !hasSelectedBasket) {
-                        advanceToPayment('timeout');
-                    }
-                }, 10000);
-            }
-        }
 
         // RENDERIZAÇÃO DOS CARDS
         function renderCards() {
@@ -472,8 +426,6 @@
         }
 
         async function showPayment() {
-            // Removido: document.getElementById('btn-pay').style.display = 'none'; (Persistência)
-            
             const msgUser = document.createElement('div');
             msgUser.className = "msg-row user";
             msgUser.innerHTML = `<div class="bubble user-bubble">Sim</div>`;
@@ -486,7 +438,6 @@
             <br>✅ Parcelamos em 3x sem juros no cartão de crédito
             <br>✅ Cartões Alimentação e Refeição`);
 
-            // NOVO FLUXO: Pergunta se costuma comprar
             setTimeout(askHabit, 3000);
         }
 
@@ -501,8 +452,6 @@
         }
 
         async function handleHabit(response) {
-            // Removido: document.getElementById('btn-habit-sim').parentElement.style.display = 'none'; (Persistência)
-
             const msgUser = document.createElement('div');
             msgUser.className = "msg-row user";
             msgUser.innerHTML = `<div class="bubble user-bubble">${response}</div>`;
@@ -510,13 +459,10 @@
             scrollChat();
 
             await speak("Vou mandar um áudio pra explicar melhor.");
-            // Passamos a resposta para a próxima etapa
             await speak(`<button class="action-btn" id="btn-ok-audio" onclick="confirmAudio('${response}')">Ok</button>`, "html");
         }
 
         async function confirmAudio(response) {
-            // Removido: document.getElementById('btn-ok-audio').style.display = 'none'; (Persistência)
-
             const msgUser = document.createElement('div');
             msgUser.className = "msg-row user";
             msgUser.innerHTML = `<div class="bubble user-bubble">Ok</div>`;
@@ -545,13 +491,12 @@
             await speak(audioHtml, "html", 500);
         }
 
-        // --- FUNÇÃO FINALSTEP ATUALIZADA ---
+        // --- FUNÇÃO FINALSTEP ATUALIZADA (SEM NOME) ---
         async function finalStep() {
             await speak("Muito obrigado, e quando quiser é só chamar no zap.");
             
-            // Cria a mensagem personalizada com o nome
-            const text = `Olá, sou ${userName}, vim pelo site e quero salvar o contato!`;
-            // Codifica para URL (para lidar com espaços e acentos)
+            // Texto genérico, já que não temos o nome
+            const text = `Olá, vim pelo site e quero salvar o contato!`;
             const encodedText = encodeURIComponent(text);
 
             const btnZap = `<button class="action-btn" style="background:#25d366; color:white; border:none; padding:16px" 
