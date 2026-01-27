@@ -349,7 +349,7 @@
             if(!userName) {
                 userName = val;
                 inputArea.style.display = 'none';
-                // SEM OK.WEBP
+                
                 await speak(`Prazer, ${userName}!`);
                 await speak(`Toque no botão abaixo para ver as fotos e listas.`);
                 await speak(`<button class="action-btn" onclick="openModal()">📦 VER CESTAS BÁSICAS</button>`, "html");
@@ -408,7 +408,7 @@
             }
         }
 
-        // FLUXO DE PAGAMENTO E AUDIO
+        /* --- FLUXO DE PAGAMENTO, PERGUNTA E AUDIO --- */
         async function selectBasket(id) {
             hasSelectedBasket = true;
             document.getElementById('modal-overlay').style.display = 'none';
@@ -429,9 +429,7 @@
             if(reason === 'closed') {
                 await speak("Se ficar na dúvida, pode escolher depois!");
             }
-            if(reason === 'timeout') {
-               // Apenas continua
-            }
+            // se for timeout, apenas segue
             askPaymentMethod();
         }
 
@@ -454,14 +452,37 @@
             <br>✅ Cartão de Débito e Crédito
             <br>✅ Cartões Alimentação e Refeição`);
 
-            setTimeout(async () => {
-                await speak("Posso te mandar um áudio rapidinho?");
-                await speak(`<button class="action-btn" id="btn-audio-ok" onclick="startAudioFlow()">Ok</button>`, "html");
-            }, 3000); 
+            // NOVO FLUXO: Pergunta se costuma comprar
+            setTimeout(askHabit, 3000);
         }
 
-        async function startAudioFlow() {
-            document.getElementById('btn-audio-ok').style.display = 'none';
+        async function askHabit() {
+            await speak("Você costuma comprar cesta básica?");
+            const buttons = `
+            <div style="display:flex; gap:10px;">
+                <button class="action-btn" id="btn-habit-sim" onclick="handleHabit('Sim')">Sim</button>
+                <button class="action-btn" id="btn-habit-nao" onclick="handleHabit('Não')">Não</button>
+            </div>`;
+            await speak(buttons, "html");
+        }
+
+        async function handleHabit(response) {
+            // Esconde botoes
+            document.getElementById('btn-habit-sim').parentElement.style.display = 'none';
+
+            const msgUser = document.createElement('div');
+            msgUser.className = "msg-row user";
+            msgUser.innerHTML = `<div class="bubble user-bubble">${response}</div>`;
+            chat.appendChild(msgUser);
+            scrollChat();
+
+            await speak("Vou mandar um áudio pra explicar melhor.");
+            // Passamos a resposta para a próxima etapa
+            await speak(`<button class="action-btn" id="btn-ok-audio" onclick="confirmAudio('${response}')">Ok</button>`, "html");
+        }
+
+        async function confirmAudio(response) {
+            document.getElementById('btn-ok-audio').style.display = 'none';
 
             const msgUser = document.createElement('div');
             msgUser.className = "msg-row user";
@@ -469,16 +490,13 @@
             chat.appendChild(msgUser);
             scrollChat();
 
-            // AUDIO 1
-            await sendAudioMsg('audio.mp3', 'Dona Antonia');
+            // Lógica condicional do áudio
+            const audioFile = response === 'Sim' ? 'audiosim.mp3' : 'audionao.mp3';
+            
+            await sendAudioMsg(audioFile, 'Dona Antonia');
 
-            // ESPERA 10s -> AUDIO 2
-            setTimeout(async () => {
-                await sendAudioMsg('audio1.mp3', 'Informações');
-                
-                // ESPERA 5s -> Pergunta Contato
-                setTimeout(askContact, 5000);
-            }, 10000);
+            // Espera 5 segundos para finalizar
+            setTimeout(finalStep, 5000);
         }
 
         async function sendAudioMsg(src, title) {
@@ -494,25 +512,12 @@
             await speak(audioHtml, "html", 500);
         }
 
-        async function askContact() {
-            await speak("Quer salvar nosso contato do WhatsApp?");
-            await speak(`<button class="action-btn" id="btn-save" style="background:#000; color:#fff" onclick="finalStep()">Quero salvar</button>`, "html");
-        }
-
         async function finalStep() {
-            document.getElementById('btn-save').style.display = 'none';
-            
-            const msgUser = document.createElement('div');
-            msgUser.className = "msg-row user";
-            msgUser.innerHTML = `<div class="bubble user-bubble">Quero salvar</div>`;
-            chat.appendChild(msgUser);
-            scrollChat();
-
-            await speak("obrigado.webp", "sticker", 600);
+            await speak("Muito obrigado, e quando quiser é só chamar no zap.");
             
             const btnZap = `<button class="action-btn" style="background:#25d366; color:white; border:none; padding:16px" 
             onclick="window.open('https://wa.me/5565999999999?text=Olá, vim pelo site e quero salvar o contato!', '_blank')">
-            CHAMAR NO WHATSAPP</button>`;
+            Salvar número do whatsapp</button>`;
             
             await speak(btnZap, "html", 800);
         }
