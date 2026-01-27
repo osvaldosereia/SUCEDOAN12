@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dona Antonia - Assistente Virtual</title>
+    <title>Dona Antonia Cestas</title>
     <style>
-        /* --- VARIAVEIS E RESET --- */
+        /* --- RESET E VARIÁVEIS --- */
         :root {
-            --primary: #000000;
-            --accent: #2563eb;
-            --green: #059669;
-            --bg-chat: #f5f5f5;
-            --white: #ffffff;
-            --shadow-card: 0 10px 30px -10px rgba(0,0,0,0.2);
+            --primary: #000000; /* Preto Profissional */
+            --bg-chat: #ffffff; /* Fundo Branco Limpo */
+            --light-gray: #f2f2f2;
+            --green-zap: #25d366;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; outline: none; }
         
@@ -25,137 +23,214 @@
             overflow: hidden;
         }
 
-        /* --- HEADER --- */
+        /* --- CABEÇALHO (TOP BAR) --- */
         header {
-            background: rgba(255,255,255,0.98);
-            backdrop-filter: blur(10px);
+            background: #ffffff;
             padding: 10px 20px;
-            display: flex; align-items: center; justify-content: space-between;
-            height: 70px; border-bottom: 1px solid #e0e0e0; z-index: 10;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; /* Separa Logo dos Ícones */
+            height: 75px; 
+            border-bottom: 1px solid #eee; 
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
         }
-        .brand-area { display: flex; align-items: center; gap: 12px; }
-        .logo { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); object-fit: cover; }
-        .brand-text { font-size: 16px; font-weight: 700; color: #111; line-height: 1.2; }
-        
-        .header-icons { display: flex; gap: 15px; }
-        .icon-btn { color: #000; text-decoration: none; display: flex; align-items: center; }
-        .icon-svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-        /* --- CHAT AREA --- */
-        main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-        
-        .msg-row { display: flex; width: 100%; animation: fadeUp 0.3s ease; }
-        .msg-row.user { justify-content: flex-end; } /* Alinha à direita */
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand img { width: 48px; height: 48px; border-radius: 50%; border: 1px solid #eee; object-fit: cover; }
+        .brand-info h1 { font-size: 16px; font-weight: 800; color: #000; line-height: 1.1; margin: 0; }
+        .brand-info p { font-size: 12px; color: #666; margin: 0; }
 
-        .bubble { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .bot { background: var(--white); color: #333; border-bottom-left-radius: 4px; }
+        /* Botões Topo (Insta/Zap) */
+        .header-actions { display: flex; gap: 12px; }
+        .icon-btn { 
+            width: 38px; height: 38px; 
+            border: 1px solid #000; /* Contorno preto discreto */
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            color: #000; text-decoration: none; transition: 0.2s;
+        }
+        .icon-btn:active { background: #f0f0f0; }
+        .icon-svg { width: 20px; height: 20px; fill: currentColor; }
+
+        /* --- ÁREA DO CHAT --- */
+        main { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px 15px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            background-image: radial-gradient(#f1f1f1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .msg-row { display: flex; width: 100%; margin-bottom: 5px; }
         
-        /* Ajuste do balão do usuário */
-        .user { 
-            background: var(--primary); 
+        /* CORREÇÃO DO BALÃO DO CLIENTE */
+        .msg-row.user { 
+            justify-content: flex-end; /* Empurra para direita */
+        }
+        
+        .bubble { 
+            max-width: 80%; 
+            padding: 14px 18px; 
+            font-size: 16px; 
+            line-height: 1.5; 
+            position: relative; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .bot-bubble { 
+            background: #f2f2f2; 
+            color: #000; 
+            border-radius: 18px 18px 18px 4px; /* Rabicho na esquerda */
+        }
+
+        .user-bubble { 
+            background: #000; 
             color: #fff; 
-            border-bottom-right-radius: 4px; 
+            border-radius: 18px 18px 4px 18px; /* Rabicho na direita */
             text-align: left;
-            margin-left: auto; /* Garante que não estique */
         }
         
-        .sticker { width: 140px; display: block; margin-bottom: 5px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+        /* Figurinhas */
+        .sticker { width: 150px; display: block; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
         
-        /* Container para stickers lado a lado */
-        .stickers-row { display: flex; gap: 10px; justify-content: flex-start; }
+        /* Figurinhas Lado a Lado */
+        .dual-sticker-container { display: flex; gap: 10px; justify-content: flex-start; }
+        .sticker-small { width: 110px; } 
 
-        /* --- INPUT --- */
-        footer { padding: 15px; background: var(--white); border-top: 1px solid #eee; display: flex; align-items: center; justify-content: center; }
-        .input-box { background: #f0f2f5; width: 100%; max-width: 600px; padding: 8px 15px; border-radius: 25px; display: flex; align-items: center; }
-        .input-box input { flex: 1; background: transparent; border: none; font-size: 16px; padding: 8px; }
-        .btn-send { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-
-        .btn-action { background: var(--white); border: 1px solid #ddd; color: #000; padding: 15px; width: 100%; border-radius: 12px; font-weight: 700; margin-top: 5px; cursor: pointer; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-
-        /* --- MODAL SLIDE (CARROSSEL) --- */
-        #modal-wrapper {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.90); z-index: 2000;
-            backdrop-filter: blur(5px); flex-direction: column;
+        /* --- INPUT (RODAPÉ) --- */
+        footer { 
+            padding: 15px 20px 25px 20px; 
+            background: #fff; 
+            border-top: 1px solid #eee; 
+            z-index: 100;
         }
-        
-        .modal-header { padding: 20px; display: flex; justify-content: flex-end; }
-        .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-        .carousel-container {
-            flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; 
-            gap: 20px; padding: 0 20px 40px 20px; align-items: center;
+        .input-wrapper { 
+            background: #f5f5f5; 
+            border-radius: 30px; 
+            padding: 5px 10px 5px 20px; 
+            display: flex; align-items: center; 
         }
-        .carousel-container::-webkit-scrollbar { display: none; }
+        .input-wrapper input { flex: 1; border: none; background: transparent; padding: 12px 0; font-size: 16px; outline: none; }
+        .send-btn { 
+            background: #000; color: #fff; border: none; 
+            width: 42px; height: 42px; border-radius: 50%; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            font-size: 20px; margin-left: 10px;
+        }
 
-        .card {
-            flex: 0 0 88%; /* Card um pouco mais largo */
+        /* --- BOTÕES DE AÇÃO NO CHAT --- */
+        .action-btn {
+            background: #fff; border: 1px solid #ddd; color: #000;
+            padding: 15px; border-radius: 12px; font-weight: 700; width: 100%;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 5px;
+        }
+
+        /* --- MODAL / SLIDE --- */
+        #modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
+            z-index: 2000; flex-direction: column; backdrop-filter: blur(5px);
+        }
+
+        .modal-top { padding: 15px; display: flex; justify-content: flex-end; }
+        .close-modal { 
+            background: rgba(255,255,255,0.2); border: none; color: #fff; 
+            width: 40px; height: 40px; border-radius: 50%; font-size: 22px; cursor: pointer;
+        }
+
+        .cards-track {
+            flex: 1; display: flex; overflow-x: auto; 
+            gap: 20px; padding: 0 25px 40px 25px; 
+            scroll-snap-type: x mandatory; align-items: center;
+        }
+        .cards-track::-webkit-scrollbar { display: none; }
+
+        /* O CARD MÁGICO */
+        .product-card {
+            flex: 0 0 90%; /* Largura quase total */
             max-width: 380px;
+            height: 75vh; /* Altura fixa */
             background: #fff;
-            border-radius: 24px;
+            border-radius: 25px;
             scroll-snap-align: center;
-            box-shadow: var(--shadow-card);
-            display: flex; flex-direction: column;
-            height: 75vh; /* Altura fixa para permitir scroll interno */
-            overflow: hidden;
+            overflow: hidden; /* Importante */
+            display: flex;
+            flex-direction: column;
             position: relative;
         }
 
-        /* Imagem fixa no topo do card */
-        .card-img-header {
+        /* Parte FIXA do Card (Imagem) */
+        .card-fixed-header {
             flex-shrink: 0; /* Não encolhe */
-            width: 100%; height: 180px; object-fit: cover; background: #eee;
+            height: 220px;
+            width: 100%;
+            background: #f9f9f9;
+            display: flex; align-items: center; justify-content: center;
             border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        .card-img { height: 100%; width: 100%; object-fit: cover; }
+        .card-title-overlay {
+            position: absolute; bottom: 10px; left: 15px;
+            background: rgba(255,255,255,0.9); padding: 5px 12px;
+            border-radius: 20px; font-weight: 800; font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* Corpo do card rolável */
-        .card-body-scroll {
-            flex: 1;
-            overflow-y: auto;
+        /* Parte ROLÁVEL do Card (Lista) */
+        .card-scrollable-body {
+            flex: 1; /* Ocupa o resto do espaço */
+            overflow-y: auto; /* Rola só aqui */
             padding: 20px;
-            display: flex; flex-direction: column; gap: 10px;
+            display: flex; flex-direction: column;
         }
 
-        .card-title { font-size: 20px; font-weight: 800; color: #111; margin-bottom: 5px; }
-        
-        .price-option { display: flex; justify-content: space-between; padding: 12px; background: #f8f9fa; border-radius: 10px; border: 1px solid #eee; align-items: center; }
-        .price-val { font-weight: 800; color: var(--green); font-size: 16px; }
-
-        /* Botão para abrir lista (Accordion) */
-        .btn-details { background: #fff; border: 1px solid #000; color: #000; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; text-align: center; }
-        
-        .items-list { 
-            max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; background: #fbfbfb; border-radius: 10px;
-        }
-        .items-list.open { border: 1px solid #eee; margin-top: 10px; padding: 10px; }
-        
-        .cat-header { font-size: 12px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin: 10px 0 5px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-
-        .item-row { display: flex; font-size: 14px; color: #444; padding: 4px 0; border-bottom: 1px dashed #f0f0f0; }
-        .item-qty { font-weight: 700; color: #000; margin-right: 6px; white-space: nowrap; }
-        
-        .btn-select { 
-            background: #000; color: #fff; border: none; padding: 16px; 
-            border-radius: 12px; font-weight: bold; width: 100%; 
-            margin-top: 20px; cursor: pointer; font-size: 16px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            flex-shrink: 0; /* Botão fixo ao rolar? Não, está dentro do scroll, melhor para UX mobile */
+        .price-row { 
+            display: flex; justify-content: space-between; 
+            padding: 10px; background: #f8f9fa; border: 1px solid #eee; 
+            border-radius: 8px; margin-bottom: 5px; font-size: 13px; font-weight: 500;
         }
 
-        /* Audio Player */
-        .audio-box { background: #dcf8c6; padding: 12px 16px; border-radius: 15px; display: flex; align-items: center; gap: 10px; width: 260px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .play-btn { font-size: 24px; cursor: pointer; color: #075e54; }
+        .list-section { margin-top: 15px; }
+        .list-title { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #2563eb; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px;}
+        
+        .item-line { 
+            display: flex; justify-content: space-between; font-size: 14px; 
+            padding: 6px 0; border-bottom: 1px dashed #f0f0f0; color: #444; 
+        }
+
+        .select-btn {
+            margin-top: auto; /* Empurra para o final se sobrar espaço */
+            background: #000; color: #fff; border: none;
+            padding: 16px; border-radius: 12px; font-weight: 700;
+            width: 100%; font-size: 16px; margin-top: 20px; cursor: pointer;
+        }
+
+        /* Player de Audio */
+        .audio-container { background: #e9fcdb; padding: 12px; border-radius: 15px; display: flex; align-items: center; gap: 12px; width: 250px; }
+        .play-icon { font-size: 24px; cursor: pointer; color: #000; }
+        
+        /* Indicador de Digitando */
+        #typing { font-size: 13px; color: #888; padding: 0 20px 10px; font-style: italic; display: none; }
+
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-area">
-            <img src="logo.webp" class="logo" alt="Logo">
-            <div class="brand-text">Dona Antonia<br>Cestas Básicas</div>
+        <div class="brand">
+            <img src="logo.webp" alt="Logo">
+            <div class="brand-info">
+                <h1>Dona Antonia</h1>
+                <p>Assistente Virtual</p>
+            </div>
         </div>
-        <div class="header-icons">
-            <a href="https://instagram.com/seuinsta" target="_blank" class="icon-btn">
+        <div class="header-actions">
+            <a href="https://instagram.com" target="_blank" class="icon-btn">
                 <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
             </a>
             <a href="https://wa.me/5565999999999" target="_blank" class="icon-btn">
@@ -164,47 +239,47 @@
         </div>
     </header>
 
-    <main id="chat-window"></main>
-    <div style="padding: 0 20px 10px; font-size:12px; color:#888; display:none;" id="typing">Osvaldo está digitando...</div>
+    <main id="chat">
+        </main>
+    <div id="typing">Osvaldo está digitando...</div>
 
-    <footer id="footer-input">
-        <div class="input-box">
-            <input type="text" id="user-input" placeholder="Digite seu nome...">
-            <button class="btn-send" onclick="handleInput()">➤</button>
+    <footer id="input-area">
+        <div class="input-wrapper">
+            <input type="text" id="msg-input" placeholder="Digite seu nome...">
+            <button class="send-btn" onclick="userSend()">➤</button>
         </div>
     </footer>
 
-    <div id="modal-wrapper">
-        <div class="modal-header">
-            <button class="close-btn" onclick="handleCloseModal()">✕</button>
+    <div id="modal-overlay">
+        <div class="modal-top">
+            <button class="close-modal" onclick="closeModal()">✕</button>
         </div>
-        <div class="carousel-container" id="carousel-mount"></div>
-        <div style="text-align: center; color: white; padding: 10px; font-size: 13px; opacity: 0.8;">
-            Arraste para o lado ⮕
-        </div>
+        <div class="cards-track" id="cards-container">
+            </div>
+        <div style="text-align:center; color:white; padding:10px; font-size:12px; opacity:0.8">Arraste para o lado ⮕</div>
     </div>
 
     <script>
-        // --- DADOS COMPLETOS DAS CESTAS ---
+        // CONFIGURAÇÃO DOS PRODUTOS
         const BASKETS = [
             {
                 id: 'grande',
                 name: 'Cesta Grande',
                 img: 'cestagrande.webp',
                 audio: 'audiogrande.mp3',
-                prices: [{n: 'Com Arroz Tio Alvino', v: 'R$ 380'}, {n: 'Com Arroz Koblenz', v: 'R$ 390'}],
-                alimentos: [
-                    {q:'4un', n:'Arroz 5kg'}, {q:'3un', n:'Açúcar Cristal 2kg'}, {q:'4un', n:'Óleo de Soja 900ml'},
-                    {q:'4un', n:'Feijão da Casa 1kg'}, {q:'1un', n:'Café Caboclo 500g'}, {q:'3un', n:'Espaguetes 500g'},
-                    {q:'12un', n:'Ovos'}, {q:'1un', n:'Mistura Bolo 400g'}, {q:'1un', n:'Trigo 1kg'}, {q:'1un', n:'Sal 1kg'},
-                    {q:'2un', n:'Molho Tomate 340g'}, {q:'1un', n:'Milho Lata 250g'}, {q:'1un', n:'Tempero 300g'},
-                    {q:'2un', n:'Bolacha Recheada'}, {q:'2un', n:'Miojo'}, {q:'4un', n:'Suco Pó'}
-                ],
-                limpeza: [
-                    {q:'1un', n:'Sabão Barra YPE c/5'}, {q:'2un', n:'Creme Dental 70g'}, {q:'2un', n:'Papel Higiênico c/4'},
-                    {q:'1un', n:'Amaciante Ype 2L'}, {q:'1un', n:'Desinfetante 2L'}, {q:'1un', n:'Sabão Pó OMO 800g'},
-                    {q:'2un', n:'Detergente Ype'}, {q:'1un', n:'Qboa 1L'}, {q:'4un', n:'Sabonete 90g'},
-                    {q:'1un', n:'Esponja de Aço'}, {q:'1un', n:'Esponja de Louça'}
+                prices: [{n: 'Arroz Tio Alvino', v: 'R$ 380'}, {n: 'Arroz Koblenz', v: 'R$ 390'}],
+                list: [
+                    {cat: 'Alimentos', items: [
+                        {q:'4un', n:'Arroz 5kg'}, {q:'3un', n:'Açúcar Cristal 2kg'}, {q:'4un', n:'Óleo Soja 900ml'},
+                        {q:'4un', n:'Feijão 1kg'}, {q:'1un', n:'Café 500g'}, {q:'3un', n:'Espaguetes'},
+                        {q:'12un', n:'Ovos'}, {q:'1un', n:'Trigo 1kg'}, {q:'1un', n:'Sal 1kg'},
+                        {q:'2un', n:'Molho Tomate'}, {q:'2un', n:'Bolacha Recheada'}, {q:'2un', n:'Miojo'}
+                    ]},
+                    {cat: 'Limpeza e Higiene', items: [
+                        {q:'1un', n:'Sabão Barra c/5'}, {q:'2un', n:'Creme Dental'}, {q:'2un', n:'Papel Higiênico'},
+                        {q:'1un', n:'Amaciante 2L'}, {q:'1un', n:'Desinfetante'}, {q:'1un', n:'Sabão Pó'},
+                        {q:'2un', n:'Detergente'}, {q:'1un', n:'Qboa 1L'}, {q:'4un', n:'Sabonete'}
+                    ]}
                 ]
             },
             {
@@ -212,19 +287,16 @@
                 name: 'Cesta Média',
                 img: 'cestamedia.webp',
                 audio: 'audiomedia.mp3',
-                prices: [{n: 'Com Arroz Tio Alvino', v: 'R$ 320'}, {n: 'Com Arroz Koblenz', v: 'R$ 325'}],
-                alimentos: [
-                    {q:'3un', n:'Arroz 5kg'}, {q:'2un', n:'Açúcar Cristal 2kg'}, {q:'3un', n:'Óleo 900ml'},
-                    {q:'3un', n:'Feijão 1kg'}, {q:'1un', n:'Café 500g'}, {q:'12un', n:'Ovos'},
-                    {q:'1un', n:'Mistura Bolo'}, {q:'2un', n:'Espaguete'}, {q:'1un', n:'Trigo 1kg'},
-                    {q:'1un', n:'Sal 1kg'}, {q:'2un', n:'Molho Tomate'}, {q:'1un', n:'Milho Lata'},
-                    {q:'1un', n:'Tempero'}, {q:'2un', n:'Bolacha Recheada'}, {q:'2un', n:'Miojo'}, {q:'3un', n:'Suco Pó'}
-                ],
-                limpeza: [
-                    {q:'1un', n:'Sabão Barra YPE c/5'}, {q:'2un', n:'Creme Dental'}, {q:'2un', n:'Papel Higiênico'},
-                    {q:'1un', n:'Amaciante 2L'}, {q:'1un', n:'Desinfetante'}, {q:'1un', n:'Sabão Pó OMO'},
-                    {q:'2un', n:'Detergente Ype'}, {q:'1un', n:'Qboa 1L'}, {q:'3un', n:'Sabonete'},
-                    {q:'1un', n:'Esponja Aço'}, {q:'1un', n:'Esponja Louça'}
+                prices: [{n: 'Arroz Tio Alvino', v: 'R$ 320'}, {n: 'Arroz Koblenz', v: 'R$ 325'}],
+                list: [
+                    {cat: 'Alimentos', items: [
+                        {q:'3un', n:'Arroz 5kg'}, {q:'2un', n:'Açúcar 2kg'}, {q:'3un', n:'Óleo'},
+                        {q:'3un', n:'Feijão'}, {q:'1un', n:'Café 500g'}, {q:'12un', n:'Ovos'},
+                        {q:'2un', n:'Espaguete'}, {q:'2un', n:'Bolacha'}, {q:'2un', n:'Miojo'}
+                    ]},
+                    {cat: 'Limpeza', items: [
+                        {q:'1un', n:'Sabão Barra'}, {q:'2un', n:'Creme Dental'}, {q:'1un', n:'Sabão Pó'}
+                    ]}
                 ]
             },
             {
@@ -232,19 +304,12 @@
                 name: 'Cesta Pequena',
                 img: 'cestapequena.webp',
                 audio: 'audiopequena.mp3',
-                prices: [{n: 'Com Arroz Tio Alvino', v: 'R$ 215'}, {n: 'Com Arroz Koblenz', v: 'R$ 220'}],
-                alimentos: [
-                    {q:'2un', n:'Arroz 5kg'}, {q:'1un', n:'Açúcar 2kg'}, {q:'2un', n:'Óleo 900ml'},
-                    {q:'2un', n:'Feijão 1kg'}, {q:'1un', n:'Café 250g'}, {q:'12un', n:'Ovos'},
-                    {q:'1un', n:'Mistura Bolo'}, {q:'1un', n:'Espaguete'}, {q:'1un', n:'Trigo'}, {q:'1un', n:'Sal'},
-                    {q:'1un', n:'Molho Tomate'}, {q:'1un', n:'Milho'}, {q:'1un', n:'Tempero'},
-                    {q:'2un', n:'Bolacha'}, {q:'2un', n:'Miojo'}, {q:'2un', n:'Suco Pó'}
-                ],
-                limpeza: [
-                    {q:'1un', n:'Sabão Barra c/5'}, {q:'1un', n:'Creme Dental'}, {q:'1un', n:'Papel Higiênico'},
-                    {q:'1un', n:'Amaciante'}, {q:'1un', n:'Desinfetante'}, {q:'1un', n:'Sabão Pó OMO'},
-                    {q:'2un', n:'Detergente'}, {q:'1un', n:'Qboa'}, {q:'2un', n:'Sabonete'},
-                    {q:'1un', n:'Bombril'}, {q:'1un', n:'Bucha'}
+                prices: [{n: 'Arroz Tio Alvino', v: 'R$ 215'}, {n: 'Arroz Koblenz', v: 'R$ 220'}],
+                list: [
+                    {cat: 'Alimentos', items: [
+                        {q:'2un', n:'Arroz 5kg'}, {q:'1un', n:'Açúcar'}, {q:'2un', n:'Óleo'},
+                        {q:'2un', n:'Feijão'}, {q:'1un', n:'Café'}, {q:'12un', n:'Ovos'}
+                    ]}
                 ]
             },
             {
@@ -252,17 +317,9 @@
                 name: 'Cesta Mini',
                 img: 'cestamini.webp',
                 audio: 'audiomini.mp3',
-                prices: [{n: 'Com Arroz Tio Alvino', v: 'R$ 165'}, {n: 'Com Arroz Koblenz', v: 'R$ 170'}],
-                alimentos: [
-                    {q:'1un', n:'Arroz 5kg'}, {q:'1un', n:'Açúcar 2kg'}, {q:'2un', n:'Óleo'}, {q:'2un', n:'Feijão'},
-                    {q:'1un', n:'Café 250g'}, {q:'1un', n:'Espaguete'}, {q:'1un', n:'Sal'}, {q:'1un', n:'Molho'},
-                    {q:'1un', n:'Milho'}, {q:'1un', n:'Bolacha'}, {q:'1un', n:'Miojo'}, {q:'2un', n:'Suco'}
-                ],
-                limpeza: [
-                    {q:'1un', n:'Sabão Barra'}, {q:'1un', n:'Creme Dental'}, {q:'1un', n:'Papel Higiênico'},
-                    {q:'1un', n:'Amaciante'}, {q:'1un', n:'Desinfetante'}, {q:'1un', n:'Sabão Pó'},
-                    {q:'1un', n:'Detergente'}, {q:'1un', n:'Qboa'}, {q:'2un', n:'Sabonete'},
-                    {q:'1un', n:'Bombril'}, {q:'1un', n:'Esponja'}
+                prices: [{n: 'Arroz Tio Alvino', v: 'R$ 165'}, {n: 'Arroz Koblenz', v: 'R$ 170'}],
+                list: [
+                    {cat: 'Alimentos', items: [{q:'1un', n:'Arroz 5kg'}, {q:'1un', n:'Açúcar'}, {q:'1un', n:'Café'}]}
                 ]
             },
             {
@@ -271,223 +328,191 @@
                 img: 'cestaeconomica.webp',
                 audio: 'audioeconomica.mp3',
                 prices: [{n: 'Preço Único', v: 'R$ 85'}],
-                alimentos: [
-                    {q:'1un', n:'Arroz Bonini 5kg'}, {q:'1un', n:'Açúcar 2kg'}, {q:'1un', n:'Óleo'}, {q:'1un', n:'Feijão'},
-                    {q:'1un', n:'Café 250g'}, {q:'1un', n:'Espaguete'}, {q:'1un', n:'Trigo'}, {q:'1un', n:'Farinha Mandioca'},
-                    {q:'1un', n:'Sal'}, {q:'1un', n:'Molho'}, {q:'1un', n:'Milho'}, {q:'1un', n:'Bolacha'},
-                    {q:'1un', n:'Miojo'}, {q:'1un', n:'Suco'}
-                ],
-                limpeza: [] // Vazia
+                list: [
+                    {cat: 'Alimentos', items: [{q:'1un', n:'Arroz Bonini'}, {q:'1un', n:'Açúcar'}, {q:'1un', n:'Feijão'}]}
+                ]
             }
         ];
 
-        // --- SISTEMA ---
-        const chat = document.getElementById('chat-window');
+        // VARIÁVEIS DE ESTADO
+        const chat = document.getElementById('chat');
         const typing = document.getElementById('typing');
-        const inputFooter = document.getElementById('footer-input');
+        const inputArea = document.getElementById('input-area');
         let userName = "";
-        let basketSelected = false; // Flag para controlar se escolheu
+        let hasSelectedBasket = false;
 
+        // SCROLL AUTOMATICO
         function scrollChat() {
-            setTimeout(() => chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }), 100);
+            setTimeout(() => { chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
         }
 
-        async function speak(content, type = 'text', delay = 1200) {
+        // FUNÇÃO DE MENSAGENS
+        async function speak(content, type='text', delay=1000) {
             typing.style.display = 'block';
             scrollChat();
             await new Promise(r => setTimeout(r, delay));
             typing.style.display = 'none';
 
-            const div = document.createElement('div');
-            div.className = "msg-row";
+            const row = document.createElement('div');
+            row.className = 'msg-row';
+            
+            let html = '';
             
             if (type === 'sticker') {
-                div.innerHTML = `<img src="${content}" class="sticker">`;
-            } else if (type === 'dual-sticker') {
-                // Duas figurinhas lado a lado
-                const [s1, s2] = content;
-                div.innerHTML = `<div class="stickers-row"><img src="${s1}" class="sticker"><img src="${s2}" class="sticker"></div>`;
-            } else if (type === 'text') {
+                html = `<img src="${content}" class="sticker">`;
+            } 
+            else if (type === 'dual-sticker') {
+                html = `<div class="dual-sticker-container">
+                            <img src="${content[0]}" class="sticker sticker-small">
+                            <img src="${content[1]}" class="sticker sticker-small">
+                        </div>`;
+            }
+            else if (type === 'text') {
                 let txt = content.replace(new RegExp(userName, 'gi'), `<b>${userName}</b>`);
-                div.innerHTML = `<div class="bubble bot">${txt}</div>`;
-            } else if (type === 'html') {
-                div.innerHTML = `<div class="bubble bot" style="width:100%">${content}</div>`;
+                html = `<div class="bubble bot-bubble">${txt}</div>`;
+            }
+            else if (type === 'html') {
+                html = `<div class="bubble bot-bubble" style="width:100%">${content}</div>`;
             }
 
-            chat.appendChild(div);
+            row.innerHTML = html;
+            chat.appendChild(row);
             scrollChat();
         }
 
-        // --- FLUXO INICIAL ---
+        // INICIO
         window.onload = async () => {
-            renderCards(); 
+            renderCards();
             const h = new Date().getHours();
             const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
-            
-            await speak("ola.webp", "sticker", 600);
-            await speak(`${saudacao}! Sou o Osvaldo, assistente da Dona Antonia.`);
+            await speak("ola.webp", "sticker", 500);
+            await speak(`${saudacao}! Sou o Osvaldo, da Dona Antonia.`);
             await speak("Qual é o seu nome?");
         };
 
-        async function handleInput() {
-            const input = document.getElementById('user-input');
-            const val = input.value.trim();
+        // INPUT DO USUARIO
+        async function userSend() {
+            const inp = document.getElementById('msg-input');
+            const val = inp.value.trim();
             if(!val) return;
             
-            input.value = "";
-            const uDiv = document.createElement('div');
-            uDiv.className = "msg-row user";
-            uDiv.innerHTML = `<div class="bubble user">${val}</div>`;
-            chat.appendChild(uDiv);
+            inp.value = "";
+            const row = document.createElement('div');
+            row.className = "msg-row user"; // Classe corrigida para direita
+            row.innerHTML = `<div class="bubble user-bubble">${val}</div>`;
+            chat.appendChild(row);
             scrollChat();
 
             if(!userName) {
                 userName = val;
-                inputFooter.style.display = 'none';
+                inputArea.style.display = 'none';
                 await speak("ok.webp", "sticker", 800);
                 await speak(`Prazer, ${userName}!`);
-                await speak("Veja abaixo as fotos e listas completas das nossas cestas:");
-                await speak(`<button class="btn-action" onclick="toggleModal(true)">📦 VER CESTAS BÁSICAS</button>`, "html");
+                await speak(`Toque no botão abaixo para ver as fotos e listas.`);
+                await speak(`<button class="action-btn" onclick="openModal()">📦 VER CESTAS BÁSICAS</button>`, "html");
             }
         }
 
-        // --- RENDERIZAR CARDS NO MODAL ---
+        // RENDERIZAÇÃO DOS CARDS
         function renderCards() {
-            const container = document.getElementById('carousel-mount');
-            let html = '';
-            
-            BASKETS.forEach((b, index) => {
-                const pricesHtml = b.prices.map(p => `
-                    <div class="price-option">
-                        <span style="font-size:12px; color:#555">${p.n}</span>
-                        <span class="price-val">${p.v}</span>
+            const container = document.getElementById('cards-container');
+            container.innerHTML = BASKETS.map(b => {
+                const prices = b.prices.map(p => `
+                    <div class="price-row"><span>${p.n}</span><span style="font-weight:800; color:#059669">${p.v}</span></div>
+                `).join('');
+
+                const lists = b.list.map(l => `
+                    <div class="list-section">
+                        <div class="list-title">${l.cat}</div>
+                        ${l.items.map(i => `<div class="item-line"><span style="font-weight:700; color:#000">${i.q}</span> ${i.n}</div>`).join('')}
                     </div>
                 `).join('');
 
-                const alimentosHtml = b.alimentos.map(i => `<div class="item-row"><span class="item-qty">${i.q}</span> <span>de ${i.n}</span></div>`).join('');
-                
-                let limpezaHtml = '';
-                if(b.limpeza.length > 0) {
-                    limpezaHtml = `<div class="cat-header">Limpeza e Higiene</div>` + 
-                    b.limpeza.map(i => `<div class="item-row"><span class="item-qty">${i.q}</span> <span>de ${i.n}</span></div>`).join('');
-                }
-
-                html += `
-                <article class="card">
-                    <img src="${b.img}" class="card-img-header" alt="${b.name}">
-                    <div class="card-body-scroll">
-                        <h3 class="card-title">${b.name}</h3>
-                        <div>${pricesHtml}</div>
-                        
-                        <button class="btn-details" onclick="toggleDetails('list-${index}')">
-                            📄 Ver lista completa dos produtos
-                        </button>
-                        
-                        <div id="list-${index}" class="items-list">
-                            <div class="cat-header">Alimentos</div>
-                            ${alimentosHtml}
-                            ${limpezaHtml}
-                        </div>
-
-                        <button class="btn-select" onclick="selectBasket('${b.id}')">
-                            TENHO INTERESSE NESTA
-                        </button>
+                return `
+                <div class="product-card">
+                    <div class="card-fixed-header">
+                        <img src="${b.img}" class="card-img">
+                        <div class="card-title-overlay">${b.name}</div>
                     </div>
-                </article>
-                `;
-            });
-            container.innerHTML = html;
+                    <div class="card-scrollable-body">
+                        ${prices}
+                        ${lists}
+                        <button class="select-btn" onclick="selectBasket('${b.id}')">TENHO INTERESSE</button>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        function toggleDetails(id) {
-            const el = document.getElementById(id);
-            if (el.style.maxHeight) {
-                el.style.maxHeight = null;
-                el.classList.remove('open');
-            } else {
-                el.classList.add('open');
-                el.style.maxHeight = el.scrollHeight + "px";
-            }
+        // CONTROLE DO MODAL
+        function openModal() {
+            document.getElementById('modal-overlay').style.display = 'flex';
         }
 
-        function toggleModal(show) {
-            document.getElementById('modal-wrapper').style.display = show ? 'flex' : 'none';
-        }
-
-        // --- LOGICA DE FECHAMENTO E SELEÇÃO ---
-        
-        function handleCloseModal() {
-            toggleModal(false);
-            if (!basketSelected) {
-                // Se fechou sem escolher nada, manda o áudio padrão
-                sendAudioFlow('audio.mp3', null);
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            if(!hasSelectedBasket) {
+                // Se fechou sem escolher, manda audio padrao
+                triggerAudioSequence('audio.mp3');
             }
         }
 
         async function selectBasket(id) {
-            basketSelected = true; // Marca que escolheu
-            toggleModal(false);
+            hasSelectedBasket = true;
+            document.getElementById('modal-overlay').style.display = 'none';
             
             const basket = BASKETS.find(b => b.id === id);
             
-            // Simula User
-            const uDiv = document.createElement('div');
-            uDiv.className = "msg-row user";
-            uDiv.innerHTML = `<div class="bubble user">Gostei da ${basket.name}</div>`;
-            chat.appendChild(uDiv);
+            // Simula balão do usuario
+            const row = document.createElement('div');
+            row.className = "msg-row user";
+            row.innerHTML = `<div class="bubble user-bubble">Gostei da ${basket.name}</div>`;
+            chat.appendChild(row);
             scrollChat();
 
-            await speak(`Ótima escolha, ${userName}! A ${basket.name} é excelente.`);
-            
-            // Chama fluxo com audio especifico
-            sendAudioFlow(basket.audio, basket.name);
+            await speak(`Ótima escolha! A ${basket.name} é muito boa.`);
+            triggerAudioSequence(basket.audio);
         }
 
-        async function sendAudioFlow(audioFile, basketName) {
-            await speak("Vou te mandar um áudio explicando a entrega rapidinho...", "text", 1000);
+        // SEQUENCIA DE AUDIO E FINAL
+        async function triggerAudioSequence(audioFile) {
+            await speak("Vou te mandar um áudio rapidinho sobre a entrega...", "text", 1000);
             
-            const audioHTML = `
-                <div class="audio-box">
-                    <span class="play-btn" onclick="playAudio(this, '${audioFile}')">▶</span>
+            const audioHtml = `
+                <div class="audio-container">
+                    <span class="play-icon" onclick="playAudio(this, '${audioFile}')">▶</span>
                     <div>
-                        <strong style="font-size:13px; display:block">Explicação Entrega</strong>
+                        <strong style="font-size:13px; display:block">Dona Antonia</strong>
                         <span style="font-size:11px; color:#666">0:30</span>
                     </div>
                     <audio id="main-player"></audio>
-                </div>
-            `;
-            await speak(audioHTML, "html", 800);
+                </div>`;
+            
+            await speak(audioHtml, "html", 500);
 
-            // Sequencia Final com Delays Naturais
-            setTimeout(finalSequence, 8000); 
+            // GATILHOS FINAIS
+            setTimeout(async () => {
+                await speak(`Na sua próxima compra vou te mandar **1 café de brinde**! ☕`, "text");
+                
+                // Figurinhas LADO A LADO
+                await speak(["cafe.webp", "obrigado.webp"], "dual-sticker", 1000);
+                
+                await speak("Me chame no WhatsApp para confirmar o endereço:", "text", 1200);
+
+                const btnZap = `<button class="action-btn" style="background:#25d366; color:white; border:none" 
+                onclick="window.open('https://wa.me/5565999999999?text=Olá, vim pelo site e quero meu café de brinde!', '_blank')">
+                <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.05 14.69 2 12.04 2Z"></path></svg>
+                CHAMAR NO WHATSAPP</button>`;
+                
+                await speak(btnZap, "html", 500);
+
+            }, 8000); // 8 segundos para ouvir o audio
         }
 
         function playAudio(btn, src) {
-            const aud = document.getElementById('main-player');
-            if(src) aud.src = src; // Carrega se fornecido
-            
-            if(aud.paused){ aud.play(); btn.innerText="⏸"; }
-            else { aud.pause(); btn.innerText="▶"; }
-        }
-
-        async function finalSequence() {
-            // 1. Texto do Café
-            await speak(`Na sua próxima compra vou te mandar **1 café de brinde**! ☕`, "text", 1000);
-            
-            // 2. Figurinhas (Cafe + Obrigado) Lado a Lado
-            await speak(["cafe.webp", "obrigado.webp"], "dual-sticker", 1000);
-
-            // 3. Texto Final
-            await speak("Me chame no WhatsApp agora para confirmar o endereço.", "text", 1200);
-
-            // 4. Botão
-            const wppBtn = `
-            <button class="btn-action" style="background:#25d366; color:white; border:none; padding:18px;" 
-            onclick="window.open('https://wa.me/5565999999999?text=Olá Osvaldo, vim pelo site e quero meu café de brinde!', '_blank')">
-                CHAMAR NO WHATSAPP
-            </button>`;
-            
-            await speak(wppBtn, "html", 800);
+            const player = document.getElementById('main-player');
+            if(src) player.src = src;
+            if(player.paused) { player.play(); btn.innerText = "⏸"; }
+            else { player.pause(); btn.innerText = "▶"; }
         }
     </script>
 </body>
