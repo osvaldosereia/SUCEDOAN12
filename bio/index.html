@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMAS | Studio 300 Pro v6.3 (Auto Name)</title>
+    <title>SISTEMAS | Studio 300 Pro v6.4 (Custom Control)</title>
     <meta name="description" content="Editor Híbrido: Fotos, Vídeos, Botões e Fundos Transparentes.">
     <meta name="theme-color" content="#2563eb">
     
@@ -306,6 +306,24 @@
             flex-direction: column; align-items: center; gap: 0.5rem;
             font-size: 0.9rem; pointer-events: none;
         }
+        
+        /* New Styles for Config Panel */
+        .config-panel {
+            background: #fafaf9;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e7e5e4;
+            margin-bottom: 1rem;
+        }
+        .suffix-manager {
+            display: none;
+            background: #fff;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+        }
+        .suffix-manager.visible { display: block; animation: slideDown 0.2s ease; }
     </style>
 </head>
 <body>
@@ -316,7 +334,6 @@
     </div>
 
     <main>
-        <!-- CARD PREVIEW -->
         <div class="card preview-section">
             
             <div class="format-selector">
@@ -368,10 +385,8 @@
             </div>
         </div>
 
-        <!-- CARD CONTROLS -->
         <div class="card" id="controlsCard">
             
-            <!-- Botões Info -->
             <fieldset>
                 <label>Botões de Informação</label>
                 <button id="btnAddOverlay" class="btn btn-add-overlay">
@@ -394,7 +409,6 @@
                         <input type="color" id="overlayTextColor" value="#ffffff">
                     </div>
 
-                    <!-- PRESETS AREA -->
                     <div class="presets-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span style="font-size:0.75rem; font-weight:bold; color:var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Presets de Botão</span>
@@ -430,14 +444,12 @@
                 <input type="range" id="sharpRange" min="0" max="30" value="0" step="1">
             </fieldset>
 
-            <!-- PHOTO EXTRAS -->
             <div id="photoExtras">
                 <button id="btnMagic" class="btn btn-magic">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.5 9.5l-2.5-2.5"/><path d="M21 11l-9 9-5-5 9-9z"/><path d="M3 3l6 6"/><path d="M15 4l-4 4"/><path d="M4 15l4-4"/><path d="M9 19l2 2"/></svg>
                     🪄 Remover Fundo
                 </button>
 
-                <!-- NEW BACKGROUND CONTROLS (FULL WIDTH) -->
                 <div id="bgControlsPanel" class="bg-controls-panel">
                     <div id="bgStatus" class="bg-status-indicator transparent">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="3" x2="21" y2="21"/><line x1="21" y1="3" x2="3" y2="21"/></svg>
@@ -464,12 +476,10 @@
                             <button id="btnClearBgPresets" class="btn-mini" style="font-size:0.65rem;">Limpar</button>
                         </div>
                         <div id="bgPresetsContainer" class="chips-container">
-                            <!-- Chips inseridos via JS -->
-                        </div>
+                            </div>
                     </div>
                 </div>
 
-                <!-- Controles de Restauração -->
                 <button id="btnRestore" class="btn btn-restore">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
                     🖌️ Pincel Restaurar
@@ -481,12 +491,25 @@
                     <div style="font-size: 0.75rem; margin-top: 5px; opacity: 0.8;">Passe o dedo onde quer trazer a imagem original de volta.</div>
                 </div>
 
+                <fieldset class="config-panel" style="margin-top: 1.5rem;">
+                    <label style="color: var(--brand-dark);">Configuração de Saída</label>
+                    
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:5px;">
+                        <span>Qualidade: <b id="qualityDisplay">90%</b></span>
+                        <span style="color:var(--text-muted);">Max KB (0 = Livre)</span>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="range" id="qualityRange" min="10" max="100" value="90" style="flex:1;">
+                        <input type="number" id="maxSizeInput" value="15" placeholder="KB" style="width: 70px; padding: 5px; border:1px solid var(--border); border-radius:4px; text-align:center;">
+                    </div>
+                </fieldset>
+
                 <button id="saveBtn" class="btn btn-save" disabled>
-                    Baixar WebP (Max 15KB)
+                    Baixar WebP
                 </button>
             </div>
 
-            <!-- VIDEO EXTRAS -->
             <div id="videoExtras" class="hidden">
                 <button id="recordBtn" class="btn btn-record" disabled>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
@@ -495,19 +518,25 @@
                 <div id="videoProgress" style="width: 0%; height: 4px; background: var(--action); margin-top: 10px; transition: width 0.2s; border-radius: 2px;"></div>
             </div>
 
-            <!-- SEO -->
             <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
                 <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Nome do Arquivo (SEO)</label>
                 <input type="text" id="nameInput" class="input-text" placeholder="ex: arroz-prato-fino" value="produto" style="margin-bottom: 0.5rem;">
                 
-                <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; margin-top: 0.5rem;">Variação SEO</label>
-                <select id="suffixSelect" class="input-select">
-                    <option value="-cesta-basica-cuiaba-varzea-grande">1 - Padrão (...varzea-grande)</option>
-                    <option value="-cesta-basica-cuiaba-varzea-grandeA">2 - Variação A (...grandeA)</option>
-                    <option value="-cesta-basica-cuiaba-varzea-grandeB">3 - Variação B (...grandeB)</option>
-                    <option value="-cesta-basica-cuiaba-varzea-grandeC">4 - Variação C (...grandeC)</option>
-                    <option value="-cesta-basica-cuiaba-varzea-grandeD">5 - Variação D (...grandeD)</option>
-                </select>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; margin-top: 0.5rem;">Variação SEO (Sufixo)</label>
+                    <button id="btnManageSuffix" class="btn-mini" style="margin-bottom: 0.5rem;">⚙️</button>
+                </div>
+                
+                <select id="suffixSelect" class="input-select"></select>
+
+                <div id="suffixManager" class="suffix-manager">
+                    <label style="font-size: 0.8rem;">Adicionar Novo Sufixo:</label>
+                    <div style="display:flex; gap:5px; margin-bottom:10px;">
+                        <input type="text" id="newSuffixInput" class="input-text" style="font-size:0.85rem; padding:6px;" placeholder="-novo-exemplo">
+                        <button id="btnAddSuffix" class="btn-mini" style="color:var(--brand); border-color:var(--brand);">Add</button>
+                    </div>
+                    <button id="btnResetSuffixes" class="btn-mini" style="width:100%; color:var(--danger); border-color:var(--danger);">Restaurar Padrões</button>
+                </div>
             </div>
         </div>
     </main>
@@ -522,9 +551,9 @@
             noBgCanvas: null, 
             useNoBg: false,
             
-            // ATUALIZADO: Controle de cor/transparência
+            // Controle de cor/transparência
             bgColor: '#ffffff',
-            bgIsTransparent: true, // Padrão agora é transparente
+            bgIsTransparent: true, 
             
             video: null,
             ctx: null, width: 300, height: 300,
@@ -545,6 +574,7 @@
 
         const PRESET_KEY = 'studio300_presets_v1';
         const BG_PRESET_KEY = 'studio300_bg_presets_v1';
+        const SUFFIX_KEY = 'studio300_suffixes_v1';
 
         const els = {
             canvas: document.getElementById('canvas'),
@@ -602,7 +632,16 @@
             btnTransparent: document.getElementById('btnTransparent'),
             btnSaveBgPreset: document.getElementById('btnSaveBgPreset'),
             bgPresetsContainer: document.getElementById('bgPresetsContainer'),
-            btnClearBgPresets: document.getElementById('btnClearBgPresets')
+            btnClearBgPresets: document.getElementById('btnClearBgPresets'),
+            // NEW CONFIG & SUFFIX UI
+            qualityRange: document.getElementById('qualityRange'),
+            qualityDisplay: document.getElementById('qualityDisplay'),
+            maxSizeInput: document.getElementById('maxSizeInput'),
+            btnManageSuffix: document.getElementById('btnManageSuffix'),
+            suffixManager: document.getElementById('suffixManager'),
+            newSuffixInput: document.getElementById('newSuffixInput'),
+            btnAddSuffix: document.getElementById('btnAddSuffix'),
+            btnResetSuffixes: document.getElementById('btnResetSuffixes')
         };
 
         function init() {
@@ -650,21 +689,34 @@
             els.btnSavePreset.onclick = saveCurrentPreset;
             els.btnClearPresets.onclick = clearPresets;
 
-            // NEW: Background Actions
+            // Background Actions
             loadBgPresets();
             els.newBgColor.addEventListener('input', (e) => {
                 state.bgColor = e.target.value;
-                state.bgIsTransparent = false; // Se tocou na cor, tira transparencia
+                state.bgIsTransparent = false; 
                 updateBgStatus();
                 requestRender();
             });
             els.btnTransparent.onclick = () => {
-                state.bgIsTransparent = true; // Volta para transparente
+                state.bgIsTransparent = true; 
                 updateBgStatus();
                 requestRender();
             };
             els.btnSaveBgPreset.onclick = saveBgPreset;
             els.btnClearBgPresets.onclick = clearBgPresets;
+
+            // CONFIG UI
+            els.qualityRange.oninput = (e) => {
+                els.qualityDisplay.innerText = e.target.value + '%';
+            };
+            
+            // SUFFIX LOGIC
+            loadSuffixes();
+            els.btnManageSuffix.onclick = () => {
+                els.suffixManager.classList.toggle('visible');
+            };
+            els.btnAddSuffix.onclick = addSuffix;
+            els.btnResetSuffixes.onclick = resetSuffixes;
 
             // Touch/Mouse Gestures
             els.canvas.addEventListener('mousedown', handlePointerDown);
@@ -684,19 +736,67 @@
             window.setFormat = setFormat; 
         }
 
+        // --- SUFFIX MANAGER ---
+        function getSuffixes() {
+            const defaults = [
+                "",
+                "-cesta-basica-cuiaba-varzea-grande",
+                "-cesta-basica-cuiaba-varzea-grandeA",
+                "-cesta-basica-cuiaba-varzea-grandeB",
+                "-cesta-basica-cuiaba-varzea-grandeC",
+                "-cesta-basica-cuiaba-varzea-grandeD"
+            ];
+            return JSON.parse(localStorage.getItem(SUFFIX_KEY)) || defaults;
+        }
+
+        function loadSuffixes() {
+            const list = getSuffixes();
+            els.suffixSelect.innerHTML = '';
+            list.forEach(sf => {
+                const opt = document.createElement('option');
+                opt.value = sf;
+                opt.textContent = sf === "" ? "(Sem sufixo)" : sf;
+                els.suffixSelect.appendChild(opt);
+            });
+            // Tenta selecionar o primeiro que não seja vazio como padrão, ou o vazio se só tiver ele
+            if (list.length > 1 && list[1]) els.suffixSelect.value = list[1];
+            else els.suffixSelect.value = list[0];
+        }
+
+        function addSuffix() {
+            const val = els.newSuffixInput.value.trim();
+            if (!val) return;
+            const list = getSuffixes();
+            if (!list.includes(val)) {
+                list.push(val);
+                localStorage.setItem(SUFFIX_KEY, JSON.stringify(list));
+                loadSuffixes();
+                els.suffixSelect.value = val;
+                els.newSuffixInput.value = '';
+            }
+        }
+
+        function resetSuffixes() {
+            if(confirm("Deseja apagar seus sufixos personalizados e voltar ao padrão?")) {
+                localStorage.removeItem(SUFFIX_KEY);
+                loadSuffixes();
+                els.suffixManager.classList.remove('visible');
+            }
+        }
+
         // --- BG HELPER ---
         function updateBgStatus() {
             if (state.bgIsTransparent) {
                 els.bgStatus.className = 'bg-status-indicator transparent';
                 els.bgStatus.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="3" x2="21" y2="21"/><line x1="21" y1="3" x2="3" y2="21"/></svg> Fundo Transparente Ativo';
-                els.newBgColor.value = '#ffffff'; // visual reset
+                els.newBgColor.value = '#ffffff'; 
             } else {
                 els.bgStatus.className = 'bg-status-indicator color';
                 els.bgStatus.innerHTML = '<span style="width:14px; height:14px; border-radius:50%; background:'+state.bgColor+'; border:1px solid #ccc; display:inline-block;"></span> Cor Ativa';
             }
         }
 
-        // --- BG PRESETS LOGIC (NEW) ---
+        // --- BG PRESETS LOGIC ---
         function getBgPresets() {
             return JSON.parse(localStorage.getItem(BG_PRESET_KEY)) || [];
         }
@@ -722,7 +822,7 @@
             }
         }
         function saveBgPreset() {
-            if(state.bgIsTransparent) return; // Nao salva transparente
+            if(state.bgIsTransparent) return; 
             const cur = els.newBgColor.value;
             const list = getBgPresets();
             if(!list.includes(cur)) {
@@ -1061,19 +1161,17 @@
             if(!state.img) return;
             const ctx = els.ctx; const w = state.width; const h = state.height;
             
-            // LIMPAR CANVAS PARA GARANTIR TRANSPARENCIA
+            // LIMPAR CANVAS
             ctx.clearRect(0, 0, w, h);
             ctx.filter = 'none'; 
 
-            // LOGICA DE COR DE FUNDO OU TRANSPARENCIA
+            // LOGICA DE COR DE FUNDO
             if (state.useNoBg) {
-                // Se removeu o fundo, só pinta se NÃO for transparente
                 if (!state.bgIsTransparent) {
                     ctx.fillStyle = state.bgColor; 
                     ctx.fillRect(0, 0, w, h);
                 }
             } else {
-                // Se NÃO removeu o fundo (modo normal), pinta de branco padrão
                 ctx.fillStyle = '#ffffff'; 
                 ctx.fillRect(0, 0, w, h);
             }
@@ -1191,7 +1289,7 @@
             });
         }
 
-        // --- EXPORT LOGIC WITH SIZE LIMIT ---
+        // --- EXPORT LOGIC WITH CUSTOM CONTROL ---
         async function savePhotoHighQuality() {
             if (!state.img) return;
             const originalText = els.btnSave.innerText;
@@ -1208,7 +1306,6 @@
                 // IMPORTANT: Clears for transparency
                 sCtx.clearRect(0, 0, superW, superH);
 
-                // Decide se pinta o fundo ou deixa transparente
                 if (state.useNoBg) {
                     if (!state.bgIsTransparent) {
                         sCtx.fillStyle = state.bgColor; 
@@ -1234,29 +1331,33 @@
                 const finalCanvas = document.createElement('canvas');
                 finalCanvas.width = state.width; finalCanvas.height = state.height;
                 
-                // Pica para resize de alta qualidade
                 if (window.pica) await window.pica().resize(superCanvas, finalCanvas, { unsharpAmount: 0, quality: 3 });
                 else finalCanvas.getContext('2d').drawImage(superCanvas, 0, 0, state.width, state.height);
 
                 if (state.sharpness > 0) applySharpen(finalCanvas.getContext('2d'), state.width, state.height, state.sharpness);
 
-                els.btnSave.innerHTML = "Comprimindo < 15KB...";
+                // --- LÓGICA DE COMPRESSÃO E TAMANHO ---
+                els.btnSave.innerHTML = "Comprimindo...";
                 
-                // --- LOGICA DE COMPRESSÃO PARA 15KB ---
-                let quality = 0.95; // Começa alto
+                let quality = parseInt(els.qualityRange.value) / 100;
+                const maxKB = parseInt(els.maxSizeInput.value);
+                const maxBytes = maxKB * 1024;
                 let blob = null;
-                const maxBytes = 15 * 1024; // 15KB em bytes
 
-                // Loop para encontrar a melhor qualidade que cabe em 15KB
-                do {
+                if (maxKB > 0) {
+                    // Modo Tamanho Alvo
+                    do {
+                        blob = await new Promise(r => finalCanvas.toBlob(r, 'image/webp', quality));
+                        if (blob.size > maxBytes) {
+                            quality -= 0.05; 
+                        }
+                    } while (blob.size > maxBytes && quality > 0.1);
+                    console.log(`Blob Final: ${(blob.size/1024).toFixed(2)}KB (Alvo: ${maxKB}KB) Q=${quality.toFixed(2)}`);
+                } else {
+                    // Modo Apenas Qualidade (ignora tamanho)
                     blob = await new Promise(r => finalCanvas.toBlob(r, 'image/webp', quality));
-                    if (blob.size > maxBytes) {
-                        quality -= 0.05; // Reduz a qualidade em 5%
-                    }
-                } while (blob.size > maxBytes && quality > 0.1);
-
-                // Se mesmo com qualidade baixa ainda for grande (muito detalhe), avisa ou baixa assim mesmo
-                console.log(`Final Blob: ${(blob.size/1024).toFixed(2)}KB at Q=${quality.toFixed(2)}`);
+                    console.log(`Blob Final: ${(blob.size/1024).toFixed(2)}KB Q=${quality.toFixed(2)}`);
+                }
 
                 download(URL.createObjectURL(blob), '.webp');
 
@@ -1282,34 +1383,30 @@
         function toggleMagicBackground() {
             if (!state.img) return;
             if (state.useNoBg) {
-                // DESATIVAR REMOÇÃO DE FUNDO
                 state.useNoBg = false; 
                 els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
                 els.btnRestore.style.display = 'none'; 
                 els.bgControlsPanel.classList.remove('visible'); 
                 requestRender();
             } else {
-                // ATIVAR REMOÇÃO DE FUNDO
                 if (state.noBgCanvas) {
                     state.useNoBg = true;
-                    // Reseta para transparente ao ativar novamente, ou mantem estado anterior?
-                    // Mantendo estado anterior para melhor UX, mas garantindo UI correta:
                     els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido';
                     els.btnRestore.style.display = 'flex'; 
                     els.bgControlsPanel.classList.add('visible'); 
-                    updateBgStatus(); // Atualiza UI da cor
+                    updateBgStatus(); 
                     requestRender();
                 } else {
                     els.btnMagic.innerHTML = '⏳ Processando...'; els.btnMagic.classList.add('processing');
                     setTimeout(() => { 
                         processRemoveBackground(); 
                         state.useNoBg = true; 
-                        state.bgIsTransparent = true; // Padrão: Transparente na primeira vez
+                        state.bgIsTransparent = true; 
                         els.btnMagic.classList.remove('processing'); 
                         els.btnMagic.style.background = '#059669'; els.btnMagic.innerHTML = '✅ Fundo Removido'; 
                         els.btnRestore.style.display = 'flex'; 
                         els.bgControlsPanel.classList.add('visible'); 
-                        updateBgStatus(); // Atualiza UI
+                        updateBgStatus(); 
                         requestRender(); 
                     }, 50);
                 }
@@ -1371,7 +1468,12 @@
         }
         function download(url, ext) {
             const link = document.createElement('a');
-            link.download = (els.nameInput.value || 'produto').toLowerCase().replace(/[^a-z0-9]/g, '-') + els.suffixSelect.value + ext;
+            // Sanitiza nome
+            let finalName = (els.nameInput.value || 'produto').toLowerCase().replace(/[^a-z0-9]/g, '-');
+            // Adiciona sufixo (se não estiver vazio)
+            finalName += els.suffixSelect.value;
+            // Adiciona extensão
+            link.download = finalName + ext;
             link.href = url; link.click();
         }
         // --- BRUSH RESTORE LOGIC ---
@@ -1405,22 +1507,18 @@
             
             // Lógica de Extração de Nome (SEO)
             let rawName = f.name;
-            // 1. Remove extensão
             const lastDot = rawName.lastIndexOf('.');
             if (lastDot !== -1) rawName = rawName.substring(0, lastDot);
             
-            // 2. Procura por "cesta"
-            const regex = /cesta/i; // case insensitive
+            const regex = /cesta/i; 
             const match = rawName.match(regex);
             
             if (match) {
-                // Pega tudo antes do match
                 rawName = rawName.substring(0, match.index);
-                // Remove separadores sobrando no final (-, _, espaço)
                 rawName = rawName.replace(/[-_\s]+$/, '');
             }
             
-            els.nameInput.value = rawName || 'produto'; // fallback se ficar vazio
+            els.nameInput.value = rawName || 'produto'; 
             
             if(f.type.startsWith('video/')) { if(state.mode !== 'video') setMode('video'); loadVideo(f); } 
             else { if(state.mode !== 'photo') setMode('photo'); loadImage(f); }
@@ -1438,7 +1536,7 @@
                 state.img = img; state.noBgCanvas = null; state.useNoBg = false; state.x = 0; state.y = 0; state.overlays = [];
                 els.btnMagic.style.background = '#8b5cf6'; els.btnMagic.innerHTML = '🪄 Remover Fundo';
                 els.btnRestore.style.display = 'none'; state.isRestoring = false; 
-                els.bgControlsPanel.classList.remove('visible'); // Hide BG Controls
+                els.bgControlsPanel.classList.remove('visible'); 
                 els.btnRestore.classList.remove('active'); els.brushControls.classList.remove('visible');
                 els.empty.classList.add('hidden'); els.canvas.classList.remove('hidden'); els.btnSave.disabled = false; requestRender(); URL.revokeObjectURL(url);
             };
