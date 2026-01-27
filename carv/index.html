@@ -3,56 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dona Antonia - Assistente</title>
+    <title>Dona Antonia Cestas Básicas</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', system-ui, sans-serif; background-color: #ffffff; margin: 0; display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; overflow: hidden; }
         
-        /* Top Bar */
-        .top-bar { background: #fff; border-bottom: 1px solid #eee; padding: 10px 20px; display: flex; align-items: center; height: 70px; flex-shrink: 0; }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .brand img { width: 45px; height: 45px; border-radius: 50%; border: 1px solid #eee; }
-        .brand span { font-weight: 700; font-size: 17px; }
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background-color: #ffffff; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
 
-        /* Área de Chat */
-        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-        
-        .msg-row { display: flex; gap: 10px; width: 100%; margin-bottom: 5px; }
-        .msg-row.user { flex-direction: row-reverse; }
+        /* Top Bar Cinza Clara */
+        .top-bar { 
+            background: #f5f5f5; 
+            border-bottom: 1px solid #ddd; 
+            padding: 15px 20px; 
+            display: flex; 
+            align-items: center; 
+            height: 85px; 
+            flex-shrink: 0; 
+            z-index: 100;
+        }
+        .brand { display: flex; align-items: center; gap: 15px; }
+        .brand img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
+        .brand span { font-weight: 800; font-size: 20px; color: #1a1a1a; }
 
-        /* Estilo das Figurinas (Sem fundo) */
-        .sticker-msg { width: 150px; height: auto; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+        /* Janela de Chat */
+        #chat-window { 
+            flex: 1; 
+            overflow-y: scroll; 
+            padding: 20px 15px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            background: #ffffff;
+            -webkit-overflow-scrolling: touch;
+        }
 
-        /* Balões de Texto */
-        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 17px; line-height: 1.4; }
-        .bot-bubble { background-color: #f0f0f0; color: #222; }
-        .user-bubble { background-color: #000; color: #fff; font-weight: 500; }
+        .msg-row { display: flex; width: 100%; animation: fadeIn 0.3s ease; }
+        .msg-row.user { justify-content: flex-end; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Digitando */
-        #typing { font-size: 13px; color: #999; padding: 5px 20px; display: none; }
+        /* Figurinas Grandes */
+        .sticker-msg { width: 180px; height: auto; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
 
-        /* Input Base */
-        .input-container { padding: 15px; border-top: 1px solid #eee; background: #fff; flex-shrink: 0; }
-        .input-bar { display: flex; gap: 10px; align-items: center; background: #f5f5f5; padding: 8px 15px; border-radius: 25px; }
-        .input-bar input { flex: 1; border: none; background: transparent; padding: 10px; outline: none; font-size: 16px; }
-        .btn-send { background: #000; color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        /* Balões de Texto Maiores */
+        .bubble { 
+            max-width: 85%; 
+            padding: 14px 18px; 
+            border-radius: 20px; 
+            font-size: 18px; 
+            line-height: 1.5; 
+        }
+        .bot-bubble { background-color: #f0f0f0; color: #222; border-bottom-left-radius: 4px; }
+        .user-bubble { background-color: #000000; color: #ffffff; border-bottom-right-radius: 4px; }
 
-        /* Botão Grande de Ação */
-        .btn-large { background: #000; color: #fff; border: none; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
-        .btn-confirm { background: #fff; border: 2px solid #000; color: #000; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 5px; }
+        #typing { font-size: 14px; color: #888; padding: 10px 20px; display: none; font-weight: 500; }
+
+        /* Input Fixo na Base */
+        .input-container { 
+            padding: 15px 20px 30px 20px; 
+            background: #ffffff; 
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        .input-bar { 
+            display: flex; 
+            gap: 12px; 
+            align-items: center; 
+            background: #f0f2f5; 
+            padding: 10px 18px; 
+            border-radius: 30px; 
+        }
+        .input-bar input { flex: 1; border: none; background: transparent; padding: 10px; outline: none; font-size: 18px; }
+        .btn-send { background: #000; color: #fff; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+
+        /* Botão de Ação */
+        .btn-action { 
+            background: #000; color: #fff; border: none; padding: 20px; 
+            border-radius: 15px; font-size: 19px; font-weight: bold; 
+            width: 100%; cursor: pointer; margin-top: 10px;
+        }
 
         /* Slide Fullscreen */
-        #modal-slide { display: none; position: fixed; inset: 0; background: #fff; z-index: 9999; flex-direction: column; }
-        .slide-header { padding: 20px; display: flex; justify-content: flex-end; }
-        .close-btn { font-size: 30px; border: none; background: none; cursor: pointer; padding: 10px; }
-        .slide-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px; }
-        .slide-img { width: 100%; max-height: 80vh; object-fit: contain; }
-        .slide-footer { padding: 30px; display: flex; justify-content: center; gap: 40px; }
-        .nav-btn { background: #000; color: #fff; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; }
+        #modal-slide { 
+            display: none; position: fixed; inset: 0; background: #fff; z-index: 10000; 
+            flex-direction: column; 
+        }
+        .slide-content { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .slide-img { width: 100vw; height: auto; max-height: 70vh; object-fit: contain; }
+        .slide-footer { padding: 40px 20px; display: flex; justify-content: space-between; gap: 20px; }
+        .nav-btn { flex: 1; background: #f0f0f0; border: none; padding: 20px; border-radius: 12px; font-weight: bold; font-size: 17px; }
 
-        /* Player Áudio */
-        .audio-card { background: #f0f0f0; padding: 15px; border-radius: 15px; display: flex; align-items: center; gap: 12px; width: 100%; max-width: 280px; }
-        .play-btn { font-size: 25px; cursor: pointer; }
+        /* Áudio Player */
+        .audio-card { background: #f0f0f0; padding: 18px; border-radius: 18px; display: flex; align-items: center; gap: 15px; width: 100%; max-width: 300px; }
     </style>
 </head>
 <body>
@@ -60,22 +108,22 @@
     <div class="top-bar">
         <div class="brand">
             <img src="logo.webp" alt="Logo">
-            <span>Dona Antonia Cestas</span>
+            <span>Dona Antonia Cestas Básicas</span>
         </div>
     </div>
 
     <div id="chat-window"></div>
-    <div id="typing">Osvaldo está digitando...</div>
+    <div id="typing">Osvaldo está escrevendo...</div>
 
     <div class="input-container" id="input-zone">
         <div class="input-bar">
-            <input type="text" id="user-input" placeholder="Digite aqui...">
+            <input type="text" id="user-input" placeholder="Digite seu nome...">
             <button class="btn-send" onclick="handleInput()">↑</button>
         </div>
     </div>
 
     <div id="modal-slide">
-        <div class="slide-header"><button class="close-btn" onclick="toggleSlide(false)">✕</button></div>
+        <div style="padding: 20px; text-align: right;"><button onclick="toggleSlide(false)" style="font-size: 30px; border:none; background:none;">✕</button></div>
         <div class="slide-content"><img id="slide-img" src="cesta1.webp"></div>
         <div class="slide-footer">
             <button class="nav-btn" onclick="moveSlide(-1)">Anterior</button>
@@ -86,14 +134,18 @@
     <script>
         const chat = document.getElementById('chat-window');
         const typing = document.getElementById('typing');
-        const inputZone = document.getElementById('input-zone');
         let userName = "";
         let currentCesta = 1;
         let step = "name";
 
-        async function speak(content, type = "text", delay = 1200) {
+        // Rolagem automática revisada
+        function scrollToBottom() {
+            chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+        }
+
+        async function speak(content, type = "text", delay = 1500) {
             typing.style.display = "block";
-            chat.scrollTop = chat.scrollHeight;
+            scrollToBottom();
             await new Promise(r => setTimeout(r, delay));
             typing.style.display = "none";
 
@@ -108,53 +160,53 @@
             }
             
             chat.appendChild(row);
-            chat.scrollTop = chat.scrollHeight;
+            scrollToBottom();
         }
 
         window.onload = async () => {
-            const h = new Date().getHours();
-            const s = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
-            await speak("ola.webp", "sticker", 600);
-            await speak(`${s}! Sou o Osvaldo.`);
-            await speak("Como você se chama?");
+            await speak("ola.webp", "sticker", 800);
+            await speak(`Olá! Sou o Osvaldo.`);
+            await speak("Qual é o seu nome?");
         };
 
         async function handleInput() {
-            const val = document.getElementById('user-input').value.trim();
+            const inputEl = document.getElementById('user-input');
+            const val = inputEl.value.trim();
             if (!val) return;
-            document.getElementById('user-input').value = "";
+            inputEl.value = "";
 
             const row = document.createElement('div');
             row.className = "msg-row user";
             row.innerHTML = `<div class="bubble user-bubble">${val}</div>`;
             chat.appendChild(row);
+            scrollToBottom();
 
             if (step === "name") {
                 userName = val;
-                step = "waiting_audio";
+                step = "waiting";
+                document.getElementById('input-zone').style.display = "none";
                 await speak("ok.webp", "sticker", 800);
                 await speak(`Prazer, ${userName}!`);
-                await speak("Vou te mostrar nossas cestas agora.");
-                await speak(`<button class="btn-large" onclick="toggleSlide(true)">📦 VER CESTAS BÁSICAS</button>`, "text", 500);
+                await speak("Vou te mandar as fotos das nossas cestas.");
+                await speak(`<button class="btn-action" onclick="toggleSlide(true)">📦 VER CESTAS BÁSICAS</button>`, "text", 500);
                 
                 setTimeout(async () => {
-                    await speak(`${userName}, posso te mandar um áudio explicando como comprar?`);
-                    await speak(`<button class="btn-confirm" onclick="sendAudio()">Sim, pode mandar!</button>`, "text", 400);
+                    await speak(`Posso te enviar um áudio explicando como comprar?`);
+                    await speak(`<button class="btn-action" style="background:#fff; color:#000; border:2px solid #000;" onclick="sendAudio()">Sim, pode mandar!</button>`);
                 }, 10000);
             }
         }
 
         async function sendAudio() {
-            // Remove o botão de confirmação para não clicar duas vezes
-            const btns = document.querySelectorAll('.btn-confirm');
-            btns.forEach(b => b.remove());
+            const btns = document.querySelectorAll('.btn-action');
+            btns.forEach(b => { if(b.innerText.includes("Sim")) b.remove(); });
 
             const audioHTML = `
                 <div class="audio-card">
-                    <span class="play-btn" onclick="playAudio(this)">▶</span>
-                    <div>
-                        <span style="font-size:14px; font-weight:600; display:block">Resumo do pedido</span>
-                        <span style="font-size:12px; color:#666">0:30</span>
+                    <span style="font-size:30px; cursor:pointer;" onclick="playAudio(this)">▶</span>
+                    <div style="flex:1">
+                        <span style="font-size:15px; font-weight:600; display:block">Explicação Cestas</span>
+                        <span style="font-size:13px; color:#666">0:30</span>
                     </div>
                     <audio id="player" src="audio.mp3"></audio>
                 </div>
@@ -170,11 +222,11 @@
         }
 
         async function finalAction() {
-            await speak("cafe.webp", "sticker", 800);
-            await speak(`Me manda um oi no WhatsApp para eu salvar seu contato.`);
-            await speak(`Garante um café de brinde na sua próxima compra! ☕`);
-            await speak(`<button class="btn-large" style="background:#25d366" onclick="window.open('https://wa.me/5511999999999')">CHAMAR NO WHATSAPP</button>`);
-            await speak("obrigado.webp", "sticker", 500);
+            await speak("cafe.webp", "sticker", 1000);
+            await speak(`Me manda um oi no WhatsApp pra salvar nosso contato.`);
+            await speak(`Na sua próxima compra te mando um café de brinde! ☕`);
+            await speak(`<button class="btn-action" style="background:#25d366" onclick="window.open('https://wa.me/5511999999999')">CHAMAR NO WHATSAPP</button>`);
+            await speak("obrigado.webp", "sticker", 800);
         }
 
         function toggleSlide(s) { document.getElementById('modal-slide').style.display = s ? "flex" : "none"; }
