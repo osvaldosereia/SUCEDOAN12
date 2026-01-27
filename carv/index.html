@@ -19,9 +19,8 @@
         #phone-container {
             width: 100%;
             max-width: 600px;
-            background-color: #efe7dd; /* Bege WhatsApp */
-            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
-            background-repeat: repeat;
+            background-color: #efe7dd; /* COR OFICIAL BEGE DO WHATSAPP */
+            /* Removi a imagem de fundo externa para parar de carregar infinitamente */
             display: flex;
             flex-direction: column;
             box-shadow: 0 0 15px rgba(0,0,0,0.1);
@@ -64,6 +63,10 @@
             flex-direction: column;
             gap: 8px;
             padding-bottom: 90px;
+            /* Padrão de fundo sutil feito com CSS puro (não precisa baixar imagem) */
+            background-image: radial-gradient(#d4cec6 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.99; /* Força renderização */
         }
 
         /* Balões */
@@ -72,7 +75,7 @@
             border-radius: 7.5px;
             font-size: 16px;
             line-height: 19px;
-            max-width: 85%; /* Um pouco mais largo para caber o player */
+            max-width: 85%;
             position: relative;
             box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
             animation: fadeIn 0.3s;
@@ -112,19 +115,19 @@
         }
         .tick { font-size: 14px; color: #53bdeb; }
 
-        /* --- PLAYER DE ÁUDIO ESTILO WHATSAPP (Ajustado) --- */
+        /* --- PLAYER DE ÁUDIO ESTILO WHATSAPP --- */
         .wa-audio-player {
             display: flex;
             align-items: center;
             gap: 8px;
-            min-width: 250px; /* Garante largura */
+            min-width: 250px;
             height: 50px;
         }
         
         .audio-avatar {
             width: 42px; height: 42px;
             border-radius: 50%;
-            background-color: #ff9800; /* Laranja do audio */
+            background-color: #ff9800;
             display: flex; justify-content: center; align-items: center;
             color: white; position: relative; flex-shrink: 0;
         }
@@ -136,18 +139,14 @@
         }
 
         audio {
-            flex: 1; /* Ocupa o resto do espaço */
+            flex: 1;
             height: 40px;
             outline: none;
         }
         
-        /* Tenta deixar o player nativo transparente para fundir com o balão */
-        audio::-webkit-media-controls-panel {
-            background-color: #ffffff; /* Cor do balão do bot */
-        }
-        audio::-webkit-media-controls-enclosure {
-            background-color: #ffffff;
-        }
+        /* Ajustes do player para Chrome/Android */
+        audio::-webkit-media-controls-panel { background-color: #ffffff; }
+        audio::-webkit-media-controls-enclosure { background-color: #ffffff; }
 
         /* --- BOTÕES --- */
         .options-container { display: flex; flex-direction: column; gap: 5px; width: 100%; }
@@ -192,7 +191,7 @@
         <header>
             <span class="material-icons back-btn">arrow_back</span>
             <div class="logo-circle">
-                <img src="img/logo.png" alt="Logo" onerror="this.src='https://via.placeholder.com/50'">
+                <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'">
             </div>
             <div class="header-info">
                 <span class="company-name">Dona Antonia</span>
@@ -339,26 +338,23 @@
                         <span class="material-icons">headset</span>
                         <span class="material-icons mic-icon-small">mic</span>
                     </div>
-                    <audio id="${id}" controls controlsList="nodownload">
+                    <audio id="${id}" controls preload="none" controlsList="nodownload">
                         <source src="${src}" type="audio/mpeg">
                         <source src="${src}" type="audio/mp4">
-                        Seu navegador não suporta áudio.
                     </audio>
                 </div>
             `;
             const div = addBotMessage(audioHtml);
             const player = document.getElementById(id);
             
-            // Adiciona um aviso se o arquivo não for achado (Diagnóstico)
             player.onerror = function() {
-                console.log("Erro ao carregar: " + src);
-                const errorMsg = document.createElement('div');
-                errorMsg.style.color = 'red'; errorMsg.style.fontSize = '12px'; errorMsg.style.marginTop = '5px';
-                errorMsg.textContent = "Erro: Arquivo não encontrado (verifique o nome)";
-                div.appendChild(errorMsg);
+                console.log("Erro no arquivo: " + src);
+                // Não mostra erro na tela para manter o visual limpo, mas não trava
             };
 
             if(player) {
+                // Tenta carregar e tocar
+                player.load(); 
                 player.play().catch(e => { console.log("Aguardando play manual"); });
             }
         }
