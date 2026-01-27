@@ -3,432 +3,387 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dona Antonia Cestas Básicas</title>
+    <title>Dona Antonia - Assistente Virtual</title>
     <style>
-        /* --- RESET & VARIAVEIS --- */
+        /* --- VARIAVEIS E RESET --- */
         :root {
-            --primary-color: #075e54; /* Verde WhatsApp Profissional */
-            --bg-color: #ffffff;
-            --chat-bg: #f2f2f2;
-            --user-msg-bg: #111b21;
-            --bot-msg-bg: #ffffff;
-            --text-color: #333;
-            --shadow-soft: 0 2px 5px rgba(0,0,0,0.05);
-            --shadow-float: 0 10px 20px rgba(0,0,0,0.1);
+            --primary: #000000;
+            --accent: #2563eb;
+            --green: #059669;
+            --bg-chat: #f5f5f5;
+            --white: #ffffff;
+            --shadow-card: 0 10px 30px -10px rgba(0,0,0,0.15);
         }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; outline: none; }
         
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--chat-bg);
-            height: 100dvh; /* Altura dinâmica para mobile */
+            background-color: var(--bg-chat);
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* --- TOP BAR (HEADER) --- */
+        /* --- HEADER --- */
         header {
-            background-color: #ededed;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
             padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            height: 70px;
-            flex-shrink: 0;
-            border-bottom: 1px solid #d1d7db;
-            z-index: 10;
+            display: flex; align-items: center; gap: 15px;
+            height: 70px; border-bottom: 1px solid #eee; z-index: 10;
         }
+        .logo { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); object-fit: cover; }
+        .brand-text { font-size: 16px; font-weight: 700; color: #111; line-height: 1.2; }
 
-        .brand-container { display: flex; align-items: center; gap: 15px; }
-        .brand-logo { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
-        .brand-name { font-size: 18px; font-weight: 700; color: #111; line-height: 1.2; }
-
-        /* --- CHAT AREA (MAIN) --- */
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* Fundo sutil estilo WhatsApp opcional */
-            background-repeat: repeat;
-            background-size: 400px;
-            scroll-behavior: smooth;
-        }
-
-        /* Mensagens */
-        .msg-row { display: flex; width: 100%; opacity: 0; transform: translateY(20px); animation: appear 0.4s forwards ease-out; }
+        /* --- CHAT AREA --- */
+        main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        
+        .msg-row { display: flex; width: 100%; animation: fadeUp 0.3s ease; }
         .msg-row.user { justify-content: flex-end; }
-        
-        @keyframes appear { to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .bubble {
-            max-width: 85%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            font-size: 16px;
-            line-height: 1.5;
+        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .bot { background: var(--white); color: #333; border-bottom-left-radius: 4px; }
+        .user { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+        
+        .sticker { width: 140px; display: block; margin-bottom: 5px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+
+        /* --- INPUT --- */
+        footer { padding: 15px; background: var(--white); border-top: 1px solid #eee; display: flex; align-items: center; justify-content: center; }
+        .input-box { background: #f0f2f5; width: 100%; max-width: 600px; padding: 8px 15px; border-radius: 25px; display: flex; align-items: center; }
+        .input-box input { flex: 1; background: transparent; border: none; font-size: 16px; padding: 8px; }
+        .btn-send { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+        .btn-action { background: var(--white); border: 1px solid #ddd; color: #000; padding: 15px; width: 100%; border-radius: 12px; font-weight: 700; margin-top: 5px; cursor: pointer; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* --- MODAL SLIDE (CARROSSEL) --- */
+        #modal-wrapper {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000;
+            backdrop-filter: blur(5px); flex-direction: column;
+        }
+        
+        .modal-header { padding: 20px; display: flex; justify-content: flex-end; }
+        .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+
+        .carousel-container {
+            flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; 
+            gap: 20px; padding: 0 20px 40px 20px; align-items: center;
+        }
+        .carousel-container::-webkit-scrollbar { display: none; } /* Esconder scrollbar */
+
+        .card {
+            flex: 0 0 85%; /* Largura do card */
+            max-width: 350px;
+            background: #fff;
+            border-radius: 24px;
+            scroll-snap-align: center;
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            display: flex; flex-direction: column;
             position: relative;
-            box-shadow: var(--shadow-soft);
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
-        .bot-bubble { 
-            background-color: var(--bot-msg-bg); 
-            color: var(--text-color); 
-            border-bottom-left-radius: 4px;
-        }
+        .card-img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+        .card-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .card-title { font-size: 20px; font-weight: 800; color: #111; }
         
-        .user-bubble { 
-            background-color: var(--user-msg-bg); 
-            color: #fff; 
-            border-bottom-right-radius: 4px; 
-        }
+        .price-option { display: flex; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 10px; margin-bottom: 5px; border: 1px solid #eee; }
+        .price-val { font-weight: 800; color: var(--green); }
 
-        /* Destaque para negrito */
-        b { font-weight: 700; color: inherit; }
+        .btn-details { background: transparent; border: 1px solid #ccc; color: #555; padding: 10px; border-radius: 10px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 5px; transition: 0.3s; }
+        .btn-details:hover { background: #f0f0f0; border-color: #bbb; }
+        
+        .btn-select { background: #000; color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: bold; width: 100%; margin-top: 15px; cursor: pointer; font-size: 16px; }
 
-        /* Figurinhas */
-        .sticker-img {
-            width: 160px;
-            height: auto;
-            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2));
-            margin-bottom: 5px;
-            display: block;
+        /* Lista Expansiva (Accordion) */
+        .items-list { 
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; background: #fbfbfb; border-radius: 10px;
         }
-
-        /* Indicador de Digitando */
-        .typing-indicator {
-            font-size: 13px;
-            color: #667781;
-            margin-left: 20px;
-            margin-bottom: 5px;
-            font-style: italic;
-            display: none;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-
-        /* --- INPUT AREA (FOOTER) --- */
-        footer {
-            background-color: #f0f2f5;
-            padding: 10px 15px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .input-box {
-            background: #fff;
-            border-radius: 25px;
-            padding: 8px 15px;
-            display: flex;
-            align-items: center;
-            width: 100%;
-            max-width: 600px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .input-box input {
-            flex: 1;
-            border: none;
-            padding: 10px;
-            font-size: 16px;
-            outline: none;
-            background: transparent;
-        }
-
-        .btn-send {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
-        }
-        .btn-send:active { transform: scale(0.9); }
-
-        /* --- ELEMENTOS INTERATIVOS --- */
-        .btn-action {
-            width: 100%;
-            background: #fff;
-            border: 1px solid #ddd;
-            color: #000;
-            padding: 15px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.2s;
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-        .btn-action:active { background: #eee; transform: translateY(2px); }
-        .btn-green { background: #25d366; color: white; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
-
-        /* Audio Player Customizado */
-        .audio-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 5px;
-            min-width: 240px;
-        }
-        .play-icon { font-size: 28px; color: #555; cursor: pointer; }
-        .audio-info { display: flex; flex-direction: column; flex: 1; }
-        .audio-bar { height: 4px; background: #ccc; border-radius: 2px; width: 100%; margin-top: 5px; position: relative; }
-        .audio-progress { height: 100%; background: var(--primary-color); width: 0%; border-radius: 2px; transition: width 0.2s; }
-
-        /* --- MODAL SLIDE (FULLSCREEN) --- */
-        #modal-slide {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 9999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .slide-img { max-width: 100vw; max-height: 70vh; object-fit: contain; }
-        .slide-controls {
-            position: absolute;
-            bottom: 40px;
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            justify-content: center;
-            padding: 0 20px;
-        }
-        .slide-btn { background: #fff; color: #000; border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; flex: 1; max-width: 150px; }
-        .close-modal { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 30px; background: none; border: none; cursor: pointer; padding: 10px; }
-
+        .items-list.open { border: 1px solid #eee; margin-top: 10px; padding: 15px; }
+        
+        .item-row { display: flex; justify-content: space-between; font-size: 13px; color: #444; padding: 6px 0; border-bottom: 1px dashed #eee; }
+        .item-qty { font-weight: 700; color: var(--accent); background: #eff6ff; padding: 2px 6px; border-radius: 4px; }
+        
+        /* Audio Player */
+        .audio-box { background: #f0f0f0; padding: 15px; border-radius: 15px; display: flex; align-items: center; gap: 10px; width: 260px; }
+        .play-btn { font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-container">
-            <img src="logo.webp" alt="Dona Antonia" class="brand-logo">
-            <span class="brand-name">Dona Antonia<br>Cestas Básicas</span>
-        </div>
+        <img src="logo.webp" class="logo" alt="Logo">
+        <div class="brand-text">Dona Antonia<br>Cestas Básicas</div>
     </header>
 
-    <main id="chat-window">
-        </main>
-    
-    <div id="typing-indicator" class="typing-indicator">Osvaldo está digitando...</div>
+    <main id="chat-window"></main>
+    <div style="padding: 0 20px 10px; font-size:12px; color:#888; display:none;" id="typing">Osvaldo está digitando...</div>
 
     <footer id="footer-input">
         <div class="input-box">
-            <input type="text" id="user-input" placeholder="Digite seu nome..." autocomplete="off">
-            <button class="btn-send" onclick="handleInput()">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-            </button>
+            <input type="text" id="user-input" placeholder="Digite seu nome...">
+            <button class="btn-send" onclick="handleInput()">➤</button>
         </div>
     </footer>
 
-    <div id="modal-slide">
-        <button class="close-modal" onclick="toggleSlide(false)">✕</button>
-        <img id="slide-img" class="slide-img" src="cesta1.webp">
-        <div class="slide-controls">
-            <button class="slide-btn" onclick="moveSlide(-1)">❮ Anterior</button>
-            <button class="slide-btn" onclick="moveSlide(1)">Próxima ❯</button>
+    <div id="modal-wrapper">
+        <div class="modal-header">
+            <button class="close-btn" onclick="toggleModal(false)">✕</button>
+        </div>
+        <div class="carousel-container" id="carousel-mount">
+            </div>
+        <div style="text-align: center; color: white; padding: 10px; font-size: 14px; opacity: 0.8;">
+            Deslize para o lado ⮕
         </div>
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO ---
+        // --- DADOS REAIS DO ARQUIVO ANEXADO ---
+        // Extraídos de index (14).html
+        const BASKETS = [
+            {
+                id: 'grande',
+                name: 'Cesta Grande',
+                img: 'cestagrande.webp',
+                prices: [{n: 'Arroz Tio Alvino', v: 'R$ 380'}, {n: 'Arroz Koblenz', v: 'R$ 390'}],
+                items: [
+                    {q:4, n:'Arroz 5kg'}, {q:3, n:'Açúcar 2kg'}, {q:4, n:'Óleo 900ml'}, {q:4, n:'Feijão 1kg'},
+                    {q:1, n:'Café 500g'}, {q:3, n:'Espaguetes'}, {q:12, n:'Ovos'}, {q:1, n:'Trigo 1kg'},
+                    {q:1, n:'Sal 1kg'}, {q:2, n:'Molho Tomate'}, {q:2, n:'Bolacha Recheada'}, {q:11, n:'Itens de Limpeza (Kit Completo)'}
+                ]
+            },
+            {
+                id: 'media',
+                name: 'Cesta Média',
+                img: 'cestamedia.webp',
+                prices: [{n: 'Arroz Tio Alvino', v: 'R$ 320'}, {n: 'Arroz Koblenz', v: 'R$ 325'}],
+                items: [
+                    {q:3, n:'Arroz 5kg'}, {q:2, n:'Açúcar 2kg'}, {q:3, n:'Óleo 900ml'}, {q:3, n:'Feijão 1kg'},
+                    {q:1, n:'Café 500g'}, {q:12, n:'Ovos'}, {q:2, n:'Espaguete'}, {q:1, n:'Trigo 1kg'},
+                    {q:2, n:'Bolacha Recheada'}, {q:2, n:'Miojo'}, {q:11, n:'Itens de Limpeza (Kit Completo)'}
+                ]
+            },
+            {
+                id: 'pequena',
+                name: 'Cesta Pequena',
+                img: 'cestapequena.webp',
+                prices: [{n: 'Arroz Tio Alvino', v: 'R$ 215'}, {n: 'Arroz Koblenz', v: 'R$ 220'}],
+                items: [
+                    {q:2, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:2, n:'Óleo 900ml'}, {q:2, n:'Feijão 1kg'},
+                    {q:1, n:'Café 250g'}, {q:12, n:'Ovos'}, {q:1, n:'Espaguete'}, {q:1, n:'Trigo 1kg'},
+                    {q:2, n:'Bolacha'}, {q:11, n:'Itens de Limpeza (Kit Completo)'}
+                ]
+            },
+            {
+                id: 'mini',
+                name: 'Cesta Mini',
+                img: 'cestamini.webp',
+                prices: [{n: 'Arroz Tio Alvino', v: 'R$ 165'}, {n: 'Arroz Koblenz', v: 'R$ 170'}],
+                items: [
+                    {q:1, n:'Arroz 5kg'}, {q:1, n:'Açúcar 2kg'}, {q:2, n:'Óleo 900ml'}, {q:2, n:'Feijão 1kg'},
+                    {q:1, n:'Café 250g'}, {q:1, n:'Espaguete'}, {q:1, n:'Bolacha'}, {q:11, n:'Itens de Limpeza (Kit Completo)'}
+                ]
+            },
+            {
+                id: 'economica',
+                name: 'Cesta Econômica',
+                img: 'cestaeconomica.webp',
+                prices: [{n: 'Preço Único', v: 'R$ 85'}],
+                items: [
+                    {q:1, n:'Arroz Tio Bonini'}, {q:1, n:'Açúcar 2kg'}, {q:1, n:'Óleo'}, {q:1, n:'Feijão'},
+                    {q:1, n:'Café 250g'}, {q:1, n:'Macarrão'}, {q:1, n:'Trigo'}, {q:1, n:'Farinha Mandioca'},
+                    {q:0, n:'Sem Limpeza'}
+                ]
+            }
+        ];
+
+        // --- SISTEMA DE CHAT ---
         const chat = document.getElementById('chat-window');
-        const typing = document.getElementById('typing-indicator');
+        const typing = document.getElementById('typing');
         const inputFooter = document.getElementById('footer-input');
-        
         let userName = "";
-        let currentCesta = 1;
-        const totalCestas = 3; // Ajuste conforme a quantidade de imagens
 
-        // Preload de imagens para evitar delay
-        const imagesToPreload = ["ola.webp", "ok.webp", "cafe.webp", "obrigado.webp", "cesta1.webp", "cesta2.webp", "cesta3.webp"];
-        imagesToPreload.forEach(src => { const img = new Image(); img.src = src; });
-
-        // Função de Scroll Suave para o Fundo
-        function scrollToBottom() {
-            setTimeout(() => {
-                chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
-            }, 100);
+        // Scroll Suave
+        function scrollChat() {
+            setTimeout(() => chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }), 100);
         }
 
-        // Sistema de Mensagens
-        async function speak(content, type = "text", delay = 1000) {
-            typing.style.display = "block";
-            scrollToBottom();
-            
+        async function speak(content, type = 'text', delay = 1200) {
+            typing.style.display = 'block';
+            scrollChat();
             await new Promise(r => setTimeout(r, delay));
-            
-            typing.style.display = "none";
-            
-            const row = document.createElement('div');
-            row.className = "msg-row";
-            
-            let innerHTML = "";
+            typing.style.display = 'none';
 
-            if (type === "sticker") {
-                innerHTML = `<img src="${content}" class="sticker-img">`;
-            } else if (type === "text") {
-                // Negrito automático no nome
-                let text = content;
-                if(userName) {
-                    text = text.replace(new RegExp(userName, 'gi'), `<b>${userName}</b>`);
-                }
-                innerHTML = `<div class="bubble bot-bubble">${text}</div>`;
-            } else if (type === "html") {
-                innerHTML = `<div class="bubble bot-bubble" style="width:100%">${content}</div>`;
+            const div = document.createElement('div');
+            div.className = "msg-row";
+            
+            if (type === 'sticker') {
+                div.innerHTML = `<img src="${content}" class="sticker">`;
+            } else if (type === 'text') {
+                let txt = content.replace(new RegExp(userName, 'gi'), `<b>${userName}</b>`);
+                div.innerHTML = `<div class="bubble bot">${txt}</div>`;
+            } else if (type === 'html') {
+                div.innerHTML = `<div class="bubble bot" style="width:100%">${content}</div>`;
             }
 
-            row.innerHTML = innerHTML;
-            chat.appendChild(row);
-            scrollToBottom();
+            chat.appendChild(div);
+            scrollChat();
         }
 
-        // --- FLUXO DO CHAT ---
-        
-        // 1. Início Automático
+        // --- LÓGICA DE INICIALIZAÇÃO ---
         window.onload = async () => {
+            renderCards(); // Prepara o slide
             const h = new Date().getHours();
             const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
             
             await speak("ola.webp", "sticker", 600);
-            await speak(`${saudacao}! Sou o Osvaldo.`);
-            await speak("Como posso te chamar?");
+            await speak(`${saudacao}! Sou o Osvaldo, assistente da Dona Antonia.`);
+            await speak("Qual é o seu nome?");
         };
 
-        // 2. Input do Usuário
         async function handleInput() {
-            const inputEl = document.getElementById('user-input');
-            const text = inputEl.value.trim();
-            if (!text) return;
+            const input = document.getElementById('user-input');
+            const val = input.value.trim();
+            if(!val) return;
+            
+            // User Msg
+            input.value = "";
+            const uDiv = document.createElement('div');
+            uDiv.className = "msg-row user";
+            uDiv.innerHTML = `<div class="bubble user">${val}</div>`;
+            chat.appendChild(uDiv);
+            scrollChat();
 
-            // Renderiza msg do usuário
-            inputEl.value = "";
-            const row = document.createElement('div');
-            row.className = "msg-row user";
-            row.innerHTML = `<div class="bubble user-bubble">${text}</div>`;
-            chat.appendChild(row);
-            scrollToBottom();
-
-            // Esconde input se for a etapa do nome
-            if (!userName) {
-                userName = text;
-                inputFooter.style.display = "none"; // Remove o input para focar na conversa
-                nextStepCestas();
+            if(!userName) {
+                userName = val;
+                inputFooter.style.display = 'none'; // Some com o teclado
+                await speak("ok.webp", "sticker", 800);
+                await speak(`Prazer, ${userName}!`);
+                await speak("Toque no botão abaixo para ver as fotos e preços das cestas:");
+                await speak(`<button class="btn-action" onclick="toggleModal(true)">📦 VER CESTAS BÁSICAS</button>`, "html");
             }
         }
 
-        // Permite enviar com Enter
-        document.getElementById('user-input').addEventListener("keypress", function(e) {
-            if (e.key === "Enter") handleInput();
-        });
-
-        // 3. Apresentação das Cestas
-        async function nextStepCestas() {
-            await speak("ok.webp", "sticker", 800);
-            await speak(`Prazer, ${userName}!`);
-            await speak("Separei nossas melhores cestas para você ver.");
+        // --- LÓGICA DO SLIDE (CARDS) ---
+        function renderCards() {
+            const container = document.getElementById('carousel-mount');
+            let html = '';
             
-            const btnHtml = `<button class="btn-action" onclick="toggleSlide(true)">📦 VER CESTAS BÁSICAS</button>`;
-            await speak(btnHtml, "html", 600);
-
-            // Aguarda um pouco antes de oferecer o áudio
-            setTimeout(offerAudio, 8000);
-        }
-
-        // 4. Oferta do Áudio
-        async function offerAudio() {
-            await speak(`${userName}, tenho uma dica rápida sobre a entrega.`);
-            await speak(`Posso mandar um áudio de 30 segundos explicando?`);
-            
-            const btnHtml = `<button class="btn-action" id="btn-audio-confirm" onclick="sendAudio()">🔊 Sim, pode mandar</button>`;
-            await speak(btnHtml, "html", 500);
-        }
-
-        // 5. Envio do Áudio
-        async function sendAudio() {
-            // Remove botão para não clicar de novo
-            const btn = document.getElementById('btn-audio-confirm');
-            if(btn) btn.style.display = 'none';
-
-            await speak("Gravando áudio...", "text", 1500); // Simula gravação
-
-            const playerHtml = `
-                <div class="audio-wrapper">
-                    <span class="play-icon" onclick="playAudio(this)">▶</span>
-                    <div class="audio-info">
-                        <span style="font-size:12px; font-weight:bold; color:#555">Explicação Dona Antonia</span>
-                        <div class="audio-bar"><div id="audio-progress" class="audio-progress"></div></div>
-                        <span style="font-size:10px; color:#999; margin-top:2px">0:30</span>
+            BASKETS.forEach((b, index) => {
+                const pricesHtml = b.prices.map(p => `
+                    <div class="price-option">
+                        <span style="font-size:12px; color:#555">${p.n}</span>
+                        <span class="price-val">${p.v}</span>
                     </div>
-                    <audio id="audio-player" src="audio.mp3" ontimeupdate="updateProgress()"></audio>
+                `).join('');
+
+                const itemsHtml = b.items.map(i => `
+                    <div class="item-row">
+                        <span>${i.n}</span>
+                        <span class="item-qty">${i.q}x</span>
+                    </div>
+                `).join('');
+
+                html += `
+                <article class="card">
+                    <img src="${b.img}" class="card-img" alt="${b.name}">
+                    <div class="card-body">
+                        <h3 class="card-title">${b.name}</h3>
+                        <div>${pricesHtml}</div>
+                        
+                        <button class="btn-details" onclick="toggleDetails('list-${index}')">
+                            📄 Ver lista de produtos ▼
+                        </button>
+                        <div id="list-${index}" class="items-list">
+                            ${itemsHtml}
+                        </div>
+
+                        <button class="btn-select" onclick="selectBasket('${b.name}')">
+                            TENHO INTERESSE NESTA
+                        </button>
+                    </div>
+                </article>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleDetails(id) {
+            const el = document.getElementById(id);
+            if (el.style.maxHeight) {
+                el.style.maxHeight = null;
+                el.classList.remove('open');
+            } else {
+                el.classList.add('open');
+                el.style.maxHeight = el.scrollHeight + "px";
+            }
+        }
+
+        function toggleModal(show) {
+            document.getElementById('modal-wrapper').style.display = show ? 'flex' : 'none';
+        }
+
+        // --- PÓS SELEÇÃO ---
+        async function selectBasket(basketName) {
+            toggleModal(false);
+            
+            // Simula usuário falando
+            const uDiv = document.createElement('div');
+            uDiv.className = "msg-row user";
+            uDiv.innerHTML = `<div class="bubble user">Gostei da ${basketName}</div>`;
+            chat.appendChild(uDiv);
+            scrollChat();
+
+            await speak(`Ótima escolha, ${userName}! A ${basketName} sai muito.`);
+            
+            // Audio Flow
+            setTimeout(async () => {
+                await speak("Posso te mandar um áudio rapidinho explicando como funciona a entrega?");
+                await speak(`<button class="btn-action" onclick="sendAudio()" id="btn-audio">🔊 Sim, pode mandar</button>`, "html");
+            }, 1000);
+        }
+
+        async function sendAudio() {
+            document.getElementById('btn-audio').style.display = 'none';
+            await speak("Gravando...", "text", 1000);
+            
+            const audioHTML = `
+                <div class="audio-box">
+                    <span class="play-btn" onclick="playAudio(this)">▶</span>
+                    <div>
+                        <strong style="font-size:13px; display:block">Explicação Dona Antonia</strong>
+                        <span style="font-size:11px; color:#666">0:30</span>
+                    </div>
+                    <audio id="player" src="audio.mp3"></audio>
                 </div>
             `;
-            await speak(playerHtml, "html", 500);
+            await speak(audioHTML, "html");
 
-            setTimeout(closingHook, 12000); // Tempo para ouvir um pouco do áudio
+            setTimeout(finalStep, 8000);
         }
 
-        // Lógica do Player
-        function playAudio(icon) {
-            const audio = document.getElementById('audio-player');
-            if (audio.paused) {
-                audio.play();
-                icon.innerText = "⏸";
-            } else {
-                audio.pause();
-                icon.innerText = "▶";
-            }
-        }
-        function updateProgress() {
-            const audio = document.getElementById('audio-player');
-            const percent = (audio.currentTime / audio.duration) * 100;
-            document.getElementById('audio-progress').style.width = percent + "%";
+        function playAudio(btn) {
+            const aud = document.getElementById('player');
+            if(aud.paused){ aud.play(); btn.innerText="⏸"; }
+            else { aud.pause(); btn.innerText="▶"; }
         }
 
-        // 6. Fechamento (Gatilho do Café)
-        async function closingHook() {
+        async function finalStep() {
             await speak("cafe.webp", "sticker", 800);
-            await speak(`Ei, me chama no WhatsApp agora para salvar seu contato.`);
-            await speak(`Na sua próxima compra vou te enviar **1 café de brinde**! ☕`);
+            await speak("Me chame no WhatsApp para confirmar o endereço.");
+            await speak("Vou deixar separado **1 Café de Brinde** no seu pedido! ☕");
             
-            const whatsBtn = `
-                <button class="btn-action btn-green" onclick="window.open('https://wa.me/5511999999999?text=Olá Osvaldo, vim pelo site e quero meu café de brinde!', '_blank')">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.05 14.69 2 12.04 2Z"></path></svg>
-                    CHAMAR NO WHATSAPP
-                </button>
-            `;
-            await speak(whatsBtn, "html", 600);
+            const wppBtn = `
+            <button class="btn-action" style="background:#25d366; color:white; border:none" 
+            onclick="window.open('https://wa.me/5565998150975?text=Olá, vim pelo site e quero meu café de brinde!', '_blank')">
+                CHAMAR NO WHATSAPP
+            </button>`;
+            
+            await speak(wppBtn, "html");
             await speak("obrigado.webp", "sticker", 1000);
-        }
-
-        // --- CONTROLE DO SLIDE ---
-        function toggleSlide(show) {
-            document.getElementById('modal-slide').style.display = show ? "flex" : "none";
-        }
-        function moveSlide(dir) {
-            currentCesta += dir;
-            if (currentCesta < 1) currentCesta = totalCestas;
-            if (currentCesta > totalCestas) currentCesta = 1;
-            document.getElementById('slide-img').src = `cesta${currentCesta}.webp`;
         }
     </script>
 </body>
