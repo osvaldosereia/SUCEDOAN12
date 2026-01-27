@@ -545,11 +545,17 @@
             await speak(audioHtml, "html", 500);
         }
 
+        // --- FUNÇÃO FINALSTEP ATUALIZADA ---
         async function finalStep() {
             await speak("Muito obrigado, e quando quiser é só chamar no zap.");
             
+            // Cria a mensagem personalizada com o nome
+            const text = `Olá, sou ${userName}, vim pelo site e quero salvar o contato!`;
+            // Codifica para URL (para lidar com espaços e acentos)
+            const encodedText = encodeURIComponent(text);
+
             const btnZap = `<button class="action-btn" style="background:#25d366; color:white; border:none; padding:16px" 
-            onclick="window.open('https://wa.me/5565998150975?text=Olá, vim pelo site e quero salvar o contato!', '_blank')">
+            onclick="window.open('https://wa.me/5565998150975?text=${encodedText}', '_blank')">
             Salvar número do whatsapp</button>`;
             
             await speak(btnZap, "html", 800);
