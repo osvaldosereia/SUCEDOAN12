@@ -7,10 +7,11 @@
     <style>
         /* --- RESET E VARIÁVEIS --- */
         :root {
-            --primary: #000000; /* Preto Profissional */
-            --bg-chat: #ffffff; /* Fundo Branco Limpo */
-            --light-gray: #f2f2f2;
+            --primary: #000000;
+            --bg-chat: #ffffff;
+            --light-gray: #f4f4f4;
             --green-zap: #25d366;
+            --blue-link: #007bff;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; outline: none; }
         
@@ -29,11 +30,10 @@
             padding: 10px 20px;
             display: flex; 
             align-items: center; 
-            justify-content: space-between; /* Separa Logo dos Ícones */
+            justify-content: space-between;
             height: 75px; 
             border-bottom: 1px solid #eee; 
             z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
         }
 
         .brand { display: flex; align-items: center; gap: 12px; }
@@ -41,17 +41,19 @@
         .brand-info h1 { font-size: 16px; font-weight: 800; color: #000; line-height: 1.1; margin: 0; }
         .brand-info p { font-size: 12px; color: #666; margin: 0; }
 
-        /* Botões Topo (Insta/Zap) */
-        .header-actions { display: flex; gap: 12px; }
-        .icon-btn { 
-            width: 38px; height: 38px; 
-            border: 1px solid #000; /* Contorno preto discreto */
-            border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center;
-            color: #000; text-decoration: none; transition: 0.2s;
+        /* Ícones Topo Corrigidos */
+        .header-actions { display: flex; gap: 15px; }
+        .icon-link { 
+            color: #000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: 0.2s;
         }
-        .icon-btn:active { background: #f0f0f0; }
-        .icon-svg { width: 20px; height: 20px; fill: currentColor; }
+        .icon-link:hover { opacity: 1; }
+        .icon-svg { width: 28px; height: 28px; fill: currentColor; }
 
         /* --- ÁREA DO CHAT --- */
         main { 
@@ -66,40 +68,31 @@
         }
 
         .msg-row { display: flex; width: 100%; margin-bottom: 5px; }
-        
-        /* CORREÇÃO DO BALÃO DO CLIENTE */
-        .msg-row.user { 
-            justify-content: flex-end; /* Empurra para direita */
-        }
+        .msg-row.user { justify-content: flex-end; }
         
         .bubble { 
-            max-width: 80%; 
+            max-width: 85%; 
             padding: 14px 18px; 
             font-size: 16px; 
             line-height: 1.5; 
             position: relative; 
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .bot-bubble { 
             background: #f2f2f2; 
             color: #000; 
-            border-radius: 18px 18px 18px 4px; /* Rabicho na esquerda */
+            border-radius: 18px 18px 18px 4px;
         }
 
         .user-bubble { 
             background: #000; 
             color: #fff; 
-            border-radius: 18px 18px 4px 18px; /* Rabicho na direita */
+            border-radius: 18px 18px 4px 18px;
             text-align: left;
         }
         
-        /* Figurinhas */
         .sticker { width: 150px; display: block; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
-        
-        /* Figurinhas Lado a Lado */
-        .dual-sticker-container { display: flex; gap: 10px; justify-content: flex-start; }
-        .sticker-small { width: 110px; } 
 
         /* --- INPUT (RODAPÉ) --- */
         footer { 
@@ -122,18 +115,19 @@
             font-size: 20px; margin-left: 10px;
         }
 
-        /* --- BOTÕES DE AÇÃO NO CHAT --- */
+        /* --- BOTÕES DE AÇÃO --- */
         .action-btn {
             background: #fff; border: 1px solid #ddd; color: #000;
-            padding: 15px; border-radius: 12px; font-weight: 700; width: 100%;
+            padding: 14px; border-radius: 12px; font-weight: 700; width: 100%;
             cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 8px; font-size: 16px;
         }
+        .action-btn:active { background: #eee; }
 
         /* --- MODAL / SLIDE --- */
         #modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
-            z-index: 2000; flex-direction: column; backdrop-filter: blur(5px);
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+            z-index: 2000; flex-direction: column; backdrop-filter: blur(4px);
         }
 
         .modal-top { padding: 15px; display: flex; justify-content: flex-end; }
@@ -149,69 +143,59 @@
         }
         .cards-track::-webkit-scrollbar { display: none; }
 
-        /* O CARD MÁGICO */
+        /* CARD DO PRODUTO */
         .product-card {
-            flex: 0 0 90%; /* Largura quase total */
+            flex: 0 0 90%; 
             max-width: 380px;
-            height: 75vh; /* Altura fixa */
+            height: 80vh; 
             background: #fff;
-            border-radius: 25px;
+            border-radius: 24px;
             scroll-snap-align: center;
-            overflow: hidden; /* Importante */
-            display: flex;
-            flex-direction: column;
-            position: relative;
+            overflow: hidden; 
+            display: flex; flex-direction: column; position: relative;
         }
 
-        /* Parte FIXA do Card (Imagem) */
         .card-fixed-header {
-            flex-shrink: 0; /* Não encolhe */
-            height: 220px;
-            width: 100%;
-            background: #f9f9f9;
-            display: flex; align-items: center; justify-content: center;
-            border-bottom: 1px solid #eee;
-            position: relative;
+            flex-shrink: 0; height: 200px; width: 100%;
+            background: #f9f9f9; display: flex; align-items: center; justify-content: center;
+            border-bottom: 1px solid #eee; position: relative;
         }
         .card-img { height: 100%; width: 100%; object-fit: cover; }
         .card-title-overlay {
             position: absolute; bottom: 10px; left: 15px;
-            background: rgba(255,255,255,0.9); padding: 5px 12px;
-            border-radius: 20px; font-weight: 800; font-size: 14px;
+            background: rgba(255,255,255,0.95); padding: 6px 14px;
+            border-radius: 20px; font-weight: 800; font-size: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* Parte ROLÁVEL do Card (Lista) */
         .card-scrollable-body {
-            flex: 1; /* Ocupa o resto do espaço */
-            overflow-y: auto; /* Rola só aqui */
-            padding: 20px;
+            flex: 1; overflow-y: auto; padding: 20px;
             display: flex; flex-direction: column;
         }
 
         .price-row { 
             display: flex; justify-content: space-between; 
-            padding: 10px; background: #f8f9fa; border: 1px solid #eee; 
-            border-radius: 8px; margin-bottom: 5px; font-size: 13px; font-weight: 500;
+            padding: 12px; background: #f8f9fa; border: 1px solid #eee; 
+            border-radius: 10px; margin-bottom: 5px; font-size: 14px; font-weight: 500;
         }
 
-        .list-section { margin-top: 15px; }
-        .list-title { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #2563eb; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px;}
+        .list-section { margin-top: 20px; }
+        .list-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #007bff; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;}
         
+        /* Ajuste da Lista: Tudo à Esquerda */
         .item-line { 
-            display: flex; justify-content: space-between; font-size: 14px; 
-            padding: 6px 0; border-bottom: 1px dashed #f0f0f0; color: #444; 
+            display: flex; justify-content: flex-start; align-items: center; font-size: 15px; 
+            padding: 6px 0; border-bottom: 1px dashed #f4f4f4; color: #333; gap: 8px;
         }
 
         .select-btn {
-            margin-top: auto; /* Empurra para o final se sobrar espaço */
-            background: #000; color: #fff; border: none;
+            margin-top: auto; background: #000; color: #fff; border: none;
             padding: 16px; border-radius: 12px; font-weight: 700;
-            width: 100%; font-size: 16px; margin-top: 20px; cursor: pointer;
+            width: 100%; font-size: 16px; margin-top: 25px; cursor: pointer;
         }
 
         /* Player de Audio */
-        .audio-container { background: #e9fcdb; padding: 12px; border-radius: 15px; display: flex; align-items: center; gap: 12px; width: 250px; }
+        .audio-container { background: #dcf8c6; padding: 12px; border-radius: 15px; display: flex; align-items: center; gap: 12px; width: 260px; margin-top: 5px; }
         .play-icon { font-size: 24px; cursor: pointer; color: #000; }
         
         /* Indicador de Digitando */
@@ -226,15 +210,15 @@
             <img src="logo.webp" alt="Logo">
             <div class="brand-info">
                 <h1>Dona Antonia</h1>
-                <p>Assistente Virtual</p>
+                <p>Cestas Básicas</p>
             </div>
         </div>
         <div class="header-actions">
-            <a href="https://instagram.com" target="_blank" class="icon-btn">
-                <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            <a href="https://instagram.com" target="_blank" class="icon-link">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
             </a>
-            <a href="https://wa.me/5565999999999" target="_blank" class="icon-btn">
-                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            <a href="https://wa.me/5565999999999" target="_blank" class="icon-link">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
             </a>
         </div>
     </header>
@@ -266,7 +250,6 @@
                 id: 'grande',
                 name: 'Cesta Grande',
                 img: 'cestagrande.webp',
-                audio: 'audiogrande.mp3',
                 prices: [{n: 'Arroz Tio Alvino', v: 'R$ 380'}, {n: 'Arroz Koblenz', v: 'R$ 390'}],
                 list: [
                     {cat: 'Alimentos', items: [
@@ -286,7 +269,6 @@
                 id: 'media',
                 name: 'Cesta Média',
                 img: 'cestamedia.webp',
-                audio: 'audiomedia.mp3',
                 prices: [{n: 'Arroz Tio Alvino', v: 'R$ 320'}, {n: 'Arroz Koblenz', v: 'R$ 325'}],
                 list: [
                     {cat: 'Alimentos', items: [
@@ -303,7 +285,6 @@
                 id: 'pequena',
                 name: 'Cesta Pequena',
                 img: 'cestapequena.webp',
-                audio: 'audiopequena.mp3',
                 prices: [{n: 'Arroz Tio Alvino', v: 'R$ 215'}, {n: 'Arroz Koblenz', v: 'R$ 220'}],
                 list: [
                     {cat: 'Alimentos', items: [
@@ -316,7 +297,6 @@
                 id: 'mini',
                 name: 'Cesta Mini',
                 img: 'cestamini.webp',
-                audio: 'audiomini.mp3',
                 prices: [{n: 'Arroz Tio Alvino', v: 'R$ 165'}, {n: 'Arroz Koblenz', v: 'R$ 170'}],
                 list: [
                     {cat: 'Alimentos', items: [{q:'1un', n:'Arroz 5kg'}, {q:'1un', n:'Açúcar'}, {q:'1un', n:'Café'}]}
@@ -326,7 +306,6 @@
                 id: 'economica',
                 name: 'Cesta Econômica',
                 img: 'cestaeconomica.webp',
-                audio: 'audioeconomica.mp3',
                 prices: [{n: 'Preço Único', v: 'R$ 85'}],
                 list: [
                     {cat: 'Alimentos', items: [{q:'1un', n:'Arroz Bonini'}, {q:'1un', n:'Açúcar'}, {q:'1un', n:'Feijão'}]}
@@ -339,7 +318,6 @@
         const typing = document.getElementById('typing');
         const inputArea = document.getElementById('input-area');
         let userName = "";
-        let hasSelectedBasket = false;
 
         // SCROLL AUTOMATICO
         function scrollChat() {
@@ -361,12 +339,6 @@
             if (type === 'sticker') {
                 html = `<img src="${content}" class="sticker">`;
             } 
-            else if (type === 'dual-sticker') {
-                html = `<div class="dual-sticker-container">
-                            <img src="${content[0]}" class="sticker sticker-small">
-                            <img src="${content[1]}" class="sticker sticker-small">
-                        </div>`;
-            }
             else if (type === 'text') {
                 let txt = content.replace(new RegExp(userName, 'gi'), `<b>${userName}</b>`);
                 html = `<div class="bubble bot-bubble">${txt}</div>`;
@@ -398,7 +370,7 @@
             
             inp.value = "";
             const row = document.createElement('div');
-            row.className = "msg-row user"; // Classe corrigida para direita
+            row.className = "msg-row user"; 
             row.innerHTML = `<div class="bubble user-bubble">${val}</div>`;
             chat.appendChild(row);
             scrollChat();
@@ -424,7 +396,7 @@
                 const lists = b.list.map(l => `
                     <div class="list-section">
                         <div class="list-title">${l.cat}</div>
-                        ${l.items.map(i => `<div class="item-line"><span style="font-weight:700; color:#000">${i.q}</span> ${i.n}</div>`).join('')}
+                        ${l.items.map(i => `<div class="item-line"><span style="font-weight:700">${i.q}</span> - ${i.n}</div>`).join('')}
                     </div>
                 `).join('');
 
@@ -444,75 +416,121 @@
         }
 
         // CONTROLE DO MODAL
-        function openModal() {
-            document.getElementById('modal-overlay').style.display = 'flex';
-        }
+        function openModal() { document.getElementById('modal-overlay').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-        function closeModal() {
-            document.getElementById('modal-overlay').style.display = 'none';
-            if(!hasSelectedBasket) {
-                // Se fechou sem escolher, manda audio padrao
-                triggerAudioSequence('audio.mp3');
-            }
-        }
-
+        /* --- FLUXO DE PAGAMENTO E AUDIO --- */
         async function selectBasket(id) {
-            hasSelectedBasket = true;
             document.getElementById('modal-overlay').style.display = 'none';
-            
             const basket = BASKETS.find(b => b.id === id);
             
-            // Simula balão do usuario
+            // MSG User
             const row = document.createElement('div');
             row.className = "msg-row user";
             row.innerHTML = `<div class="bubble user-bubble">Gostei da ${basket.name}</div>`;
             chat.appendChild(row);
             scrollChat();
 
+            // Resposta Bot
             await speak(`Ótima escolha! A ${basket.name} é muito boa.`);
-            triggerAudioSequence(basket.audio);
+            
+            // Pergunta Formas de Pagamento
+            await speak("Quer saber as formas de pagamento?");
+            await speak(`<button class="action-btn" id="btn-pay" onclick="showPayment()">Sim</button>`, "html");
         }
 
-        // SEQUENCIA DE AUDIO E FINAL
-        async function triggerAudioSequence(audioFile) {
-            await speak("Vou te mandar um áudio rapidinho sobre a entrega...", "text", 1000);
+        async function showPayment() {
+            document.getElementById('btn-pay').style.display = 'none'; // some botao
             
+            const msgUser = document.createElement('div');
+            msgUser.className = "msg-row user";
+            msgUser.innerHTML = `<div class="bubble user-bubble">Sim</div>`;
+            chat.appendChild(msgUser);
+            scrollChat();
+
+            await speak(`Aceitamos:
+            <br>✅ Dinheiro e Pix
+            <br>✅ Cartão de Débito e Crédito
+            <br>✅ Cartões Alimentação e Refeição`);
+
+            setTimeout(async () => {
+                await speak("Posso te mandar um áudio rapidinho?");
+                await speak(`<button class="action-btn" id="btn-audio-ok" onclick="startAudioFlow()">Ok</button>`, "html");
+            }, 3000); // Espera 3s
+        }
+
+        async function startAudioFlow() {
+            document.getElementById('btn-audio-ok').style.display = 'none';
+
+            const msgUser = document.createElement('div');
+            msgUser.className = "msg-row user";
+            msgUser.innerHTML = `<div class="bubble user-bubble">Ok</div>`;
+            chat.appendChild(msgUser);
+            scrollChat();
+
+            // AUDIO 1 (audio.mp3)
+            await sendAudioMsg('audio.mp3', 'Dona Antonia');
+
+            // ESPERA 10s -> AUDIO 2 (audio1.mp3)
+            setTimeout(async () => {
+                await sendAudioMsg('audio1.mp3', 'Complemento');
+                
+                // ESPERA 5s -> Pergunta Contato
+                setTimeout(askContact, 5000);
+            }, 10000);
+        }
+
+        async function sendAudioMsg(src, title) {
             const audioHtml = `
                 <div class="audio-container">
-                    <span class="play-icon" onclick="playAudio(this, '${audioFile}')">▶</span>
+                    <span class="play-icon" onclick="playAudio(this, '${src}')">▶</span>
                     <div>
-                        <strong style="font-size:13px; display:block">Dona Antonia</strong>
-                        <span style="font-size:11px; color:#666">0:30</span>
+                        <strong style="font-size:13px; display:block">${title}</strong>
+                        <span style="font-size:11px; color:#666">Mensagem de voz</span>
                     </div>
-                    <audio id="main-player"></audio>
+                    <audio id="player-${src}"></audio>
                 </div>`;
-            
             await speak(audioHtml, "html", 500);
+        }
 
-            // GATILHOS FINAIS
-            setTimeout(async () => {
-                await speak(`Na sua próxima compra vou te mandar **1 café de brinde**! ☕`, "text");
-                
-                // Figurinhas LADO A LADO
-                await speak(["cafe.webp", "obrigado.webp"], "dual-sticker", 1000);
-                
-                await speak("Me chame no WhatsApp para confirmar o endereço:", "text", 1200);
+        async function askContact() {
+            await speak("Quer salvar nosso contato do WhatsApp?");
+            await speak(`<button class="action-btn" id="btn-save" style="background:#000; color:#fff" onclick="finalStep()">Quero salvar</button>`, "html");
+        }
 
-                const btnZap = `<button class="action-btn" style="background:#25d366; color:white; border:none" 
-                onclick="window.open('https://wa.me/5565999999999?text=Olá, vim pelo site e quero meu café de brinde!', '_blank')">
-                <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.05 14.69 2 12.04 2Z"></path></svg>
-                CHAMAR NO WHATSAPP</button>`;
-                
-                await speak(btnZap, "html", 500);
+        async function finalStep() {
+            document.getElementById('btn-save').style.display = 'none';
+            
+            const msgUser = document.createElement('div');
+            msgUser.className = "msg-row user";
+            msgUser.innerHTML = `<div class="bubble user-bubble">Quero salvar</div>`;
+            chat.appendChild(msgUser);
+            scrollChat();
 
-            }, 8000); // 8 segundos para ouvir o audio
+            await speak("obrigado.webp", "sticker", 600);
+            
+            const btnZap = `<button class="action-btn" style="background:#25d366; color:white; border:none; padding:16px" 
+            onclick="window.open('https://wa.me/5565999999999?text=Olá, vim pelo site e quero salvar o contato!', '_blank')">
+            CHAMAR NO WHATSAPP</button>`;
+            
+            await speak(btnZap, "html", 800);
         }
 
         function playAudio(btn, src) {
-            const player = document.getElementById('main-player');
-            if(src) player.src = src;
-            if(player.paused) { player.play(); btn.innerText = "⏸"; }
-            else { player.pause(); btn.innerText = "▶"; }
+            // Pausa outros players
+            document.querySelectorAll('audio').forEach(a => a.pause());
+            document.querySelectorAll('.play-icon').forEach(i => i.innerText = '▶');
+
+            let player = document.getElementById(`player-${src}`);
+            if(!player.src) player.src = src;
+
+            if(player.paused) { 
+                player.play(); 
+                btn.innerText = "⏸"; 
+            } else { 
+                player.pause(); 
+                btn.innerText = "▶"; 
+            }
         }
     </script>
 </body>
