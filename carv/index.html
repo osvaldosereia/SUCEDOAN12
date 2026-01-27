@@ -212,7 +212,7 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO DOS PRODUTOS
+        // CONFIGURAÇÃO DOS PRODUTOS (Dados extraídos das imagens fornecidas)
         const BASKETS = [
             {
                 id: 'grande',
@@ -221,15 +221,17 @@
                 prices: [{n: 'Arroz Tio Alvino', v: 'R$ 380'}, {n: 'Arroz Koblenz', v: 'R$ 390'}],
                 list: [
                     {cat: 'Alimentos', items: [
-                        {q:'4un', n:'Arroz 5kg'}, {q:'3un', n:'Açúcar Cristal 2kg'}, {q:'4un', n:'Óleo Soja 900ml'},
-                        {q:'4un', n:'Feijão 1kg'}, {q:'1un', n:'Café 500g'}, {q:'3un', n:'Espaguetes'},
-                        {q:'12un', n:'Ovos'}, {q:'1un', n:'Trigo 1kg'}, {q:'1un', n:'Sal 1kg'},
-                        {q:'2un', n:'Molho Tomate'}, {q:'2un', n:'Bolacha Recheada'}, {q:'2un', n:'Miojo'}
+                        {q:'4un', n:'Arroz de 5kg'}, {q:'3un', n:'Açúcar Cristal de 2kg'}, {q:'4un', n:'Óleo de Soja de 900ml'},
+                        {q:'4un', n:'Feijão Da Casa de 1kg'}, {q:'1un', n:'Café Caboclo 500g (do grande)'}, {q:'3un', n:'Espaguetes de 500g'},
+                        {q:'12un', n:'Ovos'}, {q:'1un', n:'Mistura para Bolo 400g'}, {q:'1un', n:'Trigo de 1kg'}, {q:'1un', n:'Sal de 1kg'},
+                        {q:'2un', n:'Molho Tomate FUGINI 340g'}, {q:'1un', n:'Milho Lata ou sachê de 250g'}, {q:'1un', n:'Tempero Pronto de 300g'},
+                        {q:'2un', n:'Bolacha Recheada My Bit'}, {q:'2un', n:'Miojo Yolle'}, {q:'4un', n:'Suco Pó'}
                     ]},
                     {cat: 'Limpeza e Higiene', items: [
-                        {q:'1un', n:'Sabão Barra c/5'}, {q:'2un', n:'Creme Dental'}, {q:'2un', n:'Papel Higiênico'},
-                        {q:'1un', n:'Amaciante 2L'}, {q:'1un', n:'Desinfetante'}, {q:'1un', n:'Sabão Pó'},
-                        {q:'2un', n:'Detergente'}, {q:'1un', n:'Qboa 1L'}, {q:'4un', n:'Sabonete'}
+                        {q:'1un', n:'Sabão Barra YPE c/ 5 un'}, {q:'2un', n:'Creme Dental Sorriso 70g'}, {q:'2un', n:'Papel Higiênico c/ 4un'},
+                        {q:'1un', n:'Amaciante Ype de 2 Litros'}, {q:'1un', n:'Desinfetante Remmus 2 L'}, {q:'1un', n:'Sabão Pó OMO 800g'},
+                        {q:'2un', n:'Detergente Ype de 500ml'}, {q:'1un', n:'Qboa de 1 Litro'}, {q:'4un', n:'Sabonete Palmolive 90g'},
+                        {q:'1un', n:'Esponja de Aço Assolan'}, {q:'1un', n:'Esponja de Lavar Louça'}
                     ]}
                 ]
             },
@@ -240,12 +242,17 @@
                 prices: [{n: 'Arroz Tio Alvino', v: 'R$ 320'}, {n: 'Arroz Koblenz', v: 'R$ 325'}],
                 list: [
                     {cat: 'Alimentos', items: [
-                        {q:'3un', n:'Arroz 5kg'}, {q:'2un', n:'Açúcar 2kg'}, {q:'3un', n:'Óleo'},
-                        {q:'3un', n:'Feijão'}, {q:'1un', n:'Café 500g'}, {q:'12un', n:'Ovos'},
-                        {q:'2un', n:'Espaguete'}, {q:'2un', n:'Bolacha'}, {q:'2un', n:'Miojo'}
+                        {q:'3un', n:'Arroz de 5kg'}, {q:'2un', n:'Açúcar Cristal de 2kg'}, {q:'3un', n:'Óleo de Soja de 900ml'},
+                        {q:'3un', n:'Feijão Da Casa de 1kg'}, {q:'1un', n:'Café Caboclo 500g (do grande)'}, {q:'12un', n:'Ovos'},
+                        {q:'1un', n:'Mistura para Bolo 400g'}, {q:'2un', n:'Espaguete de 500g'}, {q:'1un', n:'Trigo de 1kg'},
+                        {q:'1un', n:'Sal de 1kg'}, {q:'2un', n:'Molho Tomate FUGINI 340g'}, {q:'1un', n:'Milho Lata ou sachê de 250g'},
+                        {q:'1un', n:'Tempero Pronto de 300g'}, {q:'2un', n:'Bolacha Recheada My Bit'}, {q:'2un', n:'Miojo Yolle'}, {q:'3un', n:'Suco Pó'}
                     ]},
-                    {cat: 'Limpeza', items: [
-                        {q:'1un', n:'Sabão Barra'}, {q:'2un', n:'Creme Dental'}, {q:'1un', n:'Sabão Pó'}
+                    {cat: 'Limpeza e Higiene', items: [
+                        {q:'1un', n:'Sabão Barra YPE c/ 5 un'}, {q:'2un', n:'Creme Dental Sorriso 70g'}, {q:'2un', n:'Papel Higiênico c/ 4un'},
+                        {q:'1un', n:'Amaciante Ype de 2 Litros'}, {q:'1un', n:'Desinfetante Remmus 2 L'}, {q:'1un', n:'Sabão Pó OMO 800g'},
+                        {q:'2un', n:'Detergente Ype de 500ml'}, {q:'1un', n:'Qboa de 1 Litro'}, {q:'3un', n:'Sabonete Palmolive 90g'},
+                        {q:'1un', n:'Esponja de Aço Assolan'}, {q:'1un', n:'Esponja de Lavar Louça'}
                     ]}
                 ]
             },
@@ -256,8 +263,17 @@
                 prices: [{n: 'Arroz Tio Alvino', v: 'R$ 215'}, {n: 'Arroz Koblenz', v: 'R$ 220'}],
                 list: [
                     {cat: 'Alimentos', items: [
-                        {q:'2un', n:'Arroz 5kg'}, {q:'1un', n:'Açúcar'}, {q:'2un', n:'Óleo'},
-                        {q:'2un', n:'Feijão'}, {q:'1un', n:'Café'}, {q:'12un', n:'Ovos'}
+                        {q:'2un', n:'Arroz de 5kg'}, {q:'1un', n:'Açúcar Cristal de 2kg'}, {q:'2un', n:'Óleo de Soja de 900ml'},
+                        {q:'2un', n:'Feijão Da Casa de 1kg'}, {q:'1un', n:'Café Caboclo de 250g'}, {q:'12un', n:'Ovos'},
+                        {q:'1un', n:'Mistura para Bolo 400g'}, {q:'1un', n:'Espaguete de 500g'}, {q:'1un', n:'Trigo de 1kg'},
+                        {q:'1un', n:'Sal de 1kg'}, {q:'1un', n:'Molho Tomate Fugini'}, {q:'1un', n:'Milho Lata de 250g'},
+                        {q:'1un', n:'Tempero Pronto de 300g'}, {q:'2un', n:'Bolacha Recheada My Bit'}, {q:'2un', n:'Miojo Yolle'}, {q:'2un', n:'Suco Pó'}
+                    ]},
+                    {cat: 'Limpeza e Higiene', items: [
+                        {q:'1un', n:'Sabão Barra YPE c/ 5 un'}, {q:'1un', n:'Creme Dental Sorriso 70g'}, {q:'1un', n:'Papel Higiênico c/ 4un'},
+                        {q:'1un', n:'Amaciante Ype de 2 Litros'}, {q:'1un', n:'Desinfetante Remmus 2 L'}, {q:'1un', n:'Sabão Pó OMO 800g'},
+                        {q:'2un', n:'Detergente Ype de 500ml'}, {q:'1un', n:'Qboa de 1 Litro'}, {q:'2un', n:'Sabonete Palmolive 90g'},
+                        {q:'1un', n:'Esponja de Aço Assolan'}, {q:'1un', n:'Bucha de lavar louça'}
                     ]}
                 ]
             },
@@ -267,7 +283,18 @@
                 img: 'cestamini.webp',
                 prices: [{n: 'Arroz Tio Alvino', v: 'R$ 165'}, {n: 'Arroz Koblenz', v: 'R$ 170'}],
                 list: [
-                    {cat: 'Alimentos', items: [{q:'1un', n:'Arroz 5kg'}, {q:'1un', n:'Açúcar'}, {q:'1un', n:'Café'}]}
+                    {cat: 'Alimentos', items: [
+                        {q:'1un', n:'Arroz de 5kg'}, {q:'1un', n:'Açúcar Cristal de 2kg'}, {q:'2un', n:'Óleo de Soja de 900ml'},
+                        {q:'2un', n:'Feijão Da Casa de 1kg'}, {q:'1un', n:'Café Caboclo de 250g'}, {q:'1un', n:'Espaguete de 500g'},
+                        {q:'1un', n:'Sal de 1kg'}, {q:'1un', n:'Molho Tomate FUGINI'}, {q:'1un', n:'Milho Lata de 250g'},
+                        {q:'1un', n:'Bolacha Recheada My Bit'}, {q:'1un', n:'Miojo Apti'}, {q:'2un', n:'Suco Pó'}
+                    ]},
+                    {cat: 'Limpeza e Higiene', items: [
+                        {q:'1un', n:'Sabão Barra YPE c/ 5 un'}, {q:'1un', n:'Creme Dental Sorriso 70g'}, {q:'1un', n:'Papel Higiênico c/ 4un'},
+                        {q:'1un', n:'Amaciante Ype de 2 Litros'}, {q:'1un', n:'Desinfetante Remmus 2 L'}, {q:'1un', n:'Sabão Pó OMO 800g'},
+                        {q:'1un', n:'Detergente Ype de 500ml'}, {q:'1un', n:'Qboa de 1 Litro'}, {q:'2un', n:'Sabonete Palmolive 90g'},
+                        {q:'1un', n:'Esponja de Aço Assolan'}, {q:'1un', n:'Esponja de Lavar Louça'}
+                    ]}
                 ]
             },
             {
@@ -276,7 +303,13 @@
                 img: 'cestaeconomica.webp',
                 prices: [{n: 'Preço Único', v: 'R$ 85'}],
                 list: [
-                    {cat: 'Alimentos', items: [{q:'1un', n:'Arroz Bonini'}, {q:'1un', n:'Açúcar'}, {q:'1un', n:'Feijão'}]}
+                    {cat: 'Alimentos', items: [
+                        {q:'1un', n:'Arroz Tio Bonini de 5kg'}, {q:'1un', n:'Açúcar Cristal de 2kg'}, {q:'1un', n:'Óleo de Soja de 900ml'},
+                        {q:'1un', n:'Feijão Dona Dê de 1kg'}, {q:'1un', n:'Café Premiado 250g'}, {q:'1un', n:'Espaguete de 400g'},
+                        {q:'1un', n:'Trigo de 1kg'}, {q:'1un', n:'Farinha de Mandioca de 1kg'}, {q:'1un', n:'Sal de 1kg'},
+                        {q:'1un', n:'Molho Tomate 300g'}, {q:'1un', n:'Milho Lata ou sachê de 250g'}, {q:'1un', n:'Bolacha Recheada'},
+                        {q:'1un', n:'Miojo'}, {q:'1un', n:'Suco Pó'}
+                    ]}
                 ]
             }
         ];
@@ -439,7 +472,7 @@
         }
 
         async function showPayment() {
-            document.getElementById('btn-pay').style.display = 'none'; 
+            // Removido: document.getElementById('btn-pay').style.display = 'none'; (Persistência)
             
             const msgUser = document.createElement('div');
             msgUser.className = "msg-row user";
@@ -467,8 +500,7 @@
         }
 
         async function handleHabit(response) {
-            // Esconde botoes
-            document.getElementById('btn-habit-sim').parentElement.style.display = 'none';
+            // Removido: document.getElementById('btn-habit-sim').parentElement.style.display = 'none'; (Persistência)
 
             const msgUser = document.createElement('div');
             msgUser.className = "msg-row user";
@@ -482,7 +514,7 @@
         }
 
         async function confirmAudio(response) {
-            document.getElementById('btn-ok-audio').style.display = 'none';
+            // Removido: document.getElementById('btn-ok-audio').style.display = 'none'; (Persistência)
 
             const msgUser = document.createElement('div');
             msgUser.className = "msg-row user";
