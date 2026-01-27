@@ -579,9 +579,21 @@ const App = {
         const cost = parseFloat(document.getElementById('p-custo').value) || 0;
         const priceEl = document.getElementById('p-valor');
         const marginEl = document.getElementById('p-margin');
-        
+        const MIN_MARGIN = 15; // Margem mínima de 15%
+
         if (trigger === 'margin' && cost > 0) {
-            const mg = parseFloat(marginEl.value) || 0;
+            let mg = parseFloat(marginEl.value) || 0;
+            
+            // Validação de segurança
+            if (mg < MIN_MARGIN) {
+                const senha = prompt(`A margem de ${mg}% está abaixo do mínimo permitido (15%). Digite a senha para autorizar:`);
+                if (senha !== 'Eomc2020') {
+                    alert("Senha incorreta! A margem foi reajustada para o mínimo de 15%.");
+                    mg = MIN_MARGIN;
+                    marginEl.value = MIN_MARGIN;
+                }
+            }
+            
             const newPrice = cost * (1 + (mg / 100));
             priceEl.value = newPrice.toFixed(2);
         } else if ((trigger === 'price' || trigger === 'cost') && cost > 0) {
@@ -620,7 +632,7 @@ const App = {
         const tbody = document.getElementById('tbl-body');
         document.getElementById('dl-prods').innerHTML = DB.data.produtos.map(p => `<option value="${p.nome}">`).join('');
 
-        let list = DB.data.produtos.filter(p => p.nome.toLowerCase().includes(s) || p.codigo.toLowerCase().includes(s));
+let list = DB.data.produtos.filter(p => p.nome.toLowerCase().includes(s) || p.codigo.toLowerCase().includes(s));
         
         const f = App.sortState.field;
         const o = App.sortState.order === 'asc' ? 1 : -1;
