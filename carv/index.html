@@ -3,123 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat Mobile Ajustado</title>
+    <title>Chat Mobile Interativo</title>
     <style>
-        /* Reset básico */
+        /* --- ESTILOS (CSS) --- */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        /* O corpo ocupa a altura total dinâmica do ecrã */
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
-            height: 100dvh; /* dvh ajusta-se melhor ao mobile que vh */
+            height: 100dvh; 
             display: flex;
             flex-direction: column;
         }
 
-        /* Área das mensagens (ocupa o espaço livre) */
         #chat-container {
-            flex: 1; /* Ocupa todo o espaço sobrando */
-            overflow-y: auto; /* Permite rolar se houver muitas mensagens */
+            flex: 1;
+            overflow-y: auto;
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            /* Suaviza a rolagem */
+            scroll-behavior: smooth; 
         }
 
-        /* Estilo das mensagens e TAMANHO DA LETRA */
         .mensagem {
+            max-width: 80%;
             background-color: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            
-            /* AQUI: Letras maiores conforme pedido */
+            padding: 12px 16px;
+            border-radius: 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
             font-size: 18px; 
-            line-height: 1.5;
+            line-height: 1.4;
+            word-wrap: break-word;
         }
 
-        /* Estilo para as mensagens enviadas pelo utilizador (opcional) */
+        /* Estilo para as mensagens que tu envias */
         .minha-mensagem {
             background-color: #dcf8c6;
             align-self: flex-end;
+            border-bottom-right-radius: 2px;
         }
 
-        /* Área de input fixa no fundo */
+        /* Estilo para as mensagens recebidas/sistema */
+        .mensagem-bot {
+            background-color: #ffffff;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
         #input-area {
             background-color: #fff;
             padding: 15px;
             border-top: 1px solid #ccc;
             display: flex;
             gap: 10px;
-            
-            /* Garante que fica na base */
             position: sticky; 
             bottom: 0;
         }
 
-        /* Campo de escrever */
         input[type="text"] {
-            width: 100%;
-            padding: 15px; /* Área de toque maior */
-            font-size: 16px; /* Letra do input também maior */
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
             border: 1px solid #ddd;
-            border-radius: 20px;
+            border-radius: 25px;
             outline: none;
         }
 
         button {
             padding: 10px 20px;
             font-size: 16px;
-            border-radius: 20px;
+            font-weight: bold;
+            border-radius: 25px;
             border: none;
             background-color: #007bff;
             color: white;
+            cursor: pointer;
         }
 
-        /* Estilo simples para os players de áudio */
-        audio {
-            width: 100%;
-            margin-top: 5px;
+        button:active {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
 
     <div id="chat-container">
-        <div class="mensagem">
-            Olá! O tamanho da letra está melhor agora?
-        </div>
-        
-        <div class="mensagem minha-mensagem">
-            Sim, e a caixa de texto não some!
-        </div>
-
-        <div class="mensagem">
-            <p>Ouvir áudio 1:</p>
-            <audio controls>
-                <source src="audio.mp3" type="audio/mpeg">
-                Seu navegador não suporta áudio.
-            </audio>
-        </div>
-
-        <div class="mensagem minha-mensagem">
-            <p>Minha resposta (Audio 2):</p>
-            <audio controls>
-                <source src="audio1.mp3" type="audio/mpeg">
-                Seu navegador não suporta áudio.
-            </audio>
+        <div class="mensagem mensagem-bot">
+            Olá! Sou o teu assistente. Escreve algo abaixo para testar o envio!
         </div>
     </div>
 
     <div id="input-area">
-        <input type="text" placeholder="Escreva aqui...">
-        <button>Enviar</button>
+        <input type="text" id="campo-texto" placeholder="Escreva aqui...">
+        <button id="btn-enviar">Enviar</button>
     </div>
+
+    <script>
+        // Selecionamos os elementos pelos IDs que criamos acima
+        const botao = document.getElementById('btn-enviar');
+        const input = document.getElementById('campo-texto');
+        const container = document.getElementById('chat-container');
+
+        // Função para adicionar a mensagem no ecrã
+        function enviarMensagem() {
+            const mensagemTexto = input.value.trim();
+
+            if (mensagemTexto !== "") {
+                // 1. Criar o elemento da mensagem
+                const novaDiv = document.createElement('div');
+                novaDiv.classList.add('mensagem', 'minha-mensagem');
+                novaDiv.textContent = mensagemTexto;
+
+                // 2. Colocar a mensagem dentro do chat
+                container.appendChild(novaDiv);
+
+                // 3. Limpar o campo de texto
+                input.value = "";
+
+                // 4. Rolar para baixo automaticamente
+                container.scrollTop = container.scrollHeight;
+                
+                // (Opcional) Focar novamente no input para continuar a escrever
+                input.focus();
+            }
+        }
+
+        // Listener para o clique no botão
+        botao.addEventListener('click', enviarMensagem);
+
+        // Listener para a tecla Enter
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                enviarMensagem();
+            }
+        });
+    </script>
 
 </body>
 </html>
