@@ -5,157 +5,179 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot Dona Antonia</title>
     <style>
-        /* Estilização Geral - Estilo Bubble Chat */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        /* Estilo base e cores do WhatsApp */
+        body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background-color: #e5ddd5; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
         /* Top Bar */
-        .top-bar { background-color: #075e54; color: white; padding: 10px; display: flex; align-items: center; position: fixed; width: 100%; top: 0; z-index: 1000; }
-        .top-bar img { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 1px solid #fff; }
-        .top-bar span { font-weight: bold; font-size: 18px; }
+        .top-bar { background-color: #075e54; color: white; padding: 12px; display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000; }
+        .top-bar img { width: 48px; height: 48px; border-radius: 50%; margin-right: 15px; border: 1px solid #fff; }
+        .top-bar .info { display: flex; flex-direction: column; }
+        .top-bar .name { font-weight: bold; font-size: 18px; }
+        .top-bar .status { font-size: 13px; opacity: 0.9; }
 
         /* Área do Chat */
-        #chat-container { flex: 1; padding: 70px 15px 20px 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        #chat-window { flex: 1; padding: 20px 15px; overflow-y: auto; scroll-behavior: smooth; display: flex; flex-direction: column; gap: 12px; }
         
-        /* Balões de Mensagem */
-        .msg { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; position: relative; margin-bottom: 5px; }
-        .bot { background-color: white; align-self: flex-start; border-top-left-radius: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .user-input-area { padding: 10px; background: white; display: flex; gap: 10px; border-top: 1px solid #ddd; }
-        .input-text { flex: 1; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; outline: none; }
-        .btn-send { background: #25d366; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
+        /* Balões de Mensagem (Fonte Maior) */
+        .msg { max-width: 85%; padding: 10px 15px; border-radius: 12px; font-size: 17px; line-height: 1.5; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .bot { background-color: #ffffff; align-self: flex-start; border-top-left-radius: 0; color: #333; }
+        .user { background-color: #dcf8c6; align-self: flex-end; border-top-right-radius: 0; color: #333; }
 
-        /* Imagens e Figurinas */
-        .sticker { width: 100px; display: block; margin-bottom: 5px; }
-        .btn-action { background-color: #34b7f1; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        /* Digitando */
+        #typing { font-size: 14px; color: #666; padding: 0 20px 10px; display: none; font-weight: 500; }
 
-        /* Modal do Slide de Imagens */
-        #modal-slide { display: none; position: fixed; z-index: 2000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); text-align: center; }
-        .slide-img { max-width: 90%; max-height: 70%; margin-top: 50px; }
-        .controls { margin-top: 20px; }
-        .btn-ctrl { background: white; border: none; padding: 15px; margin: 0 10px; font-size: 20px; cursor: pointer; border-radius: 5px; }
-        .btn-close { position: absolute; top: 20px; right: 20px; background: red; color: white; border: none; padding: 10px; cursor: pointer; }
+        /* Input */
+        .input-area { background: #f0f0f0; padding: 15px; display: flex; align-items: center; gap: 10px; }
+        .input-area input { flex: 1; border: none; padding: 15px; border-radius: 30px; outline: none; font-size: 16px; }
+        .btn-send { background: #075e54; color: white; border: none; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; font-size: 22px; }
 
-        /* Reprodutor de Áudio Estilo WhatsApp */
-        .audio-player { display: flex; align-items: center; background: #dcf8c6; padding: 10px; border-radius: 10px; min-width: 200px; }
-        .play-btn { font-size: 24px; cursor: pointer; margin-right: 10px; }
+        /* Slide */
+        #modal-slide { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        .slide-img { max-width: 90%; max-height: 65vh; border-radius: 15px; }
+        .slide-controls { margin-top: 30px; display: flex; gap: 20px; }
+        .btn-slide { background: white; border: none; padding: 15px 30px; font-weight: bold; border-radius: 30px; font-size: 16px; cursor: pointer; }
+        .btn-close { position: absolute; top: 30px; right: 30px; background: #ff4444; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* Player Áudio */
+        .wp-audio { display: flex; align-items: center; gap: 12px; background: #dcf8c6; padding: 12px; border-radius: 10px; width: 250px; }
+        .play-icon { font-size: 28px; cursor: pointer; }
+        
+        .sticker { width: 130px; border-radius: 8px; }
+        .btn-link { background: #25d366; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 8px; width: 100%; }
+        b { color: #000; } /* Garante que o negrito se destaque */
     </style>
 </head>
 <body>
 
     <div class="top-bar">
         <img src="logo.webp" alt="Logo">
-        <span>Dona Antonia Cestas Básicas</span>
+        <div class="info">
+            <span class="name">Dona Antonia Cestas Básicas</span>
+            <span class="status" id="status-text">Online</span>
+        </div>
     </div>
 
-    <div id="chat-container">
-        </div>
+    <div id="chat-window"></div>
+    <div id="typing">Osvaldo está digitando...</div>
 
-    <div class="user-input-area" id="input-zone">
-        <input type="text" id="user-name" class="input-text" placeholder="Digite seu nome...">
-        <button class="btn-send" onclick="startConversation()">➤</button>
+    <div class="input-area" id="input-container">
+        <input type="text" id="user-input" placeholder="Digite seu nome aqui...">
+        <button class="btn-send" onclick="handleUserInput()">➤</button>
     </div>
 
     <div id="modal-slide">
-        <button class="btn-close" onclick="closeSlide()">FECHAR X</button>
-        <img id="img-display" class="slide-img" src="" alt="Cesta">
-        <div class="controls">
-            <button class="btn-ctrl" onclick="changeImg(-1)">◀ Anterior</button>
-            <button class="btn-ctrl" onclick="changeImg(1)">Próxima ▶</button>
+        <button class="btn-close" onclick="toggleSlide(false)">FECHAR X</button>
+        <img id="current-slide-img" class="slide-img" src="cesta1.webp">
+        <div class="slide-controls">
+            <button class="btn-slide" onclick="changeSlide(-1)">◀ VOLTAR</button>
+            <button class="btn-slide" onclick="changeSlide(1)">PRÓXIMA ▶</button>
         </div>
     </div>
 
     <script>
-        const chatContainer = document.getElementById('chat-container');
-        const inputZone = document.getElementById('input-zone');
-        let clienteNome = "";
-        
-        // Lista de imagens das cestas
-        const imagensCestas = ["cesta1.webp", "cesta2.webp", "cesta3.webp"];
-        let currentImgIndex = 0;
+        const chatWindow = document.getElementById('chat-window');
+        const statusText = document.getElementById('status-text');
+        const typingIndicator = document.getElementById('typing');
+        let userName = "";
+        let currentCesta = 1;
 
-        // Função para adicionar mensagem ao chat
-        function addMessage(text, type = 'bot', isSticker = false) {
+        // Função para adicionar mensagens com efeito humano
+        async function speak(content, isSticker = false, delay = 1500) {
+            statusText.innerText = "Digitando...";
+            typingIndicator.style.display = "block";
+            scrollChat();
+            
+            await new Promise(res => setTimeout(res, delay));
+            
+            typingIndicator.style.display = "none";
+            statusText.innerText = "Online";
+            
             const div = document.createElement('div');
-            div.className = `msg ${type}`;
+            div.className = "msg bot";
+            
             if (isSticker) {
-                div.innerHTML = `<img src="${text}" class="sticker">`;
+                div.innerHTML = `<img src="${content}" class="sticker">`;
             } else {
+                // Aplica negrito ao nome do cliente se ele existir no texto
+                let text = content;
+                if(userName) {
+                    const regex = new RegExp(userName, "gi");
+                    text = text.replace(regex, `<b>${userName}</b>`);
+                }
                 div.innerHTML = text;
             }
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            chatWindow.appendChild(div);
+            scrollChat();
         }
 
-        // Saudação Inicial
-        window.onload = () => {
-            const hour = new Date().getHours();
-            let saudacao = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+        function scrollChat() {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Início automático
+        window.onload = async () => {
+            const hora = new Date().getHours();
+            const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
             
-            setTimeout(() => {
-                addMessage("ola.webp", 'bot', true);
-                addMessage(`${saudacao}! Me chamo Osvaldo. Qual é o seu nome?`);
-            }, 500);
+            await speak("ola.webp", true, 800);
+            await speak(`${saudacao}! Me chamo Osvaldo.`);
+            await speak("Qual é o seu nome, por favor?");
         };
 
-        // Lógica após digitar o nome
-        function startConversation() {
-            clienteNome = document.getElementById('user-name').value;
-            if (clienteNome.trim() === "") return;
+        // Recebe o nome do cliente
+        async function handleUserInput() {
+            const input = document.getElementById('user-input');
+            if (!input.value.trim()) return;
 
-            inputZone.style.display = 'none'; // Esconde o input após receber o nome
-            addMessage(clienteNome, 'user');
+            userName = input.value.trim();
+            document.getElementById('input-container').style.display = "none";
 
-            setTimeout(() => {
-                addMessage(`${clienteNome}, vou te mandar as fotos e as listas de produtos das nossas cestas agora. Pode ser?`);
-                addMessage(`<button class="btn-action" onclick="openSlide()">VER CESTAS BÁSICAS</button>`);
-                
-                // Aguarda 10 segundos para perguntar do áudio
-                setTimeout(askForAudio, 10000);
-            }, 1000);
+            const userDiv = document.createElement('div');
+            userDiv.className = "msg user";
+            userDiv.innerHTML = `<b>${userName}</b>`;
+            chatWindow.appendChild(userDiv);
+            scrollChat();
+
+            await speak(`Prazer em te conhecer, ${userName}! ok.webp`, true, 1000);
+            await speak(`${userName}, vou te mandar as fotos e as listas de produtos das nossas cestas agora. Pode ser?`);
+            await speak(`<button class="btn-link" onclick="toggleSlide(true)">📦 VER CESTAS BÁSICAS</button>`, false, 800);
+
+            setTimeout(askForAudio, 10000);
         }
 
-        // Slide de Imagens
-        function openSlide() {
-            document.getElementById('modal-slide').style.display = 'block';
-            updateSlide();
+        function toggleSlide(show) {
+            document.getElementById('modal-slide').style.display = show ? "flex" : "none";
         }
 
-        function closeSlide() {
-            document.getElementById('modal-slide').style.display = 'none';
+        function changeSlide(dir) {
+            currentCesta += dir;
+            if (currentCesta < 1) currentCesta = 5; // Supondo 5 imagens
+            if (currentCesta > 5) currentCesta = 1;
+            document.getElementById('current-slide-img').src = `cesta${currentCesta}.webp`;
         }
 
-        function updateSlide() {
-            document.getElementById('img-display').src = imagensCestas[currentImgIndex];
-        }
-
-        function changeImg(dir) {
-            currentImgIndex += dir;
-            if (currentImgIndex < 0) currentImgIndex = imagensCestas.length - 1;
-            if (currentImgIndex >= imagensCestas.length) currentImgIndex = 0;
-            updateSlide();
-        }
-
-        // Parte do Áudio
-        function askForAudio() {
-            addMessage(`${clienteNome}, posso te enviar um áudio rapidinho explicando como funciona a compra?`);
+        async function askForAudio() {
+            await speak(`${userName}, posso te enviar um áudio de 30 segundinhos explicando como funciona a compra das cestas?`, false, 1500);
             
-            setTimeout(() => {
-                // Simula o envio do áudio
+            setTimeout(async () => {
                 const audioHTML = `
-                    <div class="audio-player">
-                        <span class="play-btn" onclick="playAudio(this)">▶️</span>
-                        <span>Mensagem de voz (0:30)</span>
-                        <audio id="main-audio" src="audio.mp3"></audio>
+                    <div class="wp-audio">
+                        <span class="play-icon" onclick="playAudio(this)">▶️</span>
+                        <div style="flex:1;">
+                            <span style="font-size:13px; display:block;">Mensagem de voz</span>
+                            <div style="height:4px; background:rgba(0,0,0,0.1); width:100%; border-radius:2px; margin-top:5px;"></div>
+                        </div>
+                        <audio id="audio-file" src="audio.mp3"></audio>
                     </div>
                 `;
-                addMessage(audioHTML);
-                
-                // Aguarda o tempo do áudio + delay para mensagem final
+                await speak(audioHTML, false, 500);
                 setTimeout(finalStep, 10000);
             }, 2000);
         }
 
         function playAudio(btn) {
-            const audio = document.getElementById('main-audio');
+            const audio = document.getElementById('audio-file');
             if (audio.paused) {
                 audio.play();
                 btn.innerText = "⏸️";
@@ -165,11 +187,11 @@
             }
         }
 
-        function finalStep() {
-            addMessage("obrigado.webp", 'bot', true);
-            addMessage(`${clienteNome}, me mande um oi no WhatsApp para salvar nosso contato.`);
-            addMessage(`Na sua próxima compra vou te mandar **1 café de brinde**! ☕`);
-            addMessage(`<button class="btn-action" style="background:#25d366" onclick="window.open('https://wa.me/SEUNUMERO')">CHAMAR NO WHATSAPP</button>`);
+        async function finalStep() {
+            await speak("obrigado.webp", true, 1000);
+            await speak(`${userName}, me mande um oi no WhatsApp para salvar nosso contato.`);
+            await speak(`Na sua próxima compra vou te mandar um café de brinde! ☕`);
+            await speak(`<button class="btn-link" style="background:#25d366" onclick="window.open('https://wa.me/5511999999999')">🟢 CHAMAR NO WHATSAPP</button>`, false, 500);
         }
     </script>
 </body>
