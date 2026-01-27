@@ -632,8 +632,17 @@ const App = {
         const tbody = document.getElementById('tbl-body');
         document.getElementById('dl-prods').innerHTML = DB.data.produtos.map(p => `<option value="${p.nome}">`).join('');
 
-let list = DB.data.produtos.filter(p => p.nome.toLowerCase().includes(s) || p.codigo.toLowerCase().includes(s));
-        
+let list = DB.data.produtos.filter(p => {
+    const nome = (p.nome || "").toLowerCase();
+    const codigo = (p.codigo || "").toLowerCase();
+    const ean = (p.ean || "").toLowerCase();
+    const varEan = Array.isArray(p.varEan) ? p.varEan.join(" ").toLowerCase() : "";
+
+    return nome.includes(s) || 
+           codigo.includes(s) || 
+           ean.includes(s) || 
+           varEan.includes(s);
+});        
         const f = App.sortState.field;
         const o = App.sortState.order === 'asc' ? 1 : -1;
         list.sort((a,b) => {
