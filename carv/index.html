@@ -2,58 +2,57 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assistente Dona Antonia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dona Antonia - Assistente</title>
     <style>
-        /* Reset e Base Estilo ChatGPT */
-        * { box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background-color: #ffffff; margin: 0; display: flex; flex-direction: column; height: 100vh; color: #333; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #ffffff; margin: 0; display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; overflow: hidden; }
         
-        /* Top Bar Minimalista */
-        .top-bar { background-color: #ffffff; border-bottom: 1px solid #eee; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; }
+        /* Top Bar */
+        .top-bar { background: #fff; border-bottom: 1px solid #eee; padding: 10px 20px; display: flex; align-items: center; height: 70px; flex-shrink: 0; }
         .brand { display: flex; align-items: center; gap: 12px; }
-        .brand img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
-        .brand span { font-weight: 600; font-size: 16px; color: #111; }
+        .brand img { width: 45px; height: 45px; border-radius: 50%; border: 1px solid #eee; }
+        .brand span { font-weight: 700; font-size: 17px; }
 
         /* Área de Chat */
-        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; margin: 0 auto; width: 100%; scroll-behavior: smooth; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
         
-        /* Estrutura de Mensagem */
-        .msg-container { display: flex; gap: 15px; width: 100%; }
-        .msg-container.user { flex-direction: row-reverse; }
+        .msg-row { display: flex; gap: 10px; width: 100%; margin-bottom: 5px; }
+        .msg-row.user { flex-direction: row-reverse; }
 
-        .avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        /* Estilo das Figurinas (Sem fundo) */
+        .sticker-msg { width: 150px; height: auto; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
 
-        .bubble { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 17px; line-height: 1.6; }
-        .bot-bubble { background-color: #f7f7f8; color: #374151; border: 1px solid #e5e7eb; }
-        .user-bubble { background-color: #212121; color: #ffffff; }
+        /* Balões de Texto */
+        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 17px; line-height: 1.4; }
+        .bot-bubble { background-color: #f0f0f0; color: #222; }
+        .user-bubble { background-color: #000; color: #fff; font-weight: 500; }
 
         /* Digitando */
-        #typing { font-size: 13px; color: #888; margin-left: 55px; margin-bottom: 10px; display: none; }
+        #typing { font-size: 13px; color: #999; padding: 5px 20px; display: none; }
 
-        /* Área de Input Moderna */
-        .input-wrapper { padding: 20px; max-width: 800px; margin: 0 auto; width: 100%; }
-        .input-area { position: relative; display: flex; align-items: center; border: 1px solid #ddd; border-radius: 12px; padding: 5px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .input-area input { flex: 1; border: none; padding: 12px; outline: none; font-size: 16px; background: transparent; }
-        .btn-send { background: #212121; color: white; border: none; border-radius: 8px; width: 35px; height: 35px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-send:hover { background: #444; }
+        /* Input Base */
+        .input-container { padding: 15px; border-top: 1px solid #eee; background: #fff; flex-shrink: 0; }
+        .input-bar { display: flex; gap: 10px; align-items: center; background: #f5f5f5; padding: 8px 15px; border-radius: 25px; }
+        .input-bar input { flex: 1; border: none; background: transparent; padding: 10px; outline: none; font-size: 16px; }
+        .btn-send { background: #000; color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
-        /* Elementos Especiais */
-        .btn-action { background: #ffffff; border: 1px solid #cbcbcb; padding: 12px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.3s; width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; }
-        .btn-action:hover { background: #f9f9f9; border-color: #000; }
-        .sticker { width: 120px; margin-top: 5px; border-radius: 10px; }
+        /* Botão Grande de Ação */
+        .btn-large { background: #000; color: #fff; border: none; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
+        .btn-confirm { background: #fff; border: 2px solid #000; color: #000; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 5px; }
 
-        /* Player Áudio Clean */
-        .audio-box { background: #f7f7f8; border: 1px solid #ddd; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; width: 100%; max-width: 300px; }
-        .play-btn { font-size: 24px; cursor: pointer; }
+        /* Slide Fullscreen */
+        #modal-slide { display: none; position: fixed; inset: 0; background: #fff; z-index: 9999; flex-direction: column; }
+        .slide-header { padding: 20px; display: flex; justify-content: flex-end; }
+        .close-btn { font-size: 30px; border: none; background: none; cursor: pointer; padding: 10px; }
+        .slide-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px; }
+        .slide-img { width: 100%; max-height: 80vh; object-fit: contain; }
+        .slide-footer { padding: 30px; display: flex; justify-content: center; gap: 40px; }
+        .nav-btn { background: #000; color: #fff; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; }
 
-        /* Modal Slide */
-        #modal-slide { display: none; position: fixed; inset: 0; background: #ffffff; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        .slide-img { max-width: 90%; max-height: 70vh; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
-        .slide-nav { margin-top: 30px; display: flex; gap: 40px; }
-        .nav-btn { background: #f0f0f0; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .close-x { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; border: none; background: none; }
+        /* Player Áudio */
+        .audio-card { background: #f0f0f0; padding: 15px; border-radius: 15px; display: flex; align-items: center; gap: 12px; width: 100%; max-width: 280px; }
+        .play-btn { font-size: 25px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -61,140 +60,129 @@
     <div class="top-bar">
         <div class="brand">
             <img src="logo.webp" alt="Logo">
-            <span>Dona Antonia</span>
+            <span>Dona Antonia Cestas</span>
         </div>
-        <div style="font-size: 12px; color: #888;">Osvaldo Assistente</div>
     </div>
 
     <div id="chat-window"></div>
-    <div id="typing">Osvaldo está processando...</div>
+    <div id="typing">Osvaldo está digitando...</div>
 
-    <div class="input-wrapper" id="input-container">
-        <div class="input-area">
-            <input type="text" id="user-input" placeholder="Digite seu nome para começar...">
-            <button class="btn-send" onclick="handleUserInput()">↑</button>
+    <div class="input-container" id="input-zone">
+        <div class="input-bar">
+            <input type="text" id="user-input" placeholder="Digite aqui...">
+            <button class="btn-send" onclick="handleInput()">↑</button>
         </div>
     </div>
 
     <div id="modal-slide">
-        <button class="close-x" onclick="toggleSlide(false)">✕</button>
-        <img id="current-slide-img" class="slide-img" src="cesta1.webp">
-        <div class="slide-nav">
-            <button class="nav-btn" onclick="changeSlide(-1)">Anterior</button>
-            <button class="nav-btn" onclick="changeSlide(1)">Próxima</button>
+        <div class="slide-header"><button class="close-btn" onclick="toggleSlide(false)">✕</button></div>
+        <div class="slide-content"><img id="slide-img" src="cesta1.webp"></div>
+        <div class="slide-footer">
+            <button class="nav-btn" onclick="moveSlide(-1)">Anterior</button>
+            <button class="nav-btn" onclick="moveSlide(1)">Próxima</button>
         </div>
     </div>
 
     <script>
-        const chatWindow = document.getElementById('chat-window');
-        const typingIndicator = document.getElementById('typing');
+        const chat = document.getElementById('chat-window');
+        const typing = document.getElementById('typing');
+        const inputZone = document.getElementById('input-zone');
         let userName = "";
         let currentCesta = 1;
+        let step = "name";
 
-        async function speak(content, isSticker = false, delay = 1200) {
-            typingIndicator.style.display = "block";
-            scrollChat();
-            await new Promise(res => setTimeout(res, delay));
-            typingIndicator.style.display = "none";
+        async function speak(content, type = "text", delay = 1200) {
+            typing.style.display = "block";
+            chat.scrollTop = chat.scrollHeight;
+            await new Promise(r => setTimeout(r, delay));
+            typing.style.display = "none";
+
+            const row = document.createElement('div');
+            row.className = "msg-row";
             
-            const container = document.createElement('div');
-            container.className = "msg-container";
-            
-            // Lógica de negrito para o nome
-            let text = content;
-            if(userName) {
-                const regex = new RegExp(userName, "gi");
-                text = text.replace(regex, `<b>${userName}</b>`);
+            if (type === "sticker") {
+                row.innerHTML = `<img src="${content}" class="sticker-msg">`;
+            } else {
+                let html = content.replace(new RegExp(userName, 'g'), `<b>${userName}</b>`);
+                row.innerHTML = `<div class="bubble bot-bubble">${html}</div>`;
             }
-
-            container.innerHTML = `
-                <div class="avatar"><img src="logo.webp"></div>
-                <div class="bubble bot-bubble">
-                    ${isSticker ? `<img src="${content}" class="sticker">` : text}
-                </div>
-            `;
             
-            chatWindow.appendChild(container);
-            scrollChat();
-        }
-
-        function scrollChat() {
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            chat.appendChild(row);
+            chat.scrollTop = chat.scrollHeight;
         }
 
         window.onload = async () => {
             const h = new Date().getHours();
-            const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
-            await speak("ola.webp", true, 600);
-            await speak(`${saudacao}! Me chamo Osvaldo. Como posso te chamar?`);
+            const s = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+            await speak("ola.webp", "sticker", 600);
+            await speak(`${s}! Sou o Osvaldo.`);
+            await speak("Como você se chama?");
         };
 
-        async function handleUserInput() {
-            const input = document.getElementById('user-input');
-            if (!input.value.trim()) return;
+        async function handleInput() {
+            const val = document.getElementById('user-input').value.trim();
+            if (!val) return;
+            document.getElementById('user-input').value = "";
 
-            userName = input.value.trim();
-            document.getElementById('input-container').style.display = "none";
+            const row = document.createElement('div');
+            row.className = "msg-row user";
+            row.innerHTML = `<div class="bubble user-bubble">${val}</div>`;
+            chat.appendChild(row);
 
-            const container = document.createElement('div');
-            container.className = "msg-container user";
-            container.innerHTML = `<div class="bubble user-bubble"><b>${userName}</b></div>`;
-            chatWindow.appendChild(container);
-            scrollChat();
-
-            await speak(`Prazer em te conhecer, ${userName}! ok.webp`, true, 800);
-            await speak(`${userName}, vou te mandar as fotos e as listas de produtos das nossas cestas. Pode ser?`);
-            await speak(`<button class="btn-action" onclick="toggleSlide(true)">📦 Ver Cestas Básicas <span>→</span></button>`, false, 500);
-
-            setTimeout(askForAudio, 10000);
-        }
-
-        function toggleSlide(show) {
-            document.getElementById('modal-slide').style.display = show ? "flex" : "none";
-        }
-
-        function changeSlide(dir) {
-            currentCesta += dir;
-            if (currentCesta < 1) currentCesta = 3;
-            if (currentCesta > 3) currentCesta = 1;
-            document.getElementById('current-slide-img').src = `cesta${currentCesta}.webp`;
-        }
-
-        async function askForAudio() {
-            await speak(`${userName}, posso te enviar um áudio explicando como funciona a compra das cestas?`, false, 1500);
-            
-            setTimeout(async () => {
-                const audioHTML = `
-                    <div class="audio-box">
-                        <span class="play-btn" onclick="playAudio(this)">▶</span>
-                        <div style="flex:1">
-                            <span style="font-size:14px; font-weight:600;">Explicação Dona Antonia</span>
-                            <span style="font-size:12px; color:#666; display:block;">0:30</span>
-                        </div>
-                        <audio id="audio-file" src="audio.mp3"></audio>
-                    </div>
-                `;
-                await speak(audioHTML, false, 500);
-                setTimeout(finalStep, 10000);
-            }, 2000);
-        }
-
-        function playAudio(btn) {
-            const audio = document.getElementById('audio-file');
-            if (audio.paused) {
-                audio.play();
-                btn.innerText = "⏸";
-            } else {
-                audio.pause();
-                btn.innerText = "▶";
+            if (step === "name") {
+                userName = val;
+                step = "waiting_audio";
+                await speak("ok.webp", "sticker", 800);
+                await speak(`Prazer, ${userName}!`);
+                await speak("Vou te mostrar nossas cestas agora.");
+                await speak(`<button class="btn-large" onclick="toggleSlide(true)">📦 VER CESTAS BÁSICAS</button>`, "text", 500);
+                
+                setTimeout(async () => {
+                    await speak(`${userName}, posso te mandar um áudio explicando como comprar?`);
+                    await speak(`<button class="btn-confirm" onclick="sendAudio()">Sim, pode mandar!</button>`, "text", 400);
+                }, 10000);
             }
         }
 
-        async function finalStep() {
-            await speak("obrigado.webp", true, 800);
-            await speak(`${userName}, me mande um oi no WhatsApp para salvar nosso contato.`);
-            await speak(`Na sua próxima compra vou te mandar um café de brinde! ☕`);
-            await speak(`<button class="btn-action" style="background:#25d366; color:white; border:none;" onclick="window.open('https://wa.me/5511999999999')">🟢 Chamar no WhatsApp <span>→</span></button>`, false, 500);
+        async function sendAudio() {
+            // Remove o botão de confirmação para não clicar duas vezes
+            const btns = document.querySelectorAll('.btn-confirm');
+            btns.forEach(b => b.remove());
+
+            const audioHTML = `
+                <div class="audio-card">
+                    <span class="play-btn" onclick="playAudio(this)">▶</span>
+                    <div>
+                        <span style="font-size:14px; font-weight:600; display:block">Resumo do pedido</span>
+                        <span style="font-size:12px; color:#666">0:30</span>
+                    </div>
+                    <audio id="player" src="audio.mp3"></audio>
+                </div>
+            `;
+            await speak(audioHTML, "text", 1000);
+            setTimeout(finalAction, 10000);
+        }
+
+        function playAudio(btn) {
+            const a = document.getElementById('player');
+            if (a.paused) { a.play(); btn.innerText = "⏸"; } 
+            else { a.pause(); btn.innerText = "▶"; }
+        }
+
+        async function finalAction() {
+            await speak("cafe.webp", "sticker", 800);
+            await speak(`Me manda um oi no WhatsApp para eu salvar seu contato.`);
+            await speak(`Garante um café de brinde na sua próxima compra! ☕`);
+            await speak(`<button class="btn-large" style="background:#25d366" onclick="window.open('https://wa.me/5511999999999')">CHAMAR NO WHATSAPP</button>`);
+            await speak("obrigado.webp", "sticker", 500);
+        }
+
+        function toggleSlide(s) { document.getElementById('modal-slide').style.display = s ? "flex" : "none"; }
+        function moveSlide(d) {
+            currentCesta += d;
+            if (currentCesta < 1) currentCesta = 3;
+            if (currentCesta > 3) currentCesta = 1;
+            document.getElementById('slide-img').src = `cesta${currentCesta}.webp`;
         }
     </script>
 </body>
