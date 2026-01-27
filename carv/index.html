@@ -5,235 +5,429 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dona Antonia Cestas Básicas</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* --- RESET & VARIAVEIS --- */
+        :root {
+            --primary-color: #075e54; /* Verde WhatsApp Profissional */
+            --bg-color: #ffffff;
+            --chat-bg: #f2f2f2;
+            --user-msg-bg: #111b21;
+            --bot-msg-bg: #ffffff;
+            --text-color: #333;
+            --shadow-soft: 0 2px 5px rgba(0,0,0,0.05);
+            --shadow-float: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         
         body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            background-color: #ffffff; 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            overflow: hidden; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--chat-bg);
+            height: 100dvh; /* Altura dinâmica para mobile */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Top Bar Cinza Clara */
-        .top-bar { 
-            background: #f5f5f5; 
-            border-bottom: 1px solid #ddd; 
-            padding: 15px 20px; 
-            display: flex; 
-            align-items: center; 
-            height: 85px; 
-            flex-shrink: 0; 
-            z-index: 100;
-        }
-        .brand { display: flex; align-items: center; gap: 15px; }
-        .brand img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
-        .brand span { font-weight: 800; font-size: 20px; color: #1a1a1a; }
-
-        /* Janela de Chat */
-        #chat-window { 
-            flex: 1; 
-            overflow-y: scroll; 
-            padding: 20px 15px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-            background: #ffffff;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .msg-row { display: flex; width: 100%; animation: fadeIn 0.3s ease; }
-        .msg-row.user { justify-content: flex-end; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Figurinas Grandes */
-        .sticker-msg { width: 180px; height: auto; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
-
-        /* Balões de Texto Maiores */
-        .bubble { 
-            max-width: 85%; 
-            padding: 14px 18px; 
-            border-radius: 20px; 
-            font-size: 18px; 
-            line-height: 1.5; 
-        }
-        .bot-bubble { background-color: #f0f0f0; color: #222; border-bottom-left-radius: 4px; }
-        .user-bubble { background-color: #000000; color: #ffffff; border-bottom-right-radius: 4px; }
-
-        #typing { font-size: 14px; color: #888; padding: 10px 20px; display: none; font-weight: 500; }
-
-        /* Input Fixo na Base */
-        .input-container { 
-            padding: 15px 20px 30px 20px; 
-            background: #ffffff; 
-            border-top: 1px solid #eee;
+        /* --- TOP BAR (HEADER) --- */
+        header {
+            background-color: #ededed;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            height: 70px;
             flex-shrink: 0;
-        }
-        .input-bar { 
-            display: flex; 
-            gap: 12px; 
-            align-items: center; 
-            background: #f0f2f5; 
-            padding: 10px 18px; 
-            border-radius: 30px; 
-        }
-        .input-bar input { flex: 1; border: none; background: transparent; padding: 10px; outline: none; font-size: 18px; }
-        .btn-send { background: #000; color: #fff; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-
-        /* Botão de Ação */
-        .btn-action { 
-            background: #000; color: #fff; border: none; padding: 20px; 
-            border-radius: 15px; font-size: 19px; font-weight: bold; 
-            width: 100%; cursor: pointer; margin-top: 10px;
+            border-bottom: 1px solid #d1d7db;
+            z-index: 10;
         }
 
-        /* Slide Fullscreen */
-        #modal-slide { 
-            display: none; position: fixed; inset: 0; background: #fff; z-index: 10000; 
-            flex-direction: column; 
-        }
-        .slide-content { flex: 1; display: flex; align-items: center; justify-content: center; }
-        .slide-img { width: 100vw; height: auto; max-height: 70vh; object-fit: contain; }
-        .slide-footer { padding: 40px 20px; display: flex; justify-content: space-between; gap: 20px; }
-        .nav-btn { flex: 1; background: #f0f0f0; border: none; padding: 20px; border-radius: 12px; font-weight: bold; font-size: 17px; }
+        .brand-container { display: flex; align-items: center; gap: 15px; }
+        .brand-logo { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
+        .brand-name { font-size: 18px; font-weight: 700; color: #111; line-height: 1.2; }
 
-        /* Áudio Player */
-        .audio-card { background: #f0f0f0; padding: 18px; border-radius: 18px; display: flex; align-items: center; gap: 15px; width: 100%; max-width: 300px; }
+        /* --- CHAT AREA (MAIN) --- */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* Fundo sutil estilo WhatsApp opcional */
+            background-repeat: repeat;
+            background-size: 400px;
+            scroll-behavior: smooth;
+        }
+
+        /* Mensagens */
+        .msg-row { display: flex; width: 100%; opacity: 0; transform: translateY(20px); animation: appear 0.4s forwards ease-out; }
+        .msg-row.user { justify-content: flex-end; }
+        
+        @keyframes appear { to { opacity: 1; transform: translateY(0); } }
+
+        .bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 16px;
+            line-height: 1.5;
+            position: relative;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .bot-bubble { 
+            background-color: var(--bot-msg-bg); 
+            color: var(--text-color); 
+            border-bottom-left-radius: 4px;
+        }
+        
+        .user-bubble { 
+            background-color: var(--user-msg-bg); 
+            color: #fff; 
+            border-bottom-right-radius: 4px; 
+        }
+
+        /* Destaque para negrito */
+        b { font-weight: 700; color: inherit; }
+
+        /* Figurinhas */
+        .sticker-img {
+            width: 160px;
+            height: auto;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2));
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        /* Indicador de Digitando */
+        .typing-indicator {
+            font-size: 13px;
+            color: #667781;
+            margin-left: 20px;
+            margin-bottom: 5px;
+            font-style: italic;
+            display: none;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* --- INPUT AREA (FOOTER) --- */
+        footer {
+            background-color: #f0f2f5;
+            padding: 10px 15px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-box {
+            background: #fff;
+            border-radius: 25px;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .input-box input {
+            flex: 1;
+            border: none;
+            padding: 10px;
+            font-size: 16px;
+            outline: none;
+            background: transparent;
+        }
+
+        .btn-send {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        .btn-send:active { transform: scale(0.9); }
+
+        /* --- ELEMENTOS INTERATIVOS --- */
+        .btn-action {
+            width: 100%;
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #000;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-action:active { background: #eee; transform: translateY(2px); }
+        .btn-green { background: #25d366; color: white; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
+
+        /* Audio Player Customizado */
+        .audio-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 5px;
+            min-width: 240px;
+        }
+        .play-icon { font-size: 28px; color: #555; cursor: pointer; }
+        .audio-info { display: flex; flex-direction: column; flex: 1; }
+        .audio-bar { height: 4px; background: #ccc; border-radius: 2px; width: 100%; margin-top: 5px; position: relative; }
+        .audio-progress { height: 100%; background: var(--primary-color); width: 0%; border-radius: 2px; transition: width 0.2s; }
+
+        /* --- MODAL SLIDE (FULLSCREEN) --- */
+        #modal-slide {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .slide-img { max-width: 100vw; max-height: 70vh; object-fit: contain; }
+        .slide-controls {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            justify-content: center;
+            padding: 0 20px;
+        }
+        .slide-btn { background: #fff; color: #000; border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; flex: 1; max-width: 150px; }
+        .close-modal { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 30px; background: none; border: none; cursor: pointer; padding: 10px; }
+
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div class="brand">
-            <img src="logo.webp" alt="Logo">
-            <span>Dona Antonia Cestas Básicas</span>
+    <header>
+        <div class="brand-container">
+            <img src="logo.webp" alt="Dona Antonia" class="brand-logo">
+            <span class="brand-name">Dona Antonia<br>Cestas Básicas</span>
         </div>
-    </div>
+    </header>
 
-    <div id="chat-window"></div>
-    <div id="typing">Osvaldo está escrevendo...</div>
+    <main id="chat-window">
+        </main>
+    
+    <div id="typing-indicator" class="typing-indicator">Osvaldo está digitando...</div>
 
-    <div class="input-container" id="input-zone">
-        <div class="input-bar">
-            <input type="text" id="user-input" placeholder="Digite seu nome...">
-            <button class="btn-send" onclick="handleInput()">↑</button>
+    <footer id="footer-input">
+        <div class="input-box">
+            <input type="text" id="user-input" placeholder="Digite seu nome..." autocomplete="off">
+            <button class="btn-send" onclick="handleInput()">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
         </div>
-    </div>
+    </footer>
 
     <div id="modal-slide">
-        <div style="padding: 20px; text-align: right;"><button onclick="toggleSlide(false)" style="font-size: 30px; border:none; background:none;">✕</button></div>
-        <div class="slide-content"><img id="slide-img" src="cesta1.webp"></div>
-        <div class="slide-footer">
-            <button class="nav-btn" onclick="moveSlide(-1)">Anterior</button>
-            <button class="nav-btn" onclick="moveSlide(1)">Próxima</button>
+        <button class="close-modal" onclick="toggleSlide(false)">✕</button>
+        <img id="slide-img" class="slide-img" src="cesta1.webp">
+        <div class="slide-controls">
+            <button class="slide-btn" onclick="moveSlide(-1)">❮ Anterior</button>
+            <button class="slide-btn" onclick="moveSlide(1)">Próxima ❯</button>
         </div>
     </div>
 
     <script>
+        // --- CONFIGURAÇÃO ---
         const chat = document.getElementById('chat-window');
-        const typing = document.getElementById('typing');
+        const typing = document.getElementById('typing-indicator');
+        const inputFooter = document.getElementById('footer-input');
+        
         let userName = "";
         let currentCesta = 1;
-        let step = "name";
+        const totalCestas = 3; // Ajuste conforme a quantidade de imagens
 
-        // Rolagem automática revisada
+        // Preload de imagens para evitar delay
+        const imagesToPreload = ["ola.webp", "ok.webp", "cafe.webp", "obrigado.webp", "cesta1.webp", "cesta2.webp", "cesta3.webp"];
+        imagesToPreload.forEach(src => { const img = new Image(); img.src = src; });
+
+        // Função de Scroll Suave para o Fundo
         function scrollToBottom() {
-            chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+            setTimeout(() => {
+                chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+            }, 100);
         }
 
-        async function speak(content, type = "text", delay = 1500) {
+        // Sistema de Mensagens
+        async function speak(content, type = "text", delay = 1000) {
             typing.style.display = "block";
             scrollToBottom();
+            
             await new Promise(r => setTimeout(r, delay));
+            
             typing.style.display = "none";
-
+            
             const row = document.createElement('div');
             row.className = "msg-row";
             
+            let innerHTML = "";
+
             if (type === "sticker") {
-                row.innerHTML = `<img src="${content}" class="sticker-msg">`;
-            } else {
-                let html = content.replace(new RegExp(userName, 'g'), `<b>${userName}</b>`);
-                row.innerHTML = `<div class="bubble bot-bubble">${html}</div>`;
+                innerHTML = `<img src="${content}" class="sticker-img">`;
+            } else if (type === "text") {
+                // Negrito automático no nome
+                let text = content;
+                if(userName) {
+                    text = text.replace(new RegExp(userName, 'gi'), `<b>${userName}</b>`);
+                }
+                innerHTML = `<div class="bubble bot-bubble">${text}</div>`;
+            } else if (type === "html") {
+                innerHTML = `<div class="bubble bot-bubble" style="width:100%">${content}</div>`;
             }
-            
+
+            row.innerHTML = innerHTML;
             chat.appendChild(row);
             scrollToBottom();
         }
 
+        // --- FLUXO DO CHAT ---
+        
+        // 1. Início Automático
         window.onload = async () => {
-            await speak("ola.webp", "sticker", 800);
-            await speak(`Olá! Sou o Osvaldo.`);
-            await speak("Qual é o seu nome?");
+            const h = new Date().getHours();
+            const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+            
+            await speak("ola.webp", "sticker", 600);
+            await speak(`${saudacao}! Sou o Osvaldo.`);
+            await speak("Como posso te chamar?");
         };
 
+        // 2. Input do Usuário
         async function handleInput() {
             const inputEl = document.getElementById('user-input');
-            const val = inputEl.value.trim();
-            if (!val) return;
-            inputEl.value = "";
+            const text = inputEl.value.trim();
+            if (!text) return;
 
+            // Renderiza msg do usuário
+            inputEl.value = "";
             const row = document.createElement('div');
             row.className = "msg-row user";
-            row.innerHTML = `<div class="bubble user-bubble">${val}</div>`;
+            row.innerHTML = `<div class="bubble user-bubble">${text}</div>`;
             chat.appendChild(row);
             scrollToBottom();
 
-            if (step === "name") {
-                userName = val;
-                step = "waiting";
-                document.getElementById('input-zone').style.display = "none";
-                await speak("ok.webp", "sticker", 800);
-                await speak(`Prazer, ${userName}!`);
-                await speak("Vou te mandar as fotos das nossas cestas.");
-                await speak(`<button class="btn-action" onclick="toggleSlide(true)">📦 VER CESTAS BÁSICAS</button>`, "text", 500);
-                
-                setTimeout(async () => {
-                    await speak(`Posso te enviar um áudio explicando como comprar?`);
-                    await speak(`<button class="btn-action" style="background:#fff; color:#000; border:2px solid #000;" onclick="sendAudio()">Sim, pode mandar!</button>`);
-                }, 10000);
+            // Esconde input se for a etapa do nome
+            if (!userName) {
+                userName = text;
+                inputFooter.style.display = "none"; // Remove o input para focar na conversa
+                nextStepCestas();
             }
         }
 
-        async function sendAudio() {
-            const btns = document.querySelectorAll('.btn-action');
-            btns.forEach(b => { if(b.innerText.includes("Sim")) b.remove(); });
+        // Permite enviar com Enter
+        document.getElementById('user-input').addEventListener("keypress", function(e) {
+            if (e.key === "Enter") handleInput();
+        });
 
-            const audioHTML = `
-                <div class="audio-card">
-                    <span style="font-size:30px; cursor:pointer;" onclick="playAudio(this)">▶</span>
-                    <div style="flex:1">
-                        <span style="font-size:15px; font-weight:600; display:block">Explicação Cestas</span>
-                        <span style="font-size:13px; color:#666">0:30</span>
+        // 3. Apresentação das Cestas
+        async function nextStepCestas() {
+            await speak("ok.webp", "sticker", 800);
+            await speak(`Prazer, ${userName}!`);
+            await speak("Separei nossas melhores cestas para você ver.");
+            
+            const btnHtml = `<button class="btn-action" onclick="toggleSlide(true)">📦 VER CESTAS BÁSICAS</button>`;
+            await speak(btnHtml, "html", 600);
+
+            // Aguarda um pouco antes de oferecer o áudio
+            setTimeout(offerAudio, 8000);
+        }
+
+        // 4. Oferta do Áudio
+        async function offerAudio() {
+            await speak(`${userName}, tenho uma dica rápida sobre a entrega.`);
+            await speak(`Posso mandar um áudio de 30 segundos explicando?`);
+            
+            const btnHtml = `<button class="btn-action" id="btn-audio-confirm" onclick="sendAudio()">🔊 Sim, pode mandar</button>`;
+            await speak(btnHtml, "html", 500);
+        }
+
+        // 5. Envio do Áudio
+        async function sendAudio() {
+            // Remove botão para não clicar de novo
+            const btn = document.getElementById('btn-audio-confirm');
+            if(btn) btn.style.display = 'none';
+
+            await speak("Gravando áudio...", "text", 1500); // Simula gravação
+
+            const playerHtml = `
+                <div class="audio-wrapper">
+                    <span class="play-icon" onclick="playAudio(this)">▶</span>
+                    <div class="audio-info">
+                        <span style="font-size:12px; font-weight:bold; color:#555">Explicação Dona Antonia</span>
+                        <div class="audio-bar"><div id="audio-progress" class="audio-progress"></div></div>
+                        <span style="font-size:10px; color:#999; margin-top:2px">0:30</span>
                     </div>
-                    <audio id="player" src="audio.mp3"></audio>
+                    <audio id="audio-player" src="audio.mp3" ontimeupdate="updateProgress()"></audio>
                 </div>
             `;
-            await speak(audioHTML, "text", 1000);
-            setTimeout(finalAction, 10000);
+            await speak(playerHtml, "html", 500);
+
+            setTimeout(closingHook, 12000); // Tempo para ouvir um pouco do áudio
         }
 
-        function playAudio(btn) {
-            const a = document.getElementById('player');
-            if (a.paused) { a.play(); btn.innerText = "⏸"; } 
-            else { a.pause(); btn.innerText = "▶"; }
+        // Lógica do Player
+        function playAudio(icon) {
+            const audio = document.getElementById('audio-player');
+            if (audio.paused) {
+                audio.play();
+                icon.innerText = "⏸";
+            } else {
+                audio.pause();
+                icon.innerText = "▶";
+            }
+        }
+        function updateProgress() {
+            const audio = document.getElementById('audio-player');
+            const percent = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('audio-progress').style.width = percent + "%";
         }
 
-        async function finalAction() {
-            await speak("cafe.webp", "sticker", 1000);
-            await speak(`Me manda um oi no WhatsApp pra salvar nosso contato.`);
-            await speak(`Na sua próxima compra te mando um café de brinde! ☕`);
-            await speak(`<button class="btn-action" style="background:#25d366" onclick="window.open('https://wa.me/5511999999999')">CHAMAR NO WHATSAPP</button>`);
-            await speak("obrigado.webp", "sticker", 800);
+        // 6. Fechamento (Gatilho do Café)
+        async function closingHook() {
+            await speak("cafe.webp", "sticker", 800);
+            await speak(`Ei, me chama no WhatsApp agora para salvar seu contato.`);
+            await speak(`Na sua próxima compra vou te enviar **1 café de brinde**! ☕`);
+            
+            const whatsBtn = `
+                <button class="btn-action btn-green" onclick="window.open('https://wa.me/5511999999999?text=Olá Osvaldo, vim pelo site e quero meu café de brinde!', '_blank')">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.05 14.69 2 12.04 2Z"></path></svg>
+                    CHAMAR NO WHATSAPP
+                </button>
+            `;
+            await speak(whatsBtn, "html", 600);
+            await speak("obrigado.webp", "sticker", 1000);
         }
 
-        function toggleSlide(s) { document.getElementById('modal-slide').style.display = s ? "flex" : "none"; }
-        function moveSlide(d) {
-            currentCesta += d;
-            if (currentCesta < 1) currentCesta = 3;
-            if (currentCesta > 3) currentCesta = 1;
+        // --- CONTROLE DO SLIDE ---
+        function toggleSlide(show) {
+            document.getElementById('modal-slide').style.display = show ? "flex" : "none";
+        }
+        function moveSlide(dir) {
+            currentCesta += dir;
+            if (currentCesta < 1) currentCesta = totalCestas;
+            if (currentCesta > totalCestas) currentCesta = 1;
             document.getElementById('slide-img').src = `cesta${currentCesta}.webp`;
         }
     </script>
