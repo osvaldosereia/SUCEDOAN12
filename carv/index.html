@@ -2,13 +2,14 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dona Antonia - Cestas</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        /* --- ESTILO VISUAL (CSS) --- */
+        /* --- ESTILO VISUAL WHATSAPP (CSS) --- */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #d1d7db; /* Fundo cinza da área de trabalho */
             margin: 0;
             display: flex;
             justify-content: center;
@@ -18,28 +19,38 @@
         #phone-container {
             width: 100%;
             max-width: 600px;
-            background-color: #ffffff;
+            background-color: #efe7dd; /* Bege clássico do WhatsApp */
+            /* Imagem de fundo padrão do WhatsApp (opcional, mas dá o toque final) */
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-repeat: repeat;
             display: flex;
             flex-direction: column;
             box-shadow: 0 0 15px rgba(0,0,0,0.1);
             position: relative;
+            overflow: hidden;
         }
 
-        /* Cabeçalho */
+        /* --- CABEÇALHO --- */
         header {
-            background-color: #008060;
+            background-color: #008069; /* Verde Oficial */
             color: white;
-            padding: 15px 20px;
+            padding: 10px 15px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            gap: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             z-index: 10;
         }
 
+        .back-btn {
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
         .logo-circle {
-            width: 60px;
-            height: 60px;
+            width: 40px;
+            height: 40px;
             background-color: white;
             border-radius: 50%;
             overflow: hidden;
@@ -58,125 +69,239 @@
         .header-info {
             display: flex;
             flex-direction: column;
+            flex: 1;
         }
 
         .company-name {
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: 600;
             margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .slogan {
-            font-size: 14px;
-            opacity: 0.9;
-            font-weight: normal;
+        .status {
+            font-size: 12px;
+            opacity: 0.8;
         }
 
-        /* Área do Chat */
+        .header-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* --- ÁREA DO CHAT --- */
         #chat-content {
             flex: 1;
-            padding: 20px;
+            padding: 20px 15px; /* Espaçamento lateral */
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            padding-bottom: 80px;
-            background-color: #fdfdfd;
+            gap: 8px; /* Espaço menor entre balões */
+            padding-bottom: 90px;
         }
 
         /* Balões de Mensagem */
         .message {
-            padding: 15px 20px;
-            border-radius: 20px;
-            font-size: 18px;
-            line-height: 1.4;
-            max-width: 85%;
-            animation: fadeIn 0.5s;
+            padding: 8px 10px;
+            border-radius: 7.5px;
+            font-size: 16px;
+            line-height: 19px;
+            max-width: 75%;
             position: relative;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+            animation: fadeIn 0.3s;
+            word-wrap: break-word;
         }
 
+        /* Mensagem do Robô (Esquerda - Branco) */
         .bot-msg {
-            background-color: #e9e9eb;
-            color: black;
+            background-color: #ffffff;
+            color: #111b21;
             align-self: flex-start;
-            border-bottom-left-radius: 5px;
+            border-top-left-radius: 0; /* Canto quadrado para o rabicho */
+            margin-left: 8px;
         }
 
+        /* Rabicho do Robô */
+        .bot-msg::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -8px;
+            width: 0;
+            height: 0;
+            border: 8px solid transparent;
+            border-top-color: #ffffff;
+            border-right: 0;
+            margin-top: -0px;
+        }
+
+        /* Mensagem do Usuário (Direita - Verde Claro) */
         .user-msg {
-            background-color: #008060;
-            color: white;
+            background-color: #d9fdd3;
+            color: #111b21;
             align-self: flex-end;
-            border-bottom-right-radius: 5px;
-        }
-
-        /* Botão de "OK" */
-        .ok-button {
-            cursor: pointer;
-            text-align: center;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            transition: transform 0.1s;
-        }
-        .ok-button:active {
-            transform: scale(0.98);
-        }
-
-        /* Área de Entrada */
-        #input-area {
-            padding: 20px;
-            border-top: 1px solid #ddd;
+            border-top-right-radius: 0;
+            margin-right: 8px;
             display: flex;
+            flex-direction: column;
+            align-items: flex-end; /* Para alinhar o tick */
+        }
+
+        /* Rabicho do Usuário */
+        .user-msg::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: -8px;
+            width: 0;
+            height: 0;
+            border: 8px solid transparent;
+            border-top-color: #d9fdd3;
+            border-left: 0;
+            margin-top: -0px;
+        }
+
+        /* Horário e Ticks */
+        .msg-meta {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 3px;
+            margin-top: 2px;
+            font-size: 11px;
+            color: #667781;
+            float: right;
+            margin-left: 10px;
+            position: relative;
+            top: 4px;
+        }
+
+        .tick {
+            font-size: 14px;
+            color: #53bdeb; /* Azul do visto */
+        }
+
+        /* --- BOTÕES DAS CESTAS --- */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 100%;
+        }
+
+        .option-btn {
+            background-color: #ffffff;
+            color: #008069;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f2f5;
+            width: 100%;
+        }
+        .option-btn:hover { background-color: #f5f5f5; }
+        .option-btn:first-child { border-top-left-radius: 7.5px; border-top-right-radius: 7.5px; }
+        .option-btn:last-child { border-bottom-left-radius: 7.5px; border-bottom-right-radius: 7.5px; border-bottom: none; }
+
+        /* --- ÁREA DE INPUT (Roda pé) --- */
+        #input-area {
+            padding: 10px;
+            background-color: #f0f2f5;
+            display: flex;
+            align-items: center;
             gap: 10px;
-            background: white;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         input[type="text"] {
             flex: 1;
-            padding: 15px;
-            font-size: 18px;
-            border: 2px solid #ddd;
-            border-radius: 30px;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
             outline: none;
+            background: white;
         }
 
         button.send-btn {
-            background-color: #008060;
+            background-color: #008069;
             color: white;
             border: none;
-            padding: 15px 25px;
-            font-size: 18px;
-            border-radius: 30px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
             cursor: pointer;
-        }
-
-        /* Botões das Cestas */
-        .options-container {
             display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            align-items: flex-start;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        .option-btn {
-            background-color: #fff;
-            border: 2px solid #008060;
-            color: #008060;
-            padding: 15px 20px;
-            font-size: 18px;
-            border-radius: 12px;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        /* --- PLAYER DE ÁUDIO ESTILO WHATSAPP --- */
+        .wa-audio-player {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 260px; /* Largura padrão */
+            padding: 5px 0;
         }
         
-        .option-btn:hover {
-            background-color: #f0fff4;
+        /* Ícone do perfil/fone no áudio */
+        .audio-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #ff9800; /* Laranja padrão para áudio ou foto */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            position: relative;
+        }
+        
+        .mic-icon-small {
+            position: absolute;
+            bottom: 0;
+            right: -2px;
+            font-size: 14px;
+            color: #667781;
         }
 
-        /* Modal / Slide de Fotos */
+        /* O player nativo disfarçado */
+        audio {
+            flex: 1;
+            height: 40px;
+            outline: none;
+        }
+        
+        /* Truque para deixar o player nativo mais limpo (Chrome/Webkit) */
+        audio::-webkit-media-controls-panel {
+            background-color: transparent; 
+        }
+        
+        /* Botão do WhatsApp final */
+        .whatsapp-btn {
+            background-color: #25D366;
+            color: white;
+            text-decoration: none;
+            padding: 14px;
+            border-radius: 25px;
+            text-align: center;
+            display: block;
+            margin-top: 5px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* --- MODAL FOTOS --- */
         #photo-modal {
             display: none;
             position: fixed;
@@ -187,94 +312,30 @@
             justify-content: center;
             align-items: center;
         }
+        #modal-img { max-width: 95%; max-height: 55vh; border-radius: 5px; }
+        .nav-buttons { display: flex; gap: 50px; width: 100%; justify-content: center; margin-top: 20px;}
+        .nav-btn { background: #008069; color: white; border: none; font-size: 30px; padding: 15px 30px; border-radius: 50px; cursor: pointer; }
+        .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 20px; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 30px; cursor: pointer; border: none; }
 
-        #modal-img {
-            max-width: 95%;
-            max-height: 55vh;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: 0 0 20px rgba(255,255,255,0.1);
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 50px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        .nav-btn {
-            background: #008060;
-            color: white;
-            border: none;
-            font-size: 35px;
-            padding: 15px 40px;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: white;
-            font-size: 20px;
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 30px;
-            cursor: pointer;
-            border: none;
-        }
-
-        /* Player de Audio - CORRIGIDO */
-        audio {
-            width: 100%;
-            height: 50px; /* Garante altura suficiente */
-            margin-top: 5px;
-            outline: none;
-            border-radius: 5px;
-        }
-        
-        .audio-label {
-            font-size: 14px; 
-            font-weight: bold; 
-            margin-bottom: 5px; 
-            display: block;
-        }
-
-        /* Botão do WhatsApp final */
-        .whatsapp-btn {
-            background-color: #25D366;
-            color: white;
-            text-decoration: none;
-            padding: 18px;
-            border-radius: 15px;
-            text-align: center;
-            display: block;
-            margin-top: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div id="phone-container">
         <header>
+            <span class="material-icons back-btn">arrow_back</span>
             <div class="logo-circle">
-                <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'">
+                <img src="img/logo.png" alt="Logo" onerror="this.src='https://via.placeholder.com/50'">
             </div>
             <div class="header-info">
                 <span class="company-name">Dona Antonia</span>
-                <span class="slogan">A melhor Cesta de Cuiabá e VG</span>
+                <span class="status">online</span>
+            </div>
+            <div class="header-icons">
+                <span class="material-icons">videocam</span>
+                <span class="material-icons">call</span>
+                <span class="material-icons">more_vert</span>
             </div>
         </header>
 
@@ -282,8 +343,11 @@
             </div>
 
         <div id="input-area">
-            <input type="text" id="user-input" placeholder="Digite seu nome...">
-            <button class="send-btn" onclick="processInput()">Enviar</button>
+            <span class="material-icons" style="color: #8696a0;">add</span>
+            <input type="text" id="user-input" placeholder="Mensagem">
+            <button class="send-btn" onclick="processInput()">
+                <span class="material-icons">send</span>
+            </button>
         </div>
     </div>
 
@@ -297,7 +361,7 @@
     </div>
 
     <script>
-        /* --- LÓGICA DO PROGRAMA --- */
+        /* --- LÓGICA DO PROGRAMA (Mesma de antes) --- */
         
         let userName = "";
         let currentBasket = "";
@@ -308,16 +372,25 @@
         const userInput = document.getElementById('user-input');
 
         window.onload = function() {
+            // Data e hora atual para o horário da mensagem
             addBotMessage("Olá, eu sou o Osvaldo da propaganda.");
             setTimeout(() => {
                 addBotMessage("Qual o seu nome?");
             }, 1000);
         };
 
+        function getCurrentTime() {
+            const now = new Date();
+            return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }
+
         function addBotMessage(htmlContent) {
             const div = document.createElement('div');
             div.className = 'message bot-msg';
-            div.innerHTML = htmlContent; 
+            
+            // Adiciona o HTML e o horário
+            div.innerHTML = `${htmlContent} <span class="msg-meta">${getCurrentTime()}</span>`;
+            
             chatContent.appendChild(div);
             scrollToBottom();
             return div; 
@@ -326,8 +399,11 @@
         function addUserMessage(text, isButton = false) {
             const div = document.createElement('div');
             div.className = 'message user-msg';
-            if(isButton) div.classList.add('ok-button');
-            div.textContent = text;
+            if(isButton) div.style.cursor = "pointer";
+            
+            // Texto + Horário + Check Azul
+            div.innerHTML = `${text} <span class="msg-meta">${getCurrentTime()} <span class="material-icons tick">done_all</span></span>`;
+            
             chatContent.appendChild(div);
             scrollToBottom();
             return div;
@@ -345,7 +421,8 @@
                 userName = text;
                 addUserMessage(userName);
                 userInput.value = "";
-                inputArea.style.display = 'none';
+                // Esconde o input para focar na conversa
+                document.getElementById('input-area').style.display = 'none';
                 
                 setTimeout(() => {
                     addBotMessage(`Legal, ${userName}, vou te mandar as nossas cestas para você conhecer.`);
@@ -374,17 +451,16 @@
                 container.appendChild(btn);
             });
 
+            // Cria um balão transparente/sem fundo para a lista
             const msgDiv = document.createElement('div');
-            msgDiv.className = 'message bot-msg';
-            msgDiv.style.width = '100%'; 
-            msgDiv.style.background = 'transparent';
-            msgDiv.style.padding = '0';
+            msgDiv.style.width = '70%'; 
+            msgDiv.style.marginLeft = '10px';
+            msgDiv.style.marginBottom = '10px';
             
             msgDiv.appendChild(container);
             chatContent.appendChild(msgDiv);
             scrollToBottom();
 
-            // Espera 30 segundos
             setTimeout(askForAudioPermission, 30000); 
         }
 
@@ -406,43 +482,35 @@
             }, 500);
         }
 
-      function startAudioSequence() {
-            // 1. Mostra "Gravando..."
-            const gravandoMsg = addBotMessage("Gravando áudio...");
+        function startAudioSequence() {
+            const gravandoMsg = addBotMessage("<i>gravando áudio...</i>");
             
-            // 2. Espera 5 segundos
             setTimeout(() => {
                 gravandoMsg.remove(); 
-                
-                // VOLTAMOS PARA O SEU ARQUIVO REAL
-                // Importante: O arquivo audio.mp3 deve estar na mesma pasta do index.html
-                sendAudioPlayer("audio.mp3", "audio1");
+                sendAudioPlayer("audio.mp3", "audio1"); // SEU ARQUIVO AQUI
 
-                // 3. Espera 10 segundos
                 setTimeout(() => {
-                    // Manda o segundo áudio
-                    sendAudioPlayer("audio2.mp3", "audio2");
+                    sendAudioPlayer("audio2.mp3", "audio2"); // SEU ARQUIVO AQUI
 
-                    // 4. Encerramento
                     setTimeout(() => {
                         finalizeChat();
                     }, 10000);
-
                 }, 10000); 
-
             }, 5000); 
         }
 
         function sendAudioPlayer(src, id) {
-            // Adicionei um texto "Mensagem de voz" para garantir que o balão apareça
-            // mesmo se o player der erro.
+            // AQUI ESTÁ A MÁGICA DO VISUAL WHATSAPP
+            // Criamos um layout com ícone de fone + player nativo
             const audioHtml = `
-                <div>
-                    <span class="audio-label">🔊 Mensagem de voz:</span>
-                    <audio id="${id}" controls autoplay style="width: 100%;">
+                <div class="wa-audio-player">
+                    <div class="audio-avatar">
+                        <span class="material-icons">headset</span>
+                        <span class="material-icons mic-icon-small">mic</span>
+                    </div>
+                    <audio id="${id}" controls controlsList="nodownload noplaybackrate">
                         <source src="${src}" type="audio/mpeg">
                         <source src="${src}" type="audio/mp4">
-                        Seu navegador não suporta áudio.
                     </audio>
                 </div>
             `;
@@ -450,17 +518,7 @@
             
             const player = document.getElementById(id);
             if(player) {
-                // Tenta dar play automático
-                player.play().catch(e => {
-                    console.log("Autoplay bloqueado. O usuário deve clicar no play.");
-                });
-                
-                // Se der erro ao carregar o arquivo (nome errado, pasta errada)
-                player.onerror = function() {
-                    console.log("Erro ao carregar áudio: " + src);
-                    // Avisa visualmente se deu erro
-                    // div.innerHTML += "<br><small style='color:red'>Erro: arquivo não encontrado</small>";
-                }
+                player.play().catch(e => { console.log("Aguardando play manual"); });
             }
         }
 
@@ -469,11 +527,10 @@
             
             const msgWpp = `Oi, eu sou o ${userName}, vou salvar seu contato. O Osvaldo me garantiu um sabão em pó omo a mais na minha próxima compra. Obrigado`;
             const encodedMsg = encodeURIComponent(msgWpp);
-            
-            // SEU NÚMERO AQUI
             const numeroWpp = "5565999999999"; 
 
             const wppBtn = `<a href="https://wa.me/${numeroWpp}?text=${encodedMsg}" class="whatsapp-btn" target="_blank">
+                <span class="material-icons" style="vertical-align: middle; margin-right:5px;">chat</span>
                 Falar no WhatsApp
             </a>`;
 
@@ -482,33 +539,21 @@
             }, 1000);
         }
 
-        // --- LÓGICA DO SLIDE DE FOTOS ---
+        // --- LÓGICA DO SLIDE (MANTIDA) ---
         function openModal(cestaId) {
             currentBasket = cestaId;
             currentPhotoIndex = 0;
             updateModalImage();
             document.getElementById('photo-modal').style.display = 'flex';
         }
-
-        function closeModal() {
-            document.getElementById('photo-modal').style.display = 'none';
-        }
-
+        function closeModal() { document.getElementById('photo-modal').style.display = 'none'; }
         function updateModalImage() {
             const imgElement = document.getElementById('modal-img');
             let suffix = currentPhotoIndex === 0 ? "" : "1";
             imgElement.src = `img/${currentBasket}${suffix}.webp`;
         }
-
-        function nextPhoto() {
-            currentPhotoIndex = currentPhotoIndex === 0 ? 1 : 0;
-            updateModalImage();
-        }
-
-        function prevPhoto() {
-            currentPhotoIndex = currentPhotoIndex === 0 ? 1 : 0;
-            updateModalImage();
-        }
+        function nextPhoto() { currentPhotoIndex = currentPhotoIndex === 0 ? 1 : 0; updateModalImage(); }
+        function prevPhoto() { currentPhotoIndex = currentPhotoIndex === 0 ? 1 : 0; updateModalImage(); }
 
     </script>
 </body>
