@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMAS | Master Data Bling (Revisão Final)</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --primary: #1e293b;
+            --accent: #2563eb;
+            --success: #16a34a;
+            --st-color: #7c3aed;
+            --border: #e2e8f0;
+            --text-dim: #64748b;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        body { font-family: var(--font); background: var(--bg); margin: 0; height: 100vh; display: flex; flex-direction: column; color: var(--primary); }
+
+        /* Header */
+        header {
+            background: var(--surface); height: 70px; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+        
+        h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin: 0; }
+        .badge { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+
+        /* Controles */
+        .controls { display: flex; gap: 12px; }
+        
+        .btn {
+            height: 40px; padding: 0 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+            border: 1px solid var(--border); background: white; color: var(--primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .btn:hover { background: #f1f5f9; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        
+        .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary:hover { background: #334155; }
+        
+        .btn-success { background: var(--success); color: white; border-color: var(--success); }
+        .btn-success:hover { background: #15803d; }
+        .btn-success:disabled { background: #cbd5e1; border-color: #cbd5e1; cursor: not-allowed; transform: none; }
+
+        .file-upload { position: relative; overflow: hidden; }
+        .file-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+        /* Tabela / Grid */
+        main { flex: 1; overflow: auto; padding: 20px; }
+        
+        .grid-header {
+            display: grid;
+            grid-template-columns: 40px 110px 2fr 60px 80px 80px 100px 100px 120px 40px;
+            gap: 12px; padding: 0 16px 12px 16px;
+            font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .row-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+            margin-bottom: 12px; transition: 0.2s; position: relative; overflow: hidden;
+        }
+        .row-card:hover { border-color: var(--accent); box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05); }
+        
+        .is-st { border-left: 4px solid var(--st-color); }
+
+        .row-main {
+            display: grid;
+            grid-template-columns: 40px 110px 2fr 60px 80px 80px 100px 100px 120px 40px;
+            gap: 12px; padding: 16px; align-items: center;
+        }
+
+        /* Inputs Modernos */
+        input, select {
+            width: 100%; border: 1px solid transparent; background: transparent;
+            padding: 6px 8px; border-radius: 6px; font-size: 0.9rem; color: inherit;
+            transition: 0.2s;
+        }
+        input:hover, select:hover { background: #f8fafc; border-color: #e2e8f0; }
+        input:focus, select:focus { background: white; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        
+        .input-factor { background: #ecfdf5; color: #047857; text-align: center; font-weight: 700; border: 1px solid #a7f3d0; }
+        .input-num { text-align: right; font-variant-numeric: tabular-nums; }
+        .readonly { color: var(--text-dim); pointer-events: none; }
+
+        /* Área de Detalhes Expandida */
+        .row-details {
+            display: none; padding: 20px; background: #f8fafc; border-top: 1px solid var(--border);
+        }
+        .row-details.open { display: block; animation: slideDown 0.2s ease-out; }
+        
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .details-section { margin-bottom: 20px; }
+        .details-title { font-size: 0.8rem; font-weight: 700; color: var(--primary); margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; text-transform: uppercase; }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        .field label { font-size: 0.7rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; }
+        .field input, .field select { background: white; border: 1px solid #cbd5e1; }
+
+        footer {
+            background: var(--surface); border-top: 1px solid var(--border); padding: 12px 24px;
+            font-size: 0.85rem; color: var(--text-dim); display: flex; gap: 24px;
+        }
+        strong { color: var(--primary); }
+
+        /* Toggle Button */
+        .toggle-btn {
+            width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border);
+            background: white; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-dim); transition: 0.2s;
+        }
+        .toggle-btn:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
+        .toggle-btn.active { transform: rotate(180deg); background: var(--accent); color: white; border-color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>SISTEMAS <span class="badge">Revisão V4.0</span></h1>
+    <div class="controls">
+        <div class="btn btn-primary file-upload">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            Carregar XML
+            <input type="file" id="xmlInput" accept=".xml">
+        </div>
+        <button class="btn btn-success" id="btnExport" onclick="App.exportExcel()" disabled>
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Baixar Excel Corrigido (.xlsx)
+        </button>
+    </div>
+</header>
+
+<div class="grid-header">
+    <div>#</div>
+    <div>Código</div>
+    <div>Descrição</div>
+    <div style="text-align:center">Und XML</div>
+    <div style="text-align:center">Fator</div>
+    <div style="text-align:center">Und Venda</div>
+    <div style="text-align:right">Custo Unit</div>
+    <div style="text-align:right">Estoque</div>
+    <div>Marca</div>
+    <div></div>
+</div>
+
+<main id="gridContainer">
+    <div style="text-align:center; padding: 60px; color: #94a3b8;">
+        <h3>Aguardando Arquivo NFe</h3>
+        <p>Arraste seu XML para processamento com as novas regras.</p>
+    </div>
+</main>
+
+<footer>
+    <span>Fornecedor: <strong id="lblFornecedor">-</strong></span>
+    <span>Nota: <strong id="lblNfe">-</strong></span>
+    <span>Itens: <strong id="lblTotal">0</strong></span>
+</footer>
+
+<script>
+const App = {
+    data: [],
+    meta: {},
+    
+    // Lista OFICIAL de 59 Colunas do Bling (Revisada)
+    headers: [
+        "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
+        "Observações", "Situação", "Estoque", "Preço de custo", "Cód no fornecedor", 
+        "Fornecedor", "Localização", "Estoque maximo", "Estoque minimo", "Peso líquido (Kg)", 
+        "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da embalagem", "Largura do Produto", 
+        "Altura do Produto", "Profundidade do produto", "Data Validade", 
+        "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", 
+        "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", 
+        "Código da lista de serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", 
+        "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", 
+        "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", 
+        "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do produto", 
+        "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de medida", 
+        "Preço de compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", 
+        "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"
+    ],
+
+    init() {
+        document.getElementById('xmlInput').addEventListener('change', (e) => this.processFile(e.target.files[0]));
+    },
+
+    processFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                this.parseXML(e.target.result);
+                this.render();
+                document.getElementById('btnExport').disabled = false;
+            } catch (err) {
+                alert("Erro XML: " + err.message);
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    },
+
+    // Função auxiliar para buscar tags profundas (corrige bug de tags escondidas)
+    getVal(parent, tag) {
+        const els = parent.getElementsByTagName(tag);
+        return els.length > 0 ? els[0].textContent : "";
+    },
+
+    parseXML(xmlString) {
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(xmlString, "text/xml");
+        
+        const emit = xml.getElementsByTagName('emit')[0];
+        const ide = xml.getElementsByTagName('ide')[0];
+        
+        this.meta = {
+            fornecedor: this.getVal(emit, 'xNome') || "Desconhecido",
+            nfe: this.getVal(ide, 'nNF') || ""
+        };
+
+        this.data = [];
+        const dets = xml.getElementsByTagName('det');
+        
+        for(let i=0; i<dets.length; i++) {
+            const det = dets[i];
+            const prod = det.getElementsByTagName('prod')[0];
+            const imposto = det.getElementsByTagName('imposto')[0];
+
+            // --- Cálculos Financeiros ---
+            const vProd = parseFloat(this.getVal(prod, 'vProd') || 0);
+            const qCom = parseFloat(this.getVal(prod, 'qCom') || 0);
+            
+            let vAcres = 0;
+            // Busca profunda por impostos e frete
+            const ipi = this.getVal(imposto, 'vIPI');
+            const st = this.getVal(imposto, 'vICMSST');
+            const frete = this.getVal(prod, 'vFrete');
+            const seg = this.getVal(prod, 'vSeg');
+            const desc = this.getVal(prod, 'vDesc');
+
+            if(ipi) vAcres += parseFloat(ipi);
+            if(st) vAcres += parseFloat(st);
+            if(frete) vAcres += parseFloat(frete);
+            if(seg) vAcres += parseFloat(seg);
+            if(desc) vAcres -= parseFloat(desc);
+
+            const custoTotal = vProd + vAcres;
+            const xProd = this.getVal(prod, 'xProd');
+            const marcaChute = xProd.split(' ')[0];
+
+            // --- Lógica ST Automática ---
+            let isST = false;
+            if (st && parseFloat(st) > 0) isST = true;
+            
+            // Busca CST/CSOSN em qualquer nível
+            const cst = this.getVal(imposto, 'CST');
+            const csosn = this.getVal(imposto, 'CSOSN');
+            
+            if (['10', '30', '60', '70'].some(c => cst.endsWith(c))) isST = true;
+            if (['201', '202', '203', '500', '900'].includes(csosn)) isST = true;
+
+            const grupo = isST ? "SUBSTITUTO TRIBUTARIO" : "NORMAL";
+
+            this.data.push({
+                _id: i,
+                // --- Mapeamento Inicial ---
+                codigo: this.getVal(prod, 'cProd'),
+                descricao: xProd,
+                unidadeXML: this.getVal(prod, 'uCom'),
+                // Regra: Se veio CX, sugere UN, senão mantém
+                unidadeVenda: this.getVal(prod, 'uCom') === 'CX' ? 'UN' : this.getVal(prod, 'uCom'),
+                fator: 1,
+                
+                qCom: qCom,
+                custoTotal: custoTotal,
+                
+                ncm: this.getVal(prod, 'NCM'),
+                origem: this.getVal(imposto, 'orig') || "0",
+                cest: this.getVal(prod, 'CEST'),
+                ean: this.getVal(prod, 'cEAN'),
+                marca: marcaChute,
+                
+                // --- Defaults para Revenda ---
+                situacao: "Ativo",
+                tipoProducao: "T",    // REVISADO: Terceiros
+                tipoItem: "Produto",  // REVISADO: Tipo do item
+                condicao: "Novo",     // REVISADO: Condição
+                freteGratis: "Não",   // REVISADO: Padrão Bling "Não"
+                
+                pesoL: this.getVal(det, 'pesoL') || "0",
+                pesoB: this.getVal(det, 'pesoB') || "0",
+                
+                estoqueMin: "0",
+                estoqueMax: "100",
+                localizacao: "",
+                largura: "", altura: "", profundidade: "",
+                validade: "", descCompl: "", obs: "", categoria: "",
+                
+                grupo: grupo
+            });
+        }
+        this.updateFooter();
+    },
+
+    render() {
+        const container = document.getElementById('gridContainer');
+        container.innerHTML = '';
+
+        this.data.forEach(item => {
+            const finalQty = item.qCom * item.fator;
+            const finalCost = item.custoTotal / finalQty;
+            const precoVenda = finalCost * 2;
+            const stClass = item.grupo === "SUBSTITUTO TRIBUTARIO" ? "is-st" : "";
+
+            const div = document.createElement('div');
+            div.className = `row-card ${stClass}`;
+            div.innerHTML = `
+                <div class="row-main">
+                    <div class="readonly">#${item._id + 1}</div>
+                    <div><input value="${item.codigo}" onchange="App.update(${item._id}, 'codigo', this.value)"></div>
+                    <div><input value="${item.descricao}" onchange="App.update(${item._id}, 'descricao', this.value)"></div>
+                    <div style="text-align:center"><span style="background:#f1f5f9; padding:4px; border-radius:4px; font-size:0.8rem">${item.unidadeXML}</span></div>
+                    
+                    <div><input type="number" class="input-factor" value="${item.fator}" oninput="App.updateFactor(${item._id}, this.value)"></div>
+                    
+                    <div><input value="${item.unidadeVenda}" style="text-align:center" onchange="App.update(${item._id}, 'unidadeVenda', this.value)"></div>
+                    
+                    <div><input id="cost-${item._id}" class="input-num readonly" value="${finalCost.toFixed(4)}" readonly></div>
+                    <div><input id="qty-${item._id}" class="input-num readonly" value="${finalQty}" readonly style="color:var(--accent); font-weight:700"></div>
+                    
+                    <div><input value="${item.marca}" onchange="App.update(${item._id}, 'marca', this.value)"></div>
+                    
+                    <div class="toggle-btn" onclick="this.closest('.row-card').querySelector('.row-details').classList.toggle('open'); this.classList.toggle('active')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+
+                <div class="row-details">
+                    <div class="details-section">
+                        <div class="details-title">Fiscal & Tributário</div>
+                        <div class="details-grid">
+                            <div class="field">
+                                <label style="color:var(--st-color)">Grupo Produtos</label>
+                                <select onchange="App.update(${item._id}, 'grupo', this.value)" style="font-weight:700; color:var(--st-color)">
+                                    <option value="NORMAL" ${item.grupo==='NORMAL'?'selected':''}>NORMAL</option>
+                                    <option value="SUBSTITUTO TRIBUTARIO" ${item.grupo==='SUBSTITUTO TRIBUTARIO'?'selected':''}>SUBSTITUTO TRIBUTARIO</option>
+                                </select>
+                            </div>
+                            <div class="field"><label>Tipo Produção</label>
+                                <select onchange="App.update(${item._id}, 'tipoProducao', this.value)">
+                                    <option value="T" ${item.tipoProducao==='T'?'selected':''}>Terceiros (Revenda)</option>
+                                    <option value="P" ${item.tipoProducao==='P'?'selected':''}>Própria (Indústria)</option>
+                                </select>
+                            </div>
+                             <div class="field"><label>Tipo do Item</label>
+                                <select onchange="App.update(${item._id}, 'tipoItem', this.value)">
+                                    <option value="Produto" ${item.tipoItem==='Produto'?'selected':''}>Produto</option>
+                                    <option value="Serviço" ${item.tipoItem==='Serviço'?'selected':''}>Serviço</option>
+                                </select>
+                            </div>
+                            <div class="field"><label>NCM</label><input value="${item.ncm}" onchange="App.update(${item._id}, 'ncm', this.value)"></div>
+                            <div class="field"><label>Origem</label><input value="${item.origem}" onchange="App.update(${item._id}, 'origem', this.value)"></div>
+                            <div class="field"><label>CEST</label><input value="${item.cest}" onchange="App.update(${item._id}, 'cest', this.value)"></div>
+                        </div>
+                    </div>
+
+                    <div class="details-section">
+                        <div class="details-title">Logística & Venda</div>
+                        <div class="details-grid">
+                            <div class="field"><label>EAN/GTIN</label><input value="${item.ean}" onchange="App.update(${item._id}, 'ean', this.value)"></div>
+                            <div class="field"><label>Preço Venda Sugerido</label><input value="${precoVenda.toFixed(2)}" onchange="App.update(${item._id}, 'precoVenda', this.value)"></div>
+                            <div class="field"><label>Estoque Mín</label><input value="${item.estoqueMin}" onchange="App.update(${item._id}, 'estoqueMin', this.value)"></div>
+                            <div class="field"><label>Estoque Máx</label><input value="${item.estoqueMax}" onchange="App.update(${item._id}, 'estoqueMax', this.value)"></div>
+                            <div class="field"><label>Localização</label><input value="${item.localizacao}" onchange="App.update(${item._id}, 'localizacao', this.value)"></div>
+                            <div class="field"><label>Frete Grátis</label><input value="${item.freteGratis}" onchange="App.update(${item._id}, 'freteGratis', this.value)"></div>
+                            <div class="field"><label>Condição</label><input value="${item.condicao}" onchange="App.update(${item._id}, 'condicao', this.value)"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    },
+
+    update(id, key, val) { this.data[id][key] = val; },
+
+    updateFactor(id, val) {
+        const factor = parseFloat(val) || 1;
+        this.data[id].fator = factor;
+        const item = this.data[id];
+        const finalQty = item.qCom * factor;
+        const finalCost = item.custoTotal / finalQty;
+        
+        const row = document.querySelectorAll('.row-card')[id];
+        row.querySelector(`#qty-${id}`).value = finalQty;
+        row.querySelector(`#cost-${id}`).value = finalCost.toFixed(4);
+    },
+
+    updateFooter() {
+        document.getElementById('lblFornecedor').innerText = this.meta.fornecedor;
+        document.getElementById('lblNfe').innerText = this.meta.nfe;
+        document.getElementById('lblTotal').innerText = this.data.length;
+    },
+
+    exportExcel() {
+        const rows = this.data.map(item => {
+            const finalQty = item.qCom * item.fator;
+            const finalCost = item.custoTotal / finalQty;
+            const precoVenda = item.precoVenda || (finalCost * 2);
+
+            // Array vazio com tamanho exato (59 campos)
+            const row = new Array(this.headers.length).fill("");
+
+            // --- MAPEAMENTO FINAL REVISADO ---
+            row[1] = item.codigo;
+            row[2] = item.descricao;
+            row[3] = item.unidadeVenda;
+            row[4] = item.ncm;
+            row[5] = item.origem;
+            row[6] = precoVenda;
+            // row[7] = IPI fixo (vazio)
+            row[8] = item.obs;
+            row[9] = item.situacao;
+            row[10] = finalQty;
+            row[11] = finalCost;
+            // row[12] = Cód fornecedor (vazio)
+            row[13] = this.meta.fornecedor;
+            row[14] = item.localizacao;
+            row[15] = item.estoqueMax;
+            row[16] = item.estoqueMin;
+            row[17] = item.pesoL;
+            row[18] = item.pesoB;
+            row[19] = item.ean === "SEM GTIN" ? "" : item.ean;
+            // ... (Dimensões 20-23)
+            row[21] = item.largura; row[22] = item.altura; row[23] = item.profundidade;
+            row[24] = item.validade;
+            // row[25] = Desc Fornecedor (vazio)
+            row[26] = item.descCompl;
+            row[27] = item.fator; // Itens p/ caixa
+            
+            // --- CAMPOS CRÍTICOS REVISADOS ---
+            row[29] = item.tipoProducao; // "T"
+            row[32] = item.tipoItem;     // "Produto" (NOVO)
+            row[37] = item.grupo;        // "NORMAL" ou "SUBSTITUTO TRIBUTARIO"
+            
+            row[38] = item.marca;
+            row[39] = item.cest;
+            
+            row[47] = item.condicao;     // "Novo"
+            row[48] = item.freteGratis;  // "Não"
+            
+            row[53] = finalCost;         // Preço Compra
+            row[58] = item.categoria;
+
+            return row;
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([this.headers, ...rows]);
+        XLSX.utils.book_append_sheet(wb, ws, "ImportacaoBling");
+        XLSX.writeFile(wb, `Importacao_Bling_${this.meta.nfe || 'NFe'}.xlsx`);
+    }
+};
+
+App.init();
+</script>
+</body>
+</html>
