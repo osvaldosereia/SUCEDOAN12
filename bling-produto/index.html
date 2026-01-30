@@ -3,440 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMAS | Bling Master Suite v5.0</title>
+    <title>SISTEMAS | Bling Master Suite v11.0 (Fluxo Completo)</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     
     <style>
         :root {
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --primary: #1e293b;
-            --accent: #2563eb;
-            --success: #16a34a;
-            --border: #e2e8f0;
-            --text-dim: #64748b;
+            --bg: #f8fafc; --surface: #ffffff; --primary: #0f172a; --accent: #2563eb; --success: #16a34a; --warning: #d97706; --danger: #dc2626; --border: #e2e8f0; --text-dim: #64748b;
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-
         * { box-sizing: border-box; outline: none; }
         body { font-family: var(--font); background: var(--bg); margin: 0; height: 100vh; display: flex; flex-direction: column; color: var(--primary); }
 
-        /* --- TABS DE NAVEGAÇÃO --- */
-        .tabs {
-            background: var(--surface);
-            display: flex;
-            padding: 0 24px;
-            border-bottom: 1px solid var(--border);
-            gap: 20px;
-        }
+        /* HEADER */
+        header { background: var(--surface); height: 64px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); z-index: 10; }
+        .brand { font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .tag { background: var(--warning); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; letter-spacing: 0.5px; }
 
-        .tab-btn {
-            padding: 16px 4px;
-            background: none;
-            border: none;
-            border-bottom: 3px solid transparent;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-dim);
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
+        /* TABS */
+        .tabs { background: var(--surface); display: flex; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 20px; z-index: 9; }
+        .tab-btn { padding: 16px 4px; background: none; border: none; border-bottom: 3px solid transparent; font-size: 0.9rem; font-weight: 600; color: var(--text-dim); cursor: pointer; transition: 0.2s; }
         .tab-btn:hover { color: var(--accent); }
         .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-        /* --- CONTEÚDO --- */
         .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
         .tab-content.active { display: flex; }
 
-        /* Header Interno */
-        header {
-            background: var(--surface); height: 60px; padding: 0 24px;
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border);
-        }
+        /* KIT LAYOUT */
+        .kit-layout { display: flex; height: 100%; }
+        .sidebar { width: 340px; background: white; border-right: 1px solid var(--border); padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; z-index: 5; }
+        .main-area { flex: 1; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; background: #f1f5f9; }
         
-        /* Inputs e Botões */
-        .btn {
-            height: 36px; padding: 0 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem;
-            cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
-            border: 1px solid var(--border); background: white; color: var(--primary);
-        }
-        .btn:hover { background: #f1f5f9; }
+        /* COMPONENTS */
+        .step-title { font-size: 0.8rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        
+        .btn { height: 40px; width: 100%; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white; color: var(--primary); transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; }
+        .btn:hover { background: #f8fafc; }
         .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
         .btn-primary:hover { background: #1d4ed8; }
         .btn-success { background: var(--success); color: white; border-color: var(--success); }
         .btn-success:hover { background: #15803d; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-warning { background: var(--warning); color: white; border-color: var(--warning); }
+        .btn-warning:hover { background: #b45309; }
 
-        .file-upload { position: relative; overflow: hidden; }
-        .file-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        input[type="text"], textarea { border: 1px solid var(--border); padding: 10px; border-radius: 6px; width: 100%; font-size: 0.9rem; transition: 0.2s; font-family: inherit; }
+        input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        textarea { resize: none; min-height: 150px; font-family: 'Monaco', monospace; }
 
-        input, textarea {
-            border: 1px solid var(--border); padding: 8px; border-radius: 6px;
-            font-size: 0.9rem; width: 100%; font-family: inherit;
-        }
-        input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+        /* PREVIEW TABLE */
+        .preview-list { background: white; border: 1px solid var(--border); border-radius: 8px; flex: 1; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .p-header { background: #f8fafc; padding: 12px 15px; font-weight: 700; font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; display: grid; grid-template-columns: 50px 2fr 1fr 100px; border-bottom: 1px solid var(--border); }
+        .p-row { padding: 10px 15px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 2fr 1fr 100px; align-items: center; font-size: 0.9rem; }
+        .p-row:hover { background: #f8fafc; }
 
-        /* --- TAB 1: XML (Estilos da versão anterior) --- */
-        .grid-header {
-            display: grid; grid-template-columns: 40px 110px 2fr 60px 80px 80px 100px 100px 120px 40px;
-            gap: 12px; padding: 10px 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;
-        }
-        .row-card {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-            margin-bottom: 8px; padding: 12px 16px;
-            display: grid; grid-template-columns: 40px 110px 2fr 60px 80px 80px 100px 100px 120px 40px;
-            gap: 12px; align-items: center;
-        }
-        .row-card.is-st { border-left: 4px solid #7c3aed; }
-        .row-details { display: none; padding: 15px; background: #f8fafc; border-top: 1px solid var(--border); grid-column: 1 / -1; margin-top: 10px; }
-        .row-details.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .sku-found { font-family: monospace; font-weight: 600; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #0f172a; }
+        .sku-missing { color: #dc2626; font-style: italic; background: #fef2f2; padding: 2px 6px; border-radius: 4px; }
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-align: center; }
+        .st-ok { background: #dcfce7; color: #166534; }
+        .st-err { background: #fee2e2; color: #991b1b; }
 
-        /* --- TAB 2: KITS (Novos Estilos) --- */
-        .kit-container { padding: 20px; display: flex; gap: 20px; height: 100%; }
-        .kit-input-area { flex: 1; display: flex; flex-direction: column; gap: 15px; max-width: 400px; }
-        .kit-preview-area { flex: 2; background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
-        
-        .kit-preview-header {
-            background: #f1f5f9; padding: 10px 15px; font-weight: 700; font-size: 0.8rem; color: var(--text-dim);
-            display: grid; grid-template-columns: 60px 1fr 100px; border-bottom: 1px solid var(--border);
-        }
-        .kit-item {
-            padding: 10px 15px; border-bottom: 1px solid var(--border);
-            display: grid; grid-template-columns: 60px 1fr 100px; align-items: center;
-        }
-        .qty-badge { background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 700; text-align: center; }
+        .file-wrapper { position: relative; overflow: hidden; }
+        .file-wrapper input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
-        /* Scroll Area */
-        main { flex: 1; overflow: auto; padding: 10px; }
+        /* XML STYLES */
+        .grid-header { display: grid; grid-template-columns: 40px 110px 2fr 60px 80px 80px 100px 100px 120px 40px; gap: 12px; padding: 10px 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; background: #f1f5f9; }
+        .row-card { background: white; border: 1px solid var(--border); margin-bottom: 5px; border-radius: 6px; }
+        .row-main { display: grid; grid-template-columns: 40px 110px 2fr 60px 80px 80px 100px 100px 120px 40px; gap: 12px; padding: 10px 20px; align-items: center; font-size: 0.85rem; }
+        .row-details { display: none; padding: 15px; background: #f8fafc; border-top: 1px solid var(--border); }
+        .row-details.open { display: block; }
     </style>
 </head>
 <body>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="Tabs.open('xml')">📄 Importar XML (NFe)</button>
-        <button class="tab-btn" onclick="Tabs.open('kit')">📦 Gerador de Kits (Composição)</button>
+        <button class="tab-btn active" onclick="Tabs.open('xml')">📄 Importar NFe</button>
+        <button class="tab-btn" onclick="Tabs.open('kit')">📦 Gerador de Kits</button>
     </div>
 
     <div id="tab-xml" class="tab-content active">
         <header>
-            <h1 style="font-size:1rem; font-weight:700">Importar NFe</h1>
+            <h1 style="font-size:1rem; font-weight:700">Importador XML > Bling</h1>
             <div style="display:flex; gap:10px">
-                <div class="btn btn-primary file-upload">
-                    Carregar XML
-                    <input type="file" id="xmlInput" accept=".xml">
-                </div>
-                <button class="btn btn-success" id="btnExport" onclick="App.exportExcel()" disabled>
-                    Baixar Excel Produtos
-                </button>
+                <div class="btn btn-primary file-wrapper" style="width:auto">Carregar XML<input type="file" id="xmlInput" accept=".xml"></div>
+                <button class="btn btn-success" id="btnExportXML" style="width:auto" onclick="AppXML.exportExcel()" disabled>Baixar Excel</button>
             </div>
         </header>
-
-        <div class="grid-header">
-            <div>#</div><div>Código</div><div>Descrição</div><div style="text-align:center">Und</div>
-            <div style="text-align:center">Fator</div><div style="text-align:center">Und Venda</div>
-            <div style="text-align:right">Custo</div><div style="text-align:right">Estoque</div>
-            <div>Marca</div><div></div>
-        </div>
-
-        <main id="gridContainer">
-            <div style="text-align:center; padding: 50px; color: #94a3b8;">
-                Arraste o XML para importar produtos.
-            </div>
-        </main>
+        <div class="grid-header"><div>#</div><div>Código</div><div>Descrição</div><div style="text-align:center">Und</div><div style="text-align:center">Fator</div><div style="text-align:center">Und Venda</div><div style="text-align:right">Custo</div><div style="text-align:right">Estoque</div><div>Marca</div><div></div></div>
+        <main id="gridContainer" style="padding:10px"><div style="text-align:center; padding: 50px; color: #94a3b8;">Arraste o XML para começar.</div></main>
     </div>
 
     <div id="tab-kit" class="tab-content">
-        <header>
-            <h1 style="font-size:1rem; font-weight:700">Criar Novo Kit</h1>
-            <button class="btn btn-success" onclick="Kit.export()">
-                Baixar Planilha de Composição
-            </button>
-        </header>
-
-        <main>
-            <div class="kit-container">
-                <div class="kit-input-area">
-                    <div style="background:white; padding:15px; border-radius:8px; border:1px solid var(--border)">
-                        <h3 style="margin:0 0 10px 0; font-size:0.9rem">Dados do Produto Pai (Kit)</h3>
-                        <div style="display:flex; flex-direction:column; gap:10px">
-                            <label style="font-size:0.8rem; font-weight:600">Código do Kit (SKU Pai)</label>
-                            <input type="text" id="kitCode" placeholder="Ex: KIT-CAFE-01">
-                            
-                            <label style="font-size:0.8rem; font-weight:600">Descrição do Kit (Nome Pai)</label>
-                            <input type="text" id="kitName" placeholder="Ex: Kit Café Caboclo Promocional">
-                        </div>
+        <div class="kit-layout">
+            <div class="sidebar">
+                <div>
+                    <div class="step-title">1. Base de Conhecimento</div>
+                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px; line-height:1.4">
+                        Carregue a lista de produtos (.csv) para eu aprender os códigos (SKUs).
+                    </p>
+                    <div class="btn btn-primary file-wrapper">
+                        📂 Carregar Base Bling
+                        <input type="file" id="dbInput" accept=".csv, .xlsx, .xls">
+                    </div>
+                    <div id="dbStatus" style="margin-top:10px; font-size:0.8rem; font-weight:700; color:#dc2626">🔴 Nenhuma base carregada</div>
+                </div>
+                <hr style="border:0; border-top:1px solid var(--border)">
+                
+                <div style="display:flex; flex-direction:column; gap:15px">
+                    <div class="step-title">3. Exportar (Na Ordem)</div>
+                    
+                    <div>
+                        <span style="font-size:0.7rem; font-weight:700; color:#d97706">PASSO A: CADASTRAR O PAI</span>
+                        <button class="btn btn-warning" onclick="Kit.exportParent()">⬇️ 1. Baixar Cadastro do Kit</button>
+                        <p style="font-size:0.7rem; color:#64748b; margin-top:5px">Cria o Produto Novo (Pai).</p>
                     </div>
 
-                    <div style="background:white; padding:15px; border-radius:8px; border:1px solid var(--border); flex:1; display:flex; flex-direction:column">
-                        <h3 style="margin:0 0 10px 0; font-size:0.9rem">Lista de Componentes</h3>
-                        <p style="font-size:0.75rem; color:#64748b; margin-bottom:5px">
-                            Cole a lista no formato: <strong>1x NOME DO PRODUTO</strong>
-                        </p>
-                        <textarea id="kitList" style="flex:1; resize:none; font-family:monospace" 
-                                  placeholder="1x CAFE CABOCLO 500G&#10;2x ACUCAR UNIAO 1KG&#10;..."
-                                  oninput="Kit.parse()"></textarea>
+                    <div>
+                        <span style="font-size:0.7rem; font-weight:700; color:#16a34a">PASSO B: VINCULAR FILHOS</span>
+                        <button class="btn btn-success" onclick="Kit.exportComposition()">⬇️ 2. Baixar Composição</button>
+                        <p style="font-size:0.7rem; color:#64748b; margin-top:5px">Vincula os filhos ao Pai.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-area">
+                <div style="display:flex; gap:20px; background:white; padding:20px; border-radius:8px; border:1px solid var(--border)">
+                    <div style="width:250px">
+                        <label style="font-size:0.75rem; font-weight:700">2. Dados do Novo Kit</label>
+                        <input type="text" id="kitCode" placeholder="Código (Ex: KT-NATAL)">
+                    </div>
+                    <div style="flex:1">
+                        <label style="font-size:0.75rem; font-weight:700">Nome do Novo Kit</label>
+                        <input type="text" id="kitName" placeholder="Nome (Ex: Cesta de Natal)">
                     </div>
                 </div>
 
-                <div class="kit-preview-area">
-                    <div class="kit-preview-header">
-                        <div style="text-align:center">Qtd</div>
-                        <div>Componente (Descrição)</div>
-                        <div style="text-align:center">Status</div>
+                <div style="display:flex; flex:1; gap:20px; min-height:0;">
+                    <div style="display:flex; flex-direction:column; gap:10px; width:35%;">
+                        <label style="font-size:0.75rem; font-weight:700; color:#64748b">Lista de Componentes (1x NOME)</label>
+                        <textarea id="kitList" placeholder="1x PRODUTO A&#10;2x PRODUTO B" oninput="Kit.parse()"></textarea>
                     </div>
-                    <div id="kitPreviewList" style="overflow:auto; flex:1">
-                        <div style="padding:20px; text-align:center; color:#94a3b8">
-                            A prévia dos itens aparecerá aqui...
+                    
+                    <div class="preview-list">
+                        <div class="p-header">
+                            <div style="text-align:center">Qtd</div>
+                            <div>Nome (Colado)</div>
+                            <div>SKU (Encontrado)</div>
+                            <div style="text-align:center">Status</div>
+                        </div>
+                        <div id="kitPreviewList" style="flex:1; overflow-y:auto">
+                            <div style="padding:40px; text-align:center; color:#94a3b8">Aguardando lista...</div>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 
 <script>
-/**
- * SISTEMAS - Controle de Abas
- */
-const Tabs = {
-    open(tabId) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(`tab-${tabId}`).classList.add('active');
-        event.target.classList.add('active');
-    }
-};
+const Tabs = { open(id) { document.querySelectorAll('.tab-content, .tab-btn').forEach(e => e.classList.remove('active')); document.getElementById('tab-'+id).classList.add('active'); event.target.classList.add('active'); }};
 
-/**
- * SISTEMAS - Módulo de Kits (NOVO)
- */
-const Kit = {
-    items: [],
-
-    parse() {
-        const text = document.getElementById('kitList').value;
-        const lines = text.split('\n');
-        this.items = [];
-
-        lines.forEach(line => {
-            line = line.trim();
-            if(!line) return;
-
-            // Regex: Pega número seguido de x (ex: 10x) e o resto é o nome
-            const match = line.match(/^(\d+)[xX]\s+(.+)/);
-            
-            if(match) {
-                this.items.push({
-                    qty: parseInt(match[1]),
-                    name: match[2].trim()
-                });
-            }
-        });
-
-        this.render();
-    },
-
-    render() {
-        const container = document.getElementById('kitPreviewList');
-        container.innerHTML = '';
-
-        if(this.items.length === 0) {
-            container.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8">Lista vazia ou formato incorreto.</div>';
-            return;
-        }
-
-        this.items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'kit-item';
-            div.innerHTML = `
-                <div style="text-align:center"><span class="qty-badge">${item.qty}</span></div>
-                <div>${item.name}</div>
-                <div style="text-align:center; font-size:0.75rem; color:#16a34a">OK</div>
-            `;
-            container.appendChild(div);
-        });
-    },
-
-    export() {
-        const parentCode = document.getElementById('kitCode').value.trim();
-        const parentName = document.getElementById('kitName').value.trim();
-
-        if(!parentCode || !parentName || this.items.length === 0) {
-            alert("Preencha o Código, Nome do Kit e a Lista de Itens.");
-            return;
-        }
-
-        // Cabeçalhos EXATOS do modelo fornecido (9 colunas)
-        const headers = [
-            'ID da composição', 
-            'Descrição da composição', 
-            'Código da composição', 
-            'ID do componente', 
-            'Descrição do componente', 
-            'Código componente', 
-            'Quantidade do Componente', 
-            'Custo unitário', 
-            'Operação'
-        ];
-
-        const rows = this.items.map(item => {
-            return [
-                "",              // ID Comp (Vazio para novo)
-                parentName,      // Descrição Pai
-                parentCode,      // Código Pai
-                "",              // ID Comp (Vazio)
-                item.name,       // Descrição Componente (Nome Exato)
-                "",              // Código Componente (Vazio - Bling tenta vincular pelo nome ou cria)
-                item.qty,        // Quantidade
-                "0",             // Custo (Vazio para teste)
-                "A"              // Operação (A = Alterar/Adicionar)
-            ];
-        });
-
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-        XLSX.utils.book_append_sheet(wb, ws, "Composicao");
-        XLSX.writeFile(wb, `Kit_${parentCode}.xlsx`);
-    }
-};
-
-/**
- * SISTEMAS - Módulo NFe (Existente - Revisado V4)
- */
-const App = {
-    data: [],
-    meta: {},
-    headers: [
-        "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
-        "Observações", "Situação", "Estoque", "Preço de custo", "Cód no fornecedor", 
-        "Fornecedor", "Localização", "Estoque maximo", "Estoque minimo", "Peso líquido (Kg)", 
-        "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da embalagem", "Largura do Produto", 
-        "Altura do Produto", "Profundidade do produto", "Data Validade", 
-        "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", 
-        "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", 
-        "Código da lista de serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", 
-        "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", 
-        "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", 
-        "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do produto", 
-        "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de medida", 
-        "Preço de compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", 
-        "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"
-    ],
-
-    init() {
-        document.getElementById('xmlInput').addEventListener('change', (e) => this.processFile(e.target.files[0]));
-    },
-
-    processFile(file) {
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try { this.parseXML(e.target.result); this.render(); document.getElementById('btnExport').disabled = false; } 
-            catch (err) { alert("Erro XML: " + err.message); }
-        };
-        reader.readAsText(file);
-    },
-
-    getVal(parent, tag) {
-        const els = parent.getElementsByTagName(tag);
-        return els.length > 0 ? els[0].textContent : "";
-    },
-
-    parseXML(xmlString) {
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(xmlString, "text/xml");
-        const emit = xml.getElementsByTagName('emit')[0];
-        const ide = xml.getElementsByTagName('ide')[0];
+// --- MÓDULO XML ---
+const AppXML = {
+    data: [], meta: {}, headers: ["ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód no fornecedor", "Fornecedor", "Localização", "Estoque maximo", "Estoque minimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da embalagem", "Largura do Produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código da lista de serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de medida", "Preço de compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"],
+    init() { document.getElementById('xmlInput').addEventListener('change', (e) => this.process(e.target.files[0])); },
+    getVal(p, t) { const e = p.getElementsByTagName(t); return e.length ? e[0].textContent : ""; },
+    process(f) { if(!f) return; const r = new FileReader(); r.onload = (e) => { try { this.parse(e.target.result); this.render(); document.getElementById('btnExportXML').disabled = false; } catch(x) { alert("Erro XML: " + x.message); } }; r.readAsText(f); },
+    parse(x) {
+        const xml = new DOMParser().parseFromString(x, "text/xml");
+        const emit = xml.getElementsByTagName('emit')[0]; const ide = xml.getElementsByTagName('ide')[0];
         this.meta = { fornecedor: this.getVal(emit, 'xNome'), nfe: this.getVal(ide, 'nNF') };
         this.data = [];
         const dets = xml.getElementsByTagName('det');
-        
         for(let i=0; i<dets.length; i++) {
-            const prod = dets[i].getElementsByTagName('prod')[0];
-            const imposto = dets[i].getElementsByTagName('imposto')[0];
-            const vProd = parseFloat(this.getVal(prod, 'vProd') || 0);
-            const qCom = parseFloat(this.getVal(prod, 'qCom') || 0);
-            
+            const prod = dets[i].getElementsByTagName('prod')[0]; const imp = dets[i].getElementsByTagName('imposto')[0];
+            const vProd = parseFloat(this.getVal(prod, 'vProd')||0), qCom = parseFloat(this.getVal(prod, 'qCom')||0);
             let vAcres = 0;
-            if(this.getVal(imposto, 'vIPI')) vAcres += parseFloat(this.getVal(imposto, 'vIPI'));
-            if(this.getVal(imposto, 'vICMSST')) vAcres += parseFloat(this.getVal(imposto, 'vICMSST'));
+            ['vIPI','vICMSST'].forEach(t => { const v = this.getVal(imp, t); if(v) vAcres += parseFloat(v); });
             if(this.getVal(prod, 'vFrete')) vAcres += parseFloat(this.getVal(prod, 'vFrete'));
-
             let isST = false;
-            if (this.getVal(imposto, 'vICMSST') > 0) isST = true;
-            const csosn = this.getVal(imposto, 'CSOSN');
-            if (['201','202','203','500'].includes(csosn)) isST = true;
-
+            if(parseFloat(this.getVal(imp, 'vICMSST')) > 0) isST = true;
+            if(['201','202','203','500'].includes(this.getVal(imp, 'CSOSN'))) isST = true;
             this.data.push({
-                _id: i,
-                codigo: this.getVal(prod, 'cProd'),
-                descricao: this.getVal(prod, 'xProd'),
-                unidade: this.getVal(prod, 'uCom') === 'CX' ? 'UN' : this.getVal(prod, 'uCom'),
-                orig: this.getVal(imposto, 'orig') || "0",
-                ncm: this.getVal(prod, 'NCM'),
-                cest: this.getVal(prod, 'CEST'),
-                qCom: qCom,
-                custoTotal: vProd + vAcres,
-                fator: 1,
-                grupo: isST ? "SUBSTITUTO TRIBUTARIO" : "NORMAL",
-                marca: this.getVal(prod, 'xProd').split(' ')[0]
+                _id: i, codigo: this.getVal(prod, 'cProd'), descricao: this.getVal(prod, 'xProd'),
+                unidade: this.getVal(prod, 'uCom')==='CX'?'UN':this.getVal(prod, 'uCom'),
+                fator: 1, qCom: qCom, custoTotal: vProd+vAcres,
+                ncm: this.getVal(prod, 'NCM'), origem: this.getVal(imp, 'orig')||"0", cest: this.getVal(prod, 'CEST'),
+                grupo: isST ? "SUBSTITUTO TRIBUTARIO" : "NORMAL", marca: this.getVal(prod, 'xProd').split(' ')[0], tipoProducao: "T"
             });
         }
     },
-
     render() {
-        const container = document.getElementById('gridContainer');
-        container.innerHTML = '';
-        this.data.forEach(item => {
-            const finalQty = item.qCom * item.fator;
-            const finalCost = item.custoTotal / finalQty;
-            const div = document.createElement('div');
-            div.className = `row-card ${item.grupo === 'SUBSTITUTO TRIBUTARIO' ? 'is-st' : ''}`;
-            div.innerHTML = `
-                <div>${item._id+1}</div>
-                <div><input value="${item.codigo}" onchange="App.up(${item._id}, 'codigo', this.value)"></div>
-                <div><input value="${item.descricao}" onchange="App.up(${item._id}, 'descricao', this.value)"></div>
-                <div style="text-align:center">${item.unidade}</div>
-                <div><input class="input-factor" value="${item.fator}" oninput="App.upFactor(${item._id}, this.value)"></div>
-                <div><input value="${item.unidade}" style="text-align:center"></div>
-                <div style="text-align:right"><input id="c-${item._id}" value="${finalCost.toFixed(4)}" readonly></div>
-                <div style="text-align:right"><input id="q-${item._id}" value="${finalQty}" readonly></div>
-                <div><input value="${item.marca}"></div>
-            `;
-            container.appendChild(div);
+        const c = document.getElementById('gridContainer'); c.innerHTML = '';
+        this.data.forEach(i => {
+            const fQty = i.qCom * i.fator, fCost = i.custoTotal / fQty;
+            const el = document.createElement('div');
+            el.className = `row-card ${i.grupo==='SUBSTITUTO TRIBUTARIO'?'is-st':''}`;
+            el.innerHTML = `<div class="row-main"><div>${i._id+1}</div><div><input value="${i.codigo}" onchange="AppXML.up(${i._id},'codigo',this.value)"></div><div><input value="${i.descricao}" onchange="AppXML.up(${i._id},'descricao',this.value)"></div><div style="text-align:center">${i.unidade}</div><div><input value="${i.fator}" oninput="AppXML.upFactor(${i._id},this.value)" style="text-align:center;font-weight:bold;color:#059669;background:#ecfdf5"></div><div style="text-align:center">${i.unidade}</div><div style="text-align:right"><input id="c-${i._id}" value="${fCost.toFixed(4)}" readonly style="text-align:right"></div><div style="text-align:right"><input id="q-${i._id}" value="${fQty}" readonly style="text-align:right;font-weight:bold;color:#2563eb"></div><div><input value="${i.marca}"></div><div class="toggle-btn" onclick="this.closest('.row-card').querySelector('.row-details').classList.toggle('open')">▼</div></div><div class="row-details"><div class="details-grid"><div class="field"><label>Grupo</label><select onchange="AppXML.up(${i._id},'grupo',this.value)"><option value="NORMAL" ${i.grupo==='NORMAL'?'selected':''}>NORMAL</option><option value="SUBSTITUTO TRIBUTARIO" ${i.grupo.includes('SUB')?'selected':''}>SUBSTITUTO TRIBUTARIO</option></select></div><div class="field"><label>NCM</label><input value="${i.ncm}" onchange="AppXML.up(${i._id},'ncm',this.value)"></div><div class="field"><label>Origem</label><input value="${i.origem}" onchange="AppXML.up(${i._id},'origem',this.value)"></div><div class="field"><label>CEST</label><input value="${i.cest}" onchange="AppXML.up(${i._id},'cest',this.value)"></div><div class="field"><label>Tipo Prod</label><input value="${i.tipoProducao}" onchange="AppXML.up(${i._id},'tipoProducao',this.value)"></div></div></div>`;
+            c.appendChild(el);
         });
     },
-
     up(id, k, v) { this.data[id][k] = v; },
-    upFactor(id, v) { 
-        this.data[id].fator = v; 
-        const i = this.data[id];
-        document.getElementById(`q-${id}`).value = i.qCom * v;
-        document.getElementById(`c-${id}`).value = (i.custoTotal / (i.qCom * v)).toFixed(4);
-    },
-
+    upFactor(id, v) { this.data[id].fator = v; const i=this.data[id], fq=i.qCom*v; document.getElementById(`q-${id}`).value=fq; document.getElementById(`c-${id}`).value=(i.custoTotal/fq).toFixed(4); },
     exportExcel() {
         const rows = this.data.map(i => {
-            const finalQty = i.qCom * i.fator;
-            const finalCost = i.custoTotal / finalQty;
-            const r = new Array(59).fill("");
-            r[1]=i.codigo; r[2]=i.descricao; r[3]=i.unidade; r[4]=i.ncm; r[5]=i.orig; r[6]=finalCost*2;
-            r[9]="Ativo"; r[10]=finalQty; r[11]=finalCost; r[13]=this.meta.fornecedor; 
-            r[27]=i.fator; r[29]="T"; r[32]="Produto"; r[37]=i.grupo; r[38]=i.marca; r[39]=i.cest; 
-            r[47]="Novo"; r[48]="Não"; r[53]=finalCost;
+            const fQty = i.qCom * i.fator, fCost = i.custoTotal / fQty;
+            const r = new Array(this.headers.length).fill("");
+            r[1]=i.codigo; r[2]=i.descricao; r[3]=i.unidade; r[4]=i.ncm; r[5]=i.origem; r[6]=fCost*2; r[9]="Ativo"; r[10]=fQty; r[11]=fCost; r[13]=this.meta.fornecedor; r[27]=i.fator; r[29]=i.tipoProducao; r[32]="Produto"; r[37]=i.grupo; r[38]=i.marca; r[39]=i.cest; r[47]="Novo"; r[48]="Não"; r[53]=fCost;
             return r;
         });
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([this.headers, ...rows]);
+        const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet([this.headers, ...rows]);
         XLSX.utils.book_append_sheet(wb, ws, "Produtos");
         XLSX.writeFile(wb, `Importacao_${this.meta.nfe}.xlsx`);
     }
 };
+AppXML.init();
 
-App.init();
+// --- MÓDULO KITS (Atualizado) ---
+const Kit = {
+    db: {}, items: [],
+    init() { document.getElementById('dbInput').addEventListener('change', (e) => this.loadDB(e.target.files[0])); },
+    loadDB(f) {
+        if(!f) return; const r = new FileReader();
+        r.onload = (e) => {
+            const d=e.target.result, wb=XLSX.read(d,{type:'binary'}), ws=wb.Sheets[wb.SheetNames[0]];
+            const j=XLSX.utils.sheet_to_json(ws); let c=0; this.db={};
+            j.forEach(r => {
+                const n = r['Descrição']||r['Nome']||r['descricao'], k = r['Código']||r['Codigo']||r['SKU']||r['codigo'];
+                if(n&&k) { this.db[n.trim().toUpperCase().replace(/\s+/g,' ')]=k.toString().trim(); c++; }
+            });
+            const s=document.getElementById('dbStatus'); s.style.color="#166534"; s.innerText=`✅ ${c} SKUs aprendidos!`;
+            this.parse();
+        }; r.readAsBinaryString(f);
+    },
+    parse() {
+        const t = document.getElementById('kitList').value; this.items=[];
+        t.split('\n').forEach(l => {
+            const m = l.trim().match(/^(\d+)[xX]\s+(.+)/);
+            if(m) {
+                const n = m[2].trim(), sku = this.db[n.toUpperCase().replace(/\s+/g,' ')]||"";
+                this.items.push({ qty: m[1], name: n, sku: sku });
+            }
+        });
+        this.render();
+    },
+    render() {
+        const c = document.getElementById('kitPreviewList'); c.innerHTML='';
+        if(!this.items.length) { c.innerHTML='<div style="padding:40px;text-align:center;color:#94a3b8">Aguardando lista...</div>'; return; }
+        this.items.forEach(i => {
+            const f = i.sku!=="";
+            const d = document.createElement('div'); d.className='p-row';
+            d.innerHTML = `<div style="text-align:center;font-weight:700">${i.qty}</div><div>${i.name}</div><div>${f ? `<span class="sku-found">${i.sku}</span>` : `<span class="sku-missing">Não achei (Erro ID)</span>`}</div><div style="text-align:center"><span class="status-badge ${f?'st-ok':'st-err'}">${f?'OK':'ERRO'}</span></div>`;
+            c.appendChild(d);
+        });
+    },
+    
+    // BOTÃO 1: Exportar Cadastro do PAI (Criação)
+    exportParent() {
+        const pc = document.getElementById('kitCode').value.trim(), pn = document.getElementById('kitName').value.trim();
+        if(!pc || !pn) return alert("Preencha Código e Nome do Kit.");
+
+        // Cria estrutura de importação de PRODUTO (59 colunas) para o Pai
+        const row = new Array(59).fill("");
+        row[1] = pc; // Código
+        row[2] = pn; // Descrição
+        row[3] = "UN"; // Unidade
+        row[9] = "Ativo"; // Situação
+        row[29] = "T"; // Tipo Produção
+        row[32] = "Produto"; // Tipo Item
+        row[47] = "Novo"; // Condição
+        row[6] = 0; // Preço Venda
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([AppXML.headers, row]);
+        XLSX.utils.book_append_sheet(wb, ws, "Produtos");
+        XLSX.writeFile(wb, `1_Cadastro_Kit_${pc}.xlsx`);
+    },
+
+    // BOTÃO 2: Exportar Vínculo (Composição)
+    exportComposition() {
+        const pc = document.getElementById('kitCode').value.trim(), pn = document.getElementById('kitName').value.trim();
+        if(!pc || !pn || !this.items.length) return alert("Preencha Código, Nome e Itens.");
+        const missing = this.items.filter(i => !i.sku);
+        if(missing.length > 0) return alert(`ERRO CRÍTICO: ${missing.length} itens sem SKU. Corrija antes de baixar.`);
+
+        const rows = this.items.map(i => [0, pn, pc, 0, i.name, i.sku, i.qty, 0, "A"]);
+        const h = ['ID da composição','Descrição da composição','Código da composição','ID do componente','Descrição do componente','Código componente','Quantidade do Componente','Custo unitário','Operação'];
+        const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet([h, ...rows]);
+        XLSX.utils.book_append_sheet(wb, ws, "Composicao");
+        XLSX.writeFile(wb, `2_Composicao_Kit_${pc}.xlsx`);
+    }
+};
+Kit.init();
 </script>
 </body>
 </html>
