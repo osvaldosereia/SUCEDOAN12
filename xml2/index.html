@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitor de XML para CSV</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .header-info { display: flex; gap: 20px; background: #e8f4fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .header-info div { flex: 1; }
+        .table-container { overflow-x: auto; margin-top: 20px; border: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; min-width: 120px; }
+        th { background: #f8f9fa; position: sticky; top: 0; }
+        tr:hover { background: #f1f1f1; }
+        input[type="text"] { width: 100%; border: none; background: transparent; outline: none; }
+        .btn-container { margin-top: 20px; display: flex; gap: 10px; }
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-upload { background: #3498db; color: white; }
+        .btn-export { background: #27ae60; color: white; }
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Conversor XML NFe para CSV de Produtos</h2>
+    
+    <div class="btn-container">
+        <label class="btn-upload" for="xmlInput">1. Carregar XML</label>
+        <input type="file" id="xmlInput" accept=".xml">
+        <button class="btn-export" onclick="exportarCSV()">2. Exportar CSV</button>
+    </div>
+
+    <div id="fornecedorArea" class="header-info" style="display:none;">
+        <div><strong>Fornecedor:</strong> <span id="fornNome"></span></div>
+        <div><strong>CNPJ:</strong> <span id="fornCNPJ"></span></div>
+    </div>
+
+    <div class="table-container">
+        <table id="tabelaProdutos">
+            <thead>
+                <tr id="headerRow"></tr>
+            </thead>
+            <tbody id="corpoTabela">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Lista de colunas baseada no seu produtos.csv
+    const colunasModelo = [
+        'ID', 'Código', 'Descrição', 'Unidade', 'NCM', 'Origem', 'Preço', 'Valor IPI fixo', 
+        'Observações', 'Situação', 'Estoque', 'Preço de custo', 'Cód no fornecedor', 
+        'Fornecedor', 'Localização', 'Estoque maximo', 'Estoque minimo', 'Peso líquido (Kg)', 
+        'Peso bruto (Kg)', 'GTIN/EAN', 'GTIN/EAN da embalagem', 'Largura do Produto', 
+        'Altura do Produto', 'Profundidade do produto', 'Data Validade', 
+        'Descrição do Produto no Fornecedor', 'Descrição Complementar', 'Itens p/ caixa', 
+        'Produto Variação', 'Tipo Produção', 'Classe de enquadramento do IPI', 
+        'Código da lista de serviços', 'Tipo do item', 'Grupo de Tags/Tags', 'Tributos', 
+        'Código Pai', 'Código Integração', 'Grupo de produtos', 'Marca', 'CEST', 'Volumes', 
+        'Descrição Curta', 'Cross-Docking', 'URL Imagens Externas', 'Link Externo', 
+        'Meses Garantia no Fornecedor', 'Clonar dados do pai', 'Condição do produto', 
+        'Frete Grátis', 'Número FCI', 'Vídeo', 'Departamento', 'Unidade de medida', 
+        'Preço de compra', 'Valor base ICMS ST para retenção', 'Valor ICMS ST para retenção', 
+        'Valor ICMS próprio do substituto', 'Categoria do produto', 'Informações Adicionais'
+    ];
+
+    // Criar o cabeçalho da tabela dinamicamente
+    const headerRow = document.getElementById('headerRow');
+    colunasModelo.forEach(col => {
+        let th = document.createElement('th');
+        th.innerText = col;
+        headerRow.appendChild(th);
+    });
+
+    document.getElementById('xmlInput').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(reader.result, "text/xml");
+            processarXML(xmlDoc);
+        };
+        reader.readAsText(e.target.files[0]);
+    });
+
+    function processarXML(xml) {
+        const corpoTabela = document.getElementById('corpoTabela');
+        corpoTabela.innerHTML = "";
+        
+        // Dados Fornecedor
+        const emit = xml.getElementsByTagName('emit')[0];
+        const nomeForn = emit ? emit.getElementsByTagName('xNome')[0].textContent : "";
+        const cnpjForn = emit ? emit.getElementsByTagName('CNPJ')[0].textContent : "";
+        
+        document.getElementById('fornNome').innerText = nomeForn;
+        document.getElementById('fornCNPJ').innerText = cnpjForn;
+        document.getElementById('fornecedorArea').style.display = "flex";
+
+        // Produtos
+        const itens = xml.getElementsByTagName('det');
+        for (let i = 0; i < itens.length; i++) {
+            const prod = itens[i].getElementsByTagName('prod')[0];
+            const row = corpoTabela.insertRow();
+            
+            colunasModelo.forEach(col => {
+                const cell = row.insertCell();
+                let valor = "";
+
+                // Mapeamento automático inteligente
+                if(col === 'Código') valor = prod.getElementsByTagName('cProd')[0].textContent;
+                if(col === 'Descrição') valor = prod.getElementsByTagName('xProd')[0].textContent;
+                if(col === 'Unidade') valor = prod.getElementsByTagName('uCom')[0].textContent;
+                if(col === 'NCM') valor = prod.getElementsByTagName('NCM')[0].textContent;
+                if(col === 'Preço de custo' || col === 'Preço de compra') valor = prod.getElementsByTagName('vUnCom')[0].textContent;
+                if(col === 'GTIN/EAN') valor = prod.getElementsByTagName('cEAN')[0].textContent;
+                if(col === 'Fornecedor') valor = nomeForn;
+                if(col === 'Situação') valor = "Ativo";
+
+                cell.innerHTML = `<input type="text" value="${valor}">`;
+            });
+        }
+    }
+
+    function exportarCSV() {
+        let csvContent = colunasModelo.join(",") + "\n";
+        const rows = document.querySelectorAll("#corpoTabela tr");
+
+        rows.forEach(row => {
+            const rowData = [];
+            const inputs = row.querySelectorAll("input");
+            inputs.forEach(input => {
+                // Remove vírgulas para não quebrar o CSV
+                let val = input.value.replace(/,/g, ".");
+                rowData.push(val);
+            });
+            csvContent += rowData.join(",") + "\n";
+        });
+
+        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "produtos_exportados.csv";
+        link.click();
+    }
+</script>
+
+</body>
+</html>
