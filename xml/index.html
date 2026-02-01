@@ -3,1375 +3,331 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Leitor XML de NFe com Lista Expandida e Função de Unificação.">
-    <title>NFe Parser Pro | v6.16 Smart Detect</title>
-
+    <title>Gerador de Kits Bling (Web)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
     <style>
-        /* * SISTEMAS - CSS CORE 
-         * Performance: Alta (Sem frameworks)
-         * Design: Minimalista & Mobile-First
-         */
-
-        :root {
-            /* Paleta de Cores Otimizada */
-            --primary: #2563eb;       /* Royal Blue */
-            --primary-dark: #1d4ed8;
-            --primary-light: #eff6ff;
-            --text: #1e293b;          /* Slate 800 */
-            --text-light: #64748b;    /* Slate 500 */
-            --bg: #f8fafc;            /* Slate 50 */
-            --surface: #ffffff;
-            --border: #e2e8f0;        /* Slate 200 */
-            --danger: #dc2626;        /* Red 600 */
-            --danger-bg: #fef2f2;
-            --success: #16a34a;       /* Green 600 */
-            --success-bg: #f0fdf4;
-            --warning: #ca8a04;
-            --warning-bg: #fefce8;
-            --purple: #8b5cf6;
-            --purple-hover: #7c3aed;
-            
-            /* Métricas */
-            --radius: 8px;
-            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-            --font-main: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-            --spacing-sm: 0.75rem;
-            --spacing-md: 1.5rem;
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
+        .step-number { 
+            background: #3498db; color: white; width: 30px; height: 30px; 
+            border-radius: 50%; display: inline-flex; align-items: center; 
+            justify-content: center; font-weight: bold; margin-right: 10px;
         }
-
-        /* RESET & BASE */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            font-family: var(--font-main);
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            padding: var(--spacing-sm);
+        .status-badge { font-size: 0.8rem; padding: 5px 10px; border-radius: 12px; }
+        .bg-success-subtle { background-color: #d4edda !important; color: #155724; }
+        .bg-danger-subtle { background-color: #f8d7da !important; color: #721c24; }
+        textarea { font-family: monospace; }
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); z-index: 9999; display: none;
+            justify-content: center; align-items: center; flex-direction: column;
         }
-
-        /* LAYOUT */
-        main {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        /* COMPONENT: CARDS */
-        section, header {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: var(--spacing-md);
-            box-shadow: var(--shadow);
-        }
-
-        /* TYPOGRAPHY */
-        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
-        h1 span { color: var(--primary); }
-        h2, h3 { font-size: 1.125rem; font-weight: 600; color: var(--text); margin-bottom: 1rem; }
-        p { color: var(--text-light); font-size: 0.875rem; }
-        
-        /* HEADER */
-        header {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        @media (min-width: 768px) {
-            header { flex-direction: row; justify-content: space-between; align-items: center; }
-        }
-        .badge {
-            background: var(--primary-light);
-            color: var(--primary-dark);
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border: 1px solid #dbeafe;
-            align-self: flex-start;
-        }
-        .badge-success {
-            background: var(--success-bg);
-            color: var(--success);
-            border-color: #bbf7d0;
-        }
-        .badge-purple {
-            background: #f3e8ff;
-            color: #7e22ce;
-            border-color: #d8b4fe;
-        }
-
-        /* FORMS */
-        label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: var(--text);
-        }
-
-        input[type="text"],
-        input[type="date"],
-        input[type="file"],
-        select {
-            width: 100%;
-            padding: 0.625rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 0.875rem;
-            transition: border-color 0.15s;
-            background: var(--surface);
-            color: var(--text);
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
-        }
-        
-        /* INPUTS ESPECIAIS NA TABELA */
-        input.table-input {
-            padding: 4px 6px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-            background: #f1f5f9;
-            color: var(--text);
-        }
-        input.table-input:focus {
-            background: #fff;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px var(--primary-light);
-        }
-
-        /* Estilos específicos por tipo */
-        input.factor-input { 
-            width: 50px; 
-            text-align: center; 
-            font-weight: bold; 
-            color: var(--primary-dark);
-        }
-        
-        input.ean-input { 
-            width: 110px; 
-            font-family: monospace; 
-            letter-spacing: -0.5px;
-            text-align: center;
-        }
-
-        input.qty-input {
-            width: 70px;
-            text-align: right;
-            font-weight: 600;
-        }
-
-        input.desc-input {
-            width: 100%;
-            min-width: 250px; /* Garante espaço para ler */
-            font-weight: 500;
-        }
-        
-        input.factor-learned {
-            background: #f3e8ff; 
-            color: #7e22ce;
-            border-color: #d8b4fe;
-        }
-        
-        input.qty-edited {
-            background: #fff7ed;
-            color: #c2410c;
-            border-color: #fdba74;
-        }
-
-        input[type="file"]::file-selector-button {
-            background: var(--primary-light);
-            color: var(--primary-dark);
-            border: 0;
-            padding: 0.5rem 1rem;
-            margin-right: 1rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* CHECKBOX CUSTOMIZATION */
-        input[type="checkbox"] {
-            width: 1.25rem;
-            height: 1.25rem;
-            cursor: pointer;
-            accent-color: var(--primary);
-        }
-
-        /* GRID SYSTEM */
-        .filters-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-            align-items: end;
-        }
-        @media (min-width: 768px) {
-            .filters-grid { grid-template-columns: 2fr 1fr 1fr 1fr; }
-        }
-
-        /* BUTTONS */
-        button {
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.625rem 1.25rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-radius: var(--radius);
-            transition: all 0.2s;
-            border: 1px solid transparent;
-            width: 100%;
-        }
-        @media (min-width: 640px) { button { width: auto; } }
-
-        .btn-ghost { background: white; border: 1px solid var(--border); color: var(--text); }
-        .btn-ghost:hover { background: var(--bg); }
-        
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        
-        .btn-danger { background: white; color: var(--danger); border: 1px solid var(--border); }
-        .btn-danger:hover { background: var(--danger-bg); border-color: #fca5a5; }
-
-        .btn-success { background: var(--success); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-        .btn-success:hover { background: #15803d; transform: translateY(-1px); }
-
-        .btn-purple { background: var(--purple); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .btn-purple:hover { background: var(--purple-hover); transform: translateY(-1px); }
-
-        .actions-row {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-        }
-        @media (min-width: 640px) { 
-            .actions-row { flex-direction: row; align-items: center; }
-            .ml-auto { margin-left: auto; }
-        }
-
-        /* EXPORT CONTROL GROUP */
-        .export-control {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            width: 100%;
-        }
-        @media (min-width: 640px) {
-            .export-control { flex-direction: row; width: auto; flex: 1; }
-        }
-
-        /* TABLE */
-        .results-header {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1rem;
-        }
-        @media (min-width: 1024px) {
-            .results-header { flex-direction: row; justify-content: space-between; align-items: center; }
-        }
-
-        /* Header Controls for Table */
-        .table-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            width: 100%;
-        }
-        @media (min-width: 640px) {
-            .table-controls { flex-direction: row; align-items: center; width: auto; }
-        }
-        .mini-search {
-            padding: 0.4rem 0.8rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 0.8rem;
-            width: 100%;
-            min-width: 200px;
-        }
-
-        .total-card {
-            background: var(--primary-light);
-            border: 1px solid #dbeafe;
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius);
-            text-align: right;
-            white-space: nowrap;
-        }
-        .total-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-light); }
-        .total-value { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            max-height: 70vh;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 0.75rem;
-            white-space: nowrap;
-        }
-
-        th {
-            background: var(--bg);
-            text-align: left;
-            padding: 0.75rem;
-            font-weight: 600;
-            color: var(--text-light);
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            position: sticky;
-            top: 0;
-            border-bottom: 1px solid var(--border);
-            z-index: 10;
-        }
-
-        td {
-            padding: 0.5rem 0.75rem;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-            vertical-align: middle;
-        }
-
-        th.w-check, td.w-check { width: 40px; text-align: center; padding-left: 0.5rem; padding-right: 0.5rem; }
-
-        tr:hover td { background: var(--bg); }
-        tr.selected td { background: var(--success-bg); }
-        
-        .text-right { text-align: right; }
-        .text-brand { color: var(--primary); font-family: monospace; }
-        .text-danger { color: var(--danger); }
-        .text-success { color: var(--success); }
-        .text-muted { color: #cbd5e1; font-style: italic; font-size: 0.7rem; }
-        .font-bold { font-weight: 700; }
-        
-        /* New Styles for Smart Fiscal */
-        .smart-tag {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            margin-left: 5px;
-        }
-        .smart-st { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .smart-normal { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-
-        /* TOAST NOTIFICATION */
-        .toast-container {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            pointer-events: none;
-        }
-
-        .toast {
-            background: var(--text);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius);
-            font-size: 0.875rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            animation: slideUp 0.3s ease-out forwards;
-            pointer-events: auto;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeOut {
-            to { opacity: 0; transform: translateY(-10px); }
-        }
-
-        /* MODAL STYLE (NEW) */
-        dialog {
-            border: none;
-            border-radius: var(--radius);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-            padding: 0;
-            max-width: 800px;
-            width: 90%;
-            margin: auto;
-        }
-        dialog::backdrop {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
-        }
-        .modal-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--surface);
-        }
-        .modal-body {
-            padding: 1.5rem;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        .btn-icon {
-            background: transparent;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: var(--text-light);
-        }
-        .btn-icon:hover { color: var(--danger); }
-
-        /* LOADING & UTILS */
-        #loading {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .loader-card {
-            background: white;
-            padding: 1.5rem 2rem;
-            border-radius: var(--radius);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-        }
-
-        .spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid #e2e8f0;
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .hidden { display: none !important; }
-        .flex { display: flex !important; }
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <!-- Loading Overlay -->
-    <div id="loading" class="hidden">
-        <div class="loader-card">
-            <div class="spinner"></div>
-            <span style="font-weight: 500;">Processando...</span>
-        </div>
+    <div id="loading" class="loading-overlay">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="mt-2 fw-bold" id="loadingText">Processando...</div>
     </div>
 
-    <!-- Toast Notifications -->
-    <div id="toastContainer" class="toast-container"></div>
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold text-primary">📦 Gerador de Composições Bling</h1>
+            <p class="text-muted">Crie arquivos de importação de Kits sem abrir o Excel.</p>
+        </div>
 
-    <main>
-        
-        <!-- Header -->
-        <header>
-            <div>
-                <h1>NFe Parser Pro <span>Smart Detect</span></h1>
-                <p>Detecta Fatores (Ex: CX/0012), permite Edição Completa e <b>deduz Descontos</b>.</p>
+        <div class="card p-4">
+            <h5 class="card-title d-flex align-items-center">
+                <span class="step-number">1</span> Carregar Base de Produtos
+            </h5>
+            <div class="card-body">
+                <p class="small text-muted">Exporte seus produtos do Bling (CSV) e suba aqui. O sistema precisa disso para achar os códigos.</p>
+                <input type="file" id="fileInput" class="form-control" accept=".csv">
+                <div id="fileStatus" class="mt-2 text-muted fst-italic">Nenhum arquivo carregado.</div>
             </div>
-            <div class="flex flex-col items-end gap-1">
-                <span class="badge">v6.16 Smart Update</span>
-                <span class="badge badge-purple">Memória Ativa</span>
-            </div>
-        </header>
+        </div>
 
-        <!-- Upload -->
-        <section>
-            <label for="fileInput">1. Importar Arquivos XML (Compra)</label>
-            <input type="file" id="fileInput" multiple accept=".xml, text/xml">
-            <p style="margin-top: 0.5rem;">🧠 Dica: O sistema agora prioriza padrões como <b>CX/0012</b> ou <b>UN/0001</b> no final do nome.</p>
-        </section>
-
-        <!-- Filtros e Ações -->
-        <section>
-            <div class="results-header" style="border: none; padding: 0; margin: 0 0 1rem 0;">
-                <h2>2. Filtros e Seleção Inteligente</h2>
-            </div>
-
-            <div class="filters-grid">
-                <div>
-                    <label for="searchInput">BUSCAR GERAL</label>
-                    <input type="text" id="searchInput" placeholder="Nome, EAN, Código, NCM...">
-                </div>
-                <div>
-                    <label for="dateStart">DATA INÍCIO</label>
-                    <input type="date" id="dateStart">
-                </div>
-                <div>
-                    <label for="dateEnd">DATA FIM</label>
-                    <input type="date" id="dateEnd">
-                </div>
-                <div>
-                    <!-- Botão de Resumo de Estoque -->
-                    <button class="btn-ghost" onclick="app.showSummary()" style="color: var(--primary); border-color: var(--primary-light);">
-                        📊 Estoque Total
-                    </button>
-                </div>
-            </div>
-            
-            <div class="actions-row">
-                <!-- Botão de Exportação Condicional -->
-                <div id="selectionActions" class="hidden fade-in export-control">
-                    <select id="exportModeSelect" style="max-width: 250px;">
-                        <option value="varejo" selected>Modo Varejo (Unidade)</option>
-                        <option value="atacado">Modo Atacado (Caixa/Fardo)</option>
-                        <option value="ambos">Ambos (Completo)</option>
-                    </select>
-                    <button class="btn-success" onclick="app.exportSmartJSON()">
-                        ✨ Itens Soltos
-                    </button>
-                    <!-- NOVO BOTÃO UNIFICADO -->
-                    <button class="btn-purple" onclick="app.exportUnified()" title="Agrupar todos os selecionados em um único produto com o preço mais alto">
-                        📦 Unificar
-                    </button>
-                </div>
-
-                <div class="ml-auto flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                    <button class="btn-primary" onclick="app.exportData()" style="width: auto;">
-                        📥 Backup Bruto
-                    </button>
-                    <button class="btn-danger" onclick="app.clearData()" style="width: auto;">
-                        🗑️ Apagar
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Resultados -->
-        <section style="padding: 0; overflow: hidden; border: none; background: transparent; box-shadow: none;">
-            <!-- Header da Tabela com Busca Local e Controles -->
-            <div style="background: var(--surface); padding: var(--spacing-md); border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; border-bottom: none;" class="results-header">
-                <div>
-                    <h3>3. Conferência de Produtos</h3>
-                    <p>Agora você pode editar <b>Qtd</b> e <b>Fator</b>. O valor total atualiza automaticamente.</p>
-                </div>
-
-                <div class="table-controls">
-                    <!-- Busca Local e Ordenação -->
-                    <input type="text" id="tableSearch" class="mini-search" placeholder="🔍 Localizar na tabela..." onkeyup="app.syncSearch(this.value)">
-                    
-                    <select id="sortSelect" class="mini-search" style="width: auto;" onchange="app.render()">
-                        <option value="name" selected>🔤 Ordem Alfabética</option>
-                        <option value="date">📅 Data de Emissão</option>
-                    </select>
-
-                    <div class="total-card">
-                        <div class="total-label">Total Filtrado</div>
-                        <div id="totalValueDisplay" class="total-value">R$ 0,00</div>
+        <div class="card p-4">
+            <h5 class="card-title d-flex align-items-center">
+                <span class="step-number">2</span> Definir Novo Kit
+            </h5>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Código do Kit (SKU Pai)</label>
+                        <input type="text" id="kitSku" class="form-control" placeholder="Ex: KIT-CAFE-01">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Nome do Kit</label>
+                        <input type="text" id="kitName" class="form-control" placeholder="Ex: Kit Café Completo">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Componentes (1 por linha)</label>
+                        <textarea id="kitItems" class="form-control" rows="5" placeholder="Exemplo:&#10;1x cafe caboclo 250g&#10;2x acucar uniao"></textarea>
+                        <div class="form-text">Digite a quantidade seguida de 'x' e o nome do produto. O sistema buscará automaticamente.</div>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button onclick="processarKit()" class="btn btn-primary px-4">⬇️ Adicionar à Lista</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="table-container" style="background: var(--surface); border-radius: 0 0 var(--radius) var(--radius);">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="w-check">
-                                <input type="checkbox" id="selectAll" onchange="app.toggleSelectAll(this)">
-                            </th>
-                            <th>Fator/Cx</th>
-                            <th>Data</th>
-                            <th>Descrição (Editável)</th>
-                            <th>EAN (Editável)</th>
-                            <th>NCM</th>
-                            <th>CST</th>
-                            <th class="text-right">Qtd (Nota)</th>
-                            <th class="text-right text-success" title="Valor do Desconto Rateado">Desc.</th>
-                            <th class="text-right" title="Valor Líquido por Caixa (Entrada - Desconto)">V. Liq (Cx)</th>
-                            <th class="text-right">V. Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <!-- JS Renderiza aqui -->
-                        <tr>
-                            <td colspan="11" style="text-align: center; padding: 3rem;">
-                                <div style="color: var(--text-light);">
-                                    Importe arquivos XML para visualizar.
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="card p-4">
+            <h5 class="card-title d-flex align-items-center">
+                <span class="step-number">3</span> Revisão e Exportação
+            </h5>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Kit (Pai)</th>
+                                <th>Qtd</th>
+                                <th>Componente Encontrado (Filho)</th>
+                                <th>SKU Filho</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="text-center py-4 text-muted">
+                    Nenhum kit adicionado ainda.
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                    <button onclick="limparTudo()" class="btn btn-outline-danger me-md-2">Limpar Tudo</button>
+                    <button onclick="gerarCSV()" class="btn btn-success btn-lg">💾 Baixar CSV para Bling</button>
+                </div>
             </div>
-        </section>
-
-    </main>
-    
-    <!-- MODAL DE RESUMO -->
-    <dialog id="summaryModal">
-        <div class="modal-header">
-            <h3 style="margin:0; font-size: 1.1rem; display:flex; align-items:center; gap:0.5rem;">
-                📊 Resumo Consolidado de Estoque
-            </h3>
-            <button onclick="document.getElementById('summaryModal').close()" class="btn-icon" title="Fechar">✕</button>
         </div>
-        <div class="modal-body">
-            <table class="w-full">
-                <thead>
-                    <tr>
-                        <th style="position: sticky; top: -1px; z-index: 20;">EAN</th>
-                        <th style="position: sticky; top: -1px; z-index: 20;">Produto (Nome Atual)</th>
-                        <th class="text-right" style="position: sticky; top: -1px; z-index: 20;">Qtd Total (Notas)</th>
-                    </tr>
-                </thead>
-                <tbody id="summaryTableBody">
-                    <!-- Conteúdo gerado via JS -->
-                </tbody>
-            </table>
-        </div>
-    </dialog>
+    </div>
 
     <script>
-        /**
-         * SISTEMAS - Core Logic v6.16 Smart Detect (Limit 5000)
-         */
-        var app = {
-            data: [], 
-            factorsDB: {}, 
-            selectedIds: new Set(),
-            storageKey: 'nfe_sys_data_sync_v66', // Bumped version to clear old cache if needed
-            factorsStorageKey: 'nfe_sys_factors_db_v1', 
+        let productsDB = []; // Armazena a base de produtos carregada
+        let kitsToExport = []; // Armazena os kits processados
 
-            init() {
-                this.cacheDOM();
-                this.bindEvents();
-                this.loadFactorsDB(); 
-                this.loadFromStorage();
-            },
+        // --- 1. Carregamento do Arquivo ---
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-            cacheDOM() {
-                this.dom = {
-                    fileInput: document.getElementById('fileInput'),
-                    tableBody: document.getElementById('tableBody'),
-                    searchInput: document.getElementById('searchInput'),
-                    tableSearch: document.getElementById('tableSearch'), 
-                    sortSelect: document.getElementById('sortSelect'), 
-                    dateStart: document.getElementById('dateStart'),
-                    dateEnd: document.getElementById('dateEnd'),
-                    totalDisplay: document.getElementById('totalValueDisplay'),
-                    loading: document.getElementById('loading'),
-                    selectAll: document.getElementById('selectAll'),
-                    selectionActions: document.getElementById('selectionActions'),
-                    exportModeSelect: document.getElementById('exportModeSelect'),
-                    toastContainer: document.getElementById('toastContainer'),
-                };
-            },
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('loadingText').innerText = "Lendo arquivo de produtos...";
 
-            bindEvents() {
-                this.dom.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-                this.dom.searchInput.addEventListener('input', () => {
-                    this.dom.tableSearch.value = this.dom.searchInput.value; 
-                    this.render();
-                });
-                this.dom.dateStart.addEventListener('change', () => this.render());
-                this.dom.dateEnd.addEventListener('change', () => this.render());
-            },
+            Papa.parse(file, {
+                header: true,
+                delimiter: ";", // Bling usa ponto e vírgula
+                skipEmptyLines: true,
+                encoding: "ISO-8859-1", // Padrão comum do Excel/Bling BR. Se der erro, tentar UTF-8
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        // Mapeia e limpa os dados
+                        productsDB = results.data.map(p => ({
+                            codigo: p['Código'] ? p['Código'].trim() : '',
+                            descricao: p['Descrição'] ? p['Descrição'].trim() : '',
+                            // Cria um campo de busca normalizado (sem acentos, minúsculo)
+                            busca: normalizeText(p['Descrição'] + " " + p['Código'])
+                        })).filter(p => p.codigo !== ""); // Remove linhas vazias
 
-            syncSearch(val) {
-                this.dom.searchInput.value = val;
-                this.render();
-            },
-
-            loadFactorsDB() {
-                try {
-                    const db = localStorage.getItem(this.factorsStorageKey);
-                    this.factorsDB = db ? JSON.parse(db) : {};
-                } catch (e) {
-                    this.factorsDB = {};
+                        document.getElementById('fileStatus').innerHTML = 
+                            `<span class="text-success fw-bold">✅ ${productsDB.length} produtos carregados na memória!</span>`;
+                    } else {
+                        alert("Erro ao ler CSV. Verifique se o separador é ponto e vírgula (;).");
+                    }
+                    document.getElementById('loading').style.display = 'none';
+                },
+                error: function(err) {
+                    alert("Erro ao ler arquivo: " + err.message);
+                    document.getElementById('loading').style.display = 'none';
                 }
-            },
-            
-            saveFactorsDB() {
-                try {
-                    localStorage.setItem(this.factorsStorageKey, JSON.stringify(this.factorsDB));
-                } catch (e) { console.error('Storage cheio para fatores'); }
-            },
+            });
+        });
 
-            saveToStorage() {
-                try { localStorage.setItem(this.storageKey, JSON.stringify(this.data)); } catch (e) { alert('LocalStorage cheio.'); }
-            },
-            loadFromStorage() {
-                const stored = localStorage.getItem(this.storageKey);
-                if (stored) { this.data = JSON.parse(stored); this.render(); }
-            },
-            clearData() {
-                if (confirm('Limpar lista atual?')) {
-                    this.data = []; this.selectedIds.clear();
-                    localStorage.removeItem(this.storageKey); this.render();
-                    this.dom.fileInput.value = '';
-                }
-            },
-            exportData() {
-                try {
-                    if(!this.data || this.data.length === 0) return alert('Sem dados para exportar.');
-                    this.downloadJSON(this.data, 'backup_completo');
-                } catch (e) {
-                    alert('Erro ao exportar: ' + e.message);
-                }
-            },
+        // --- 2. Função de Normalização de Texto ---
+        function normalizeText(text) {
+            if (!text) return "";
+            return text.toString()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                .toLowerCase();
+        }
 
-            showSummary() {
-                if (this.data.length === 0) return alert('Importe XMLs primeiro.');
+        // --- 3. Processar Kit ---
+        function processarKit() {
+            if (productsDB.length === 0) {
+                alert("Por favor, carregue o arquivo de produtos primeiro (Passo 1).");
+                return;
+            }
 
-                const summary = {};
+            const kitSku = document.getElementById('kitSku').value.trim();
+            const kitName = document.getElementById('kitName').value.trim();
+            const itemsText = document.getElementById('kitItems').value.trim();
+
+            if (!kitSku || !itemsText) {
+                alert("Preencha o Código do Kit e os Itens.");
+                return;
+            }
+
+            const lines = itemsText.split('\n');
+            const newRows = [];
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+
+                // Regex para pegar Quantidade e Nome (ex: "2x Acucar")
+                // Aceita "2x", "2 x", "2 " no inicio
+                const match = line.match(/^(\d+)[xX]?\s+(.*)/);
                 
-                this.data.forEach(item => {
-                    let key = item.cEAN;
-                    let displayEAN = item.cEAN;
-
-                    if (!key || key === 'SEM GTIN' || key.trim() === '') {
-                        key = 'NO_GTIN_' + item.xProd; 
-                        displayEAN = 'SEM GTIN';
-                    }
-                    
-                    if (!summary[key]) {
-                        summary[key] = {
-                            ean: displayEAN,
-                            name: item.xProd, 
-                            qty: 0
-                        };
-                    }
-                    summary[key].qty += parseFloat(item.qCom) || 0;
-                });
-
-                const tbody = document.getElementById('summaryTableBody');
-                tbody.innerHTML = '';
-                
-                Object.values(summary)
-                    .sort((a,b) => a.name.localeCompare(b.name))
-                    .forEach(row => {
-                        const tr = document.createElement('tr');
-                        const eanClass = row.ean === 'SEM GTIN' ? 'text-muted' : 'text-brand';
-                        
-                        tr.innerHTML = `
-                            <td class="${eanClass}">${row.ean}</td>
-                            <td>${row.name}</td>
-                            <td class="text-right font-bold" style="color:var(--primary); font-size: 1rem;">
-                                ${row.qty.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 3})}
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                
-                document.getElementById('summaryModal').showModal();
-            },
-
-            // --- Lógica de Edição ---
-            
-            updateFactor(id, newValue) {
-                const sourceItem = this.data.find(i => i.id === id);
-                if (!sourceItem) return;
-
-                let val = parseInt(newValue);
-                if (isNaN(val) || val < 1) val = 1;
-
-                sourceItem.userFactor = val;
-
-                // Sync por EAN (se válido)
-                const hasValidEan = sourceItem.cEAN && sourceItem.cEAN !== 'SEM GTIN' && sourceItem.cEAN.trim() !== '';
-
-                if (hasValidEan) {
-                    this.data.forEach(item => {
-                        if (item.id !== id && item.cEAN === sourceItem.cEAN) {
-                            item.userFactor = val;
-                        }
-                    });
-                }
-
-                this.saveToStorage();
-                // Não chama render() aqui para não perder o foco, mas o dado está salvo.
-            },
-
-            updateQty(id, newValue) {
-                const sourceItem = this.data.find(i => i.id === id);
-                if (!sourceItem) return;
-
-                let val = parseFloat(newValue);
-                if (isNaN(val) || val < 0) return; // Evita valores negativos ou inválidos
-
-                sourceItem.qCom = val;
-                
-                // Recalcula o Valor Total da linha baseado no unitário original
-                // vProd (Total) = qCom * vUnCom
-                sourceItem.vProd = parseFloat((val * sourceItem.vUnCom).toFixed(2));
-
-                this.saveToStorage();
-                this.render(); // Precisa renderizar para atualizar totais e colunas dependentes
-            },
-
-            updateEAN(id, newEan) {
-                const sourceItem = this.data.find(i => i.id === id);
-                if (!sourceItem) return;
-                const cleanEan = newEan.trim().toUpperCase();
-                sourceItem.cEAN = cleanEan;
-                this.saveToStorage();
-            },
-
-            updateDescription(id, newDesc) {
-                const sourceItem = this.data.find(i => i.id === id);
-                if (!sourceItem) return;
-                sourceItem.xProd = newDesc; // Salva a descrição editada
-                this.saveToStorage();
-            },
-
-            showToast(message) {
-                const toast = document.createElement('div');
-                toast.className = 'toast';
-                toast.textContent = message;
-                this.dom.toastContainer.appendChild(toast);
-                setTimeout(() => {
-                    toast.style.animation = 'fadeOut 0.3s ease-out forwards';
-                    setTimeout(() => toast.remove(), 300);
-                }, 3000);
-            },
-
-            toggleSelect(id) {
-                this.selectedIds.has(id) ? this.selectedIds.delete(id) : this.selectedIds.add(id);
-                this.updateSelectionUI();
-            },
-            toggleSelectAll(checkbox) {
-                const filtered = this.getFilteredData();
-                if (checkbox.checked) {
-                    filtered.forEach(i => this.selectedIds.add(i.id));
-                } else {
-                    filtered.forEach(i => this.selectedIds.delete(i.id));
-                }
-                this.render();
-            },
-            updateSelectionUI() {
-                const count = this.selectedIds.size;
-                if (count > 0) {
-                    this.dom.selectionActions.classList.remove('hidden');
-                    this.dom.selectionActions.classList.add('flex');
-                } else {
-                    this.dom.selectionActions.classList.add('hidden');
-                    this.dom.selectionActions.classList.remove('flex');
-                    this.dom.selectAll.checked = false;
-                }
-                
-                document.querySelectorAll('.row-checkbox').forEach(cb => {
-                    const tr = cb.closest('tr');
-                    cb.checked ? tr.classList.add('selected') : tr.classList.remove('selected');
-                });
-            },
-
-            detectConversionFactor(description) {
-                if (!description) return 1;
-                const desc = description.toUpperCase().trim();
-
-                // ESTRATÉGIA 1: Padrão Específico de Suffix (CX/0012, PT/0024, UN/0001)
-                // Procura por barra seguida de zeros opcionais e digitos no final da string ou palavra isolada
-                const regexSuffix = /\/(?:0*)(\d+)(?:\s|$)/;
-                const matchSuffix = desc.match(regexSuffix);
-                if (matchSuffix && matchSuffix[1]) {
-                     const val = parseInt(matchSuffix[1]);
-                     if (val > 0) return val;
-                }
-
-                // ESTRATÉGIA 2: Multiplicador explícito (12x1)
-                const regexMultiplier = /(\d+)\s*[xX]\s*\d+/; 
-                const matchX = desc.match(regexMultiplier);
-                if (matchX && matchX[1]) {
-                    const val = parseInt(matchX[1]);
-                    return val > 0 ? val : 1;
-                }
-
-                // ESTRATÉGIA 3: Prefixos comuns (CX 12, FARDO 6)
-                const regexPack = /(?:CX|FD|FARDO|PCT)\W+(\d+)/;
-                const matchPack = desc.match(regexPack);
-                if (matchPack && matchPack[1]) {
-                    const val = parseInt(matchPack[1]);
-                    return val > 0 ? val : 1;
-                }
-                return 1;
-            },
-
-            predictFiscalAttributes(item) {
-                const cfopIn = parseInt(item.CFOP.replace('.', ''));
-                const cstIn = parseInt(item.CST_CSOSN || '0');
-                const isST = [1403, 2403, 5403, 5405].includes(cfopIn) || [10, 30, 60, 70, 201, 202, 500].includes(cstIn);
-
-                if (isST) {
-                    return { cfopOut: '5405', csosnOut: '500', desc: 'Revenda ST' };
-                } else {
-                    return { cfopOut: '5102', csosnOut: '102', desc: 'Revenda Normal' };
-                }
-            },
-
-            // --- EXPORTAÇÃO UNIFICADA (NOVO) ---
-            exportUnified() {
-                const selectedItems = this.data.filter(item => this.selectedIds.has(item.id));
-                if (selectedItems.length === 0) return alert('Selecione itens para unificar.');
-
-                // 1. Coletar Dados Únicos
-                const descriptions = new Set();
-                const eans = new Set();
-                let totalQtyUnits = 0; // Quantidade Total em UNIDADES soltas
-                let maxUnitCost = 0;
-                let referenceItem = selectedItems[0]; // Item base inicial
-                let highestValFound = -1;
-
-                selectedItems.forEach(item => {
-                    // Fator e Custos
-                    const detected = this.detectConversionFactor(item.xProd);
-                    const factor = item.userFactor ? item.userFactor : detected;
-                    
-                    const discount = item.vDesc || 0;
-                    const netTotal = item.vProd - discount;
-                    const netCostBox = netTotal / item.qCom; // Custo real da caixa
-                    const unitCost = netCostBox / factor; // Custo unitário real
-
-                    // Logica do Maior Valor
-                    if (unitCost > highestValFound) {
-                        highestValFound = unitCost;
-                        maxUnitCost = unitCost;
-                        referenceItem = item; // O item mais caro define NCM/Impostos
-                    }
-
-                    // Acumuladores
-                    if (item.xProd) descriptions.add(item.xProd.trim());
-                    
-                    if (item.cEAN && item.cEAN !== 'SEM GTIN' && item.cEAN.trim() !== '') {
-                        eans.add(item.cEAN.trim());
-                    }
-
-                    // Soma total de unidades (Qtd Nota * Fator)
-                    totalQtyUnits += (item.qCom * factor);
-                });
-
-                // 2. Montar Strings Concatenadas
-                const finalDesc = Array.from(descriptions).join(' | ');
-                const finalEan = eans.size > 0 ? Array.from(eans).join(' | ') : 'SEM GTIN';
-
-                // 3. Fiscal do Item de Referência (o mais caro)
-                const fiscal = this.predictFiscalAttributes(referenceItem);
-
-                // 4. Objeto Unificado
-                const unifiedObj = {
-                    id_referencia: 'UNIFICADO-' + new Date().getTime(),
-                    Numero_Nota: 'VARIAS',
-                    Quantidade_Nota: '1', 
-                    cProd_Sugestao: referenceItem.cProd + '-KIT',
-                    cEAN: finalEan,
-                    xProd: finalDesc + ' (AGRUPADO)',
-                    NCM: referenceItem.NCM,
-                    CEST: referenceItem.CEST,
-                    CFOP_SAIDA: fiscal.cfopOut,
-                    CSOSN_SAIDA: fiscal.csosnOut,
-                    Unidade_Venda: 'UN',
-                    Fator_Conversao_Entrada: 1, 
-                    Quantidade_Total_Unidades: parseFloat(totalQtyUnits.toFixed(3)),
-                    Custo_Unitario: parseFloat(maxUnitCost.toFixed(4)),
-                    Custo_Real_Caixa: parseFloat(maxUnitCost.toFixed(4)), 
-                    Valor_Desconto_Total: 0,
-                    _TIPO: 'PRODUTO UNIFICADO (MIX)',
-                    _OBS: `Agrupamento de ${selectedItems.length} itens. Preço baseado no maior valor encontrado.`
-                };
-
-                this.downloadJSON([unifiedObj], 'exportacao_unificada_kit');
-            },
-
-            // --- EXPORTAÇÃO PADRÃO ---
-            exportSmartJSON() {
-                const selectedItems = this.data.filter(item => this.selectedIds.has(item.id));
-                if (selectedItems.length === 0) return;
-
-                const mode = this.dom.exportModeSelect.value;
-                const exportList = [];
-                let learnedCount = 0;
-
-                selectedItems.forEach(item => {
-                    const detected = this.detectConversionFactor(item.xProd);
-                    const finalFactor = item.userFactor ? item.userFactor : detected;
-                    
-                    // Aprendizado
-                    if (item.userFactor && item.cEAN && item.cEAN !== 'SEM GTIN' && item.cEAN.length > 5) {
-                        if (this.factorsDB[item.cEAN] !== item.userFactor) {
-                            this.factorsDB[item.cEAN] = item.userFactor;
-                            learnedCount++;
-                        }
-                    }
-
-                    const fiscal = this.predictFiscalAttributes(item);
-                    const totalDesc = item.vDesc || 0;
-                    const netTotal = item.vProd - totalDesc;
-                    const netCostBox = netTotal / item.qCom;
-                    const unitCost = netCostBox / finalFactor;
-
-                    if (mode === 'varejo' || mode === 'ambos') {
-                        let cleanDesc = item.xProd.replace(/(\d+\s*[xX]\s*\d+)/gi, '').replace(/(FD|CX|FARDO)\s*\d*/gi, '').trim();
-                        if(!cleanDesc.toUpperCase().endsWith('(UN)')) {
-                            cleanDesc = cleanDesc + " (UN)";
-                        }
-
-                        exportList.push({
-                            id_referencia: item.id,
-                            Numero_Nota: item.nNF,
-                            Quantidade_Nota: item.qCom,
-                            cProd_Sugestao: item.cProd + '-UN',
-                            cEAN: item.cEAN, // Valor EDITADO
-                            xProd: cleanDesc, // Descrição baseada no valor EDITADO
-                            NCM: item.NCM,
-                            CEST: item.CEST,
-                            CFOP_SAIDA: fiscal.cfopOut,
-                            CSOSN_SAIDA: fiscal.csosnOut,
-                            Unidade_Venda: 'UN',
-                            Fator_Conversao_Entrada: finalFactor,
-                            Quantidade_Total_Unidades: parseFloat((item.qCom * finalFactor).toFixed(3)),
-                            Custo_Unitario: parseFloat(unitCost.toFixed(4)),
-                            Custo_Real_Caixa: parseFloat(netCostBox.toFixed(4)),
-                            Valor_Desconto_Total: totalDesc,
-                            _TIPO: 'VAREJO (SAIDA)',
-                            _OBS: `Desconto de R$ ${totalDesc} abatido do custo`
-                        });
-                    }
-
-                    if (mode === 'atacado' || mode === 'ambos') {
-                        exportList.push({
-                            ...item,
-                            Numero_Nota: item.nNF,
-                            _TIPO: 'ATACADO (ENTRADA)',
-                            CFOP_SAIDA_SUGERIDO: fiscal.cfopOut,
-                            CSOSN_SAIDA_SUGERIDO: fiscal.csosnOut,
-                            FATOR_UTILIZADO: finalFactor,
-                            CUSTO_LIQUIDO_CAIXA: parseFloat(netCostBox.toFixed(4)),
-                            Custo_Real_Caixa: parseFloat(netCostBox.toFixed(4)),
-                            DESCONTO_APLICADO: totalDesc
-                        });
-                    }
-                });
-
-                if (learnedCount > 0) {
-                    this.saveFactorsDB();
-                    this.showToast(`🧠 Fatores de ${learnedCount} produtos salvos na memória!`);
-                }
-
-                const filename = `exportacao_${mode}_${selectedItems.length}itens`;
-                this.downloadJSON(exportList, filename);
-            },
-
-            downloadJSON(data, filenamePrefix) {
-                const content = JSON.stringify(data, null, 2);
-                const blob = new Blob([content], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${filenamePrefix}_${new Date().toISOString().slice(0,10)}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            },
-            
-            async handleFileUpload(event) {
-                const files = Array.from(event.target.files);
-                if (files.length === 0) return;
-                this.toggleLoading(true);
-
-                const existingKeys = new Set(this.data.map(i => i.id.split('-')[0]));
-                
-                const promises = files.map(file => this.readFileAsText(file));
-                try {
-                    const contents = await Promise.all(promises);
-                    let newItems = [];
-                    let duplicates = 0;
-                    let autoLearned = 0;
-
-                    contents.forEach(xml => {
-                        const parsed = this.parseXML(xml);
-                        if (parsed && parsed.length > 0) {
-                            const nfeKey = parsed[0].id.split('-')[0];
-                            if (existingKeys.has(nfeKey)) {
-                                duplicates++;
-                            } else {
-                                parsed.forEach(item => {
-                                    if (item.cEAN && this.factorsDB[item.cEAN]) {
-                                        item.userFactor = this.factorsDB[item.cEAN];
-                                        item.isLearned = true; 
-                                        autoLearned++;
-                                    }
-                                });
-                                newItems.push(...parsed);
-                                existingKeys.add(nfeKey);
-                            }
-                        }
-                    });
-
-                    if (duplicates > 0) this.showToast(`⚠️ ${duplicates} NFe(s) duplicada(s).`);
-
-                    if (newItems.length > 0) {
-                        this.data = [...this.data, ...newItems];
-                        this.saveToStorage();
-                        this.render();
-                        let msg = `✅ ${newItems.length} novos itens.`;
-                        if (autoLearned > 0) msg += ` 🧠 ${autoLearned} fatores recuperados!`;
-                        this.showToast(msg);
-                    } else if (duplicates === 0) {
-                        this.showToast(`ℹ️ Nenhum dado válido encontrado.`);
-                    }
-                } catch (e) { 
-                    console.error(e);
-                    this.showToast('❌ Erro ao processar arquivos.'); 
-                } 
-                finally { 
-                    this.toggleLoading(false); 
-                    this.dom.fileInput.value = ''; 
-                }
-            },
-            readFileAsText(file) {
-                return new Promise((r, j) => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.onerror = j; fr.readAsText(file); });
-            },
-            parseXML(xmlString) {
-                try {
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-                    if (xmlDoc.getElementsByTagName("parsererror").length > 0) return null;
-                    const getTag = (p, t) => { const el = p.getElementsByTagName(t)[0]; return el ? el.textContent.trim() : ''; };
-                    const getFloat = (p, t) => { const v = getTag(p, t); return v ? parseFloat(v) : 0.0; };
-
-                    const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
-                    if (!infNFe) return null; 
-                    const nNF = getTag(infNFe, 'nNF');
-                    const dhEmi = getTag(infNFe, 'dhEmi') || getTag(infNFe, 'dEmi');
-                    const emitente = getTag(infNFe, 'xNome');
-                    const chave = infNFe.getAttribute('Id') || '';
-                    
-                    const dets = xmlDoc.getElementsByTagName('det');
-                    const items = [];
-                    for (let i = 0; i < dets.length; i++) {
-                        const prod = dets[i].getElementsByTagName('prod')[0];
-                        const imposto = dets[i].getElementsByTagName('imposto')[0];
-                        const nItem = dets[i].getAttribute('nItem');
-                        
-                        let cst = '', vICMS = 0;
-                        if (imposto) {
-                            cst = getTag(imposto, 'CST') || getTag(imposto, 'CSOSN');
-                            vICMS = getFloat(imposto, 'vICMS');
-                        }
-
-                        const vDesc = getFloat(prod, 'vDesc'); 
-
-                        // ROBUST EAN PARSING
-                        let cEAN = getTag(prod, 'cEAN');
-                        if (!cEAN || cEAN === 'SEM GTIN') {
-                            const cEANTrib = getTag(prod, 'cEANTrib');
-                            if (cEANTrib && cEANTrib !== 'SEM GTIN') {
-                                cEAN = cEANTrib;
-                            }
-                        }
-                        // Fallback to "SEM GTIN" string if still empty
-                        if (!cEAN) cEAN = 'SEM GTIN';
-
-                        items.push({
-                            id: `${chave}-${nItem}`,
-                            nNF, 
-                            dataEmissao: dhEmi.split('T')[0],
-                            emitente,
-                            cProd: getTag(prod, 'cProd'),
-                            cEAN: cEAN, 
-                            xProd: getTag(prod, 'xProd'),
-                            NCM: getTag(prod, 'NCM'),
-                            CEST: getTag(prod, 'CEST'),
-                            CFOP: getTag(prod, 'CFOP'),
-                            uCom: getTag(prod, 'uCom'),
-                            qCom: getFloat(prod, 'qCom'),
-                            vUnCom: getFloat(prod, 'vUnCom'), 
-                            vProd: getFloat(prod, 'vProd'),
-                            vDesc: vDesc,
-                            CST_CSOSN: cst,
-                            vICMS,
-                            userFactor: null,
-                            isLearned: false
-                        });
-                    }
-                    return items;
-                } catch (e) { return []; }
-            },
-
-            // --- Render ---
-            getFilteredData() {
-                const s = this.dom.searchInput.value.toLowerCase();
-                const d1 = this.dom.dateStart.value;
-                const d2 = this.dom.dateEnd.value;
-                
-                let filtered = this.data.filter(i => {
-                    const txt = (i.emitente+i.xProd+i.cProd+i.nNF).toLowerCase().includes(s);
-                    let date = true;
-                    if (d1) date = date && i.dataEmissao >= d1;
-                    if (d2) date = date && i.dataEmissao <= d2;
-                    return txt && date;
-                });
-
-                // ORDENAÇÃO
-                const sortMode = this.dom.sortSelect ? this.dom.sortSelect.value : 'name';
-                if (sortMode === 'date') {
-                    filtered.sort((a,b) => b.dataEmissao.localeCompare(a.dataEmissao));
-                } else {
-                    filtered.sort((a,b) => a.xProd.localeCompare(b.xProd));
-                }
-
-                return filtered;
-            },
-            resetFilters() {
-                this.dom.searchInput.value = '';
-                this.dom.tableSearch.value = '';
-                this.dom.dateStart.value = '';
-                this.dom.dateEnd.value = '';
-                this.render();
-            },
-            render() {
-                const filtered = this.getFilteredData();
-                const tbody = this.dom.tableBody;
-                tbody.innerHTML = '';
-                
-                this.dom.selectAll.checked = filtered.length > 0 && filtered.every(i => this.selectedIds.has(i.id));
-
-                if (filtered.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding: 2rem; color: #94a3b8;">Nada encontrado.</td></tr>`;
-                    this.dom.totalDisplay.textContent = 'R$ 0,00';
-                    this.updateSelectionUI();
+                if (!match) {
+                    alert(`Formato inválido na linha: "${line}". Use o formato "1x Nome do Produto"`);
                     return;
                 }
 
-                const limit = 5000; 
-                const fragment = document.createDocumentFragment();
+                const qtd = match[1];
+                const termoBusca = match[2];
+                const termoNormalizado = normalizeText(termoBusca);
 
-                filtered.slice(0, limit).forEach(item => {
-                    const tr = document.createElement('tr');
-                    const isSel = this.selectedIds.has(item.id);
-                    if (isSel) tr.classList.add('selected');
-
-                    const fiscal = this.predictFiscalAttributes(item);
-                    const tagClass = fiscal.csosnOut === '500' ? 'smart-st' : 'smart-normal';
-                    const tagLabel = fiscal.csosnOut === '500' ? 'ST' : 'NORM';
-                    
-                    const detected = this.detectConversionFactor(item.xProd);
-                    const currentFactor = item.userFactor ? item.userFactor : detected;
-                    
-                    const discount = item.vDesc || 0;
-                    const netTotal = item.vProd - discount;
-                    const netUnitCostBox = netTotal / item.qCom; // Custo real da caixa
-
-                    // Styles for Factor Input
-                    const factorClass = item.isLearned ? 'table-input factor-input factor-learned' : 'table-input factor-input';
-                    const titleFactor = item.isLearned ? 'Carregado da memória por EAN' : `Qtd detectada: ${detected}`;
-
-                    const inputHtml = `
-                        <input type="number" 
-                               class="${factorClass}" 
-                               value="${currentFactor}" 
-                               min="1" 
-                               onchange="app.updateFactor('${item.id}', this.value)"
-                               onclick="this.select()"
-                               title="${titleFactor}">
-                    `;
-
-                    // Style for Qty Input (New)
-                    // If vProd was manually recalculated, maybe show a color?
-                    // For now simple input.
-                    const qtyInputHtml = `
-                        <input type="number"
-                               class="table-input qty-input"
-                               value="${item.qCom}"
-                               step="0.0001"
-                               onchange="app.updateQty('${item.id}', this.value)"
-                               onclick="this.select()"
-                        >
-                    `;
-
-                    const descHtml = discount > 0 
-                        ? `<span class="text-success font-bold">-${discount.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>` 
-                        : '<span style="color:#cbd5e1">-</span>';
-
-                    const eanVal = (item.cEAN === 'SEM GTIN' || !item.cEAN) ? '' : item.cEAN;
-                    const eanPlaceholder = (item.cEAN === 'SEM GTIN') ? 'SEM GTIN' : 'EAN';
-                    
-                    const eanInputHtml = `
-                        <input type="text"
-                               class="table-input ean-input"
-                               value="${eanVal}"
-                               placeholder="${eanPlaceholder}"
-                               onchange="app.updateEAN('${item.id}', this.value)"
-                               onclick="this.select()"
-                        >
-                    `;
-
-                    const descInputHtml = `
-                        <input type="text"
-                               class="table-input desc-input"
-                               value="${item.xProd}"
-                               onchange="app.updateDescription('${item.id}', this.value)"
-                               title="${item.xProd}"
-                        >
-                    `;
-
-                    tr.innerHTML = `
-                        <td class="w-check">
-                            <input type="checkbox" class="row-checkbox" value="${item.id}" ${isSel ? 'checked' : ''} onchange="app.toggleSelect('${item.id}')">
-                        </td>
-                        <td style="text-align: center;">${inputHtml}</td>
-                        <td>${item.dataEmissao.split('-').reverse().join('/')}</td>
-                        <td>${descInputHtml}</td>
-                        <td>${eanInputHtml}</td>
-                        <td>${item.NCM}</td>
-                        <td><span class="smart-tag ${tagClass}">${tagLabel}</span></td>
-                        <td class="text-right">${qtyInputHtml}</td>
-                        <td class="text-right">${descHtml}</td>
-                        <td class="text-right font-bold" style="color:var(--primary)">${netUnitCostBox.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-                        <td class="text-right">${item.vProd.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-                    `;
-                    fragment.appendChild(tr);
+                // Busca Inteligente
+                const palavras = termoNormalizado.split(' ');
+                
+                // Filtra produtos que contêm TODAS as palavras digitadas
+                const encontrados = productsDB.filter(prod => {
+                    return palavras.every(palavra => prod.busca.includes(palavra));
                 });
 
-                tbody.appendChild(fragment);
-                this.dom.totalDisplay.textContent = filtered.reduce((a, b) => a + b.vProd, 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-                this.updateSelectionUI();
-            },
-            toggleLoading(show) {
-                const el = this.dom.loading;
-                show ? (el.classList.remove('hidden'), el.classList.add('flex')) : (el.classList.add('hidden'), el.classList.remove('flex'));
+                let produtoSelecionado = null;
+                let statusClass = "";
+                let obs = "";
+
+                if (encontrados.length === 0) {
+                    // Não achou
+                    produtoSelecionado = { descricao: `❌ NÃO ENCONTRADO: ${termoBusca}`, codigo: "???" };
+                    statusClass = "table-danger";
+                } else if (encontrados.length === 1) {
+                    // Match perfeito
+                    produtoSelecionado = encontrados[0];
+                } else {
+                    // Múltiplos encontrados - Pega o primeiro mas avisa
+                    // Tenta priorizar match exato se houver, senão pega o primeiro
+                    produtoSelecionado = encontrados[0]; 
+                    statusClass = "table-warning";
+                    obs = `(Atenção: ${encontrados.length} similares encontrados. Usado: ${produtoSelecionado.descricao})`;
+                }
+
+                // Adiciona ao array de exportação
+                kitsToExport.push({
+                    paiSku: kitSku,
+                    paiNome: kitName,
+                    filhoSku: produtoSelecionado.codigo,
+                    filhoNome: produtoSelecionado.descricao,
+                    qtd: qtd,
+                    status: statusClass
+                });
+
+                // Adiciona linha visual
+                renderRow(kitSku, qtd, produtoSelecionado, statusClass, obs);
+            });
+
+            // Limpa campos para o próximo
+            document.getElementById('kitSku').value = "";
+            document.getElementById('kitName').value = "";
+            document.getElementById('kitItems').value = "";
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        function renderRow(pai, qtd, filho, cssClass, obs) {
+            const tbody = document.getElementById('previewTableBody');
+            const tr = document.createElement('tr');
+            if (cssClass) tr.className = cssClass;
+
+            tr.innerHTML = `
+                <td><strong>${pai}</strong></td>
+                <td>${qtd}</td>
+                <td>
+                    ${filho.descricao}
+                    ${obs ? `<br><small class="text-muted fst-italic">${obs}</small>` : ''}
+                </td>
+                <td>${filho.codigo}</td>
+                <td><button onclick="removerLinha(this)" class="btn btn-sm btn-outline-danger">X</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function removerLinha(btn) {
+            const tr = btn.closest('tr');
+            const index = tr.rowIndex - 1; // Ajuste por causa do header
+            kitsToExport.splice(index, 1); // Remove do array lógico (aproximado, ideal seria ID único)
+            tr.remove();
+        }
+
+        function limparTudo() {
+            if(confirm("Limpar toda a lista?")) {
+                kitsToExport = [];
+                document.getElementById('previewTableBody').innerHTML = "";
+                document.getElementById('emptyState').style.display = 'block';
             }
-        };
+        }
 
-        window.app = app;
+        // --- 4. Gerar CSV ---
+        function gerarCSV() {
+            if (kitsToExport.length === 0) {
+                alert("Nada para exportar.");
+                return;
+            }
 
-        document.addEventListener('DOMContentLoaded', () => app.init());
+            // Validação antes de baixar
+            const erros = kitsToExport.filter(k => k.filhoSku === "???");
+            if (erros.length > 0) {
+                alert("⚠️ Existem itens não encontrados na lista (em vermelho). Remova-os ou corrija antes de baixar.");
+                return;
+            }
+
+            // Monta dados no padrão Bling
+            // Cabeçalho: ID da composição;Descrição da composição;Código da composição;ID do componente;Descrição do componente;Código componente;Quantidade do Componente;Custo unitário;Operação
+            const csvRows = [];
+            csvRows.push([
+                "ID da composição", "Descrição da composição", "Código da composição",
+                "ID do componente", "Descrição do componente", "Código componente",
+                "Quantidade do Componente", "Custo unitário", "Operação"
+            ]);
+
+            kitsToExport.forEach(k => {
+                csvRows.push([
+                    "0",                // ID Composição (0 p/ novo)
+                    k.paiNome,          // Descrição Pai
+                    k.paiSku,           // Código Pai
+                    "",                 // ID Componente (vazio)
+                    k.filhoNome,        // Descrição Componente
+                    k.filhoSku,         // Código Componente
+                    k.qtd,              // Quantidade
+                    "",                 // Custo (opcional)
+                    "A"                 // Operação (A = Adicionar/Alterar)
+                ]);
+            });
+
+            // Converte para CSV string usando PapaParse (para garantir escaping correto)
+            const csvString = Papa.unparse(csvRows, {
+                delimiter: ";",
+                quotes: false // Bling geralmente não exige aspas se não tiver conflito, mas Papa trata bem
+            });
+
+            // Cria Blob e Download
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "importacao_kits_bling.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
 </body>
 </html>
