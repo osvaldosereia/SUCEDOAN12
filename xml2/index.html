@@ -3,61 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Master Converter | Integração Bling</title>
+    <title>XML Master Converter | Ultra-Compact</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 10px; }
+        /* Estilização das barras de rolagem */
+        .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 5px; }
         
-        .sticky-col-check { position: sticky; left: 0; background: #f8fafc; z-index: 30; border-right: 1px solid #e2e8f0 !important; width: 50px; }
-        .sticky-col-desc { position: sticky; left: 50px; background: white; z-index: 25; border-right: 2px solid #e2e8f0 !important; }
+        /* Travamento das colunas essenciais */
+        .sticky-col-check { position: sticky; left: 0; background: #f8fafc; z-index: 40; border-right: 1px solid #e2e8f0 !important; width: 40px; }
+        .sticky-col-desc { position: sticky; left: 40px; background: white; z-index: 35; border-right: 2px solid #e2e8f0 !important; }
 
-        .col-id { min-width: 100px; width: 100px; background: #fefce8 !important; } /* Amarelo claro para destaque */
-        .col-cod { min-width: 100px; width: 120px; }
-        .col-desc { min-width: 400px; }
-        .col-small { min-width: 80px; width: 80px; }
-        .col-med { min-width: 120px; width: 130px; }
-        .col-large { min-width: 200px; }
+        /* Larguras Compactas (40% menores) */
+        .col-id { min-width: 65px; width: 65px; background: #fffde7 !important; }
+        .col-cod { min-width: 80px; width: 80px; }
+        .col-desc { min-width: 280px; } /* Descrição ainda legível, mas compacta */
+        .col-small { min-width: 55px; width: 55px; } 
+        .col-med { min-width: 85px; width: 90px; }
+        .col-default { min-width: 110px; }
+
+        /* Limitação de 6 linhas com scroll vertical */
+        .table-viewport { 
+            max-height: 380px; /* Altura aproximada para 6 linhas + header */
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+        }
 
         input[type="text"] { 
             width: 100%; 
-            padding: 4px 8px;
+            padding: 2px 4px;
+            font-size: 11px;
             border: 1px solid transparent;
             background: transparent;
-            transition: all 0.2s;
         }
-        input[type="text"]:focus { 
-            background: white; 
-            border-color: #3b82f6; 
-            outline: none; 
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-        }
-        tr:hover input[type="text"] { background: rgba(255,255,255,0.5); border-color: #e2e8f0; }
+        input[type="text"]:focus { background: white; border-color: #3b82f6; outline: none; }
         
-        .status-badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-bold: 700; text-transform: uppercase; }
-        .status-vinc { background: #dcfce7; color: #166534; } /* Verde para vinculado */
+        .status-badge { font-size: 8px; padding: 1px 4px; border-radius: 4px; font-weight: bold; }
+        .status-vinc { background: #dcfce7; color: #166534; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-slate-100 min-h-screen text-slate-800">
 
-    <header class="bg-slate-900 text-white p-6 shadow-xl border-b-4 border-blue-600">
+    <header class="bg-slate-900 text-white p-4 shadow-xl border-b-2 border-blue-600 sticky top-0 z-50">
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-2xl font-black tracking-tight flex items-center gap-3">
-                    <i class="fas fa-sync-alt text-blue-400"></i> XML MASTER CONVERTER <span class="text-blue-500 text-sm font-light">v2.0</span>
-                </h1>
-                <p class="text-slate-400 text-xs font-medium">CONVERSOR COM INTELIGÊNCIA DE VÍNCULO POR EAN</p>
-            </div>
+            <h1 class="text-xl font-black tracking-tighter flex items-center gap-2">
+                <i class="fas fa-bolt text-yellow-400"></i> XML MASTER <span class="text-blue-500">PRO</span>
+            </h1>
             
-            <div class="flex flex-wrap gap-3">
-                <label class="bg-slate-700 hover:bg-slate-600 text-white px-5 py-3 rounded-xl font-bold cursor-pointer transition-all flex items-center gap-2 border border-slate-600">
-                    <i class="fas fa-database text-yellow-400"></i> 1. CARREGAR BASE BLING (CSV)
+            <div class="flex gap-2">
+                <label class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 border border-slate-600 transition-all">
+                    <i class="fas fa-database text-yellow-400"></i> 1. BASE BLING
                     <input type="file" id="blingCsvInput" accept=".csv" class="hidden">
                 </label>
 
-                <label class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold cursor-pointer transition-all transform hover:scale-105 shadow-lg flex items-center gap-2">
+                <label class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
                     <i class="fas fa-file-invoice"></i> 2. IMPORTAR XMLS
                     <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
                 </label>
@@ -65,37 +67,34 @@
         </div>
     </header>
 
-    <main class="container mx-auto px-4 mt-8 pb-20" id="cardsContainer">
-        <div id="blingStatus" class="hidden mb-6 bg-emerald-100 border border-emerald-200 text-emerald-800 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold">
-            <i class="fas fa-check-circle"></i> Base de produtos Bling carregada: <span id="blingCount">0</span> produtos prontos para vínculo.
+    <main class="container mx-auto px-4 mt-6 pb-10" id="cardsContainer">
+        <div id="blingStatus" class="hidden mb-4 bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm">
+            <i class="fas fa-check-circle"></i> BASE BLING ATIVA: <span id="blingCount">0</span> PRODUTOS VINCULÁVEIS.
         </div>
 
-        <div id="placeholder" class="bg-white text-center py-32 border-4 border-dashed border-slate-200 rounded-3xl text-slate-400">
-            <i class="fas fa-project-diagram text-7xl mb-6 opacity-20"></i>
-            <p class="text-2xl font-light">Siga os passos acima para iniciar o processamento.</p>
+        <div id="placeholder" class="bg-white text-center py-20 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400">
+            <p class="text-lg italic">Aguardando arquivos para processamento...</p>
         </div>
     </main>
 
     <template id="cardTemplate">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-12 overflow-hidden">
-            <div class="bg-slate-50 p-5 border-b flex flex-wrap justify-between items-center gap-4">
-                <div class="flex items-center gap-8">
-                    <div class="bg-white p-3 rounded-lg border border-slate-200">
-                        <span class="text-[10px] font-black text-blue-600 uppercase block mb-1">Emitente</span>
-                        <span class="font-bold text-slate-800 forn-nome text-lg">---</span>
-                    </div>
+        <div class="bg-white rounded-xl shadow-md border border-slate-200 mb-8 overflow-hidden">
+            <div class="bg-slate-50 p-3 border-b flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-black forn-nome">---</span>
+                    <span class="text-[10px] text-slate-400 font-mono forn-cnpj">---</span>
                 </div>
-                <button class="export-btn bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-emerald-100 transition-all">
-                    <i class="fas fa-download"></i> EXPORTAR CSV PARA O BLING
+                <button class="export-btn bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
+                    <i class="fas fa-file-export"></i> EXPORTAR CSV
                 </button>
             </div>
             
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-slate-800 text-slate-300 uppercase text-[11px] tracking-widest" id="headerRow">
-                            <th class="p-4 sticky-col-check bg-slate-800 border-r border-slate-700">
-                                <input type="checkbox" class="select-all w-4 h-4 accent-blue-500">
+            <div class="table-viewport custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky top-0 z-40">
+                        <tr class="bg-slate-800 text-slate-300 text-[10px] uppercase tracking-tighter" id="headerRow">
+                            <th class="p-2 sticky-col-check bg-slate-800 border-r border-slate-700 text-center">
+                                <input type="checkbox" class="select-all w-3 h-3">
                             </th>
                         </tr>
                     </thead>
@@ -106,8 +105,7 @@
     </template>
 
 <script>
-    // Memória global para a base do Bling
-    let baseBling = {}; // Chave: EAN, Valor: ID
+    let baseBling = {};
 
     const colunasModelo = [
         'ID', 'Código', 'Descrição', 'Unidade', 'NCM', 'Origem', 'Preço', 'Valor IPI fixo', 
@@ -126,55 +124,39 @@
         'Valor ICMS próprio do substituto', 'Categoria do produto', 'Informações Adicionais'
     ];
 
-    // 1. Lógica para processar o CSV do Bling
+    // Carregar Base Bling
     document.getElementById('blingCsvInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(event) {
             const text = event.target.result;
             const rows = text.split(/\r?\n/);
-            const headers = rows[0].split(',').map(h => h.replace(/"/g, '').trim());
-            
-            const idxID = headers.indexOf('ID');
-            const idxEAN = headers.indexOf('GTIN/EAN');
+            const sep = rows[0].includes(';') ? ';' : ',';
+            const headers = rows[0].split(sep).map(h => h.replace(/"/g, '').trim().toUpperCase());
+            const idxID = headers.findIndex(h => h === 'ID');
+            const idxEAN = headers.findIndex(h => h.includes('EAN'));
 
-            if (idxID === -1 || idxEAN === -1) {
-                alert("Erro: O CSV do Bling deve conter as colunas 'ID' e 'GTIN/EAN'.");
-                return;
-            }
-
-            let count = 0;
-            baseBling = {}; // Limpa base anterior
+            baseBling = {};
             for (let i = 1; i < rows.length; i++) {
-                const cols = rows[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Split que ignora vírgulas dentro de aspas
-                if (cols.length > idxEAN) {
-                    const idVal = cols[idxID]?.replace(/"/g, '').trim();
-                    const eanVal = cols[idxEAN]?.replace(/"/g, '').trim();
-                    if (eanVal && eanVal !== "") {
-                        baseBling[eanVal] = idVal;
-                        count++;
-                    }
-                }
+                const cols = rows[i].split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
+                if (cols[idxEAN]) baseBling[cols[idxEAN].replace(/"/g, '').trim()] = cols[idxID]?.replace(/"/g, '').trim();
             }
-            
-            const status = document.getElementById('blingStatus');
-            status.classList.remove('hidden');
-            document.getElementById('blingCount').innerText = count;
+            document.getElementById('blingStatus').classList.remove('hidden');
+            document.getElementById('blingCount').innerText = Object.keys(baseBling).length;
+            alert("Base Bling Sincronizada!");
         };
         reader.readAsText(file);
     });
 
-    // 2. Lógica para processar os XMLs
+    // Processar XMLs
     document.getElementById('xmlInput').addEventListener('change', function(e) {
         if(e.target.files.length > 0) {
             document.getElementById('placeholder').style.display = 'none';
             Array.from(e.target.files).forEach(file => {
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(event.target.result, "text/xml");
+                reader.onload = (ev) => {
+                    const xmlDoc = new DOMParser().parseFromString(ev.target.result, "text/xml");
                     criarCardNota(xmlDoc, file.name);
                 };
                 reader.readAsText(file);
@@ -185,25 +167,26 @@
     function criarCardNota(xml, fileName) {
         const container = document.getElementById('cardsContainer');
         const template = document.getElementById('cardTemplate').content.cloneNode(true);
-        
         const emit = xml.getElementsByTagName('emit')[0];
-        const nomeForn = emit ? emit.getElementsByTagName('xNome')[0].textContent : "Desconhecido";
-        const cnpjForn = emit ? emit.getElementsByTagName('CNPJ')[0].textContent : "---";
+        const nomeForn = emit?.getElementsByTagName('xNome')[0]?.textContent || "Desconhecido";
+        const cnpjForn = emit?.getElementsByTagName('CNPJ')[0]?.textContent || "---";
 
-        template.querySelector('.forn-nome').innerText = nomeForn;
+        template.querySelector('.forn-nome').innerText = nomeForn.substring(0, 30);
+        template.querySelector('.forn-cnpj').innerText = cnpjForn;
+
         const headerRow = template.querySelector('#headerRow');
         const tbody = template.querySelector('tbody');
 
         colunasModelo.forEach(col => {
             const th = document.createElement('th');
-            let classe = "p-4 font-bold border-r border-slate-700 whitespace-nowrap ";
-            if(col === 'ID') classe += "col-id";
-            else if(col === 'Descrição') classe += "col-desc sticky-col-desc bg-slate-800";
-            else if(['Unidade', 'Estoque', 'Origem'].includes(col)) classe += "col-small";
-            else if(['NCM', 'Preço', 'Preço de custo'].includes(col)) classe += "col-med";
-            else if(col === 'Código') classe += "col-cod";
-            else classe += "col-large";
-            th.className = classe;
+            let cl = "p-2 border-r border-slate-700 font-bold ";
+            if(col === 'ID') cl += "col-id";
+            else if(col === 'Descrição') cl += "col-desc sticky-col-desc bg-slate-800";
+            else if(['Unidade', 'Estoque', 'Origem'].includes(col)) cl += "col-small";
+            else if(['NCM', 'Preço', 'Preço de custo'].includes(col)) cl += "col-med";
+            else if(col === 'Código') cl += "col-cod";
+            else cl += "col-default";
+            th.className = cl;
             th.innerText = col;
             headerRow.appendChild(th);
         });
@@ -212,67 +195,55 @@
         for (let i = 0; i < itens.length; i++) {
             const prod = itens[i].getElementsByTagName('prod')[0];
             const row = tbody.insertRow();
-            
             const checkCell = row.insertCell();
-            checkCell.className = "p-4 sticky-col-check text-center";
-            checkCell.innerHTML = `<input type="checkbox" class="prod-select w-4 h-4 accent-blue-600" checked>`;
+            checkCell.className = "p-2 sticky-col-check text-center border-r";
+            checkCell.innerHTML = `<input type="checkbox" class="prod-select w-3 h-3 accent-blue-600" checked>`;
 
-            // Extração de dados básica para o vínculo
             const eanXML = prod.getElementsByTagName('cEAN')[0]?.textContent || "";
             const idVinculado = baseBling[eanXML] || "";
 
             colunasModelo.forEach(col => {
                 const cell = row.insertCell();
-                let valor = "";
-                let classe = "p-2 border-r border-slate-100 ";
+                let v = ""; 
+                let cl = "p-1 border-r border-slate-100 ";
 
-                if(col === 'ID') { 
-                    valor = idVinculado; 
-                    classe += "col-id";
-                    if(idVinculado) cell.innerHTML = `<div class="flex flex-col"><span class="status-badge status-vinc mb-1 text-center">Vinculado</span><input type="text" value="${valor}" class="font-bold text-blue-800"></div>`;
-                    else cell.innerHTML = `<input type="text" value="${valor}">`;
-                    cell.className = classe;
-                    return;
+                if(col === 'ID') {
+                    v = idVinculado; cl += "col-id";
+                    cell.innerHTML = idVinculado ? `<span class="status-badge status-vinc">OK</span><input type="text" value="${v}">` : `<input type="text" value="${v}">`;
+                } else {
+                    if(col === 'Código') { v = prod.getElementsByTagName('cProd')[0]?.textContent || ""; cl += "col-cod"; }
+                    else if(col === 'Descrição') { v = prod.getElementsByTagName('xProd')[0]?.textContent || ""; cl += "col-desc sticky-col-desc"; }
+                    else if(col === 'Unidade') { v = prod.getElementsByTagName('uCom')[0]?.textContent || ""; cl += "col-small"; }
+                    else if(col === 'Estoque') { v = prod.getElementsByTagName('qCom')[0]?.textContent || "0"; cl += "col-small font-bold text-blue-600"; }
+                    else if(col === 'NCM') { v = prod.getElementsByTagName('NCM')[0]?.textContent || ""; cl += "col-med"; }
+                    else if(['Preço', 'Preço de custo', 'Preço de compra'].includes(col)) { v = prod.getElementsByTagName('vUnCom')[0]?.textContent || "0"; cl += "col-med"; }
+                    else if(col === 'GTIN/EAN') { v = eanXML; cl += "col-med"; }
+                    else if(col === 'Fornecedor') { v = nomeForn; cl += "col-default"; }
+                    else if(col === 'Situação') { v = "Ativo"; cl += "col-small"; }
+                    else cl += "col-default";
+                    cell.innerHTML = `<input type="text" value="${v}">`;
                 }
-                
-                if(col === 'Código') { valor = prod.getElementsByTagName('cProd')[0]?.textContent || ""; classe += "col-cod"; }
-                else if(col === 'Descrição') { valor = prod.getElementsByTagName('xProd')[0]?.textContent || ""; classe += "col-desc sticky-col-desc"; }
-                else if(col === 'Unidade') { valor = prod.getElementsByTagName('uCom')[0]?.textContent || ""; classe += "col-small"; }
-                else if(col === 'Estoque') { valor = prod.getElementsByTagName('qCom')[0]?.textContent || "0"; classe += "col-small text-blue-700 font-bold"; }
-                else if(col === 'NCM') { valor = prod.getElementsByTagName('NCM')[0]?.textContent || ""; classe += "col-med"; }
-                else if(col === 'Preço de custo' || col === 'Preço de compra' || col === 'Preço') { valor = prod.getElementsByTagName('vUnCom')[0]?.textContent || "0"; classe += "col-med"; }
-                else if(col === 'GTIN/EAN') { valor = eanXML; classe += "col-med"; }
-                else if(col === 'Fornecedor') { valor = nomeForn; classe += "col-large"; }
-                else if(col === 'Situação') { valor = "Ativo"; classe += "col-small"; }
-                else classe += "col-large";
-
-                cell.className = classe;
-                cell.innerHTML = `<input type="text" value="${valor}">`;
+                cell.className = cl;
             });
         }
 
-        template.querySelector('.select-all').addEventListener('change', (e) => {
-            tbody.querySelectorAll('.prod-select').forEach(c => c.checked = e.target.checked);
-        });
-
+        template.querySelector('.select-all').onclick = (e) => tbody.querySelectorAll('.prod-select').forEach(c => c.checked = e.target.checked);
         template.querySelector('.export-btn').onclick = () => exportarCSV(tbody, nomeForn);
         container.appendChild(template);
     }
 
-    function exportarCSV(tbody, nomeForn) {
-        let csvRows = ["\ufeff" + colunasModelo.join(",")];
-        const rows = tbody.querySelectorAll("tr");
-        rows.forEach(row => {
+    function exportarCSV(tbody, nome) {
+        let csv = ["\ufeff" + colunasModelo.join(",")];
+        tbody.querySelectorAll("tr").forEach(row => {
             if (row.querySelector('.prod-select').checked) {
-                const data = Array.from(row.querySelectorAll('input[type="text"]')).map(i => `"${i.value.replace(/"/g, '""')}"`);
-                csvRows.push(data.join(","));
+                csv.push(Array.from(row.querySelectorAll('input')).map(i => `"${i.value.replace(/"/g, '""')}"`).join(","));
             }
         });
-        const blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `IMPORTAR_BLING_${nomeForn.replace(/[^a-z0-9]/gi, '_').toUpperCase()}.csv`;
-        link.click();
+        const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `BLING_${nome.toUpperCase().replace(/\s/g, '_')}.csv`;
+        a.click();
     }
 </script>
 </body>
