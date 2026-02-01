@@ -3,245 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Kits Bling (v4.0 - CORREÇÃO DEFINITIVA DE IDs)</title>
+    <title>Gerador Bling - FIXO KIT100</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    
     <style>
-        body { background-color: #e9ecef; font-family: 'Segoe UI', sans-serif; }
-        .container { max-width: 1000px; }
-        .card { border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .badge-id { font-size: 0.9em; font-family: monospace; }
-        .error-box { background: #fee; border: 1px solid #f00; color: #a00; padding: 10px; display: none; margin-top: 10px; border-radius: 5px; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', monospace; }
+        .card { border: 1px solid #ced4da; box-shadow: none; border-radius: 4px; }
+        .fixed-data { background-color: #e9ecef; border: 1px solid #adb5bd; color: #495057; font-weight: bold; }
+        .badge-id { font-size: 0.9rem; letter-spacing: 1px; }
+        .table-xs th, .table-xs td { font-size: 0.85rem; padding: 0.4rem; }
     </style>
 </head>
 <body>
 
-    <div class="container py-5">
-        <h2 class="fw-bold text-center mb-4">📦 Gerador de Kits - Versão Final (IDs Obrigatórios)</h2>
+<div class="container py-4">
+    <h3 class="fw-bold text-center mb-4">GERADOR DE COMPOSIÇÃO (KIT100)</h3>
 
-        <div class="card p-4">
-            <h5 class="fw-bold">1. Carregar CSV de Produtos (Exportado do Bling)</h5>
-            <input type="file" id="fileInput" class="form-control" accept=".csv">
-            <div id="statusLoad" class="mt-2 fw-bold text-muted">Aguardando arquivo...</div>
-            <div id="errorLoad" class="error-box"></div>
+    <div class="row">
+        <div class="col-12 mb-3">
+            <div class="card p-3 border-primary">
+                <label class="fw-bold text-primary mb-2">1. CARREGUE SEU BANCO DE DADOS (CSV DO BLING)</label>
+                <input type="file" id="dbInput" class="form-control" accept=".csv">
+                <small id="dbStatus" class="mt-2 d-block text-muted">Aguardando arquivo...</small>
+            </div>
         </div>
 
-        <div class="card p-4">
-            <h5 class="fw-bold">2. Criar Kit</h5>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">SKU do Kit (Pai)</label>
-                    <input type="text" id="kitSku" class="form-control" placeholder="Ex: KIT-123" onblur="verificarPai()">
-                    <div id="paiStatus" class="form-text"></div>
-                </div>
-                <div class="col-md-8">
-                    <label class="form-label">Nome do Kit</label>
-                    <input type="text" id="kitName" class="form-control">
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Componentes (Ex: <code>1x nome do produto</code>)</label>
-                    <textarea id="kitItems" class="form-control font-monospace" rows="5"></textarea>
-                    <button onclick="adicionarKit()" class="btn btn-primary mt-2 w-100 fw-bold">⬇️ ADICIONAR À LISTA</button>
+        <div class="col-12 mb-3">
+            <div class="card p-3">
+                <h6 class="fw-bold border-bottom pb-2">2. DADOS DO KIT (FIXOS)</h6>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="small text-muted">ID da Composição</label>
+                        <input type="text" class="form-control fixed-data" value="16598186578" readonly id="fixedId">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted">Descrição</label>
+                        <input type="text" class="form-control fixed-data" value="KIT100" readonly id="fixedDesc">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted">Código</label>
+                        <input type="text" class="form-control fixed-data" value="69486" readonly id="fixedCode">
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="card p-4">
-            <h5 class="fw-bold d-flex justify-content-between">
-                3. Lista Final
-                <button onclick="limpar()" class="btn btn-sm btn-outline-danger">Limpar</button>
-            </h5>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Kit (Pai)</th>
-                            <th>ID Pai</th>
-                            <th>Qtd</th>
-                            <th>Componente (Filho)</th>
-                            <th>ID Filho (CRÍTICO)</th>
-                            <th>Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaBody"></tbody>
-                </table>
+        <div class="col-12 mb-3">
+            <div class="card p-3">
+                <label class="fw-bold mb-2">3. LISTA DE COMPONENTES (FILHOS)</label>
+                <textarea id="inputItems" class="form-control font-monospace" rows="5" placeholder="1x cafe caboclo&#10;2x acucar uniao"></textarea>
+                <button onclick="processar()" class="btn btn-dark w-100 mt-2 fw-bold">PROCESSAR LISTA</button>
             </div>
-            <div class="text-end">
-                <button onclick="baixarCSV()" id="btnBaixar" class="btn btn-success btn-lg disabled">💾 BAIXAR ARQUIVO CORRETO</button>
+        </div>
+
+        <div class="col-12">
+            <div class="card p-3">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-xs align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID Pai</th>
+                                <th>Cod Pai</th>
+                                <th>Qtd</th>
+                                <th>ID Filho (Banco)</th>
+                                <th>Desc Filho</th>
+                                <th>Cod Filho</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
+                <button id="btnDownload" onclick="baixar()" class="btn btn-success w-100 disabled fw-bold p-3">BAIXAR CSV EXATO</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        let produtos = [];
-        let listaKits = [];
+<script>
+    let dbProdutos = [];
+    let listaFinal = [];
 
-        // 1. CARREGAMENTO ROBUSTO DO ARQUIVO
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+    // --- LEITURA DO ARQUIVO DE PRODUTOS ---
+    document.getElementById('dbInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
 
-            Papa.parse(file, {
-                header: true,
-                delimiter: ";", // Bling usa ponto e vírgula
-                skipEmptyLines: true,
-                encoding: "ISO-8859-1", // Codificação padrão do Excel BR
-                complete: function(results) {
-                    
-                    // LÓGICA DE DETECÇÃO DE COLUNA ID (O PULO DO GATO)
-                    // Procura qualquer coluna que limpa de aspas e espaços seja "ID" ou "id"
-                    const campos = results.meta.fields;
-                    console.log("Colunas encontradas:", campos);
+        Papa.parse(file, {
+            header: true,
+            delimiter: ";", // Bling padrão
+            encoding: "ISO-8859-1", // Bling padrão
+            skipEmptyLines: true,
+            complete: (results) => {
+                const fields = results.meta.fields.map(f => f.trim().toLowerCase());
+                
+                // Tenta achar as colunas independente de maiuscula/minuscula
+                const keyID = results.meta.fields.find(f => f.toLowerCase().trim() === 'id');
+                const keyCod = results.meta.fields.find(f => f.toLowerCase().includes('código') || f.toLowerCase().includes('codigo'));
+                const keyDesc = results.meta.fields.find(f => f.toLowerCase().includes('descri'));
 
-                    const nomeColunaID = campos.find(c => c.trim().replace(/['"]/g, '').toLowerCase() === 'id');
-                    const nomeColunaCod = campos.find(c => c.trim().replace(/['"]/g, '').toLowerCase().includes('código') || c.toLowerCase().includes('codigo'));
-                    const nomeColunaDesc = campos.find(c => c.trim().replace(/['"]/g, '').toLowerCase().includes('descri'));
-
-                    if (!nomeColunaID) {
-                        document.getElementById('errorLoad').style.display = 'block';
-                        document.getElementById('errorLoad').innerText = "ERRO FATAL: Não encontrei a coluna 'ID' no seu arquivo. Verifique se exportou corretamente do Bling.";
-                        return;
-                    }
-
-                    // Mapeia forçando a extração do ID
-                    produtos = results.data.map(row => {
-                        // Remove aspas extras se houver nos valores
-                        let idLimpo = row[nomeColunaID] ? row[nomeColunaID].replace(/['"]/g, '').trim() : "";
-                        return {
-                            id: idLimpo,
-                            codigo: row[nomeColunaCod] ? row[nomeColunaCod].replace(/['"]/g, '').trim() : "",
-                            descricao: row[nomeColunaDesc] ? row[nomeColunaDesc].replace(/['"]/g, '').trim() : "",
-                            // Campo de busca normalizado
-                            busca: ((row[nomeColunaDesc]||"") + " " + (row[nomeColunaCod]||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                        };
-                    }).filter(p => p.id !== ""); // Remove linhas sem ID
-
-                    document.getElementById('statusLoad').innerHTML = `<span class="text-success">✅ ${produtos.length} produtos carregados! Coluna ID detectada: <b>${nomeColunaID}</b></span>`;
-                    document.getElementById('errorLoad').style.display = 'none';
+                if(!keyID) {
+                    document.getElementById('dbStatus').innerHTML = `<span class="text-danger fw-bold">❌ ERRO: Coluna 'ID' não encontrada no CSV.</span>`;
+                    return;
                 }
+
+                dbProdutos = results.data.map(row => ({
+                    id: row[keyID],
+                    codigo: row[keyCod] || "",
+                    descricao: row[keyDesc] || "",
+                    // Cria string de busca normalizada
+                    busca: ((row[keyDesc]||"") + " " + (row[keyCod]||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                })).filter(p => p.id && p.id.trim() !== "");
+
+                document.getElementById('dbStatus').innerHTML = `<span class="text-success fw-bold">✅ ${dbProdutos.length} produtos carregados na memória.</span>`;
+            }
+        });
+    });
+
+    // --- PROCESSAMENTO ---
+    function processar() {
+        if(dbProdutos.length === 0) return alert("Carregue o arquivo de produtos primeiro (Passo 1).");
+
+        const linhas = document.getElementById('inputItems').value.split('\n');
+        listaFinal = [];
+        const tbody = document.getElementById('previewBody');
+        tbody.innerHTML = "";
+
+        // DADOS FIXOS
+        const pai = {
+            id: document.getElementById('fixedId').value,
+            desc: document.getElementById('fixedDesc').value,
+            cod: document.getElementById('fixedCode').value
+        };
+
+        linhas.forEach(linha => {
+            if(!linha.trim()) return;
+
+            // Regex para pegar quantidade e nome
+            const match = linha.match(/^(\d+)[xX]?\s+(.*)/);
+            if(!match) return;
+
+            const qtd = match[1];
+            const termo = match[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const termosBusca = termo.split(" ");
+
+            // Busca no banco de dados carregado
+            const encontrados = dbProdutos.filter(p => termosBusca.every(t => p.busca.includes(t)));
+            
+            let filho = { id: "", codigo: "", descricao: "NÃO ENCONTRADO" };
+            let status = "❌";
+            let classRow = "table-danger";
+
+            if(encontrados.length > 0) {
+                filho = encontrados[0]; // Pega o primeiro
+                status = "✅";
+                classRow = "";
+            }
+
+            // Adiciona à lista final
+            listaFinal.push({
+                pai: pai,
+                filho: filho,
+                qtd: qtd,
+                valido: !!filho.id
             });
+
+            // Renderiza na tela
+            const tr = document.createElement('tr');
+            tr.className = classRow;
+            tr.innerHTML = `
+                <td>${pai.id}</td>
+                <td>${pai.cod}</td>
+                <td class="text-center fw-bold">${qtd}</td>
+                <td><span class="badge bg-light text-dark border badge-id">${filho.id || '---'}</span></td>
+                <td>${filho.descricao}</td>
+                <td>${filho.codigo}</td>
+                <td class="text-center">${status}</td>
+            `;
+            tbody.appendChild(tr);
         });
 
-        function normalizar(txt) {
-            return txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        // Habilita download se tiver itens
+        const btn = document.getElementById('btnDownload');
+        if(listaFinal.length > 0 && listaFinal.every(i => i.valido)) {
+            btn.classList.remove('disabled');
+            btn.innerText = "BAIXAR CSV (PRONTO)";
+        } else {
+            btn.classList.add('disabled');
+            btn.innerText = "CORRIJA OS ERROS (ITENS VERMELHOS)";
         }
+    }
 
-        // Verifica se o Pai já existe para pegar o ID dele
-        function verificarPai() {
-            const sku = document.getElementById('kitSku').value.trim();
-            const feedback = document.getElementById('paiStatus');
-            if (!sku || produtos.length === 0) return;
+    // --- GERAÇÃO DO CSV ---
+    function baixar() {
+        // Cabeçalho Exato do Modelo
+        const header = "ID da composição;Descrição da composição;Código da composição;ID do componente;Descrição do componente;Código componente;Quantidade do Componente;Custo unitário;Operação";
+        
+        let csvContent = header + "\n";
 
-            const pai = produtos.find(p => p.codigo === sku);
-            if (pai) {
-                feedback.innerHTML = `<span class="text-success fw-bold">✅ Pai encontrado! ID: ${pai.id}</span>`;
-                if(!document.getElementById('kitName').value) document.getElementById('kitName').value = pai.descricao;
-            } else {
-                feedback.innerHTML = `<span class="text-danger fw-bold">⚠️ Pai não encontrado no arquivo (ID será vazio).</span>`;
-            }
-        }
+        listaFinal.forEach(item => {
+            // Montagem da linha respeitando ordem exata
+            const row = [
+                item.pai.id,           // ID da composição
+                item.pai.desc,         // Descrição da composição
+                item.pai.cod,          // Código da composição
+                item.filho.id,         // ID do componente (VEM DO BANCO DE DADOS)
+                item.filho.descricao,  // Descrição do componente
+                item.filho.codigo,     // Código componente
+                item.qtd,              // Quantidade
+                "0",                   // Custo unitário
+                "A"                    // Operação
+            ];
+            csvContent += row.join(";") + "\n";
+        });
 
-        function adicionarKit() {
-            if (produtos.length === 0) return alert("Carregue o arquivo primeiro!");
-            
-            const skuPai = document.getElementById('kitSku').value.trim();
-            const nomePai = document.getElementById('kitName').value.trim();
-            const linhas = document.getElementById('kitItems').value.split('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "importacao_kit100_final.csv";
+        document.body.appendChild(link);
+        link.click();
+    }
+</script>
 
-            // Tenta pegar ID do Pai
-            const objPai = produtos.find(p => p.codigo === skuPai);
-            const idPai = objPai ? objPai.id : ""; // Se não achar, vai vazio (Bling tenta pelo SKU)
-
-            linhas.forEach(linha => {
-                if (!linha.trim()) return;
-
-                const match = linha.match(/^(\d+)[xX]?\s+(.*)/);
-                if (!match) return alert(`Linha inválida: ${linha}`);
-
-                const qtd = match[1];
-                const termo = normalizar(match[2]);
-                const palavras = termo.split(' ');
-
-                // Busca Produto Filho
-                const matches = produtos.filter(p => palavras.every(pl => p.busca.includes(pl)));
-
-                let filho = { id: "", codigo: "ERRO", descricao: "NÃO ENCONTRADO" };
-                let erro = true;
-
-                if (matches.length > 0) {
-                    filho = matches[0]; // Pega o primeiro
-                    erro = false;
-                }
-
-                listaKits.push({
-                    skuPai, nomePai, idPai,
-                    idFilho: filho.id,
-                    codFilho: filho.codigo,
-                    descFilho: filho.descricao,
-                    qtd, erro
-                });
-            });
-
-            renderizar();
-            document.getElementById('kitItems').value = '';
-        }
-
-        function renderizar() {
-            const tbody = document.getElementById('tabelaBody');
-            tbody.innerHTML = '';
-            
-            listaKits.forEach((item, i) => {
-                const tr = document.createElement('tr');
-                if (item.erro || !item.idFilho) tr.classList.add('table-danger');
-
-                tr.innerHTML = `
-                    <td>${item.skuPai}</td>
-                    <td><span class="badge bg-secondary">${item.idPai || 'N/A'}</span></td>
-                    <td>${item.qtd}</td>
-                    <td>${item.descFilho}</td>
-                    <td><span class="badge bg-${item.idFilho ? 'success' : 'danger'} badge-id">${item.idFilho || 'SEM ID'}</span></td>
-                    <td><button onclick="rm(${i})" class="btn btn-sm btn-danger">X</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('btnBaixar').classList.remove('disabled');
-        }
-
-        function rm(i) { listaKits.splice(i, 1); renderizar(); }
-        function limpar() { listaKits = []; renderizar(); }
-
-        function baixarCSV() {
-            // VERIFICAÇÃO FINAL
-            if (listaKits.some(k => !k.idFilho)) {
-                alert("PARE! Existem itens vermelhos SEM ID na lista. Eles não vão funcionar. Corrija antes de baixar.");
-                return;
-            }
-
-            const header = ["ID da composição", "Descrição da composição", "Código da composição", "ID do componente", "Descrição do componente", "Código componente", "Quantidade do Componente", "Custo unitário", "Operação"];
-            
-            const rows = listaKits.map(k => [
-                k.idPai,    // ID DO PAI (Se tiver)
-                k.nomePai,
-                k.skuPai,
-                k.idFilho,  // ID DO FILHO (Obrigatório)
-                k.descFilho,
-                k.codFilho,
-                k.qtd,
-                "",         // Custo
-                "A"
-            ]);
-
-            const csvContent = Papa.unparse([header, ...rows], { delimiter: ";", quotes: false });
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "importacao_kits_COM_IDS.csv";
-            document.body.appendChild(a);
-            a.click();
-        }
-    </script>
 </body>
 </html>
