@@ -1344,7 +1344,7 @@ const Importer = {
     }
 };
 
-/* --- CSV IMPORTER - ATUALIZAÇÃO VIA ARQUIVO --- */
+/* --- CSV IMPORTER - FIX ENCODING UTF-8 --- */
 const CSVImporter = {
     parse: (inp) => {
         const file = inp.files[0];
@@ -1359,10 +1359,10 @@ const CSVImporter = {
 
             // Identifica delimitador (ponto e vírgula ou vírgula)
             const delimiter = lines[0].includes(';') ? ';' : ',';
-            const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+            // LIMPEZA: Remove aspas extras que alguns CSVs colocam (ex: "Descrição")
+            const headers = lines[0].split(delimiter).map(h => h.trim().replace(/"/g, '').toLowerCase());
 
-            // Mapeamento EXATO para o seu arquivo
-            // Colunas: Descrição, Preço, Estoque, GTIN/EAN, GTIN/EAN da Embalagem
+            // Mapeamento EXATO
             const colDesc = headers.indexOf("descrição");
             const colPreco = headers.indexOf("preço");
             const colEstoque = headers.indexOf("estoque");
@@ -1371,6 +1371,7 @@ const CSVImporter = {
 
             // Validação mínima das colunas
             if (colDesc === -1 || colPreco === -1) {
+                console.log("Headers encontrados:", headers);
                 return alert("Erro: Colunas 'Descrição' ou 'Preço' não encontradas. Verifique se o arquivo está correto.");
             }
 
@@ -1386,7 +1387,8 @@ const CSVImporter = {
 
             // Loop de processamento
             for (let i = 1; i < lines.length; i++) {
-                const columns = lines[i].split(delimiter).map(c => c.trim());
+                // Também removemos aspas dos dados
+                const columns = lines[i].split(delimiter).map(c => c.trim().replace(/"/g, ''));
                 if (columns.length < headers.length) continue;
 
                 const csvData = {
@@ -1443,8 +1445,8 @@ const CSVImporter = {
             App.render();
             alert(`Processamento Concluído!\n✅ Atualizados: ${updates}\n🆕 Novos: ${creations}`);
         };
-        // Leitura com encoding ISO-8859-1 para garantir acentuação correta
-        reader.readAsText(file, 'ISO-8859-1'); 
+        // Leitura em UTF-8 para garantir caracteres especiais
+        reader.readAsText(file, 'UTF-8'); 
         inp.value = '';
     }
 };
