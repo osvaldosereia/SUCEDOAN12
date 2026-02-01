@@ -1344,7 +1344,7 @@ const Importer = {
     }
 };
 
-/* --- CSV IMPORTER - ATUALIZAÇÃO DE CADASTRO --- */
+/* --- CSV IMPORTER - ATUALIZAÇÃO VIA ARQUIVO --- */
 const CSVImporter = {
     parse: (inp) => {
         const file = inp.files[0];
@@ -1357,24 +1357,32 @@ const CSVImporter = {
             const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
             if (lines.length < 2) return alert("Arquivo CSV vazio ou sem dados.");
 
-            // Identifica delimitador
+            // Identifica delimitador (ponto e vírgula ou vírgula)
             const delimiter = lines[0].includes(';') ? ';' : ',';
             const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
 
-            // Mapeamento de colunas solicitadas
+            // Mapeamento EXATO para o seu arquivo
+            // Colunas: Descrição, Preço, Estoque, GTIN/EAN, GTIN/EAN da Embalagem
             const colDesc = headers.indexOf("descrição");
             const colPreco = headers.indexOf("preço");
             const colEstoque = headers.indexOf("estoque");
-            const colEan = headers.indexOf("getin/ean");
-            const colEanEmb = headers.indexOf("getin/ean embalagem");
+            const colEan = headers.indexOf("gtin/ean");
+            const colEanEmb = headers.indexOf("gtin/ean da embalagem");
 
             // Validação mínima das colunas
             if (colDesc === -1 || colPreco === -1) {
-                return alert("Erro: Colunas 'Descrição' ou 'Preço' não encontradas no CSV. Verifique o cabeçalho.");
+                return alert("Erro: Colunas 'Descrição' ou 'Preço' não encontradas. Verifique se o arquivo está correto.");
             }
 
             let updates = 0;
             let creations = 0;
+            
+            // Função auxiliar para converter "1.000,00" ou "10,00" para número float
+            const parseBRNum = (val) => {
+                if(!val) return 0;
+                // Remove pontos de milhar e troca vírgula por ponto
+                return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0;
+            };
 
             // Loop de processamento
             for (let i = 1; i < lines.length; i++) {
@@ -1383,8 +1391,8 @@ const CSVImporter = {
 
                 const csvData = {
                     nome: columns[colDesc].toUpperCase(),
-                    preco: parseFloat(columns[colPreco].replace(',', '.')) || 0,
-                    estoque: parseFloat(columns[colEstoque]) || 0,
+                    preco: parseBRNum(columns[colPreco]),
+                    estoque: parseBRNum(columns[colEstoque]),
                     ean: columns[colEan] || "",
                     eanEmb: columns[colEanEmb] || ""
                 };
