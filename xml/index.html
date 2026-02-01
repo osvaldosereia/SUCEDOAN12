@@ -3,105 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador Bling - Composição Editável</title>
+    <title>Gerador Bling - Composição Profissional</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .container { max-width: 1000px; }
-        .card { border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .card-header { font-weight: bold; background-color: #e9ecef; }
-        .badge-id { font-family: monospace; letter-spacing: 1px; font-size: 0.9em; }
-        .form-control:focus { box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15); border-color: #86b7fe; }
-        /* Destaque para os campos editáveis do Pai */
-        .input-pai { background-color: #fff; border: 2px solid #ced4da; font-weight: 600; color: #212529; }
-        .input-pai:focus { border-color: #0d6efd; background-color: #fff; }
+        :root {
+            --bling-blue: #0056b3;
+            --bling-dark: #212529;
+            --bg-gray: #f4f7f9;
+        }
+
+        body { 
+            background-color: var(--bg-gray); 
+            font-family: 'Inter', sans-serif; 
+            color: #444;
+        }
+
+        /* Barra de Atalhos */
+        .shortcut-bar {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 10px 0;
+            margin-bottom: 30px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .shortcut-link {
+            text-decoration: none;
+            color: #666;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .shortcut-link:hover {
+            background: #f0f4ff;
+            color: var(--bling-blue);
+        }
+        .shortcut-link .material-icons-round { font-size: 18px; }
+
+        /* Cards e Layout */
+        .container { max-width: 1100px; }
+        .card { 
+            border: none; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.08); 
+            margin-bottom: 25px; 
+        }
+        .card-header { 
+            background-color: #fff; 
+            border-bottom: 1px solid #f0f0f0;
+            font-weight: 700; 
+            padding: 18px 24px;
+            border-radius: 12px 12px 0 0 !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Inputs Customizados */
+        .form-label { font-weight: 600; color: #555; font-size: 0.9rem; }
+        .input-pai { 
+            border: 2px solid #e0e0e0; 
+            padding: 12px;
+            transition: all 0.3s;
+        }
+        .input-pai:focus { 
+            border-color: var(--bling-blue);
+            box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.1);
+        }
+
+        /* Tabela de Resultados */
+        .table { font-size: 0.9rem; }
+        .badge-id { 
+            font-family: 'Roboto Mono', monospace; 
+            font-weight: 600;
+            color: var(--bling-blue);
+            background: #eef4ff;
+            padding: 5px 10px;
+        }
+        .btn-processar {
+            padding: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
 
-<div class="container py-5">
-    <h3 class="fw-bold text-center mb-4">📦 GERADOR DE COMPOSIÇÃO BLING (MODELO OFICIAL)</h3>
+<nav class="shortcut-bar shadow-sm">
+    <div class="container d-flex justify-content-center flex-wrap gap-2">
+        <a href="https://www.bling.com.br/contatos.php" target="_blank" class="shortcut-link">
+            <span class="material-icons-round">people</span> Cadastro Cliente
+        </a>
+        <a href="https://www.bling.com.br/vendas.php" target="_blank" class="shortcut-link">
+            <span class="material-icons-round">shopping_cart</span> Gerar Pedido
+        </a>
+        <a href="https://www.bling.com.br/produtos.php" target="_blank" class="shortcut-link">
+            <span class="material-icons-round">inventory_2</span> Produtos
+        </a>
+        <a href="https://www.bling.com.br/notas.fiscais.php#list" target="_blank" class="shortcut-link">
+            <span class="material-icons-round">description</span> Nota Saída
+        </a>
+        <a href="https://www.bling.com.br/notas.entrada.php#list" target="_blank" class="shortcut-link">
+            <span class="material-icons-round">receipt_long</span> Nota Entrada
+        </a>
+    </div>
+</nav>
 
-    <div class="card">
-        <div class="card-header text-primary">1. CARREGAR BANCO DE DADOS (CSV EXPORTADO DO BLING)</div>
-        <div class="card-body">
-            <label class="form-label small text-muted">Selecione o arquivo com todos os seus produtos (necessário para achar os IDs dos filhos)</label>
-            <input type="file" id="dbInput" class="form-control" accept=".csv">
-            <div id="dbStatus" class="mt-2 fw-bold text-danger small">Nenhum arquivo carregado.</div>
-        </div>
+<div class="container pb-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-dark">Gerador de Composição Bling</h2>
+        <p class="text-muted">Crie arquivos de importação de kits de forma rápida e segura</p>
     </div>
 
     <div class="card">
-        <div class="card-header text-success">2. DADOS DO KIT / PAI (EDITÁVEIS)</div>
-        <div class="card-body bg-light">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">ID da Composição (Pai)</label>
-                    <input type="text" class="form-control input-pai" id="paiId" value="16598186578">
+        <div class="card-header text-primary">
+            <span class="material-icons-round">cloud_upload</span>
+            1. BANCO DE DADOS (CSV)
+        </div>
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <label class="form-label">Selecione o arquivo de produtos exportado do Bling</label>
+                    <input type="file" id="dbInput" class="form-control" accept=".csv">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label fw-bold">Descrição (Nome do Kit)</label>
-                    <input type="text" class="form-control input-pai" id="paiDesc" value="KIT100">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Código (SKU do Kit)</label>
-                    <input type="text" class="form-control input-pai" id="paiCod" value="69486">
+                    <div id="dbStatus" class="alert alert-secondary m-0 py-2 text-center small fw-bold mt-3 mt-md-0">
+                        Aguardando arquivo...
+                    </div>
                 </div>
             </div>
-            <div class="form-text mt-2">Estes dados serão repetidos em todas as linhas do arquivo gerado. Você pode alterá-los se for criar outro kit.</div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header text-dark">3. COMPONENTES (FILHOS)</div>
-        <div class="card-body">
-            <label class="form-label fw-bold">Digite a lista (Formato: 1x Nome do Produto)</label>
-            <textarea id="inputList" class="form-control font-monospace" rows="6" placeholder="Exemplo:&#10;1x cafe caboclo 500g&#10;2x acucar uniao"></textarea>
-            
-            <div class="d-grid gap-2 mt-3">
-                <button onclick="processar()" class="btn btn-primary fw-bold">🔍 PROCESSAR E BUSCAR IDs</button>
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header text-success">
+                    <span class="material-icons-round">account_tree</span>
+                    2. DADOS DO KIT (PAI)
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">ID da Composição</label>
+                        <input type="text" class="form-control input-pai" id="paiId" value="16598186578">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição (Nome do Kit)</label>
+                        <input type="text" class="form-control input-pai" id="paiDesc" value="KIT100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Código (SKU do Kit)</label>
+                        <input type="text" class="form-control input-pai" id="paiCod" value="69486">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header text-dark">
+                    <span class="material-icons-round">list_alt</span>
+                    3. COMPONENTES (FILHOS)
+                </div>
+                <div class="card-body p-4 d-flex flex-column">
+                    <label class="form-label">Lista de Itens (Ex: 1x Nome do Produto)</label>
+                    <textarea id="inputList" class="form-control font-monospace flex-grow-1 mb-3" rows="6" placeholder="1x cafe caboclo 500g&#10;2x acucar uniao"></textarea>
+                    <button onclick="processar()" class="btn btn-primary btn-processar w-100 d-flex align-items-center justify-content-center gap-2">
+                        <span class="material-icons-round">search</span> PROCESSAR E BUSCAR IDs
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="card" id="cardResult" style="display:none;">
-        <div class="card-header">4. CONFERÊNCIA E DOWNLOAD</div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped align-middle table-sm">
-                    <thead class="table-dark small">
-                        <tr>
-                            <th>ID Pai</th>
-                            <th>SKU Pai</th>
+    <div class="card mt-4" id="cardResult" style="display:none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <span class="material-icons-round">fact_check</span>
+                4. CONFERÊNCIA E DOWNLOAD
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive rounded border mb-3">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-uppercase">
+                            <th class="ps-3">SKU Pai</th>
                             <th class="text-center">Qtd</th>
-                            <th>ID Filho (Banco)</th>
-                            <th>Nome Filho (Encontrado)</th>
+                            <th>ID Filho</th>
+                            <th>Nome Filho</th>
                             <th>SKU Filho</th>
-                            <th>Status</th>
+                            <th class="text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
             </div>
 
-            <div class="alert alert-warning small">
-                <i class="bi bi-info-circle"></i> Verifique se os <strong>IDs dos Filhos</strong> foram encontrados. Se estiver "SEM ID", o Bling rejeitará a linha.
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                <div class="text-muted small">
+                    <span class="material-icons-round align-bottom text-warning">info</span>
+                    Certifique-se de que todos os itens possuem ID antes de baixar.
+                </div>
+                <button onclick="baixarCSV()" id="btnDownload" class="btn btn-success btn-lg px-5 disabled fw-bold shadow-sm">
+                    💾 BAIXAR CSV OFICIAL
+                </button>
             </div>
-
-            <button onclick="baixarCSV()" id="btnDownload" class="btn btn-success btn-lg w-100 disabled">
-                💾 BAIXAR ARQUIVO .CSV (MODELO BLING)
-            </button>
         </div>
     </div>
 </div>
 
 <script>
+    // --- LÓGICA ORIGINAL PRESERVADA ---
     let produtosDB = [];
     let listaExportacao = [];
 
-    // --- 1. LEITURA DO ARQUIVO DE PRODUTOS ---
     document.getElementById('dbInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if(!file) return;
@@ -109,38 +236,35 @@
         Papa.parse(file, {
             header: true,
             delimiter: ";",
-            encoding: "ISO-8859-1", // Padrão PT-BR
+            encoding: "ISO-8859-1",
             skipEmptyLines: true,
             complete: function(results) {
-                // Detecção inteligente de colunas
                 const cols = results.meta.fields;
-                // Procura coluna ID (remove aspas se houver)
                 const colId = cols.find(c => c.trim().replace(/['"]/g,'').toLowerCase() === 'id');
                 const colCod = cols.find(c => c.toLowerCase().includes('código') || c.toLowerCase().includes('codigo'));
                 const colDesc = cols.find(c => c.toLowerCase().includes('descri'));
 
                 if (!colId) {
-                    alert("ERRO: Não encontrei a coluna 'ID' no arquivo CSV. Verifique a exportação.");
+                    alert("ERRO: Coluna 'ID' não encontrada.");
                     return;
                 }
 
                 produtosDB = results.data.map(row => ({
-                    id: row[colId] ? row[colId].replace(/\D/g, '') : '', // Limpa ID para só numeros
+                    id: row[colId] ? row[colId].replace(/\D/g, '') : '',
                     codigo: row[colCod] || '',
                     descricao: row[colDesc] || '',
-                    // String de busca normalizada (sem acento, minuscula)
                     busca: ((row[colDesc]||'') + ' ' + (row[colCod]||'')).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 })).filter(p => p.id !== "");
 
-                document.getElementById('dbStatus').className = "mt-2 fw-bold text-success small";
-                document.getElementById('dbStatus').innerText = `✅ Banco carregado: ${produtosDB.length} produtos indexados.`;
+                const status = document.getElementById('dbStatus');
+                status.className = "alert alert-success m-0 py-2 text-center small fw-bold mt-3 mt-md-0";
+                status.innerHTML = `✅ ${produtosDB.length} Produtos`;
             }
         });
     });
 
-    // --- 2. PROCESSAMENTO ---
     function processar() {
-        if(produtosDB.length === 0) return alert("Por favor, carregue o CSV de produtos no Passo 1.");
+        if(produtosDB.length === 0) return alert("Carregue o CSV no Passo 1 primeiro.");
 
         const paiId = document.getElementById('paiId').value.trim();
         const paiDesc = document.getElementById('paiDesc').value.trim();
@@ -148,7 +272,7 @@
         const texto = document.getElementById('inputList').value;
         const tbody = document.getElementById('tableBody');
 
-        if(!paiId || !paiDesc || !paiCod) return alert("Preencha os dados do Kit (Pai) no Passo 2.");
+        if(!paiId || !paiDesc || !paiCod) return alert("Preencha os dados do Kit.");
 
         listaExportacao = [];
         tbody.innerHTML = "";
@@ -159,24 +283,19 @@
 
         linhas.forEach(linha => {
             if(!linha.trim()) return;
-
-            // Regex: Pega "1x" ou "10 X" e o resto do texto
             const match = linha.match(/^(\d+)[xX]?\s+(.*)/);
-            if(!match) return; // Ignora linha inválida
+            if(!match) return;
 
             const qtd = match[1];
             const termoBusca = match[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             const palavras = termoBusca.split(" ");
 
-            // Busca no banco
             const encontrados = produtosDB.filter(p => palavras.every(pl => p.busca.includes(pl)));
-
-            let filho = { id: "", codigo: "", descricao: "❌ NÃO ENCONTRADO" };
-            let classe = "table-danger";
+            let filho = { id: "", codigo: "", descricao: "⚠️ PRODUTO NÃO LOCALIZADO" };
+            let rowClass = encontrados.length > 0 ? "" : "table-danger-light";
 
             if(encontrados.length > 0) {
-                filho = encontrados[0]; // Pega o primeiro match
-                classe = "";
+                filho = encontrados[0];
             } else {
                 temErro = true;
             }
@@ -190,16 +309,14 @@
                 valido: !!filho.id
             });
 
-            // Renderiza Linha
             const tr = document.createElement('tr');
-            if(classe) tr.className = classe;
+            if(!filho.id) tr.style.backgroundColor = "#fff5f5";
             tr.innerHTML = `
-                <td>${paiId}</td>
-                <td>${paiCod}</td>
-                <td class="text-center fw-bold">${qtd}</td>
-                <td><span class="badge bg-light text-dark border badge-id">${filho.id || 'SEM ID'}</span></td>
-                <td>${filho.descricao}</td>
-                <td>${filho.codigo}</td>
+                <td class="ps-3 text-muted">${paiCod}</td>
+                <td class="text-center fw-bold text-dark">${qtd}</td>
+                <td><span class="badge-id rounded">${filho.id || '---'}</span></td>
+                <td class="small fw-semibold">${filho.descricao}</td>
+                <td class="text-muted">${filho.codigo}</td>
                 <td class="text-center">${filho.id ? '✅' : '❌'}</td>
             `;
             tbody.appendChild(tr);
@@ -208,32 +325,19 @@
         const btn = document.getElementById('btnDownload');
         if(listaExportacao.length > 0 && !temErro) {
             btn.classList.remove('disabled');
-            btn.innerText = "💾 BAIXAR ARQUIVO .CSV";
+            btn.innerHTML = "💾 BAIXAR ARQUIVO .CSV";
         } else {
             btn.classList.add('disabled');
-            btn.innerText = "⚠️ CORRIJA OS ITENS VERMELHOS";
+            btn.innerHTML = "⚠️ CORRIJA OS ITENS FALTANTES";
         }
     }
 
-    // --- 3. EXPORTAÇÃO ---
     function baixarCSV() {
-        // Cabeçalho Oficial do Bling
         const header = "ID da composição;Descrição da composição;Código da composição;ID do componente;Descrição do componente;Código componente;Quantidade do Componente;Custo unitário;Operação";
-        
         let csvContent = header + "\n";
 
         listaExportacao.forEach(item => {
-            const linha = [
-                item.paiId,             // ID da composição
-                item.paiDesc,           // Descrição da composição
-                item.paiCod,            // Código da composição
-                item.filhoId,           // ID do componente (VEM DO BANCO)
-                item.filhoDesc,         // Descrição do componente
-                item.filhoCod,          // Código componente
-                item.qtd,               // Quantidade
-                "0",                    // Custo unitário (Padrão 0)
-                "A"                     // Operação (A = Adicionar/Alterar)
-            ];
+            const linha = [item.paiId, item.paiDesc, item.paiCod, item.filhoId, item.filhoDesc, item.filhoCod, item.qtd, "0", "A"];
             csvContent += linha.join(";") + "\n";
         });
 
@@ -242,9 +346,7 @@
         const link = document.createElement("a");
         link.href = url;
         link.download = `importacao_kit_${document.getElementById('paiCod').value}.csv`;
-        document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
     }
 </script>
 
