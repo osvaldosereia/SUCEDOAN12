@@ -3,330 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Kits Bling (Web)</title>
+    <title>Gerador de Kits Bling (v4.0 - CORREÇÃO DEFINITIVA DE IDs)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
-        .step-number { 
-            background: #3498db; color: white; width: 30px; height: 30px; 
-            border-radius: 50%; display: inline-flex; align-items: center; 
-            justify-content: center; font-weight: bold; margin-right: 10px;
-        }
-        .status-badge { font-size: 0.8rem; padding: 5px 10px; border-radius: 12px; }
-        .bg-success-subtle { background-color: #d4edda !important; color: #155724; }
-        .bg-danger-subtle { background-color: #f8d7da !important; color: #721c24; }
-        textarea { font-family: monospace; }
-        .loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8); z-index: 9999; display: none;
-            justify-content: center; align-items: center; flex-direction: column;
-        }
+        body { background-color: #e9ecef; font-family: 'Segoe UI', sans-serif; }
+        .container { max-width: 1000px; }
+        .card { border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .badge-id { font-size: 0.9em; font-family: monospace; }
+        .error-box { background: #fee; border: 1px solid #f00; color: #a00; padding: 10px; display: none; margin-top: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="loading" class="loading-overlay">
-        <div class="spinner-border text-primary" role="status"></div>
-        <div class="mt-2 fw-bold" id="loadingText">Processando...</div>
-    </div>
-
     <div class="container py-5">
-        <div class="text-center mb-5">
-            <h1 class="fw-bold text-primary">📦 Gerador de Composições Bling</h1>
-            <p class="text-muted">Crie arquivos de importação de Kits sem abrir o Excel.</p>
+        <h2 class="fw-bold text-center mb-4">📦 Gerador de Kits - Versão Final (IDs Obrigatórios)</h2>
+
+        <div class="card p-4">
+            <h5 class="fw-bold">1. Carregar CSV de Produtos (Exportado do Bling)</h5>
+            <input type="file" id="fileInput" class="form-control" accept=".csv">
+            <div id="statusLoad" class="mt-2 fw-bold text-muted">Aguardando arquivo...</div>
+            <div id="errorLoad" class="error-box"></div>
         </div>
 
         <div class="card p-4">
-            <h5 class="card-title d-flex align-items-center">
-                <span class="step-number">1</span> Carregar Base de Produtos
-            </h5>
-            <div class="card-body">
-                <p class="small text-muted">Exporte seus produtos do Bling (CSV) e suba aqui. O sistema precisa disso para achar os códigos.</p>
-                <input type="file" id="fileInput" class="form-control" accept=".csv">
-                <div id="fileStatus" class="mt-2 text-muted fst-italic">Nenhum arquivo carregado.</div>
-            </div>
-        </div>
-
-        <div class="card p-4">
-            <h5 class="card-title d-flex align-items-center">
-                <span class="step-number">2</span> Definir Novo Kit
-            </h5>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Código do Kit (SKU Pai)</label>
-                        <input type="text" id="kitSku" class="form-control" placeholder="Ex: KIT-CAFE-01">
-                    </div>
-                    <div class="col-md-8">
-                        <label class="form-label">Nome do Kit</label>
-                        <input type="text" id="kitName" class="form-control" placeholder="Ex: Kit Café Completo">
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Componentes (1 por linha)</label>
-                        <textarea id="kitItems" class="form-control" rows="5" placeholder="Exemplo:&#10;1x cafe caboclo 250g&#10;2x acucar uniao"></textarea>
-                        <div class="form-text">Digite a quantidade seguida de 'x' e o nome do produto. O sistema buscará automaticamente.</div>
-                    </div>
-                    <div class="col-12 text-end">
-                        <button onclick="processarKit()" class="btn btn-primary px-4">⬇️ Adicionar à Lista</button>
-                    </div>
+            <h5 class="fw-bold">2. Criar Kit</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">SKU do Kit (Pai)</label>
+                    <input type="text" id="kitSku" class="form-control" placeholder="Ex: KIT-123" onblur="verificarPai()">
+                    <div id="paiStatus" class="form-text"></div>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Nome do Kit</label>
+                    <input type="text" id="kitName" class="form-control">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Componentes (Ex: <code>1x nome do produto</code>)</label>
+                    <textarea id="kitItems" class="form-control font-monospace" rows="5"></textarea>
+                    <button onclick="adicionarKit()" class="btn btn-primary mt-2 w-100 fw-bold">⬇️ ADICIONAR À LISTA</button>
                 </div>
             </div>
         </div>
 
         <div class="card p-4">
-            <h5 class="card-title d-flex align-items-center">
-                <span class="step-number">3</span> Revisão e Exportação
+            <h5 class="fw-bold d-flex justify-content-between">
+                3. Lista Final
+                <button onclick="limpar()" class="btn btn-sm btn-outline-danger">Limpar</button>
             </h5>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Kit (Pai)</th>
-                                <th>Qtd</th>
-                                <th>Componente Encontrado (Filho)</th>
-                                <th>SKU Filho</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="previewTableBody">
-                            </tbody>
-                    </table>
-                </div>
-
-                <div id="emptyState" class="text-center py-4 text-muted">
-                    Nenhum kit adicionado ainda.
-                </div>
-
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                    <button onclick="limparTudo()" class="btn btn-outline-danger me-md-2">Limpar Tudo</button>
-                    <button onclick="gerarCSV()" class="btn btn-success btn-lg">💾 Baixar CSV para Bling</button>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Kit (Pai)</th>
+                            <th>ID Pai</th>
+                            <th>Qtd</th>
+                            <th>Componente (Filho)</th>
+                            <th>ID Filho (CRÍTICO)</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaBody"></tbody>
+                </table>
+            </div>
+            <div class="text-end">
+                <button onclick="baixarCSV()" id="btnBaixar" class="btn btn-success btn-lg disabled">💾 BAIXAR ARQUIVO CORRETO</button>
             </div>
         </div>
     </div>
 
     <script>
-        let productsDB = []; // Armazena a base de produtos carregada
-        let kitsToExport = []; // Armazena os kits processados
+        let produtos = [];
+        let listaKits = [];
 
-        // --- 1. Carregamento do Arquivo ---
+        // 1. CARREGAMENTO ROBUSTO DO ARQUIVO
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
-            document.getElementById('loading').style.display = 'flex';
-            document.getElementById('loadingText').innerText = "Lendo arquivo de produtos...";
 
             Papa.parse(file, {
                 header: true,
                 delimiter: ";", // Bling usa ponto e vírgula
                 skipEmptyLines: true,
-                encoding: "ISO-8859-1", // Padrão comum do Excel/Bling BR. Se der erro, tentar UTF-8
+                encoding: "ISO-8859-1", // Codificação padrão do Excel BR
                 complete: function(results) {
-                    if (results.data && results.data.length > 0) {
-                        // Mapeia e limpa os dados
-                        productsDB = results.data.map(p => ({
-                            codigo: p['Código'] ? p['Código'].trim() : '',
-                            descricao: p['Descrição'] ? p['Descrição'].trim() : '',
-                            // Cria um campo de busca normalizado (sem acentos, minúsculo)
-                            busca: normalizeText(p['Descrição'] + " " + p['Código'])
-                        })).filter(p => p.codigo !== ""); // Remove linhas vazias
+                    
+                    // LÓGICA DE DETECÇÃO DE COLUNA ID (O PULO DO GATO)
+                    // Procura qualquer coluna que limpa de aspas e espaços seja "ID" ou "id"
+                    const campos = results.meta.fields;
+                    console.log("Colunas encontradas:", campos);
 
-                        document.getElementById('fileStatus').innerHTML = 
-                            `<span class="text-success fw-bold">✅ ${productsDB.length} produtos carregados na memória!</span>`;
-                    } else {
-                        alert("Erro ao ler CSV. Verifique se o separador é ponto e vírgula (;).");
+                    const nomeColunaID = campos.find(c => c.trim().replace(/['"]/g, '').toLowerCase() === 'id');
+                    const nomeColunaCod = campos.find(c => c.trim().replace(/['"]/g, '').toLowerCase().includes('código') || c.toLowerCase().includes('codigo'));
+                    const nomeColunaDesc = campos.find(c => c.trim().replace(/['"]/g, '').toLowerCase().includes('descri'));
+
+                    if (!nomeColunaID) {
+                        document.getElementById('errorLoad').style.display = 'block';
+                        document.getElementById('errorLoad').innerText = "ERRO FATAL: Não encontrei a coluna 'ID' no seu arquivo. Verifique se exportou corretamente do Bling.";
+                        return;
                     }
-                    document.getElementById('loading').style.display = 'none';
-                },
-                error: function(err) {
-                    alert("Erro ao ler arquivo: " + err.message);
-                    document.getElementById('loading').style.display = 'none';
+
+                    // Mapeia forçando a extração do ID
+                    produtos = results.data.map(row => {
+                        // Remove aspas extras se houver nos valores
+                        let idLimpo = row[nomeColunaID] ? row[nomeColunaID].replace(/['"]/g, '').trim() : "";
+                        return {
+                            id: idLimpo,
+                            codigo: row[nomeColunaCod] ? row[nomeColunaCod].replace(/['"]/g, '').trim() : "",
+                            descricao: row[nomeColunaDesc] ? row[nomeColunaDesc].replace(/['"]/g, '').trim() : "",
+                            // Campo de busca normalizado
+                            busca: ((row[nomeColunaDesc]||"") + " " + (row[nomeColunaCod]||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        };
+                    }).filter(p => p.id !== ""); // Remove linhas sem ID
+
+                    document.getElementById('statusLoad').innerHTML = `<span class="text-success">✅ ${produtos.length} produtos carregados! Coluna ID detectada: <b>${nomeColunaID}</b></span>`;
+                    document.getElementById('errorLoad').style.display = 'none';
                 }
             });
         });
 
-        // --- 2. Função de Normalização de Texto ---
-        function normalizeText(text) {
-            if (!text) return "";
-            return text.toString()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-                .toLowerCase();
+        function normalizar(txt) {
+            return txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        // --- 3. Processar Kit ---
-        function processarKit() {
-            if (productsDB.length === 0) {
-                alert("Por favor, carregue o arquivo de produtos primeiro (Passo 1).");
-                return;
+        // Verifica se o Pai já existe para pegar o ID dele
+        function verificarPai() {
+            const sku = document.getElementById('kitSku').value.trim();
+            const feedback = document.getElementById('paiStatus');
+            if (!sku || produtos.length === 0) return;
+
+            const pai = produtos.find(p => p.codigo === sku);
+            if (pai) {
+                feedback.innerHTML = `<span class="text-success fw-bold">✅ Pai encontrado! ID: ${pai.id}</span>`;
+                if(!document.getElementById('kitName').value) document.getElementById('kitName').value = pai.descricao;
+            } else {
+                feedback.innerHTML = `<span class="text-danger fw-bold">⚠️ Pai não encontrado no arquivo (ID será vazio).</span>`;
             }
+        }
 
-            const kitSku = document.getElementById('kitSku').value.trim();
-            const kitName = document.getElementById('kitName').value.trim();
-            const itemsText = document.getElementById('kitItems').value.trim();
+        function adicionarKit() {
+            if (produtos.length === 0) return alert("Carregue o arquivo primeiro!");
+            
+            const skuPai = document.getElementById('kitSku').value.trim();
+            const nomePai = document.getElementById('kitName').value.trim();
+            const linhas = document.getElementById('kitItems').value.split('\n');
 
-            if (!kitSku || !itemsText) {
-                alert("Preencha o Código do Kit e os Itens.");
-                return;
-            }
+            // Tenta pegar ID do Pai
+            const objPai = produtos.find(p => p.codigo === skuPai);
+            const idPai = objPai ? objPai.id : ""; // Se não achar, vai vazio (Bling tenta pelo SKU)
 
-            const lines = itemsText.split('\n');
-            const newRows = [];
+            linhas.forEach(linha => {
+                if (!linha.trim()) return;
 
-            lines.forEach(line => {
-                if (!line.trim()) return;
-
-                // Regex para pegar Quantidade e Nome (ex: "2x Acucar")
-                // Aceita "2x", "2 x", "2 " no inicio
-                const match = line.match(/^(\d+)[xX]?\s+(.*)/);
-                
-                if (!match) {
-                    alert(`Formato inválido na linha: "${line}". Use o formato "1x Nome do Produto"`);
-                    return;
-                }
+                const match = linha.match(/^(\d+)[xX]?\s+(.*)/);
+                if (!match) return alert(`Linha inválida: ${linha}`);
 
                 const qtd = match[1];
-                const termoBusca = match[2];
-                const termoNormalizado = normalizeText(termoBusca);
+                const termo = normalizar(match[2]);
+                const palavras = termo.split(' ');
 
-                // Busca Inteligente
-                const palavras = termoNormalizado.split(' ');
-                
-                // Filtra produtos que contêm TODAS as palavras digitadas
-                const encontrados = productsDB.filter(prod => {
-                    return palavras.every(palavra => prod.busca.includes(palavra));
-                });
+                // Busca Produto Filho
+                const matches = produtos.filter(p => palavras.every(pl => p.busca.includes(pl)));
 
-                let produtoSelecionado = null;
-                let statusClass = "";
-                let obs = "";
+                let filho = { id: "", codigo: "ERRO", descricao: "NÃO ENCONTRADO" };
+                let erro = true;
 
-                if (encontrados.length === 0) {
-                    // Não achou
-                    produtoSelecionado = { descricao: `❌ NÃO ENCONTRADO: ${termoBusca}`, codigo: "???" };
-                    statusClass = "table-danger";
-                } else if (encontrados.length === 1) {
-                    // Match perfeito
-                    produtoSelecionado = encontrados[0];
-                } else {
-                    // Múltiplos encontrados - Pega o primeiro mas avisa
-                    // Tenta priorizar match exato se houver, senão pega o primeiro
-                    produtoSelecionado = encontrados[0]; 
-                    statusClass = "table-warning";
-                    obs = `(Atenção: ${encontrados.length} similares encontrados. Usado: ${produtoSelecionado.descricao})`;
+                if (matches.length > 0) {
+                    filho = matches[0]; // Pega o primeiro
+                    erro = false;
                 }
 
-                // Adiciona ao array de exportação
-                kitsToExport.push({
-                    paiSku: kitSku,
-                    paiNome: kitName,
-                    filhoSku: produtoSelecionado.codigo,
-                    filhoNome: produtoSelecionado.descricao,
-                    qtd: qtd,
-                    status: statusClass
+                listaKits.push({
+                    skuPai, nomePai, idPai,
+                    idFilho: filho.id,
+                    codFilho: filho.codigo,
+                    descFilho: filho.descricao,
+                    qtd, erro
                 });
-
-                // Adiciona linha visual
-                renderRow(kitSku, qtd, produtoSelecionado, statusClass, obs);
             });
 
-            // Limpa campos para o próximo
-            document.getElementById('kitSku').value = "";
-            document.getElementById('kitName').value = "";
-            document.getElementById('kitItems').value = "";
-            document.getElementById('emptyState').style.display = 'none';
+            renderizar();
+            document.getElementById('kitItems').value = '';
         }
 
-        function renderRow(pai, qtd, filho, cssClass, obs) {
-            const tbody = document.getElementById('previewTableBody');
-            const tr = document.createElement('tr');
-            if (cssClass) tr.className = cssClass;
+        function renderizar() {
+            const tbody = document.getElementById('tabelaBody');
+            tbody.innerHTML = '';
+            
+            listaKits.forEach((item, i) => {
+                const tr = document.createElement('tr');
+                if (item.erro || !item.idFilho) tr.classList.add('table-danger');
 
-            tr.innerHTML = `
-                <td><strong>${pai}</strong></td>
-                <td>${qtd}</td>
-                <td>
-                    ${filho.descricao}
-                    ${obs ? `<br><small class="text-muted fst-italic">${obs}</small>` : ''}
-                </td>
-                <td>${filho.codigo}</td>
-                <td><button onclick="removerLinha(this)" class="btn btn-sm btn-outline-danger">X</button></td>
-            `;
-            tbody.appendChild(tr);
+                tr.innerHTML = `
+                    <td>${item.skuPai}</td>
+                    <td><span class="badge bg-secondary">${item.idPai || 'N/A'}</span></td>
+                    <td>${item.qtd}</td>
+                    <td>${item.descFilho}</td>
+                    <td><span class="badge bg-${item.idFilho ? 'success' : 'danger'} badge-id">${item.idFilho || 'SEM ID'}</span></td>
+                    <td><button onclick="rm(${i})" class="btn btn-sm btn-danger">X</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('btnBaixar').classList.remove('disabled');
         }
 
-        function removerLinha(btn) {
-            const tr = btn.closest('tr');
-            const index = tr.rowIndex - 1; // Ajuste por causa do header
-            kitsToExport.splice(index, 1); // Remove do array lógico (aproximado, ideal seria ID único)
-            tr.remove();
-        }
+        function rm(i) { listaKits.splice(i, 1); renderizar(); }
+        function limpar() { listaKits = []; renderizar(); }
 
-        function limparTudo() {
-            if(confirm("Limpar toda a lista?")) {
-                kitsToExport = [];
-                document.getElementById('previewTableBody').innerHTML = "";
-                document.getElementById('emptyState').style.display = 'block';
-            }
-        }
-
-        // --- 4. Gerar CSV ---
-        function gerarCSV() {
-            if (kitsToExport.length === 0) {
-                alert("Nada para exportar.");
+        function baixarCSV() {
+            // VERIFICAÇÃO FINAL
+            if (listaKits.some(k => !k.idFilho)) {
+                alert("PARE! Existem itens vermelhos SEM ID na lista. Eles não vão funcionar. Corrija antes de baixar.");
                 return;
             }
 
-            // Validação antes de baixar
-            const erros = kitsToExport.filter(k => k.filhoSku === "???");
-            if (erros.length > 0) {
-                alert("⚠️ Existem itens não encontrados na lista (em vermelho). Remova-os ou corrija antes de baixar.");
-                return;
-            }
-
-            // Monta dados no padrão Bling
-            // Cabeçalho: ID da composição;Descrição da composição;Código da composição;ID do componente;Descrição do componente;Código componente;Quantidade do Componente;Custo unitário;Operação
-            const csvRows = [];
-            csvRows.push([
-                "ID da composição", "Descrição da composição", "Código da composição",
-                "ID do componente", "Descrição do componente", "Código componente",
-                "Quantidade do Componente", "Custo unitário", "Operação"
+            const header = ["ID da composição", "Descrição da composição", "Código da composição", "ID do componente", "Descrição do componente", "Código componente", "Quantidade do Componente", "Custo unitário", "Operação"];
+            
+            const rows = listaKits.map(k => [
+                k.idPai,    // ID DO PAI (Se tiver)
+                k.nomePai,
+                k.skuPai,
+                k.idFilho,  // ID DO FILHO (Obrigatório)
+                k.descFilho,
+                k.codFilho,
+                k.qtd,
+                "",         // Custo
+                "A"
             ]);
 
-            kitsToExport.forEach(k => {
-                csvRows.push([
-                    "0",                // ID Composição (0 p/ novo)
-                    k.paiNome,          // Descrição Pai
-                    k.paiSku,           // Código Pai
-                    "",                 // ID Componente (vazio)
-                    k.filhoNome,        // Descrição Componente
-                    k.filhoSku,         // Código Componente
-                    k.qtd,              // Quantidade
-                    "",                 // Custo (opcional)
-                    "A"                 // Operação (A = Adicionar/Alterar)
-                ]);
-            });
-
-            // Converte para CSV string usando PapaParse (para garantir escaping correto)
-            const csvString = Papa.unparse(csvRows, {
-                delimiter: ";",
-                quotes: false // Bling geralmente não exige aspas se não tiver conflito, mas Papa trata bem
-            });
-
-            // Cria Blob e Download
-            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const csvContent = Papa.unparse([header, ...rows], { delimiter: ";", quotes: false });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "importacao_kits_bling.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "importacao_kits_COM_IDS.csv";
+            document.body.appendChild(a);
+            a.click();
         }
     </script>
 </body>
