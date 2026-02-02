@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Master Pro | Etiquetas & Dashboard</title>
+    <title>XML Master Pro | Completo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -14,11 +14,12 @@
         .field-filled { background-color: #f0f9ff !important; border-color: #bae6fd !important; }
         .selected-item { border-left: 5px solid #3b82f6 !important; background-color: #f1f5f9; }
         
+        /* Sidebar Animada */
         .sidebar { width: 60px; transition: width 0.2s; overflow: hidden; white-space: nowrap; }
         .sidebar:hover { width: 220px; }
         .main-content { flex: 1; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        /* Estilos de Abas */
+        /* Abas */
         .tab-content { display: none; height: calc(100vh - 140px); }
         .tab-content.active { display: flex; }
         .tab-btn.active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
@@ -27,54 +28,26 @@
         .status-novo { background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
         .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 8px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; }
 
-        /* ESTILO PARA IMPRESSÃO DE ETIQUETAS - AJUSTADO PARA 85MM */
+        .nav-link { display: flex; align-items: center; padding: 14px 20px; color: #94a3b8; transition: all 0.2s; gap: 15px; cursor: pointer; }
+        .nav-link:hover { background: #1e293b; color: #3b82f6; }
+        .nav-link i { min-width: 20px; text-align: center; font-size: 18px; }
+
+        /* IMPRESSÃO 85MM */
         @media print {
-            /* Oculta tudo que não é área de impressão */
             body > *:not(#printArea) { display: none !important; }
-            
-            #printArea { 
-                display: block !important; 
-                width: 85mm; /* Largura da bobina */
-                margin: 0;
-                padding: 0;
-            }
-
+            #printArea { display: block !important; width: 85mm; margin: 0; padding: 0; }
             .etiqueta {
-                width: 80mm; /* Largura segura para impressão (deixa 2.5mm de margem cada lado) */
-                min-height: 40mm; /* Altura mínima sugerida */
-                margin: 0 auto; /* Centraliza na bobina */
+                width: 80mm;
+                min-height: 40mm;
+                margin: 0 auto;
                 padding: 2mm 0;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
-                page-break-after: always; /* Corta/pula página após cada etiqueta */
-                border-bottom: 1px dashed #ccc; /* Guia de corte opcional */
+                display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+                page-break-after: always;
+                border-bottom: 1px dashed #ccc;
             }
-
-            .etiqueta-nome { 
-                font-size: 14pt; /* Fonte maior para largura de 85mm */
-                font-weight: 900; 
-                line-height: 1.1; 
-                margin-bottom: 3mm; 
-                width: 100%; 
-                text-transform: uppercase;
-                word-wrap: break-word;
-            }
-
-            .etiqueta-ean { 
-                font-size: 11pt; 
-                width: 100%; 
-                font-family: 'Courier New', monospace; /* Fonte monoespaçada para leitura fácil */
-                letter-spacing: 1px;
-            }
-
-            /* Configuração da Página para o Driver da Impressora */
-            @page {
-                size: 85mm auto; /* Largura fixa, altura automática */
-                margin: 0; /* Remove margens do navegador */
-            }
+            .etiqueta-nome { font-size: 14pt; font-weight: 900; line-height: 1.1; margin-bottom: 3mm; width: 100%; text-transform: uppercase; word-wrap: break-word; }
+            .etiqueta-ean { font-size: 11pt; width: 100%; font-family: 'Courier New', monospace; letter-spacing: 1px; }
+            @page { size: 85mm auto; margin: 0; }
         }
     </style>
 </head>
@@ -84,12 +57,41 @@
         <div class="p-4 mb-4 flex justify-center bg-blue-600">
             <i class="fas fa-bolt text-white text-xl"></i>
         </div>
-        <nav class="flex-1">
-            <a href="#" onclick="switchTab('import')" class="nav-link flex items-center p-4 text-slate-400 hover:text-white gap-4" title="Importar">
-                <i class="fas fa-file-import w-5"></i> <span>IMPORTAR XML</span>
+        
+        <nav class="flex-1 overflow-y-auto custom-scrollbar">
+            <div onclick="switchTab('import')" class="nav-link text-white bg-slate-800" title="Dashboard XML">
+                <i class="fas fa-file-invoice"></i> <span>DASHBOARD XML</span>
+            </div>
+            <div onclick="switchTab('labels')" class="nav-link text-white bg-slate-800 mb-2" title="Etiquetas">
+                <i class="fas fa-barcode"></i> <span>ETIQUETAS</span>
+            </div>
+
+            <div class="border-t border-slate-700 my-2 mx-4"></div>
+
+            <a href="https://www.bling.com.br/produtos.php#list" target="_blank" class="nav-link" title="Produtos">
+                <i class="fas fa-box"></i> <span>PRODUTOS</span>
             </a>
-            <a href="#" onclick="switchTab('labels')" class="nav-link flex items-center p-4 text-slate-400 hover:text-white gap-4" title="Etiquetas">
-                <i class="fas fa-barcode w-5"></i> <span>ETIQUETAS</span>
+            <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-link" title="Pedidos">
+                <i class="fas fa-shopping-cart"></i> <span>PEDIDOS</span>
+            </a>
+            <a href="http://localhost:3000/" target="_blank" class="nav-link text-blue-400 font-bold" title="Tirar Pedido">
+                <i class="fas fa-plus-circle"></i> <span>TIRAR PEDIDO</span>
+            </a>
+            <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-link" title="Importar Produtos">
+                <i class="fas fa-upload"></i> <span>IMPORTAR PRODUTOS</span>
+            </a>
+            <a href="https://www.bling.com.br/importador.produtos.estrutura.php" target="_blank" class="nav-link" title="Importar Combos">
+                <i class="fas fa-boxes"></i> <span>IMPORTAR COMBOS</span>
+            </a>
+            <a href="https://www.bling.com.br/vendas.php#list" target="_blank" class="nav-link" title="Pedidos de Venda">
+                <i class="fas fa-list-ul"></i> <span>PEDIDOS DE VENDA</span>
+            </a>
+            <a href="https://www.bling.com.br/contatos.php" target="_blank" class="nav-link" title="Clientes">
+                <i class="fas fa-users"></i> <span>CLIENTES</span>
+            </a>
+            <div class="border-t border-slate-800 my-2"></div>
+            <a href="https://www.donaantonia.com.br/site" target="_blank" class="nav-link text-emerald-400" title="Ver Site">
+                <i class="fas fa-globe"></i> <span>SITE DONA ANTONIA</span>
             </a>
         </nav>
     </aside>
@@ -99,8 +101,8 @@
             <div class="flex items-center gap-8">
                 <h1 class="text-lg font-black tracking-tighter uppercase">XML MASTER <span class="text-blue-600">PRO</span></h1>
                 <nav class="flex gap-4">
-                    <button onclick="switchTab('import')" class="tab-btn active px-3 py-2 font-bold text-xs uppercase tracking-widest">Dashboard</button>
-                    <button onclick="switchTab('labels')" class="tab-btn px-3 py-2 font-bold text-xs uppercase tracking-widest">Etiquetas Bling</button>
+                    <button onclick="switchTab('import')" id="headerBtnImport" class="tab-btn active px-3 py-2 font-bold text-xs uppercase tracking-widest">Dashboard</button>
+                    <button onclick="switchTab('labels')" id="headerBtnLabels" class="tab-btn px-3 py-2 font-bold text-xs uppercase tracking-widest">Etiquetas Bling</button>
                 </nav>
             </div>
             
@@ -187,7 +189,10 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tab + 'Tab').classList.add('active');
-        event.currentTarget.classList.add('active');
+        
+        // Atualiza botões do header
+        if(tab === 'import') document.getElementById('headerBtnImport').classList.add('active');
+        if(tab === 'labels') document.getElementById('headerBtnLabels').classList.add('active');
     }
 
     document.getElementById('blingCsvInput').addEventListener('change', function(e) {
@@ -228,37 +233,28 @@
                     tbody.appendChild(tr);
                 }
             }
-            document.getElementById('blingAlert').classList.remove('hidden');
-            document.getElementById('blingInfo').innerText = `${Object.keys(baseBling).length} PRODUTOS CARREGADOS`;
+            alert("Base Bling carregada com sucesso!");
         };
         reader.readAsText(e.target.files[0], "UTF-8");
     });
 
-    // --- FUNÇÃO DE IMPRESSÃO AJUSTADA PARA GARANTIR VISIBILIDADE ---
     function imprimirEtiquetas() {
         const selecionados = document.querySelectorAll('.label-check:checked');
         if(selecionados.length === 0) return alert("Selecione ao menos um produto!");
 
         const printArea = document.getElementById('printArea');
         printArea.innerHTML = "";
-        
-        // Remove a classe hidden para que o conteúdo exista no DOM antes de imprimir
         printArea.classList.remove('hidden');
 
         selecionados.forEach(cb => {
             const div = document.createElement('div');
             div.className = "etiqueta";
-            div.innerHTML = `
-                <div class="etiqueta-nome">${cb.dataset.nome}</div>
-                <div class="etiqueta-ean">${cb.dataset.ean}</div>
-            `;
+            div.innerHTML = `<div class="etiqueta-nome">${cb.dataset.nome}</div><div class="etiqueta-ean">${cb.dataset.ean}</div>`;
             printArea.appendChild(div);
         });
 
-        // Delay para garantir renderização de fontes
         setTimeout(() => {
             window.print();
-            // Retorna o estado oculto após a janela de impressão fechar
             printArea.classList.add('hidden');
         }, 100);
     }
