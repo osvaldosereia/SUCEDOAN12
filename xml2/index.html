@@ -14,14 +14,14 @@
         .field-filled { background-color: #f0f9ff !important; border-color: #bae6fd !important; }
         .selected-item { border-left: 5px solid #3b82f6 !important; background-color: #f1f5f9; }
         
-        /* Layout */
-        .sidebar { width: 60px; transition: width 0.2s; overflow: hidden; white-space: nowrap; }
+        /* Layout de Colunas */
+        .sidebar { width: 60px; transition: width 0.3s; overflow: hidden; white-space: nowrap; }
         .sidebar:hover { width: 200px; }
-        .main-content { flex: 1; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        .master-panel { height: calc(100vh - 120px); overflow-y: auto; }
-        .detail-panel { height: calc(100vh - 120px); overflow-y: auto; }
+        .main-content { flex: 1; height: 100vh; overflow: hidden; }
+        .master-panel { height: calc(100vh - 100px); overflow-y: auto; }
+        .detail-panel { height: calc(100vh - 100px); overflow-y: auto; }
         
-        .xml-divider { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 6px 12px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+        .xml-divider { background: #f8fafc; border-y: 1px solid #e2e8f0; padding: 6px 12px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
         .status-vinc { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
         .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 6px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; }
         
@@ -44,7 +44,7 @@
             <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-link" title="Pedidos">
                 <i class="fas fa-shopping-cart"></i> <span>Pedidos</span>
             </a>
-            <a href="http://localhost:3000/" target="_blank" class="nav-link text-blue-400 font-bold" title="Tirar Pedido">
+            <a href="http://localhost:3000/" target="_blank" class="nav-link text-blue-400" title="Tirar Pedido">
                 <i class="fas fa-plus-circle"></i> <span>Tirar Pedido</span>
             </a>
             <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-link" title="Importar Produtos">
@@ -60,19 +60,19 @@
                 <i class="fas fa-users"></i> <span>Clientes</span>
             </a>
             <div class="border-t border-slate-800 my-2"></div>
-            <a href="http://www.donaantonia.com.br/site" target="_blank" class="nav-link text-emerald-400" title="Ver Site">
+            <a href="https://www.donaantonia.com.br/site" target="_blank" class="nav-link text-emerald-400" title="Ver Site">
                 <i class="fas fa-globe"></i> <span>Ver Site</span>
             </a>
         </nav>
     </aside>
 
-    <div class="main-content">
+    <div class="main-content flex flex-col">
         
         <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-4">
-                <h1 class="text-lg font-black tracking-tighter uppercase">XML MASTER <span class="text-blue-600">PRO</span></h1>
-                <div id="blingAlert" class="hidden bg-emerald-600 text-white px-3 py-1 rounded-full text-[10px] font-bold animate-pulse">
-                    <i class="fas fa-check"></i> BASE BLING CONECTADA
+                <h1 class="text-lg font-black tracking-tighter">XML MASTER <span class="text-blue-600">INTEGRATOR</span></h1>
+                <div id="blingAlert" class="hidden bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
+                    <i class="fas fa-link"></i> BASE BLING ATIVA
                 </div>
             </div>
             
@@ -88,36 +88,34 @@
             </div>
         </header>
 
-        <div class="flex p-4 gap-4 overflow-hidden flex-1">
+        <div class="flex p-4 gap-4 overflow-hidden">
             
             <div class="w-80 bg-white rounded-xl border border-slate-200 master-panel custom-scrollbar shadow-sm">
                 <div class="p-3 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
-                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Lista da Nota</span>
+                    <span class="text-[10px] font-black uppercase text-slate-400">Produtos</span>
                     <button id="btnExport" class="hidden bg-emerald-600 text-white px-3 py-1 rounded font-bold text-[10px] hover:bg-emerald-700">
                         EXPORTAR (<span id="countSelected">0</span>)
                     </button>
                 </div>
-                <div id="productList" class="divide-y divide-slate-100">
-                    <p class="p-8 text-center text-slate-400 italic text-xs">Aguardando arquivos...</p>
-                </div>
+                <div id="productList" class="divide-y divide-slate-100"></div>
             </div>
 
             <div class="flex-1 bg-white rounded-xl border border-slate-200 detail-panel custom-scrollbar p-6 shadow-sm">
-                <div id="editorPlaceholder" class="flex flex-col items-center justify-center h-full text-slate-300">
-                    <i class="fas fa-mouse-pointer text-5xl mb-4 opacity-10"></i>
-                    <p class="text-sm italic">Selecione um produto para editar</p>
+                <div id="editorPlaceholder" class="flex flex-col items-center justify-center h-full text-slate-300 italic">
+                    <i class="fas fa-hand-pointer text-5xl mb-4 opacity-10"></i>
+                    Selecione um item da nota para editar
                 </div>
 
                 <div id="editorContent" class="hidden">
                     <div class="flex justify-between items-start border-b pb-6 mb-6">
                         <div class="flex-1 mr-6">
-                            <label class="text-[9px] font-black text-blue-500 uppercase">Nome / Descrição do Produto</label>
+                            <label class="text-[9px] font-black text-blue-500 uppercase">Descrição no Bling</label>
                             <input type="text" id="editMainName" class="text-xl font-bold text-slate-800 uppercase w-full bg-slate-50 border-b-2 border-transparent focus:border-blue-500 focus:bg-white outline-none p-1 transition-all" oninput="sincronizarNome(this)">
                             <div id="calcInfo" class="mt-4"></div>
                         </div>
                         <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col items-center gap-1">
-                            <span class="text-[9px] font-black text-blue-800 uppercase">Fator Multiplicador</span>
-                            <input type="number" id="fatorInput" placeholder="1" class="w-16 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center outline-none">
+                            <span class="text-[9px] font-black text-blue-800 uppercase">Fator (X)</span>
+                            <input type="number" id="fatorInput" placeholder="1" class="w-16 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center outline-none focus:ring-2 focus:ring-blue-400">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4" id="fieldsGrid"></div>
@@ -127,60 +125,32 @@
     </div>
 
 <script>
+    // Lógica de Dados permanece a mesma com correções de NCM e Soma de Estoque
     let baseBling = {}; 
     let produtosCarregados = [];
     let produtoSelecionadoIdx = null;
 
     const colunasModelo = ['ID', 'Código', 'Descrição', 'Unidade', 'NCM', 'Origem', 'Preço', 'Valor IPI fixo', 'Observações', 'Situação', 'Estoque', 'Preço de custo', 'Cód no fornecedor', 'Fornecedor', 'Localização', 'Estoque maximo', 'Estoque minimo', 'Peso líquido (Kg)', 'Peso bruto (Kg)', 'GTIN/EAN', 'GTIN/EAN da embalagem', 'Largura do Produto', 'Altura do Produto', 'Profundidade do produto', 'Data Validade', 'Descrição do Produto no Fornecedor', 'Descrição Complementar', 'Itens p/ caixa', 'Produto Variação', 'Tipo Produção', 'Classe de enquadramento do IPI', 'Código da lista de serviços', 'Tipo do item', 'Grupo de Tags/Tags', 'Tributos', 'Código Pai', 'Código Integração', 'Grupo de produtos', 'Marca', 'CEST', 'Volumes', 'Descrição Curta', 'Cross-Docking', 'URL Imagens Externas', 'Link Externo', 'Meses Garantia no Fornecedor', 'Clonar dados do pai', 'Condição do produto', 'Frete Grátis', 'Número FCI', 'Vídeo', 'Departamento', 'Unidade de medida', 'Preço de compra', 'Valor base ICMS ST para retenção', 'Valor ICMS ST para retenção', 'Valor ICMS próprio do substituto', 'Categoria do produto', 'Informações Adicionais'];
 
-    // Lógica Robusta de Importação de CSV
     document.getElementById('blingCsvInput').addEventListener('change', function(e) {
         const reader = new FileReader();
         reader.onload = function(ev) {
-            let content = ev.target.result;
-            
-            // Remove o BOM do Excel se existir
-            content = content.replace(/^\ufeff/, "");
-            
-            const rows = content.split(/\r?\n/);
-            if(rows.length < 1) return;
-
-            // Detectar separador
-            const firstRow = rows[0];
-            const sep = firstRow.includes(';') ? ';' : ',';
-            
-            // Limpar headers de aspas e espaços
-            const headers = firstRow.split(sep).map(h => h.replace(/"/g, '').trim().toUpperCase());
-            
-            const idxID = headers.indexOf('ID');
+            const rows = ev.target.result.split(/\r?\n/);
+            const sep = rows[0].includes(';') ? ';' : ',';
+            const headers = rows[0].split(sep).map(h => h.replace(/"/g, '').trim().toUpperCase());
+            const idxID = headers.findIndex(h => h === 'ID');
             const idxEAN = headers.findIndex(h => h.includes('EAN') || h.includes('GTIN'));
-            const idxEstoque = headers.indexOf('ESTOQUE');
-
-            if(idxID === -1 || idxEAN === -1) {
-                alert("Erro: Não encontramos as colunas 'ID' ou 'GTIN/EAN' no seu CSV do Bling.");
-                return;
-            }
-
+            const idxEstoque = headers.findIndex(h => h === 'ESTOQUE');
             baseBling = {};
-            for(let i = 1; i < rows.length; i++) {
-                if(!rows[i].trim()) continue;
-                
-                // Split que respeita aspas
-                const cols = rows[i].split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
-                
+            rows.forEach((row, i) => {
+                if(i===0) return;
+                const cols = row.split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
                 const ean = cols[idxEAN]?.replace(/"/g, '').trim();
-                const id = cols[idxID]?.replace(/"/g, '').trim();
-                const est = cols[idxEstoque]?.replace(/"/g, '').replace(',', '.') || "0";
-                
-                if(ean && ean !== "") {
-                    baseBling[ean] = { id: id, estoqueAtual: parseFloat(est) };
-                }
-            }
-            
+                if(ean) baseBling[ean] = { id: cols[idxID]?.replace(/"/g, '').trim() || "", estoqueAtual: parseFloat(cols[idxEstoque]?.replace(/"/g, '').replace(',', '.') || 0) };
+            });
             document.getElementById('blingAlert').classList.remove('hidden');
-            alert(`Base Bling Carregada: ${Object.keys(baseBling).length} produtos prontos para vínculo.`);
         };
-        reader.readAsText(e.target.files[0], "UTF-8");
+        reader.readAsText(e.target.files[0]);
     });
 
     document.getElementById('xmlInput').addEventListener('change', function(e) {
@@ -198,22 +168,14 @@
         const emit = xml.getElementsByTagName('emit')[0];
         const nomeForn = emit?.getElementsByTagName('xNome')[0]?.textContent || "Desconhecido";
         const itens = xml.getElementsByTagName('det');
-        
         for (let i = 0; i < itens.length; i++) {
             const prod = itens[i].getElementsByTagName('prod')[0];
             const imposto = itens[i].getElementsByTagName('imposto')[0];
             const ean = prod.getElementsByTagName('cEAN')[0]?.textContent || "";
-            
             const dadosBling = baseBling[ean] || { id: "", estoqueAtual: 0 };
             const qCom = parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent || 0);
             
-            let obj = { 
-                _xmlSource: fileName, 
-                _selected: true, 
-                _original: {}, 
-                _vinculado: dadosBling.id !== "", 
-                _estoqueBling: dadosBling.estoqueAtual 
-            };
+            let obj = { _xmlSource: fileName, _selected: true, _original: {}, _vinculado: dadosBling.id !== "", _estoqueBling: dadosBling.estoqueAtual };
 
             colunasModelo.forEach(col => {
                 let val = "";
@@ -228,10 +190,8 @@
                 else if(col === 'GTIN/EAN') val = ean;
                 else if(col === 'Fornecedor') val = nomeForn;
                 else if(col === 'Situação') val = "Ativo";
-                
                 obj[col] = val;
-                if(['Estoque', 'Preço', 'Preço de custo', 'Preço de compra'].includes(col)) 
-                    obj._original[col] = (col === 'Estoque') ? qCom : val;
+                if(['Estoque', 'Preço', 'Preço de custo', 'Preço de compra'].includes(col)) obj._original[col] = (col === 'Estoque') ? qCom : val;
             });
             produtosCarregados.push(obj);
         }
@@ -272,10 +232,8 @@
         document.getElementById('editorPlaceholder').classList.add('hidden');
         document.getElementById('editorContent').classList.remove('hidden');
         document.getElementById('editMainName').value = p.Descrição;
-        
         const qNota = parseFloat(p.Estoque) - p._estoqueBling;
-        document.getElementById('calcInfo').innerHTML = `<div class="estoque-highlight">Bling: ${p._estoqueBling} + Nota: ${qNota.toFixed(2)} = Total: ${parseFloat(p.Estoque).toFixed(2)}</div>`;
-        
+        document.getElementById('calcInfo').innerHTML = `<div class="estoque-highlight">SOMA: Bling (${p._estoqueBling}) + Nota (${qNota.toFixed(2)}) = Total Final: ${parseFloat(p.Estoque).toFixed(2)}</div>`;
         const grid = document.getElementById('fieldsGrid');
         grid.innerHTML = "";
         colunasModelo.forEach(col => {
@@ -311,6 +269,7 @@
                 if(col === 'Estoque') {
                     const soma = p._estoqueBling + (ori * f);
                     input.value = soma.toFixed(2);
+                    document.getElementById('calcInfo').innerHTML = `<div class="estoque-highlight">SOMA: Bling (${p._estoqueBling}) + (Nota ${ori} x Fator ${f}) = Final: ${soma.toFixed(2)}</div>`;
                 } else if(['Preço', 'Preço de custo', 'Preço de compra'].includes(col)) {
                     input.value = (ori / f).toFixed(4);
                 }
@@ -331,7 +290,7 @@
         const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `CONSOLIDADO_BLING.csv`;
+        a.download = `CONSOLIDADO_ESTOQUE_FINAL.csv`;
         a.click();
     };
 </script>
