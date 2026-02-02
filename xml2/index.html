@@ -28,27 +28,40 @@
         .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 8px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; }
 
         /* ESTILO PARA IMPRESSÃO DE ETIQUETAS */
-        @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; }
-            .etiqueta {
-                width: 50mm;
-                height: 25mm;
-                padding: 4mm;
-                border: 1px solid #eee; /* Apenas visual no browser */
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
-                page-break-after: always;
-                box-sizing: border-box;
-                overflow: hidden;
-            }
-            .etiqueta-nome { font-size: 10pt; font-weight: bold; line-height: 1.1; margin-bottom: 2mm; width: 100%; text-transform: uppercase; }
-            .etiqueta-ean { font-size: 9pt; width: 100%; font-family: monospace; }
-        }
+       @media print {
+    /* Esconde tudo que não é a área de impressão */
+    body > *:not(#printArea) {
+        display: none !important;
+    }
+
+    #printArea {
+        display: block !important;
+        position: static;
+        width: 50mm;
+    }
+
+    .etiqueta {
+        width: 50mm;
+        height: 25mm;
+        padding: 4mm;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        page-break-after: always;
+        box-sizing: border-box;
+        /* Garante que o texto seja visível */
+        color: black !important;
+        background: white !important;
+    }
+
+    /* Remove margens padrão da página (essencial para impressoras térmicas) */
+    @page {
+        size: 50mm 25mm;
+        margin: 0;
+    }
+}
     </style>
 </head>
 <body class="bg-slate-50 flex overflow-hidden text-slate-900">
