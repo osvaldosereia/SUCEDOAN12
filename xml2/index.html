@@ -3,63 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Master Converter | Ultra-Compact</title>
+    <title>XML Master Pro | Inteligência Fiscal ST</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Estilização das barras de rolagem */
         .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 5px; }
         
-        /* Travamento das colunas essenciais */
-        .sticky-col-check { position: sticky; left: 0; background: #f8fafc; z-index: 40; border-right: 1px solid #e2e8f0 !important; width: 40px; }
-        .sticky-col-desc { position: sticky; left: 40px; background: white; z-index: 35; border-right: 2px solid #e2e8f0 !important; }
+        .sticky-col-check { position: sticky; left: 0; background: #f8fafc; z-index: 45; border-right: 1px solid #e2e8f0 !important; width: 40px; }
+        .sticky-col-fator { position: sticky; left: 40px; background: #eff6ff; z-index: 40; border-right: 2px solid #3b82f6 !important; width: 65px; }
+        .sticky-col-desc { position: sticky; left: 105px; background: white; z-index: 35; border-right: 2px solid #e2e8f0 !important; }
 
-        /* Larguras Compactas (40% menores) */
+        .col-fator { min-width: 65px; width: 65px; }
         .col-id { min-width: 65px; width: 65px; background: #fffde7 !important; }
-        .col-cod { min-width: 80px; width: 80px; }
-        .col-desc { min-width: 280px; } /* Descrição ainda legível, mas compacta */
-        .col-small { min-width: 55px; width: 55px; } 
-        .col-med { min-width: 85px; width: 90px; }
-        .col-default { min-width: 110px; }
+        .col-desc { min-width: 280px; }
+        .col-small { min-width: 60px; } 
+        .col-med { min-width: 90px; }
+        .col-fiscal { min-width: 130px; background: #fff5f5 !important; } /* Destaque para campos fiscais */
 
-        /* Limitação de 6 linhas com scroll vertical */
-        .table-viewport { 
-            max-height: 380px; /* Altura aproximada para 6 linhas + header */
-            overflow-y: auto;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-        }
+        .table-viewport { max-height: 400px; overflow: auto; border: 1px solid #e2e8f0; }
 
-        input[type="text"] { 
-            width: 100%; 
-            padding: 2px 4px;
-            font-size: 11px;
-            border: 1px solid transparent;
-            background: transparent;
-        }
-        input[type="text"]:focus { background: white; border-color: #3b82f6; outline: none; }
+        input { width: 100%; padding: 2px 4px; font-size: 11px; border: 1px solid transparent; background: transparent; }
+        input:focus { background: white; border-color: #3b82f6; outline: none; }
         
-        .status-badge { font-size: 8px; padding: 1px 4px; border-radius: 4px; font-weight: bold; }
-        .status-vinc { background: #dcfce7; color: #166534; }
+        .row-st { background: #fff1f2; } /* Linha com ST detectada */
+        .st-warning { background: #ef4444; color: white; font-size: 9px; padding: 2px 4px; border-radius: 3px; font-weight: bold; display: block; margin-bottom: 2px; text-align: center; }
+        .missing-data { border: 1px dashed #ef4444 !important; background: #fee2e2 !important; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
 
-    <header class="bg-slate-900 text-white p-4 shadow-xl border-b-2 border-blue-600 sticky top-0 z-50">
+    <header class="bg-slate-900 text-white p-4 shadow-xl border-b-2 border-red-600 sticky top-0 z-50">
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <h1 class="text-xl font-black tracking-tighter flex items-center gap-2">
-                <i class="fas fa-bolt text-yellow-400"></i> XML MASTER <span class="text-blue-500">PRO</span>
+                <i class="fas fa-shield-alt text-red-500"></i> XML MASTER <span class="text-red-500">FISCAL</span>
             </h1>
-            
             <div class="flex gap-2">
-                <label class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 border border-slate-600 transition-all">
+                <label class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 border border-slate-600">
                     <i class="fas fa-database text-yellow-400"></i> 1. BASE BLING
                     <input type="file" id="blingCsvInput" accept=".csv" class="hidden">
                 </label>
-
-                <label class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
+                <label class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg">
                     <i class="fas fa-file-invoice"></i> 2. IMPORTAR XMLS
                     <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
                 </label>
@@ -68,24 +53,25 @@
     </header>
 
     <main class="container mx-auto px-4 mt-6 pb-10" id="cardsContainer">
-        <div id="blingStatus" class="hidden mb-4 bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm">
-            <i class="fas fa-check-circle"></i> BASE BLING ATIVA: <span id="blingCount">0</span> PRODUTOS VINCULÁVEIS.
+        <div id="statusArea" class="flex gap-4 mb-4">
+            <div id="blingStatus" class="hidden bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold">VÍNCULO ATIVO</div>
+            <div id="stInfo" class="hidden bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold italic animate-pulse">ATENÇÃO: ST DETECTADA EM ALGUNS ITENS</div>
         </div>
-
-        <div id="placeholder" class="bg-white text-center py-20 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400">
-            <p class="text-lg italic">Aguardando arquivos para processamento...</p>
+        
+        <div id="placeholder" class="bg-white text-center py-20 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 font-light italic">
+            Arraste seus XMLs para análise fiscal completa.
         </div>
     </main>
 
     <template id="cardTemplate">
         <div class="bg-white rounded-xl shadow-md border border-slate-200 mb-8 overflow-hidden">
             <div class="bg-slate-50 p-3 border-b flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-black forn-nome">---</span>
-                    <span class="text-[10px] text-slate-400 font-mono forn-cnpj">---</span>
+                <div class="flex items-center gap-3">
+                    <span class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-black forn-nome">---</span>
+                    <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold st-count hidden">ST DETECTADA</span>
                 </div>
-                <button class="export-btn bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
-                    <i class="fas fa-file-export"></i> EXPORTAR CSV
+                <button class="export-btn bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md">
+                    <i class="fas fa-check-double"></i> VALIDAR E EXPORTAR
                 </button>
             </div>
             
@@ -93,9 +79,8 @@
                 <table class="w-full text-left border-collapse">
                     <thead class="sticky top-0 z-40">
                         <tr class="bg-slate-800 text-slate-300 text-[10px] uppercase tracking-tighter" id="headerRow">
-                            <th class="p-2 sticky-col-check bg-slate-800 border-r border-slate-700 text-center">
-                                <input type="checkbox" class="select-all w-3 h-3">
-                            </th>
+                            <th class="p-2 sticky-col-check bg-slate-800 border-r border-slate-700 text-center"><input type="checkbox" class="select-all"></th>
+                            <th class="p-2 sticky-col-fator bg-blue-900 text-white border-r border-blue-700 text-center">Fator (X)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100"></tbody>
@@ -106,7 +91,6 @@
 
 <script>
     let baseBling = {};
-
     const colunasModelo = [
         'ID', 'Código', 'Descrição', 'Unidade', 'NCM', 'Origem', 'Preço', 'Valor IPI fixo', 
         'Observações', 'Situação', 'Estoque', 'Preço de custo', 'Cód no fornecedor', 
@@ -124,7 +108,9 @@
         'Valor ICMS próprio do substituto', 'Categoria do produto', 'Informações Adicionais'
     ];
 
-    // Carregar Base Bling
+    const camposFiscaisST = ['NCM', 'Origem', 'CEST', 'Valor base ICMS ST para retenção', 'Valor ICMS ST para retenção'];
+
+    // Lógica Bling CSV
     document.getElementById('blingCsvInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -136,20 +122,18 @@
             const headers = rows[0].split(sep).map(h => h.replace(/"/g, '').trim().toUpperCase());
             const idxID = headers.findIndex(h => h === 'ID');
             const idxEAN = headers.findIndex(h => h.includes('EAN'));
-
             baseBling = {};
             for (let i = 1; i < rows.length; i++) {
                 const cols = rows[i].split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
                 if (cols[idxEAN]) baseBling[cols[idxEAN].replace(/"/g, '').trim()] = cols[idxID]?.replace(/"/g, '').trim();
             }
             document.getElementById('blingStatus').classList.remove('hidden');
-            document.getElementById('blingCount').innerText = Object.keys(baseBling).length;
             alert("Base Bling Sincronizada!");
         };
         reader.readAsText(file);
     });
 
-    // Processar XMLs
+    // Processar XML
     document.getElementById('xmlInput').addEventListener('change', function(e) {
         if(e.target.files.length > 0) {
             document.getElementById('placeholder').style.display = 'none';
@@ -169,62 +153,98 @@
         const template = document.getElementById('cardTemplate').content.cloneNode(true);
         const emit = xml.getElementsByTagName('emit')[0];
         const nomeForn = emit?.getElementsByTagName('xNome')[0]?.textContent || "Desconhecido";
-        const cnpjForn = emit?.getElementsByTagName('CNPJ')[0]?.textContent || "---";
-
+        
         template.querySelector('.forn-nome').innerText = nomeForn.substring(0, 30);
-        template.querySelector('.forn-cnpj').innerText = cnpjForn;
-
-        const headerRow = template.querySelector('#headerRow');
         const tbody = template.querySelector('tbody');
+        const headerRow = template.querySelector('#headerRow');
 
+        // Criar Header
         colunasModelo.forEach(col => {
             const th = document.createElement('th');
             let cl = "p-2 border-r border-slate-700 font-bold ";
             if(col === 'ID') cl += "col-id";
             else if(col === 'Descrição') cl += "col-desc sticky-col-desc bg-slate-800";
+            else if(camposFiscaisST.includes(col)) cl += "col-fiscal";
             else if(['Unidade', 'Estoque', 'Origem'].includes(col)) cl += "col-small";
-            else if(['NCM', 'Preço', 'Preço de custo'].includes(col)) cl += "col-med";
-            else if(col === 'Código') cl += "col-cod";
-            else cl += "col-default";
+            else cl += "col-med";
             th.className = cl;
             th.innerText = col;
             headerRow.appendChild(th);
         });
 
         const itens = xml.getElementsByTagName('det');
+        let notaTemST = false;
+
         for (let i = 0; i < itens.length; i++) {
             const prod = itens[i].getElementsByTagName('prod')[0];
+            const imposto = itens[i].getElementsByTagName('imposto')[0];
             const row = tbody.insertRow();
-            const checkCell = row.insertCell();
-            checkCell.className = "p-2 sticky-col-check text-center border-r";
-            checkCell.innerHTML = `<input type="checkbox" class="prod-select w-3 h-3 accent-blue-600" checked>`;
+            
+            // Detector de ST (ICMS 10, 30, 70, 90 tem ST)
+            const icmsST = imposto.querySelector('ICMS10, ICMS30, ICMS70, ICMS90, ICMSPart, ICMSST');
+            const isST = icmsST !== null;
+            if(isST) { row.classList.add('row-st'); notaTemST = true; }
+
+            // Checkbox e Fator
+            row.insertCell().className = "p-2 sticky-col-check text-center border-r";
+            row.cells[0].innerHTML = `<input type="checkbox" class="prod-select" checked>`;
+            
+            row.insertCell().className = "p-2 sticky-col-fator text-center border-r col-fator";
+            row.cells[1].innerHTML = `<input type="number" value="1" min="1" class="input-fator font-bold text-blue-700 bg-blue-50 rounded" oninput="aplicarFator(this)">`;
 
             const eanXML = prod.getElementsByTagName('cEAN')[0]?.textContent || "";
             const idVinculado = baseBling[eanXML] || "";
 
-            colunasModelo.forEach(col => {
+            colunasModelo.forEach((col, index) => {
                 const cell = row.insertCell();
                 let v = ""; 
                 let cl = "p-1 border-r border-slate-100 ";
+                let dataOriginal = "";
 
-                if(col === 'ID') {
-                    v = idVinculado; cl += "col-id";
-                    cell.innerHTML = idVinculado ? `<span class="status-badge status-vinc">OK</span><input type="text" value="${v}">` : `<input type="text" value="${v}">`;
-                } else {
-                    if(col === 'Código') { v = prod.getElementsByTagName('cProd')[0]?.textContent || ""; cl += "col-cod"; }
-                    else if(col === 'Descrição') { v = prod.getElementsByTagName('xProd')[0]?.textContent || ""; cl += "col-desc sticky-col-desc"; }
-                    else if(col === 'Unidade') { v = prod.getElementsByTagName('uCom')[0]?.textContent || ""; cl += "col-small"; }
-                    else if(col === 'Estoque') { v = prod.getElementsByTagName('qCom')[0]?.textContent || "0"; cl += "col-small font-bold text-blue-600"; }
-                    else if(col === 'NCM') { v = prod.getElementsByTagName('NCM')[0]?.textContent || ""; cl += "col-med"; }
-                    else if(['Preço', 'Preço de custo', 'Preço de compra'].includes(col)) { v = prod.getElementsByTagName('vUnCom')[0]?.textContent || "0"; cl += "col-med"; }
-                    else if(col === 'GTIN/EAN') { v = eanXML; cl += "col-med"; }
-                    else if(col === 'Fornecedor') { v = nomeForn; cl += "col-default"; }
-                    else if(col === 'Situação') { v = "Ativo"; cl += "col-small"; }
-                    else cl += "col-default";
-                    cell.innerHTML = `<input type="text" value="${v}">`;
+                // Mapeamento de dados
+                if(col === 'ID') { 
+                    v = idVinculado; cl += "col-id"; 
+                    if(idVinculado) cell.innerHTML = `<span class="status-badge status-vinc">VINC</span>`;
                 }
+                else if(col === 'Descrição') { 
+                    v = prod.getElementsByTagName('xProd')[0]?.textContent || ""; cl += "col-desc sticky-col-desc";
+                    if(isST) cell.innerHTML = `<span class="st-warning">ITEM COM ST</span>`;
+                }
+                else if(col === 'Código') v = prod.getElementsByTagName('cProd')[0]?.textContent || "";
+                else if(col === 'Unidade') v = prod.getElementsByTagName('uCom')[0]?.textContent || "";
+                else if(col === 'Estoque') { v = prod.getElementsByTagName('qCom')[0]?.textContent || "0"; dataOriginal = v; }
+                else if(col === 'Preço de custo' || col === 'Preço de compra' || col === 'Preço') { v = prod.getElementsByTagName('vUnCom')[0]?.textContent || "0"; dataOriginal = v; }
+                else if(col === 'NCM') v = prod.getElementsByTagName('NCM')[0]?.textContent || "";
+                else if(col === 'Origem') v = itens[i].getElementsByTagName('orig')[0]?.textContent || "0";
+                else if(col === 'CEST') v = prod.getElementsByTagName('CEST')[0]?.textContent || "";
+                else if(col === 'GTIN/EAN') v = eanXML;
+                else if(col === 'Fornecedor') v = nomeForn;
+                else if(col === 'Situação') v = "Ativo";
+                
+                // Valores de ST do XML
+                else if(col === 'Valor base ICMS ST para retenção') v = icmsST?.getElementsByTagName('vBCST')[0]?.textContent || "";
+                else if(col === 'Valor ICMS ST para retenção') v = icmsST?.getElementsByTagName('vICMSST')[0]?.textContent || "";
+
+                if(camposFiscaisST.includes(col)) {
+                    cl += "col-fiscal ";
+                    if(isST && !v) cl += "missing-data ";
+                }
+
+                const input = document.createElement('input');
+                input.type = "text";
+                input.value = v;
+                input.className = "input-data";
+                input.dataset.col = col;
+                if(dataOriginal) input.dataset.original = dataOriginal;
+                
                 cell.className = cl;
+                cell.appendChild(input);
             });
+        }
+
+        if(notaTemST) {
+            template.querySelector('.st-count').classList.remove('hidden');
+            document.getElementById('stInfo').classList.remove('hidden');
         }
 
         template.querySelector('.select-all').onclick = (e) => tbody.querySelectorAll('.prod-select').forEach(c => c.checked = e.target.checked);
@@ -232,17 +252,38 @@
         container.appendChild(template);
     }
 
+    function aplicarFator(el) {
+        const row = el.closest('tr');
+        const f = parseFloat(el.value) || 1;
+        row.querySelectorAll('.input-data[data-original]').forEach(i => {
+            const ori = parseFloat(i.dataset.original);
+            if(i.dataset.col === 'Estoque') i.value = (ori * f).toFixed(2);
+            else i.value = (ori / f).toFixed(4);
+        });
+    }
+
     function exportarCSV(tbody, nome) {
+        let erros = 0;
+        tbody.querySelectorAll('tr.row-st').forEach(row => {
+            if(row.querySelector('.prod-select').checked) {
+                row.querySelectorAll('.missing-data input').forEach(i => { if(!i.value) erros++; });
+            }
+        });
+
+        if(erros > 0) {
+            if(!confirm(`Existem ${erros} campos fiscais obrigatórios vazios em itens com ST. Deseja exportar assim mesmo?`)) return;
+        }
+
         let csv = ["\ufeff" + colunasModelo.join(",")];
         tbody.querySelectorAll("tr").forEach(row => {
             if (row.querySelector('.prod-select').checked) {
-                csv.push(Array.from(row.querySelectorAll('input')).map(i => `"${i.value.replace(/"/g, '""')}"`).join(","));
+                csv.push(Array.from(row.querySelectorAll('.input-data')).map(i => `"${i.value.replace(/"/g, '""')}"`).join(","));
             }
         });
         const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `BLING_${nome.toUpperCase().replace(/\s/g, '_')}.csv`;
+        a.download = `FISCAL_ST_${nome.toUpperCase().replace(/\s/g, '_')}.csv`;
         a.click();
     }
 </script>
