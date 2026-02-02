@@ -3,119 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Master Pro | Dashboard</title>
+    <title>XML Master Pro | Correção NCM e Vínculos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        .field-filled { background-color: #f0f9ff !important; border-color: #bae6fd !important; }
-        .selected-item { border-left: 5px solid #3b82f6 !important; background-color: #f1f5f9; }
-        
-        /* Layout de Colunas */
-        .sidebar { width: 60px; transition: width 0.3s; overflow: hidden; white-space: nowrap; }
-        .sidebar:hover { width: 200px; }
-        .main-content { flex: 1; height: 100vh; overflow: hidden; }
-        .master-panel { height: calc(100vh - 100px); overflow-y: auto; }
-        .detail-panel { height: calc(100vh - 100px); overflow-y: auto; }
-        
+        .field-filled { background-color: #eff6ff !important; border-color: #bfdbfe !important; }
+        .selected-item { border-left: 6px solid #3b82f6 !important; background-color: #f1f5f9; }
+        .master-panel, .detail-panel { height: calc(100vh - 180px); overflow-y: auto; }
         .xml-divider { background: #f8fafc; border-y: 1px solid #e2e8f0; padding: 6px 12px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
         .status-vinc { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
-        .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 6px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; }
-        
-        .nav-link { display: flex; align-items: center; padding: 12px 20px; color: #94a3b8; transition: all 0.2s; gap: 15px; }
-        .nav-link:hover { background: #1e293b; color: #3b82f6; }
-        .nav-link i { min-width: 20px; text-align: center; font-size: 18px; }
+        .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 4px 10px; border-radius: 6px; font-weight: bold; color: #854d0e; }
+        .nav-btn { background: #334155; color: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 700; transition: all 0.2s; border-bottom: 3px solid #1e293b; }
+        .nav-btn:hover { background: #475569; transform: translateY(-1px); }
     </style>
 </head>
-<body class="bg-slate-50 flex overflow-hidden text-slate-900">
+<body class="bg-slate-50 min-h-screen overflow-hidden text-slate-900">
 
-    <aside class="sidebar bg-slate-900 flex flex-col shadow-2xl z-50">
-        <div class="p-4 mb-4 flex justify-center bg-blue-600">
-            <i class="fas fa-bolt text-white text-xl"></i>
-        </div>
-        
-        <nav class="flex-1">
-            <a href="https://www.bling.com.br/produtos.php#list" target="_blank" class="nav-link" title="Produtos">
-                <i class="fas fa-box"></i> <span>Produtos</span>
-            </a>
-            <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-link" title="Pedidos">
-                <i class="fas fa-shopping-cart"></i> <span>Pedidos</span>
-            </a>
-            <a href="http://localhost:3000/" target="_blank" class="nav-link text-blue-400" title="Tirar Pedido">
-                <i class="fas fa-plus-circle"></i> <span>Tirar Pedido</span>
-            </a>
-            <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-link" title="Importar Produtos">
-                <i class="fas fa-upload"></i> <span>Importar Prod.</span>
-            </a>
-            <a href="https://www.bling.com.br/importador.produtos.estrutura.php" target="_blank" class="nav-link" title="Importar Combos">
-                <i class="fas fa-boxes"></i> <span>Importar Combos</span>
-            </a>
-            <a href="https://www.bling.com.br/vendas.php#list" target="_blank" class="nav-link" title="Pedidos de Venda">
-                <i class="fas fa-list-ul"></i> <span>Pedidos Venda</span>
-            </a>
-            <a href="https://www.bling.com.br/contatos.php" target="_blank" class="nav-link" title="Clientes">
-                <i class="fas fa-users"></i> <span>Clientes</span>
-            </a>
-            <div class="border-t border-slate-800 my-2"></div>
-            <a href="https://www.donaantonia.com.br/site" target="_blank" class="nav-link text-emerald-400" title="Ver Site">
-                <i class="fas fa-globe"></i> <span>Ver Site</span>
-            </a>
-        </nav>
-    </aside>
-
-    <div class="main-content flex flex-col">
-        
-        <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
-            <div class="flex items-center gap-4">
-                <h1 class="text-lg font-black tracking-tighter">XML MASTER <span class="text-blue-600">INTEGRATOR</span></h1>
-                <div id="blingAlert" class="hidden bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
-                    <i class="fas fa-link"></i> BASE BLING ATIVA
+    <header class="bg-slate-900 text-white p-4 shadow-lg z-50 relative">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-xl font-black flex items-center gap-2">
+                    <i class="fas fa-check-double text-blue-400"></i> XML MASTER <span class="text-blue-500">REVISADO</span>
+                </h1>
+                <div class="flex gap-3">
+                    <label class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 border border-slate-600 shadow-sm">
+                        <i class="fas fa-database text-yellow-400"></i> 1. CARREGAR BASE BLING
+                        <input type="file" id="blingCsvInput" accept=".csv" class="hidden">
+                    </label>
+                    <label class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
+                        <i class="fas fa-file-upload"></i> 2. IMPORTAR XMLS
+                        <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
+                    </label>
                 </div>
             </div>
             
-            <div class="flex gap-2">
-                <label class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 border border-slate-300 transition-all">
-                    <i class="fas fa-database text-amber-500"></i> CARREGAR CSV BLING
-                    <input type="file" id="blingCsvInput" accept=".csv" class="hidden">
-                </label>
-                <label class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
-                    <i class="fas fa-file-import"></i> IMPORTAR XMLS
-                    <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
-                </label>
+            <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
+                <a href="https://www.bling.com.br/produtos.php#list" target="_blank" class="nav-btn">PRODUTOS</a>
+                <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-btn">PEDIDOS</a>
+                <a href="http://localhost:3000/" target="_blank" class="nav-btn bg-blue-700">TIRAR PEDIDO</a>
+                <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-btn">IMPORTAR PRODUTOS</a>
+                <a href="https://www.bling.com.br/vendas.php#list" target="_blank" class="nav-btn">PEDIDOS DE VENDA</a>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <div class="flex p-4 gap-4 overflow-hidden">
-            
-            <div class="w-80 bg-white rounded-xl border border-slate-200 master-panel custom-scrollbar shadow-sm">
-                <div class="p-3 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
-                    <span class="text-[10px] font-black uppercase text-slate-400">Produtos</span>
-                    <button id="btnExport" class="hidden bg-emerald-600 text-white px-3 py-1 rounded font-bold text-[10px] hover:bg-emerald-700">
+    <div class="container mx-auto px-4 mt-4">
+        <div id="blingAlert" class="hidden mb-4 bg-emerald-600 text-white px-4 py-2 rounded-lg text-[11px] font-bold shadow-md">
+            BASE BLING ATIVA: IDs e Estoques serão processados automaticamente.
+        </div>
+
+        <div class="flex gap-6">
+            <div class="w-1/3 bg-white rounded-xl shadow-sm border border-slate-200 master-panel custom-scrollbar">
+                <div class="p-4 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
+                    <h2 class="font-bold text-slate-700 text-[10px] uppercase">Produtos</h2>
+                    <button id="btnExport" class="hidden bg-emerald-600 text-white px-4 py-2 rounded-lg font-black text-[10px] shadow-md">
                         EXPORTAR (<span id="countSelected">0</span>)
                     </button>
                 </div>
                 <div id="productList" class="divide-y divide-slate-100"></div>
             </div>
 
-            <div class="flex-1 bg-white rounded-xl border border-slate-200 detail-panel custom-scrollbar p-6 shadow-sm">
+            <div class="w-2/3 bg-white rounded-xl shadow-sm border border-slate-200 detail-panel custom-scrollbar p-6">
                 <div id="editorPlaceholder" class="flex flex-col items-center justify-center h-full text-slate-300 italic">
-                    <i class="fas fa-hand-pointer text-5xl mb-4 opacity-10"></i>
-                    Selecione um item da nota para editar
+                    Selecione um produto para validar o NCM e Estoque
                 </div>
 
                 <div id="editorContent" class="hidden">
                     <div class="flex justify-between items-start border-b pb-6 mb-6">
                         <div class="flex-1 mr-6">
-                            <label class="text-[9px] font-black text-blue-500 uppercase">Descrição no Bling</label>
+                            <label class="text-[9px] font-black text-blue-500 uppercase">Descrição</label>
                             <input type="text" id="editMainName" class="text-xl font-bold text-slate-800 uppercase w-full bg-slate-50 border-b-2 border-transparent focus:border-blue-500 focus:bg-white outline-none p-1 transition-all" oninput="sincronizarNome(this)">
-                            <div id="calcInfo" class="mt-4"></div>
+                            <div id="calcInfo" class="mt-4 flex gap-2"></div>
                         </div>
-                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col items-center gap-1">
+                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-200 flex flex-col items-center gap-1 shadow-inner">
                             <span class="text-[9px] font-black text-blue-800 uppercase">Fator (X)</span>
-                            <input type="number" id="fatorInput" placeholder="1" class="w-16 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center outline-none focus:ring-2 focus:ring-blue-400">
+                            <input type="number" id="fatorInput" placeholder="1" class="w-16 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4" id="fieldsGrid"></div>
@@ -125,7 +90,6 @@
     </div>
 
 <script>
-    // Lógica de Dados permanece a mesma com correções de NCM e Soma de Estoque
     let baseBling = {}; 
     let produtosCarregados = [];
     let produtoSelecionadoIdx = null;
@@ -141,6 +105,7 @@
             const idxID = headers.findIndex(h => h === 'ID');
             const idxEAN = headers.findIndex(h => h.includes('EAN') || h.includes('GTIN'));
             const idxEstoque = headers.findIndex(h => h === 'ESTOQUE');
+
             baseBling = {};
             rows.forEach((row, i) => {
                 if(i===0) return;
@@ -166,8 +131,9 @@
 
     function processarXML(xml, fileName) {
         const emit = xml.getElementsByTagName('emit')[0];
-        const nomeForn = emit?.getElementsByTagName('xNome')[0]?.textContent || "Desconhecido";
+        const nomeForn = emit?.getElementsByTagName('xNome')[0]?.textContent || "";
         const itens = xml.getElementsByTagName('det');
+
         for (let i = 0; i < itens.length; i++) {
             const prod = itens[i].getElementsByTagName('prod')[0];
             const imposto = itens[i].getElementsByTagName('imposto')[0];
@@ -175,21 +141,36 @@
             const dadosBling = baseBling[ean] || { id: "", estoqueAtual: 0 };
             const qCom = parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent || 0);
             
-            let obj = { _xmlSource: fileName, _selected: true, _original: {}, _vinculado: dadosBling.id !== "", _estoqueBling: dadosBling.estoqueAtual };
+            // BUSCA AVANÇADA DE NCM E CEST
+            const ncmVal = prod.getElementsByTagName('NCM')[0]?.textContent || "";
+            const cestVal = prod.getElementsByTagName('CEST')[0]?.textContent || "";
+            
+            // BUSCA DE ORIGEM (Fica dentro do ICMS)
+            const origVal = imposto?.querySelector('orig')?.textContent || "0";
+
+            let obj = {
+                _xmlSource: fileName,
+                _selected: true,
+                _original: {},
+                _vinculado: dadosBling.id !== "",
+                _estoqueBling: dadosBling.estoqueAtual
+            };
 
             colunasModelo.forEach(col => {
                 let val = "";
                 if(col === 'ID') val = dadosBling.id;
-                else if(col === 'Descrição') val = prod.getElementsByTagName('xProd')[0]?.textContent || "";
                 else if(col === 'Código') val = prod.getElementsByTagName('cProd')[0]?.textContent || "";
+                else if(col === 'Descrição') val = prod.getElementsByTagName('xProd')[0]?.textContent || "";
                 else if(col === 'Unidade') val = prod.getElementsByTagName('uCom')[0]?.textContent || "";
-                else if(col === 'NCM') val = prod.getElementsByTagName('NCM')[0]?.textContent || "";
-                else if(col === 'Origem') val = imposto?.querySelector('orig')?.textContent || "0";
+                else if(col === 'NCM') val = ncmVal;
+                else if(col === 'CEST') val = cestVal;
+                else if(col === 'Origem') val = origVal;
                 else if(col === 'Estoque') val = (dadosBling.estoqueAtual + qCom).toString();
                 else if(['Preço', 'Preço de custo', 'Preço de compra'].includes(col)) val = prod.getElementsByTagName('vUnCom')[0]?.textContent || "0";
                 else if(col === 'GTIN/EAN') val = ean;
                 else if(col === 'Fornecedor') val = nomeForn;
                 else if(col === 'Situação') val = "Ativo";
+                
                 obj[col] = val;
                 if(['Estoque', 'Preço', 'Preço de custo', 'Preço de compra'].includes(col)) obj._original[col] = (col === 'Estoque') ? qCom : val;
             });
@@ -208,6 +189,7 @@
             if(!grupos[p._xmlSource]) grupos[p._xmlSource] = [];
             grupos[p._xmlSource].push({p, idx});
         });
+
         for(const fileName in grupos) {
             const div = document.createElement('div');
             div.className = "xml-divider";
@@ -217,9 +199,16 @@
                 const item = document.createElement('div');
                 item.className = `p-3 flex items-center gap-3 cursor-pointer border-l-4 border-transparent ${produtoSelecionadoIdx === idx ? 'selected-item' : 'hover:bg-slate-50'}`;
                 item.onclick = () => selecionarProduto(idx);
-                item.innerHTML = `<input type="checkbox" class="w-3 h-3 accent-blue-600" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
-                    <div class="flex-1 overflow-hidden"><p class="text-[10px] font-bold truncate uppercase name-ref-${idx}">${p.Descrição}</p>
-                    <div class="flex gap-2 items-center mt-1">${p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : ''}</div></div>`;
+                item.innerHTML = `
+                    <input type="checkbox" class="w-4 h-4" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
+                    <div class="flex-1 overflow-hidden">
+                        <p class="text-[11px] font-bold truncate uppercase name-ref-${idx}">${p.Descrição}</p>
+                        <div class="flex gap-2 mt-1">
+                             <span class="text-[9px] text-blue-600 font-bold">${p.NCM ? 'NCM: '+p.NCM : 'NCM Vazio'}</span>
+                             ${p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : ''}
+                        </div>
+                    </div>
+                `;
                 list.appendChild(item);
             });
         }
@@ -232,8 +221,10 @@
         document.getElementById('editorPlaceholder').classList.add('hidden');
         document.getElementById('editorContent').classList.remove('hidden');
         document.getElementById('editMainName').value = p.Descrição;
+        
         const qNota = parseFloat(p.Estoque) - p._estoqueBling;
-        document.getElementById('calcInfo').innerHTML = `<div class="estoque-highlight">SOMA: Bling (${p._estoqueBling}) + Nota (${qNota.toFixed(2)}) = Total Final: ${parseFloat(p.Estoque).toFixed(2)}</div>`;
+        document.getElementById('calcInfo').innerHTML = `<div class="estoque-highlight text-[10px]">CÁLCULO: Bling (${p._estoqueBling}) + Nota (${qNota.toFixed(2)}) = Total Final: ${parseFloat(p.Estoque).toFixed(2)}</div>`;
+
         const grid = document.getElementById('fieldsGrid');
         grid.innerHTML = "";
         colunasModelo.forEach(col => {
@@ -241,7 +232,8 @@
             const div = document.createElement('div');
             div.className = "flex flex-col gap-1";
             div.innerHTML = `<label class="text-[9px] font-black text-slate-500 uppercase">${col}</label>
-                <input type="text" value="${val}" data-col="${col}" oninput="atualizarCampo(this)" class="p-2 border border-slate-200 rounded-lg text-[11px] focus:border-blue-500 outline-none ${val ? 'field-filled' : 'bg-slate-50'}">`;
+                             <input type="text" value="${val}" data-col="${col}" oninput="atualizarCampo(this)"
+                             class="p-2 border border-slate-200 rounded-lg text-xs focus:border-blue-500 outline-none ${val ? 'field-filled' : 'bg-slate-50'}">`;
             grid.appendChild(div);
         });
     }
@@ -269,7 +261,6 @@
                 if(col === 'Estoque') {
                     const soma = p._estoqueBling + (ori * f);
                     input.value = soma.toFixed(2);
-                    document.getElementById('calcInfo').innerHTML = `<div class="estoque-highlight">SOMA: Bling (${p._estoqueBling}) + (Nota ${ori} x Fator ${f}) = Final: ${soma.toFixed(2)}</div>`;
                 } else if(['Preço', 'Preço de custo', 'Preço de compra'].includes(col)) {
                     input.value = (ori / f).toFixed(4);
                 }
@@ -284,13 +275,13 @@
 
     document.getElementById('btnExport').onclick = () => {
         const sel = produtosCarregados.filter(p => p._selected);
-        if(sel.length === 0) return alert("Selecione itens!");
+        if(sel.length === 0) return alert("Selecione os produtos!");
         let csv = ["\ufeff" + colunasModelo.join(",")];
         sel.forEach(p => csv.push(colunasModelo.map(col => `"${String(p[col]).replace(/"/g, '""')}"`).join(",")));
         const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `CONSOLIDADO_ESTOQUE_FINAL.csv`;
+        a.download = `EXPORT_CONSOLIDADO.csv`;
         a.click();
     };
 </script>
