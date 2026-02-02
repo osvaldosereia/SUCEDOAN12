@@ -14,16 +14,18 @@
         .field-filled { background-color: #f0f9ff !important; border-color: #bae6fd !important; }
         .selected-item { border-left: 5px solid #3b82f6 !important; background-color: #f1f5f9; }
         
+        /* Layout Sidebar */
         .sidebar { width: 60px; transition: width 0.2s; overflow: hidden; white-space: nowrap; }
-        .sidebar:hover { width: 200px; }
+        .sidebar:hover { width: 220px; }
         .main-content { flex: 1; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        .master-panel, .detail-panel { height: calc(100vh - 120px); overflow-y: auto; }
+        .master-panel { height: calc(100vh - 120px); overflow-y: auto; }
+        .detail-panel { height: calc(100vh - 120px); overflow-y: auto; }
         
         .xml-divider { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 6px 12px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
         .status-vinc { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
-        .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 6px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; }
+        .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 8px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
         
-        .nav-link { display: flex; align-items: center; padding: 12px 20px; color: #94a3b8; transition: all 0.2s; gap: 15px; }
+        .nav-link { display: flex; align-items: center; padding: 14px 20px; color: #94a3b8; transition: all 0.2s; gap: 15px; }
         .nav-link:hover { background: #1e293b; color: #3b82f6; }
         .nav-link i { min-width: 20px; text-align: center; font-size: 18px; }
     </style>
@@ -34,20 +36,38 @@
         <div class="p-4 mb-4 flex justify-center bg-blue-600">
             <i class="fas fa-bolt text-white text-xl"></i>
         </div>
+        
         <nav class="flex-1">
-            <a href="https://www.bling.com.br/produtos.php#list" target="_blank" class="nav-link" title="Produtos"><i class="fas fa-box"></i> <span>Produtos</span></a>
-            <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-link" title="Pedidos"><i class="fas fa-shopping-cart"></i> <span>Pedidos</span></a>
-            <a href="http://localhost:3000/" target="_blank" class="nav-link text-blue-400 font-bold" title="Tirar Pedido"><i class="fas fa-plus-circle"></i> <span>Tirar Pedido</span></a>
-            <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-link" title="Importar Produtos"><i class="fas fa-upload"></i> <span>Importar Prod.</span></a>
-            <a href="https://www.bling.com.br/importador.produtos.estrutura.php" target="_blank" class="nav-link" title="Importar Combos"><i class="fas fa-boxes"></i> <span>Importar Combos</span></a>
-            <a href="https://www.bling.com.br/vendas.php#list" target="_blank" class="nav-link" title="Pedidos de Venda"><i class="fas fa-list-ul"></i> <span>Pedidos Venda</span></a>
-            <a href="https://www.bling.com.br/contatos.php" target="_blank" class="nav-link" title="Clientes"><i class="fas fa-users"></i> <span>Clientes</span></a>
+            <a href="https://www.bling.com.br/produtos.php#list" target="_blank" class="nav-link" title="Produtos">
+                <i class="fas fa-box"></i> <span>PRODUTOS</span>
+            </a>
+            <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-link" title="Pedidos">
+                <i class="fas fa-shopping-cart"></i> <span>PEDIDOS</span>
+            </a>
+            <a href="http://localhost:3000/" target="_blank" class="nav-link text-blue-400 font-bold" title="Tirar Pedido">
+                <i class="fas fa-plus-circle"></i> <span>TIRAR PEDIDO</span>
+            </a>
+            <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-link" title="Importar Produtos">
+                <i class="fas fa-upload"></i> <span>IMPORTAR PRODUTOS</span>
+            </a>
+            <a href="https://www.bling.com.br/importador.produtos.estrutura.php" target="_blank" class="nav-link" title="Importar Combos">
+                <i class="fas fa-boxes"></i> <span>IMPORTAR COMBOS</span>
+            </a>
+            <a href="https://www.bling.com.br/vendas.php#list" target="_blank" class="nav-link" title="Pedidos de Venda">
+                <i class="fas fa-list-ul"></i> <span>PEDIDOS DE VENDA</span>
+            </a>
+            <a href="https://www.bling.com.br/contatos.php" target="_blank" class="nav-link" title="Clientes">
+                <i class="fas fa-users"></i> <span>CLIENTES</span>
+            </a>
             <div class="border-t border-slate-800 my-2"></div>
-            <a href="http://www.donaantonia.com.br/site" target="_blank" class="nav-link text-emerald-400" title="Ver Site"><i class="fas fa-globe"></i> <span>Ver Site</span></a>
+            <a href="https://www.donaantonia.com.br/site" target="_blank" class="nav-link text-emerald-400" title="Ver Site">
+                <i class="fas fa-globe"></i> <span>SITE DONA ANTONIA</span>
+            </a>
         </nav>
     </aside>
 
     <div class="main-content">
+        
         <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-4">
                 <h1 class="text-lg font-black tracking-tighter uppercase">XML MASTER <span class="text-blue-600">PRO</span></h1>
@@ -55,6 +75,7 @@
                     <i class="fas fa-check"></i> <span id="blingInfo">BASE CONECTADA</span>
                 </div>
             </div>
+            
             <div class="flex gap-2">
                 <label class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 border border-slate-300 transition-all">
                     <i class="fas fa-database text-amber-500"></i> CARREGAR CSV BLING
@@ -68,6 +89,7 @@
         </header>
 
         <div class="flex p-4 gap-4 overflow-hidden flex-1">
+            
             <div class="w-80 bg-white rounded-xl border border-slate-200 master-panel custom-scrollbar shadow-sm">
                 <div class="p-3 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
                     <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Lista da Nota</span>
@@ -85,16 +107,17 @@
                     <i class="fas fa-mouse-pointer text-5xl mb-4 opacity-10"></i>
                     <p class="text-sm italic">Selecione um produto para editar</p>
                 </div>
+
                 <div id="editorContent" class="hidden">
                     <div class="flex justify-between items-start border-b pb-6 mb-6">
                         <div class="flex-1 mr-6">
-                            <label class="text-[9px] font-black text-blue-500 uppercase">Nome / Descrição</label>
+                            <label class="text-[9px] font-black text-blue-500 uppercase">Nome / Descrição do Produto</label>
                             <input type="text" id="editMainName" class="text-xl font-bold text-slate-800 uppercase w-full bg-slate-50 border-b-2 border-transparent focus:border-blue-500 focus:bg-white outline-none p-1 transition-all" oninput="sincronizarNome(this)">
                             <div id="calcInfo" class="mt-4"></div>
                         </div>
-                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col items-center gap-1">
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col items-center gap-1 shadow-inner">
                             <span class="text-[9px] font-black text-blue-800 uppercase">Fator Multiplicador</span>
-                            <input type="number" id="fatorInput" placeholder="1" class="w-16 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center outline-none">
+                            <input type="number" id="fatorInput" placeholder="1" class="w-20 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center outline-none focus:ring-2 focus:ring-blue-400">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4" id="fieldsGrid"></div>
@@ -108,13 +131,13 @@
     let produtosCarregados = [];
     let produtoSelecionadoIdx = null;
 
-    // Colunas atualizadas para bater 100% com o seu arquivo do Bling
+    // Colunas oficiais baseadas no seu arquivo mais recente
     const colunasModelo = ['ID', 'Código', 'Descrição', 'Unidade', 'NCM', 'Origem', 'Preço', 'Valor IPI fixo', 'Observações', 'Situação', 'Estoque', 'Preço de custo', 'Cód. no fornecedor', 'Fornecedor', 'Localização', 'Estoque máximo', 'Estoque mínimo', 'Peso líquido (Kg)', 'Peso bruto (Kg)', 'GTIN/EAN', 'GTIN/EAN da Embalagem', 'Largura do produto', 'Altura do Produto', 'Profundidade do produto', 'Data Validade', 'Descrição do Produto no Fornecedor', 'Descrição Complementar', 'Itens p/ caixa', 'Produto Variação', 'Tipo Produção', 'Classe de enquadramento do IPI', 'Código na Lista de Serviços', 'Tipo do item', 'Grupo de Tags/Tags', 'Tributos', 'Código Pai', 'Código Integração', 'Grupo de produtos', 'Marca', 'CEST', 'Volumes', 'Descrição Curta', 'Cross-Docking', 'URL Imagens Externas', 'Link Externo', 'Meses Garantia no Fornecedor', 'Clonar dados do pai', 'Condição do Produto', 'Frete Grátis', 'Número FCI', 'Vídeo', 'Departamento', 'Unidade de Medida', 'Preço de Compra', 'Valor base ICMS ST para retenção', 'Valor ICMS ST para retenção', 'Valor ICMS próprio do substituto', 'Categoria do produto', 'Informações Adicionais'];
 
     document.getElementById('blingCsvInput').addEventListener('change', function(e) {
         const reader = new FileReader();
         reader.onload = function(ev) {
-            let content = ev.target.result.replace(/^\ufeff/, ""); // Remove BOM do Excel
+            let content = ev.target.result.replace(/^\ufeff/, "");
             const rows = content.split(/\r?\n/);
             const sep = rows[0].includes(';') ? ';' : ',';
             const headers = rows[0].split(sep).map(h => h.replace(/"/g, '').trim().toUpperCase());
@@ -124,19 +147,17 @@
             const idxEstoque = headers.indexOf('ESTOQUE');
 
             baseBling = {};
-            let countTotal = 0;
             for(let i = 1; i < rows.length; i++) {
                 if(!rows[i].trim()) continue;
                 const cols = rows[i].split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
-                const ean = cols[idxEAN]?.replace(/"/g, '').trim(); // O trim remove o "\t" que o Bling coloca
+                const ean = cols[idxEAN]?.replace(/"/g, '').trim(); 
                 if(ean && ean !== "") {
                     baseBling[ean] = { id: cols[idxID]?.replace(/"/g, '').trim() || "", estoqueAtual: parseFloat(cols[idxEstoque]?.replace(/"/g, '').replace(',', '.') || 0) };
-                    countTotal++;
                 }
             }
             document.getElementById('blingAlert').classList.remove('hidden');
-            document.getElementById('blingInfo').innerText = `${Object.keys(baseBling).length} EANs ÚNICOS CONECTADOS`;
-            alert(`Sucesso! Foram encontrados ${Object.keys(baseBling).length} EANs exclusivos para vínculo.`);
+            document.getElementById('blingInfo').innerText = `${Object.keys(baseBling).length} EANs VINCULADOS`;
+            alert("Base Bling carregada com sucesso!");
         };
         reader.readAsText(e.target.files[0], "UTF-8");
     });
@@ -161,6 +182,7 @@
             const ean = prod.getElementsByTagName('cEAN')[0]?.textContent || "";
             const dadosBling = baseBling[ean] || { id: "", estoqueAtual: 0 };
             const qCom = parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent || 0);
+            
             let obj = { _xmlSource: fileName, _selected: true, _original: {}, _vinculado: dadosBling.id !== "", _estoqueBling: dadosBling.estoqueAtual };
             colunasModelo.forEach(col => {
                 let val = "";
@@ -169,7 +191,7 @@
                 else if(col === 'Código') val = prod.getElementsByTagName('cProd')[0]?.textContent || "";
                 else if(col === 'Unidade') val = prod.getElementsByTagName('uCom')[0]?.textContent || "";
                 else if(col === 'NCM') val = prod.getElementsByTagName('NCM')[0]?.textContent || "";
-                else if(col === 'Estoque') val = (dadosBling.estoqueAtual + qCom).toString();
+                else if(col === 'Estoque') val = (dadosBling.estoqueAtual + qCom).toFixed(2);
                 else if(['Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) val = prod.getElementsByTagName('vUnCom')[0]?.textContent || "0";
                 else if(col === 'GTIN/EAN') val = ean;
                 else if(col === 'Fornecedor') val = nomeForn;
@@ -201,7 +223,7 @@
                 const item = document.createElement('div');
                 item.className = `p-3 flex items-center gap-3 cursor-pointer border-l-4 border-transparent ${produtoSelecionadoIdx === idx ? 'selected-item' : 'hover:bg-slate-50'}`;
                 item.onclick = () => selecionarProduto(idx);
-                item.innerHTML = `<input type="checkbox" class="w-3 h-3 accent-blue-600" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
+                item.innerHTML = `<input type="checkbox" class="w-4 h-4 accent-blue-600" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
                     <div class="flex-1 overflow-hidden"><p class="text-[10px] font-bold truncate uppercase name-ref-${idx}">${p.Descrição}</p>
                     <div class="flex gap-2 items-center mt-1">${p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : ''}</div></div>`;
                 list.appendChild(item);
@@ -216,8 +238,9 @@
         document.getElementById('editorPlaceholder').classList.add('hidden');
         document.getElementById('editorContent').classList.remove('hidden');
         document.getElementById('editMainName').value = p.Descrição;
-        const qNota = parseFloat(p.Estoque) - p._estoqueBling;
-        document.getElementById('calcInfo').innerHTML = `<div class="estoque-highlight">Bling: ${p._estoqueBling} + Nota: ${qNota.toFixed(2)} = Total: ${parseFloat(p.Estoque).toFixed(2)}</div>`;
+        
+        atualizarDisplayCalculo();
+
         const grid = document.getElementById('fieldsGrid');
         grid.innerHTML = "";
         colunasModelo.forEach(col => {
@@ -229,6 +252,43 @@
             grid.appendChild(div);
         });
     }
+
+    function atualizarDisplayCalculo() {
+        const p = produtosCarregados[produtoSelecionadoIdx];
+        const f = parseFloat(document.getElementById('fatorInput').value) || 1;
+        const qNotaOriginal = parseFloat(p._original.Estoque);
+        const novoEstoqueNota = qNotaOriginal * f;
+        const totalFinal = p._estoqueBling + novoEstoqueNota;
+
+        document.getElementById('calcInfo').innerHTML = `
+            <div class="estoque-highlight">
+                Bling: ${p._estoqueBling.toFixed(2)} + (Nota: ${qNotaOriginal.toFixed(2)} x Fator: ${f}) = TOTAL: ${totalFinal.toFixed(2)}
+            </div>
+        `;
+    }
+
+    function aplicarFator() {
+        if(produtoSelecionadoIdx === null) return;
+        const f = parseFloat(document.getElementById('fatorInput').value) || 1;
+        const p = produtosCarregados[produtoSelecionadoIdx];
+        
+        document.querySelectorAll('input[data-col]').forEach(input => {
+            const col = input.dataset.col;
+            const ori = parseFloat(p._original[col]);
+            if(!isNaN(ori)) {
+                if(col === 'Estoque') {
+                    const novoValor = p._estoqueBling + (ori * f);
+                    input.value = novoValor.toFixed(2);
+                    p[col] = input.value;
+                } else if(['Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) {
+                    input.value = (ori / f).toFixed(4);
+                    p[col] = input.value;
+                }
+            }
+        });
+        atualizarDisplayCalculo();
+    }
+    document.getElementById('fatorInput').oninput = aplicarFator;
 
     function atualizarCampo(el) {
         const col = el.dataset.col;
@@ -243,37 +303,18 @@
         if(inp) inp.value = el.value;
     }
 
-    function aplicarFator() {
-        const f = parseFloat(document.getElementById('fatorInput').value) || 1;
-        const p = produtosCarregados[produtoSelecionadoIdx];
-        document.querySelectorAll('input[data-col]').forEach(input => {
-            const col = input.dataset.col;
-            const ori = parseFloat(p._original[col]);
-            if(!isNaN(ori)) {
-                if(col === 'Estoque') {
-                    const soma = p._estoqueBling + (ori * f);
-                    input.value = soma.toFixed(2);
-                } else if(['Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) {
-                    input.value = (ori / f).toFixed(4);
-                }
-                p[col] = input.value;
-            }
-        });
-    }
-    document.getElementById('fatorInput').oninput = aplicarFator;
-
     function toggleItem(idx) { produtosCarregados[idx]._selected = !produtosCarregados[idx]._selected; atualizarContador(); }
     function atualizarContador() { document.getElementById('countSelected').innerText = produtosCarregados.filter(p => p._selected).length; }
 
     document.getElementById('btnExport').onclick = () => {
         const sel = produtosCarregados.filter(p => p._selected);
-        if(sel.length === 0) return alert("Selecione itens!");
-        let csv = ["\ufeff" + colunasModelo.join(";")]; // Exportando com ponto e vírgula como o seu Bling usa
+        if(sel.length === 0) return alert("Selecione os produtos!");
+        let csv = ["\ufeff" + colunasModelo.join(";")];
         sel.forEach(p => csv.push(colunasModelo.map(col => `"${String(p[col]).replace(/"/g, '""')}"`).join(";")));
         const blob = new Blob([csv.join("\r\n")], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `CONSOLIDADO_BLING.csv`;
+        a.download = `IMPORTACAO_BLING_SOMA_ESTOQUE.csv`;
         a.click();
     };
 </script>
