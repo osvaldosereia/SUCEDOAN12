@@ -14,7 +14,6 @@
         .field-filled { background-color: #f0f9ff !important; border-color: #bae6fd !important; }
         .selected-item { border-left: 5px solid #3b82f6 !important; background-color: #f1f5f9; }
         
-        /* Layout Sidebar */
         .sidebar { width: 60px; transition: width 0.2s; overflow: hidden; white-space: nowrap; }
         .sidebar:hover { width: 220px; }
         .main-content { flex: 1; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
@@ -23,6 +22,7 @@
         
         .xml-divider { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 6px 12px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
         .status-vinc { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
+        .status-novo { background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
         .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 8px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
         
         .nav-link { display: flex; align-items: center; padding: 14px 20px; color: #94a3b8; transition: all 0.2s; gap: 15px; }
@@ -67,7 +67,6 @@
     </aside>
 
     <div class="main-content">
-        
         <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-4">
                 <h1 class="text-lg font-black tracking-tighter uppercase">XML MASTER <span class="text-blue-600">PRO</span></h1>
@@ -89,7 +88,6 @@
         </header>
 
         <div class="flex p-4 gap-4 overflow-hidden flex-1">
-            
             <div class="w-80 bg-white rounded-xl border border-slate-200 master-panel custom-scrollbar shadow-sm">
                 <div class="p-3 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
                     <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Lista da Nota</span>
@@ -131,7 +129,6 @@
     let produtosCarregados = [];
     let produtoSelecionadoIdx = null;
 
-    // Colunas oficiais baseadas no seu arquivo mais recente
     const colunasModelo = ['ID', 'Código', 'Descrição', 'Unidade', 'NCM', 'Origem', 'Preço', 'Valor IPI fixo', 'Observações', 'Situação', 'Estoque', 'Preço de custo', 'Cód. no fornecedor', 'Fornecedor', 'Localização', 'Estoque máximo', 'Estoque mínimo', 'Peso líquido (Kg)', 'Peso bruto (Kg)', 'GTIN/EAN', 'GTIN/EAN da Embalagem', 'Largura do produto', 'Altura do Produto', 'Profundidade do produto', 'Data Validade', 'Descrição do Produto no Fornecedor', 'Descrição Complementar', 'Itens p/ caixa', 'Produto Variação', 'Tipo Produção', 'Classe de enquadramento do IPI', 'Código na Lista de Serviços', 'Tipo do item', 'Grupo de Tags/Tags', 'Tributos', 'Código Pai', 'Código Integração', 'Grupo de produtos', 'Marca', 'CEST', 'Volumes', 'Descrição Curta', 'Cross-Docking', 'URL Imagens Externas', 'Link Externo', 'Meses Garantia no Fornecedor', 'Clonar dados do pai', 'Condição do Produto', 'Frete Grátis', 'Número FCI', 'Vídeo', 'Departamento', 'Unidade de Medida', 'Preço de Compra', 'Valor base ICMS ST para retenção', 'Valor ICMS ST para retenção', 'Valor ICMS próprio do substituto', 'Categoria do produto', 'Informações Adicionais'];
 
     document.getElementById('blingCsvInput').addEventListener('change', function(e) {
@@ -145,6 +142,8 @@
             const idxID = headers.indexOf('ID');
             const idxEAN = headers.findIndex(h => h.includes('EAN') || h.includes('GTIN'));
             const idxEstoque = headers.indexOf('ESTOQUE');
+            const idxDesc = headers.indexOf('DESCRIÇÃO');
+            const idxPreco = headers.indexOf('PREÇO');
 
             baseBling = {};
             for(let i = 1; i < rows.length; i++) {
@@ -152,7 +151,12 @@
                 const cols = rows[i].split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
                 const ean = cols[idxEAN]?.replace(/"/g, '').trim(); 
                 if(ean && ean !== "") {
-                    baseBling[ean] = { id: cols[idxID]?.replace(/"/g, '').trim() || "", estoqueAtual: parseFloat(cols[idxEstoque]?.replace(/"/g, '').replace(',', '.') || 0) };
+                    baseBling[ean] = { 
+                        id: cols[idxID]?.replace(/"/g, '').trim() || "", 
+                        estoqueAtual: parseFloat(cols[idxEstoque]?.replace(/"/g, '').replace(',', '.') || 0),
+                        descricao: cols[idxDesc]?.replace(/"/g, '').trim() || "",
+                        preco: cols[idxPreco]?.replace(/"/g, '').replace(',', '.') || ""
+                    };
                 }
             }
             document.getElementById('blingAlert').classList.remove('hidden');
@@ -177,27 +181,65 @@
         const emit = xml.getElementsByTagName('emit')[0];
         const nomeForn = emit?.getElementsByTagName('xNome')[0]?.textContent || "Desconhecido";
         const itens = xml.getElementsByTagName('det');
+
         for (let i = 0; i < itens.length; i++) {
             const prod = itens[i].getElementsByTagName('prod')[0];
             const ean = prod.getElementsByTagName('cEAN')[0]?.textContent || "";
-            const dadosBling = baseBling[ean] || { id: "", estoqueAtual: 0 };
             const qCom = parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent || 0);
+            const vUnCom = parseFloat(prod.getElementsByTagName('vUnCom')[0]?.textContent || 0);
             
-            let obj = { _xmlSource: fileName, _selected: true, _original: {}, _vinculado: dadosBling.id !== "", _estoqueBling: dadosBling.estoqueAtual };
+            // Verifica se existe na base Bling
+            const infoBling = baseBling[ean];
+            const vinculado = !!infoBling;
+            const dadosBling = infoBling || { id: "", estoqueAtual: 0, descricao: "", preco: "" };
+            
+            let obj = { 
+                _xmlSource: fileName, 
+                _selected: true, 
+                _original: {}, 
+                _vinculado: vinculado, 
+                _estoqueBling: dadosBling.estoqueAtual 
+            };
+
             colunasModelo.forEach(col => {
                 let val = "";
-                if(col === 'ID') val = dadosBling.id;
-                else if(col === 'Descrição') val = prod.getElementsByTagName('xProd')[0]?.textContent || "";
-                else if(col === 'Código') val = prod.getElementsByTagName('cProd')[0]?.textContent || "";
-                else if(col === 'Unidade') val = prod.getElementsByTagName('uCom')[0]?.textContent || "";
-                else if(col === 'NCM') val = prod.getElementsByTagName('NCM')[0]?.textContent || "";
-                else if(col === 'Estoque') val = (dadosBling.estoqueAtual + qCom).toFixed(2);
-                else if(['Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) val = prod.getElementsByTagName('vUnCom')[0]?.textContent || "0";
-                else if(col === 'GTIN/EAN') val = ean;
-                else if(col === 'Fornecedor') val = nomeForn;
-                else if(col === 'Situação') val = "Ativo";
+                
+                if(col === 'ID') {
+                    val = dadosBling.id;
+                } else if(col === 'Descrição') {
+                    // Mantém nome do Bling se existir, senão usa do XML
+                    val = (vinculado && dadosBling.descricao) ? dadosBling.descricao : (prod.getElementsByTagName('xProd')[0]?.textContent || "");
+                } else if(col === 'Preço') {
+                    // Mantém preço do Bling se existir, senão aplica margem de 50%
+                    if (vinculado && dadosBling.preco) {
+                        val = dadosBling.preco;
+                    } else {
+                        val = (vUnCom * 1.5).toFixed(2);
+                    }
+                } else if(col === 'Código') {
+                    val = prod.getElementsByTagName('cProd')[0]?.textContent || "";
+                } else if(col === 'Unidade') {
+                    val = prod.getElementsByTagName('uCom')[0]?.textContent || "";
+                } else if(col === 'NCM') {
+                    val = prod.getElementsByTagName('NCM')[0]?.textContent || "";
+                } else if(col === 'Estoque') {
+                    val = (dadosBling.estoqueAtual + qCom).toFixed(2);
+                } else if(['Preço de custo', 'Preço de Compra'].includes(col)) {
+                    val = vUnCom.toFixed(2);
+                } else if(col === 'GTIN/EAN') {
+                    val = ean;
+                } else if(col === 'Fornecedor') {
+                    val = nomeForn;
+                } else if(col === 'Situação') {
+                    val = "Ativo";
+                }
+
                 obj[col] = val;
-                if(['Estoque', 'Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) obj._original[col] = (col === 'Estoque') ? qCom : val;
+
+                // Salva originais para recalcular com o fator multiplicador se necessário
+                if(['Estoque', 'Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) {
+                    obj._original[col] = (col === 'Estoque') ? qCom : val;
+                }
             });
             produtosCarregados.push(obj);
         }
@@ -223,9 +265,15 @@
                 const item = document.createElement('div');
                 item.className = `p-3 flex items-center gap-3 cursor-pointer border-l-4 border-transparent ${produtoSelecionadoIdx === idx ? 'selected-item' : 'hover:bg-slate-50'}`;
                 item.onclick = () => selecionarProduto(idx);
-                item.innerHTML = `<input type="checkbox" class="w-4 h-4 accent-blue-600" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
-                    <div class="flex-1 overflow-hidden"><p class="text-[10px] font-bold truncate uppercase name-ref-${idx}">${p.Descrição}</p>
-                    <div class="flex gap-2 items-center mt-1">${p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : ''}</div></div>`;
+                
+                const statusTag = p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : '<span class="status-novo">NOVO (+50%)</span>';
+                
+                item.innerHTML = `
+                    <input type="checkbox" class="w-4 h-4 accent-blue-600" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
+                    <div class="flex-1 overflow-hidden">
+                        <p class="text-[10px] font-bold truncate uppercase name-ref-${idx}">${p.Descrição}</p>
+                        <div class="flex gap-2 items-center mt-1">${statusTag}</div>
+                    </div>`;
                 list.appendChild(item);
             });
         }
@@ -247,7 +295,8 @@
             const val = p[col];
             const div = document.createElement('div');
             div.className = "flex flex-col gap-1";
-            div.innerHTML = `<label class="text-[9px] font-black text-slate-500 uppercase">${col}</label>
+            div.innerHTML = `
+                <label class="text-[9px] font-black text-slate-500 uppercase">${col}</label>
                 <input type="text" value="${val}" data-col="${col}" oninput="atualizarCampo(this)" class="p-2 border border-slate-200 rounded-lg text-[11px] focus:border-blue-500 outline-none ${val ? 'field-filled' : 'bg-slate-50'}">`;
             grid.appendChild(div);
         });
@@ -281,7 +330,7 @@
                     input.value = novoValor.toFixed(2);
                     p[col] = input.value;
                 } else if(['Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) {
-                    input.value = (ori / f).toFixed(4);
+                    input.value = (ori / f).toFixed(2);
                     p[col] = input.value;
                 }
             }
@@ -293,7 +342,10 @@
     function atualizarCampo(el) {
         const col = el.dataset.col;
         produtosCarregados[produtoSelecionadoIdx][col] = el.value;
-        if(col === 'Descrição') document.querySelector(`.name-ref-${produtoSelecionadoIdx}`).innerText = el.value;
+        if(col === 'Descrição') {
+            document.querySelector(`.name-ref-${produtoSelecionadoIdx}`).innerText = el.value;
+            document.getElementById('editMainName').value = el.value;
+        }
     }
 
     function sincronizarNome(el) {
@@ -303,8 +355,14 @@
         if(inp) inp.value = el.value;
     }
 
-    function toggleItem(idx) { produtosCarregados[idx]._selected = !produtosCarregados[idx]._selected; atualizarContador(); }
-    function atualizarContador() { document.getElementById('countSelected').innerText = produtosCarregados.filter(p => p._selected).length; }
+    function toggleItem(idx) { 
+        produtosCarregados[idx]._selected = !produtosCarregados[idx]._selected; 
+        atualizarContador(); 
+    }
+    
+    function atualizarContador() { 
+        document.getElementById('countSelected').innerText = produtosCarregados.filter(p => p._selected).length; 
+    }
 
     document.getElementById('btnExport').onclick = () => {
         const sel = produtosCarregados.filter(p => p._selected);
@@ -314,7 +372,7 @@
         const blob = new Blob([csv.join("\r\n")], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `IMPORTACAO_BLING_SOMA_ESTOQUE.csv`;
+        a.download = `IMPORTACAO_BLING_MASTER.csv`;
         a.click();
     };
 </script>
