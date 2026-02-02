@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Master Pro | Soma de Estoque Bling</title>
+    <title>XML Master Pro | Bling Integrator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -12,68 +12,82 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .field-filled { background-color: #eff6ff !important; border-color: #bfdbfe !important; }
         .selected-item { border-left: 6px solid #3b82f6 !important; background-color: #f1f5f9; }
-        .master-panel, .detail-panel { height: calc(100vh - 140px); overflow-y: auto; }
+        .master-panel, .detail-panel { height: calc(100vh - 180px); overflow-y: auto; }
         .xml-divider { background: #f8fafc; border-y: 1px solid #e2e8f0; padding: 6px 12px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
         .status-vinc { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
-        .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 4px 8px; border-radius: 6px; font-weight: bold; color: #854d0e; }
+        .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 4px 10px; border-radius: 6px; font-weight: bold; color: #854d0e; }
+        .nav-btn { background: #334155; color: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 700; transition: all 0.2s; border-bottom: 3px solid #1e293b; }
+        .nav-btn:hover { background: #475569; transform: translateY(-1px); }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen overflow-hidden text-slate-900">
 
-    <header class="bg-slate-900 text-white p-4 shadow-lg flex justify-between items-center z-50 relative">
-        <h1 class="text-xl font-black flex items-center gap-2">
-            <i class="fas fa-calculator text-blue-400"></i> XML MASTER <span class="text-blue-500">STOCK SUM</span>
-        </h1>
-        <div class="flex gap-3">
-            <label class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 border border-slate-600 transition-all shadow-sm">
-                <i class="fas fa-database text-yellow-400"></i> 1. CARREGAR BASE BLING
-                <input type="file" id="blingCsvInput" accept=".csv" class="hidden">
-            </label>
-            <label class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
-                <i class="fas fa-file-upload"></i> 2. IMPORTAR XMLS
-                <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
-            </label>
+    <header class="bg-slate-900 text-white p-4 shadow-lg z-50 relative">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-xl font-black flex items-center gap-2 tracking-tighter">
+                    <i class="fas fa-rocket text-blue-400"></i> XML MASTER <span class="text-blue-500">ULTRA</span>
+                </h1>
+                <div class="flex gap-3">
+                    <label class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 transition-all border border-slate-600 shadow-sm">
+                        <i class="fas fa-database text-yellow-400"></i> 1. CARREGAR BASE BLING
+                        <input type="file" id="blingCsvInput" accept=".csv" class="hidden">
+                    </label>
+                    <label class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
+                        <i class="fas fa-file-upload"></i> 2. IMPORTAR XMLS
+                        <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
+                    </label>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
+                <a href="https://www.bling.com.br/produtos.php#list" target="_blank" class="nav-btn"><i class="fas fa-box-open mr-1 text-blue-400"></i> PRODUTOS</a>
+                <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-btn"><i class="fas fa-shopping-cart mr-1 text-emerald-400"></i> PEDIDOS</a>
+                <a href="http://localhost:3000/" target="_blank" class="nav-btn bg-blue-700 border-blue-900"><i class="fas fa-plus-circle mr-1"></i> TIRAR PEDIDO</a>
+                <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-btn"><i class="fas fa-file-import mr-1 text-orange-400"></i> IMPORTAR PRODUTOS</a>
+                <a href="https://www.bling.com.br/importador.produtos.structure.php" target="_blank" class="nav-btn"><i class="fas fa-boxes mr-1 text-purple-400"></i> IMPORTAR COMBOS</a>
+                <a href="https://www.bling.com.br/vendas.php#list" target="_blank" class="nav-btn"><i class="fas fa-list-alt mr-1 text-pink-400"></i> PEDIDOS DE VENDA</a>
+            </div>
         </div>
     </header>
 
     <div class="container mx-auto px-4 mt-4">
-        <div id="blingAlert" class="hidden mb-4 bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md">
-            <i class="fas fa-check-circle"></i> BASE BLING CARREGADA. O sistema somará o estoque atual com o da nota automaticamente.
+        <div id="blingAlert" class="hidden mb-4 bg-emerald-600 text-white px-4 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 shadow-md">
+            <i class="fas fa-check-circle text-lg"></i> BASE BLING CONECTADA: O sistema somará o estoque atual com o da nota automaticamente durante a exportação.
         </div>
 
         <div class="flex gap-6">
             <div class="w-1/3 bg-white rounded-xl shadow-sm border border-slate-200 master-panel custom-scrollbar">
                 <div class="p-4 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
-                    <h2 class="font-bold text-slate-700 text-[10px] uppercase">Itens por Nota</h2>
-                    <button id="btnExport" class="hidden bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-all">
-                        EXPORTAR (<span id="countSelected">0</span>)
+                    <h2 class="font-bold text-slate-700 text-[10px] uppercase tracking-widest">Produtos / Notas</h2>
+                    <button id="btnExport" class="hidden bg-emerald-600 text-white px-4 py-2 rounded-lg font-black text-[10px] hover:bg-emerald-700 transition-all shadow-md">
+                        EXPORTAR SELECIONADOS (<span id="countSelected">0</span>)
                     </button>
                 </div>
                 <div id="productList" class="divide-y divide-slate-100">
-                    <p class="p-8 text-center text-slate-400 italic text-sm">Aguardando Importação...</p>
+                    <p class="p-10 text-center text-slate-400 italic text-sm">Aguardando importação de arquivos...</p>
                 </div>
             </div>
 
             <div class="w-2/3 bg-white rounded-xl shadow-sm border border-slate-200 detail-panel custom-scrollbar p-6">
-                <div id="editorPlaceholder" class="flex flex-col items-center justify-center h-full text-slate-400">
-                    <i class="fas fa-calculator text-5xl mb-4 opacity-10"></i>
-                    <p>Selecione um produto para calcular o estoque final</p>
+                <div id="editorPlaceholder" class="flex flex-col items-center justify-center h-full text-slate-300">
+                    <i class="fas fa-edit text-6xl mb-4 opacity-10"></i>
+                    <p class="text-lg">Selecione um item ao lado para editar</p>
                 </div>
 
                 <div id="editorContent" class="hidden">
-                    <div class="flex justify-between items-start border-b pb-4 mb-6">
-                        <div class="flex-1 mr-4">
-                            <label class="text-[9px] font-black text-blue-500 uppercase">Descrição do Produto</label>
-                            <input type="text" id="editMainName" class="text-lg font-bold text-slate-800 uppercase w-full bg-slate-50 border-b-2 border-transparent focus:border-blue-500 focus:bg-white outline-none p-1 transition-all" oninput="sincronizarNome(this)">
-                            
-                            <div id="calcInfo" class="mt-3 flex gap-2"></div>
+                    <div class="flex justify-between items-start border-b pb-6 mb-6">
+                        <div class="flex-1 mr-6">
+                            <label class="text-[9px] font-black text-blue-500 uppercase">Descrição no Cadastro</label>
+                            <input type="text" id="editMainName" class="text-xl font-bold text-slate-800 uppercase w-full bg-slate-50 border-b-2 border-transparent focus:border-blue-500 focus:bg-white outline-none p-1 transition-all" oninput="sincronizarNome(this)">
+                            <div id="calcInfo" class="mt-4 flex gap-2"></div>
                         </div>
-                        <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 flex items-center gap-3">
-                            <span class="text-[10px] font-black text-blue-800 uppercase">FATOR (X)</span>
-                            <input type="number" id="fatorInput" placeholder="1" class="w-16 p-2 rounded-lg border-blue-200 text-blue-900 font-bold focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-200 flex flex-col items-center gap-1 shadow-inner">
+                            <span class="text-[9px] font-black text-blue-800 uppercase">Fator (X)</span>
+                            <input type="number" id="fatorInput" placeholder="1" class="w-16 p-2 rounded-lg border-blue-300 text-blue-900 font-bold focus:ring-2 focus:ring-blue-500 outline-none text-center">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3" id="fieldsGrid"></div>
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4" id="fieldsGrid"></div>
                 </div>
             </div>
         </div>
@@ -124,6 +138,7 @@
                 }
             });
             document.getElementById('blingAlert').classList.remove('hidden');
+            alert("Sucesso: Base do Bling carregada para vínculos.");
         };
         reader.readAsText(e.target.files[0]);
     });
@@ -163,18 +178,14 @@
                 if(col === 'ID') val = dadosBling.id;
                 else if(col === 'Descrição') val = prod.getElementsByTagName('xProd')[0]?.textContent || "";
                 else if(col === 'Código') val = prod.getElementsByTagName('cProd')[0]?.textContent || "";
-                else if(col === 'Estoque') val = (dadosBling.estoqueAtual + qCom).toString(); // SOMA INICIAL
+                else if(col === 'Estoque') val = (dadosBling.estoqueAtual + qCom).toString();
                 else if(['Preço', 'Preço de custo', 'Preço de compra'].includes(col)) val = prod.getElementsByTagName('vUnCom')[0]?.textContent || "0";
                 else if(col === 'GTIN/EAN') val = ean;
                 else if(col === 'Fornecedor') val = nomeForn;
                 else if(col === 'Situação') val = "Ativo";
-                else val = "";
                 
                 obj[col] = val;
-                if(['Estoque', 'Preço', 'Preço de custo', 'Preço de compra'].includes(col)) {
-                    // O estoque original para cálculo do fator é APENAS o que vem da nota
-                    obj._original[col] = (col === 'Estoque') ? qCom : val;
-                }
+                if(['Estoque', 'Preço', 'Preço de custo', 'Preço de compra'].includes(col)) obj._original[col] = (col === 'Estoque') ? qCom : val;
             });
             produtosCarregados.push(obj);
         }
@@ -195,7 +206,7 @@
         for(const fileName in grupos) {
             const divXml = document.createElement('div');
             divXml.className = "xml-divider";
-            divXml.innerText = fileName;
+            divXml.innerHTML = `<i class="fas fa-file-code opacity-50 mr-1"></i> ${fileName}`;
             list.appendChild(divXml);
 
             grupos[fileName].forEach(({p, idx}) => {
@@ -203,12 +214,12 @@
                 item.className = `p-3 flex items-center gap-3 cursor-pointer transition-all border-l-4 border-transparent ${produtoSelecionadoIdx === idx ? 'selected-item' : 'hover:bg-slate-50'}`;
                 item.onclick = () => selecionarProduto(idx);
                 item.innerHTML = `
-                    <input type="checkbox" class="w-4 h-4" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
+                    <input type="checkbox" class="w-4 h-4 accent-emerald-600" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
                     <div class="flex-1 overflow-hidden">
                         <p class="text-[11px] font-bold text-slate-800 truncate uppercase name-ref-${idx}">${p.Descrição}</p>
-                        <div class="flex gap-2">
-                             ${p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : '<span class="text-[9px] bg-slate-100 px-1 rounded">NOVO</span>'}
-                             <span class="text-[9px] text-slate-400 font-mono">Qtd Nota: ${p._original.Estoque}</span>
+                        <div class="flex gap-2 items-center mt-1">
+                             ${p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : '<span class="text-[8px] font-black bg-slate-200 px-1 rounded">NOVO</span>'}
+                             <span class="text-[9px] text-slate-400 font-mono">XML: ${p._original.Estoque} un</span>
                         </div>
                     </div>
                 `;
@@ -225,14 +236,9 @@
         document.getElementById('editorContent').classList.remove('hidden');
         document.getElementById('editMainName').value = p.Descrição;
         
-        // Exibir Cálculo de Estoque
         const calcArea = document.getElementById('calcInfo');
-        const total = parseFloat(p.Estoque);
-        calcArea.innerHTML = `
-            <div class="estoque-highlight text-[10px]">
-                Bling: ${p._estoqueBling} + Nota: ${(total - p._estoqueBling).toFixed(2)} = Total Final: ${total.toFixed(2)}
-            </div>
-        `;
+        const qNota = parseFloat(p.Estoque) - p._estoqueBling;
+        calcArea.innerHTML = `<div class="estoque-highlight text-[10px]">ESTOQUE: Bling (${p._estoqueBling}) + Nota (${qNota.toFixed(2)}) = Total Final: ${parseFloat(p.Estoque).toFixed(2)}</div>`;
 
         const grid = document.getElementById('fieldsGrid');
         grid.innerHTML = "";
@@ -241,39 +247,13 @@
             const div = document.createElement('div');
             div.className = "flex flex-col gap-1";
             div.innerHTML = `
-                <label class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">${col}</label>
+                <label class="text-[9px] font-black text-slate-500 uppercase">${col}</label>
                 <input type="text" value="${val}" data-col="${col}" oninput="atualizarCampo(this)"
-                       class="p-2 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 ${val ? 'field-filled' : 'bg-slate-50'}">
+                       class="p-2 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 transition-all ${val ? 'field-filled' : 'bg-slate-50'}">
             `;
             grid.appendChild(div);
         });
     }
-
-    function aplicarFator() {
-        const f = parseFloat(document.getElementById('fatorInput').value) || 1;
-        const p = produtosCarregados[produtoSelecionadoIdx];
-        document.querySelectorAll('input[data-col]').forEach(input => {
-            const col = input.dataset.col;
-            const ori = parseFloat(p._original[col]);
-            if(!isNaN(ori)) {
-                if(col === 'Estoque') {
-                    const novoEstoqueNota = ori * f;
-                    const somaTotal = p._estoqueBling + novoEstoqueNota;
-                    input.value = somaTotal.toFixed(2);
-                    // Atualiza o box de cálculo no topo
-                    document.getElementById('calcInfo').innerHTML = `
-                        <div class="estoque-highlight text-[10px]">
-                            Bling: ${p._estoqueBling} + (Nota: ${ori} x Fator: ${f}) = Total Final: ${somaTotal.toFixed(2)}
-                        </div>
-                    `;
-                } else if(['Preço', 'Preço de custo', 'Preço de compra'].includes(col)) {
-                    input.value = (ori / f).toFixed(4);
-                }
-                p[col] = input.value;
-            }
-        });
-    }
-    document.getElementById('fatorInput').oninput = aplicarFator;
 
     function atualizarCampo(el) {
         const col = el.dataset.col;
@@ -288,18 +268,38 @@
         if(inp) inp.value = el.value;
     }
 
+    function aplicarFator() {
+        const f = parseFloat(document.getElementById('fatorInput').value) || 1;
+        const p = produtosCarregados[produtoSelecionadoIdx];
+        document.querySelectorAll('input[data-col]').forEach(input => {
+            const col = input.dataset.col;
+            const ori = parseFloat(p._original[col]);
+            if(!isNaN(ori)) {
+                if(col === 'Estoque') {
+                    const soma = p._estoqueBling + (ori * f);
+                    input.value = soma.toFixed(2);
+                    document.getElementById('calcInfo').innerHTML = `<div class="estoque-highlight text-[10px]">ESTOQUE: Bling (${p._estoqueBling}) + (Nota ${ori} x Fator ${f}) = Final: ${soma.toFixed(2)}</div>`;
+                } else if(['Preço', 'Preço de custo', 'Preço de compra'].includes(col)) {
+                    input.value = (ori / f).toFixed(4);
+                }
+                p[col] = input.value;
+            }
+        });
+    }
+    document.getElementById('fatorInput').oninput = aplicarFator;
+
     function toggleItem(idx) { produtosCarregados[idx]._selected = !produtosCarregados[idx]._selected; atualizarContador(); }
     function atualizarContador() { document.getElementById('countSelected').innerText = produtosCarregados.filter(p => p._selected).length; }
 
     document.getElementById('btnExport').onclick = () => {
         const sel = produtosCarregados.filter(p => p._selected);
-        if(sel.length === 0) return alert("Selecione itens!");
+        if(sel.length === 0) return alert("Selecione os produtos primeiro!");
         let csv = ["\ufeff" + colunasModelo.join(",")];
         sel.forEach(p => csv.push(colunasModelo.map(col => `"${String(p[col]).replace(/"/g, '""')}"`).join(",")));
         const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `CONSOLIDADO_BLING_SOMA.csv`;
+        a.download = `IMPORTAR_BLING_SOMA_ESTOQUE.csv`;
         a.click();
     };
 </script>
