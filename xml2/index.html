@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Master Pro | Dashboard</title>
+    <title>XML Master Pro | Etiquetas & Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -17,17 +17,38 @@
         .sidebar { width: 60px; transition: width 0.2s; overflow: hidden; white-space: nowrap; }
         .sidebar:hover { width: 220px; }
         .main-content { flex: 1; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        .master-panel { height: calc(100vh - 120px); overflow-y: auto; }
-        .detail-panel { height: calc(100vh - 120px); overflow-y: auto; }
         
-        .xml-divider { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 6px 12px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+        /* Estilos de Abas */
+        .tab-content { display: none; height: calc(100vh - 140px); }
+        .tab-content.active { display: flex; }
+        .tab-btn.active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
+
         .status-vinc { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
         .status-novo { background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
-        .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 8px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
-        
-        .nav-link { display: flex; align-items: center; padding: 14px 20px; color: #94a3b8; transition: all 0.2s; gap: 15px; }
-        .nav-link:hover { background: #1e293b; color: #3b82f6; }
-        .nav-link i { min-width: 20px; text-align: center; font-size: 18px; }
+        .estoque-highlight { background: #fef9c3; border: 1px solid #facc15; padding: 8px 12px; border-radius: 8px; font-weight: bold; color: #854d0e; font-size: 11px; }
+
+        /* ESTILO PARA IMPRESSÃO DE ETIQUETAS */
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+            .etiqueta {
+                width: 50mm;
+                height: 25mm;
+                padding: 4mm;
+                border: 1px solid #eee; /* Apenas visual no browser */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                page-break-after: always;
+                box-sizing: border-box;
+                overflow: hidden;
+            }
+            .etiqueta-nome { font-size: 10pt; font-weight: bold; line-height: 1.1; margin-bottom: 2mm; width: 100%; text-transform: uppercase; }
+            .etiqueta-ean { font-size: 9pt; width: 100%; font-family: monospace; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 flex overflow-hidden text-slate-900">
@@ -36,43 +57,24 @@
         <div class="p-4 mb-4 flex justify-center bg-blue-600">
             <i class="fas fa-bolt text-white text-xl"></i>
         </div>
-        
         <nav class="flex-1">
-            <a href="https://www.bling.com.br/produtos.php#list" target="_blank" class="nav-link" title="Produtos">
-                <i class="fas fa-box"></i> <span>PRODUTOS</span>
+            <a href="#" onclick="switchTab('import')" class="nav-link flex items-center p-4 text-slate-400 hover:text-white gap-4" title="Importar">
+                <i class="fas fa-file-import w-5"></i> <span>IMPORTAR XML</span>
             </a>
-            <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-link" title="Pedidos">
-                <i class="fas fa-shopping-cart"></i> <span>PEDIDOS</span>
-            </a>
-            <a href="http://localhost:3000/" target="_blank" class="nav-link text-blue-400 font-bold" title="Tirar Pedido">
-                <i class="fas fa-plus-circle"></i> <span>TIRAR PEDIDO</span>
-            </a>
-            <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-link" title="Importar Produtos">
-                <i class="fas fa-upload"></i> <span>IMPORTAR PRODUTOS</span>
-            </a>
-            <a href="https://www.bling.com.br/importador.produtos.estrutura.php" target="_blank" class="nav-link" title="Importar Combos">
-                <i class="fas fa-boxes"></i> <span>IMPORTAR COMBOS</span>
-            </a>
-            <a href="https://www.bling.com.br/vendas.php#list" target="_blank" class="nav-link" title="Pedidos de Venda">
-                <i class="fas fa-list-ul"></i> <span>PEDIDOS DE VENDA</span>
-            </a>
-            <a href="https://www.bling.com.br/contatos.php" target="_blank" class="nav-link" title="Clientes">
-                <i class="fas fa-users"></i> <span>CLIENTES</span>
-            </a>
-            <div class="border-t border-slate-800 my-2"></div>
-            <a href="https://www.donaantonia.com.br/site" target="_blank" class="nav-link text-emerald-400" title="Ver Site">
-                <i class="fas fa-globe"></i> <span>SITE DONA ANTONIA</span>
+            <a href="#" onclick="switchTab('labels')" class="nav-link flex items-center p-4 text-slate-400 hover:text-white gap-4" title="Etiquetas">
+                <i class="fas fa-barcode w-5"></i> <span>ETIQUETAS</span>
             </a>
         </nav>
     </aside>
 
     <div class="main-content">
         <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-8">
                 <h1 class="text-lg font-black tracking-tighter uppercase">XML MASTER <span class="text-blue-600">PRO</span></h1>
-                <div id="blingAlert" class="hidden bg-emerald-600 text-white px-3 py-1 rounded-full text-[10px] font-bold">
-                    <i class="fas fa-check"></i> <span id="blingInfo">BASE CONECTADA</span>
-                </div>
+                <nav class="flex gap-4">
+                    <button onclick="switchTab('import')" class="tab-btn active px-3 py-2 font-bold text-xs uppercase tracking-widest">Dashboard</button>
+                    <button onclick="switchTab('labels')" class="tab-btn px-3 py-2 font-bold text-xs uppercase tracking-widest">Etiquetas Bling</button>
+                </nav>
             </div>
             
             <div class="flex gap-2">
@@ -80,49 +82,72 @@
                     <i class="fas fa-database text-amber-500"></i> CARREGAR CSV BLING
                     <input type="file" id="blingCsvInput" accept=".csv" class="hidden">
                 </label>
-                <label class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
+                <label id="btnXml" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
                     <i class="fas fa-file-import"></i> IMPORTAR XMLS
                     <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
                 </label>
             </div>
         </header>
 
-        <div class="flex p-4 gap-4 overflow-hidden flex-1">
-            <div class="w-80 bg-white rounded-xl border border-slate-200 master-panel custom-scrollbar shadow-sm">
+        <div id="importTab" class="tab-content active p-4 gap-4 overflow-hidden">
+            <div class="w-80 bg-white rounded-xl border border-slate-200 overflow-y-auto custom-scrollbar shadow-sm">
                 <div class="p-3 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
                     <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Lista da Nota</span>
-                    <button id="btnExport" class="hidden bg-emerald-600 text-white px-3 py-1 rounded font-bold text-[10px] hover:bg-emerald-700">
-                        EXPORTAR (<span id="countSelected">0</span>)
-                    </button>
+                    <button id="btnExport" class="hidden bg-emerald-600 text-white px-3 py-1 rounded font-bold text-[10px]">EXPORTAR</button>
                 </div>
                 <div id="productList" class="divide-y divide-slate-100">
                     <p class="p-8 text-center text-slate-400 italic text-xs">Aguardando arquivos...</p>
                 </div>
             </div>
 
-            <div class="flex-1 bg-white rounded-xl border border-slate-200 detail-panel custom-scrollbar p-6 shadow-sm">
-                <div id="editorPlaceholder" class="flex flex-col items-center justify-center h-full text-slate-300">
-                    <i class="fas fa-mouse-pointer text-5xl mb-4 opacity-10"></i>
-                    <p class="text-sm italic">Selecione um produto para editar</p>
-                </div>
-
+            <div class="flex-1 bg-white rounded-xl border border-slate-200 overflow-y-auto custom-scrollbar p-6 shadow-sm">
                 <div id="editorContent" class="hidden">
                     <div class="flex justify-between items-start border-b pb-6 mb-6">
                         <div class="flex-1 mr-6">
                             <label class="text-[9px] font-black text-blue-500 uppercase">Nome / Descrição do Produto</label>
-                            <input type="text" id="editMainName" class="text-xl font-bold text-slate-800 uppercase w-full bg-slate-50 border-b-2 border-transparent focus:border-blue-500 focus:bg-white outline-none p-1 transition-all" oninput="sincronizarNome(this)">
+                            <input type="text" id="editMainName" class="text-xl font-bold text-slate-800 uppercase w-full bg-slate-50 border-b-2 border-transparent focus:border-blue-500 outline-none p-1" oninput="sincronizarNome(this)">
                             <div id="calcInfo" class="mt-4"></div>
                         </div>
                         <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col items-center gap-1 shadow-inner">
-                            <span class="text-[9px] font-black text-blue-800 uppercase">Fator Multiplicador</span>
-                            <input type="number" id="fatorInput" placeholder="1" class="w-20 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center outline-none focus:ring-2 focus:ring-blue-400">
+                            <span class="text-[9px] font-black text-blue-800 uppercase">Fator</span>
+                            <input type="number" id="fatorInput" value="1" class="w-20 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4" id="fieldsGrid"></div>
+                    <div class="grid grid-cols-3 gap-4" id="fieldsGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="labelsTab" class="tab-content flex-col p-4 overflow-hidden">
+            <div class="bg-white rounded-xl border border-slate-200 flex flex-col h-full shadow-sm">
+                <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                    <div>
+                        <h3 class="font-bold text-slate-700">Produtos no Cadastro Bling</h3>
+                        <p class="text-xs text-slate-500">Selecione para imprimir na etiqueta 50x25mm</p>
+                    </div>
+                    <button onclick="imprimirEtiquetas()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold text-xs hover:bg-slate-900 flex items-center gap-2">
+                        <i class="fas fa-print"></i> IMPRIMIR SELECIONADOS
+                    </button>
+                </div>
+                <div class="overflow-y-auto flex-1 custom-scrollbar">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-100 sticky top-0 text-[10px] font-black uppercase text-slate-500">
+                            <tr>
+                                <th class="p-4 w-10"><input type="checkbox" onclick="toggleAllLabels(this)"></th>
+                                <th class="p-4">Descrição do Produto</th>
+                                <th class="p-4">EAN / GTIN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="labelsTableBody" class="divide-y divide-slate-100">
+                            <tr><td colspan="3" class="p-8 text-center text-slate-400 italic">Carregue o CSV do Bling para listar os produtos.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+
+    <div id="printArea" class="hidden"></div>
 
 <script>
     let baseBling = {}; 
@@ -130,6 +155,13 @@
     let produtoSelecionadoIdx = null;
 
     const colunasModelo = ['ID', 'Código', 'Descrição', 'Unidade', 'NCM', 'Origem', 'Preço', 'Valor IPI fixo', 'Observações', 'Situação', 'Estoque', 'Preço de custo', 'Cód. no fornecedor', 'Fornecedor', 'Localização', 'Estoque máximo', 'Estoque mínimo', 'Peso líquido (Kg)', 'Peso bruto (Kg)', 'GTIN/EAN', 'GTIN/EAN da Embalagem', 'Largura do produto', 'Altura do Produto', 'Profundidade do produto', 'Data Validade', 'Descrição do Produto no Fornecedor', 'Descrição Complementar', 'Itens p/ caixa', 'Produto Variação', 'Tipo Produção', 'Classe de enquadramento do IPI', 'Código na Lista de Serviços', 'Tipo do item', 'Grupo de Tags/Tags', 'Tributos', 'Código Pai', 'Código Integração', 'Grupo de produtos', 'Marca', 'CEST', 'Volumes', 'Descrição Curta', 'Cross-Docking', 'URL Imagens Externas', 'Link Externo', 'Meses Garantia no Fornecedor', 'Clonar dados do pai', 'Condição do Produto', 'Frete Grátis', 'Número FCI', 'Vídeo', 'Departamento', 'Unidade de Medida', 'Preço de Compra', 'Valor base ICMS ST para retenção', 'Valor ICMS ST para retenção', 'Valor ICMS próprio do substituto', 'Categoria do produto', 'Informações Adicionais'];
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tab + 'Tab').classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
 
     document.getElementById('blingCsvInput').addEventListener('change', function(e) {
         const reader = new FileReader();
@@ -139,33 +171,68 @@
             const sep = rows[0].includes(';') ? ';' : ',';
             const headers = rows[0].split(sep).map(h => h.replace(/"/g, '').trim().toUpperCase());
             
-            const idxID = headers.indexOf('ID');
-            const idxEAN = headers.findIndex(h => h.includes('EAN') || h.includes('GTIN'));
-            const idxEstoque = headers.indexOf('ESTOQUE');
-            const idxDesc = headers.indexOf('DESCRIÇÃO');
-            const idxPreco = headers.indexOf('PREÇO');
+            const idxID = headers.indexOf('ID'), idxEAN = headers.findIndex(h => h.includes('EAN') || h.includes('GTIN')),
+                  idxEstoque = headers.indexOf('ESTOQUE'), idxDesc = headers.indexOf('DESCRIÇÃO'), idxPreco = headers.indexOf('PREÇO');
 
             baseBling = {};
+            const tbody = document.getElementById('labelsTableBody');
+            tbody.innerHTML = "";
+
             for(let i = 1; i < rows.length; i++) {
                 if(!rows[i].trim()) continue;
                 const cols = rows[i].split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
                 const ean = cols[idxEAN]?.replace(/"/g, '').trim(); 
-                if(ean && ean !== "") {
+                const desc = cols[idxDesc]?.replace(/"/g, '').trim() || "SEM NOME";
+                
+                if(ean) {
                     baseBling[ean] = { 
                         id: cols[idxID]?.replace(/"/g, '').trim() || "", 
                         estoqueAtual: parseFloat(cols[idxEstoque]?.replace(/"/g, '').replace(',', '.') || 0),
-                        descricao: cols[idxDesc]?.replace(/"/g, '').trim() || "",
-                        preco: cols[idxPreco]?.replace(/"/g, '').replace(',', '.') || ""
+                        descricao: desc, preco: cols[idxPreco]?.replace(/"/g, '').replace(',', '.') || ""
                     };
+
+                    // Adiciona na tabela de etiquetas
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50";
+                    tr.innerHTML = `
+                        <td class="p-4"><input type="checkbox" class="label-check" data-nome="${desc}" data-ean="${ean}"></td>
+                        <td class="p-4 font-medium">${desc}</td>
+                        <td class="p-4 text-slate-500 font-mono">${ean}</td>
+                    `;
+                    tbody.appendChild(tr);
                 }
             }
             document.getElementById('blingAlert').classList.remove('hidden');
-            document.getElementById('blingInfo').innerText = `${Object.keys(baseBling).length} EANs VINCULADOS`;
-            alert("Base Bling carregada com sucesso!");
+            document.getElementById('blingInfo').innerText = `${Object.keys(baseBling).length} PRODUTOS CARREGADOS`;
         };
         reader.readAsText(e.target.files[0], "UTF-8");
     });
 
+    function imprimirEtiquetas() {
+        const selecionados = document.querySelectorAll('.label-check:checked');
+        if(selecionados.length === 0) return alert("Selecione ao menos um produto!");
+
+        const printArea = document.getElementById('printArea');
+        printArea.innerHTML = "";
+
+        selecionados.forEach(cb => {
+            const div = document.createElement('div');
+            div.className = "etiqueta";
+            div.innerHTML = `
+                <div class="etiqueta-nome">${cb.dataset.nome}</div>
+                <div class="etiqueta-ean">${cb.dataset.ean}</div>
+            `;
+            printArea.appendChild(div);
+        });
+
+        window.print();
+    }
+
+    function toggleAllLabels(source) {
+        document.querySelectorAll('.label-check').forEach(cb => cb.checked = source.checked);
+    }
+
+    // --- REUTILIZANDO LÓGICA DE PROCESSAMENTO ANTERIOR ---
     document.getElementById('xmlInput').addEventListener('change', function(e) {
         Array.from(e.target.files).forEach(file => {
             const reader = new FileReader();
@@ -181,71 +248,31 @@
         const emit = xml.getElementsByTagName('emit')[0];
         const nomeForn = emit?.getElementsByTagName('xNome')[0]?.textContent || "Desconhecido";
         const itens = xml.getElementsByTagName('det');
-
         for (let i = 0; i < itens.length; i++) {
             const prod = itens[i].getElementsByTagName('prod')[0];
             const ean = prod.getElementsByTagName('cEAN')[0]?.textContent || "";
-            const qCom = parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent || 0);
             const vUnCom = parseFloat(prod.getElementsByTagName('vUnCom')[0]?.textContent || 0);
-            
-            // Verifica se existe na base Bling
             const infoBling = baseBling[ean];
             const vinculado = !!infoBling;
-            const dadosBling = infoBling || { id: "", estoqueAtual: 0, descricao: "", preco: "" };
             
-            let obj = { 
-                _xmlSource: fileName, 
-                _selected: true, 
-                _original: {}, 
-                _vinculado: vinculado, 
-                _estoqueBling: dadosBling.estoqueAtual 
-            };
-
+            let obj = { _xmlSource: fileName, _selected: true, _original: {}, _vinculado: vinculado, _estoqueBling: infoBling?.estoqueAtual || 0 };
             colunasModelo.forEach(col => {
                 let val = "";
-                
-                if(col === 'ID') {
-                    val = dadosBling.id;
-                } else if(col === 'Descrição') {
-                    // Mantém nome do Bling se existir, senão usa do XML
-                    val = (vinculado && dadosBling.descricao) ? dadosBling.descricao : (prod.getElementsByTagName('xProd')[0]?.textContent || "");
-                } else if(col === 'Preço') {
-                    // Mantém preço do Bling se existir, senão aplica margem de 50%
-                    if (vinculado && dadosBling.preco) {
-                        val = dadosBling.preco;
-                    } else {
-                        val = (vUnCom * 1.5).toFixed(2);
-                    }
-                } else if(col === 'Código') {
-                    val = prod.getElementsByTagName('cProd')[0]?.textContent || "";
-                } else if(col === 'Unidade') {
-                    val = prod.getElementsByTagName('uCom')[0]?.textContent || "";
-                } else if(col === 'NCM') {
-                    val = prod.getElementsByTagName('NCM')[0]?.textContent || "";
-                } else if(col === 'Estoque') {
-                    val = (dadosBling.estoqueAtual + qCom).toFixed(2);
-                } else if(['Preço de custo', 'Preço de Compra'].includes(col)) {
-                    val = vUnCom.toFixed(2);
-                } else if(col === 'GTIN/EAN') {
-                    val = ean;
-                } else if(col === 'Fornecedor') {
-                    val = nomeForn;
-                } else if(col === 'Situação') {
-                    val = "Ativo";
-                }
-
+                if(col === 'ID') val = infoBling?.id || "";
+                else if(col === 'Descrição') val = (vinculado && infoBling.descricao) ? infoBling.descricao : prod.getElementsByTagName('xProd')[0]?.textContent;
+                else if(col === 'Preço') val = (vinculado && infoBling.preco) ? infoBling.preco : (vUnCom * 1.5).toFixed(2);
+                else if(col === 'GTIN/EAN') val = ean;
+                else if(col === 'Estoque') val = ((infoBling?.estoqueAtual || 0) + parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent)).toFixed(2);
+                else if(['Preço de custo', 'Preço de Compra'].includes(col)) val = vUnCom.toFixed(2);
+                else if(col === 'Situação') val = "Ativo";
+                else val = prod.getElementsByTagName(col === 'Código' ? 'cProd' : col)?.[0]?.textContent || "";
                 obj[col] = val;
-
-                // Salva originais para recalcular com o fator multiplicador se necessário
-                if(['Estoque', 'Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) {
-                    obj._original[col] = (col === 'Estoque') ? qCom : val;
-                }
+                if(['Estoque', 'Preço', 'Preço de custo'].includes(col)) obj._original[col] = (col === 'Estoque') ? parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent) : val;
             });
             produtosCarregados.push(obj);
         }
         renderLista();
         document.getElementById('btnExport').classList.remove('hidden');
-        atualizarContador();
     }
 
     function renderLista() {
@@ -263,17 +290,11 @@
             list.appendChild(div);
             grupos[fileName].forEach(({p, idx}) => {
                 const item = document.createElement('div');
-                item.className = `p-3 flex items-center gap-3 cursor-pointer border-l-4 border-transparent ${produtoSelecionadoIdx === idx ? 'selected-item' : 'hover:bg-slate-50'}`;
+                item.className = `p-3 flex items-center gap-3 cursor-pointer border-l-4 ${produtoSelecionadoIdx === idx ? 'selected-item' : 'hover:bg-slate-50'}`;
                 item.onclick = () => selecionarProduto(idx);
-                
-                const statusTag = p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : '<span class="status-novo">NOVO (+50%)</span>';
-                
-                item.innerHTML = `
-                    <input type="checkbox" class="w-4 h-4 accent-blue-600" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItem(${idx})">
-                    <div class="flex-1 overflow-hidden">
-                        <p class="text-[10px] font-bold truncate uppercase name-ref-${idx}">${p.Descrição}</p>
-                        <div class="flex gap-2 items-center mt-1">${statusTag}</div>
-                    </div>`;
+                item.innerHTML = `<input type="checkbox" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); p._selected=!p._selected">
+                    <div class="flex-1 overflow-hidden"><p class="text-[10px] font-bold truncate uppercase">${p.Descrição}</p>
+                    <div class="mt-1">${p._vinculado ? '<span class="status-vinc">VINCULADO</span>' : '<span class="status-novo">NOVO (+50%)</span>'}</div></div>`;
                 list.appendChild(item);
             });
         }
@@ -282,99 +303,20 @@
     function selecionarProduto(idx) {
         produtoSelecionadoIdx = idx;
         const p = produtosCarregados[idx];
-        renderLista();
-        document.getElementById('editorPlaceholder').classList.add('hidden');
         document.getElementById('editorContent').classList.remove('hidden');
         document.getElementById('editMainName').value = p.Descrição;
-        
-        atualizarDisplayCalculo();
-
         const grid = document.getElementById('fieldsGrid');
         grid.innerHTML = "";
         colunasModelo.forEach(col => {
-            const val = p[col];
-            const div = document.createElement('div');
-            div.className = "flex flex-col gap-1";
-            div.innerHTML = `
-                <label class="text-[9px] font-black text-slate-500 uppercase">${col}</label>
-                <input type="text" value="${val}" data-col="${col}" oninput="atualizarCampo(this)" class="p-2 border border-slate-200 rounded-lg text-[11px] focus:border-blue-500 outline-none ${val ? 'field-filled' : 'bg-slate-50'}">`;
-            grid.appendChild(div);
+            grid.innerHTML += `<div class="flex flex-col"><label class="text-[9px] font-black text-slate-500 uppercase">${col}</label>
+                <input type="text" value="${p[col]}" data-col="${col}" oninput="p[col]=this.value" class="p-2 border rounded-lg text-[11px] ${p[col]?'field-filled':''}"></div>`;
         });
-    }
-
-    function atualizarDisplayCalculo() {
-        const p = produtosCarregados[produtoSelecionadoIdx];
-        const f = parseFloat(document.getElementById('fatorInput').value) || 1;
-        const qNotaOriginal = parseFloat(p._original.Estoque);
-        const novoEstoqueNota = qNotaOriginal * f;
-        const totalFinal = p._estoqueBling + novoEstoqueNota;
-
-        document.getElementById('calcInfo').innerHTML = `
-            <div class="estoque-highlight">
-                Bling: ${p._estoqueBling.toFixed(2)} + (Nota: ${qNotaOriginal.toFixed(2)} x Fator: ${f}) = TOTAL: ${totalFinal.toFixed(2)}
-            </div>
-        `;
-    }
-
-    function aplicarFator() {
-        if(produtoSelecionadoIdx === null) return;
-        const f = parseFloat(document.getElementById('fatorInput').value) || 1;
-        const p = produtosCarregados[produtoSelecionadoIdx];
-        
-        document.querySelectorAll('input[data-col]').forEach(input => {
-            const col = input.dataset.col;
-            const ori = parseFloat(p._original[col]);
-            if(!isNaN(ori)) {
-                if(col === 'Estoque') {
-                    const novoValor = p._estoqueBling + (ori * f);
-                    input.value = novoValor.toFixed(2);
-                    p[col] = input.value;
-                } else if(['Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) {
-                    input.value = (ori / f).toFixed(2);
-                    p[col] = input.value;
-                }
-            }
-        });
-        atualizarDisplayCalculo();
-    }
-    document.getElementById('fatorInput').oninput = aplicarFator;
-
-    function atualizarCampo(el) {
-        const col = el.dataset.col;
-        produtosCarregados[produtoSelecionadoIdx][col] = el.value;
-        if(col === 'Descrição') {
-            document.querySelector(`.name-ref-${produtoSelecionadoIdx}`).innerText = el.value;
-            document.getElementById('editMainName').value = el.value;
-        }
     }
 
     function sincronizarNome(el) {
         produtosCarregados[produtoSelecionadoIdx].Descrição = el.value;
-        document.querySelector(`.name-ref-${produtoSelecionadoIdx}`).innerText = el.value;
-        const inp = document.querySelector(`input[data-col="Descrição"]`);
-        if(inp) inp.value = el.value;
+        renderLista();
     }
-
-    function toggleItem(idx) { 
-        produtosCarregados[idx]._selected = !produtosCarregados[idx]._selected; 
-        atualizarContador(); 
-    }
-    
-    function atualizarContador() { 
-        document.getElementById('countSelected').innerText = produtosCarregados.filter(p => p._selected).length; 
-    }
-
-    document.getElementById('btnExport').onclick = () => {
-        const sel = produtosCarregados.filter(p => p._selected);
-        if(sel.length === 0) return alert("Selecione os produtos!");
-        let csv = ["\ufeff" + colunasModelo.join(";")];
-        sel.forEach(p => csv.push(colunasModelo.map(col => `"${String(p[col]).replace(/"/g, '""')}"`).join(";")));
-        const blob = new Blob([csv.join("\r\n")], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `IMPORTACAO_BLING_MASTER.csv`;
-        a.click();
-    };
 </script>
 </body>
 </html>
