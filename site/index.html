@@ -216,88 +216,85 @@
 
         /* --- NOVO ESTILO CARD CESTA (HOME) --- */
        .home-basket-card {
-    background: #fff; 
-    border-radius: 20px; 
-    padding: 20px; /* Aumentamos de 15px para 20px para o conteúdo "respirar" melhor */
-    border: 1px solid #eee;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    transition: transform 0.2s;
-    margin: 0 auto; /* Centraliza o card */
-    max-width: 400px; /* Evita que o card fique gigante em telas de tablet ou celulares muito largos */
-}
+            background: #fff; 
+            border-radius: 20px; 
+            padding: 20px; 
+            border: 1px solid #eee;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            margin: 0 auto; 
+            max-width: 400px; 
+        }
         .home-basket-card:hover { transform: translateY(-5px); }
 
         /* Container da Foto (Simples) */
-.hbc-photo-container {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 15px;
-    overflow: hidden;
-    margin-bottom: 12px;
-    border: 1px solid #f0f0f0;
-}
+        .hbc-photo-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            border: 1px solid #f0f0f0;
+        }
 
-.hbc-photo-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+        .hbc-photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-/* Título antes da cesta, centralizado */
-.hbc-title-top {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: var(--secondary);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    text-align: center;
-}
+        /* Título antes da cesta, centralizado */
+        .hbc-title-top {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--secondary);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            text-align: center;
+        }
 
-/* Remova a classe .hbc-photo-overlay pois não será mais usada */
+        .hbc-price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 5px;
+        }
 
-      /* Localize e substitua estas classes no seu CSS */
-.hbc-price-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding: 0 5px;
-}
+        .hbc-item-count {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #64748b; 
+        }
 
-.hbc-item-count {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #64748b; /* Um cinza elegante */
-}
+        .hbc-price { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            color: var(--primary); 
+            margin: 0; 
+        }
 
-.hbc-price { 
-    font-size: 1.4rem; 
-    font-weight: 800; 
-    color: var(--primary); 
-    margin: 0; /* Garante que fique alinhado na linha */
-}
-
-/* Destaque no Botão Ver Lista */
-.btn-view-list {
-    background: #f1f5f9;
-    color: var(--primary); /* Mudança para a cor principal */
-    border: 1px solid #e2e8f0;
-    padding: 12px 15px;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    font-weight: 800; /* Mais negrito */
-    margin-bottom: 15px;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.btn-view-list:hover { 
-    background: var(--primary); 
-    color: white; 
-}
+        /* Destaque no Botão Ver Lista */
+        .btn-view-list {
+            background: #f1f5f9;
+            color: var(--primary); 
+            border: 1px solid #e2e8f0;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 800; 
+            margin-bottom: 15px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-view-list:hover { 
+            background: var(--primary); 
+            color: white; 
+        }
 
         .hbc-actions-grid { display: flex; flex-direction: column; gap: 10px; }
 
@@ -596,8 +593,7 @@
                     </button>
                     <button class="ah-icon-btn" onclick="window.open('https://instagram.com/donaantoniacestas','_blank')" title="Instagram">
                         <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                    </button>
-                </div>
+                </button>
             </div>
         </div>
 
@@ -1190,7 +1186,9 @@
             paginationStore: {},
             bannerInterval: null,
 
+            // --- NOVO APP.INIT ---
             async init() {
+                // 1. Ouvinte para fechar menu ao clicar fora (mantido)
                 document.addEventListener('click', (e) => {
                     const menu = document.getElementById('cat-dropdown');
                     const btn = document.getElementById('btn-cat-menu');
@@ -1199,302 +1197,25 @@
                     }
                 });
 
-                this.initHeroBanner();
+                this.initHeroBanner(); 
 
                 try {
-                    const res = await fetch('produtos/produtos.json?v=' + Date.now());
-                    if (!res.ok) throw new Error("Erro ao carregar dados.");
-                    const content = await res.json();
-                    const raw = content.produtos || content;
-this.data = raw
-    .filter(p => {
-        // Filtra estoque > 0 e se possui link de imagem válido
-        const temEstoque = parseFloat(p.Estoque || p.estoque || 0) > 0;
-        const temFoto = p.imagem && p.imagem !== "" && p.imagem !== "0" && p.imagem !== null;
-        return temEstoque && temFoto;
-    })
-    .map(p => {                        const catRaw = (p.categoria || "OUTROS").trim();
-                        const parts = catRaw.split('>');
-                        const mainCat = parts[0].trim().toUpperCase();
-                        let appCat = mainCat; 
-                        if (mainCat.includes('ALIMENTOS') || mainCat.includes('MERCEARIA')) appCat = "MERCEARIA E ALIMENTOS";
-                        else if (mainCat.includes('CAFÉ') || mainCat.includes('MATINAIS')) appCat = "CAFÉ DA MANHÃ E LANCHES";
-                        else if (mainCat.includes('LIMPEZA') || mainCat.includes('LAVANDERIA')) appCat = "LIMPEZA E LAVANDERIA";
-                        else if (mainCat.includes('HIGIENE') || mainCat.includes('PESSOAL')) appCat = "CUIDADOS PESSOAIS";
-                        else if (mainCat.includes('CALÇADO')) appCat = "CALÇADOS";
-                        else if (mainCat.includes('BAZAR')) appCat = "BAZAR E UTILIDADES";
-                        let imgUrl = 'img/placeholder.jpg';
-                        if(p.imagem) imgUrl = `img/produtos/${p.imagem.split('/').pop()}`;
-                        return {
-                            ...p, id: String(p.id), codigo: String(p.codigo || ""),
-                            nome: this.toSmartTitleCase(p.nome.trim()).replace(/\*(.*?)\*/g, '<strong>$1</strong>'), 
-                            valor: parseFloat(p.valor || 0), offerPrice: parseFloat(p.Valor_Oferta || 0),
-                            isOffer: (p.Oferta === 'Sim'), appCategory: appCat, subCategory: parts.length > 1 ? parts[1].trim() : "Geral", 
-                            imagem: imgUrl, limit: parseInt(p.Limit || p.limit || 0), caracteristicas: p.Caracteristicas || p.caracteristicas || "",
-                            linkedCode: String(p.Codigo_Produto_Ligado || p.codigo_produto_ligado || "").trim(),
-                            hasLink: (p.Tem_Ligacao || p.tem_ligacao) === 'Sim',
-                            validade: (p.validade && p.validade !== '0') ? this.formatDateBr(p.validade) : "",
-                            categoria: catRaw.toUpperCase(), isBest: (p.Mais_Vendido === 'Sim')
-                        };
-                    });
+                    // 2. Carrega o NOVO arquivo JSON
+                    const res = await fetch('produtos_exportados (2).json?v=' + Date.now());
                     
-                    this.data.sort((a, b) => a.nome.localeCompare(b.nome));
+                    if (!res.ok) throw new Error("Erro ao carregar dados.");
+                    
+                    const content = await res.json(); 
+                    const raw = Array.isArray(content) ? content : (content.produtos || []);
 
-                    const saved = localStorage.getItem('da_state');
-                    if (saved) {
-                        try {
-                            const state = JSON.parse(saved);
-                            if (state.view === 'customizer' && state.basketId) {
-                                const basket = this.data.find(p => p.id === state.basketId);
-                                if (basket) {
-                                    this.cart = state.cart || {}; this.cartOrder = state.cartOrder || []; this.currentBasket = basket;
-                                    const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim();
-                                    let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k));
-                                    this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
-                                    this.originalCart = {};
-                                    if(basket.items) basket.items.forEach(i => {
-                                        let match = this.data.find(p => p.id === String(i.id));
-                                        if(match) this.originalCart[match.id] = (this.originalCart[match.id] || 0) + (parseInt(i.qty || 1));
-                                    });
-                                    document.getElementById('home-view').classList.add('hidden');
-                                    document.getElementById('customizer-view').classList.remove('hidden');
-                                    document.body.classList.add('customizer-mode');
-                                    setTimeout(() => ChatFlow.start(), 100);
-                                    document.body.classList.add('loaded'); MarketingApp.init();
-                                    return; 
-                                }
-                            }
-                        } catch (e) { localStorage.removeItem('da_state'); }
-                    }
-                    this.renderHome(); document.body.classList.add('loaded'); MarketingApp.init();
-                    this.renderOffersCarousel();
-                } catch (e) { 
-                    console.error(e);
-                    document.body.classList.add('loaded');
-                    document.getElementById('home-list').innerHTML = `<div style="text-align:center; padding:40px;">Erro ao carregar.<button onclick="location.reload()">Tentar Novamente</button></div>`;
-                }
-            },
+                    const parseBRL = (val) => {
+                        if (typeof val === 'number') return val;
+                        if (!val) return 0;
+                        return parseFloat(val.replace(/\./g, '').replace(',', '.'));
+                    };
 
-            initHeroBanner() {
-                const track = document.getElementById('hero-banner-track');
-                const dots = document.querySelectorAll('.hb-dot');
-                if(!track) return;
-                let index = 0; const total = 6; const isDesktop = window.innerWidth >= 1024; const step = isDesktop ? 3 : 1; 
-                const scrollNext = () => {
-                    index = (index + step) % total; if(isDesktop && index > total - 3) index = 0;
-                    const cardWidth = track.querySelector('.hb-card').offsetWidth; const gap = 16;
-                    track.scrollTo({ left: index * (cardWidth + gap), behavior: 'smooth' });
-                    dots.forEach(d => d.classList.remove('active')); if(dots[index]) dots[index].classList.add('active');
-                };
-                this.bannerInterval = setInterval(scrollNext, 3500);
-                const stopAuto = () => { if(this.bannerInterval) clearInterval(this.bannerInterval); };
-                track.addEventListener('touchstart', stopAuto, {passive: true}); track.addEventListener('mousedown', stopAuto);
-            },
-
-            saveState() {
-                localStorage.setItem('da_state', JSON.stringify({
-                    view: document.body.classList.contains('customizer-mode') ? 'customizer' : 'home',
-                    basketId: this.currentBasket ? this.currentBasket.id : null, cart: this.cart, cartOrder: this.cartOrder
-                }));
-            },
-            
-            toggleCatMenu(e) {
-                if(e) e.stopPropagation();
-                const menu = document.getElementById('cat-dropdown');
-                if (menu.classList.contains('active')) {
-                    menu.classList.remove('active'); document.body.classList.remove('no-scroll');
-                } else {
-                    if (ChatFlow.categories.length > 0) {
-                        let gridHtml = '<div class="corridor-grid" style="margin-top:0;">';
-                        ChatFlow.categories.forEach(cat => {
-                            const isCatVisited = ChatFlow.visitedCorridors.includes(cat);
-                            const mainCls = isCatVisited ? "btn-main-cat visited" : "btn-main-cat";
-                            let subHtml = ""; const subCats = Array.from(ChatFlow.categoryMap[cat] || []).sort();
-                            if(subCats.length > 0) {
-                                subHtml = `<div class="sub-cat-list">${subCats.map(sub => {
-                                    const isSubVisited = ChatFlow.visitedSubCats.includes(sub);
-                                    const subCls = isSubVisited ? "btn-sub-cat visited" : "btn-sub-cat";
-                                    const imgName = App.toSlug(sub);
-                                    return `<button class="${subCls}" onclick="App.toggleCatMenu(); ChatFlow.showCategory('act-menu', '${cat}', '${sub}')">
-                                        <div class="bsc-img-container"><img src="img/${imgName}.webp" class="bsc-img" alt="${sub}" onerror="this.style.display='none';this.nextElementSibling.style.display='block';"><div class="bsc-placeholder" style="display:none;">•</div></div>
-                                        <span class="bsc-label">${App.toSmartTitleCase(sub)}</span>
-                                    </button>`;
-                                }).join('')}</div>`;
-                            }
-                            gridHtml += `<div class="corridor-card"><button class="${mainCls}" onclick="App.toggleCatMenu(); ChatFlow.showCategory('act-menu', '${cat}', null)">${App.toSmartTitleCase(cat)}</button>${subHtml}</div>`;
-                        });
-                        gridHtml += '</div>'; menu.innerHTML = gridHtml;
-                    }
-                    menu.classList.add('active'); document.body.classList.add('no-scroll');
-                }
-            },
-            
-            toSmartTitleCase(str) {
-                const smallWords = ['de', 'da', 'do', 'e', 'com', 'sem', 'para', 'na', 'no', 'em', 'ao', 'a', 'o', 'as', 'os'];
-                const upperWords = ['kg', 'ml', 'g', 'l', 'un', 'pvc', 'uht', 'pet', 'ypê', 'sbp', 'tixan', 'qboa'];
-                return str.toLowerCase().split(' ').map((w, i) => {
-                    if (upperWords.includes(w)) return w.toUpperCase();
-                    if (smallWords.includes(w) && i !== 0) return w;
-                    return w.charAt(0).toUpperCase() + w.slice(1);
-                }).join(' ');
-            },
-            toSlug(text) { return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, ''); },
-            formatDateBr(dateStr) { if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) { const [y, m, d] = dateStr.split('-'); return `${d}/${m}/${y}`; } return dateStr; },
-            setupPagination(sectionId, products, type='home') {
-                const isDesktop = window.innerWidth >= 1024; const cols = isDesktop ? 6 : (type === 'home' || sectionId.includes('basket-grid') ? 3 : 2);
-                let limit = cols; this.paginationStore[sectionId] = { products, currentIndex: 0, limit, type, lastSubCat: '', cols };
-                this.loadMore(sectionId, true);
-            },
-            loadMore(sectionId, isInitial = false) {
-                const data = this.paginationStore[sectionId]; if(!data) return;
-                const nextIndex = data.currentIndex + data.limit; const batch = data.products.slice(data.currentIndex, nextIndex); const hasMore = nextIndex < data.products.length;
-                let batchHtml = '';
-                batch.forEach(item => {
-                    const p = data.type === 'home' ? item.d : item;
-                    if(data.type === 'home') {
-                        batchHtml += `<div class="card-prod readonly"><div class="cp-img-box"><img src="${item.d.imagem}" class="cp-img" alt="${item.d.nome}" loading="lazy"></div><div class="home-qty-text">${item.qty} ${item.qty > 1 ? 'Unidades' : 'Unidade'}</div><div class="cp-title">${item.d.nome}</div></div>`;
-                    } else { batchHtml += this.buildCard(p); }
-                });
-                let grid = document.querySelector(`#${sectionId} .grid-products-row`);
-                if(!grid) { document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<div class="grid-products-row"></div>`); grid = document.querySelector(`#${sectionId} .grid-products-row`); }
-                grid.insertAdjacentHTML('beforeend', batchHtml); data.currentIndex = nextIndex; data.limit = data.cols * 3;
-                const oldBtn = document.getElementById(`btn-${sectionId}`); if(oldBtn) oldBtn.remove();
-                if(hasMore) { const count = Math.min(data.products.length - data.currentIndex, data.limit); document.getElementById(sectionId).insertAdjacentHTML('beforeend', `<button type="button" id="btn-${sectionId}" class="btn-load-more" onclick="App.loadMore('${sectionId}')">VER MAIS ${count} PRODUTOS</button>`); }
-            },
-
-            /* --- NOVO RENDERHOME --- */
-          renderHome() {
-    const list = document.getElementById('home-list');
-    const baskets = this.data.filter(p => p.categoria && p.categoria.includes('CESTA'));
-    
-    if (baskets.length > 0) {
-        list.innerHTML = baskets.map(p => {
-            // Soma todas as unidades de produtos dentro desta cesta
-            const totalItens = p.items ? p.items.reduce((acc, curr) => acc + parseInt(curr.qty || 0), 0) : 0;
-
-            return `
-            <div class="home-basket-card">
-                <h2 class="hbc-title-top">${p.nome}</h2>
-
-                <div class="hbc-photo-container">
-                    <img src="${p.imagem}" alt="${p.nome}" loading="lazy">
-                </div>
-
-                <div class="hbc-price-row">
-                    <span class="hbc-item-count">📦 ${totalItens} Itens</span>
-                    <div class="hbc-price">R$ ${p.valor.toFixed(2).replace('.',',')}</div>
-                </div>
-
-                <button class="btn-view-list" onclick="App.openBasketPreview('${p.id}')">
-                    🔍 VER LISTA DE PRODUTOS
-                </button>
-                
-                <div class="hbc-actions-grid">
-                    <button onclick="App.openCustomizer('${p.id}')" class="btn-home-cust">Personalizar</button>
-                    <button onclick="App.directLink('${p.nome}')" class="btn-home-order">Encomendar a Cesta Normal</button>
-                </div>
-            </div>`;
-        }).join('');
-    }
-},
-
-            /* --- NOVO OPENBASKETPREVIEW --- */
-            openBasketPreview(id) {
-                const p = this.data.find(x => x.id === id);
-                if (!p || !p.items) return;
-
-                let itemsHtml = p.items.map(i => {
-                    const d = this.data.find(x => x.id === String(i.id));
-                    if(!d) return '';
-                    return `
-                        <div style="text-align:center; font-size:0.7rem;">
-                            <img src="${d.imagem}" style="width:100%; border-radius:10px; background:#f9f9f9;" loading="lazy">
-                            <div style="font-weight:700; margin-top:4px;">${i.qty}x</div>
-                            <div style="color:#666; line-height:1.1; overflow:hidden; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${d.nome}</div>
-                        </div>`;
-                }).join('');
-
-                document.getElementById('info-title').innerText = "Produtos da " + p.nome;
-                document.getElementById('info-media').innerHTML = ""; 
-                document.getElementById('info-body').innerHTML = `<div class="grid-modal">${itemsHtml}</div>`;
-                
-                this.openSheet('info-sheet');
-            },
-            
-            renderOffersCarousel() {
-                const offers = this.data.filter(p => p.isOffer === true); if (offers.length === 0) return;
-                const track = document.getElementById('offers-track'); const container = document.getElementById('offers-carousel-container'); if(!track || !container) return;
-                let html = offers.map(p => {
-                    let discountTag = ''; if(p.valor > 0) { const pct = Math.round(((p.valor - p.offerPrice) / p.valor) * 100); discountTag = `<span class="cp-tag-off" style="font-size:0.7rem; padding:4px 8px;">-${pct}%</span>`; }
-                    return `<div class="card-prod offer-card-simple" onclick="App.openInfo('${p.id}'); MarketingApp.logProductView('${p.id}');">${discountTag}<div class="cp-img-box"><img src="${p.imagem}" class="cp-img" alt="${p.nome}" loading="lazy"></div><div class="cp-price offer-price" style="margin-top:5px;">R$ ${p.offerPrice.toFixed(2).replace('.',',')}<small>R$${p.valor.toFixed(2).replace('.',',')}</small></div><div class="cp-title" style="min-height:auto;">${p.nome}</div></div>`;
-                }).join('');
-                track.innerHTML = html; container.classList.remove('hidden');
-            },
-
-            openCustomizer(id) {
-                const basket = this.data.find(p => p.id === id); if(!basket) return;
-                if (!this.currentBasket || this.currentBasket.id !== id) {
-                    this.cart = {}; this.cartOrder = []; this.appliedCoupon = false; ChatFlow.catIndex = 0; ChatFlow.checkoutState = { paymentMethod: '', couponApplied: false };
-                    if(basket.items) basket.items.forEach(i => { let match = this.data.find(p => p.id === String(i.id)); if(match) { this.cart[match.id] = (this.cart[match.id] || 0) + (parseInt(i.qty || 1)); if(!this.cartOrder.includes(match.id)) this.cartOrder.push(match.id); } });
-                    this.originalCart = { ...this.cart };
-                    let sumItems = 0; for(let i in this.cart) { let p = this.data.find(x => x.id === i); if(p) sumItems += (p.isOffer ? p.offerPrice : p.valor) * this.cart[i]; }
-                    this.baseFee = basket.valor - sumItems;
-                }
-                this.currentBasket = basket; const nameKey = basket.nome.toLowerCase().replace('cesta', '').trim(); let limitKey = Object.keys(CONSTANTS.LIMITS).find(k => nameKey.includes(k)); this.currentLimit = limitKey ? CONSTANTS.LIMITS[limitKey] : 99;
-                document.getElementById('home-view').classList.add('hidden'); document.getElementById('customizer-view').classList.remove('hidden'); document.body.classList.add('customizer-mode');
-                this.updateTotal(); window.scrollTo(0,0); ChatFlow.start(); this.saveState(); 
-            },
-            goHome() { document.getElementById('customizer-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); document.body.classList.remove('customizer-mode'); document.getElementById('credit-chip').classList.remove('visible'); localStorage.setItem('da_state', JSON.stringify({view: 'home'})); if(this.data.length > 0) this.renderHome(); },
-            resetCart() { if(!confirm("Deseja limpar sua cesta atual e voltar para o início?")) return; localStorage.removeItem('da_state'); this.cart = {}; this.cartOrder = []; this.appliedCoupon = false; this.currentBasket = null; window.location.reload(); },
-            buildCard(p) {
-                const qty = this.cart[p.id] || 0; const price = p.isOffer ? p.offerPrice : p.valor;
-                let discountTag = ''; if(p.isOffer && p.valor > 0) { const pct = Math.round(((p.valor - p.offerPrice) / p.valor) * 100); discountTag = `<span class="cp-tag-off">-${pct}%</span>`; }
-                const trash = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-                return `<div class="card-prod" id="card-${p.id}">${p.isOffer ? '<span class="cp-tag">OFERTA</span>' + discountTag : ''}<div class="cp-img-box" onclick="App.openInfo('${p.id}'); MarketingApp.logProductView('${p.id}');"><img src="${p.imagem}" class="cp-img" alt="${p.nome}" loading="lazy" width="100" height="100"></div><div class="card-action-row"><div id="btn-add-${p.id}" class="btn-circle-add ${qty > 0 ? 'hidden' : ''}" onclick="event.stopPropagation(); App.modQty('${p.id}', 1);">+</div><div id="qty-ctrl-${p.id}" class="qty-ctrl-float ${qty > 0 ? '' : 'hidden'}" onclick="event.stopPropagation()"><div id="btn-dec-${p.id}" class="qcf-btn" onclick="App.modQty('${p.id}', -1)">${qty===1?trash:'-'}</div><div class="qcf-val" id="qty-val-${p.id}">${qty}</div><div class="qcf-btn" onclick="App.modQty('${p.id}', 1)">+</div></div></div><div class="${p.isOffer ? 'cp-price offer-price' : 'cp-price'}">R$ ${price.toFixed(2).replace('.',',')}${p.isOffer ? `<small>R$${p.valor.toFixed(2).replace('.',',')}</small>`:''}</div><div class="cp-title">${p.nome}</div>${(p.validade) ? `<div class="cp-validity">Val: ${p.validade}</div>` : ''}</div>`;
-            },
-            modQty(id, delta) {
-                const p = this.data.find(x => x.id === id); if(!this.cart[id]) this.cart[id] = 0; const isNew = this.cart[id] === 0, newQty = this.cart[id] + delta; if(delta > 0 && p.limit > 0 && newQty > p.limit) return alert(`Limite de ${p.limit} unidades.`);
-                let removed = 0; for(let i in this.originalCart) if(this.originalCart[i] > 0 && (!this.cart[i] || this.cart[i] === 0)) removed++; if (this.originalCart[id] && delta < 0 && newQty === 0 && removed >= this.currentLimit) return alert(`Limite de ${this.currentLimit} trocas atingido.`);
-                this.cart[id] = newQty; if(this.cart[id] <= 0) { delete this.cart[id]; this.cartOrder = this.cartOrder.filter(x => x !== id); } else if (isNew) { this.cartOrder = this.cartOrder.filter(x => x !== id); this.cartOrder.unshift(id); }
-                this.updateCardUI(id, newQty); this.updateTotal(); if(delta > 0 && p.linkedCode) this.checkSuggestion(p.linkedCode);
-                if(ChatFlow && typeof ChatFlow.reactToCartChange === 'function') { ChatFlow.reactToCartChange(); }
-                this.saveState(); 
-            },
-            updateCardUI(id, qty) {
-                const trash = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-                document.querySelectorAll(`[id="btn-add-${id}"]`).forEach(b => b.classList.toggle('hidden', qty > 0)); document.querySelectorAll(`[id="qty-ctrl-${id}"]`).forEach(c => c.classList.toggle('hidden', qty <= 0)); document.querySelectorAll(`[id="qty-val-${id}"]`).forEach(v => v.innerText = qty); document.querySelectorAll(`[id="btn-dec-${id}"]`).forEach(b => b.innerHTML = qty === 1 ? trash : '-');
-            },
-            checkSuggestion(code) {
-                const target = String(code).trim().toUpperCase(); const p = this.data.find(x => x.id === target || (x.codigo && String(x.codigo).trim().toUpperCase() === target));
-                if(p && !this.cart[p.id]) { const shown = JSON.parse(sessionStorage.getItem('shown_suggestions') || '[]'); if (shown.includes(p.id)) return; setTimeout(() => { document.getElementById('sd-content').innerHTML = `<div style="width:180px; margin:0 auto;">${this.buildCard(p)}</div>`; document.getElementById('suggestion-overlay').classList.add('active'); document.getElementById('suggestion-drawer').classList.add('open'); shown.push(p.id); sessionStorage.setItem('shown_suggestions', JSON.stringify(shown)); }, 500); }
-            },
-            closeSuggestion() { document.getElementById('suggestion-drawer').classList.remove('open'); document.getElementById('suggestion-overlay').classList.remove('active'); },
-            updateTotal() {
-                let sum = 0; for(let id in this.cart) { const p = this.data.find(x => x.id === id); if(p) sum += (p.isOffer ? p.offerPrice : p.valor) * this.cart[id]; }
-                const effectiveTotal = sum + this.baseFee; let displayTotal = effectiveTotal; if(this.appliedCoupon) displayTotal = Math.max(0, displayTotal - CONSTANTS.COUPON_VAL);
-                const txtTotal = 'R$ ' + displayTotal.toFixed(2).replace('.', ',');
-                const headerVal = document.getElementById('icb-total-val'); if(headerVal) { headerVal.innerText = txtTotal; headerVal.style.display = 'none'; }
-                const basketPrice = this.currentBasket.valor; const chipBtn = document.querySelector('.ccb-btn'), chipLabel = document.getElementById('ccb-label'), chipVal = document.getElementById('ccb-val');
-                if(chipLabel) chipLabel.innerText = "Total do Pedido"; if(chipVal) { chipVal.innerText = txtTotal; chipVal.style.color = "#fff"; }
-                if (effectiveTotal < basketPrice - 0.05) { if(chipBtn) { chipBtn.innerText = "Completar Cesta"; chipBtn.classList.add('disabled'); chipBtn.onclick = null; } } else { if(chipBtn) { chipBtn.innerText = "Finalizar Pedido"; chipBtn.classList.remove('disabled'); chipBtn.onclick = () => ChatFlow.startCheckout(); } }
-            },
-            openInfo(id) {
-                const p = this.data.find(x => x.id === id); if(!p) return;
-                document.getElementById('info-title').innerText = p.nome;
-                let desc = p.caracteristicas ? p.caracteristicas.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : "Sem informações.";
-                if(p.isOffer && p.valor > 0) { const percent = Math.round(((p.valor - p.offerPrice) / p.valor) * 100); desc = `<div style="background:#fef2f2; border:1px solid #fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:15px; text-align:center;"><div style="font-weight:800; font-size:1.1rem; margin-bottom:4px;">${percent}% OFF</div><span style="text-decoration:line-through; color:#7f1d1d; font-size:0.9rem; margin-right:8px;">R$ ${p.valor.toFixed(2).replace('.',',')}</span><span style="font-weight:800; font-size:1.2rem; color:#dc2626;">R$ ${p.offerPrice.toFixed(2).replace('.',',')}</span></div>` + desc; }
-                document.getElementById('info-body').innerHTML = desc; document.getElementById('info-media').innerHTML = `<img src="${p.imagem}" style="width:100%; border-radius:8px;" alt="${p.nome}">`;
-                App.openSheet('info-sheet');
-            },
-            openPhoto(url, title) { document.getElementById('info-title').innerText = title; document.getElementById('info-body').innerHTML = ''; document.getElementById('info-media').innerHTML = `<img src="${url}" style="width:100%; border-radius:8px;" alt="${title}">`; App.openSheet('info-sheet'); },
-            openSheet(id) { document.getElementById(id).classList.add('open'); },
-            closeSheet(id) { document.getElementById(id).classList.remove('open'); },
-            directLink(name) { window.open(`https://api.whatsapp.com/send?phone=${CONSTANTS.PHONE}&text=${encodeURIComponent('Quero pedir ' + name)}`, '_blank'); }
-        };
-        window.ChatFlow = ChatFlow; window.App = App;
-        window.addEventListener('scroll', () => { const h = document.querySelector('.app-header'); if(h && window.scrollY > 100) h.classList.add('scrolled'); else if(h) h.classList.remove('scrolled'); });
-        document.addEventListener('DOMContentLoaded', () => App.init());
-    </script>
-    <div id="icb-total-val" style="display:none;"></div>
-</body>
-</html>
+                    this.data = raw
+                        .filter(p => {
+                            const estoque = parseBRL(p.Estoque);
+                            const temFoto = p.imagem && p.imagem !== "";
+                            return estoque > 0 && temFoto;
