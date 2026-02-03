@@ -399,7 +399,7 @@
                     name: x.Descrição,
                     price: parseFloat(String(x.Preço).replace('R$','').replace(/\./g,'').replace(',', '.')),
                     cat: x["Categoria do produto"] || "Geral",
-                    img: x.imagem ? "img/" + x.imagem.split('/').pop() : null
+                    img: x.imagem ? "img/produtos/" + x.imagem.split('/').pop() : null
                 }));
                 DB_CESTAS = cd;
                 renderHome();
