@@ -726,20 +726,28 @@
             e.preventDefault();
             
             const n = document.getElementById('cust-name').value;
-            const phone = document.getElementById('cust-phone').value; // PEGA O CELULAR
+            const phone = document.getElementById('cust-phone').value; 
             const a = document.getElementById('cust-addr').value;
             const p = document.getElementById('cust-pay').value;
             
+            // --- 1. PREPARAÇÃO DOS DADOS PARA O MAKE ---
+
+            // A) Limpa o celular para pegar os ultimos 8 digitos
+            const phoneClean = phone.replace(/\D/g, ''); // Remove tudo que não é número
+            const phoneLast8 = phoneClean.length >= 8 ? phoneClean.slice(-8) : phoneClean;
+
+            // B) Calcula a Soma dos Produtos individualmente
+            let somaProdutos = 0;
             const itensMake = [];
-            let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
-            
             const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
-            trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
 
             for(let k in CART) {
                 if(CART[k] > 0) {
                     const produto = DB_PROD.find(x => x.id === k);
-                    mensagemZap += `${CART[k]}x ${produto.name}\n`;
+                    
+                    // Soma para o cálculo da diferença
+                    somaProdutos += (produto.price * CART[k]);
+
                     itensMake.push({
                         "id": k,
                         "nome": produto.name,
@@ -748,7 +756,28 @@
                     });
                 }
             }
+
+            // C) Calcula a diferença (Total Site - Soma Produtos)
+            // Ex: Site deu 200, Soma Produtos deu 195 -> Diferença 5 (Taxa/Serviço)
+            // Ex: Site deu 190, Soma Produtos deu 200 -> Diferença -10 (Desconto)
+            let diferenca = window.finalTotal - somaProdutos;
+            // Arredonda para 2 casas decimais para evitar bugs de 0.0000001
+            diferenca = parseFloat(diferenca.toFixed(2));
+
+
+            // --- 2. MONTAGEM DA MENSAGEM DO WHATSAPP ---
+            let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
+            for(let k in CART) {
+                if(CART[k] > 0) {
+                    const produto = DB_PROD.find(x => x.id === k);
+                    mensagemZap += `${CART[k]}x ${produto.name}\n`;
+                }
+            }
             mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
+
+            
+            // --- 3. ENVIO PARA O MAKE ---
+            trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
 
             try {
                 fetch(MAKE_WEBHOOK, {
@@ -757,12 +786,15 @@
                     body: JSON.stringify({
                         "cliente": { 
                             "nome": n, 
-                            "celular": phone, // ENVIA O CELULAR
+                            "celular": phone, 
+                            "celular_limpo_8": phoneLast8, // <--- CAMPO NOVO PRONTO
                             "endereco": a 
                         },
                         "pedido": {
                             "itens": itensMake,
-                            "total": window.finalTotal,
+                            "total_site": window.finalTotal,
+                            "soma_produtos": somaProdutos,
+                            "diferenca_ajuste": diferenca, // <--- CAMPO NOVO PRONTO
                             "forma_pagamento": p,
                             "cesta_origem": CURR_CESTA.nome
                         }
