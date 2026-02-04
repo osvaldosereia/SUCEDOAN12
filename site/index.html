@@ -40,15 +40,12 @@
     <style>
         /* --- CONFIGURAÇÕES GERAIS --- */
         :root {
-            /* Paleta de Cores */
             --cor-primary: #E63946; 
             --cor-bg: #F4F6F8;
             --cor-surface: #FFFFFF;
             --cor-text-main: #1D3557;
             --cor-text-sec: #6c757d;
             --cat-bg: #E7ECEF;
-            
-            /* Formas */
             --radius-box: 20px;
             --radius-btn: 50px;
             --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -108,9 +105,8 @@
             display: grid; 
             gap: 24px; 
             padding-top: 10px;
-            grid-template-columns: 1fr; /* Mobile: 1 coluna */
+            grid-template-columns: 1fr; 
         }
-        /* Desktop Home: 3 Colunas */
         @media (min-width: 900px) {
             .grid-cestas { grid-template-columns: repeat(3, 1fr); }
         }
@@ -151,7 +147,7 @@
             box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3); 
         }
 
-        /* --- CATÁLOGO ESTILO IFOOD --- */
+        /* --- CATÁLOGO --- */
         .cat-title {
             font-size: 1.1rem; font-weight: 800; color: var(--cor-text-main);
             margin: 40px 0 15px 0; 
@@ -164,10 +160,9 @@
         
         .products-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* Mobile: 2 colunas */
+            grid-template-columns: 1fr 1fr; 
             gap: 15px;
         }
-        /* Desktop Catálogo: 4 Colunas */
         @media (min-width: 900px) {
             .products-grid { grid-template-columns: repeat(4, 1fr); }
         }
@@ -225,11 +220,9 @@
         .basket-scroll {
             display: flex; gap: 12px; overflow-x: auto; padding: 10px 5px 25px; scroll-behavior: smooth;
         }
-        /* Barra de rolagem visível e estilizada */
         .basket-scroll::-webkit-scrollbar { height: 8px; }
         .basket-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .basket-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
-        .basket-scroll::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         
         .chip-item {
             flex: 0 0 135px;
@@ -427,35 +420,48 @@
 
     <script>
         const CONFIG = { whatsapp: "5565984491018", maxRemoval: 0.3 };
-        let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
+        // URL DO MAKE/WEBHOOK
+        const MAKE_WEBHOOK = "SUA_URL_DO_MAKE_AQUI"; 
+
+        let DB_PROD = [], DB_CESTAS = [], DB_CATS = {}, CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
         async function init() {
             try {
-                const [p, c] = await Promise.all([fetch('produtos.json'), fetch('produtos-cesta-basica.json')]);
-                const pd = await p.json();
-                const cd = await c.json();
-                
-                // --- LÓGICA ATUALIZADA (FILTRO + CATEGORIA COMPOSTA) ---
-                DB_PROD = pd
-                    // Filtro 1: Apenas produtos ATIVOS (Situacao = "A")
-                    // Filtro 2: Apenas produtos com estoque positivo (estoque > 0)
-                    .filter(x => x.situacao === "A" && x.estoque > 0)
-                    .map(x => ({
-                        id: String(x.id),
-                        name: x.nome,
-                        price: parseFloat(x.preco),
-                        
-                        // CORREÇÃO DA CATEGORIA (Pega só o que vem depois do >>)
-                        cat: x.categoria ? x.categoria.split('>>').pop().trim() : "Geral",
-                        
-                        img: x.imagem && x.imagem !== "" ? x.imagem : null
-                    }));
+                // Carrega 3 arquivos agora: Produtos, Cestas e CATEGORIAS
+                const [pRes, cRes, catRes] = await Promise.all([
+                    fetch('produtos.json'), 
+                    fetch('produtos-cesta-basica.json'),
+                    fetch('categorias.json')
+                ]);
 
-                DB_CESTAS = cd;
+                const rawProd = await pRes.json();
+                const rawCestas = await cRes.json();
+                DB_CATS = await catRes.json(); // Carrega o dicionário
+                
+                // Processa os produtos e define a categoria pela primeira letra do ID
+                DB_PROD = rawProd
+                    .filter(x => x.situacao === "A" && x.estoque > 0)
+                    .map(x => {
+                        const sId = String(x.id);
+                        // Pega a primeira letra (Maiúscula)
+                        const primeiraLetra = sId.charAt(0).toUpperCase();
+                        // Busca no dicionário, se não achar usa "Diversos"
+                        const nomeCategoria = DB_CATS[primeiraLetra] || "Diversos";
+
+                        return {
+                            id: sId,
+                            name: x.nome,
+                            price: parseFloat(x.preco),
+                            cat: nomeCategoria, // Categoria inteligente aqui
+                            img: x.imagem && x.imagem !== "" ? x.imagem : null
+                        };
+                    });
+
+                DB_CESTAS = rawCestas;
                 renderHome();
             } catch (err) { 
                 console.error(err);
-                document.getElementById('cestas-container').innerHTML = "Erro ao carregar dados."; 
+                document.getElementById('cestas-container').innerHTML = "Carregando catálogo... (Se demorar, recarregue a página)"; 
             }
         }
 
@@ -472,19 +478,28 @@
             window.scrollTo(0,0);
             CURR_CESTA = DB_CESTAS.find(c => c.id === id);
             CART = {}; ORIG_COUNTS = {}; ORIG_TOTAL = 0;
+            
+            // Lógica para ler "Quantidade x ID" da cesta
             CURR_CESTA.produtos.forEach(s => {
-                const [q, pid] = s.split('x ');
-                const iq = parseInt(q), cid = pid.trim();
-                if(DB_PROD.find(x => x.id === cid)) {
-                    CART[cid] = iq; ORIG_COUNTS[cid] = iq; ORIG_TOTAL += iq;
+                const parts = s.split('x '); // Divide em ["4", "A001"]
+                if(parts.length >= 2) {
+                    const iq = parseInt(parts[0]);
+                    const cid = parts[1].trim();
+                    
+                    // Só adiciona se o produto existir no banco ativo
+                    if(DB_PROD.find(x => x.id === cid)) {
+                        CART[cid] = iq; ORIG_COUNTS[cid] = iq; ORIG_TOTAL += iq;
+                    }
                 }
             });
+
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-catalogo').classList.add('active');
             document.getElementById('btn-back').style.display = 'block';
             document.getElementById('cart-bar').style.display = 'flex';
             document.getElementById('page-title').innerText = CURR_CESTA.nome;
-            renderCatalog();
+            
+            renderCatalog(); // Vai agrupar usando as novas categorias
             updateTotals();
         }
 
@@ -492,6 +507,8 @@
             const div = document.getElementById('cestas-container');
             div.innerHTML = "";
             const ph = svgPlace();
+            
+            // Renderiza apenas as Cestas Básicas na Home
             DB_CESTAS.forEach(c => {
                 const img = c.imagem || ph;
                 div.innerHTML += `
@@ -515,6 +532,7 @@
             div.innerHTML = "";
             const ph = svgPlace();
             
+            // 1. Lista Horizontal (Itens da Cesta)
             let html = `<div style="margin-bottom:30px;">
                 <h3 style="font-size:1rem; color:#888; margin-bottom:10px; padding-left:5px;">Itens da Cesta</h3>
                 <div class="basket-scroll">`;
@@ -535,10 +553,18 @@
             });
             html += `</div></div>`;
 
+            // 2. Agrupamento por Categoria (Automático)
             const cats = {};
-            DB_PROD.forEach(p => { const c = p.cat; if(!cats[c]) cats[c] = []; cats[c].push(p); });
+            // Agora 'p.cat' já vem com o nome correto (Mercearia, Limpeza...)
+            DB_PROD.forEach(p => { 
+                if(!cats[p.cat]) cats[p.cat] = []; 
+                cats[p.cat].push(p); 
+            });
+            
+            // Ordena as categorias alfabeticamente
+            const sortedKeys = Object.keys(cats).sort();
 
-            for(const c in cats) {
+            sortedKeys.forEach(c => {
                 html += `<div class="cat-title">${c}</div><div class="products-grid">`;
                 cats[c].forEach(p => {
                     const q = CART[p.id] || 0;
@@ -561,7 +587,7 @@
                     </div>`;
                 });
                 html += `</div>`;
-            }
+            });
             div.innerHTML = html;
         }
 
@@ -619,9 +645,13 @@
             trackEvent('ViewContent', { content_type: 'product', content_ids: [id], content_name: c.nome, value: c.preco, currency: 'BRL' });
             const d = document.getElementById('detail-list'); d.innerHTML = "";
             c.produtos.forEach(s => {
-                const [q, pid] = s.split('x ');
-                const p = DB_PROD.find(x => x.id === pid.trim());
-                if(p) d.innerHTML += `<div class="clean-item"><span class="clean-qty">${q}</span><span class="clean-name">${p.name}</span></div>`;
+                const parts = s.split('x ');
+                if(parts.length >= 2) {
+                    const q = parts[0];
+                    const pid = parts[1].trim();
+                    const p = DB_PROD.find(x => x.id === pid);
+                    if(p) d.innerHTML += `<div class="clean-item"><span class="clean-qty">${q}</span><span class="clean-name">${p.name}</span></div>`;
+                }
             });
             document.getElementById('modal-details').showModal();
         }
@@ -645,27 +675,20 @@
         async function sendWhatsapp(e) {
             e.preventDefault();
             
-            // 1. Coleta os dados do formulário
             const n = document.getElementById('cust-name').value;
             const a = document.getElementById('cust-addr').value;
             const p = document.getElementById('cust-pay').value;
             
-            // 2. Prepara a lista de produtos limpa para o Make
             const itensMake = [];
             let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
             
-            // Rastreamento (Mantido do original)
             const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
             trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
 
             for(let k in CART) {
                 if(CART[k] > 0) {
                     const produto = DB_PROD.find(x => x.id === k);
-                    
-                    // Adiciona na mensagem do WhatsApp
                     mensagemZap += `${CART[k]}x ${produto.name}\n`;
-                    
-                    // Adiciona na lista para o Bling (Dados puros)
                     itensMake.push({
                         "id": k,
                         "nome": produto.name,
@@ -676,20 +699,12 @@
             }
             mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
 
-            // 3. ENVIA PARA O MAKE (O "Espião")
-            const webhookUrl = "SUA_URL_DO_MAKE_AQUI"; // <--- COLE SEU LINK DO MAKE AQUI
-
             try {
-                // Envia os dados sem travar o site (usando fetch)
-                fetch(webhookUrl, {
+                fetch(MAKE_WEBHOOK, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        "cliente": {
-                            "nome": n,
-                            "celular": "", // Se quiser pedir o cel no form, adicione aqui
-                            "endereco": a
-                        },
+                        "cliente": { "nome": n, "celular": "", "endereco": a },
                         "pedido": {
                             "itens": itensMake,
                             "total": window.finalTotal,
@@ -698,11 +713,8 @@
                         }
                     })
                 });
-            } catch (erro) {
-                console.error("Erro ao enviar para o Make:", erro);
-            }
+            } catch (erro) { console.error(erro); }
 
-            // 4. Redireciona para o WhatsApp (Como já fazia antes)
             setTimeout(() => { 
                 window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensagemZap)}`; 
             }, 500); 
