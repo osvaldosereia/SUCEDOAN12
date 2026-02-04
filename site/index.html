@@ -420,48 +420,65 @@
 
     <script>
         const CONFIG = { whatsapp: "5565984491018", maxRemoval: 0.3 };
-        // URL DO MAKE/WEBHOOK
+        
+        // --- SEU WEBHOOK DO MAKE ---
         const MAKE_WEBHOOK = "https://hook.eu1.make.com/24y838o95ik4jvfxf1t837fjpayincq0"; 
 
         let DB_PROD = [], DB_CESTAS = [], DB_CATS = {}, CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
         async function init() {
             try {
-                // Carrega 3 arquivos agora: Produtos, Cestas e CATEGORIAS
-                const [pRes, cRes, catRes] = await Promise.all([
-                    fetch('produtos.json'), 
-                    fetch('produtos-cesta-basica.json'),
-                    fetch('categorias.json')
-                ]);
+                // 1. CARREGA AS CESTAS PRIMEIRO (Prioridade Total)
+                // Assim a Home abre mesmo se o resto falhar ou estiver com nome errado
+                try {
+                    const cRes = await fetch('produtos-cesta-basica.json');
+                    if (cRes.ok) {
+                        DB_CESTAS = await cRes.json();
+                        renderHome(); // <--- RENDERIZA AQUI, IMEDIATAMENTE
+                    } else {
+                        console.error("Erro ao baixar cestas: " + cRes.status);
+                        document.getElementById('cestas-container').innerHTML = "<p style='text-align:center; padding:40px'>Erro ao carregar cestas.</p>";
+                    }
+                } catch (e) { console.error("Erro JSON Cestas:", e); }
 
-                const rawProd = await pRes.json();
-                const rawCestas = await cRes.json();
-                DB_CATS = await catRes.json(); // Carrega o dicionário
-                
-                // Processa os produtos e define a categoria pela primeira letra do ID
-                DB_PROD = rawProd
-                    .filter(x => x.situacao === "A" && x.estoque > 0)
-                    .map(x => {
-                        const sId = String(x.id);
-                        // Pega a primeira letra (Maiúscula)
-                        const primeiraLetra = sId.charAt(0).toUpperCase();
-                        // Busca no dicionário, se não achar usa "Diversos"
-                        const nomeCategoria = DB_CATS[primeiraLetra] || "Diversos";
+                // 2. TENTA CARREGAR CATEGORIAS
+                // Se der erro (por causa do nome "cetegorias" vs "categorias"), usa objeto vazio e segue vida
+                try {
+                    // Tenta o nome correto. Se falhar, tenta o nome errado (gambiarra de segurança)
+                    let catRes = await fetch('categorias.json');
+                    if (!catRes.ok) catRes = await fetch('cetegorias.json'); // Tenta o nome com typo
 
-                        return {
-                            id: sId,
-                            name: x.nome,
-                            price: parseFloat(x.preco),
-                            cat: nomeCategoria, // Categoria inteligente aqui
-                            img: x.imagem && x.imagem !== "" ? x.imagem : null
-                        };
-                    });
+                    if (catRes.ok) DB_CATS = await catRes.json();
+                } catch (e) { console.warn("Sem categorias ou erro no arquivo:", e); }
 
-                DB_CESTAS = rawCestas;
-                renderHome();
+                // 3. TENTA CARREGAR PRODUTOS (Do Make)
+                try {
+                    const pRes = await fetch('produtos.json');
+                    if (pRes.ok) {
+                        const rawProd = await pRes.json();
+                        
+                        // Processamento dos produtos
+                        DB_PROD = rawProd
+                            .filter(x => x.situacao === "A" && x.estoque > 0)
+                            .map(x => {
+                                const sId = String(x.id);
+                                const primeiraLetra = sId.charAt(0).toUpperCase();
+                                // Se não achou categoria, usa "Diversos"
+                                const nomeCategoria = DB_CATS[primeiraLetra] || "Diversos";
+
+                                return {
+                                    id: sId,
+                                    name: x.nome,
+                                    price: parseFloat(x.preco),
+                                    cat: nomeCategoria,
+                                    img: x.imagem && x.imagem !== "" ? x.imagem : null
+                                };
+                            });
+                    }
+                } catch (e) { console.error("Erro produtos:", e); }
+
             } catch (err) { 
-                console.error(err);
-                document.getElementById('cestas-container').innerHTML = "Carregando catálogo... (Se demorar, recarregue a página)"; 
+                console.error("Erro fatal:", err);
             }
         }
 
@@ -475,18 +492,22 @@
         }
 
         function goCatalog(id) {
+            if (DB_PROD.length === 0) {
+                showToast("Aguarde, carregando estoque de produtos...");
+                init(); // Tenta carregar de novo
+                return;
+            }
+
             window.scrollTo(0,0);
             CURR_CESTA = DB_CESTAS.find(c => c.id === id);
             CART = {}; ORIG_COUNTS = {}; ORIG_TOTAL = 0;
             
-            // Lógica para ler "Quantidade x ID" da cesta
             CURR_CESTA.produtos.forEach(s => {
-                const parts = s.split('x '); // Divide em ["4", "A001"]
+                const parts = s.split('x '); 
                 if(parts.length >= 2) {
                     const iq = parseInt(parts[0]);
                     const cid = parts[1].trim();
                     
-                    // Só adiciona se o produto existir no banco ativo
                     if(DB_PROD.find(x => x.id === cid)) {
                         CART[cid] = iq; ORIG_COUNTS[cid] = iq; ORIG_TOTAL += iq;
                     }
@@ -499,18 +520,21 @@
             document.getElementById('cart-bar').style.display = 'flex';
             document.getElementById('page-title').innerText = CURR_CESTA.nome;
             
-            renderCatalog(); // Vai agrupar usando as novas categorias
+            renderCatalog(); 
             updateTotals();
         }
 
         function renderHome() {
             const div = document.getElementById('cestas-container');
+            if (DB_CESTAS.length === 0) {
+                div.innerHTML = "<p style='text-align:center; padding:40px'>Nenhuma cesta encontrada.</p>";
+                return;
+            }
             div.innerHTML = "";
             const ph = svgPlace();
             
-            // Renderiza apenas as Cestas Básicas na Home
             DB_CESTAS.forEach(c => {
-                const img = c.imagem || ph;
+                const img = (c.imagem && c.imagem !== "") ? c.imagem : ph;
                 div.innerHTML += `
                 <div class="cesta-card">
                     <div class="cesta-img-wrap"><img src="${img}" class="cesta-img" loading="lazy" onclick="zoom('${img}')"></div>
@@ -532,7 +556,6 @@
             div.innerHTML = "";
             const ph = svgPlace();
             
-            // 1. Lista Horizontal (Itens da Cesta)
             let html = `<div style="margin-bottom:30px;">
                 <h3 style="font-size:1rem; color:#888; margin-bottom:10px; padding-left:5px;">Itens da Cesta</h3>
                 <div class="basket-scroll">`;
@@ -553,15 +576,12 @@
             });
             html += `</div></div>`;
 
-            // 2. Agrupamento por Categoria (Automático)
             const cats = {};
-            // Agora 'p.cat' já vem com o nome correto (Mercearia, Limpeza...)
             DB_PROD.forEach(p => { 
                 if(!cats[p.cat]) cats[p.cat] = []; 
                 cats[p.cat].push(p); 
             });
             
-            // Ordena as categorias alfabeticamente
             const sortedKeys = Object.keys(cats).sort();
 
             sortedKeys.forEach(c => {
@@ -650,7 +670,8 @@
                     const q = parts[0];
                     const pid = parts[1].trim();
                     const p = DB_PROD.find(x => x.id === pid);
-                    if(p) d.innerHTML += `<div class="clean-item"><span class="clean-qty">${q}</span><span class="clean-name">${p.name}</span></div>`;
+                    const displayName = p ? p.name : `Produto Código ${pid}`;
+                    d.innerHTML += `<div class="clean-item"><span class="clean-qty">${q}</span><span class="clean-name">${displayName}</span></div>`;
                 }
             });
             document.getElementById('modal-details').showModal();
