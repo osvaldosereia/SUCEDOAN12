@@ -429,33 +429,41 @@
         async function init() {
             try {
                 // 1. CARREGA AS CESTAS PRIMEIRO (Prioridade Total)
-                // Assim a Home abre mesmo se o resto falhar ou estiver com nome errado
                 try {
                     const cRes = await fetch('produtos-cesta-basica.json');
                     if (cRes.ok) {
                         DB_CESTAS = await cRes.json();
-                        renderHome(); // <--- RENDERIZA AQUI, IMEDIATAMENTE
+                        renderHome(); // Renderiza assim que baixa as cestas
                     } else {
                         console.error("Erro ao baixar cestas: " + cRes.status);
                         document.getElementById('cestas-container').innerHTML = "<p style='text-align:center; padding:40px'>Erro ao carregar cestas.</p>";
                     }
                 } catch (e) { console.error("Erro JSON Cestas:", e); }
 
-                // 2. TENTA CARREGAR CATEGORIAS
-                // Se der erro (por causa do nome "cetegorias" vs "categorias"), usa objeto vazio e segue vida
+                // 2. TENTA CARREGAR CATEGORIAS (Com correção de nome do arquivo)
                 try {
-                    // Tenta o nome correto. Se falhar, tenta o nome errado (gambiarra de segurança)
                     let catRes = await fetch('categorias.json');
-                    if (!catRes.ok) catRes = await fetch('cetegorias.json'); // Tenta o nome com typo
+                    if (!catRes.ok) catRes = await fetch('cetegorias.json'); // Corrige o erro de digitação do arquivo
 
                     if (catRes.ok) DB_CATS = await catRes.json();
                 } catch (e) { console.warn("Sem categorias ou erro no arquivo:", e); }
 
-                // 3. TENTA CARREGAR PRODUTOS (Do Make)
+                // 3. TENTA CARREGAR PRODUTOS (Do Make) E CORRIGE O FORMATO
                 try {
                     const pRes = await fetch('produtos.json');
                     if (pRes.ok) {
-                        const rawProd = await pRes.json();
+                        // Lê como texto primeiro para consertar o JSON quebrado
+                        let text = await pRes.text();
+                        text = text.trim();
+                        
+                        // CORREÇÃO MÁGICA 🪄
+                        // Remove última vírgula se existir
+                        if (text.endsWith(',')) text = text.slice(0, -1);
+                        // Adiciona colchetes se faltar
+                        if (!text.startsWith('[')) text = '[' + text;
+                        if (!text.endsWith(']')) text = text + ']';
+
+                        const rawProd = JSON.parse(text);
                         
                         // Processamento dos produtos
                         DB_PROD = rawProd
