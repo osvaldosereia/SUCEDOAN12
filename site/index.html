@@ -3,31 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Super Cestas Dona Antônia - Encomende online via WhatsApp.">
+    <meta name="description" content="Super Cestas Dona Antônia - A melhor cesta básica de Cuiabá e Várzea Grande. Encomende online com entrega rápida.">
+    <meta name="geo.region" content="BR-MT" />
+    <meta name="geo.placename" content="Cuiabá" />
+    <meta name="geo.position" content="-15.6014;-56.0979" />
+    <meta name="ICBM" content="-15.6014, -56.0979" />
+    
     <meta name="theme-color" content="#ffffff">
-    <title>Super Cestas Dona Antônia</title>
+    <title>Super Cestas Dona Antônia | Cuiabá e VG</title>
+
+    <script type="application/ld-json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Super Cestas Dona Antônia",
+      "image": "https://seusite.com.br/img/logo.png",
+      "@id": "https://seusite.com.br",
+      "url": "https://seusite.com.br",
+      "telephone": "5565984491018",
+      "priceRange": "R$ 100 - R$ 500",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Atendimento Delivery",
+        "addressLocality": "Cuiabá",
+        "addressRegion": "MT",
+        "postalCode": "78000-000",
+        "addressCountry": "BR"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -15.6014,
+        "longitude": -56.0979
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "opens": "07:30",
+        "closes": "18:00"
+      },
+      "sameAs": [
+        "https://wa.me/5565984491018"
+      ]
+    }
+    </script>
+
     <style>
         /* --- SOFT UI DESIGN SYSTEM --- */
         :root {
-            /* Cores */
             --cor-primary: #E63946; 
             --cor-bg: #F4F6F8;
             --cor-surface: #FFFFFF;
             --cor-text-main: #1D3557;
             --cor-text-sec: #6c757d;
-            
-            /* Banner Colors */
             --banner-green: #2A9D8F;
             --banner-blue: #457B9D;
             --banner-orange: #F4A261;
-
-            /* Espaçamentos e Formas */
             --radius-box: 20px;
             --radius-btn: 50px;
             --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 5px 10px -5px rgba(0, 0, 0, 0.01);
             --shadow-float: 0 -5px 20px rgba(0,0,0,0.08);
-            
-            /* Tipografia Otimizada (Google Fonts Like) */
             --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
@@ -39,9 +73,11 @@
             color: var(--cor-text-main);
             margin: 0;
             padding-bottom: 120px;
-            font-size: 16px; /* Base 16px para acessibilidade */
+            font-size: 16px;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            /* Previne quebrar layout em landscape mobile */
+            overflow-x: hidden; 
         }
 
         h1, h2, h3 { margin: 0; font-weight: 700; color: var(--cor-text-main); letter-spacing: -0.5px; }
@@ -88,9 +124,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* --- LAYOUT --- */
-        /* CORREÇÃO 2: Main para semântica */
         main { display: block; width: 100%; }
-
         .view { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
         .view.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -127,7 +161,7 @@
             box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3); 
         }
 
-        /* --- LISTA DE PERSONALIZAÇÃO --- */
+        /* --- LISTA DE PRODUTOS "IFOOD STYLE" (UX 40+) --- */
         .list-header { margin: 30px 0 15px; display: flex; align-items: center; gap: 10px; }
         .list-header::after { content: ""; height: 2px; flex: 1; background: #E1E5E9; border-radius: 2px; }
         .list-title { font-size: 1.1rem; color: var(--cor-text-main); font-weight: 800; }
@@ -135,60 +169,54 @@
         .basket-scroll {
             display: flex; gap: 15px; overflow-x: auto; padding: 5px 5px 20px 5px; scroll-behavior: smooth;
         }
-        .basket-scroll::-webkit-scrollbar { height: 4px; }
-        .basket-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-
         .chip-item {
-            flex: 0 0 100px; background: var(--cor-surface);
-            padding: 10px; border-radius: 16px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-            text-align: center; border: 1px solid white;
+            flex: 0 0 100px; background: var(--cor-surface); padding: 10px; border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); text-align: center; border: 1px solid white;
             display: flex; flex-direction: column; align-items: center;
         }
         .chip-img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 8px; }
-        
-        .ctrl-float {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            background: #EDF2F4; padding: 4px; border-radius: 20px;
-        }
-        .btn-mini { 
-            width: 32px; height: 32px; background: white; border-radius: 50%; 
-            color: var(--cor-primary); font-weight: bold; font-size: 1.2rem;
-            display: grid; place-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
+        .ctrl-float { display: flex; align-items: center; justify-content: center; gap: 8px; background: #EDF2F4; padding: 4px; border-radius: 20px; }
+        .btn-mini { width: 32px; height: 32px; background: white; border-radius: 50%; color: var(--cor-primary); font-weight: bold; font-size: 1.2rem; display: grid; place-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .val-mini { font-size: 0.9rem; font-weight: 700; width: 20px; }
 
-        /* Lista Vertical */
+        /* ITEM DA LISTA - NOVO CSS */
         .prod-item {
-            display: flex; align-items: center; gap: 16px;
-            background: var(--cor-surface); margin-bottom: 12px; padding: 12px;
-            border-radius: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            border: 1px solid transparent; transition: border-color 0.2s;
+            display: grid;
+            grid-template-columns: 90px 1fr auto; /* Layout Fixo */
+            gap: 16px; align-items: center;
+            background: var(--cor-surface); margin-bottom: 16px; padding: 16px;
+            border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #E1E5E9; transition: all 0.2s ease;
+            position: relative;
         }
-        .prod-item.active { border-color: var(--cor-primary); background: #FFF5F5; }
+        .prod-item.active { border-color: var(--cor-primary); background: #FFFBFB; box-shadow: 0 4px 12px rgba(230, 57, 70, 0.15); }
 
         .prod-img { 
-            width: 72px; height: 72px; object-fit: contain; 
-            background: white; border-radius: 12px; padding: 4px;
+            width: 90px; height: 90px; object-fit: cover; 
+            background: #f0f0f0; border-radius: 12px; pointer-events: none;
         }
-        .prod-info { flex: 1; }
-        .prod-name { font-weight: 600; font-size: 1rem; margin-bottom: 4px; line-height: 1.3; color: #333; }
-        .prod-price { font-weight: 800; color: var(--cor-text-sec); font-size: 0.95rem; }
+        .prod-info { display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        .prod-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; line-height: 1.3; color: var(--cor-text-main); }
+        .prod-price { font-weight: 800; color: var(--cor-primary); font-size: 1.1rem; letter-spacing: -0.5px; }
 
+        /* BOTÕES DE AÇÃO GRANDES */
         .btn-add-bg {
-            background: #EDF2F4; width: 44px; height: 44px; border-radius: 12px;
-            display: grid; place-items: center; color: var(--cor-primary); font-size: 1.6rem;
-            transition: all 0.2s;
+            background: #EDF2F4; width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--cor-primary); font-size: 1.8rem; font-weight: 300; transition: all 0.1s;
+            user-select: none; -webkit-user-select: none;
         }
-        .btn-add-bg:active { transform: scale(0.9); background: #E0E4E7; }
+        .btn-add-bg:active { background: #dce3e6; transform: scale(0.92); }
 
         .qty-pill {
-            display: flex; flex-direction: column; align-items: center; gap: 2px;
-            background: white; border: 1px solid var(--cor-primary); border-radius: 8px;
-            padding: 4px; width: 44px;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            background: var(--cor-primary); border: none; border-radius: 14px;
+            padding: 0; width: 48px; height: 90px;
+            box-shadow: 0 4px 10px rgba(230, 57, 70, 0.3); overflow: hidden;
         }
-        .btn-qty-v { width: 100%; height: 26px; color: var(--cor-primary); font-weight: bold; font-size: 1.3rem; display: grid; place-items: center; }
-        .val-qty-v { font-weight: 800; font-size: 1.1rem; }
+        .btn-qty-v { width: 100%; flex: 1; color: white; font-weight: bold; font-size: 1.4rem; display: grid; place-items: center; }
+        .btn-qty-v:active { background: rgba(0,0,0,0.1); }
+        .val-qty-v { font-weight: 800; font-size: 1.1rem; color: white; background: rgba(0,0,0,0.1); width: 100%; text-align: center; padding: 2px 0; }
 
         /* --- FOOTER & MODAIS --- */
         .float-bar {
@@ -209,11 +237,7 @@
         }
         .btn-finish:disabled { background: #ccc; box-shadow: none; color: #fff; }
 
-        /* Dialogs */
-        dialog {
-            border: none; border-radius: 24px; padding: 0; width: 90%; max-width: 450px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2); background: var(--cor-surface);
-        }
+        dialog { border: none; border-radius: 24px; padding: 0; width: 90%; max-width: 450px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); background: var(--cor-surface); }
         dialog::backdrop { background: rgba(29, 53, 87, 0.4); backdrop-filter: blur(3px); }
         .modal-head { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
         .modal-body { padding: 24px; max-height: 60vh; overflow-y: auto; }
@@ -226,39 +250,26 @@
         .input-box:focus { border-color: var(--cor-primary); background: white; }
         label { display: block; margin-bottom: 6px; font-weight: 700; color: var(--cor-text-main); font-size: 0.9rem; }
 
-        /* LISTA REVISÃO */
-        .rev-row { 
-            display: flex; align-items: center; justify-content: flex-start;
-            margin-bottom: 12px; border-bottom: 1px dashed #eee; padding-bottom: 8px; gap: 12px;
-        }
+        .rev-row { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 12px; border-bottom: 1px dashed #eee; padding-bottom: 8px; gap: 12px; }
         .rev-qty { font-weight: 800; color: var(--cor-primary); min-width: 25px; text-align: center; }
         .rev-nome { flex: 1; text-align: left; font-size: 0.85rem; color: #444; line-height: 1.3; }
 
         .status-toast {
             display: none; position: fixed; top: 120px; left: 50%; transform: translateX(-50%);
             background: #FFE8E8; color: #D63031; padding: 12px 20px; border-radius: 50px;
-            font-weight: 600; font-size: 0.9rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 200;
-            white-space: nowrap;
+            font-weight: 600; font-size: 0.9rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 200; white-space: nowrap;
         }
-
-        /* FAQ & EMPRESA */
         details { background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
         summary { padding: 15px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; }
         .ans { padding: 0 15px 15px; color: #555; line-height: 1.4; }
-
         .company-info { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px dashed #ddd; }
         .company-name { font-weight: 800; color: var(--cor-primary); margin: 10px 0 5px; font-size: 1.1rem; }
         .company-data { font-size: 0.9rem; color: #777; margin-bottom: 15px; line-height: 1.6; }
         .social-btns { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
-        .btn-social { 
-            padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; 
-            color: white; text-decoration: none; font-weight: 600; display: inline-block;
-        }
-
+        .btn-social { padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; color: white; text-decoration: none; font-weight: 600; display: inline-block; }
     </style>
 </head>
 <body>
-
     <div id="status-toast" class="status-toast"></div>
 
     <div class="header-wrapper">
@@ -281,7 +292,6 @@
                 <p style="text-align:center; padding:40px; color:#999">Carregando catálogo...</p>
             </div>
         </div>
-
         <div id="view-catalogo" class="view">
             <div id="catalog-content"></div>
         </div>
@@ -305,21 +315,17 @@
             <div style="text-align:right; font-size:1.3rem; font-weight:800; color:var(--cor-primary); margin:20px 0;">
                 Total: <span id="checkout-total"></span>
             </div>
-            
             <form onsubmit="sendWhatsapp(event)">
                 <label>Seu Nome</label>
                 <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
-                
                 <label>Endereço de Entrega</label>
                 <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
-                
                 <label>Forma de Pagamento</label>
                 <select id="cust-pay" class="input-box">
                     <option>PIX</option>
                     <option>Dinheiro (Levar troco?)</option>
                     <option>Cartão</option>
                 </select>
-                
                 <button type="submit" class="btn-finish" style="width:100%">ENVIAR PEDIDO</button>
             </form>
         </div>
@@ -339,23 +345,12 @@
             <details><summary>Entrega</summary><div class="ans">Cuiabá e Várzea Grande. Combinamos o horário no WhatsApp.</div></details>
             <details><summary>Pagamento</summary><div class="ans">Pague somente na entrega via PIX, Dinheiro ou Cartão.</div></details>
             <details><summary>Posso mudar itens?</summary><div class="ans">Sim! Clique em "Personalizar". Você pode trocar ou retirar até 30% dos itens.</div></details>
-            <details><summary>Pedido Mínimo</summary><div class="ans">O valor mínimo é o preço da cesta escolhida.</div></details>
-
             <div class="company-info">
                 <div class="logo" style="width:50px; height:50px; margin:0 auto; font-size:1.5rem;">D</div>
                 <div class="company-name">Super Cestas Dona Antônia</div>
                 <div class="company-data">
-                    CNPJ: 00.000.000/0001-00<br>
-                    Atendimento Online - Cuiabá e VG<br>
-                    <strong>(65) 98449-1018</strong><br>
-                    <strong>(65) 99815-0975</strong>
-                </div>
-                <div class="social-btns">
-                    <a href="https://wa.me/5565984491018" class="btn-social" style="background:#25D366">WhatsApp</a>
-                    <a href="#" class="btn-social" style="background:#E1306C">Instagram</a>
-                </div>
-                <div style="margin-top:10px;">
-                     <a href="http://maps.google.com" target="_blank" style="color:#4285F4; text-decoration:none; font-weight:600;">Ver Área de Entrega no Mapa</a>
+                    CNPJ: 00.000.000/0001-00<br>Atendimento Online - Cuiabá e VG<br>
+                    <strong>(65) 98449-1018</strong>
                 </div>
             </div>
         </div>
@@ -366,6 +361,7 @@
     </dialog>
 
     <script>
+        /* --- LOGIC CORE --- */
         const MESSAGES = [
             { text: "Entrega Grátis em Cuiabá e VG", color: "var(--banner-green)" },
             { text: "3x Sem Juros no Cartão", color: "var(--banner-blue)" },
@@ -489,6 +485,7 @@
                 cats[c].forEach(p => {
                     const q = CART[p.id] || 0;
                     const activeClass = q > 0 ? 'active' : '';
+                    // UX: Botões Pílula Vertical
                     const btnHtml = q > 0 
                         ? `<div class="qty-pill">
                                <button class="btn-qty-v" onclick="upd('${p.id}', 1)">+</button>
@@ -512,6 +509,9 @@
         }
 
         function upd(id, d) {
+            // Haptic Feedback (Vibração leve) para UX tátil
+            if(navigator.vibrate) navigator.vibrate(5); 
+
             if(!CART[id]) CART[id] = 0;
             const nq = CART[id] + d;
             if (d < 0 && ORIG_COUNTS[id]) {
@@ -565,6 +565,38 @@
             }
         }
 
+        /* --- META PIXEL HELPER (PILAR 2) --- */
+        function trackMetaEvent(eventName, params) {
+            if (typeof fbq === 'function') {
+                try {
+                    fbq('track', eventName, params);
+                    console.log(`📡 Pixel: ${eventName}`, params);
+                } catch (err) { console.error('Erro Pixel', err); }
+            }
+        }
+
+        function details(id) {
+            window.viewId = id;
+            const c = DB_CESTAS.find(x => x.id === id);
+            
+            // TRACKING: Visualização de Produto
+            trackMetaEvent('ViewContent', {
+                content_type: 'product',
+                content_ids: [id],
+                content_name: c.nome,
+                currency: 'BRL',
+                value: c.preco
+            });
+
+            const d = document.getElementById('detail-list'); d.innerHTML = "";
+            c.produtos.forEach(s => {
+                const [q, pid] = s.split('x ');
+                const p = DB_PROD.find(x => x.id === pid.trim());
+                if(p) d.innerHTML += `<div class="rev-row"><span class="rev-qty">${q}</span><span class="rev-nome">${p.name}</span></div>`;
+            });
+            document.getElementById('modal-details').showModal();
+        }
+
         function openCheckout() {
             const d = document.getElementById('checkout-list'); d.innerHTML = "";
             for(let k in CART) {
@@ -574,6 +606,16 @@
                 }
             }
             document.getElementById('checkout-total').innerText = fmt(window.finalTotal);
+            
+            // TRACKING: Intenção de Compra
+            const itemIds = Object.keys(CART).filter(k => CART[k] > 0);
+            trackMetaEvent('InitiateCheckout', {
+                currency: 'BRL',
+                value: window.finalTotal,
+                num_items: itemIds.length,
+                content_ids: itemIds
+            });
+
             document.getElementById('modal-checkout').showModal();
         }
 
@@ -582,23 +624,30 @@
             const n = document.getElementById('cust-name').value;
             const a = document.getElementById('cust-addr').value;
             const p = document.getElementById('cust-pay').value;
+
+            // TRACKING: Conversão (Purchase)
+            // IMPORTANTE: Troque 'SEU_ID_DO_PIXEL_AQUI' pelo ID numérico do Pixel
+            if (typeof fbq === 'function') fbq('init', 'SEU_ID_DO_PIXEL_AQUI');
+
+            const itemIds = Object.keys(CART).filter(k => CART[k] > 0);
+            trackMetaEvent('Purchase', {
+                currency: 'BRL',
+                value: window.finalTotal,
+                content_type: 'product',
+                content_ids: itemIds,
+                num_items: itemIds.reduce((acc, curr) => acc + CART[curr], 0)
+            });
+
             let m = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📍 ${a}\n💰 ${p}\n\n`;
             for(let k in CART) if(CART[k]>0) m += `${CART[k]}x ${DB_PROD.find(x=>x.id===k).name}\n`;
             m += `\n*TOTAL: ${fmt(window.finalTotal)}*`;
-            window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(m)}`;
+
+            // Delay seguro para o Pixel disparar antes do redirecionamento
+            setTimeout(() => {
+                window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(m)}`;
+            }, 300);
         }
 
-        function details(id) {
-            window.viewId = id;
-            const c = DB_CESTAS.find(x => x.id === id);
-            const d = document.getElementById('detail-list'); d.innerHTML = "";
-            c.produtos.forEach(s => {
-                const [q, pid] = s.split('x ');
-                const p = DB_PROD.find(x => x.id === pid.trim());
-                if(p) d.innerHTML += `<div class="rev-row"><span class="rev-qty">${q}</span><span class="rev-nome">${p.name}</span></div>`;
-            });
-            document.getElementById('modal-details').showModal();
-        }
         function orderDirect() {
             const c = DB_CESTAS.find(x => x.id === window.viewId);
             window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent("Quero encomendar a " + c.nome + " por " + fmt(c.preco))}`;
@@ -614,6 +663,25 @@
         function zoom(s) { document.getElementById('zoom-img').src=s; document.getElementById('zoom-modal').showModal(); }
 
         init();
+    </script>
+
+    <script>
+    (function() {
+        const meuDominioOficial = ''; // Ex: 'seusite.com.br' (Preencha ao publicar)
+
+        if (meuDominioOficial && window.location.hostname !== meuDominioOficial && window.location.hostname !== 'localhost') {
+            alert('Atenção: Acesso não autorizado. Redirecionando para o site oficial.');
+            window.location.href = 'https://' + meuDominioOficial;
+        }
+
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) return false; 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
+        }
+        console.log('%c STOP! ', 'color: red; font-size: 30px; font-weight: bold;');
+    })();
     </script>
 </body>
 </html>
