@@ -435,16 +435,28 @@
                 const pd = await p.json();
                 const cd = await c.json();
                 
-                DB_PROD = pd.filter(x => x.Situação === "Ativo").map(x => ({
-                    id: String(x.ID),
-                    name: x.Descrição,
-                    price: parseFloat(String(x.Preço).replace('R$','').replace(/\./g,'').replace(',', '.')),
-                    cat: x["Categoria do produto"] ? x["Categoria do produto"].split('>>').pop().trim() : "Geral",
-                    img: x.imagem ? "img/produtos/" + x.imagem.split('/').pop() : null
-                }));
+                // --- LÓGICA ATUALIZADA (FILTRO + CATEGORIA COMPOSTA) ---
+                DB_PROD = pd
+                    // Filtro 1: Apenas produtos ATIVOS (Situacao = "A")
+                    // Filtro 2: Apenas produtos com estoque positivo (estoque > 0)
+                    .filter(x => x.situacao === "A" && x.estoque > 0)
+                    .map(x => ({
+                        id: String(x.id),
+                        name: x.nome,
+                        price: parseFloat(x.preco),
+                        
+                        // CORREÇÃO DA CATEGORIA (Pega só o que vem depois do >>)
+                        cat: x.categoria ? x.categoria.split('>>').pop().trim() : "Geral",
+                        
+                        img: x.imagem && x.imagem !== "" ? x.imagem : null
+                    }));
+
                 DB_CESTAS = cd;
                 renderHome();
-            } catch { document.getElementById('cestas-container').innerHTML = "Erro ao carregar dados."; }
+            } catch (err) { 
+                console.error(err);
+                document.getElementById('cestas-container').innerHTML = "Erro ao carregar dados."; 
+            }
         }
 
         function goHome() {
@@ -665,7 +677,7 @@
             mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
 
             // 3. ENVIA PARA O MAKE (O "Espião")
-            const webhookUrl = "https://hook.eu1.make.com/24y838o95ik4jvfxf1t837fjpayincq0"; // <--- COLE SEU LINK DO MAKE AQUI
+            const webhookUrl = "SUA_URL_DO_MAKE_AQUI"; // <--- COLE SEU LINK DO MAKE AQUI
 
             try {
                 // Envia os dados sem travar o site (usando fetch)
