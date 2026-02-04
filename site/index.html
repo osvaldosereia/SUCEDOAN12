@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Super Cestas Dona Antônia - Encomende online.">
+    <meta name="description" content="Super Cestas Dona Antônia - Encomende online via WhatsApp.">
+    
     <meta name="geo.region" content="BR-MT" />
     <meta name="geo.placename" content="Cuiabá" />
     <meta name="theme-color" content="#ffffff">
+    
     <title>Super Cestas Dona Antônia</title>
 
     <script type="application/ld-json">
@@ -15,21 +17,45 @@
       "@type": "LocalBusiness",
       "name": "Super Cestas Dona Antônia",
       "telephone": "5565984491018",
-      "address": { "@type": "PostalAddress", "addressLocality": "Cuiabá", "addressRegion": "MT" },
-      "geo": { "@type": "GeoCoordinates", "latitude": -15.6014, "longitude": -56.0979 }
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Cuiabá",
+        "addressRegion": "MT",
+        "addressCountry": "BR"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -15.6014,
+        "longitude": -56.0979
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "opens": "07:30",
+        "closes": "18:00"
+      }
     }
     </script>
 
     <style>
-        /* --- DESIGN SYSTEM LIMPO --- */
+        /* --- CONFIGURAÇÕES GERAIS --- */
         :root {
+            /* Paleta de Cores */
             --cor-primary: #E63946; 
-            --cor-bg: #FAFAFA;
+            --cor-bg: #F4F6F8;
             --cor-surface: #FFFFFF;
-            --cor-text-main: #222222;
-            --cor-text-sec: #888888;
-            --radius-box: 16px;
-            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --cor-text-main: #1D3557;
+            --cor-text-sec: #6c757d;
+            
+            /* Cores Auxiliares */
+            --banner-green: #2A9D8F;
+            --banner-blue: #457B9D;
+            --banner-orange: #F4A261;
+
+            /* Formas */
+            --radius-box: 20px;
+            --radius-btn: 50px;
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -38,159 +64,261 @@
             font-family: var(--font-stack);
             background-color: var(--cor-bg);
             color: var(--cor-text-main);
-            margin: 0; padding-bottom: 120px;
-            font-size: 16px; -webkit-font-smoothing: antialiased;
+            margin: 0;
+            padding-bottom: 120px;
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
-        h1, h2, h3 { margin: 0; font-weight: 600; }
+        h1, h2, h3 { margin: 0; font-weight: 700; color: var(--cor-text-main); letter-spacing: -0.5px; }
         button { cursor: pointer; border: none; outline: none; background: none; font-family: inherit; }
 
-        /* HEADER */
-        .header-wrapper { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0px rgba(0,0,0,0.05); }
-        header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; height: 60px; }
+        /* --- CABEÇALHO --- */
+        .header-wrapper {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--cor-surface);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 20px;
+            height: 64px;
+        }
+        
         .header-left { display: flex; align-items: center; gap: 12px; }
-        .logo { width: 36px; height: 36px; background: var(--cor-primary); color: white; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: 1.1rem; }
-        .page-title { font-size: 1.1rem; font-weight: 600; color: var(--cor-text-main); }
-        .btn-back { display: none; font-size: 1.5rem; color: var(--cor-text-main); padding: 5px; }
+        
+        .logo { 
+            width: 40px; height: 40px; 
+            background: var(--cor-primary); color: white; 
+            border-radius: 12px; display: grid; place-items: center; 
+            font-weight: 800; font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(230, 57, 70, 0.3);
+        }
+        
+        .page-title { font-size: 1.1rem; font-weight: 700; color: var(--cor-text-main); }
+        .btn-back { display: none; font-size: 1.4rem; color: var(--cor-text-sec); padding: 5px; }
+        .btn-help { width: 36px; height: 36px; background: #EDF2F4; border-radius: 50%; color: var(--cor-text-main); font-weight: bold; font-size: 1.1rem; }
 
-        /* LAYOUT */
+        /* --- VISUALIZAÇÃO (VIEWS) --- */
         main { display: block; width: 100%; }
-        .view { display: none; padding: 20px 15px; max-width: 800px; margin: 0 auto; }
-        .view.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .view { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .view.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* HOME: CARDS */
-        .grid-cestas { display: grid; gap: 20px; }
+        /* --- CARDS DE CESTAS (HOME) --- */
+        .grid-cestas { display: grid; gap: 24px; padding-top: 10px; }
+        
         .cesta-card {
             background: var(--cor-surface); border-radius: var(--radius-box);
-            overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             transition: transform 0.2s;
         }
         .cesta-card:active { transform: scale(0.98); }
-        .cesta-img-wrap { width: 100%; height: 200px; background: #f4f4f4; }
-        .cesta-img { width: 100%; height: 100%; object-fit: cover; }
-        .cesta-content { padding: 18px; }
-        .cesta-name { font-size: 1.25rem; margin-bottom: 5px; color: var(--cor-text-main); font-weight: 700; }
-        .cesta-price { font-size: 1.5rem; font-weight: 700; color: var(--cor-primary); display: block; margin-top: 8px; }
-        .cesta-actions { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-card { flex: 1; padding: 12px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; text-align: center; }
-        .btn-outline { background: #f0f0f0; color: #333; }
-        .btn-primary { background: var(--cor-primary); color: white; }
 
-        /* CATALOGO: GRID LIMP0 */
+        .cesta-img-wrap { width: 100%; height: 200px; background: #EDF2F4; position: relative; }
+        .cesta-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .cesta-content { padding: 20px; }
+        .cesta-name { font-size: 1.3rem; margin-bottom: 4px; color: var(--cor-text-main); }
+        .cesta-info { 
+            display: inline-block; background: #EDF2F4; color: var(--cor-text-sec); 
+            padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; margin-bottom: 12px;
+        }
+        .cesta-price { font-size: 1.6rem; font-weight: 800; color: var(--cor-primary); display: block; margin-bottom: 16px; }
+        
+        .cesta-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px; }
+        .btn-card { 
+            padding: 14px; border-radius: var(--radius-btn); font-weight: 700; font-size: 0.95rem; 
+            text-align: center;
+        }
+        .btn-outline { background: #EDF2F4; color: var(--cor-text-main); }
+        .btn-primary { 
+            background: var(--cor-primary); color: white; 
+            box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3); 
+        }
+
+        /* --- CATÁLOGO ESTILO IFOOD (GRID LIMPO) --- */
         .cat-title {
             font-size: 1.3rem; font-weight: 700; color: #333;
             margin: 30px 0 15px 5px; position: relative;
             text-transform: capitalize; letter-spacing: -0.5px;
         }
-        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .prod-card {
-            background: var(--cor-surface); border-radius: 16px; padding: 12px;
-            display: flex; flex-direction: column; align-items: center; text-align: center;
-            border: 1px solid transparent; transition: all 0.2s; position: relative;
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 COLUNAS */
+            gap: 15px;
         }
-        .prod-card.active { border-color: var(--cor-primary); background: #fffcfc; }
-        .prod-img-box { width: 100%; height: 140px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
-        .prod-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .prod-price { font-size: 1.15rem; font-weight: 700; color: var(--cor-primary); margin-bottom: 4px; }
+
+        .prod-card {
+            background: var(--cor-surface);
+            border-radius: 16px;
+            padding: 15px;
+            display: flex; flex-direction: column;
+            align-items: center; text-align: center;
+            border: 1px solid transparent;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            transition: all 0.2s;
+            position: relative;
+        }
+        /* Item selecionado ganha destaque sutil */
+        .prod-card.active { border-color: var(--cor-primary); background: #FFFBFB; }
+
+        .prod-img-box {
+            width: 100%; height: 130px; /* FOTO GRANDE */
+            margin-bottom: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .prod-img {
+            width: 100%; height: 100%;
+            object-fit: contain; /* Produto inteiro visível */
+            mix-blend-mode: multiply; /* Fundo transparente visual */
+        }
+
+        .prod-price { font-size: 1.1rem; font-weight: 800; color: var(--cor-primary); margin-bottom: 4px; }
         .prod-name { 
-            font-size: 0.9rem; color: #555; font-weight: 500; line-height: 1.3; margin-bottom: 12px;
+            font-size: 0.9rem; color: #555; font-weight: 500; 
+            line-height: 1.3; margin-bottom: 15px;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 38px;
         }
 
-        /* CONTROLES */
+        /* Botões do Catálogo */
         .action-area { width: 100%; margin-top: auto; }
-        .btn-add-simple { width: 100%; padding: 10px; background: #F0F2F5; color: var(--cor-primary); border-radius: 12px; font-weight: 700; font-size: 0.9rem; }
-        .qty-control { display: flex; align-items: center; justify-content: space-between; background: var(--cor-primary); border-radius: 12px; padding: 4px; color: white; width: 100%; }
-        .btn-q { width: 32px; height: 32px; font-size: 1.2rem; display: grid; place-items: center; font-weight: bold; }
-        .val-q { font-weight: 700; font-size: 1rem; }
+        
+        .btn-add-simple {
+            width: 100%; padding: 12px; background: #EDF2F4; color: var(--cor-text-main);
+            border-radius: 12px; font-weight: 700; font-size: 0.9rem;
+        }
+        
+        .qty-control {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--cor-primary); border-radius: 12px;
+            padding: 6px; color: white; width: 100%;
+        }
+        .btn-q { width: 30px; height: 30px; font-size: 1.2rem; display: grid; place-items: center; font-weight: bold; }
+        .val-q { font-weight: 700; font-size: 1.1rem; }
 
-        /* LISTA HORIZONTAL */
-        .basket-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px 5px 20px; scroll-behavior: smooth; }
-        .chip-item { flex: 0 0 85px; background: white; padding: 8px; border-radius: 14px; border: 1px solid #eee; text-align: center; }
+        /* --- LISTA HORIZONTAL (TOPO DO CATÁLOGO) --- */
+        .basket-scroll {
+            display: flex; gap: 10px; overflow-x: auto; padding: 10px 5px 20px; scroll-behavior: smooth;
+        }
+        .chip-item {
+            flex: 0 0 90px; background: white; padding: 10px; border-radius: 14px;
+            border: 1px solid #eee; text-align: center;
+            display: flex; flex-direction: column; align-items: center;
+        }
 
-        /* FOOTER BAR */
+        /* --- BARRA FLUTUANTE DE TOTAL --- */
         .float-bar {
             position: fixed; bottom: 20px; left: 15px; right: 15px;
-            background: #222; color: white; padding: 12px 20px; border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: #222; color: white;
+            padding: 12px 20px; border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
             display: none; justify-content: space-between; align-items: center; z-index: 90;
         }
-        .total-info { display: flex; flex-direction: column; }
-        .total-lbl { font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; }
+        .total-lbl { font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; font-weight: 700; }
         .total-val { font-size: 1.3rem; font-weight: 700; }
-        .btn-finish { background: var(--cor-primary); color: white; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; }
+        .btn-finish {
+            background: var(--cor-primary); color: white;
+            padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 0.95rem;
+        }
+        .btn-finish:disabled { background: #555; color: #aaa; }
 
-        /* MODAIS & UTILS */
-        dialog { border: none; border-radius: 20px; padding: 0; width: 90%; max-width: 450px; background: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-        dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
-        .modal-head { padding: 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
-        .input-box { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 15px; font-size: 1rem; background: #f9f9f9; }
-        label { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display: block; color: #333; }
-        .toast { display:none; position:fixed; top:80px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:10px 20px; border-radius:30px; z-index:200; font-size:0.9rem; }
+        /* --- MODAIS E DIALOGS --- */
+        dialog {
+            border: none; border-radius: 24px; padding: 0; width: 90%; max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); background: var(--cor-surface);
+        }
+        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+        
+        .modal-head { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
+        
+        /* Input Styles */
+        .input-box {
+            width: 100%; padding: 14px; border: 2px solid #EDF2F4; 
+            border-radius: 12px; font-size: 1rem; margin-bottom: 16px;
+            background: #F8FAFC; transition: border-color 0.2s;
+        }
+        .input-box:focus { border-color: var(--cor-primary); background: white; }
+        label { display: block; margin-bottom: 6px; font-weight: 700; color: var(--cor-text-main); font-size: 0.9rem; }
 
-        /* LISTA LIMPA PARA CHECKOUT E DETALHES */
-        .clean-list-item { 
-            display: flex; align-items: center; gap: 12px; 
-            padding: 12px 0; border-bottom: 1px solid #f5f5f5; 
+        /* LISTA LIMPA (CHECKOUT) */
+        .clean-item {
+            display: flex; align-items: center; justify-content: flex-start;
+            padding: 10px 0; border-bottom: 1px solid #f0f0f0; gap: 15px;
         }
         .clean-qty { 
-            background: #EDF2F4; color: var(--cor-primary); 
-            font-weight: 800; padding: 4px 10px; border-radius: 6px; 
+            background: #EDF2F4; color: var(--cor-primary); padding: 5px 12px; 
+            border-radius: 8px; font-weight: 800; font-size: 1rem;
         }
-        .clean-name { font-size: 0.95rem; color: #444; font-weight: 500; }
+        .clean-name { font-size: 0.95rem; color: #333; font-weight: 500; }
 
-        /* FAQ BEAUTIFUL STYLE */
-        details { background: #f8f9fa; border-radius: 12px; margin-bottom: 12px; overflow: hidden; border: 1px solid #eee; }
-        summary { padding: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; list-style: none; color: #333; }
-        summary::after { content: "+"; font-size: 1.2rem; color: var(--cor-primary); font-weight: 300; }
-        details[open] summary::after { content: "-"; }
-        .ans { padding: 0 16px 16px; color: #666; line-height: 1.5; font-size: 0.95rem; }
-        
+        /* --- FAQ ORIGINAL RESTAURADO (EXATAMENTE COMO VOCÊ GOSTAVA) --- */
+        details { background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+        summary { padding: 15px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; color: #333; }
+        .ans { padding: 0 15px 15px; color: #555; line-height: 1.4; }
+
         .company-info { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px dashed #ddd; }
         .company-name { font-weight: 800; color: var(--cor-primary); margin: 10px 0 5px; font-size: 1.1rem; }
         .company-data { font-size: 0.9rem; color: #777; margin-bottom: 15px; line-height: 1.6; }
+        .social-btns { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+        .btn-social { 
+            padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; 
+            color: white; text-decoration: none; font-weight: 600; display: inline-block;
+        }
 
         /* ZOOM */
-        dialog#zoom-modal { width: 100%; height: 100%; max-width: 100%; max-height: 100%; border-radius: 0; }
-        .zoom-close { position: absolute; top: 20px; right: 20px; font-size: 2rem; color: #333; z-index: 10; padding: 10px; }
-        .zoom-content { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: white; }
+        dialog#zoom-modal { background: #fff; width: 100%; height: 100%; max-width: 100%; max-height: 100%; border-radius: 0; }
+        .zoom-close { position: absolute; top: 20px; right: 20px; font-size: 2rem; padding: 10px; z-index: 10; }
+        .zoom-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .zoom-img-full { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+        /* TOAST */
+        .status-toast {
+            display: none; position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
+            background: #333; color: white; padding: 12px 24px; border-radius: 50px;
+            font-weight: 600; z-index: 200; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
 
-    <div id="status-toast" class="toast"></div>
+    <div id="status-toast" class="status-toast"></div>
 
     <div class="header-wrapper">
         <header>
             <div class="header-left">
                 <button class="btn-back" id="btn-back" onclick="goHome()">❮</button>
                 <div class="logo">D</div>
-                <div id="page-title" class="page-title">Dona Antônia</div>
+                <div id="page-title" class="page-title">Super Cestas</div>
             </div>
-            <button onclick="document.getElementById('modal-faq').showModal()" style="font-size:1.5rem; color:#333;">?</button>
+            <button class="btn-help" onclick="document.getElementById('modal-faq').showModal()">?</button>
         </header>
     </div>
 
     <main id="main-content">
+        
         <div id="view-home" class="view active">
-            <h2 style="margin-bottom:20px; color:#444;">Escolha sua Cesta</h2>
-            <div class="grid-cestas" id="cestas-container">Carregando...</div>
+            <h2 style="padding: 10px 0; color:#444;">Nossas Cestas</h2>
+            <div class="grid-cestas" id="cestas-container">
+                <p style="text-align:center; padding:40px; color:#999">Carregando catálogo...</p>
+            </div>
         </div>
 
-        <div id="view-catalogo" class="view" style="padding-top:10px;">
+        <div id="view-catalogo" class="view">
             <div id="catalog-content"></div>
         </div>
     </main>
 
     <div class="float-bar" id="cart-bar">
         <div class="total-info">
-            <span class="total-lbl">Total estimado</span>
-            <span class="total-val" id="total-display">R$ 0,00</span>
+            <div class="total-lbl">Total Estimado</div>
+            <div class="total-val" id="total-display">R$ 0,00</div>
         </div>
-        <button class="btn-finish" id="btn-finish" onclick="openCheckout()">CONCLUIR</button>
+        <button class="btn-finish" id="btn-finish" onclick="openCheckout()">CONCLUIR PEDIDO</button>
     </div>
 
     <dialog id="modal-details">
@@ -200,7 +328,7 @@
         </div>
         <div class="modal-body">
             <div id="detail-list"></div>
-            <div style="margin-top:20px; text-align:center;">
+            <div style="padding:20px 0; text-align:center;">
                 <button class="btn-finish" style="width:100%" onclick="orderDirect()">PEDIR ESSA CESTA</button>
             </div>
         </div>
@@ -212,41 +340,40 @@
             <button onclick="document.getElementById('modal-checkout').close()" style="font-size:1.5rem;">✕</button>
         </div>
         <div class="modal-body">
+            <h4 style="margin-bottom:15px; color:#666;">Resumo dos Itens</h4>
             <div id="checkout-list" style="margin-bottom:25px;"></div>
             
-            <div style="background: #F8F9FA; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 25px; border: 1px dashed #ddd;">
-                <span style="display:block; font-size:0.9rem; color:#666; margin-bottom:5px;">VALOR TOTAL DO PEDIDO</span>
-                <span id="checkout-total" style="font-size:1.8rem; font-weight:800; color:var(--cor-primary);"></span>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 16px; text-align: center; margin-bottom: 25px; border: 2px dashed #e9ecef;">
+                <span style="display:block; font-size:0.85rem; color:#666; font-weight:700; margin-bottom:5px; text-transform:uppercase;">Valor Total a Pagar</span>
+                <span id="checkout-total" style="font-size:2rem; font-weight:800; color:var(--cor-primary);">R$ 0,00</span>
             </div>
-
+            
             <form onsubmit="sendWhatsapp(event)">
                 <label>Seu Nome</label>
                 <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
+                
                 <label>Endereço de Entrega</label>
-                <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Bairro e Número">
+                <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
+                
                 <label>Forma de Pagamento</label>
                 <select id="cust-pay" class="input-box">
-                    <option>PIX</option>
-                    <option>Dinheiro (Precisa de troco?)</option>
-                    <option>Cartão</option>
+                    <option>PIX (Na entrega)</option>
+                    <option>Dinheiro (Levar troco?)</option>
+                    <option>Cartão (Crédito/Débito)</option>
                 </select>
-                <button type="submit" class="btn-finish" style="width:100%; height: 50px; font-size: 1.1rem;">ENVIAR PEDIDO</button>
+                
+                <button type="submit" class="btn-finish" style="width:100%; padding: 15px; font-size: 1.1rem;">ENVIAR PEDIDO AGORA</button>
             </form>
         </div>
     </dialog>
 
-    <dialog id="zoom-modal">
-        <button class="zoom-close" onclick="document.getElementById('zoom-modal').close()">✕</button>
-        <div class="zoom-content"><img id="zoom-img" class="zoom-img-full"></div>
-    </dialog>
-
     <dialog id="modal-faq">
-        <div class="modal-head"><h3>Ajuda & Dúvidas</h3><button onclick="document.getElementById('modal-faq').close()" style="font-size:1.5rem;">✕</button></div>
+        <div class="modal-head"><h3>Ajuda</h3><button onclick="document.getElementById('modal-faq').close()" style="font-size:1.5rem;">✕</button></div>
         <div class="modal-body">
-            <details><summary>Onde vocês entregam?</summary><div class="ans">Entregamos em todos os bairros de Cuiabá e Várzea Grande. O horário é combinado via WhatsApp.</div></details>
-            <details><summary>Quais as formas de pagamento?</summary><div class="ans">Aceitamos PIX, Dinheiro e Cartão (Crédito/Débito) diretamente na entrega.</div></details>
-            <details><summary>Posso personalizar a cesta?</summary><div class="ans">Sim! Ao escolher uma cesta, clique em "Personalizar". Você pode trocar, remover ou adicionar produtos conforme sua necessidade.</div></details>
-            <details><summary>Tem valor mínimo?</summary><div class="ans">Sim, o valor mínimo do pedido é o preço base da cesta escolhida.</div></details>
+            <details><summary>Entrega</summary><div class="ans">Cuiabá e Várzea Grande. Combinamos o horário no WhatsApp.</div></details>
+            <details><summary>Pagamento</summary><div class="ans">Pague somente na entrega via PIX, Dinheiro ou Cartão.</div></details>
+            <details><summary>Posso mudar itens?</summary><div class="ans">Sim! Clique em "Personalizar". Você pode trocar ou retirar até 30% dos itens.</div></details>
+            <details><summary>Pedido Mínimo</summary><div class="ans">O valor mínimo é o preço da cesta escolhida.</div></details>
 
             <div class="company-info">
                 <div class="logo" style="width:50px; height:50px; margin:0 auto; font-size:1.5rem;">D</div>
@@ -254,9 +381,21 @@
                 <div class="company-data">
                     CNPJ: 00.000.000/0001-00<br>
                     Atendimento Online - Cuiabá e VG<br>
-                    <strong>(65) 98449-1018</strong>
+                    <strong>(65) 98449-1018</strong><br>
+                    <strong>(65) 99815-0975</strong>
+                </div>
+                <div class="social-btns">
+                    <a href="https://wa.me/5565984491018" class="btn-social" style="background:#25D366">WhatsApp</a>
+                    <a href="#" class="btn-social" style="background:#E1306C">Instagram</a>
                 </div>
             </div>
+        </div>
+    </dialog>
+
+    <dialog id="zoom-modal">
+        <button class="zoom-close" onclick="document.getElementById('zoom-modal').close()">✕</button>
+        <div class="zoom-content">
+            <img id="zoom-img" class="zoom-img-full">
         </div>
     </dialog>
 
@@ -274,12 +413,13 @@
                     id: String(x.ID),
                     name: x.Descrição,
                     price: parseFloat(String(x.Preço).replace('R$','').replace(/\./g,'').replace(',', '.')),
+                    // CATEGORIAS: PEGA SÓ O ÚLTIMO NOME
                     cat: x["Categoria do produto"] ? x["Categoria do produto"].split('>>').pop().trim() : "Geral",
                     img: x.imagem ? "img/produtos/" + x.imagem.split('/').pop() : null
                 }));
                 DB_CESTAS = cd;
                 renderHome();
-            } catch { document.getElementById('cestas-container').innerHTML = "Erro ao carregar."; }
+            } catch { document.getElementById('cestas-container').innerHTML = "Erro ao carregar dados."; }
         }
 
         /* NAVEGAÇÃO */
@@ -288,7 +428,8 @@
             document.getElementById('view-catalogo').classList.remove('active');
             document.getElementById('btn-back').style.display = 'none';
             document.getElementById('cart-bar').style.display = 'none';
-            document.getElementById('page-title').innerText = "Dona Antônia";
+            document.getElementById('page-title').innerText = "Super Cestas";
+            document.getElementById('status-toast').style.display = 'none';
         }
 
         function goCatalog(id) {
@@ -323,8 +464,8 @@
                     <div class="cesta-img-wrap"><img src="${img}" class="cesta-img" loading="lazy" onclick="zoom('${img}')"></div>
                     <div class="cesta-content">
                         <div class="cesta-name">${c.nome}</div>
-                        <span style="font-size:0.85rem; color:#888;">${c.produtos.length} Itens Selecionados</span>
-                        <div class="cesta-price">${fmt(c.preco)}</div>
+                        <span class="cesta-info">${c.produtos.length} Itens</span>
+                        <span class="cesta-price">${fmt(c.preco)}</span>
                         <div class="cesta-actions">
                             <button class="btn-card btn-outline" onclick="details('${c.id}')">Ver Itens</button>
                             <button class="btn-card btn-primary" onclick="goCatalog('${c.id}')">Personalizar</button>
@@ -336,9 +477,14 @@
 
         function renderCatalog() {
             const div = document.getElementById('catalog-content');
+            div.innerHTML = "";
             const ph = svgPlace();
             
-            let html = `<div style="margin-bottom:20px;"><h3 style="font-size:1rem; color:#888; margin-bottom:10px;">Itens Inclusos na Cesta</h3><div class="basket-scroll">`;
+            // LISTA TOPO: ITENS JÁ NA CESTA
+            let html = `<div style="margin-bottom:25px;">
+                <h3 style="font-size:1rem; color:#888; margin-bottom:10px; padding-left:5px;">Itens da Cesta</h3>
+                <div class="basket-scroll">`;
+            
             Object.keys(ORIG_COUNTS).forEach(id => {
                 const p = DB_PROD.find(x => x.id === id);
                 if(!p) return;
@@ -346,15 +492,16 @@
                 html += `
                 <div class="chip-item">
                     <img src="${p.img || ph}" style="width:50px; height:50px; object-fit:contain;" onclick="zoom('${p.img||ph}')">
-                    <div style="font-weight:700; font-size:0.8rem; margin:5px 0;">${qty}un</div>
-                    <div style="display:flex; gap:5px; justify-content:center;">
-                        <button onclick="upd('${id}', -1)" style="background:#eee; width:24px; height:24px; border-radius:50%; font-weight:bold;">-</button>
-                        <button onclick="upd('${id}', 1)" style="background:#eee; width:24px; height:24px; border-radius:50%; font-weight:bold;">+</button>
+                    <div style="font-weight:700; font-size:0.9rem; margin:5px 0;">${qty}un</div>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="upd('${id}', -1)" style="background:#eee; width:28px; height:28px; border-radius:50%; font-weight:bold;">-</button>
+                        <button onclick="upd('${id}', 1)" style="background:#eee; width:28px; height:28px; border-radius:50%; font-weight:bold;">+</button>
                     </div>
                 </div>`;
             });
             html += `</div></div>`;
 
+            // GRID DE PRODUTOS
             const cats = {};
             DB_PROD.forEach(p => { const c = p.cat; if(!cats[c]) cats[c] = []; cats[c].push(p); });
 
@@ -364,8 +511,12 @@
                     const q = CART[p.id] || 0;
                     const activeClass = q > 0 ? 'active' : '';
                     const imgSrc = p.img || ph;
-                    const actionHtml = q > 0 
-                        ? `<div class="qty-control"><button class="btn-q" onclick="upd('${p.id}', -1)">-</button><span class="val-q">${q}</span><button class="btn-q" onclick="upd('${p.id}', 1)">+</button></div>`
+                    const btnHtml = q > 0 
+                        ? `<div class="qty-control">
+                               <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
+                               <span class="val-q">${q}</span>
+                               <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
+                           </div>`
                         : `<button class="btn-add-simple" onclick="upd('${p.id}', 1)">ADICIONAR</button>`;
 
                     html += `
@@ -373,7 +524,7 @@
                         <div class="prod-img-box"><img src="${imgSrc}" class="prod-img" loading="lazy" onclick="zoom('${imgSrc}')"></div>
                         <div class="prod-price">${fmt(p.price)}</div>
                         <div class="prod-name">${p.name}</div>
-                        <div class="action-area" id="act-${p.id}">${actionHtml}</div>
+                        <div class="action-area" id="act-${p.id}">${btnHtml}</div>
                     </div>`;
                 });
                 html += `</div>`;
@@ -386,6 +537,7 @@
             if(navigator.vibrate) navigator.vibrate(10);
             if(!CART[id]) CART[id] = 0;
             const nq = CART[id] + d;
+            
             if (d < 0 && ORIG_COUNTS[id]) {
                 let currOrig = 0;
                 for(let k in CART) if(ORIG_COUNTS[k]) currOrig += Math.min(k===id ? nq : CART[k], ORIG_COUNTS[k]);
@@ -416,52 +568,54 @@
             const total = CURR_CESTA.preco + (u - o);
             window.finalTotal = total;
             document.getElementById('total-display').innerText = fmt(total);
+            
             const btn = document.getElementById('btn-finish');
             if(total < CURR_CESTA.preco) {
-                btn.style.background = "#ccc"; btn.innerText = "MÍNIMO: " + fmt(CURR_CESTA.preco); btn.disabled = true;
+                btn.style.background = "#555";
+                btn.innerText = `MÍNIMO: ${fmt(CURR_CESTA.preco)}`;
+                btn.disabled = true;
             } else {
-                btn.style.background = "var(--cor-primary)"; btn.innerText = "CONCLUIR"; btn.disabled = false;
+                btn.style.background = "var(--cor-primary)";
+                btn.innerText = "CONCLUIR PEDIDO";
+                btn.disabled = false;
             }
         }
 
-        /* MODAIS E AÇÕES */
-        function trackEvent(name, data) { if(typeof fbq === 'function') fbq('track', name, data); }
-
+        /* AÇÕES DOS MODAIS */
         function details(id) {
             window.viewId = id;
             const c = DB_CESTAS.find(x => x.id === id);
             
-            trackEvent('ViewContent', { content_type: 'product', content_ids: [id], content_name: c.nome, currency: 'BRL', value: c.preco });
+            // TRACKING: Facebook Pixel
+            trackEvent('ViewContent', { content_type: 'product', content_ids: [id], content_name: c.nome, value: c.preco, currency: 'BRL' });
 
             const d = document.getElementById('detail-list'); d.innerHTML = "";
             c.produtos.forEach(s => {
                 const [q, pid] = s.split('x ');
                 const p = DB_PROD.find(x => x.id === pid.trim());
-                if(p) d.innerHTML += `<div class="clean-list-item"><span class="clean-qty">${q}</span><span class="clean-name">${p.name}</span></div>`;
+                if(p) d.innerHTML += `<div class="clean-item"><span class="clean-qty">${q}</span><span class="clean-name">${p.name}</span></div>`;
             });
             document.getElementById('modal-details').showModal();
         }
 
-        function orderDirect() {
-            const c = DB_CESTAS.find(x => x.id === window.viewId);
-            window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent("Quero encomendar a " + c.nome + " por " + fmt(c.preco))}`;
-        }
-
         function openCheckout() {
-            const list = document.getElementById('checkout-list'); list.innerHTML = "";
+            const list = document.getElementById('checkout-list'); 
+            list.innerHTML = "";
             let items = [];
+            
             for(let k in CART) {
                 if(CART[k] > 0) {
-                    const p = DB_PROD.find(x=>x.id===k);
+                    const p = DB_PROD.find(x => x.id === k);
                     items.push(k);
-                    // RENDERIZAÇÃO LIMPA: Apenas Quantidade e Nome (Sem Preço)
+                    // EXIBIÇÃO LIMPA: SEM PREÇO INDIVIDUAL
                     list.innerHTML += `
-                    <div class="clean-list-item">
+                    <div class="clean-item">
                         <span class="clean-qty">${CART[k]}</span>
                         <span class="clean-name">${p.name}</span>
                     </div>`;
                 }
             }
+            
             document.getElementById('checkout-total').innerText = fmt(window.finalTotal);
             
             trackEvent('InitiateCheckout', { value: window.finalTotal, currency: 'BRL', content_ids: items, num_items: items.length });
@@ -474,6 +628,7 @@
             const a = document.getElementById('cust-addr').value;
             const p = document.getElementById('cust-pay').value;
 
+            // Pixel Purchase
             const items = Object.keys(CART).filter(k=>CART[k]>0);
             trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: items, num_items: items.reduce((a,c)=>a+CART[c],0) });
 
@@ -484,18 +639,28 @@
             setTimeout(() => { window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(m)}`; }, 500);
         }
 
+        function orderDirect() {
+            const c = DB_CESTAS.find(x => x.id === window.viewId);
+            window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent("Gostaria de pedir a " + c.nome + " por " + fmt(c.preco))}`;
+        }
+
+        /* TRACKING HELPER */
+        function trackEvent(name, data) { if(typeof fbq === 'function') fbq('track', name, data); }
+
+        /* UTILITÁRIOS */
         function fmt(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
         function showToast(m) { const t=document.getElementById('status-toast'); t.innerText=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
         function svgPlace() { return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjRTI1QzZDIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjwvc3ZnPg=="; }
         function zoom(src) { document.getElementById('zoom-img').src = src; document.getElementById('zoom-modal').showModal(); }
 
-        init();
-
-        /* SECURITY */
+        /* SEGURANÇA */
         (function(){
             document.addEventListener('contextmenu', e => e.preventDefault());
             document.onkeydown = e => { if(e.keyCode==123 || (e.ctrlKey && e.keyCode==85)) return false; };
+            console.log('%c Dona Antonia ', 'background: #E63946; color: #fff; font-size: 20px;');
         })();
+
+        init();
     </script>
 </body>
 </html>
