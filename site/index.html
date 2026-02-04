@@ -178,6 +178,8 @@
             transition: all 0.2s;
             position: relative;
         }
+        /* Estilo para produto ESGOTADO */
+        .prod-card.esgotado { opacity: 0.7; filter: grayscale(1); }
         .prod-card.active { border-color: var(--cor-primary); background: #FFFBFB; }
 
         .prod-img-box {
@@ -206,6 +208,11 @@
         .btn-add-simple {
             width: 100%; padding: 12px; background: #EDF2F4; color: var(--cor-text-main);
             border-radius: 12px; font-weight: 700; font-size: 0.9rem;
+        }
+        .btn-esgotado {
+            width: 100%; padding: 12px; background: #eee; color: #999;
+            border-radius: 12px; font-weight: 700; font-size: 0.85rem;
+            cursor: not-allowed;
         }
         
         .qty-control {
@@ -424,7 +431,22 @@
         // --- SEU WEBHOOK DO MAKE ---
         const MAKE_WEBHOOK = "https://hook.eu1.make.com/24y838o95ik4jvfxf1t837fjpayincq0"; 
 
-        let DB_PROD = [], DB_CESTAS = [], DB_CATS = {}, CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
+        // --- DEFINIÇÃO DAS CATEGORIAS DIRETO NO CÓDIGO ---
+        const CATEGORIAS_FIXAS = {
+            "A": "Mercearia",
+            "B": "Molhos e Massas",
+            "C": "Óleos e Temperos",
+            "D": "Matinais e Sobremesas",
+            "E": "Bebidas",
+            "F": "Higiene Pessoal",
+            "G": "Limpeza",
+            "H": "Hortifruti",
+            "I": "Açougue",
+            "1": "Promocionais",
+            "2": "Kits Especiais"
+        };
+
+        let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
         async function init() {
             try {
@@ -433,33 +455,21 @@
                     const cRes = await fetch('produtos-cesta-basica.json');
                     if (cRes.ok) {
                         DB_CESTAS = await cRes.json();
-                        renderHome(); // Renderiza assim que baixa as cestas
+                        renderHome(); 
                     } else {
                         console.error("Erro ao baixar cestas: " + cRes.status);
                         document.getElementById('cestas-container').innerHTML = "<p style='text-align:center; padding:40px'>Erro ao carregar cestas.</p>";
                     }
                 } catch (e) { console.error("Erro JSON Cestas:", e); }
 
-                // 2. TENTA CARREGAR CATEGORIAS (Com correção de nome do arquivo)
-                try {
-                    let catRes = await fetch('categorias.json');
-                    if (!catRes.ok) catRes = await fetch('cetegorias.json'); // Corrige o erro de digitação do arquivo
-
-                    if (catRes.ok) DB_CATS = await catRes.json();
-                } catch (e) { console.warn("Sem categorias ou erro no arquivo:", e); }
-
-                // 3. TENTA CARREGAR PRODUTOS (Do Make) E CORRIGE O FORMATO
+                // 2. TENTA CARREGAR PRODUTOS (Do Make)
                 try {
                     const pRes = await fetch('produtos.json');
                     if (pRes.ok) {
-                        // Lê como texto primeiro para consertar o JSON quebrado
+                        // Conserta JSON quebrado do Make se precisar
                         let text = await pRes.text();
                         text = text.trim();
-                        
-                        // CORREÇÃO MÁGICA 🪄
-                        // Remove última vírgula se existir
                         if (text.endsWith(',')) text = text.slice(0, -1);
-                        // Adiciona colchetes se faltar
                         if (!text.startsWith('[')) text = '[' + text;
                         if (!text.endsWith(']')) text = text + ']';
 
@@ -467,18 +477,20 @@
                         
                         // Processamento dos produtos
                         DB_PROD = rawProd
-                            .filter(x => x.situacao === "A" && x.estoque > 0)
+                            .filter(x => x.situacao === "A") // Não filtra estoque aqui, filtra na tela
                             .map(x => {
                                 const sId = String(x.id);
-                                const primeiraLetra = sId.charAt(0).toUpperCase();
-                                // Se não achou categoria, usa "Diversos"
-                                const nomeCategoria = DB_CATS[primeiraLetra] || "Diversos";
+                                const sCodigo = x.codigo ? String(x.codigo) : sId; // Pega o código (ex: AP333) ou usa ID
+                                const primeiraLetra = sCodigo.charAt(0).toUpperCase(); // Primeira letra do CÓDIGO
+                                
+                                const nomeCategoria = CATEGORIAS_FIXAS[primeiraLetra] || "Diversos";
 
                                 return {
                                     id: sId,
                                     name: x.nome,
                                     price: parseFloat(x.preco),
                                     cat: nomeCategoria,
+                                    stock: x.estoque || 0, // Salva o estoque
                                     img: x.imagem && x.imagem !== "" ? x.imagem : null
                                 };
                             });
@@ -502,7 +514,7 @@
         function goCatalog(id) {
             if (DB_PROD.length === 0) {
                 showToast("Aguarde, carregando estoque de produtos...");
-                init(); // Tenta carregar de novo
+                init();
                 return;
             }
 
@@ -596,15 +608,23 @@
                 html += `<div class="cat-title">${c}</div><div class="products-grid">`;
                 cats[c].forEach(p => {
                     const q = CART[p.id] || 0;
-                    const activeClass = q > 0 ? 'active' : '';
+                    const semEstoque = p.stock <= 0;
+                    const activeClass = q > 0 ? 'active' : (semEstoque ? 'esgotado' : '');
                     const imgSrc = p.img || ph;
-                    const btnHtml = q > 0 
-                        ? `<div class="qty-control">
+                    
+                    let btnHtml = "";
+                    
+                    if (semEstoque && q === 0) {
+                        btnHtml = `<button class="btn-esgotado">ESGOTADO</button>`;
+                    } else if (q > 0) {
+                        btnHtml = `<div class="qty-control">
                                <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
                                <span class="val-q">${q}</span>
                                <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
-                           </div>`
-                        : `<button class="btn-add-simple" onclick="upd('${p.id}', 1)">ADICIONAR</button>`;
+                           </div>`;
+                    } else {
+                        btnHtml = `<button class="btn-add-simple" onclick="upd('${p.id}', 1)">ADICIONAR</button>`;
+                    }
 
                     html += `
                     <div class="prod-card ${activeClass}" id="card-${p.id}">
@@ -620,6 +640,14 @@
         }
 
         function upd(id, d) {
+            const prod = DB_PROD.find(x => x.id === id);
+            
+            // Impede adicionar se estiver sem estoque (mas permite remover)
+            if (prod && prod.stock <= 0 && d > 0) {
+                 showToast("Produto esgotado.");
+                 return;
+            }
+
             if(navigator.vibrate) navigator.vibrate(10);
             if(!CART[id]) CART[id] = 0;
             const nq = CART[id] + d;
@@ -633,17 +661,7 @@
             if(nq < 0) return;
             CART[id] = nq;
             
-            const card = document.getElementById(`card-${id}`);
-            const actDiv = document.getElementById(`act-${id}`);
-            if(card && actDiv) {
-                if(nq > 0) {
-                    card.classList.add('active');
-                    actDiv.innerHTML = `<div class="qty-control"><button class="btn-q" onclick="upd('${id}', -1)">-</button><span class="val-q">${nq}</span><button class="btn-q" onclick="upd('${id}', 1)">+</button></div>`;
-                } else {
-                    card.classList.remove('active');
-                    actDiv.innerHTML = `<button class="btn-add-simple" onclick="upd('${id}', 1)">ADICIONAR</button>`;
-                }
-            }
+            renderCatalog(); // Re-renderiza para atualizar botão se zerar
             updateTotals();
         }
 
