@@ -3,66 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Super Cestas Dona Antônia - A melhor cesta básica de Cuiabá e Várzea Grande. Encomende online com entrega rápida.">
+    <meta name="description" content="Super Cestas Dona Antônia - Encomende online.">
     <meta name="geo.region" content="BR-MT" />
     <meta name="geo.placename" content="Cuiabá" />
-    <meta name="geo.position" content="-15.6014;-56.0979" />
-    <meta name="ICBM" content="-15.6014, -56.0979" />
-    
     <meta name="theme-color" content="#ffffff">
-    <title>Super Cestas Dona Antônia | Cuiabá e VG</title>
+    <title>Super Cestas Dona Antônia</title>
 
     <script type="application/ld-json">
     {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
       "name": "Super Cestas Dona Antônia",
-      "image": "https://seusite.com.br/img/logo.png",
-      "@id": "https://seusite.com.br",
-      "url": "https://seusite.com.br",
       "telephone": "5565984491018",
-      "priceRange": "R$ 100 - R$ 500",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Atendimento Delivery",
-        "addressLocality": "Cuiabá",
-        "addressRegion": "MT",
-        "postalCode": "78000-000",
-        "addressCountry": "BR"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": -15.6014,
-        "longitude": -56.0979
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-        "opens": "07:30",
-        "closes": "18:00"
-      },
-      "sameAs": [
-        "https://wa.me/5565984491018"
-      ]
+      "address": { "@type": "PostalAddress", "addressLocality": "Cuiabá", "addressRegion": "MT" },
+      "geo": { "@type": "GeoCoordinates", "latitude": -15.6014, "longitude": -56.0979 }
     }
     </script>
 
     <style>
-        /* --- SOFT UI DESIGN SYSTEM --- */
+        /* --- DESIGN SYSTEM LIMPO (LESS IS MORE) --- */
         :root {
             --cor-primary: #E63946; 
-            --cor-bg: #F4F6F8;
+            --cor-bg: #FAFAFA; /* Fundo mais claro/clean */
             --cor-surface: #FFFFFF;
-            --cor-text-main: #1D3557;
-            --cor-text-sec: #6c757d;
-            --banner-green: #2A9D8F;
-            --banner-blue: #457B9D;
-            --banner-orange: #F4A261;
-            --radius-box: 20px;
-            --radius-btn: 50px;
-            --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 5px 10px -5px rgba(0, 0, 0, 0.01);
-            --shadow-float: 0 -5px 20px rgba(0,0,0,0.08);
-            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --cor-text-main: #222222; /* Preto suave */
+            --cor-text-sec: #888888;
+            --radius-box: 16px;
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -71,321 +38,234 @@
             font-family: var(--font-stack);
             background-color: var(--cor-bg);
             color: var(--cor-text-main);
-            margin: 0;
-            padding-bottom: 120px;
-            font-size: 16px;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            /* Previne quebrar layout em landscape mobile */
-            overflow-x: hidden; 
+            margin: 0; padding-bottom: 120px;
+            font-size: 16px; -webkit-font-smoothing: antialiased;
         }
 
-        h1, h2, h3 { margin: 0; font-weight: 700; color: var(--cor-text-main); letter-spacing: -0.5px; }
+        h1, h2, h3 { margin: 0; font-weight: 600; } /* Fontes menos pesadas */
         button { cursor: pointer; border: none; outline: none; background: none; font-family: inherit; }
 
-        /* --- HEADER & BANNER --- */
-        .header-wrapper {
-            position: sticky; top: 0; z-index: 100;
-            background: var(--cor-surface);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-        }
-
-        header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 20px;
-            height: 64px;
-        }
-        
+        /* HEADER */
+        .header-wrapper { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0px rgba(0,0,0,0.05); }
+        header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; height: 60px; }
         .header-left { display: flex; align-items: center; gap: 12px; }
-        
-        .logo { 
-            width: 40px; height: 40px; 
-            background: var(--cor-primary); color: white; 
-            border-radius: 12px; display: grid; place-items: center; 
-            font-weight: 800; font-size: 1.2rem;
-            box-shadow: 0 4px 10px rgba(230, 57, 70, 0.3);
-        }
-        
-        .page-title { font-size: 1.1rem; font-weight: 700; color: var(--cor-text-main); }
-        .btn-back { display: none; font-size: 1.4rem; color: var(--cor-text-sec); padding: 5px; }
-        .btn-help { width: 36px; height: 36px; background: #EDF2F4; border-radius: 50%; color: var(--cor-text-main); font-weight: bold; font-size: 1.1rem; }
+        .logo { width: 36px; height: 36px; background: var(--cor-primary); color: white; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: 1.1rem; }
+        .page-title { font-size: 1.1rem; font-weight: 600; color: var(--cor-text-main); }
+        .btn-back { display: none; font-size: 1.5rem; color: var(--cor-text-main); padding: 5px; }
 
-        /* BANNER ROTATIVO */
-        .ticker-bar {
-            width: 100%; height: 36px;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: 600; font-size: 0.9rem;
-            transition: background-color 0.5s ease;
-        }
-        .ticker-text {
-            animation: fadeIn 0.5s ease;
-            text-align: center; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- LAYOUT --- */
+        /* LAYOUT */
         main { display: block; width: 100%; }
-        .view { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
-        .view.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .view { display: none; padding: 20px 15px; max-width: 800px; margin: 0 auto; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- CARDS DE CESTAS --- */
-        .grid-cestas { display: grid; gap: 24px; padding-top: 10px; }
-        
+        /* HOME: CARDS DE CESTAS */
+        .grid-cestas { display: grid; gap: 20px; }
         .cesta-card {
             background: var(--cor-surface); border-radius: var(--radius-box);
-            overflow: hidden; box-shadow: var(--shadow-soft);
+            overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
             transition: transform 0.2s;
         }
         .cesta-card:active { transform: scale(0.98); }
-
-        .cesta-img-wrap { width: 100%; height: 200px; background: #EDF2F4; position: relative; }
+        .cesta-img-wrap { width: 100%; height: 200px; background: #f4f4f4; }
         .cesta-img { width: 100%; height: 100%; object-fit: cover; }
+        .cesta-content { padding: 18px; }
+        .cesta-name { font-size: 1.25rem; margin-bottom: 5px; color: var(--cor-text-main); font-weight: 700; }
+        .cesta-price { font-size: 1.5rem; font-weight: 700; color: var(--cor-primary); display: block; margin-top: 8px; }
+        .cesta-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-card { flex: 1; padding: 12px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; text-align: center; }
+        .btn-outline { background: #f0f0f0; color: #333; }
+        .btn-primary { background: var(--cor-primary); color: white; }
+
+        /* --- CATÁLOGO NOVO: GRID LIMPO (FOTO GRANDE) --- */
         
-        .cesta-content { padding: 20px; }
-        .cesta-name { font-size: 1.3rem; margin-bottom: 4px; color: var(--cor-text-main); }
-        .cesta-info { 
-            display: inline-block; background: #EDF2F4; color: var(--cor-text-sec); 
-            padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; margin-bottom: 12px;
+        /* Cabeçalho da Categoria */
+        .cat-title {
+            font-size: 1.3rem; font-weight: 700; color: #333;
+            margin: 30px 0 15px 5px; position: relative;
+            text-transform: capitalize; letter-spacing: -0.5px;
         }
-        .cesta-price { font-size: 1.6rem; font-weight: 800; color: var(--cor-primary); display: block; margin-bottom: 16px; }
         
-        .cesta-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px; }
-        .btn-card { 
-            padding: 14px; border-radius: var(--radius-btn); font-weight: 700; font-size: 0.95rem; 
-            text-align: center;
-        }
-        .btn-outline { background: #EDF2F4; color: var(--cor-text-main); }
-        .btn-primary { 
-            background: var(--cor-primary); color: white; 
-            box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3); 
-        }
-
-        /* --- LISTA DE PRODUTOS "IFOOD STYLE" (UX 40+) --- */
-        .list-header { margin: 30px 0 15px; display: flex; align-items: center; gap: 10px; }
-        .list-header::after { content: ""; height: 2px; flex: 1; background: #E1E5E9; border-radius: 2px; }
-        .list-title { font-size: 1.1rem; color: var(--cor-text-main); font-weight: 800; }
-
-        .basket-scroll {
-            display: flex; gap: 15px; overflow-x: auto; padding: 5px 5px 20px 5px; scroll-behavior: smooth;
-        }
-        .chip-item {
-            flex: 0 0 100px; background: var(--cor-surface); padding: 10px; border-radius: 16px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); text-align: center; border: 1px solid white;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .chip-img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 8px; }
-        .ctrl-float { display: flex; align-items: center; justify-content: center; gap: 8px; background: #EDF2F4; padding: 4px; border-radius: 20px; }
-        .btn-mini { width: 32px; height: 32px; background: white; border-radius: 50%; color: var(--cor-primary); font-weight: bold; font-size: 1.2rem; display: grid; place-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .val-mini { font-size: 0.9rem; font-weight: 700; width: 20px; }
-
-        /* ITEM DA LISTA - NOVO CSS */
-        .prod-item {
+        /* Grid de Produtos (2 Colunas) */
+        .products-grid {
             display: grid;
-            grid-template-columns: 90px 1fr auto; /* Layout Fixo */
-            gap: 16px; align-items: center;
-            background: var(--cor-surface); margin-bottom: 16px; padding: 16px;
-            border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            border: 1px solid #E1E5E9; transition: all 0.2s ease;
+            grid-template-columns: 1fr 1fr; /* 2 produtos por linha */
+            gap: 12px;
+        }
+
+        .prod-card {
+            background: var(--cor-surface);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex; flex-direction: column;
+            align-items: center; text-align: center;
+            border: 1px solid transparent;
+            transition: all 0.2s;
             position: relative;
         }
-        .prod-item.active { border-color: var(--cor-primary); background: #FFFBFB; box-shadow: 0 4px 12px rgba(230, 57, 70, 0.15); }
+        /* Item selecionado ganha borda sutil */
+        .prod-card.active { border-color: var(--cor-primary); background: #fffcfc; }
 
-        .prod-img { 
-            width: 90px; height: 90px; object-fit: cover; 
-            background: #f0f0f0; border-radius: 12px; pointer-events: none;
-        }
-        .prod-info { display: flex; flex-direction: column; justify-content: center; height: 100%; }
-        .prod-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; line-height: 1.3; color: var(--cor-text-main); }
-        .prod-price { font-weight: 800; color: var(--cor-primary); font-size: 1.1rem; letter-spacing: -0.5px; }
-
-        /* BOTÕES DE AÇÃO GRANDES */
-        .btn-add-bg {
-            background: #EDF2F4; width: 48px; height: 48px; border-radius: 14px;
+        /* FOTO GRANDE E LIMPA */
+        .prod-img-box {
+            width: 100%; height: 140px; /* Altura fixa grande */
+            margin-bottom: 10px;
             display: flex; align-items: center; justify-content: center;
-            color: var(--cor-primary); font-size: 1.8rem; font-weight: 300; transition: all 0.1s;
-            user-select: none; -webkit-user-select: none;
         }
-        .btn-add-bg:active { background: #dce3e6; transform: scale(0.92); }
+        .prod-img {
+            width: 100%; height: 100%;
+            object-fit: contain; /* Mostra o produto inteiro */
+            mix-blend-mode: multiply; /* Tenta fundir fundo branco se houver */
+        }
 
-        .qty-pill {
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            background: var(--cor-primary); border: none; border-radius: 14px;
-            padding: 0; width: 48px; height: 90px;
-            box-shadow: 0 4px 10px rgba(230, 57, 70, 0.3); overflow: hidden;
+        .prod-price { font-size: 1.15rem; font-weight: 700; color: var(--cor-primary); margin-bottom: 4px; }
+        .prod-name { 
+            font-size: 0.9rem; color: #555; font-weight: 500; 
+            line-height: 1.3; margin-bottom: 12px;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 38px;
         }
-        .btn-qty-v { width: 100%; flex: 1; color: white; font-weight: bold; font-size: 1.4rem; display: grid; place-items: center; }
-        .btn-qty-v:active { background: rgba(0,0,0,0.1); }
-        .val-qty-v { font-weight: 800; font-size: 1.1rem; color: white; background: rgba(0,0,0,0.1); width: 100%; text-align: center; padding: 2px 0; }
 
-        /* --- FOOTER & MODAIS --- */
-        .float-bar {
-            position: fixed; bottom: 20px; left: 20px; right: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            padding: 12px 20px; border-radius: 20px;
-            box-shadow: var(--shadow-float);
-            display: none; justify-content: space-between; align-items: center; z-index: 90;
-            border: 1px solid rgba(255,255,255,0.5);
-        }
-        .total-label { font-size: 0.75rem; text-transform: uppercase; color: var(--cor-text-sec); font-weight: 700; letter-spacing: 0.5px; }
-        .total-value { font-size: 1.4rem; font-weight: 900; color: var(--cor-text-main); line-height: 1; }
-        .btn-finish {
-            background: var(--cor-primary); color: white;
-            padding: 12px 24px; border-radius: 50px; font-weight: 700;
-            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4); font-size: 1rem;
-        }
-        .btn-finish:disabled { background: #ccc; box-shadow: none; color: #fff; }
-
-        dialog { border: none; border-radius: 24px; padding: 0; width: 90%; max-width: 450px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); background: var(--cor-surface); }
-        dialog::backdrop { background: rgba(29, 53, 87, 0.4); backdrop-filter: blur(3px); }
-        .modal-head { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
-        .modal-body { padding: 24px; max-height: 60vh; overflow-y: auto; }
+        /* CONTROLES (Botões grandes e fáceis) */
+        .action-area { width: 100%; margin-top: auto; }
         
-        .input-box {
-            width: 100%; padding: 14px; border: 2px solid #EDF2F4; 
-            border-radius: 12px; font-size: 1rem; margin-bottom: 16px;
-            background: #F8FAFC; transition: border-color 0.2s;
+        .btn-add-simple {
+            width: 100%; padding: 10px; background: #F0F2F5; color: var(--cor-primary);
+            border-radius: 12px; font-weight: 700; font-size: 0.9rem;
         }
-        .input-box:focus { border-color: var(--cor-primary); background: white; }
-        label { display: block; margin-bottom: 6px; font-weight: 700; color: var(--cor-text-main); font-size: 0.9rem; }
-
-        .rev-row { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 12px; border-bottom: 1px dashed #eee; padding-bottom: 8px; gap: 12px; }
-        .rev-qty { font-weight: 800; color: var(--cor-primary); min-width: 25px; text-align: center; }
-        .rev-nome { flex: 1; text-align: left; font-size: 0.85rem; color: #444; line-height: 1.3; }
-
-        .status-toast {
-            display: none; position: fixed; top: 120px; left: 50%; transform: translateX(-50%);
-            background: #FFE8E8; color: #D63031; padding: 12px 20px; border-radius: 50px;
-            font-weight: 600; font-size: 0.9rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 200; white-space: nowrap;
+        
+        .qty-control {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--cor-primary); border-radius: 12px;
+            padding: 4px; color: white; width: 100%;
         }
-        details { background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
-        summary { padding: 15px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; }
-        .ans { padding: 0 15px 15px; color: #555; line-height: 1.4; }
-        .company-info { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px dashed #ddd; }
-        .company-name { font-weight: 800; color: var(--cor-primary); margin: 10px 0 5px; font-size: 1.1rem; }
-        .company-data { font-size: 0.9rem; color: #777; margin-bottom: 15px; line-height: 1.6; }
-        .social-btns { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
-        .btn-social { padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; color: white; text-decoration: none; font-weight: 600; display: inline-block; }
+        .btn-q { width: 32px; height: 32px; font-size: 1.2rem; display: grid; place-items: center; font-weight: bold; }
+        .val-q { font-weight: 700; font-size: 1rem; }
+
+        /* LISTA HORIZONTAL (ITENS JÁ NA CESTA) */
+        .basket-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px 5px 20px; scroll-behavior: smooth; }
+        .basket-scroll::-webkit-scrollbar { display: none; }
+        .chip-item {
+            flex: 0 0 85px; background: white; padding: 8px; border-radius: 14px;
+            border: 1px solid #eee; text-align: center;
+        }
+
+        /* CHECKOUT BAR */
+        .float-bar {
+            position: fixed; bottom: 20px; left: 15px; right: 15px;
+            background: #222; color: white; /* Contraste Dark para o CTA */
+            padding: 12px 20px; border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none; justify-content: space-between; align-items: center; z-index: 90;
+        }
+        .total-info { display: flex; flex-direction: column; }
+        .total-lbl { font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; }
+        .total-val { font-size: 1.3rem; font-weight: 700; }
+        .btn-finish { background: var(--cor-primary); color: white; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; }
+
+        /* ZOOM MODAL (FUNDO BRANCO) */
+        dialog#zoom-modal { 
+            background: #ffffff; /* Fundo branco solicitado */
+            border-radius: 0; width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+            border: none; padding: 0;
+        }
+        .zoom-close { position: absolute; top: 20px; right: 20px; font-size: 2rem; color: #333; z-index: 10; padding: 10px; }
+        .zoom-content { 
+            display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; 
+            background: white; 
+        }
+        .zoom-img-full { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        /* UTILS */
+        .modal-body { padding: 20px; }
+        .input-box { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 15px; font-size: 1rem; }
+        label { font-weight: 600; font-size: 0.9rem; margin-bottom: 5px; display: block; }
+        .toast { display:none; position:fixed; top:80px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:10px 20px; border-radius:30px; z-index:200; font-size:0.9rem; }
     </style>
 </head>
 <body>
-    <div id="status-toast" class="status-toast"></div>
+
+    <div id="status-toast" class="toast"></div>
 
     <div class="header-wrapper">
         <header>
             <div class="header-left">
                 <button class="btn-back" id="btn-back" onclick="goHome()">❮</button>
                 <div class="logo">D</div>
-                <div id="page-title" class="page-title">Super Cestas</div>
+                <div id="page-title" class="page-title">Dona Antônia</div>
             </div>
-            <button class="btn-help" onclick="document.getElementById('modal-faq').showModal()">?</button>
+            <button onclick="document.getElementById('modal-faq').showModal()" style="font-size:1.5rem; color:#333;">?</button>
         </header>
-        <div id="ticker" class="ticker-bar" style="background: var(--banner-green);">
-            <div id="ticker-text" class="ticker-text">Entrega Grátis em Cuiabá e VG</div>
-        </div>
     </div>
 
     <main id="main-content">
         <div id="view-home" class="view active">
-            <div class="grid-cestas" id="cestas-container">
-                <p style="text-align:center; padding:40px; color:#999">Carregando catálogo...</p>
-            </div>
+            <h2 style="margin-bottom:20px; color:#444;">Escolha sua Cesta</h2>
+            <div class="grid-cestas" id="cestas-container">Carregando...</div>
         </div>
-        <div id="view-catalogo" class="view">
+
+        <div id="view-catalogo" class="view" style="padding-top:10px;">
             <div id="catalog-content"></div>
         </div>
     </main>
 
     <div class="float-bar" id="cart-bar">
         <div class="total-info">
-            <div class="total-label">Total a Pagar</div>
-            <div class="total-value" id="total-display">R$ 0,00</div>
+            <span class="total-lbl">Total estimado</span>
+            <span class="total-val" id="total-display">R$ 0,00</span>
         </div>
         <button class="btn-finish" id="btn-finish" onclick="openCheckout()">CONCLUIR</button>
     </div>
 
-    <dialog id="modal-checkout">
-        <div class="modal-head">
-            <h3>Finalizar Pedido</h3>
-            <button onclick="document.getElementById('modal-checkout').close()" style="font-size:1.5rem;">✕</button>
+    <dialog id="zoom-modal">
+        <button class="zoom-close" onclick="document.getElementById('zoom-modal').close()">✕</button>
+        <div class="zoom-content">
+            <img id="zoom-img" class="zoom-img-full">
+        </div>
+    </dialog>
+
+    <dialog id="modal-checkout" style="border-radius:20px; width:90%; max-width:400px;">
+        <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+            <h3>Seu Pedido</h3>
+            <button onclick="document.getElementById('modal-checkout').close()">✕</button>
         </div>
         <div class="modal-body">
-            <div id="checkout-list"></div>
-            <div style="text-align:right; font-size:1.3rem; font-weight:800; color:var(--cor-primary); margin:20px 0;">
+            <div id="checkout-list" style="margin-bottom:20px;"></div>
+            <div style="text-align:right; font-size:1.4rem; font-weight:700; color:var(--cor-primary); margin-bottom:20px;">
                 Total: <span id="checkout-total"></span>
             </div>
             <form onsubmit="sendWhatsapp(event)">
-                <label>Seu Nome</label>
-                <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
+                <label>Nome Completo</label>
+                <input type="text" id="cust-name" class="input-box" required placeholder="Ex: Maria Silva">
                 <label>Endereço de Entrega</label>
-                <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
-                <label>Forma de Pagamento</label>
+                <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Bairro, Nº">
+                <label>Pagamento (na entrega)</label>
                 <select id="cust-pay" class="input-box">
                     <option>PIX</option>
-                    <option>Dinheiro (Levar troco?)</option>
+                    <option>Dinheiro (Precisa de troco?)</option>
                     <option>Cartão</option>
                 </select>
-                <button type="submit" class="btn-finish" style="width:100%">ENVIAR PEDIDO</button>
+                <button type="submit" class="btn-finish" style="width:100%; justify-content:center;">ENVIAR PEDIDO</button>
             </form>
         </div>
     </dialog>
 
-    <dialog id="modal-details">
-        <div class="modal-head"><h3>Itens da Cesta</h3><button onclick="document.getElementById('modal-details').close()" style="font-size:1.5rem;">✕</button></div>
-        <div class="modal-body" id="detail-list"></div>
-        <div style="padding:20px; text-align:center;">
-            <button class="btn-finish" style="width:100%" onclick="orderDirect()">PEDIR ESSA CESTA</button>
+    <dialog id="modal-faq" style="border-radius:20px; width:90%;">
+        <div style="padding:20px;">
+            <h3>Informações</h3>
+            <p style="margin-top:10px; color:#555;">CNPJ: 00.000.000/0001-00</p>
+            <p style="color:#555;">(65) 98449-1018</p>
+            <button onclick="document.getElementById('modal-faq').close()" style="margin-top:20px; width:100%; padding:10px; background:#eee; border-radius:10px;">Fechar</button>
         </div>
-    </dialog>
-
-    <dialog id="modal-faq">
-        <div class="modal-head"><h3>Ajuda</h3><button onclick="document.getElementById('modal-faq').close()" style="font-size:1.5rem;">✕</button></div>
-        <div class="modal-body">
-            <details><summary>Entrega</summary><div class="ans">Cuiabá e Várzea Grande. Combinamos o horário no WhatsApp.</div></details>
-            <details><summary>Pagamento</summary><div class="ans">Pague somente na entrega via PIX, Dinheiro ou Cartão.</div></details>
-            <details><summary>Posso mudar itens?</summary><div class="ans">Sim! Clique em "Personalizar". Você pode trocar ou retirar até 30% dos itens.</div></details>
-            <div class="company-info">
-                <div class="logo" style="width:50px; height:50px; margin:0 auto; font-size:1.5rem;">D</div>
-                <div class="company-name">Super Cestas Dona Antônia</div>
-                <div class="company-data">
-                    CNPJ: 00.000.000/0001-00<br>Atendimento Online - Cuiabá e VG<br>
-                    <strong>(65) 98449-1018</strong>
-                </div>
-            </div>
-        </div>
-    </dialog>
-
-    <dialog id="zoom-modal" onclick="this.close()" style="background:transparent; box-shadow:none; text-align:center;">
-        <img id="zoom-img" src="" style="max-width:95vw; max-height:80vh; border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
     </dialog>
 
     <script>
-        /* --- LOGIC CORE --- */
-        const MESSAGES = [
-            { text: "Entrega Grátis em Cuiabá e VG", color: "var(--banner-green)" },
-            { text: "3x Sem Juros no Cartão", color: "var(--banner-blue)" },
-            { text: "Pague só na Entrega", color: "var(--banner-orange)" }
-        ];
-        let msgIndex = 0;
-        function rotateBanner() {
-            msgIndex = (msgIndex + 1) % MESSAGES.length;
-            const bar = document.getElementById('ticker');
-            const txt = document.getElementById('ticker-text');
-            txt.style.opacity = 0;
-            setTimeout(() => {
-                bar.style.backgroundColor = MESSAGES[msgIndex].color;
-                txt.innerText = MESSAGES[msgIndex].text;
-                txt.style.opacity = 1;
-            }, 500);
-        }
-        setInterval(rotateBanner, 3500);
-
+        /* CONFIGURAÇÕES GERAIS */
         const CONFIG = { whatsapp: "5565984491018", maxRemoval: 0.3 };
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
         async function init() {
             try {
+                // Carregamento paralelo para velocidade
                 const [p, c] = await Promise.all([fetch('produtos.json'), fetch('produtos-cesta-basica.json')]);
                 const pd = await p.json();
                 const cd = await c.json();
@@ -394,27 +274,30 @@
                     id: String(x.ID),
                     name: x.Descrição,
                     price: parseFloat(String(x.Preço).replace('R$','').replace(/\./g,'').replace(',', '.')),
-                    cat: x["Categoria do produto"] || "Geral",
+                    // LOGICA DE SUBCATEGORIA: Pega apenas o último item após ">>"
+                    cat: x["Categoria do produto"] ? x["Categoria do produto"].split('>>').pop().trim() : "Geral",
                     img: x.imagem ? "img/produtos/" + x.imagem.split('/').pop() : null
                 }));
                 DB_CESTAS = cd;
                 renderHome();
-            } catch { document.getElementById('cestas-container').innerHTML = "Erro ao carregar dados."; }
+            } catch { document.getElementById('cestas-container').innerHTML = "Erro ao carregar."; }
         }
 
+        /* --- NAVEGAÇÃO --- */
         function goHome() {
             document.getElementById('view-home').classList.add('active');
             document.getElementById('view-catalogo').classList.remove('active');
             document.getElementById('btn-back').style.display = 'none';
             document.getElementById('cart-bar').style.display = 'none';
-            document.getElementById('page-title').innerText = "Super Cestas";
-            document.getElementById('status-toast').style.display = 'none';
+            document.getElementById('page-title').innerText = "Dona Antônia";
         }
 
         function goCatalog(id) {
             window.scrollTo(0,0);
             CURR_CESTA = DB_CESTAS.find(c => c.id === id);
             CART = {}; ORIG_COUNTS = {}; ORIG_TOTAL = 0;
+            
+            // Popula o carrinho inicial com base na cesta
             CURR_CESTA.produtos.forEach(s => {
                 const [q, pid] = s.split('x ');
                 const iq = parseInt(q), cid = pid.trim();
@@ -422,19 +305,22 @@
                     CART[cid] = iq; ORIG_COUNTS[cid] = iq; ORIG_TOTAL += iq;
                 }
             });
+
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-catalogo').classList.add('active');
             document.getElementById('btn-back').style.display = 'block';
             document.getElementById('cart-bar').style.display = 'flex';
-            document.getElementById('page-title').innerText = CURR_CESTA.nome;
+            document.getElementById('page-title').innerText = CURR_CESTA.nome; // Título simples
+            
             renderCatalog();
             updateTotals();
         }
 
+        /* --- RENDERIZADORES --- */
         function renderHome() {
             const div = document.getElementById('cestas-container');
             div.innerHTML = "";
-            const ph = svgPlace();
+            const ph = svgPlace(); // Placeholder
             DB_CESTAS.forEach(c => {
                 const img = c.imagem || ph;
                 div.innerHTML += `
@@ -442,8 +328,8 @@
                     <div class="cesta-img-wrap"><img src="${img}" class="cesta-img" loading="lazy" onclick="zoom('${img}')"></div>
                     <div class="cesta-content">
                         <div class="cesta-name">${c.nome}</div>
-                        <span class="cesta-info">${c.produtos.length} Itens</span>
-                        <span class="cesta-price">${fmt(c.preco)}</span>
+                        <span style="font-size:0.85rem; color:#888;">${c.produtos.length} Itens Selecionados</span>
+                        <div class="cesta-price">${fmt(c.preco)}</div>
                         <div class="cesta-actions">
                             <button class="btn-card btn-outline" onclick="details('${c.id}')">Ver Itens</button>
                             <button class="btn-card btn-primary" onclick="goCatalog('${c.id}')">Personalizar</button>
@@ -455,92 +341,112 @@
 
         function renderCatalog() {
             const div = document.getElementById('catalog-content');
-            div.innerHTML = "";
             const ph = svgPlace();
-            let html = `<div class="list-header"><span class="list-title">ITENS DA CESTA</span></div><div class="basket-scroll">`;
+            
+            // 1. HEADER: ITENS JÁ NA CESTA (Horizontal Scroll)
+            let html = `<div style="margin-bottom:20px;">
+                <h3 style="font-size:1rem; color:#888; margin-bottom:10px;">Itens Inclusos na Cesta</h3>
+                <div class="basket-scroll">`;
+            
             Object.keys(ORIG_COUNTS).forEach(id => {
                 const p = DB_PROD.find(x => x.id === id);
                 if(!p) return;
                 const qty = CART[id] || 0;
+                // Chip pequeno com foto e controle
                 html += `
                 <div class="chip-item">
-                    <img src="${p.img || ph}" class="chip-img" onclick="zoom('${p.img||ph}')">
-                    <div class="ctrl-float">
-                        <button class="btn-mini" onclick="upd('${id}', -1)">-</button>
-                        <span class="val-mini qty-${id}">${qty}</span>
-                        <button class="btn-mini" onclick="upd('${id}', 1)">+</button>
+                    <img src="${p.img || ph}" style="width:50px; height:50px; object-fit:contain;" onclick="zoom('${p.img||ph}')">
+                    <div style="font-weight:700; font-size:0.8rem; margin:5px 0;">${qty}un</div>
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        <button onclick="upd('${id}', -1)" style="background:#eee; width:24px; height:24px; border-radius:50%; font-weight:bold;">-</button>
+                        <button onclick="upd('${id}', 1)" style="background:#eee; width:24px; height:24px; border-radius:50%; font-weight:bold;">+</button>
                     </div>
                 </div>`;
             });
-            html += `</div>`;
-            html += `<div class="list-header"><span class="list-title">ADICIONAR PRODUTOS</span></div>`;
+            html += `</div></div>`;
+
+            // 2. AGRUPAMENTO POR SUBCATEGORIA LIMPA
             const cats = {};
             DB_PROD.forEach(p => {
-                const c = p.cat.split('>>')[0].trim();
+                // A limpeza da string já foi feita no init()
+                const c = p.cat; 
                 if(!cats[c]) cats[c] = [];
                 cats[c].push(p);
             });
+
+            // 3. GRID DE PRODUTOS (Visual iFood Market)
             for(const c in cats) {
-                html += `<div style="margin:20px 0 10px; font-weight:700; color:#888; text-transform:uppercase; font-size:0.85rem; letter-spacing:1px;">${c}</div>`;
+                html += `<div class="cat-title">${c}</div>`;
+                html += `<div class="products-grid">`; // Grid 2 Colunas
+                
                 cats[c].forEach(p => {
                     const q = CART[p.id] || 0;
                     const activeClass = q > 0 ? 'active' : '';
-                    // UX: Botões Pílula Vertical
-                    const btnHtml = q > 0 
-                        ? `<div class="qty-pill">
-                               <button class="btn-qty-v" onclick="upd('${p.id}', 1)">+</button>
-                               <span class="val-qty-v qty-${p.id}">${q}</span>
-                               <button class="btn-qty-v" onclick="upd('${p.id}', -1)">-</button>
+                    const imgSrc = p.img || ph;
+
+                    // Botão Condicional (Adicionar vs Controle de Qtde)
+                    const actionHtml = q > 0 
+                        ? `<div class="qty-control">
+                               <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
+                               <span class="val-q">${q}</span>
+                               <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
                            </div>`
-                        : `<button class="btn-add-bg" onclick="upd('${p.id}', 1)">+</button>`;
+                        : `<button class="btn-add-simple" onclick="upd('${p.id}', 1)">ADICIONAR</button>`;
 
                     html += `
-                    <div class="prod-item ${activeClass}" id="card-${p.id}">
-                        <img src="${p.img || ph}" class="prod-img" loading="lazy" onclick="zoom('${p.img||ph}')">
-                        <div class="prod-info">
-                            <div class="prod-name">${p.name}</div>
-                            <div class="prod-price">${fmt(p.price)}</div>
+                    <div class="prod-card ${activeClass}" id="card-${p.id}">
+                        <div class="prod-img-box">
+                            <img src="${imgSrc}" class="prod-img" loading="lazy" onclick="zoom('${imgSrc}')">
                         </div>
-                        <div id="act-${p.id}">${btnHtml}</div>
+                        <div class="prod-price">${fmt(p.price)}</div>
+                        <div class="prod-name">${p.name}</div>
+                        <div class="action-area" id="act-${p.id}">
+                            ${actionHtml}
+                        </div>
                     </div>`;
                 });
+                html += `</div>`; // fecha products-grid
             }
             div.innerHTML = html;
         }
 
+        /* --- LÓGICA DO CARRINHO --- */
         function upd(id, d) {
-            // Haptic Feedback (Vibração leve) para UX tátil
-            if(navigator.vibrate) navigator.vibrate(5); 
+            if(navigator.vibrate) navigator.vibrate(10); // Feedback tátil leve
 
             if(!CART[id]) CART[id] = 0;
             const nq = CART[id] + d;
+
+            // Regra: Mínimo 70% dos itens originais
             if (d < 0 && ORIG_COUNTS[id]) {
                 let currOrig = 0;
                 for(let k in CART) if(ORIG_COUNTS[k]) currOrig += Math.min(k===id ? nq : CART[k], ORIG_COUNTS[k]);
                 const minAllowed = Math.ceil(ORIG_TOTAL * (1 - CONFIG.maxRemoval));
                 if (currOrig < minAllowed) {
-                    showToast(`⚠️ Você deve manter pelo menos ${minAllowed} itens da cesta original.`);
+                    showToast(`Mínimo de itens originais atingido.`);
                     return;
                 }
             }
             if(nq < 0) return;
+
             CART[id] = nq;
-            document.querySelectorAll(`.qty-${id}`).forEach(e => e.innerText = nq);
+            
+            // Atualiza UI do Card Específico (Sem renderizar tudo)
             const card = document.getElementById(`card-${id}`);
-            if(card) {
-                if(nq > 0) card.classList.add('active');
-                else card.classList.remove('active');
-                const actDiv = document.getElementById(`act-${id}`);
-                if(actDiv) {
-                    if(nq === 0) actDiv.innerHTML = `<button class="btn-add-bg" onclick="upd('${id}', 1)">+</button>`;
-                    else if(nq === 1 && d === 1) {
-                         actDiv.innerHTML = `
-                           <div class="qty-pill">
-                               <button class="btn-qty-v" onclick="upd('${id}', 1)">+</button>
-                               <span class="val-qty-v qty-${id}">${nq}</span>
-                               <button class="btn-qty-v" onclick="upd('${id}', -1)">-</button>
-                           </div>`;
-                    }
+            const actDiv = document.getElementById(`act-${id}`);
+            
+            if(card && actDiv) {
+                if(nq > 0) {
+                    card.classList.add('active');
+                    actDiv.innerHTML = `
+                       <div class="qty-control">
+                           <button class="btn-q" onclick="upd('${id}', -1)">-</button>
+                           <span class="val-q">${nq}</span>
+                           <button class="btn-q" onclick="upd('${id}', 1)">+</button>
+                       </div>`;
+                } else {
+                    card.classList.remove('active');
+                    actDiv.innerHTML = `<button class="btn-add-simple" onclick="upd('${id}', 1)">ADICIONAR</button>`;
                 }
             }
             updateTotals();
@@ -548,74 +454,52 @@
 
         function updateTotals() {
             let u=0, o=0;
+            // Cálculo diferencial (Custo base + Adicionais - Removidos)
             for(let k in CART) u += (DB_PROD.find(x=>x.id===k)?.price||0) * CART[k];
             for(let k in ORIG_COUNTS) o += (DB_PROD.find(x=>x.id===k)?.price||0) * ORIG_COUNTS[k];
+            
             const total = CURR_CESTA.preco + (u - o);
             window.finalTotal = total;
             document.getElementById('total-display').innerText = fmt(total);
+
+            // Validação de Preço Mínimo
             const btn = document.getElementById('btn-finish');
             if(total < CURR_CESTA.preco) {
+                btn.style.background = "#ccc";
+                btn.innerText = "MÍNIMO: " + fmt(CURR_CESTA.preco);
                 btn.disabled = true;
-                btn.innerText = `Mínimo: ${fmt(CURR_CESTA.preco)}`;
-                showToast(`Valor mínimo para esta cesta: ${fmt(CURR_CESTA.preco)}`);
             } else {
-                btn.disabled = false;
+                btn.style.background = "var(--cor-primary)";
                 btn.innerText = "CONCLUIR";
-                document.getElementById('status-toast').style.display = 'none';
+                btn.disabled = false;
             }
         }
 
-        /* --- META PIXEL HELPER (PILAR 2) --- */
-        function trackMetaEvent(eventName, params) {
-            if (typeof fbq === 'function') {
-                try {
-                    fbq('track', eventName, params);
-                    console.log(`📡 Pixel: ${eventName}`, params);
-                } catch (err) { console.error('Erro Pixel', err); }
-            }
-        }
-
-        function details(id) {
-            window.viewId = id;
-            const c = DB_CESTAS.find(x => x.id === id);
-            
-            // TRACKING: Visualização de Produto
-            trackMetaEvent('ViewContent', {
-                content_type: 'product',
-                content_ids: [id],
-                content_name: c.nome,
-                currency: 'BRL',
-                value: c.preco
-            });
-
-            const d = document.getElementById('detail-list'); d.innerHTML = "";
-            c.produtos.forEach(s => {
-                const [q, pid] = s.split('x ');
-                const p = DB_PROD.find(x => x.id === pid.trim());
-                if(p) d.innerHTML += `<div class="rev-row"><span class="rev-qty">${q}</span><span class="rev-nome">${p.name}</span></div>`;
-            });
-            document.getElementById('modal-details').showModal();
+        /* --- PIXEL & EVENTOS --- */
+        function trackEvent(name, data) {
+            if(typeof fbq === 'function') fbq('track', name, data);
         }
 
         function openCheckout() {
-            const d = document.getElementById('checkout-list'); d.innerHTML = "";
+            const list = document.getElementById('checkout-list');
+            list.innerHTML = "";
+            let items = [];
             for(let k in CART) {
                 if(CART[k] > 0) {
-                    const p = DB_PROD.find(x => x.id === k);
-                    d.innerHTML += `<div class="rev-row"><span class="rev-qty">${CART[k]}</span><span class="rev-nome">${p.name}</span></div>`;
+                    const p = DB_PROD.find(x=>x.id===k);
+                    items.push(k);
+                    list.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem; border-bottom:1px dashed #eee; padding-bottom:5px;">
+                        <span>${CART[k]}x ${p.name}</span><span>${fmt(p.price * CART[k])}</span>
+                    </div>`;
                 }
             }
             document.getElementById('checkout-total').innerText = fmt(window.finalTotal);
             
-            // TRACKING: Intenção de Compra
-            const itemIds = Object.keys(CART).filter(k => CART[k] > 0);
-            trackMetaEvent('InitiateCheckout', {
-                currency: 'BRL',
-                value: window.finalTotal,
-                num_items: itemIds.length,
-                content_ids: itemIds
+            trackEvent('InitiateCheckout', {
+                value: window.finalTotal, currency: 'BRL',
+                content_ids: items, num_items: items.length
             });
-
+            
             document.getElementById('modal-checkout').showModal();
         }
 
@@ -625,63 +509,42 @@
             const a = document.getElementById('cust-addr').value;
             const p = document.getElementById('cust-pay').value;
 
-            // TRACKING: Conversão (Purchase)
-            // IMPORTANTE: Troque 'SEU_ID_DO_PIXEL_AQUI' pelo ID numérico do Pixel
-            if (typeof fbq === 'function') fbq('init', 'SEU_ID_DO_PIXEL_AQUI');
-
-            const itemIds = Object.keys(CART).filter(k => CART[k] > 0);
-            trackMetaEvent('Purchase', {
-                currency: 'BRL',
-                value: window.finalTotal,
-                content_type: 'product',
-                content_ids: itemIds,
-                num_items: itemIds.reduce((acc, curr) => acc + CART[curr], 0)
+            // Pixel Purchase
+            const items = Object.keys(CART).filter(k=>CART[k]>0);
+            trackEvent('Purchase', {
+                value: window.finalTotal, currency: 'BRL',
+                content_ids: items, num_items: items.reduce((a,c)=>a+CART[c],0)
             });
 
-            let m = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📍 ${a}\n💰 ${p}\n\n`;
+            // Monta msg
+            let m = `*NOVO PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
             for(let k in CART) if(CART[k]>0) m += `${CART[k]}x ${DB_PROD.find(x=>x.id===k).name}\n`;
-            m += `\n*TOTAL: ${fmt(window.finalTotal)}*`;
+            m += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
 
-            // Delay seguro para o Pixel disparar antes do redirecionamento
             setTimeout(() => {
                 window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(m)}`;
-            }, 300);
+            }, 500);
         }
 
-        function orderDirect() {
-            const c = DB_CESTAS.find(x => x.id === window.viewId);
-            window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent("Quero encomendar a " + c.nome + " por " + fmt(c.preco))}`;
-        }
-        
-        function showToast(msg) {
-            const t = document.getElementById('status-toast');
-            t.innerText = msg; t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        }
+        /* UTILS */
         function fmt(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+        function showToast(m) { const t=document.getElementById('status-toast'); t.innerText=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
         function svgPlace() { return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjRTI1QzZDIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjwvc3ZnPg=="; }
-        function zoom(s) { document.getElementById('zoom-img').src=s; document.getElementById('zoom-modal').showModal(); }
+        // Zoom com fundo branco
+        function zoom(src) { 
+            document.getElementById('zoom-img').src = src; 
+            document.getElementById('zoom-modal').showModal(); 
+        }
 
         init();
-    </script>
 
-    <script>
-    (function() {
-        const meuDominioOficial = ''; // Ex: 'seusite.com.br' (Preencha ao publicar)
-
-        if (meuDominioOficial && window.location.hostname !== meuDominioOficial && window.location.hostname !== 'localhost') {
-            alert('Atenção: Acesso não autorizado. Redirecionando para o site oficial.');
-            window.location.href = 'https://' + meuDominioOficial;
-        }
-
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        document.onkeydown = function(e) {
-            if(e.keyCode == 123) return false; 
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
-        }
-        console.log('%c STOP! ', 'color: red; font-size: 30px; font-weight: bold;');
-    })();
+        /* SECURITY (ANTI-COPY) */
+        (function(){
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.onkeydown = e => { if(e.keyCode==123 || (e.ctrlKey && e.keyCode==85)) return false; };
+            // Se tiver dominio, descomente:
+            // const h = ''; if(h && window.location.hostname !== h) window.location.href = 'https://'+h;
+        })();
     </script>
 </body>
 </html>
