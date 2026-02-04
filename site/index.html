@@ -380,6 +380,10 @@
             <form onsubmit="sendWhatsapp(event)">
                 <label>Seu Nome</label>
                 <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
+                
+                <label>Celular (WhatsApp)</label>
+                <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999">
+
                 <label>Endereço de Entrega</label>
                 <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
                 <label>Forma de Pagamento</label>
@@ -642,7 +646,6 @@
         function upd(id, d) {
             const prod = DB_PROD.find(x => x.id === id);
             
-            // Impede adicionar se estiver sem estoque (mas permite remover)
             if (prod && prod.stock <= 0 && d > 0) {
                  showToast("Produto esgotado.");
                  return;
@@ -661,7 +664,7 @@
             if(nq < 0) return;
             CART[id] = nq;
             
-            renderCatalog(); // Re-renderiza para atualizar botão se zerar
+            renderCatalog(); 
             updateTotals();
         }
 
@@ -723,11 +726,12 @@
             e.preventDefault();
             
             const n = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value; // PEGA O CELULAR
             const a = document.getElementById('cust-addr').value;
             const p = document.getElementById('cust-pay').value;
             
             const itensMake = [];
-            let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
+            let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
             
             const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
             trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
@@ -751,7 +755,11 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        "cliente": { "nome": n, "celular": "", "endereco": a },
+                        "cliente": { 
+                            "nome": n, 
+                            "celular": phone, // ENVIA O CELULAR
+                            "endereco": a 
+                        },
                         "pedido": {
                             "itens": itensMake,
                             "total": window.finalTotal,
