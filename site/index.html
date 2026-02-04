@@ -46,7 +46,7 @@
             --cor-surface: #FFFFFF;
             --cor-text-main: #1D3557;
             --cor-text-sec: #6c757d;
-            --cat-bg: #E7ECEF; /* Cor de fundo dos titulos */
+            --cat-bg: #E7ECEF;
             
             /* Formas */
             --radius-box: 20px;
@@ -99,21 +99,30 @@
 
         /* --- VISUALIZAÇÃO (VIEWS) --- */
         main { display: block; width: 100%; }
-        .view { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .view { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
         .view.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* --- CARDS DE CESTAS (HOME) --- */
-        .grid-cestas { display: grid; gap: 24px; padding-top: 10px; }
+        .grid-cestas { 
+            display: grid; 
+            gap: 24px; 
+            padding-top: 10px;
+            grid-template-columns: 1fr; /* Mobile: 1 coluna */
+        }
+        /* Desktop Home: 3 Colunas */
+        @media (min-width: 900px) {
+            .grid-cestas { grid-template-columns: repeat(3, 1fr); }
+        }
         
         .cesta-card {
             background: var(--cor-surface); border-radius: var(--radius-box);
             overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             transition: transform 0.2s;
+            display: flex; flex-direction: column;
         }
         .cesta-card:active { transform: scale(0.98); }
 
-        /* FOTOS QUADRADAS NA HOME */
         .cesta-img-wrap { 
             width: 100%; 
             aspect-ratio: 1 / 1; 
@@ -122,13 +131,14 @@
         }
         .cesta-img { width: 100%; height: 100%; object-fit: cover; }
         
-        .cesta-content { padding: 20px; }
+        .cesta-content { padding: 20px; display: flex; flex-direction: column; flex: 1; }
         .cesta-name { font-size: 1.3rem; margin-bottom: 4px; color: var(--cor-text-main); }
         .cesta-info { 
             display: inline-block; background: #EDF2F4; color: var(--cor-text-sec); 
             padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; margin-bottom: 12px;
+            align-self: flex-start;
         }
-        .cesta-price { font-size: 1.6rem; font-weight: 800; color: var(--cor-primary); display: block; margin-bottom: 16px; }
+        .cesta-price { font-size: 1.6rem; font-weight: 800; color: var(--cor-primary); display: block; margin-bottom: 16px; margin-top: auto; }
         
         .cesta-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px; }
         .btn-card { 
@@ -141,23 +151,25 @@
             box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3); 
         }
 
-        /* --- CATÁLOGO ESTILO IFOOD (GRID LIMPO) --- */
-        
-        /* TÍTULOS DE CATEGORIA DESTACADOS */
+        /* --- CATÁLOGO ESTILO IFOOD --- */
         .cat-title {
             font-size: 1.1rem; font-weight: 800; color: var(--cor-text-main);
             margin: 40px 0 15px 0; 
             text-transform: uppercase; letter-spacing: 0.5px;
-            background: var(--cat-bg); /* Fundo claro destacado */
+            background: var(--cat-bg);
             padding: 12px 16px;
             border-radius: 12px;
-            border-left: 5px solid var(--cor-primary); /* Detalhe lateral */
+            border-left: 5px solid var(--cor-primary);
         }
         
         .products-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 2 COLUNAS */
+            grid-template-columns: 1fr 1fr; /* Mobile: 2 colunas */
             gap: 15px;
+        }
+        /* Desktop Catálogo: 4 Colunas */
+        @media (min-width: 900px) {
+            .products-grid { grid-template-columns: repeat(4, 1fr); }
         }
 
         .prod-card {
@@ -174,7 +186,7 @@
         .prod-card.active { border-color: var(--cor-primary); background: #FFFBFB; }
 
         .prod-img-box {
-            width: 100%; height: 130px; /* FOTO GRANDE */
+            width: 100%; height: 130px;
             margin-bottom: 10px;
             display: flex; align-items: center; justify-content: center;
         }
@@ -186,13 +198,12 @@
 
         .prod-price { font-size: 1.1rem; font-weight: 800; color: var(--cor-primary); margin-bottom: 4px; }
         
-        /* NOME DO PRODUTO EM ATÉ 3 LINHAS */
         .prod-name { 
             font-size: 0.9rem; color: #555; font-weight: 500; 
             line-height: 1.3; margin-bottom: 15px;
-            display: -webkit-box; -webkit-line-clamp: 3; /* Permite 3 linhas */
+            display: -webkit-box; -webkit-line-clamp: 3;
             -webkit-box-orient: vertical; overflow: hidden; 
-            min-height: 52px; /* Altura mínima para alinhar */
+            min-height: 52px;
         }
 
         .action-area { width: 100%; margin-top: auto; }
@@ -210,32 +221,34 @@
         .btn-q { width: 30px; height: 30px; font-size: 1.2rem; display: grid; place-items: center; font-weight: bold; }
         .val-q { font-weight: 700; font-size: 1.1rem; }
 
-        /* --- LISTA HORIZONTAL (TOPO - ITENS DA CESTA) AUMENTADA --- */
+        /* --- LISTA HORIZONTAL (ITENS DA CESTA) --- */
         .basket-scroll {
             display: flex; gap: 12px; overflow-x: auto; padding: 10px 5px 25px; scroll-behavior: smooth;
         }
-        .basket-scroll::-webkit-scrollbar { display: none; }
+        /* Barra de rolagem visível e estilizada */
+        .basket-scroll::-webkit-scrollbar { height: 8px; }
+        .basket-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .basket-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        .basket-scroll::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         
-        /* CARD NO TOPO (AUMENTADO PARA 135px e FOTO GRANDE) */
         .chip-item {
-            flex: 0 0 135px; /* Bem maior, aprox 2.5 cards na tela */
+            flex: 0 0 135px;
             background: white; padding: 12px; border-radius: 16px;
             border: 1px solid #e0e0e0; text-align: center;
             display: flex; flex-direction: column; align-items: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        
-        /* Botões de controle no topo maiores também */
         .ctrl-top { display: flex; gap: 10px; margin-top: 8px; align-items: center; }
         .btn-mini-top { width: 32px; height: 32px; background: #f0f0f0; border-radius: 50%; font-weight: bold; font-size: 1.2rem; display: grid; place-items: center; color: var(--cor-primary); }
 
-        /* --- BARRA FLUTUANTE DE TOTAL --- */
+        /* --- BARRA FLUTUANTE --- */
         .float-bar {
             position: fixed; bottom: 20px; left: 15px; right: 15px;
             background: #222; color: white;
             padding: 12px 20px; border-radius: 50px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.25);
             display: none; justify-content: space-between; align-items: center; z-index: 90;
+            max-width: 600px; margin: 0 auto;
         }
         .total-lbl { font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; font-weight: 700; }
         .total-val { font-size: 1.3rem; font-weight: 700; }
@@ -245,7 +258,7 @@
         }
         .btn-finish:disabled { background: #555; color: #aaa; }
 
-        /* --- MODAIS E DIALOGS --- */
+        /* --- MODAIS --- */
         dialog {
             border: none; border-radius: 24px; padding: 0; width: 90%; max-width: 450px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3); background: var(--cor-surface);
@@ -263,7 +276,6 @@
         .input-box:focus { border-color: var(--cor-primary); background: white; }
         label { display: block; margin-bottom: 6px; font-weight: 700; color: var(--cor-text-main); font-size: 0.9rem; }
 
-        /* LISTA LIMPA (CHECKOUT) */
         .clean-item {
             display: flex; align-items: center; justify-content: flex-start;
             padding: 10px 0; border-bottom: 1px solid #f0f0f0; gap: 15px;
@@ -274,7 +286,7 @@
         }
         .clean-name { font-size: 0.95rem; color: #333; font-weight: 500; }
 
-        /* --- FAQ ORIGINAL --- */
+        /* --- FAQ --- */
         details { background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
         summary { padding: 15px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; color: #333; }
         .ans { padding: 0 15px 15px; color: #555; line-height: 1.4; }
@@ -491,7 +503,6 @@
             div.innerHTML = "";
             const ph = svgPlace();
             
-            // TOPO: ITENS JÁ NA CESTA (AGORA MAIORES)
             let html = `<div style="margin-bottom:30px;">
                 <h3 style="font-size:1rem; color:#888; margin-bottom:10px; padding-left:5px;">Itens da Cesta</h3>
                 <div class="basket-scroll">`;
@@ -500,7 +511,6 @@
                 const p = DB_PROD.find(x => x.id === id);
                 if(!p) return;
                 const qty = CART[id] || 0;
-                // FOTO GRANDE E CARD MAIOR (135px)
                 html += `
                 <div class="chip-item">
                     <img src="${p.img || ph}" style="width:100px; height:100px; object-fit:contain;" onclick="zoom('${p.img||ph}')">
@@ -513,7 +523,6 @@
             });
             html += `</div></div>`;
 
-            // GRID DE PRODUTOS
             const cats = {};
             DB_PROD.forEach(p => { const c = p.cat; if(!cats[c]) cats[c] = []; cats[c].push(p); });
 
