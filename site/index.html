@@ -46,12 +46,8 @@
             --cor-surface: #FFFFFF;
             --cor-text-main: #1D3557;
             --cor-text-sec: #6c757d;
+            --cat-bg: #E7ECEF; /* Cor de fundo dos titulos */
             
-            /* Cores Auxiliares */
-            --banner-green: #2A9D8F;
-            --banner-blue: #457B9D;
-            --banner-orange: #F4A261;
-
             /* Formas */
             --radius-box: 20px;
             --radius-btn: 50px;
@@ -117,7 +113,13 @@
         }
         .cesta-card:active { transform: scale(0.98); }
 
-        .cesta-img-wrap { width: 100%; height: 200px; background: #EDF2F4; position: relative; }
+        /* FOTOS QUADRADAS NA HOME */
+        .cesta-img-wrap { 
+            width: 100%; 
+            aspect-ratio: 1 / 1; 
+            background: #EDF2F4; 
+            position: relative; 
+        }
         .cesta-img { width: 100%; height: 100%; object-fit: cover; }
         
         .cesta-content { padding: 20px; }
@@ -140,10 +142,16 @@
         }
 
         /* --- CATÁLOGO ESTILO IFOOD (GRID LIMPO) --- */
+        
+        /* TÍTULOS DE CATEGORIA DESTACADOS */
         .cat-title {
-            font-size: 1.3rem; font-weight: 700; color: #333;
-            margin: 30px 0 15px 5px; position: relative;
-            text-transform: capitalize; letter-spacing: -0.5px;
+            font-size: 1.1rem; font-weight: 800; color: var(--cor-text-main);
+            margin: 40px 0 15px 0; 
+            text-transform: uppercase; letter-spacing: 0.5px;
+            background: var(--cat-bg); /* Fundo claro destacado */
+            padding: 12px 16px;
+            border-radius: 12px;
+            border-left: 5px solid var(--cor-primary); /* Detalhe lateral */
         }
         
         .products-grid {
@@ -163,7 +171,6 @@
             transition: all 0.2s;
             position: relative;
         }
-        /* Item selecionado ganha destaque sutil */
         .prod-card.active { border-color: var(--cor-primary); background: #FFFBFB; }
 
         .prod-img-box {
@@ -173,18 +180,21 @@
         }
         .prod-img {
             width: 100%; height: 100%;
-            object-fit: contain; /* Produto inteiro visível */
-            mix-blend-mode: multiply; /* Fundo transparente visual */
+            object-fit: contain; 
+            mix-blend-mode: multiply;
         }
 
         .prod-price { font-size: 1.1rem; font-weight: 800; color: var(--cor-primary); margin-bottom: 4px; }
+        
+        /* NOME DO PRODUTO EM ATÉ 3 LINHAS */
         .prod-name { 
             font-size: 0.9rem; color: #555; font-weight: 500; 
             line-height: 1.3; margin-bottom: 15px;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 38px;
+            display: -webkit-box; -webkit-line-clamp: 3; /* Permite 3 linhas */
+            -webkit-box-orient: vertical; overflow: hidden; 
+            min-height: 52px; /* Altura mínima para alinhar */
         }
 
-        /* Botões do Catálogo */
         .action-area { width: 100%; margin-top: auto; }
         
         .btn-add-simple {
@@ -200,15 +210,24 @@
         .btn-q { width: 30px; height: 30px; font-size: 1.2rem; display: grid; place-items: center; font-weight: bold; }
         .val-q { font-weight: 700; font-size: 1.1rem; }
 
-        /* --- LISTA HORIZONTAL (TOPO DO CATÁLOGO) --- */
+        /* --- LISTA HORIZONTAL (TOPO - ITENS DA CESTA) AUMENTADA --- */
         .basket-scroll {
-            display: flex; gap: 10px; overflow-x: auto; padding: 10px 5px 20px; scroll-behavior: smooth;
+            display: flex; gap: 12px; overflow-x: auto; padding: 10px 5px 25px; scroll-behavior: smooth;
         }
+        .basket-scroll::-webkit-scrollbar { display: none; }
+        
+        /* CARD NO TOPO (AUMENTADO PARA 135px e FOTO GRANDE) */
         .chip-item {
-            flex: 0 0 90px; background: white; padding: 10px; border-radius: 14px;
-            border: 1px solid #eee; text-align: center;
+            flex: 0 0 135px; /* Bem maior, aprox 2.5 cards na tela */
+            background: white; padding: 12px; border-radius: 16px;
+            border: 1px solid #e0e0e0; text-align: center;
             display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
+        
+        /* Botões de controle no topo maiores também */
+        .ctrl-top { display: flex; gap: 10px; margin-top: 8px; align-items: center; }
+        .btn-mini-top { width: 32px; height: 32px; background: #f0f0f0; border-radius: 50%; font-weight: bold; font-size: 1.2rem; display: grid; place-items: center; color: var(--cor-primary); }
 
         /* --- BARRA FLUTUANTE DE TOTAL --- */
         .float-bar {
@@ -236,7 +255,6 @@
         .modal-head { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
         .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
         
-        /* Input Styles */
         .input-box {
             width: 100%; padding: 14px; border: 2px solid #EDF2F4; 
             border-radius: 12px; font-size: 1rem; margin-bottom: 16px;
@@ -256,7 +274,7 @@
         }
         .clean-name { font-size: 0.95rem; color: #333; font-weight: 500; }
 
-        /* --- FAQ ORIGINAL RESTAURADO (EXATAMENTE COMO VOCÊ GOSTAVA) --- */
+        /* --- FAQ ORIGINAL --- */
         details { background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
         summary { padding: 15px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; color: #333; }
         .ans { padding: 0 15px 15px; color: #555; line-height: 1.4; }
@@ -276,7 +294,6 @@
         .zoom-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .zoom-img-full { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        /* TOAST */
         .status-toast {
             display: none; position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
             background: #333; color: white; padding: 12px 24px; border-radius: 50px;
@@ -351,17 +368,14 @@
             <form onsubmit="sendWhatsapp(event)">
                 <label>Seu Nome</label>
                 <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
-                
                 <label>Endereço de Entrega</label>
                 <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
-                
                 <label>Forma de Pagamento</label>
                 <select id="cust-pay" class="input-box">
                     <option>PIX (Na entrega)</option>
                     <option>Dinheiro (Levar troco?)</option>
                     <option>Cartão (Crédito/Débito)</option>
                 </select>
-                
                 <button type="submit" class="btn-finish" style="width:100%; padding: 15px; font-size: 1.1rem;">ENVIAR PEDIDO AGORA</button>
             </form>
         </div>
@@ -413,7 +427,6 @@
                     id: String(x.ID),
                     name: x.Descrição,
                     price: parseFloat(String(x.Preço).replace('R$','').replace(/\./g,'').replace(',', '.')),
-                    // CATEGORIAS: PEGA SÓ O ÚLTIMO NOME
                     cat: x["Categoria do produto"] ? x["Categoria do produto"].split('>>').pop().trim() : "Geral",
                     img: x.imagem ? "img/produtos/" + x.imagem.split('/').pop() : null
                 }));
@@ -422,7 +435,6 @@
             } catch { document.getElementById('cestas-container').innerHTML = "Erro ao carregar dados."; }
         }
 
-        /* NAVEGAÇÃO */
         function goHome() {
             document.getElementById('view-home').classList.add('active');
             document.getElementById('view-catalogo').classList.remove('active');
@@ -452,7 +464,6 @@
             updateTotals();
         }
 
-        /* RENDERIZADORES */
         function renderHome() {
             const div = document.getElementById('cestas-container');
             div.innerHTML = "";
@@ -480,8 +491,8 @@
             div.innerHTML = "";
             const ph = svgPlace();
             
-            // LISTA TOPO: ITENS JÁ NA CESTA
-            let html = `<div style="margin-bottom:25px;">
+            // TOPO: ITENS JÁ NA CESTA (AGORA MAIORES)
+            let html = `<div style="margin-bottom:30px;">
                 <h3 style="font-size:1rem; color:#888; margin-bottom:10px; padding-left:5px;">Itens da Cesta</h3>
                 <div class="basket-scroll">`;
             
@@ -489,13 +500,14 @@
                 const p = DB_PROD.find(x => x.id === id);
                 if(!p) return;
                 const qty = CART[id] || 0;
+                // FOTO GRANDE E CARD MAIOR (135px)
                 html += `
                 <div class="chip-item">
-                    <img src="${p.img || ph}" style="width:50px; height:50px; object-fit:contain;" onclick="zoom('${p.img||ph}')">
-                    <div style="font-weight:700; font-size:0.9rem; margin:5px 0;">${qty}un</div>
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="upd('${id}', -1)" style="background:#eee; width:28px; height:28px; border-radius:50%; font-weight:bold;">-</button>
-                        <button onclick="upd('${id}', 1)" style="background:#eee; width:28px; height:28px; border-radius:50%; font-weight:bold;">+</button>
+                    <img src="${p.img || ph}" style="width:100px; height:100px; object-fit:contain;" onclick="zoom('${p.img||ph}')">
+                    <div style="font-weight:700; font-size:1rem; margin:6px 0;">${qty}un</div>
+                    <div class="ctrl-top">
+                        <button class="btn-mini-top" onclick="upd('${id}', -1)">-</button>
+                        <button class="btn-mini-top" onclick="upd('${id}', 1)">+</button>
                     </div>
                 </div>`;
             });
@@ -532,7 +544,6 @@
             div.innerHTML = html;
         }
 
-        /* LÓGICA CARRINHO */
         function upd(id, d) {
             if(navigator.vibrate) navigator.vibrate(10);
             if(!CART[id]) CART[id] = 0;
@@ -581,14 +592,10 @@
             }
         }
 
-        /* AÇÕES DOS MODAIS */
         function details(id) {
             window.viewId = id;
             const c = DB_CESTAS.find(x => x.id === id);
-            
-            // TRACKING: Facebook Pixel
             trackEvent('ViewContent', { content_type: 'product', content_ids: [id], content_name: c.nome, value: c.preco, currency: 'BRL' });
-
             const d = document.getElementById('detail-list'); d.innerHTML = "";
             c.produtos.forEach(s => {
                 const [q, pid] = s.split('x ');
@@ -602,22 +609,14 @@
             const list = document.getElementById('checkout-list'); 
             list.innerHTML = "";
             let items = [];
-            
             for(let k in CART) {
                 if(CART[k] > 0) {
                     const p = DB_PROD.find(x => x.id === k);
                     items.push(k);
-                    // EXIBIÇÃO LIMPA: SEM PREÇO INDIVIDUAL
-                    list.innerHTML += `
-                    <div class="clean-item">
-                        <span class="clean-qty">${CART[k]}</span>
-                        <span class="clean-name">${p.name}</span>
-                    </div>`;
+                    list.innerHTML += `<div class="clean-item"><span class="clean-qty">${CART[k]}</span><span class="clean-name">${p.name}</span></div>`;
                 }
             }
-            
             document.getElementById('checkout-total').innerText = fmt(window.finalTotal);
-            
             trackEvent('InitiateCheckout', { value: window.finalTotal, currency: 'BRL', content_ids: items, num_items: items.length });
             document.getElementById('modal-checkout').showModal();
         }
@@ -627,15 +626,11 @@
             const n = document.getElementById('cust-name').value;
             const a = document.getElementById('cust-addr').value;
             const p = document.getElementById('cust-pay').value;
-
-            // Pixel Purchase
             const items = Object.keys(CART).filter(k=>CART[k]>0);
             trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: items, num_items: items.reduce((a,c)=>a+CART[c],0) });
-
             let m = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
             for(let k in CART) if(CART[k]>0) m += `${CART[k]}x ${DB_PROD.find(x=>x.id===k).name}\n`;
             m += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
-
             setTimeout(() => { window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(m)}`; }, 500);
         }
 
@@ -644,16 +639,12 @@
             window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent("Gostaria de pedir a " + c.nome + " por " + fmt(c.preco))}`;
         }
 
-        /* TRACKING HELPER */
         function trackEvent(name, data) { if(typeof fbq === 'function') fbq('track', name, data); }
-
-        /* UTILITÁRIOS */
         function fmt(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
         function showToast(m) { const t=document.getElementById('status-toast'); t.innerText=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
         function svgPlace() { return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjRTI1QzZDIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjwvc3ZnPg=="; }
         function zoom(src) { document.getElementById('zoom-img').src = src; document.getElementById('zoom-modal').showModal(); }
 
-        /* SEGURANÇA */
         (function(){
             document.addEventListener('contextmenu', e => e.preventDefault());
             document.onkeydown = e => { if(e.keyCode==123 || (e.ctrlKey && e.keyCode==85)) return false; };
