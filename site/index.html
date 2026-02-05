@@ -452,62 +452,71 @@
 
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
-        async function init() {
-            try {
-                // 1. CARREGA AS CESTAS PRIMEIRO (Prioridade Total)
-                try {
-                    const cRes = await fetch('produtos-cesta-basica.json');
-                    if (cRes.ok) {
-                        DB_CESTAS = await cRes.json();
-                        renderHome(); 
-                    } else {
-                        console.error("Erro ao baixar cestas: " + cRes.status);
-                        document.getElementById('cestas-container').innerHTML = "<p style='text-align:center; padding:40px'>Erro ao carregar cestas.</p>";
-                    }
-                } catch (e) { console.error("Erro JSON Cestas:", e); }
+       async function init() {
+    try {
+        // 1. TENTA CARREGAR AS CESTAS (O teu ficheiro produtos-cesta-basica.json)
+        try {
+            const cRes = await fetch('produtos-cesta-basica.json');
+            if (cRes.ok) {
+                DB_CESTAS = await cRes.json();
+                console.log("Cestas carregadas com sucesso:", DB_CESTAS.length);
+                renderHome(); // Mostra as cestas imediatamente
+            } else {
+                console.error("Erro ao carregar ficheiro de cestas. Status:", cRes.status);
+                document.getElementById('cestas-container').innerHTML = "<p style='text-align:center; padding:40px'>Erro ao carregar cestas (Erro 404/500).</p>";
+            }
+        } catch (e) { 
+            console.error("Erro na leitura do JSON de cestas:", e); 
+        }
 
-                // 2. TENTA CARREGAR PRODUTOS (Do Make)
-               // --- DENTRO DA FUNÇÃO init() NO SEU HTML ---
-try {
-    const pRes = await fetch('produtos.json');
-    if (pRes.ok) {
-        let text = await pRes.text();
-        text = text.trim();
-        
-        // Remove possíveis vírgulas ou chaves vazias no final que travam o JSON
-        text = text.replace(/,(\s+)?$/, ""); 
-        
-        // Garante que o texto vire uma lista (Array) válida
-        if (!text.startsWith('[')) text = '[' + text;
-        if (!text.endsWith(']')) text = text + ']';
-
-        const rawProd = JSON.parse(text);
-        
-        DB_PROD = rawProd
-            .filter(x => x && x.situacao === "A") // x && garante que ignora objetos vazios
-            .map(x => {
-                const sId = String(x.id);
-                const sCodigo = x.codigo ? String(x.codigo) : sId;
-                const primeiraLetra = sCodigo.charAt(0).toUpperCase();
+        // 2. TENTA CARREGAR OS PRODUTOS (produtos.json do Make)
+        try {
+            const pRes = await fetch('produtos.json');
+            if (pRes.ok) {
+                let text = await pRes.text();
+                text = text.trim();
                 
-                const nomeCategoria = CATEGORIAS_FIXAS[primeiraLetra] || "Diversos";
+                // Limpeza agressiva para evitar erros de vírgulas extras no fim do JSON
+                text = text.replace(/,(\s+)?$/, ""); 
+                if (!text.startsWith('[')) text = '[' + text;
+                if (!text.endsWith(']')) text = text + ']';
 
-                return {
-                    id: sId,
-                    name: x.nome,
-                    price: parseFloat(x.preco),
-                    cat: nomeCategoria,
-                    stock: x.estoque || 0,
-                    img: x.imagem && x.imagem !== "" ? x.imagem : null
-                };
-            });
-            
-        // Log para você conferir no F12 se carregou tudo
-        console.log("Total de produtos carregados:", DB_PROD.length);
+                const rawProd = JSON.parse(text);
+                
+                DB_PROD = rawProd
+                    .filter(x => x && x.situacao === "A")
+                    .map(x => {
+                        const sId = String(x.id);
+                        const sCodigo = x.codigo ? String(x.codigo) : sId;
+                        const primeiraLetra = sCodigo.charAt(0).toUpperCase();
+                        
+                        // Corrigi aqui: P para Higiene conforme o teu JSON de produtos
+                        const categorias = {
+                            "A": "Mercearia", "B": "Molhos", "C": "Óleos", "D": "Matinais",
+                            "E": "Bebidas", "P": "Higiene Pessoal", "G": "Limpeza",
+                            "H": "Hortifruti", "I": "Açougue"
+                        };
+                        
+                        const nomeCategoria = categorias[primeiraLetra] || "Diversos";
+
+                        return {
+                            id: sId,
+                            name: x.nome,
+                            price: parseFloat(x.preco),
+                            cat: nomeCategoria,
+                            stock: x.estoque || 0,
+                            img: x.imagem && x.imagem !== "" ? x.imagem : null
+                        };
+                    });
+                console.log("Produtos carregados:", DB_PROD.length);
+            }
+        } catch (e) { 
+            console.error("Erro nos produtos:", e); 
+        }
+
+    } catch (err) { 
+        console.error("Erro fatal no carregamento:", err);
     }
-} catch (e) { 
-    console.error("Erro ao processar produtos.json:", e); 
-}
         }
 
         function goHome() {
