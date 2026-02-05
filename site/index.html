@@ -377,23 +377,28 @@
                 <span id="checkout-total" style="font-size:2rem; font-weight:800; color:var(--cor-primary);">R$ 0,00</span>
             </div>
             
-            <form onsubmit="sendWhatsapp(event)">
-                <label>Seu Nome</label>
-                <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
-                
-                <label>Celular (WhatsApp)</label>
-                <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999">
+           <form onsubmit="sendWhatsapp(event)">
+    <label>Seu Nome</label>
+    <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
+    
+    <label>CPF (Para o Cadastro)</label>
+    <input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00">
+    
+    <label>Celular (WhatsApp)</label>
+    <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999">
 
-                <label>Endereço de Entrega</label>
-                <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
-                <label>Forma de Pagamento</label>
-                <select id="cust-pay" class="input-box">
-                    <option>PIX (Na entrega)</option>
-                    <option>Dinheiro (Levar troco?)</option>
-                    <option>Cartão (Crédito/Débito)</option>
-                </select>
-                <button type="submit" class="btn-finish" style="width:100%; padding: 15px; font-size: 1.1rem;">ENVIAR PEDIDO AGORA</button>
-            </form>
+    <label>Endereço de Entrega</label>
+    <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
+    
+    <label>Forma de Pagamento</label>
+    <select id="cust-pay" class="input-box">
+        <option>PIX (Na entrega)</option>
+        <option>Dinheiro (Levar troco?)</option>
+        <option>Cartão (Crédito/Débito)</option>
+    </select>
+    
+    <button type="submit" class="btn-finish" style="width:100%; padding: 15px; font-size: 1.1rem;">ENVIAR PEDIDO AGORA</button>
+</form>
         </div>
     </dialog>
 
@@ -735,90 +740,83 @@
             document.getElementById('modal-checkout').showModal();
         }
 
-        async function sendWhatsapp(e) {
-            e.preventDefault();
-            
-            const n = document.getElementById('cust-name').value;
-            const phone = document.getElementById('cust-phone').value; 
-            const a = document.getElementById('cust-addr').value;
-            const p = document.getElementById('cust-pay').value;
-            
-            // --- 1. PREPARAÇÃO DOS DADOS PARA O MAKE ---
+       // Substitua a função sendWhatsapp antiga inteira por esta:
 
-            // A) Limpa o celular para pegar os ultimos 8 digitos
-            const phoneClean = phone.replace(/\D/g, ''); // Remove tudo que não é número
-            const phoneLast8 = phoneClean.length >= 8 ? phoneClean.slice(-8) : phoneClean;
+async function sendWhatsapp(e) {
+    e.preventDefault();
+    
+    const n = document.getElementById('cust-name').value;
+    const cpf = document.getElementById('cust-cpf').value; // <--- PEGANDO O CPF
+    const phone = document.getElementById('cust-phone').value; 
+    const a = document.getElementById('cust-addr').value;
+    const p = document.getElementById('cust-pay').value;
+    
+    // --- 1. PREPARAÇÃO DOS DADOS ---
 
-            // B) Calcula a Soma dos Produtos individualmente
-            let somaProdutos = 0;
-            const itensMake = [];
-            const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
+    // Soma dos Produtos
+    let somaProdutos = 0;
+    const itensMake = [];
+    const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
 
-            for(let k in CART) {
-                if(CART[k] > 0) {
-                    const produto = DB_PROD.find(x => x.id === k);
-                    
-                    // Soma para o cálculo da diferença
-                    somaProdutos += (produto.price * CART[k]);
+    for(let k in CART) {
+        if(CART[k] > 0) {
+            const produto = DB_PROD.find(x => x.id === k);
+            somaProdutos += (produto.price * CART[k]);
 
-                    itensMake.push({
-                        "id": k,
-                        "nome": produto.name,
-                        "quantidade": CART[k],
-                        "preco_unitario": produto.price
-                    });
-                }
-            }
-
-            // C) Calcula a diferença (Total Site - Soma Produtos)
-            // Ex: Site deu 200, Soma Produtos deu 195 -> Diferença 5 (Taxa/Serviço)
-            // Ex: Site deu 190, Soma Produtos deu 200 -> Diferença -10 (Desconto)
-            let diferenca = window.finalTotal - somaProdutos;
-            // Arredonda para 2 casas decimais para evitar bugs de 0.0000001
-            diferenca = parseFloat(diferenca.toFixed(2));
-
-
-            // --- 2. MONTAGEM DA MENSAGEM DO WHATSAPP ---
-            let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
-            for(let k in CART) {
-                if(CART[k] > 0) {
-                    const produto = DB_PROD.find(x => x.id === k);
-                    mensagemZap += `${CART[k]}x ${produto.name}\n`;
-                }
-            }
-            mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
-
-            
-            // --- 3. ENVIO PARA O MAKE ---
-            trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
-
-            try {
-                fetch(MAKE_WEBHOOK, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        "cliente": { 
-                            "nome": n, 
-                            "celular": phone, 
-                            "celular_limpo_8": phoneLast8, // <--- CAMPO NOVO PRONTO
-                            "endereco": a 
-                        },
-                        "pedido": {
-                            "itens": itensMake,
-                            "total_site": window.finalTotal,
-                            "soma_produtos": somaProdutos,
-                            "diferenca_ajuste": diferenca, // <--- CAMPO NOVO PRONTO
-                            "forma_pagamento": p,
-                            "cesta_origem": CURR_CESTA.nome
-                        }
-                    })
-                });
-            } catch (erro) { console.error(erro); }
-
-            setTimeout(() => { 
-                window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensagemZap)}`; 
-            }, 500); 
+            itensMake.push({
+                "id": k,
+                "nome": produto.name,
+                "quantidade": CART[k],
+                "preco_unitario": produto.price
+            });
         }
+    }
+
+    // Calcula Diferença
+    let diferenca = window.finalTotal - somaProdutos;
+    diferenca = parseFloat(diferenca.toFixed(2));
+
+    // --- 2. MONTAGEM DA MENSAGEM DO WHATSAPP (Incluindo CPF) ---
+    let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📄 CPF: ${cpf}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
+    
+    for(let k in CART) {
+        if(CART[k] > 0) {
+            const produto = DB_PROD.find(x => x.id === k);
+            mensagemZap += `${CART[k]}x ${produto.name}\n`;
+        }
+    }
+    mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
+
+    // --- 3. ENVIO PARA O MAKE (Incluindo CPF) ---
+    trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
+
+    try {
+        fetch(MAKE_WEBHOOK, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                "cliente": { 
+                    "nome": n, 
+                    "cpf": cpf,           // <--- ENVIANDO CPF PRO MAKE
+                    "celular": phone, 
+                    "endereco": a 
+                },
+                "pedido": {
+                    "itens": itensMake,
+                    "total_site": window.finalTotal,
+                    "soma_produtos": somaProdutos,
+                    "diferenca_ajuste": diferenca,
+                    "forma_pagamento": p,
+                    "cesta_origem": CURR_CESTA.nome
+                }
+            })
+        });
+    } catch (erro) { console.error(erro); }
+
+    setTimeout(() => { 
+        window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensagemZap)}`; 
+    }, 500); 
+}
 
         function orderDirect() {
             const c = DB_CESTAS.find(x => x.id === window.viewId);
