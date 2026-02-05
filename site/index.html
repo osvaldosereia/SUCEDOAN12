@@ -467,43 +467,47 @@
                 } catch (e) { console.error("Erro JSON Cestas:", e); }
 
                 // 2. TENTA CARREGAR PRODUTOS (Do Make)
-                try {
-                    const pRes = await fetch('produtos.json');
-                    if (pRes.ok) {
-                        // Conserta JSON quebrado do Make se precisar
-                        let text = await pRes.text();
-                        text = text.trim();
-                        if (text.endsWith(',')) text = text.slice(0, -1);
-                        if (!text.startsWith('[')) text = '[' + text;
-                        if (!text.endsWith(']')) text = text + ']';
+               // --- DENTRO DA FUNÇÃO init() NO SEU HTML ---
+try {
+    const pRes = await fetch('produtos.json');
+    if (pRes.ok) {
+        let text = await pRes.text();
+        text = text.trim();
+        
+        // Remove possíveis vírgulas ou chaves vazias no final que travam o JSON
+        text = text.replace(/,(\s+)?$/, ""); 
+        
+        // Garante que o texto vire uma lista (Array) válida
+        if (!text.startsWith('[')) text = '[' + text;
+        if (!text.endsWith(']')) text = text + ']';
 
-                        const rawProd = JSON.parse(text);
-                        
-                        // Processamento dos produtos
-                        DB_PROD = rawProd
-                            .filter(x => x.situacao === "A") // Não filtra estoque aqui, filtra na tela
-                            .map(x => {
-                                const sId = String(x.id);
-                                const sCodigo = x.codigo ? String(x.codigo) : sId; // Pega o código (ex: AP333) ou usa ID
-                                const primeiraLetra = sCodigo.charAt(0).toUpperCase(); // Primeira letra do CÓDIGO
-                                
-                                const nomeCategoria = CATEGORIAS_FIXAS[primeiraLetra] || "Diversos";
+        const rawProd = JSON.parse(text);
+        
+        DB_PROD = rawProd
+            .filter(x => x && x.situacao === "A") // x && garante que ignora objetos vazios
+            .map(x => {
+                const sId = String(x.id);
+                const sCodigo = x.codigo ? String(x.codigo) : sId;
+                const primeiraLetra = sCodigo.charAt(0).toUpperCase();
+                
+                const nomeCategoria = CATEGORIAS_FIXAS[primeiraLetra] || "Diversos";
 
-                                return {
-                                    id: sId,
-                                    name: x.nome,
-                                    price: parseFloat(x.preco),
-                                    cat: nomeCategoria,
-                                    stock: x.estoque || 0, // Salva o estoque
-                                    img: x.imagem && x.imagem !== "" ? x.imagem : null
-                                };
-                            });
-                    }
-                } catch (e) { console.error("Erro produtos:", e); }
-
-            } catch (err) { 
-                console.error("Erro fatal:", err);
-            }
+                return {
+                    id: sId,
+                    name: x.nome,
+                    price: parseFloat(x.preco),
+                    cat: nomeCategoria,
+                    stock: x.estoque || 0,
+                    img: x.imagem && x.imagem !== "" ? x.imagem : null
+                };
+            });
+            
+        // Log para você conferir no F12 se carregou tudo
+        console.log("Total de produtos carregados:", DB_PROD.length);
+    }
+} catch (e) { 
+    console.error("Erro ao processar produtos.json:", e); 
+}
         }
 
         function goHome() {
