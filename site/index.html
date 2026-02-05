@@ -436,123 +436,56 @@
 
     <script>
         const CONFIG = { whatsapp: "5565984491018", maxRemoval: 0.3 };
-        
-        // --- SEU WEBHOOK DO MAKE ---
         const MAKE_WEBHOOK = "https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il"; 
-
-        // --- DEFINIÇÃO DAS CATEGORIAS DIRETO NO CÓDIGO ---
-        const CATEGORIAS_FIXAS = {
-            "A": "Mercearia",
-            "B": "Molhos e Massas",
-            "C": "Óleos e Temperos",
-            "D": "Matinais e Sobremesas",
-            "E": "Bebidas",
-            "P": "Higiene Pessoal",
-            "G": "Limpeza",
-            "H": "Hortifruti",
-            "I": "Açougue",
-            "1": "Promocionais",
-            "2": "Kits Especiais"
-        };
 
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
-      async function init() {
-    try {
-        // 1. CARREGAR AS CESTAS
-        const cRes = await fetch('produtos-cesta-basica.json');
-        if (cRes.ok) {
-            DB_CESTAS = await cRes.json();
-            renderHome();
-        }
+        async function init() {
+            try {
+                // 1. CARREGAR AS CESTAS
+                const cRes = await fetch('produtos-cesta-basica.json');
+                if (cRes.ok) {
+                    DB_CESTAS = await cRes.json();
+                    renderHome();
+                }
 
-        // 2. CARREGAR OS PRODUTOS (JSON DO MAKE)
-        const pRes = await fetch('produtos.json');
-        if (pRes.ok) {
-            let rawProd = await pRes.json();
-            
-            // Se o JSON vier dentro de uma lista extra por erro do Make, isso corrige:
-            if (Array.isArray(rawProd) && Array.isArray(rawProd[0])) {
-                rawProd = rawProd[0];
-            }
-
-            DB_PROD = rawProd
-                .filter(x => x && x.id && x.situacao === "A") // Filtra apenas se tiver ID e estiver ativo
-                .map(x => {
-                    const sId = String(x.id);
-                    const sCodigo = x.codigo ? String(x.codigo) : sId;
-                    const primeiraLetra = sCodigo.charAt(0).toUpperCase();
+                // 2. CARREGAR OS PRODUTOS (JSON DO MAKE)
+                const pRes = await fetch('produtos.json');
+                if (pRes.ok) {
+                    let rawProd = await pRes.json();
                     
-                    const categorias = {
-                        "A": "Mercearia", "B": "Molhos", "C": "Óleos", "D": "Matinais",
-                        "E": "Bebidas", "P": "Higiene Pessoal", "G": "Limpeza",
-                        "H": "Hortifruti", "I": "Açougue"
-                    };
-                    
-                    return {
-                        id: sId,
-                        name: x.nome,
-                        price: parseFloat(x.preco) || 0,
-                        cat: categorias[primeiraLetra] || "Diversos",
-                        stock: x.estoque || 0,
-                        img: x.imagem && x.imagem !== "" ? x.imagem : null
-                    };
-                });
-            console.log("Produtos carregados:", DB_PROD.length);
-        }
-    } catch (err) { 
-        console.error("Erro ao processar JSON:", err);
-    }
-}
+                    // Correção para listas aninhadas do Make
+                    if (Array.isArray(rawProd) && Array.isArray(rawProd[0])) {
+                        rawProd = rawProd[0];
+                    }
 
-        // 2. TENTA CARREGAR OS PRODUTOS (produtos.json do Make)
-        try {
-            const pRes = await fetch('produtos.json');
-            if (pRes.ok) {
-                let text = await pRes.text();
-                text = text.trim();
-                
-                // Limpeza agressiva para evitar erros de vírgulas extras no fim do JSON
-                text = text.replace(/,(\s+)?$/, ""); 
-                if (!text.startsWith('[')) text = '[' + text;
-                if (!text.endsWith(']')) text = text + ']';
-
-                const rawProd = JSON.parse(text);
-                
-                DB_PROD = rawProd
-                    .filter(x => x && x.situacao === "A")
-                    .map(x => {
-                        const sId = String(x.id);
-                        const sCodigo = x.codigo ? String(x.codigo) : sId;
-                        const primeiraLetra = sCodigo.charAt(0).toUpperCase();
-                        
-                        // Corrigi aqui: P para Higiene conforme o teu JSON de produtos
-                        const categorias = {
-                            "A": "Mercearia", "B": "Molhos", "C": "Óleos", "D": "Matinais",
-                            "E": "Bebidas", "P": "Higiene Pessoal", "G": "Limpeza",
-                            "H": "Hortifruti", "I": "Açougue"
-                        };
-                        
-                        const nomeCategoria = categorias[primeiraLetra] || "Diversos";
-
-                        return {
-                            id: sId,
-                            name: x.nome,
-                            price: parseFloat(x.preco),
-                            cat: nomeCategoria,
-                            stock: x.estoque || 0,
-                            img: x.imagem && x.imagem !== "" ? x.imagem : null
-                        };
-                    });
-                console.log("Produtos carregados:", DB_PROD.length);
+                    DB_PROD = rawProd
+                        .filter(x => x && x.id && x.situacao === "A")
+                        .map(x => {
+                            const sId = String(x.id);
+                            const sCodigo = x.codigo ? String(x.codigo) : sId;
+                            const primeiraLetra = sCodigo.charAt(0).toUpperCase();
+                            
+                            const categorias = {
+                                "A": "Mercearia", "B": "Molhos", "C": "Óleos", "D": "Matinais",
+                                "E": "Bebidas", "P": "Higiene Pessoal", "G": "Limpeza",
+                                "H": "Hortifruti", "I": "Açougue"
+                            };
+                            
+                            return {
+                                id: sId,
+                                name: x.nome,
+                                price: parseFloat(x.preco) || 0,
+                                cat: categorias[primeiraLetra] || "Diversos",
+                                stock: x.estoque || 0,
+                                img: x.imagem && x.imagem !== "" ? x.imagem : null
+                            };
+                        });
+                    console.log("Produtos carregados:", DB_PROD.length);
+                }
+            } catch (err) { 
+                console.error("Erro no carregamento dos dados:", err);
             }
-        } catch (e) { 
-            console.error("Erro nos produtos:", e); 
-        }
-
-    } catch (err) { 
-        console.error("Erro fatal no carregamento:", err);
-    }
         }
 
         function goHome() {
@@ -567,7 +500,6 @@
         function goCatalog(id) {
             if (DB_PROD.length === 0) {
                 showToast("Aguarde, carregando estoque de produtos...");
-                init();
                 return;
             }
 
@@ -771,83 +703,70 @@
             document.getElementById('modal-checkout').showModal();
         }
 
-       // Substitua a função sendWhatsapp antiga inteira por esta:
+        async function sendWhatsapp(e) {
+            e.preventDefault();
+            
+            const n = document.getElementById('cust-name').value;
+            const cpf = document.getElementById('cust-cpf').value;
+            const phone = document.getElementById('cust-phone').value; 
+            const a = document.getElementById('cust-addr').value;
+            const p = document.getElementById('cust-pay').value;
+            
+            let somaProdutos = 0;
+            const itensMake = [];
+            const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
 
-async function sendWhatsapp(e) {
-    e.preventDefault();
-    
-    const n = document.getElementById('cust-name').value;
-    const cpf = document.getElementById('cust-cpf').value; // <--- PEGANDO O CPF
-    const phone = document.getElementById('cust-phone').value; 
-    const a = document.getElementById('cust-addr').value;
-    const p = document.getElementById('cust-pay').value;
-    
-    // --- 1. PREPARAÇÃO DOS DADOS ---
+            for(let k in CART) {
+                if(CART[k] > 0) {
+                    const produto = DB_PROD.find(x => x.id === k);
+                    somaProdutos += (produto.price * CART[k]);
 
-    // Soma dos Produtos
-    let somaProdutos = 0;
-    const itensMake = [];
-    const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
-
-    for(let k in CART) {
-        if(CART[k] > 0) {
-            const produto = DB_PROD.find(x => x.id === k);
-            somaProdutos += (produto.price * CART[k]);
-
-            itensMake.push({
-                "id": k,
-                "nome": produto.name,
-                "quantidade": CART[k],
-                "preco_unitario": produto.price
-            });
-        }
-    }
-
-    // Calcula Diferença
-    let diferenca = window.finalTotal - somaProdutos;
-    diferenca = parseFloat(diferenca.toFixed(2));
-
-    // --- 2. MONTAGEM DA MENSAGEM DO WHATSAPP (Incluindo CPF) ---
-    let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📄 CPF: ${cpf}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
-    
-    for(let k in CART) {
-        if(CART[k] > 0) {
-            const produto = DB_PROD.find(x => x.id === k);
-            mensagemZap += `${CART[k]}x ${produto.name}\n`;
-        }
-    }
-    mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
-
-    // --- 3. ENVIO PARA O MAKE (Incluindo CPF) ---
-    trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
-
-    try {
-        fetch(MAKE_WEBHOOK, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                "cliente": { 
-                    "nome": n, 
-                    "cpf": cpf,           // <--- ENVIANDO CPF PRO MAKE
-                    "celular": phone, 
-                    "endereco": a 
-                },
-                "pedido": {
-                    "itens": itensMake,
-                    "total_site": window.finalTotal,
-                    "soma_produtos": somaProdutos,
-                    "diferenca_ajuste": diferenca,
-                    "forma_pagamento": p,
-                    "cesta_origem": CURR_CESTA.nome
+                    itensMake.push({
+                        "id": k,
+                        "nome": produto.name,
+                        "quantidade": CART[k],
+                        "preco_unitario": produto.price
+                    });
                 }
-            })
-        });
-    } catch (erro) { console.error(erro); }
+            }
 
-    setTimeout(() => { 
-        window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensagemZap)}`; 
-    }, 500); 
-}
+            let diferenca = window.finalTotal - somaProdutos;
+            diferenca = parseFloat(diferenca.toFixed(2));
+
+            let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📄 CPF: ${cpf}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
+            
+            for(let k in CART) {
+                if(CART[k] > 0) {
+                    const produto = DB_PROD.find(x => x.id === k);
+                    mensagemZap += `${CART[k]}x ${produto.name}\n`;
+                }
+            }
+            mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
+
+            trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
+
+            try {
+                fetch(MAKE_WEBHOOK, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        "cliente": { "nome": n, "cpf": cpf, "celular": phone, "endereco": a },
+                        "pedido": {
+                            "itens": itensMake,
+                            "total_site": window.finalTotal,
+                            "soma_produtos": somaProdutos,
+                            "diferenca_ajuste": diferenca,
+                            "forma_pagamento": p,
+                            "cesta_origem": CURR_CESTA.nome
+                        }
+                    })
+                });
+            } catch (erro) { console.error(erro); }
+
+            setTimeout(() => { 
+                window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensagemZap)}`; 
+            }, 500); 
+        }
 
         function orderDirect() {
             const c = DB_CESTAS.find(x => x.id === window.viewId);
@@ -863,7 +782,6 @@ async function sendWhatsapp(e) {
         (function(){
             document.addEventListener('contextmenu', e => e.preventDefault());
             document.onkeydown = e => { if(e.keyCode==123 || (e.ctrlKey && e.keyCode==85)) return false; };
-            console.log('%c Dona Antonia ', 'background: #E63946; color: #fff; font-size: 20px;');
         })();
 
         init();
