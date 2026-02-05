@@ -457,22 +457,53 @@
 
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
-       async function init() {
+      async function init() {
     try {
-        // 1. TENTA CARREGAR AS CESTAS (O teu ficheiro produtos-cesta-basica.json)
-        try {
-            const cRes = await fetch('produtos-cesta-basica.json');
-            if (cRes.ok) {
-                DB_CESTAS = await cRes.json();
-                console.log("Cestas carregadas com sucesso:", DB_CESTAS.length);
-                renderHome(); // Mostra as cestas imediatamente
-            } else {
-                console.error("Erro ao carregar ficheiro de cestas. Status:", cRes.status);
-                document.getElementById('cestas-container').innerHTML = "<p style='text-align:center; padding:40px'>Erro ao carregar cestas (Erro 404/500).</p>";
-            }
-        } catch (e) { 
-            console.error("Erro na leitura do JSON de cestas:", e); 
+        // 1. CARREGAR AS CESTAS
+        const cRes = await fetch('produtos-cesta-basica.json');
+        if (cRes.ok) {
+            DB_CESTAS = await cRes.json();
+            renderHome();
         }
+
+        // 2. CARREGAR OS PRODUTOS (JSON DO MAKE)
+        const pRes = await fetch('produtos.json');
+        if (pRes.ok) {
+            let rawProd = await pRes.json();
+            
+            // Se o JSON vier dentro de uma lista extra por erro do Make, isso corrige:
+            if (Array.isArray(rawProd) && Array.isArray(rawProd[0])) {
+                rawProd = rawProd[0];
+            }
+
+            DB_PROD = rawProd
+                .filter(x => x && x.id && x.situacao === "A") // Filtra apenas se tiver ID e estiver ativo
+                .map(x => {
+                    const sId = String(x.id);
+                    const sCodigo = x.codigo ? String(x.codigo) : sId;
+                    const primeiraLetra = sCodigo.charAt(0).toUpperCase();
+                    
+                    const categorias = {
+                        "A": "Mercearia", "B": "Molhos", "C": "Óleos", "D": "Matinais",
+                        "E": "Bebidas", "P": "Higiene Pessoal", "G": "Limpeza",
+                        "H": "Hortifruti", "I": "Açougue"
+                    };
+                    
+                    return {
+                        id: sId,
+                        name: x.nome,
+                        price: parseFloat(x.preco) || 0,
+                        cat: categorias[primeiraLetra] || "Diversos",
+                        stock: x.estoque || 0,
+                        img: x.imagem && x.imagem !== "" ? x.imagem : null
+                    };
+                });
+            console.log("Produtos carregados:", DB_PROD.length);
+        }
+    } catch (err) { 
+        console.error("Erro ao processar JSON:", err);
+    }
+}
 
         // 2. TENTA CARREGAR OS PRODUTOS (produtos.json do Make)
         try {
