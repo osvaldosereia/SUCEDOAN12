@@ -1,15 +1,257 @@
-<script>
-        document.getElementById('inputArquivo').addEventListener('change', function(event) {
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impressão Térmica Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --accent-color: #2c3e50;
+            --paper-width: 80mm;
+        }
+
+        body {
+            font-family: 'Inter', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #000;
+        }
+
+        /* --- Interface de Upload (Tela) --- */
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: #fafafa;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-color);
+            background: #f0f4f8;
+        }
+
+        .btn-print {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: none; /* Aparece só depois de carregar */
+            margin-top: 10px;
+            transition: transform 0.1s;
+        }
+
+        .btn-print:active {
+            transform: scale(0.98);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+        }
+
+        /* --- Estilos do Cupom (Visualização e Impressão) --- */
+        #area-cupom {
+            width: var(--paper-width);
+            background: #fff;
+            margin: 0 auto;
+            padding: 0; /* Margem interna controlada nos elementos */
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: none;
+            box-sizing: border-box;
+            line-height: 1.3;
+        }
+
+        /* Cabeçalho Invertido */
+        .header-box {
+            background: #000;
+            color: #fff;
+            text-align: center;
+            padding: 15px 5px;
+            border-bottom: 2px solid #000;
+        }
+
+        .header-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        .header-pedido {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 5px 0;
+        }
+
+        .header-data {
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        /* Seções */
+        .section {
+            padding: 12px 10px;
+            border-bottom: 1px dashed #000;
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: #444;
+            letter-spacing: 1px;
+        }
+
+        /* Cliente */
+        .client-name {
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .client-detail {
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        /* Tabela de Itens */
+        .table-items {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .table-items td {
+            padding: 6px 0;
+            vertical-align: top;
+        }
+
+        .qty-col {
+            width: 12%;
+            font-weight: 800;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .desc-col {
+            padding-left: 5px;
+        }
+
+        .item-name {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .item-meta {
+            font-size: 10px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Badge de Localização */
+        .loc-badge {
+            border: 1px solid #000;
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-weight: 800;
+            font-size: 10px;
+            background: #eee;
+        }
+
+        .footer-end {
+            text-align: center;
+            font-size: 10px;
+            padding: 20px 0;
+            font-weight: 600;
+        }
+
+        /* --- MODO IMPRESSÃO --- */
+        @media print {
+            @page { margin: 0; size: 80mm auto; }
+            body { background: white; padding: 0; margin: 0; }
+            .app-container { display: none !important; }
+            #area-cupom { 
+                display: block !important; 
+                width: 100%; 
+                box-shadow: none; 
+                padding-bottom: 5mm;
+            }
+            /* Garante que o fundo preto imprima */
+            .header-box, .loc-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h2 style="margin-top:0">🖨️ Gerador de Pedido Térmico</h2>
+        <p style="color:#666; font-size: 14px;">Carregue o arquivo HTML do Bling para gerar o cupom otimizado.</p>
+        
+        <label for="inputArquivo" class="upload-zone" id="dropZone">
+            <div style="font-size: 24px; margin-bottom: 10px;">📂</div>
+            <span class="upload-label">Clique para selecionar o arquivo</span>
+        </label>
+        <input type="file" id="inputArquivo" accept=".html">
+
+        <button class="btn-print" id="btnImprimir" onclick="window.print()">
+            IMPRIMIR CUPOM
+        </button>
+    </div>
+
+    <div id="area-cupom"></div>
+
+    <script>
+        const inputArquivo = document.getElementById('inputArquivo');
+        const dropZone = document.getElementById('dropZone');
+        
+        inputArquivo.addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const conteudoHTML = e.target.result;
-                processarHTML(conteudoHTML);
-            };
+            // Feedback visual
+            document.querySelector('.upload-label').innerText = "Arquivo: " + file.name;
+            dropZone.style.borderColor = "#2c3e50";
+            dropZone.style.background = "#e8f0fe";
 
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                processarHTML(e.target.result);
+                document.getElementById('btnImprimir').style.display = 'inline-block';
+                // Rola suavemente até o cupom
+                setTimeout(() => {
+                    document.getElementById('area-cupom').scrollIntoView({behavior: "smooth"});
+                }, 100);
+            };
             reader.readAsText(file);
         });
 
@@ -17,115 +259,101 @@
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlString, 'text/html');
 
-            // --- 1. NÚMERO DO PEDIDO ---
-            const tituloPedido = doc.querySelector('h2') ? doc.querySelector('h2').innerText.trim() : "Sem Número";
+            // --- Extração de Dados ---
+            
+            // 1. Pedido
+            const tituloPedido = doc.querySelector('h2') ? doc.querySelector('h2').innerText.trim() : "000";
             const numeroPedido = tituloPedido.replace(/\D/g, ''); 
 
-            // --- 2. DATA ---
+            // 2. Data
             let dataPedido = "Data N/D";
-            const linhasInfo = doc.querySelectorAll('.gridH tr');
-            linhasInfo.forEach(tr => {
-                if(tr.innerText.includes('Data')) {
-                    dataPedido = tr.cells[1].innerText.trim();
-                }
+            doc.querySelectorAll('.gridH tr').forEach(tr => {
+                if(tr.innerText.includes('Data')) dataPedido = tr.cells[1].innerText.trim();
             });
 
-            // --- 3. DADOS DO CLIENTE (Lógica Melhorada) ---
+            // 3. Cliente (Lógica de limpeza de duplicação)
             const divCliente = doc.querySelector('.divBorda');
-            let nomeCliente = "Cliente não identificado";
-            let endereco = "";
-            let cidade = "";
-            let celular = "";
+            let nomeCliente = "Consumidor", endereco = "", cidade = "", celular = "";
             
             if (divCliente) {
-                // A. Nome: Pega APENAS o que está dentro da tag <b> (negrito) para evitar a duplicação
+                // Nome do negrito
                 const elNome = divCliente.querySelector('b');
-                if (elNome) {
-                    nomeCliente = elNome.innerText.trim();
-                }
+                if (elNome) nomeCliente = elNome.innerText.trim();
 
-                // B. Resto dos dados: Vamos converter <br> em quebras de linha reais para separar tudo
-                // Isso evita que textos fiquem colados (ex: SilvaRua)
+                // Limpeza do texto para pegar endereço
                 let htmlComQuebras = divCliente.innerHTML.replace(/<br\s*\/?>/gi, '\n');
-                let textoLimpo = htmlComQuebras.replace(/<[^>]+>/g, ''); // Remove as tags HTML sobrando
-                
-                // Cria uma lista de linhas, removendo espaços vazios
+                let textoLimpo = htmlComQuebras.replace(/<[^>]+>/g, ''); 
                 let linhas = textoLimpo.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-                // C. Busca Inteligente: Procura linhas que pareçam endereço ou telefone
                 linhas.forEach(linha => {
-                    // Ignora linhas que sejam exatamente iguais ao nome (para não repetir)
                     if (linha === nomeCliente) return;
-
-                    // Procura Endereço (começa com Rua, Av, etc)
-                    if (linha.match(/^(Rua|Av|Avenida|Travessa|Alameda|Rod|Estrada|Logradouro)/i)) {
-                        endereco = linha;
-                    }
-                    // Procura Cidade/CEP (tem formato de CEP 00000-000)
-                    else if (linha.match(/\d{5}-?\d{3}/)) {
-                        cidade = linha;
-                    }
-                    // Procura Celular (tem a palavra Celular ou formato de ddd)
-                    else if (linha.match(/Celular|\(\d{2}\)/i)) {
-                        celular = linha.replace(/^,\s*/, ''); // Remove vírgula inicial se houver
-                    }
+                    if (linha.match(/^(Rua|Av|Avenida|Travessa|Alameda|Rod|Estrada|Logradouro)/i)) endereco = linha;
+                    else if (linha.match(/\d{5}-?\d{3}/)) cidade = linha;
+                    else if (linha.match(/Celular|\(\d{2}\)/i)) celular = linha.replace(/^,\s*/, '');
                 });
             }
 
-            // --- 4. ITENS DO PEDIDO ---
+            // 4. Itens
             const tabelaProdutos = doc.querySelector('table.grid');
             let htmlItens = "";
 
             if (tabelaProdutos) {
-                const linhasProdutos = tabelaProdutos.querySelectorAll('tbody tr');
-                
-                linhasProdutos.forEach((tr) => {
+                tabelaProdutos.querySelectorAll('tbody tr').forEach((tr) => {
                     const celulas = tr.querySelectorAll('td');
-                    // Verifica se é uma linha válida de produto
                     if (celulas.length > 5) {
                         const descricao = celulas[0].innerText.trim();
                         const codigo = celulas[1].innerText.trim();
                         const localizacao = celulas[3].innerText.trim();
                         const qtd = celulas[4].innerText.trim();
 
+                        // Verifica se tem localização para criar o badge ou não
+                        const locBadge = localizacao 
+                            ? `<span class="loc-badge">📍 ${localizacao}</span>` 
+                            : '';
+
                         htmlItens += `
-                            <tr class="item-row">
-                                <td style="width: 15%; font-weight:bold;">${parseFloat(qtd.replace(',','.'))}x</td>
-                                <td>
-                                    <span class="item-desc">${descricao}</span>
+                            <tr>
+                                <td class="qty-col">${parseFloat(qtd.replace(',','.'))}</td>
+                                <td class="desc-col">
+                                    <span class="item-name">${descricao}</span>
                                     <div class="item-meta">
-                                        Cód: ${codigo} ${localizacao ? `| <strong>Loc: ${localizacao}</strong>` : ''}
+                                        Cód: ${codigo} ${locBadge}
                                     </div>
                                 </td>
                             </tr>
+                            <tr><td colspan="2" style="border-bottom: 1px dotted #ccc;"></td></tr>
                         `;
                     }
                 });
             }
 
-            // --- GERAÇÃO DO HTML FINAL ---
+            // --- Montagem do HTML Moderno ---
             const cupomHTML = `
-                <div class="cupom-header">
-                    PEDIDO
-                    <div class="cupom-numero">${numeroPedido}</div>
-                    <small>${dataPedido}</small>
+                <div class="header-box">
+                    <div class="header-title">Pedido de Venda</div>
+                    <div class="header-pedido">#${numeroPedido}</div>
+                    <div class="header-data">${dataPedido}</div>
                 </div>
                 
-                <div class="cupom-info">
-                    <p style="font-size: 14px; font-weight: bold; text-transform: uppercase;">${nomeCliente}</p>
-                    ${endereco ? `<p>${endereco}</p>` : ''}
-                    ${cidade ? `<p>${cidade}</p>` : ''}
-                    ${celular ? `<p>${celular}</p>` : ''}
+                <div class="section">
+                    <div class="section-title">Cliente</div>
+                    <div class="client-name">${nomeCliente}</div>
+                    ${endereco ? `<div class="client-detail">${endereco}</div>` : ''}
+                    ${cidade ? `<div class="client-detail">${cidade}</div>` : ''}
+                    ${celular ? `<div class="client-detail">📞 ${celular}</div>` : ''}
                 </div>
 
-                <div style="margin-bottom: 5px; font-weight: bold; border-bottom: 1px solid black; margin-top: 10px;">ITENS</div>
+                <div class="section">
+                    <div class="section-title">Produtos</div>
+                    <table class="table-items">
+                        <tbody>
+                            ${htmlItens}
+                        </tbody>
+                    </table>
+                </div>
                 
-                <table class="cupom-items">
-                    ${htmlItens}
-                </table>
-                
-                <div style="margin-top: 20px; text-align: center; font-size: 10px;">
-                    --- Fim do Pedido ---
+                <div class="footer-end">
+                    === FIM DO PEDIDO ===
                 </div>
             `;
 
@@ -134,3 +362,5 @@
             areaCupom.style.display = 'block';
         }
     </script>
+</body>
+</html>
