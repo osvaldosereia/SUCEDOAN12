@@ -21,13 +21,13 @@
             --nav-height: 80px;
         }
 
-        /* Reset e Travamento de Scroll da Página */
+        /* Reset e Travamento de Scroll */
         html, body { 
             height: 100%; margin: 0; overflow: hidden; 
             font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-main);
         }
 
-        /* BARRA DE NAVEGAÇÃO SUPERIOR (TOPBAR) */
+        /* BARRA DE NAVEGAÇÃO SUPERIOR */
         .global-nav {
             height: var(--nav-height); background: #000; display: flex; align-items: center; 
             padding: 0 20px; gap: 8px; border-bottom: 3px solid var(--accent); z-index: 1000; position: relative;
@@ -52,7 +52,7 @@
         .view-pane.active { display: block; }
         .view-pane iframe { width: 100%; height: 100%; border: none; background: white; }
 
-        /* ESTILOS DA ABA PRODUÇÃO (TABELA) */
+        /* ESTILOS DA ABA PRODUÇÃO */
         .app-container { padding: 15px; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; }
         #search-field { 
             width: 100%; padding: 16px; border-radius: 10px; border: 3px solid var(--accent); 
@@ -60,38 +60,36 @@
         }
         #product-table { flex-grow: 1; border-radius: 12px; overflow: hidden; font-size: 14px; background: var(--card); }
 
-        /* BOTÕES DE AÇÃO DENTRO DA TABELA */
+        /* BOTÕES DE AÇÃO */
         .action-btn { 
             border: none; border-radius: 4px; padding: 6px 8px; cursor: pointer; 
             font-weight: bold; font-size: 10px; margin-right: 2px; text-transform: uppercase; 
         }
         .btn-copy { background: #64748b; color: white; }
         .btn-link { background: var(--primary); color: white; }
-        .btn-ia { background: #8b5cf6; color: white; }
 
-        /* MODAL FLUTUANTE (ESTILO MOBILE DIREITA) */
-        #google-modal {
+        /* MODAL FLUTUANTE DIREITO */
+        #side-modal {
             position: fixed; top: calc(var(--nav-height) + 10px); right: 10px;
             width: 420px; height: calc(100vh - var(--nav-height) - 30px);
             background: white; border-radius: 15px; border: 4px solid var(--accent);
             box-shadow: -5px 0 25px rgba(0,0,0,0.5); z-index: 2000;
             display: none; flex-direction: column; overflow: hidden;
-            transition: all 0.3s ease;
         }
 
-        #google-modal header {
+        #side-modal header {
             background: var(--accent); color: black; padding: 10px;
             display: flex; justify-content: space-between; align-items: center; font-weight: bold;
         }
 
-        #google-modal .close-modal {
+        #side-modal .close-modal {
             background: #ef4444; color: white; border: none; padding: 5px 10px; 
             border-radius: 5px; cursor: pointer; font-size: 12px;
         }
 
-        #google-iframe { flex-grow: 1; border: none; }
+        #side-iframe { flex-grow: 1; border: none; }
 
-        /* ESTILO DA LISTA DE PEDIDOS */
+        /* LISTA DE PEDIDOS */
         .order-card { 
             background: var(--card); border-radius: 12px; margin: 15px; padding: 20px; 
             border-left: 10px solid var(--accent); display: flex; justify-content: space-between; align-items: center; 
@@ -101,14 +99,11 @@
             border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; 
         }
 
-        /* CONFIGURAÇÃO DE IMPRESSORA TÉRMICA 80mm */
+        /* IMPRESSÃO */
         @media print {
             body * { visibility: hidden; }
             #print-section, #print-section * { visibility: visible; }
-            #print-section { 
-                position: absolute; left: 0; top: 0; width: 80mm; 
-                color: black !important; font-family: 'Courier New', monospace; font-size: 12px; 
-            }
+            #print-section { position: absolute; left: 0; top: 0; width: 80mm; color: black; }
         }
         #print-section { display: none; background: white; padding: 10px; color: black; }
     </style>
@@ -142,12 +137,12 @@
         </div>
     </div>
 
-    <div id="google-modal">
+    <div id="side-modal">
         <header>
-            <span id="modal-title">ASSISTENTE VISUAL</span>
+            <span>REFERÊNCIA DE IMAGEM</span>
             <button class="close-modal" onclick="closeSideModal()">FECHAR [X]</button>
         </header>
-        <iframe id="google-iframe" src=""></iframe>
+        <iframe id="side-iframe" src=""></iframe>
     </div>
 
     <div id="view-pedidos" class="view-pane">
@@ -157,17 +152,9 @@
         </div>
     </div>
 
-    <div id="view-editor" class="view-pane">
-        <iframe id="iframe-editor" src="https://donaantonia.com.br/bio/"></iframe>
-    </div>
-
-    <div id="view-loja" class="view-pane">
-        <iframe src="https://donaantonia.com.br/site/"></iframe>
-    </div>
-
-    <div id="view-nota" class="view-pane">
-        <iframe src="https://donaantonia.com.br/produtos/"></iframe>
-    </div>
+    <div id="view-editor" class="view-pane"><iframe id="iframe-editor" src="https://donaantonia.com.br/bio/"></iframe></div>
+    <div id="view-loja" class="view-pane"><iframe src="https://donaantonia.com.br/site/"></iframe></div>
+    <div id="view-nota" class="view-pane"><iframe src="https://donaantonia.com.br/produtos/"></iframe></div>
 
     <div id="print-section"></div>
 
@@ -176,22 +163,22 @@
         var pedidosProcessados = [];
         const STORAGE_KEY = 'sucedoan_kiosk_data';
 
-        // --- FUNÇÕES DO MODAL LATERAL ---
+        // --- GESTÃO DO MODAL ---
 
-        function openSideModal(url, title) {
-            const modal = document.getElementById('google-modal');
-            const iframe = document.getElementById('google-iframe');
-            document.getElementById('modal-title').innerText = title;
-            iframe.src = url;
+        function openSideModal(query) {
+            const modal = document.getElementById('side-modal');
+            const iframe = document.getElementById('side-iframe');
+            // Usando o DuckDuckGo Images ou Bing que costumam permitir iframe de busca básica
+            iframe.src = "https://www.bing.com/images/search?q=" + encodeURIComponent(query) + "&first=1";
             modal.style.display = 'flex';
         }
 
         function closeSideModal() {
-            document.getElementById('google-modal').style.display = 'none';
-            document.getElementById('google-iframe').src = '';
+            document.getElementById('side-modal').style.display = 'none';
+            document.getElementById('side-iframe').src = '';
         }
 
-        // --- FUNÇÕES AUXILIARES ---
+        // --- AUXILIARES ---
 
         function slugify(text) {
             if (!text) return "";
@@ -207,89 +194,64 @@
             const printArea = document.getElementById('print-section');
             printArea.innerHTML = `
                 <div style="text-align:center; font-weight:bold; font-size:16px;">DONA ANTONIA</div>
-                <div style="text-align:center; margin-bottom:5px;">LOGÍSTICA E MONTAGEM</div>
                 <hr>
                 <div><b>PEDIDO:</b> #${pedido.numero}</div>
-                <div><b>DATA:</b> ${new Date().toLocaleString()}</div>
                 <div><b>CLIENTE:</b> ${pedido.cliente}</div>
                 <hr>
-                <div style="font-weight:bold; margin-bottom:5px;">ITENS:</div>
                 ${pedido.itens.map(i => `<div>${i.quantidade}x ${i.descricao}</div>`).join('')}
                 <hr>
-                <div style="text-align:center; font-size:10px;">Sistema Sucedoan v2.0</div>
+                <div style="text-align:center; font-size:10px;">Sistema Sucedoan</div>
             `;
             window.print();
         }
 
-        // --- LÓGICA DA TABELA (TABULATOR) ---
+        // --- TABELA ---
 
         function initTable(data) {
             table = new Tabulator("#product-table", {
                 data: data,
                 layout: "fitColumns",
                 height: "100%",
-                movableColumns: true,
                 columns: [
-                    {title: "CÓDIGO", field: "Código", width: 90, headerSort: false},
-                    
-                    // Lupa de Busca Rápida (Modal)
-                    {title: "🔍", width: 50, hozAlign: "center", formatter: () => "🔍", headerSort: false, cellClick: (e, cell) => {
-                        const desc = cell.getData()["Descrição"];
-                        openSideModal("https://www.bing.com/images/search?q=" + encodeURIComponent(desc), "BUSCA DE REFERÊNCIA");
+                    {title: "CÓDIGO", field: "Código", width: 90},
+                    {title: "🔍", width: 50, hozAlign: "center", formatter: () => "🔍", cellClick: (e, cell) => {
+                        openSideModal(cell.getData()["Descrição"]);
                     }},
-
-                    // Coluna de Ações
-                    {title: "AÇÕES IA E SISTEMA", width: 300, headerSort: false, hozAlign: "center", columns: [
-                        {title: "IA PROMPT", formatter: () => "<button class='action-btn btn-ia'>🤖 IA</button>", width: 90, cellClick: (e, cell) => {
-                            const desc = cell.getData()["Descrição"];
-                            const prompt = `Foto profissional de e-commerce, fundo branco, iluminação de estúdio, 4k, centralizado, produto: ${desc}`;
-                            navigator.clipboard.writeText(prompt);
-                            openSideModal("https://www.bing.com/images/create?q=" + encodeURIComponent(prompt), "GERAR IMAGEM COM IA");
-                            alert("Prompt otimizado copiado! Cole na barra da IA que abriu ao lado.");
-                        }},
-                        {title: "EDITOR", formatter: () => "<button class='action-btn btn-copy'>📋 NOME</button>", width: 95, cellClick: (e, cell) => {
+                    {title: "AÇÕES", width: 210, headerSort: false, columns: [
+                        {title: "EDITOR", formatter: () => "<button class='action-btn btn-copy'>📋 NOME</button>", width: 100, cellClick: (e, cell) => {
                             const slug = slugify(cell.getData()["Descrição"]);
                             navigator.clipboard.writeText(slug); 
                             document.getElementById('iframe-editor').src = "https://donaantonia.com.br/bio/?nome=" + slug;
                             showView('editor', document.getElementById('btn-editor'));
                         }},
-                        {title: "LINK GH", formatter: () => "<button class='action-btn btn-link'>🔗 LINK</button>", width: 95, cellClick: (e, cell) => {
+                        {title: "LINK GH", formatter: () => "<button class='action-btn btn-link'>🔗 LINK</button>", width: 100, cellClick: (e, cell) => {
                             const slug = slugify(cell.getData()["Descrição"]);
                             const urlFinal = `https://github.com/osvaldosereia/SUCEDOAN12/blob/main/site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp?raw=true`;
                             cell.getRow().update({"URL Imagens Externas": urlFinal});
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()));
                         }}
                     ]},
-
                     {title: "URL IMAGEM", field: "URL Imagens Externas", width: 200, editor: "input"},
-                    {title: "DESCRIÇÃO DO PRODUTO", field: "Descrição", widthGrow: 3, editor: "input"},
+                    {title: "DESCRIÇÃO", field: "Descrição", widthGrow: 3, editor: "input"},
                     {title: "ESTOQUE", field: "Estoque", width: 90, editor: "input", hozAlign: "center"},
                     {title: "LOCAL", field: "Localização", width: 120, editor: "input"},
                 ],
-                cellEdited: function(cell) {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()));
-                }
+                cellEdited: () => localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()))
             });
 
-            document.getElementById("search-field").addEventListener("input", function(e){
+            document.getElementById("search-field").addEventListener("input", (e) => {
                 const val = e.target.value;
-                table.setFilter([
-                    [
-                        {field:"Código", type:"like", value:val},
-                        {field:"Descrição", type:"like", value:val}
-                    ]
-                ]);
+                table.setFilter([[{field:"Código", type:"like", value:val}, {field:"Descrição", type:"like", value:val}]]);
             });
         }
 
-        // --- AUTOMAÇÃO DE PEDIDOS (MAKE.COM) ---
+        // --- PEDIDOS ---
 
         async function fetchOrders() {
             try {
                 const response = await fetch('pedidos.json?t=' + Date.now());
                 const orders = await response.json();
                 let temNovidade = false;
-
                 orders.forEach(o => {
                     if(!pedidosProcessados.includes(o.id)) {
                         pedidosProcessados.push(o.id);
@@ -298,17 +260,10 @@
                         const container = document.getElementById('lista-pedidos-container');
                         const card = document.createElement('div');
                         card.className = 'order-card';
-                        card.innerHTML = `
-                            <div>
-                                <h3>Pedido #${o.numero} - ${o.cliente}</h3>
-                                <p>${o.itens.length} itens no carrinho</p>
-                            </div>
-                            <button class="btn-print" onclick='imprimirPedido(${JSON.stringify(o)})'>🖨 IMPRIMIR</button>
-                        `;
+                        card.innerHTML = `<div><h3>Pedido #${o.numero} - ${o.cliente}</h3><p>${o.itens.length} itens</p></div><button class="btn-print" onclick='imprimirPedido(${JSON.stringify(o)})'>🖨 IMPRIMIR</button>`;
                         container.prepend(card);
                     }
                 });
-
                 if(temNovidade) {
                     document.getElementById('bell-sound').play();
                     document.getElementById('btn-pedidos-nav').classList.add('new-order');
@@ -316,70 +271,44 @@
             } catch(e) { }
         }
 
-        // --- GESTÃO DE TELAS (PERSISTENTE) ---
+        // --- NAVEGAÇÃO ---
 
         function showView(viewId, btn) {
-            // Esconde todas as telas
             document.querySelectorAll('.view-pane').forEach(v => v.classList.remove('active'));
-            // Remove active de todos os botões
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            
-            // Ativa a tela e o botão selecionado
-            const targetView = document.getElementById('view-' + viewId);
-            if(targetView) {
-                targetView.classList.add('active');
-            }
-            
+            document.getElementById('view-' + viewId).classList.add('active');
             if(btn) {
                 btn.classList.add('active');
                 btn.classList.remove('new-order');
             }
-
-            if(viewId === 'producao') {
-                setTimeout(() => document.getElementById("search-field").focus(), 100);
-            }
+            if(viewId === 'producao') setTimeout(() => document.getElementById("search-field").focus(), 100);
         }
 
-        // --- INICIALIZAÇÃO ---
-
         window.onload = function() {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                initTable(JSON.parse(savedData));
-            }
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) initTable(JSON.parse(saved));
             setInterval(fetchOrders, 30000);
             fetchOrders();
             document.getElementById("search-field").focus();
         };
 
-        // Upload CSV
         document.getElementById('csv-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                encoding: "UTF-8",
-                complete: function(results) {
+            Papa.parse(e.target.files[0], {
+                header: true, skipEmptyLines: true, encoding: "UTF-8",
+                complete: (results) => {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(results.data));
                     initTable(results.data);
-                    alert("Dados importados!");
+                    alert("Dados atualizados!");
                 }
             });
         });
 
-        // Exportar CSV
         document.getElementById('btn-export').addEventListener('click', function() {
-            if (!table) return;
-            const csv = Papa.unparse(table.getData(), {
-                quotes: true,
-                delimiter: ";",
-                newline: "\r\n"
-            });
+            const csv = Papa.unparse(table.getData(), { quotes: true, delimiter: ";", newline: "\r\n" });
             const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "estoque_producao_atualizado.csv";
+            link.download = "estoque_producao.csv";
             link.click();
         });
     </script>
