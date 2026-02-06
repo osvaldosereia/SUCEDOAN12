@@ -250,7 +250,7 @@
             }
         }
 
-        async function sincronizarProdutoUnitario(rowData, btnElement) {
+       async function sincronizarProdutoUnitario(rowData, btnElement) {
             if(MAKE_WEBHOOK_UPDATE_PRODUCT.includes("SEU_LINK")) {
                 alert("Configure o link do Webhook UPDATE no código!");
                 return;
@@ -262,10 +262,11 @@
             btnElement.disabled = true;
 
             try {
-                // Preparar Payload para o Make
+                // Preparar Payload para o Make (COM LIMPEZA DE TEXTO)
                 const payload = {
                     codigo: rowData["Código"],
-                    descricao: rowData["Descrição"],
+                    // Aqui removemos quebras de linha (\n) e espaços extras para não quebrar o JSON
+                    descricao: rowData["Descrição"] ? rowData["Descrição"].replace(/[\r\n]+/g, " ").trim() : "",
                     url_imagem: rowData["URL Imagens Externas"],
                     estoque: rowData["Estoque"],
                     localizacao: rowData["Localização"]
@@ -289,6 +290,7 @@
 
             } catch (error) {
                 alert("Erro ao enviar para o Bling.");
+                console.error(error);
                 btnElement.innerText = "❌ Erro";
                 btnElement.disabled = false;
             }
