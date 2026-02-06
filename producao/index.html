@@ -18,6 +18,7 @@
             --card: #1e293b;
             --text-main: #f8fafc;
             --accent: #38bdf8;
+            --bling-color: #f59e0b;
             --nav-height: 80px;
         }
 
@@ -67,6 +68,16 @@
         }
         .btn-copy { background: #64748b; color: white; }
         .btn-link { background: var(--primary); color: white; }
+        .btn-sync { background: var(--bling-color); color: black; border: 1px solid #d97706; }
+        .btn-sync:hover { background: #fffbeb; }
+
+        /* HEADER DOS BOTÕES */
+        .btn-header {
+            padding: 10px; cursor: pointer; font-weight: bold; border-radius: 8px; border: none; font-size: 12px;
+        }
+        .btn-header.csv { background: #334155; color: white; }
+        .btn-header.export { background: var(--success); color: white; }
+        .btn-header.import-bling { background: var(--bling-color); color: black; margin-right: 10px; }
 
         /* MODAL FLUTUANTE DIREITO */
         #side-modal {
@@ -99,6 +110,15 @@
             border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; 
         }
 
+        /* LOADER */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000; display: none;
+            justify-content: center; align-items: center; color: white; flex-direction: column;
+        }
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         /* IMPRESSÃO */
         @media print {
             body * { visibility: hidden; }
@@ -109,6 +129,17 @@
     </style>
 </head>
 <body>
+
+    <script>
+        // COLOQUE AQUI OS SEUS LINKS DO MAKE (WEBHOOKS)
+        const MAKE_WEBHOOK_GET_PRODUCTS = "https://hook.us1.make.com/SEU_LINK_AQUI_GET"; 
+        const MAKE_WEBHOOK_UPDATE_PRODUCT = "https://hook.us1.make.com/SEU_LINK_AQUI_UPDATE";
+    </script>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-text">Processando...</div>
+    </div>
 
     <audio id="bell-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
@@ -127,11 +158,14 @@
 
     <div id="view-producao" class="view-pane active">
         <div class="app-container">
-            <header style="display:flex; gap:10px;">
-                <input type="text" id="search-field" placeholder="🔎 ESCANEAR CÓDIGO OU BUSCAR PRODUTO..." autofocus>
+            <header style="display:flex; gap:10px; flex-wrap: wrap;">
+                <input type="text" id="search-field" placeholder="🔎 ESCANEAR CÓDIGO OU BUSCAR PRODUTO..." autofocus style="flex-grow: 1;">
+                
+                <button onclick="importarDoBling()" class="btn-header import-bling">☁ IMPORTAR BLING</button>
+                
                 <input type="file" id="csv-file" accept=".csv" style="display:none">
-                <button onclick="document.getElementById('csv-file').click()" style="padding:10px; cursor:pointer; font-weight:bold; border-radius:8px;">SUBIR NOVO CSV</button>
-                <button id="btn-export" style="background:var(--success); color:white; padding:10px 15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">EXPORTAR CSV</button>
+                <button onclick="document.getElementById('csv-file').click()" class="btn-header csv">📂 SUBIR CSV</button>
+                <button id="btn-export" class="btn-header export">⬇ EXPORTAR CSV</button>
             </header>
             <div id="product-table"></div>
         </div>
@@ -163,12 +197,17 @@
         var pedidosProcessados = [];
         const STORAGE_KEY = 'sucedoan_kiosk_data';
 
-        // --- GESTÃO DO MODAL ---
+        // --- GESTÃO DO MODAL E LOADER ---
+
+        function toggleLoader(show, text="Processando...") {
+            const el = document.getElementById('loading-overlay');
+            document.getElementById('loading-text').innerText = text;
+            el.style.display = show ? 'flex' : 'none';
+        }
 
         function openSideModal(query) {
             const modal = document.getElementById('side-modal');
             const iframe = document.getElementById('side-iframe');
-            // Usando o DuckDuckGo Images ou Bing que costumam permitir iframe de busca básica
             iframe.src = "https://www.bing.com/images/search?q=" + encodeURIComponent(query) + "&first=1";
             modal.style.display = 'flex';
         }
@@ -176,6 +215,83 @@
         function closeSideModal() {
             document.getElementById('side-modal').style.display = 'none';
             document.getElementById('side-iframe').src = '';
+        }
+
+        // --- INTEGRAÇÃO MAKE/BLING ---
+
+        async function importarDoBling() {
+            if(!confirm("Deseja baixar os produtos do Bling? Isso substituirá a tabela atual.")) return;
+            
+            if(MAKE_WEBHOOK_GET_PRODUCTS.includes("SEU_LINK")) {
+                alert("Configure o link do Webhook no código primeiro!");
+                return;
+            }
+
+            toggleLoader(true, "Baixando produtos do Bling...");
+            
+            try {
+                const response = await fetch(MAKE_WEBHOOK_GET_PRODUCTS);
+                const data = await response.json();
+                
+                // O Make deve retornar um JSON que seja um Array de objetos
+                if(Array.isArray(data)) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                    table.setData(data);
+                    alert("Importação concluída com sucesso!");
+                } else {
+                    alert("Formato recebido inválido. Verifique o Make.");
+                    console.log(data);
+                }
+            } catch (error) {
+                alert("Erro ao conectar com o Make.");
+                console.error(error);
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        async function sincronizarProdutoUnitario(rowData, btnElement) {
+            if(MAKE_WEBHOOK_UPDATE_PRODUCT.includes("SEU_LINK")) {
+                alert("Configure o link do Webhook UPDATE no código!");
+                return;
+            }
+
+            // Feedback visual no botão
+            const textoOriginal = btnElement.innerText;
+            btnElement.innerText = "⏳...";
+            btnElement.disabled = true;
+
+            try {
+                // Preparar Payload para o Make
+                const payload = {
+                    codigo: rowData["Código"],
+                    descricao: rowData["Descrição"],
+                    url_imagem: rowData["URL Imagens Externas"],
+                    estoque: rowData["Estoque"],
+                    localizacao: rowData["Localização"]
+                };
+
+                const response = await fetch(MAKE_WEBHOOK_UPDATE_PRODUCT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if(response.ok) {
+                    btnElement.innerText = "✅ OK";
+                    setTimeout(() => { 
+                        btnElement.innerText = textoOriginal; 
+                        btnElement.disabled = false;
+                    }, 2000);
+                } else {
+                    throw new Error("Erro na resposta");
+                }
+
+            } catch (error) {
+                alert("Erro ao enviar para o Bling.");
+                btnElement.innerText = "❌ Erro";
+                btnElement.disabled = false;
+            }
         }
 
         // --- AUXILIARES ---
@@ -217,21 +333,25 @@
                     {title: "🔍", width: 50, hozAlign: "center", formatter: () => "🔍", cellClick: (e, cell) => {
                         openSideModal(cell.getData()["Descrição"]);
                     }},
-                    {title: "AÇÕES", width: 210, headerSort: false, columns: [
-                        {title: "EDITOR", formatter: () => "<button class='action-btn btn-copy'>📋 NOME</button>", width: 100, cellClick: (e, cell) => {
+                    {title: "AÇÕES", width: 280, headerSort: false, columns: [
+                        {title: "SYNC", formatter: () => "<button class='action-btn btn-sync'>☁ ATUALIZAR</button>", width: 100, hozAlign:"center", cellClick: (e, cell) => {
+                            // Chama a função de sincronização passando os dados da linha e o botão clicado
+                            sincronizarProdutoUnitario(cell.getData(), e.target);
+                        }},
+                        {title: "EDITOR", formatter: () => "<button class='action-btn btn-copy'>📋 NOME</button>", width: 90, cellClick: (e, cell) => {
                             const slug = slugify(cell.getData()["Descrição"]);
                             navigator.clipboard.writeText(slug); 
                             document.getElementById('iframe-editor').src = "https://donaantonia.com.br/bio/?nome=" + slug;
                             showView('editor', document.getElementById('btn-editor'));
                         }},
-                        {title: "LINK GH", formatter: () => "<button class='action-btn btn-link'>🔗 LINK</button>", width: 100, cellClick: (e, cell) => {
+                        {title: "LINK GH", formatter: () => "<button class='action-btn btn-link'>🔗 LINK</button>", width: 90, cellClick: (e, cell) => {
                             const slug = slugify(cell.getData()["Descrição"]);
                             const urlFinal = `https://github.com/osvaldosereia/SUCEDOAN12/blob/main/site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp?raw=true`;
                             cell.getRow().update({"URL Imagens Externas": urlFinal});
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()));
                         }}
                     ]},
-                    {title: "URL IMAGEM", field: "URL Imagens Externas", width: 200, editor: "input"},
+                    {title: "URL IMAGEM", field: "URL Imagens Externas", width: 180, editor: "input"},
                     {title: "DESCRIÇÃO", field: "Descrição", widthGrow: 3, editor: "input"},
                     {title: "ESTOQUE", field: "Estoque", width: 90, editor: "input", hozAlign: "center"},
                     {title: "LOCAL", field: "Localização", width: 120, editor: "input"},
