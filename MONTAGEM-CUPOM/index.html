@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impressão Térmica Pro</title>
+    <title>Impressão Térmica Clean</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-color: #f4f6f8;
-            --accent-color: #2c3e50;
             --paper-width: 80mm;
         }
 
         body {
             font-family: 'Inter', Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
+            background-color: #f4f6f8;
             margin: 0;
             padding: 20px;
             color: #000;
         }
 
-        /* --- Interface de Upload (Tela) --- */
+        /* --- Interface de Upload (Tela do PC) --- */
         .app-container {
             max-width: 600px;
             margin: 0 auto 40px auto;
@@ -37,18 +35,17 @@
             border-radius: 8px;
             padding: 30px;
             margin: 20px 0;
-            transition: all 0.3s;
             cursor: pointer;
             background: #fafafa;
         }
 
         .upload-zone:hover {
-            border-color: var(--accent-color);
+            border-color: #000;
             background: #f0f4f8;
         }
 
         .btn-print {
-            background-color: var(--accent-color);
+            background-color: #000;
             color: white;
             border: none;
             padding: 12px 30px;
@@ -56,176 +53,133 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
-            display: none; /* Aparece só depois de carregar */
+            display: none; 
             margin-top: 10px;
-            transition: transform 0.1s;
         }
 
-        .btn-print:active {
-            transform: scale(0.98);
-        }
+        input[type="file"] { display: none; }
+        .upload-label { font-weight: 600; color: #555; cursor: pointer; }
 
-        input[type="file"] {
-            display: none;
-        }
-
-        .upload-label {
-            font-weight: 600;
-            color: #555;
-            cursor: pointer;
-        }
-
-        /* --- Estilos do Cupom (Visualização e Impressão) --- */
+        /* --- Estilos do Cupom --- */
         #area-cupom {
             width: var(--paper-width);
             background: #fff;
             margin: 0 auto;
-            padding: 0; /* Margem interna controlada nos elementos */
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 0;
             display: none;
             box-sizing: border-box;
-            line-height: 1.3;
+            line-height: 1.2;
         }
 
-        /* Cabeçalho Invertido */
+        /* CABEÇALHO LIMPO (Sem fundo preto) */
         .header-box {
-            background: #000;
-            color: #fff;
+            background: transparent;
+            color: #000;
             text-align: center;
-            padding: 15px 5px;
-            border-bottom: 2px solid #000;
+            padding: 10px 0;
+            border-bottom: 3px solid #000; /* Linha grossa para separar */
+            margin-bottom: 10px;
         }
 
-        .header-title {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.8;
+        .header-title { 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            font-weight: 600;
         }
-
-        .header-pedido {
-            font-size: 32px;
-            font-weight: 800;
+        
+        .header-pedido { 
+            font-size: 42px; /* Bem grande para compensar a falta de fundo */
+            font-weight: 900; 
             margin: 5px 0;
+            line-height: 1;
         }
-
-        .header-data {
-            font-size: 11px;
-            font-family: monospace;
+        
+        .header-data { 
+            font-size: 12px; 
+            font-weight: 600;
         }
 
         /* Seções */
-        .section {
-            padding: 12px 10px;
-            border-bottom: 1px dashed #000;
+        .section { 
+            padding: 5px 0; 
+            border-bottom: 1px dashed #000; 
+            margin-bottom: 5px;
         }
-
-        .section-title {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            color: #444;
-            letter-spacing: 1px;
+        
+        .section-title { 
+            font-size: 11px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            margin-bottom: 5px; 
+            text-decoration: underline;
         }
 
         /* Cliente */
-        .client-name {
-            font-size: 15px;
-            font-weight: 800;
-            margin-bottom: 4px;
-        }
-
-        .client-detail {
-            font-size: 12px;
-            margin-bottom: 2px;
-        }
+        .client-name { font-size: 16px; font-weight: 800; margin-bottom: 3px; }
+        .client-detail { font-size: 13px; margin-bottom: 2px; }
 
         /* Tabela de Itens */
-        .table-items {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
+        .table-items { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .table-items td { padding: 8px 0; vertical-align: top; }
 
-        .table-items td {
-            padding: 6px 0;
+        .qty-col {
+            width: 15%;
+            font-weight: 800;
+            font-size: 18px; /* Quantidade bem visível */
+            text-align: center;
             vertical-align: top;
         }
 
-        .qty-col {
-            width: 12%;
-            font-weight: 800;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .desc-col {
-            padding-left: 5px;
-        }
+        .desc-col { padding-left: 5px; }
 
         .item-name {
             font-weight: 600;
             display: block;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
+            font-size: 13px;
         }
 
+        /* CÓDIGO E LOCALIZAÇÃO (Sem box, sem fundo, apenas texto grande) */
         .item-meta {
-            font-size: 10px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            font-size: 15px; /* Aumentado */
+            font-weight: 900; /* Extra Negrito */
+            color: #000;
+            display: block;
+            margin-top: 2px;
+            letter-spacing: -0.5px; /* Aperta levemente para caber mais */
         }
 
-        /* Badge de Localização */
-        .loc-badge {
-            border: 1px solid #000;
-            border-radius: 3px;
-            padding: 1px 4px;
-            font-weight: 800;
-            font-size: 10px;
-            background: #eee;
+        .footer-end { 
+            text-align: center; 
+            font-size: 12px; 
+            padding: 20px 0; 
+            font-weight: 800; 
+            border-top: 2px solid #000;
+            margin-top: 10px;
         }
 
-        .footer-end {
-            text-align: center;
-            font-size: 10px;
-            padding: 20px 0;
-            font-weight: 600;
-        }
-
-        /* --- MODO IMPRESSÃO --- */
         @media print {
             @page { margin: 0; size: 80mm auto; }
             body { background: white; padding: 0; margin: 0; }
             .app-container { display: none !important; }
-            #area-cupom { 
-                display: block !important; 
-                width: 100%; 
-                box-shadow: none; 
-                padding-bottom: 5mm;
-            }
-            /* Garante que o fundo preto imprima */
-            .header-box, .loc-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #area-cupom { display: block !important; width: 100%; padding-bottom: 5mm; }
         }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <h2 style="margin-top:0">🖨️ Gerador de Pedido Térmico</h2>
-        <p style="color:#666; font-size: 14px;">Carregue o arquivo HTML do Bling para gerar o cupom otimizado.</p>
+        <h2 style="margin-top:0">🖨️ Gerador de Pedido (Econômico)</h2>
+        <p style="color:#666; font-size: 14px;">Layout limpo: sem fundos sólidos, economia de tinta.</p>
         
         <label for="inputArquivo" class="upload-zone" id="dropZone">
             <div style="font-size: 24px; margin-bottom: 10px;">📂</div>
-            <span class="upload-label">Clique para selecionar o arquivo</span>
+            <span class="upload-label">Clique para selecionar o arquivo HTML</span>
         </label>
         <input type="file" id="inputArquivo" accept=".html">
 
-        <button class="btn-print" id="btnImprimir" onclick="window.print()">
-            IMPRIMIR CUPOM
-        </button>
+        <button class="btn-print" id="btnImprimir" onclick="window.print()">IMPRIMIR CUPOM</button>
     </div>
 
     <div id="area-cupom"></div>
@@ -238,19 +192,14 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            // Feedback visual
-            document.querySelector('.upload-label').innerText = "Arquivo: " + file.name;
-            dropZone.style.borderColor = "#2c3e50";
-            dropZone.style.background = "#e8f0fe";
-
+            document.querySelector('.upload-label').innerText = "Arquivo carregado: " + file.name;
+            dropZone.style.borderColor = "#000";
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 processarHTML(e.target.result);
                 document.getElementById('btnImprimir').style.display = 'inline-block';
-                // Rola suavemente até o cupom
-                setTimeout(() => {
-                    document.getElementById('area-cupom').scrollIntoView({behavior: "smooth"});
-                }, 100);
+                setTimeout(() => { document.getElementById('area-cupom').scrollIntoView({behavior: "smooth"}); }, 100);
             };
             reader.readAsText(file);
         });
@@ -259,28 +208,21 @@
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlString, 'text/html');
 
-            // --- Extração de Dados ---
-            
-            // 1. Pedido
             const tituloPedido = doc.querySelector('h2') ? doc.querySelector('h2').innerText.trim() : "000";
             const numeroPedido = tituloPedido.replace(/\D/g, ''); 
 
-            // 2. Data
             let dataPedido = "Data N/D";
             doc.querySelectorAll('.gridH tr').forEach(tr => {
                 if(tr.innerText.includes('Data')) dataPedido = tr.cells[1].innerText.trim();
             });
 
-            // 3. Cliente (Lógica de limpeza de duplicação)
             const divCliente = doc.querySelector('.divBorda');
-            let nomeCliente = "Consumidor", endereco = "", cidade = "", celular = "";
+            let nomeCliente = "Cliente não identificado", endereco = "", cidade = "", celular = "";
             
             if (divCliente) {
-                // Nome do negrito
                 const elNome = divCliente.querySelector('b');
                 if (elNome) nomeCliente = elNome.innerText.trim();
 
-                // Limpeza do texto para pegar endereço
                 let htmlComQuebras = divCliente.innerHTML.replace(/<br\s*\/?>/gi, '\n');
                 let textoLimpo = htmlComQuebras.replace(/<[^>]+>/g, ''); 
                 let linhas = textoLimpo.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -293,7 +235,6 @@
                 });
             }
 
-            // 4. Itens
             const tabelaProdutos = doc.querySelector('table.grid');
             let htmlItens = "";
 
@@ -306,10 +247,10 @@
                         const localizacao = celulas[3].innerText.trim();
                         const qtd = celulas[4].innerText.trim();
 
-                        // Verifica se tem localização para criar o badge ou não
-                        const locBadge = localizacao 
-                            ? `<span class="loc-badge">📍 ${localizacao}</span>` 
-                            : '';
+                        // Formatação LIMPA: Apenas texto, sem símbolos
+                        const infoExtra = localizacao 
+                            ? `${codigo}   LOC: ${localizacao}` 
+                            : codigo;
 
                         htmlItens += `
                             <tr>
@@ -317,34 +258,33 @@
                                 <td class="desc-col">
                                     <span class="item-name">${descricao}</span>
                                     <div class="item-meta">
-                                        Cód: ${codigo} ${locBadge}
+                                        ${infoExtra}
                                     </div>
                                 </td>
                             </tr>
-                            <tr><td colspan="2" style="border-bottom: 1px dotted #ccc;"></td></tr>
+                            <tr><td colspan="2" style="border-bottom: 1px dotted #ccc; padding-bottom:5px;"></td></tr>
                         `;
                     }
                 });
             }
 
-            // --- Montagem do HTML Moderno ---
             const cupomHTML = `
                 <div class="header-box">
-                    <div class="header-title">Pedido de Venda</div>
-                    <div class="header-pedido">#${numeroPedido}</div>
+                    <div class="header-title">PEDIDO DE VENDA</div>
+                    <div class="header-pedido">${numeroPedido}</div>
                     <div class="header-data">${dataPedido}</div>
                 </div>
                 
                 <div class="section">
-                    <div class="section-title">Cliente</div>
+                    <div class="section-title">CLIENTE</div>
                     <div class="client-name">${nomeCliente}</div>
                     ${endereco ? `<div class="client-detail">${endereco}</div>` : ''}
                     ${cidade ? `<div class="client-detail">${cidade}</div>` : ''}
-                    ${celular ? `<div class="client-detail">📞 ${celular}</div>` : ''}
+                    ${celular ? `<div class="client-detail">Tel: ${celular}</div>` : ''}
                 </div>
 
-                <div class="section">
-                    <div class="section-title">Produtos</div>
+                <div class="section" style="border-bottom:none;">
+                    <div class="section-title">PRODUTOS</div>
                     <table class="table-items">
                         <tbody>
                             ${htmlItens}
@@ -353,7 +293,7 @@
                 </div>
                 
                 <div class="footer-end">
-                    === FIM DO PEDIDO ===
+                    FIM DO PEDIDO
                 </div>
             `;
 
