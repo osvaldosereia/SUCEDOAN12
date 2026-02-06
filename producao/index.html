@@ -67,11 +67,12 @@
         }
         .btn-copy { background: #64748b; color: white; }
         .btn-link { background: var(--primary); color: white; }
+        .btn-ia { background: #8b5cf6; color: white; }
 
-        /* MODAL FLUTUANTE (ESTILO MOBILE) */
+        /* MODAL FLUTUANTE (ESTILO MOBILE DIREITA) */
         #google-modal {
             position: fixed; top: calc(var(--nav-height) + 10px); right: 10px;
-            width: 380px; height: calc(100vh - var(--nav-height) - 30px);
+            width: 420px; height: calc(100vh - var(--nav-height) - 30px);
             background: white; border-radius: 15px; border: 4px solid var(--accent);
             box-shadow: -5px 0 25px rgba(0,0,0,0.5); z-index: 2000;
             display: none; flex-direction: column; overflow: hidden;
@@ -143,8 +144,8 @@
 
     <div id="google-modal">
         <header>
-            <span>REFERÊNCIA VISUAL</span>
-            <button class="close-modal" onclick="closeGoogleModal()">FECHAR [X]</button>
+            <span id="modal-title">ASSISTENTE VISUAL</span>
+            <button class="close-modal" onclick="closeSideModal()">FECHAR [X]</button>
         </header>
         <iframe id="google-iframe" src=""></iframe>
     </div>
@@ -175,21 +176,17 @@
         var pedidosProcessados = [];
         const STORAGE_KEY = 'sucedoan_kiosk_data';
 
-        // --- FUNÇÕES DO MODAL GOOGLE ---
+        // --- FUNÇÕES DO MODAL LATERAL ---
 
-        function openGoogleModal(query) {
+        function openSideModal(url, title) {
             const modal = document.getElementById('google-modal');
             const iframe = document.getElementById('google-iframe');
-            
-            // Nota: Alguns sites (como o Google) podem bloquear exibição em iframe por segurança (X-Frame-Options).
-            // Caso o Google bloqueie, usamos o Bing Images ou uma busca direta que permita.
-            const searchUrl = "https://www.google.com/search?q=" + encodeURIComponent(query) + "&tbm=isch&igu=1";
-            
-            iframe.src = searchUrl;
+            document.getElementById('modal-title').innerText = title;
+            iframe.src = url;
             modal.style.display = 'flex';
         }
 
-        function closeGoogleModal() {
+        function closeSideModal() {
             document.getElementById('google-modal').style.display = 'none';
             document.getElementById('google-iframe').src = '';
         }
@@ -224,7 +221,7 @@
             window.print();
         }
 
-        // --- LÓGICA DA TABELA ---
+        // --- LÓGICA DA TABELA (TABULATOR) ---
 
         function initTable(data) {
             table = new Tabulator("#product-table", {
@@ -233,23 +230,30 @@
                 height: "100%",
                 movableColumns: true,
                 columns: [
-                    {title: "CÓDIGO", field: "Código", width: 100, headerSort: false},
+                    {title: "CÓDIGO", field: "Código", width: 90, headerSort: false},
                     
-                    // BOTÃO DA LUPA -> AGORA ABRE O MODAL
+                    // Lupa de Busca Rápida (Modal)
                     {title: "🔍", width: 50, hozAlign: "center", formatter: () => "🔍", headerSort: false, cellClick: (e, cell) => {
                         const desc = cell.getData()["Descrição"];
-                        openGoogleModal(desc);
+                        openSideModal("https://www.bing.com/images/search?q=" + encodeURIComponent(desc), "BUSCA DE REFERÊNCIA");
                     }},
 
-                    {title: "AÇÕES", width: 200, headerSort: false, hozAlign: "center", columns: [
-                        {title: "COP/EDITOR", formatter: () => "<button class='action-btn btn-copy'>📋 NOME</button>", width: 95, cellClick: (e, cell) => {
+                    // Coluna de Ações
+                    {title: "AÇÕES IA E SISTEMA", width: 300, headerSort: false, hozAlign: "center", columns: [
+                        {title: "IA PROMPT", formatter: () => "<button class='action-btn btn-ia'>🤖 IA</button>", width: 90, cellClick: (e, cell) => {
+                            const desc = cell.getData()["Descrição"];
+                            const prompt = `Foto profissional de e-commerce, fundo branco, iluminação de estúdio, 4k, centralizado, produto: ${desc}`;
+                            navigator.clipboard.writeText(prompt);
+                            openSideModal("https://www.bing.com/images/create?q=" + encodeURIComponent(prompt), "GERAR IMAGEM COM IA");
+                            alert("Prompt otimizado copiado! Cole na barra da IA que abriu ao lado.");
+                        }},
+                        {title: "EDITOR", formatter: () => "<button class='action-btn btn-copy'>📋 NOME</button>", width: 95, cellClick: (e, cell) => {
                             const slug = slugify(cell.getData()["Descrição"]);
                             navigator.clipboard.writeText(slug); 
-                            const editorIframe = document.getElementById('iframe-editor');
-                            editorIframe.src = "https://donaantonia.com.br/bio/?nome=" + slug;
+                            document.getElementById('iframe-editor').src = "https://donaantonia.com.br/bio/?nome=" + slug;
                             showView('editor', document.getElementById('btn-editor'));
                         }},
-                        {title: "GERAR GH", formatter: () => "<button class='action-btn btn-link'>🔗 LINK</button>", width: 95, cellClick: (e, cell) => {
+                        {title: "LINK GH", formatter: () => "<button class='action-btn btn-link'>🔗 LINK</button>", width: 95, cellClick: (e, cell) => {
                             const slug = slugify(cell.getData()["Descrição"]);
                             const urlFinal = `https://github.com/osvaldosereia/SUCEDOAN12/blob/main/site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp?raw=true`;
                             cell.getRow().update({"URL Imagens Externas": urlFinal});
@@ -257,10 +261,10 @@
                         }}
                     ]},
 
-                    {title: "URL IMAGEM", field: "URL Imagens Externas", width: 220, editor: "input"},
-                    {title: "DESCRIÇÃO DO PRODUTO", field: "Descrição", widthGrow: 4, editor: "input"},
+                    {title: "URL IMAGEM", field: "URL Imagens Externas", width: 200, editor: "input"},
+                    {title: "DESCRIÇÃO DO PRODUTO", field: "Descrição", widthGrow: 3, editor: "input"},
                     {title: "ESTOQUE", field: "Estoque", width: 90, editor: "input", hozAlign: "center"},
-                    {title: "LOCAL", field: "Localização", width: 130, editor: "input"},
+                    {title: "LOCAL", field: "Localização", width: 120, editor: "input"},
                 ],
                 cellEdited: function(cell) {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()));
@@ -278,7 +282,7 @@
             });
         }
 
-        // --- AUTOMAÇÃO DE PEDIDOS ---
+        // --- AUTOMAÇÃO DE PEDIDOS (MAKE.COM) ---
 
         async function fetchOrders() {
             try {
@@ -312,14 +316,20 @@
             } catch(e) { }
         }
 
-        // --- GESTÃO DE TELAS ---
+        // --- GESTÃO DE TELAS (PERSISTENTE) ---
 
         function showView(viewId, btn) {
+            // Esconde todas as telas
             document.querySelectorAll('.view-pane').forEach(v => v.classList.remove('active'));
+            // Remove active de todos os botões
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             
+            // Ativa a tela e o botão selecionado
             const targetView = document.getElementById('view-' + viewId);
-            if(targetView) targetView.classList.add('active');
+            if(targetView) {
+                targetView.classList.add('active');
+            }
+            
             if(btn) {
                 btn.classList.add('active');
                 btn.classList.remove('new-order');
@@ -330,34 +340,46 @@
             }
         }
 
+        // --- INICIALIZAÇÃO ---
+
         window.onload = function() {
             const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) initTable(JSON.parse(savedData));
+            if (savedData) {
+                initTable(JSON.parse(savedData));
+            }
             setInterval(fetchOrders, 30000);
             fetchOrders();
             document.getElementById("search-field").focus();
         };
 
+        // Upload CSV
         document.getElementById('csv-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(!file) return;
             Papa.parse(file, {
-                header: true, skipEmptyLines: true, encoding: "UTF-8",
+                header: true,
+                skipEmptyLines: true,
+                encoding: "UTF-8",
                 complete: function(results) {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(results.data));
                     initTable(results.data);
-                    alert("Planilha atualizada com sucesso!");
+                    alert("Dados importados!");
                 }
             });
         });
 
+        // Exportar CSV
         document.getElementById('btn-export').addEventListener('click', function() {
             if (!table) return;
-            const csv = Papa.unparse(table.getData(), { quotes: true, delimiter: ";", newline: "\r\n" });
+            const csv = Papa.unparse(table.getData(), {
+                quotes: true,
+                delimiter: ";",
+                newline: "\r\n"
+            });
             const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "estoque_producao_editado.csv";
+            link.download = "estoque_producao_atualizado.csv";
             link.click();
         });
     </script>
