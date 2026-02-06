@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Montagem - Sucedoan</title>
+
+    <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_modern.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #0052cc;
+            --success: #22c55e;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text-main: #f8fafc;
+            --accent: #38bdf8;
+        }
+
+        /* Bloqueia a rolagem da página principal */
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: var(--card);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .search-container {
+            flex-grow: 1;
+            margin: 0 40px;
+            position: relative;
+        }
+
+        #search-field {
+            width: 100%;
+            padding: 18px 25px;
+            font-size: 24px; /* Fonte Grande para Busca */
+            font-weight: 700;
+            border-radius: 12px;
+            border: 3px solid var(--accent);
+            background: #ffffff;
+            color: #000;
+            outline: none;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+        }
+
+        #search-field:focus {
+            border-color: var(--success);
+            background: #f0fff4;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        .btn-upload { background: #475569; color: white; }
+        .btn-export { background: var(--success); color: white; margin-left: 10px; }
+
+        /* Customização da Tabela para Visibilidade Máxima */
+        #product-table {
+            flex-grow: 1;
+            background: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: none;
+            font-size: 18px; /* Texto da tabela maior */
+        }
+
+        /* Estilo das linhas do Tabulator */
+        .tabulator { background-color: var(--card) !important; color: white !important; }
+        .tabulator-header { background-color: #334155 !important; color: var(--accent) !important; font-weight: 900 !important; border-bottom: 2px solid var(--accent) !important; }
+        .tabulator-row { background-color: var(--card) !important; min-height: 60px !important; align-items: center; border-bottom: 1px solid #334155 !important; }
+        .tabulator-row.tabulator-selectable:hover { background-color: #334155 !important; }
+        .tabulator-cell { padding: 15px !important; }
+        
+        /* Destaque para o Estoque */
+        .stock-cell { font-weight: 900; color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <div style="font-weight: 900; font-size: 22px; color: var(--accent);">LINHA DE MONTAGEM</div>
+            
+            <div class="search-container">
+                <input type="text" id="search-field" placeholder="🔎 ESCANEIE OU DIGITE O PRODUTO..." autofocus>
+            </div>
+
+            <div style="display: flex;">
+                <input type="file" id="csv-file" accept=".csv" style="display:none">
+                <button class="btn btn-upload" onclick="document.getElementById('csv-file').click()">Carregar CSV</button>
+                <button class="btn btn-export" id="btn-export">Exportar</button>
+            </div>
+        </header>
+
+        <div id="product-table"></div>
+    </div>
+
+    <script>
+        var table;
+        const STORAGE_KEY = 'sucedoan_kiosk_data';
+
+        function initTable(data) {
+            table = new Tabulator("#product-table", {
+                data: data,
+                layout: "fitColumns",
+                responsiveLayout: "collapse",
+                height: "100%", // Preenche o container
+                movableColumns: true,
+                renderVertical: "virtual", // Alta performance para listas gigantes
+                columns: [
+                    {title: "CÓDIGO", field: "Código", width: 150, editor: "input", headerSort: false},
+                    {title: "DESCRIÇÃO DO PRODUTO", field: "Descrição", widthGrow: 4, editor: "input"},
+                    {title: "EAN / BARRAS", field: "GTIN/EAN", width: 220, editor: "input"},
+                    {title: "LOCALIZAÇÃO", field: "Localização", width: 180, editor: "input"},
+                    {title: "ESTOQUE", field: "Estoque", width: 130, hozAlign: "center", editor: "input", cssClass: "stock-cell"},
+                ],
+                cellEdited: function(cell) {
+                    saveToLocalStorage(table.getData());
+                }
+            });
+
+            // Lógica de Busca Instantânea
+            document.getElementById("search-field").addEventListener("input", function(e){
+                const val = e.target.value;
+                table.setFilter([
+                    [
+                        {field:"Código", type:"like", value:val},
+                        {field:"Descrição", type:"like", value:val},
+                        {field:"GTIN/EAN", type:"like", value:val}
+                    ]
+                ]);
+            });
+        }
+
+        function saveToLocalStorage(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        window.onload = function() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                initTable(JSON.parse(savedData));
+            }
+            document.getElementById("search-field").focus();
+        };
+
+        document.getElementById('csv-file').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                encoding: "UTF-8",
+                complete: function(results) {
+                    saveToLocalStorage(results.data);
+                    initTable(results.data);
+                    alert("Planilha carregada com sucesso!");
+                }
+            });
+        });
+
+        document.getElementById('btn-export').addEventListener('click', function() {
+            if (!table) return;
+            const dataToExport = table.getData();
+            const csv = Papa.unparse(dataToExport, { quotes: true, delimiter: ";", newline: "\r\n" });
+            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "estoque_montagem_atualizado.csv";
+            link.click();
+        });
+    </script>
+</body>
+</html>
