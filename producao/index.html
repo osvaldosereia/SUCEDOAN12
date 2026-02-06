@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Montagem - Sucedoan</title>
+    <title>Sistema Integrado - Dona Antonia</title>
 
     <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_modern.min.css" rel="stylesheet">
     <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
@@ -18,188 +18,167 @@
             --card: #1e293b;
             --text-main: #f8fafc;
             --accent: #38bdf8;
+            --nav-height: 70px;
         }
 
-        /* Bloqueia a rolagem da página principal */
         html, body { 
             height: 100%; 
             margin: 0; 
             overflow: hidden; 
             font-family: 'Inter', sans-serif;
             background-color: var(--bg);
-            color: var(--text-main);
         }
 
-        .app-container {
+        /* BARRA DE NAVEGAÇÃO FIXA */
+        .global-nav {
+            height: var(--nav-height);
+            background: #000;
             display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            background: var(--card);
-            border-radius: 12px;
-            margin-bottom: 10px;
+            padding: 0 20px;
+            gap: 15px;
+            border-bottom: 2px solid var(--accent);
         }
 
-        .search-container {
-            flex-grow: 1;
-            margin: 0 40px;
-            position: relative;
-        }
-
-        #search-field {
-            width: 100%;
-            padding: 18px 25px;
-            font-size: 24px; /* Fonte Grande para Busca */
-            font-weight: 700;
-            border-radius: 12px;
-            border: 3px solid var(--accent);
-            background: #ffffff;
-            color: #000;
-            outline: none;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
-        }
-
-        #search-field:focus {
-            border-color: var(--success);
-            background: #f0fff4;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
+        .nav-btn {
+            padding: 10px 18px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: white;
             font-weight: 700;
             cursor: pointer;
-            text-transform: uppercase;
-            font-size: 14px;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s;
         }
 
-        .btn-upload { background: #475569; color: white; }
-        .btn-export { background: var(--success); color: white; margin-left: 10px; }
+        .nav-btn:hover { background: var(--accent); color: #000; }
+        .nav-btn.active { background: var(--primary); border-color: var(--accent); }
+        .nav-btn.special { background: #f59e0b; color: #000; } /* Cor para o Bling */
 
-        /* Customização da Tabela para Visibilidade Máxima */
-        #product-table {
-            flex-grow: 1;
-            background: var(--card);
-            border-radius: 12px;
-            overflow: hidden;
-            border: none;
-            font-size: 18px; /* Texto da tabela maior */
+        /* CONTAINERS DE CONTEÚDO */
+        .content-view {
+            height: calc(100vh - var(--nav-height));
+            width: 100%;
+            display: none; /* Escondido por padrão */
         }
 
-        /* Estilo das linhas do Tabulator */
-        .tabulator { background-color: var(--card) !important; color: white !important; }
-        .tabulator-header { background-color: #334155 !important; color: var(--accent) !important; font-weight: 900 !important; border-bottom: 2px solid var(--accent) !important; }
-        .tabulator-row { background-color: var(--card) !important; min-height: 60px !important; align-items: center; border-bottom: 1px solid #334155 !important; }
-        .tabulator-row.tabulator-selectable:hover { background-color: #334155 !important; }
-        .tabulator-cell { padding: 15px !important; }
+        .content-view.active { display: block; }
+
+        /* Estilos da Tabela (Produção) */
+        .app-container { padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; height: 100%; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .search-container { flex-grow: 1; margin: 0 20px; }
+        #search-field { width: 100%; padding: 15px; font-size: 20px; font-weight: 700; border-radius: 8px; border: 2px solid var(--accent); }
         
-        /* Destaque para o Estoque */
-        .stock-cell { font-weight: 900; color: var(--accent); }
+        #product-table { flex-grow: 1; border-radius: 12px; overflow: hidden; font-size: 18px; }
+        
+        /* Iframe para sites externos */
+        iframe { width: 100%; height: 100%; border: none; background: white; }
 
+        .btn-system { padding: 10px 15px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <header>
-            <div style="font-weight: 900; font-size: 22px; color: var(--accent);">LINHA DE MONTAGEM</div>
-            
-            <div class="search-container">
-                <input type="text" id="search-field" placeholder="🔎 ESCANEIE OU DIGITE O PRODUTO..." autofocus>
-            </div>
+    <nav class="global-nav">
+        <div style="color: var(--accent); font-weight: 900; margin-right: 20px;">DONA ANTONIA</div>
+        
+        <button class="nav-btn active" onclick="switchView('view-producao', this)">🛠 PRODUÇÃO</button>
+        
+        <button class="nav-btn special" onclick="switchView('view-bling', this)">💰 BLING CHECKOUT</button>
+        
+        <button class="nav-btn" onclick="window.open('URL_AQUI', '_blank')">LINK 3</button>
+        <button class="nav-btn" onclick="window.open('URL_AQUI', '_blank')">LINK 4</button>
+    </nav>
 
-            <div style="display: flex;">
+    <div id="view-producao" class="content-view active">
+        <div class="app-container">
+            <header>
+                <div class="search-container">
+                    <input type="text" id="search-field" placeholder="🔎 ESCANEAR OU BUSCAR PRODUTO..." autofocus>
+                </div>
                 <input type="file" id="csv-file" accept=".csv" style="display:none">
-                <button class="btn btn-upload" onclick="document.getElementById('csv-file').click()">Carregar CSV</button>
-                <button class="btn btn-export" id="btn-export">Exportar</button>
-            </div>
-        </header>
+                <button class="btn-system" onclick="document.getElementById('csv-file').click()" style="background:#475569; color:white;">SUBIR CSV</button>
+                <button class="btn-system" id="btn-export" style="background:var(--success); color:white; margin-left:10px;">EXPORTAR</button>
+            </header>
+            <div id="product-table"></div>
+        </div>
+    </div>
 
-        <div id="product-table"></div>
+    <div id="view-bling" class="content-view">
+        <iframe src="https://www.bling.com.br/vendas.checkout.php"></iframe>
     </div>
 
     <script>
         var table;
         const STORAGE_KEY = 'sucedoan_kiosk_data';
 
+        // Função para trocar de tela
+        function switchView(viewId, btn) {
+            // Remove active de todos
+            document.querySelectorAll('.content-view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+            // Ativa o selecionado
+            document.getElementById(viewId).classList.add('active');
+            btn.classList.add('active');
+
+            // Se voltar para produção, foca no busca
+            if(viewId === 'view-producao') {
+                setTimeout(() => document.getElementById("search-field").focus(), 100);
+            }
+        }
+
+        // Lógica da Tabela (Mantida do anterior)
         function initTable(data) {
             table = new Tabulator("#product-table", {
                 data: data,
                 layout: "fitColumns",
-                responsiveLayout: "collapse",
-                height: "100%", // Preenche o container
-                movableColumns: true,
-                renderVertical: "virtual", // Alta performance para listas gigantes
+                height: "100%",
                 columns: [
-                    {title: "CÓDIGO", field: "Código", width: 150, editor: "input", headerSort: false},
-                    {title: "DESCRIÇÃO DO PRODUTO", field: "Descrição", widthGrow: 4, editor: "input"},
-                    {title: "EAN / BARRAS", field: "GTIN/EAN", width: 220, editor: "input"},
-                    {title: "LOCALIZAÇÃO", field: "Localização", width: 180, editor: "input"},
-                    {title: "ESTOQUE", field: "Estoque", width: 130, hozAlign: "center", editor: "input", cssClass: "stock-cell"},
+                    {title: "CÓDIGO", field: "Código", width: 140, editor: "input"},
+                    {title: "DESCRIÇÃO", field: "Descrição", widthGrow: 4, editor: "input"},
+                    {title: "EAN", field: "GTIN/EAN", width: 200, editor: "input"},
+                    {title: "LOCAL", field: "Localização", width: 150, editor: "input"},
+                    {title: "ESTOQUE", field: "Estoque", width: 120, hozAlign: "center", editor: "input", color: "#38bdf8"},
                 ],
                 cellEdited: function(cell) {
-                    saveToLocalStorage(table.getData());
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()));
                 }
             });
 
-            // Lógica de Busca Instantânea
             document.getElementById("search-field").addEventListener("input", function(e){
-                const val = e.target.value;
-                table.setFilter([
-                    [
-                        {field:"Código", type:"like", value:val},
-                        {field:"Descrição", type:"like", value:val},
-                        {field:"GTIN/EAN", type:"like", value:val}
-                    ]
-                ]);
+                table.setFilter([[{field:"Código", type:"like", value:e.target.value}, {field:"Descrição", type:"like", value:e.target.value}, {field:"GTIN/EAN", type:"like", value:e.target.value}]]);
             });
         }
 
-        function saveToLocalStorage(data) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        }
-
+        // Inicialização
         window.onload = function() {
             const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                initTable(JSON.parse(savedData));
-            }
+            if (savedData) initTable(JSON.parse(savedData));
             document.getElementById("search-field").focus();
         };
 
+        // Upload e Export
         document.getElementById('csv-file').addEventListener('change', function(e) {
-            var file = e.target.files[0];
-            if (!file) return;
-
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                encoding: "UTF-8",
-                complete: function(results) {
-                    saveToLocalStorage(results.data);
-                    initTable(results.data);
-                    alert("Planilha carregada com sucesso!");
+            Papa.parse(e.target.files[0], {
+                header: true, skipEmptyLines: true, encoding: "UTF-8",
+                complete: function(r) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(r.data));
+                    initTable(r.data);
                 }
             });
         });
 
         document.getElementById('btn-export').addEventListener('click', function() {
             if (!table) return;
-            const dataToExport = table.getData();
-            const csv = Papa.unparse(dataToExport, { quotes: true, delimiter: ";", newline: "\r\n" });
+            const csv = Papa.unparse(table.getData(), { quotes: true, delimiter: ";", newline: "\r\n" });
             const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "estoque_montagem_atualizado.csv";
+            link.download = "estoque_atualizado.csv";
             link.click();
         });
     </script>
