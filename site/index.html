@@ -441,31 +441,25 @@
     let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
     // --- FUNÇÃO DE INICIALIZAÇÃO CORRIGIDA ---
-   async function init() {
+  async function init() {
     try {
-        // 1. CARREGAR AS CESTAS (Independente dos produtos)
+        // 1. CARREGAR AS CESTAS
         const cRes = await fetch('produtos-cesta-basica.json');
         if (cRes.ok) {
             DB_CESTAS = await cRes.json();
-            renderHome(); // Mostra as cestas na Home imediatamente
+            renderHome();
         }
 
-        // 2. CARREGAR OS PRODUTOS (Com tratamento de erro exato)
+        // 2. CARREGAR OS PRODUTOS (AJUSTADO PARA IMAGENS VAZIAS)
         const pRes = await fetch('produtos.json');
         if (pRes.ok) {
-            let text = await pRes.text(); // Lemos como texto primeiro
+            let text = await pRes.text();
             
-            // LIMPEZA DE SINTAXE:
-            // Corrige o erro do Make substituindo ": ," por ": null," 
-            // e remove vírgulas sobrando antes do fechamento do JSON.
-            text = text.trim()
-                       .replace(/:\s*,/g, ': null,')
-                       .replace(/:\s*\]/g, ': null]')
-                       .replace(/,(\s+)?\]$/, "]");
-
-            let rawProd = JSON.parse(text); // Agora o JSON está seguro para converter
+            // LIMPEZA: Corrige campos vazios do Make para não travar o JSON
+            text = text.trim().replace(/:\s*,/g, ': null,').replace(/:\s*\]/g, ': null]');
             
-            // Correção para listas aninhadas do Make
+            let rawProd = JSON.parse(text);
+            
             if (Array.isArray(rawProd) && Array.isArray(rawProd[0])) {
                 rawProd = rawProd[0];
             }
@@ -489,13 +483,14 @@
                         price: parseFloat(x.preco) || 0,
                         cat: categorias[primeiraLetra] || "Diversos",
                         stock: x.estoque || 0,
-                        img: x.imagem && x.imagem !== "" ? x.imagem : null
+                        // ACEITA "" E TRANSFORMA EM NULL PARA USAR PLACEHOLDER DEPOIS
+                        img: (x.imagem && x.imagem.trim() !== "") ? x.imagem : null
                     };
                 });
-            console.log("Produtos carregados com sucesso:", DB_PROD.length);
+            console.log("Produtos carregados:", DB_PROD.length);
         }
     } catch (err) { 
-        console.error("Erro crítico ao processar arquivos JSON:", err);
+        console.error("Erro ao processar produtos:", err);
     }
 }
 
