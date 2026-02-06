@@ -3,203 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impressão Térmica Clean</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Gerador de Cupom Térmico</title>
     
     <style>
+        /* --- CONFIGURAÇÕES GERAIS --- */
         :root {
             --paper-width: 80mm;
+            --print-margin: 3mm;
+            --primary-color: #333;
+            --bg-app: #f5f5f7;
         }
 
         body {
-            font-family: 'Inter', Helvetica, Arial, sans-serif;
-            background-color: #f4f6f8;
+            /* Fonte nativa do sistema (rápida e moderna) */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-app);
             margin: 0;
             padding: 20px;
             color: #000;
         }
 
-        /* --- Interface de Upload (Tela do PC) --- */
+        /* --- INTERFACE DE UPLOAD (Apenas na tela) --- */
         .app-container {
-            max-width: 600px;
-            margin: 0 auto 40px auto;
+            max-width: 500px;
+            margin: 40px auto;
             background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             text-align: center;
+            border: 1px solid #e1e1e1;
         }
 
-        .upload-zone {
-            border: 2px dashed #cbd5e0;
+        .app-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .app-desc {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .btn-upload {
+            border: 2px dashed #ccc;
+            color: #555;
+            background-color: #fafafa;
+            padding: 30px 20px;
             border-radius: 8px;
-            padding: 30px;
-            margin: 20px 0;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            box-sizing: border-box;
             cursor: pointer;
-            background: #fafafa;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
 
-        .upload-zone:hover {
+        .btn-upload:hover {
             border-color: #000;
-            background: #f0f4f8;
+            background-color: #fff;
         }
 
-        .btn-print {
+        .icon-file {
+            font-size: 32px;
+            display: block;
+        }
+
+        .input-file {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            height: 100%;
+            width: 100%;
+        }
+
+        .btn-action {
             background-color: #000;
             color: white;
             border: none;
-            padding: 12px 30px;
+            padding: 15px 0;
             font-size: 16px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            display: none; 
-            margin-top: 10px;
+            width: 100%;
+            margin-top: 20px;
+            display: none; /* Escondido inicialmente */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .btn-action:hover {
+            background-color: #333;
         }
 
-        input[type="file"] { display: none; }
-        .upload-label { font-weight: 600; color: #555; cursor: pointer; }
-
-        /* --- Estilos do Cupom --- */
+        /* --- VISUAL DO CUPOM (Simulação na Tela + Impressão) --- */
         #area-cupom {
             width: var(--paper-width);
             background: #fff;
-            margin: 0 auto;
-            padding: 0;
+            margin: 40px auto;
+            /* Padding simula a margem de impressão na tela */
+            padding: var(--print-margin); 
+            box-sizing: border-box; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
             display: none;
-            box-sizing: border-box;
             line-height: 1.2;
         }
 
-        /* CABEÇALHO LIMPO (Sem fundo preto) */
-        .header-box {
-            background: transparent;
-            color: #000;
+        /* --- ELEMENTOS DO CUPOM --- */
+        
+        /* Cabeçalho */
+        .cupom-header {
             text-align: center;
-            padding: 10px 0;
-            border-bottom: 3px solid #000; /* Linha grossa para separar */
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
             margin-bottom: 10px;
         }
+        .cupom-title { font-size: 12px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+        .cupom-pedido { font-size: 48px; font-weight: 900; line-height: 1; margin: 5px 0; letter-spacing: -2px; }
+        .cupom-data { font-size: 12px; font-family: monospace; }
 
-        .header-title { 
-            font-size: 12px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            font-weight: 600;
+        /* Grupos de Informação */
+        .cupom-group {
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 10px;
         }
-        
-        .header-pedido { 
-            font-size: 42px; /* Bem grande para compensar a falta de fundo */
-            font-weight: 900; 
-            margin: 5px 0;
-            line-height: 1;
-        }
-        
-        .header-data { 
-            font-size: 12px; 
-            font-weight: 600;
-        }
-
-        /* Seções */
-        .section { 
-            padding: 5px 0; 
-            border-bottom: 1px dashed #000; 
+        .cupom-group-title {
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #444;
             margin-bottom: 5px;
-        }
-        
-        .section-title { 
-            font-size: 11px; 
-            font-weight: 800; 
-            text-transform: uppercase; 
-            margin-bottom: 5px; 
-            text-decoration: underline;
         }
 
         /* Cliente */
-        .client-name { font-size: 16px; font-weight: 800; margin-bottom: 3px; }
-        .client-detail { font-size: 13px; margin-bottom: 2px; }
+        .cliente-nome { font-size: 16px; font-weight: 800; margin-bottom: 2px; display: block;}
+        .cliente-info { font-size: 13px; display: block; margin-bottom: 1px; }
 
-        /* Tabela de Itens */
-        .table-items { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .table-items td { padding: 8px 0; vertical-align: top; }
-
-        .qty-col {
+        /* Tabela de Produtos */
+        .table-items {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .td-qtd {
             width: 15%;
-            font-weight: 800;
-            font-size: 18px; /* Quantidade bem visível */
-            text-align: center;
             vertical-align: top;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 800;
+            padding-top: 2px;
         }
 
-        .desc-col { padding-left: 5px; }
+        .td-desc {
+            width: 85%;
+            vertical-align: top;
+            padding-bottom: 8px; /* Espaço entre produtos */
+            padding-left: 5px;   /* Separação da quantidade */
+        }
 
-        .item-name {
+        .item-nome {
+            font-size: 14px;
             font-weight: 600;
             display: block;
             margin-bottom: 3px;
-            font-size: 13px;
         }
 
-        /* CÓDIGO E LOCALIZAÇÃO (Sem box, sem fundo, apenas texto grande) */
-        .item-meta {
-            font-size: 15px; /* Aumentado */
-            font-weight: 900; /* Extra Negrito */
-            color: #000;
-            display: block;
+        /* Container do Código e Localização */
+        .item-meta-box {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
             margin-top: 2px;
-            letter-spacing: -0.5px; /* Aperta levemente para caber mais */
         }
 
-        .footer-end { 
-            text-align: center; 
-            font-size: 12px; 
-            padding: 20px 0; 
-            font-weight: 800; 
+        .meta-codigo {
+            /* Garante que o código não gruda */
+            margin-right: 10px; 
+            font-family: monospace; /* Fonte monoespaçada para números ajuda na leitura */
+            font-size: 15px;
+        }
+
+        .meta-loc {
+            /* Visualmente separado */
+            position: relative;
+        }
+        
+        /* Adiciona uma barra separadora via CSS se houver localização */
+        .meta-loc::before {
+            content: "|";
+            margin-right: 10px;
+            color: #ccc;
+            font-weight: normal;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 15px;
             border-top: 2px solid #000;
-            margin-top: 10px;
+            padding-top: 10px;
         }
 
+        /* --- MODO IMPRESSÃO (Onde a mágica acontece) --- */
         @media print {
-            @page { margin: 0; size: 80mm auto; }
-            body { background: white; padding: 0; margin: 0; }
+            @page {
+                margin: 0;
+                size: 80mm auto; /* Define o tamanho do papel */
+            }
+
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+
             .app-container { display: none !important; }
-            #area-cupom { display: block !important; width: 100%; padding-bottom: 5mm; }
+            
+            #area-cupom {
+                display: block !important;
+                width: 80mm; /* Largura total */
+                /* As margens de segurança para a impressão não cortar */
+                padding: 0 var(--print-margin); 
+                box-shadow: none;
+                margin: 0;
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <h2 style="margin-top:0">🖨️ Gerador de Pedido (Econômico)</h2>
-        <p style="color:#666; font-size: 14px;">Layout limpo: sem fundos sólidos, economia de tinta.</p>
+        <div class="app-title">Gerador de Cupom</div>
+        <div class="app-desc">Sistema de conversão para impressão térmica (80mm)</div>
         
-        <label for="inputArquivo" class="upload-zone" id="dropZone">
-            <div style="font-size: 24px; margin-bottom: 10px;">📂</div>
-            <span class="upload-label">Clique para selecionar o arquivo HTML</span>
-        </label>
-        <input type="file" id="inputArquivo" accept=".html">
+        <div class="upload-btn-wrapper">
+            <button class="btn-upload" id="btnDrop">
+                <span class="icon-file">📄</span>
+                <span>Toque para escolher o HTML do Pedido</span>
+            </button>
+            <input type="file" name="myfile" id="inputArquivo" class="input-file" accept=".html" />
+        </div>
 
-        <button class="btn-print" id="btnImprimir" onclick="window.print()">IMPRIMIR CUPOM</button>
+        <button class="btn-action" id="btnImprimir" onclick="window.print()">
+            🖨️ IMPRIMIR PEDIDO
+        </button>
     </div>
 
-    <div id="area-cupom"></div>
+    <div id="area-cupom">
+        </div>
 
     <script>
         const inputArquivo = document.getElementById('inputArquivo');
-        const dropZone = document.getElementById('dropZone');
+        const btnDrop = document.getElementById('btnDrop');
         
         inputArquivo.addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            document.querySelector('.upload-label').innerText = "Arquivo carregado: " + file.name;
-            dropZone.style.borderColor = "#000";
-            
+            // Muda visual do botão
+            btnDrop.style.borderColor = "#000";
+            btnDrop.style.background = "#eef";
+            btnDrop.innerHTML = `<span class="icon-file">✅</span><span>${file.name}</span>`;
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 processarHTML(e.target.result);
-                document.getElementById('btnImprimir').style.display = 'inline-block';
-                setTimeout(() => { document.getElementById('area-cupom').scrollIntoView({behavior: "smooth"}); }, 100);
+                document.getElementById('btnImprimir').style.display = 'block';
+                
+                // Rola a tela até o cupom
+                setTimeout(() => { 
+                    document.getElementById('area-cupom').scrollIntoView({behavior: "smooth"}); 
+                }, 200);
             };
             reader.readAsText(file);
         });
@@ -208,16 +302,19 @@
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlString, 'text/html');
 
+            // 1. Número
             const tituloPedido = doc.querySelector('h2') ? doc.querySelector('h2').innerText.trim() : "000";
             const numeroPedido = tituloPedido.replace(/\D/g, ''); 
 
+            // 2. Data
             let dataPedido = "Data N/D";
             doc.querySelectorAll('.gridH tr').forEach(tr => {
                 if(tr.innerText.includes('Data')) dataPedido = tr.cells[1].innerText.trim();
             });
 
+            // 3. Cliente
             const divCliente = doc.querySelector('.divBorda');
-            let nomeCliente = "Cliente não identificado", endereco = "", cidade = "", celular = "";
+            let nomeCliente = "Consumidor", endereco = "", cidade = "", celular = "";
             
             if (divCliente) {
                 const elNome = divCliente.querySelector('b');
@@ -235,6 +332,7 @@
                 });
             }
 
+            // 4. Itens
             const tabelaProdutos = doc.querySelector('table.grid');
             let htmlItens = "";
 
@@ -247,44 +345,50 @@
                         const localizacao = celulas[3].innerText.trim();
                         const qtd = celulas[4].innerText.trim();
 
-                        // Formatação LIMPA: Apenas texto, sem símbolos
-                        const infoExtra = localizacao 
-                            ? `${codigo}   LOC: ${localizacao}` 
-                            : codigo;
+                        // Lógica de Separação Visual
+                        // Se tiver localização, adiciona a classe que põe a barra separadora
+                        const htmlLoc = localizacao 
+                            ? `<span class="meta-loc">LOC: ${localizacao}</span>` 
+                            : '';
 
                         htmlItens += `
                             <tr>
-                                <td class="qty-col">${parseFloat(qtd.replace(',','.'))}</td>
-                                <td class="desc-col">
-                                    <span class="item-name">${descricao}</span>
-                                    <div class="item-meta">
-                                        ${infoExtra}
+                                <td class="td-qtd">${parseFloat(qtd.replace(',','.'))}</td>
+                                <td class="td-desc">
+                                    <span class="item-nome">${descricao}</span>
+                                    <div class="item-meta-box">
+                                        <span class="meta-codigo">${codigo}</span>
+                                        ${htmlLoc}
                                     </div>
                                 </td>
                             </tr>
-                            <tr><td colspan="2" style="border-bottom: 1px dotted #ccc; padding-bottom:5px;"></td></tr>
+                            <tr>
+                                <td colspan="2" style="border-bottom: 1px dotted #ccc; height: 5px;"></td>
+                            </tr>
+                            <tr><td colspan="2" style="height: 5px;"></td></tr>
                         `;
                     }
                 });
             }
 
+            // Montagem do HTML
             const cupomHTML = `
-                <div class="header-box">
-                    <div class="header-title">PEDIDO DE VENDA</div>
-                    <div class="header-pedido">${numeroPedido}</div>
-                    <div class="header-data">${dataPedido}</div>
+                <div class="cupom-header">
+                    <div class="cupom-title">Pedido de Venda</div>
+                    <div class="cupom-pedido">${numeroPedido}</div>
+                    <div class="cupom-data">${dataPedido}</div>
                 </div>
                 
-                <div class="section">
-                    <div class="section-title">CLIENTE</div>
-                    <div class="client-name">${nomeCliente}</div>
-                    ${endereco ? `<div class="client-detail">${endereco}</div>` : ''}
-                    ${cidade ? `<div class="client-detail">${cidade}</div>` : ''}
-                    ${celular ? `<div class="client-detail">Tel: ${celular}</div>` : ''}
+                <div class="cupom-group">
+                    <div class="cupom-group-title">Dados do Cliente</div>
+                    <span class="cliente-nome">${nomeCliente}</span>
+                    ${endereco ? `<span class="cliente-info">${endereco}</span>` : ''}
+                    ${cidade ? `<span class="cliente-info">${cidade}</span>` : ''}
+                    ${celular ? `<span class="cliente-info">Tel: ${celular}</span>` : ''}
                 </div>
 
-                <div class="section" style="border-bottom:none;">
-                    <div class="section-title">PRODUTOS</div>
+                <div class="cupom-group" style="border-bottom: none;">
+                    <div class="cupom-group-title">Produtos</div>
                     <table class="table-items">
                         <tbody>
                             ${htmlItens}
@@ -292,8 +396,8 @@
                     </table>
                 </div>
                 
-                <div class="footer-end">
-                    FIM DO PEDIDO
+                <div class="footer">
+                    --- FIM DO PEDIDO ---
                 </div>
             `;
 
