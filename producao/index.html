@@ -256,19 +256,23 @@
                 return;
             }
 
-            // Feedback visual no botão
+            // Função ajudante para limpar "Enters" e espaços extras de qualquer texto
+            const limparTexto = (texto) => {
+                if (!texto) return "";
+                return texto.toString().replace(/[\r\n]+/g, "").trim();
+            };
+
             const textoOriginal = btnElement.innerText;
             btnElement.innerText = "⏳...";
             btnElement.disabled = true;
 
             try {
-                // Preparar Payload para o Make (COM LIMPEZA DE TEXTO)
+                // Preparar Payload (Limpando TODOS os campos perigosos)
                 const payload = {
-                    codigo: rowData["Código"],
-                    // Aqui removemos quebras de linha (\n) e espaços extras para não quebrar o JSON
-                    descricao: rowData["Descrição"] ? rowData["Descrição"].replace(/[\r\n]+/g, " ").trim() : "",
-                    url_imagem: rowData["URL Imagens Externas"],
-                    estoque: rowData["Estoque"],
+                    codigo: limparTexto(rowData["Código"]),
+                    descricao: limparTexto(rowData["Descrição"]),
+                    url_imagem: limparTexto(rowData["URL Imagens Externas"]),
+                    estoque: rowData["Estoque"], // Estoque geralmente é número, não precisa limpar
                     localizacao: rowData["Localização"]
                 };
 
