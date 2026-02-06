@@ -477,15 +477,16 @@
                         "H": "Hortifruti", "I": "Açougue"
                     };
                     
-                    return {
-                        id: sId,
-                        name: x.nome,
-                        price: parseFloat(x.preco) || 0,
-                        cat: categorias[primeiraLetra] || "Diversos",
-                        stock: x.estoque || 0,
-                        // ACEITA "" E TRANSFORMA EM NULL PARA USAR PLACEHOLDER DEPOIS
-                        img: (x.imagem && x.imagem.trim() !== "") ? x.imagem : null
-                    };
+                    // Dentro do DB_PROD.map no seu index.html:
+return {
+    id: sId,
+    name: x.nome,
+    price: parseFloat(x.preco) || 0,
+    cat: categorias[primeiraLetra] || "Diversos",
+    stock: x.estoque || 0,
+    // Este ajuste ignora campos "" ou vazios e define como null
+    img: (x.imagem && String(x.imagem).trim() !== "") ? x.imagem : null
+};
                 });
             console.log("Produtos carregados:", DB_PROD.length);
         }
