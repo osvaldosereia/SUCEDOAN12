@@ -50,6 +50,7 @@
         /* CONTAINERS DE CONTEÚDO */
         .view-pane { width: 100%; height: calc(100vh - var(--nav-height)); display: none; overflow-y: auto; }
         .view-pane.active { display: block; }
+        .view-pane iframe { width: 100%; height: 100%; border: none; background: white; }
 
         /* ESTILOS DA ABA PRODUÇÃO (TABELA) */
         .app-container { padding: 15px; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; }
@@ -66,7 +67,28 @@
         }
         .btn-copy { background: #64748b; color: white; }
         .btn-link { background: var(--primary); color: white; }
-        .btn-search-icon { background: #334155; color: white; border: none; border-radius: 4px; padding: 6px; cursor: pointer; }
+
+        /* MODAL FLUTUANTE (ESTILO MOBILE) */
+        #google-modal {
+            position: fixed; top: calc(var(--nav-height) + 10px); right: 10px;
+            width: 380px; height: calc(100vh - var(--nav-height) - 30px);
+            background: white; border-radius: 15px; border: 4px solid var(--accent);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.5); z-index: 2000;
+            display: none; flex-direction: column; overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        #google-modal header {
+            background: var(--accent); color: black; padding: 10px;
+            display: flex; justify-content: space-between; align-items: center; font-weight: bold;
+        }
+
+        #google-modal .close-modal {
+            background: #ef4444; color: white; border: none; padding: 5px 10px; 
+            border-radius: 5px; cursor: pointer; font-size: 12px;
+        }
+
+        #google-iframe { flex-grow: 1; border: none; }
 
         /* ESTILO DA LISTA DE PEDIDOS */
         .order-card { 
@@ -88,9 +110,6 @@
             }
         }
         #print-section { display: none; background: white; padding: 10px; color: black; }
-        
-        /* IFRAMES PARA LINKS EXTERNOS */
-        iframe { width: 100%; height: 100%; border: none; background: white; }
     </style>
 </head>
 <body>
@@ -100,14 +119,14 @@
     <nav class="global-nav">
         <div style="color: var(--accent); font-weight: 900; font-size: 16px; margin-right: 10px;">DONA ANTONIA</div>
         
-        <button class="nav-btn active" id="btn-producao" onclick="showView('producao', '', this)">🛠 PRODUÇÃO</button>
-        <button class="nav-btn" id="btn-pedidos-nav" onclick="showView('pedidos', '', this)">📦 PEDIDOS</button>
+        <button class="nav-btn active" id="btn-producao" onclick="showView('producao', this)">🛠 PRODUÇÃO</button>
+        <button class="nav-btn" id="btn-pedidos-nav" onclick="showView('pedidos', this)">📦 PEDIDOS</button>
         
         <a href="https://www.bling.com.br/vendas.checkout.php" target="_blank" class="nav-btn bling">💰 BLING</a>
         
-        <button class="nav-btn" id="btn-editor" onclick="showView('external', 'https://donaantonia.com.br/bio/', this)">📸 EDITOR FOTO</button>
-        <button class="nav-btn" id="btn-loja" onclick="showView('external', 'https://donaantonia.com.br/site/', this)">🛒 LOJA</button>
-        <button class="nav-btn" id="btn-nota" onclick="showView('external', 'https://donaantonia.com.br/produtos/', this)">📝 CADASTRAR NOTA</button>
+        <button class="nav-btn" id="btn-editor" onclick="showView('editor', this)">📸 EDITOR FOTO</button>
+        <button class="nav-btn" id="btn-loja" onclick="showView('loja', this)">🛒 LOJA</button>
+        <button class="nav-btn" id="btn-nota" onclick="showView('nota', this)">📝 CADASTRAR NOTA</button>
     </nav>
 
     <div id="view-producao" class="view-pane active">
@@ -122,15 +141,31 @@
         </div>
     </div>
 
+    <div id="google-modal">
+        <header>
+            <span>REFERÊNCIA VISUAL</span>
+            <button class="close-modal" onclick="closeGoogleModal()">FECHAR [X]</button>
+        </header>
+        <iframe id="google-iframe" src=""></iframe>
+    </div>
+
     <div id="view-pedidos" class="view-pane">
         <div id="lista-pedidos-container">
             <h2 style="padding: 20px;">Separação de Pedidos (Cupom 80mm)</h2>
-            <div id="pedidos-placeholder" style="padding: 20px; opacity: 0.5;">Aguardando novos pedidos do Make.com...</div>
-            </div>
+            <div id="pedidos-placeholder" style="padding: 20px; opacity: 0.5;">Aguardando novos pedidos...</div>
+        </div>
     </div>
 
-    <div id="view-external" class="view-pane">
-        <iframe id="main-iframe" src=""></iframe>
+    <div id="view-editor" class="view-pane">
+        <iframe id="iframe-editor" src="https://donaantonia.com.br/bio/"></iframe>
+    </div>
+
+    <div id="view-loja" class="view-pane">
+        <iframe src="https://donaantonia.com.br/site/"></iframe>
+    </div>
+
+    <div id="view-nota" class="view-pane">
+        <iframe src="https://donaantonia.com.br/produtos/"></iframe>
     </div>
 
     <div id="print-section"></div>
@@ -140,20 +175,37 @@
         var pedidosProcessados = [];
         const STORAGE_KEY = 'sucedoan_kiosk_data';
 
+        // --- FUNÇÕES DO MODAL GOOGLE ---
+
+        function openGoogleModal(query) {
+            const modal = document.getElementById('google-modal');
+            const iframe = document.getElementById('google-iframe');
+            
+            // Nota: Alguns sites (como o Google) podem bloquear exibição em iframe por segurança (X-Frame-Options).
+            // Caso o Google bloqueie, usamos o Bing Images ou uma busca direta que permita.
+            const searchUrl = "https://www.google.com/search?q=" + encodeURIComponent(query) + "&tbm=isch&igu=1";
+            
+            iframe.src = searchUrl;
+            modal.style.display = 'flex';
+        }
+
+        function closeGoogleModal() {
+            document.getElementById('google-modal').style.display = 'none';
+            document.getElementById('google-iframe').src = '';
+        }
+
         // --- FUNÇÕES AUXILIARES ---
 
-        // Transforma texto em "slug" (arroz-branco-5kg)
         function slugify(text) {
             if (!text) return "";
             return text.toString().toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
-                .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
-                .replace(/\s+/g, '-') // Espaços por hifens
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') 
+                .replace(/[^\w\s-]/g, '') 
+                .replace(/\s+/g, '-') 
                 .replace(/--+/g, '-') 
                 .trim();
         }
 
-        // Função de Impressão Térmica
         function imprimirPedido(pedido) {
             const printArea = document.getElementById('print-section');
             printArea.innerHTML = `
@@ -172,7 +224,7 @@
             window.print();
         }
 
-        // --- LÓGICA DA TABELA (TABULATOR) ---
+        // --- LÓGICA DA TABELA ---
 
         function initTable(data) {
             table = new Tabulator("#product-table", {
@@ -183,21 +235,19 @@
                 columns: [
                     {title: "CÓDIGO", field: "Código", width: 100, headerSort: false},
                     
-                    // Coluna Google Imagens
+                    // BOTÃO DA LUPA -> AGORA ABRE O MODAL
                     {title: "🔍", width: 50, hozAlign: "center", formatter: () => "🔍", headerSort: false, cellClick: (e, cell) => {
                         const desc = cell.getData()["Descrição"];
-                        window.open("https://www.google.com/search?q=" + encodeURIComponent(desc) + "&tbm=isch", '_blank');
+                        openGoogleModal(desc);
                     }},
 
-                    // Coluna de Ações Automatizadas
                     {title: "AÇÕES", width: 200, headerSort: false, hozAlign: "center", columns: [
                         {title: "COP/EDITOR", formatter: () => "<button class='action-btn btn-copy'>📋 NOME</button>", width: 95, cellClick: (e, cell) => {
                             const slug = slugify(cell.getData()["Descrição"]);
-                            navigator.clipboard.writeText(slug); // Copia o nome com hifens
-                            
-                            // Muda para a aba do Editor de Foto passando o nome na URL
-                            const editorUrl = "https://donaantonia.com.br/bio/?nome=" + slug;
-                            showView('external', editorUrl, document.getElementById('btn-editor'));
+                            navigator.clipboard.writeText(slug); 
+                            const editorIframe = document.getElementById('iframe-editor');
+                            editorIframe.src = "https://donaantonia.com.br/bio/?nome=" + slug;
+                            showView('editor', document.getElementById('btn-editor'));
                         }},
                         {title: "GERAR GH", formatter: () => "<button class='action-btn btn-link'>🔗 LINK</button>", width: 95, cellClick: (e, cell) => {
                             const slug = slugify(cell.getData()["Descrição"]);
@@ -217,7 +267,6 @@
                 }
             });
 
-            // Filtro de Busca em Tempo Real
             document.getElementById("search-field").addEventListener("input", function(e){
                 const val = e.target.value;
                 table.setFilter([
@@ -229,11 +278,10 @@
             });
         }
 
-        // --- AUTOMAÇÃO DE PEDIDOS (MAKE.COM) ---
+        // --- AUTOMAÇÃO DE PEDIDOS ---
 
         async function fetchOrders() {
             try {
-                // Tenta ler o arquivo JSON gerado pelo Make no seu repositório
                 const response = await fetch('pedidos.json?t=' + Date.now());
                 const orders = await response.json();
                 let temNovidade = false;
@@ -242,10 +290,8 @@
                     if(!pedidosProcessados.includes(o.id)) {
                         pedidosProcessados.push(o.id);
                         temNovidade = true;
-                        
                         document.getElementById('pedidos-placeholder').style.display = 'none';
                         const container = document.getElementById('lista-pedidos-container');
-                        
                         const card = document.createElement('div');
                         card.className = 'order-card';
                         card.innerHTML = `
@@ -255,7 +301,7 @@
                             </div>
                             <button class="btn-print" onclick='imprimirPedido(${JSON.stringify(o)})'>🖨 IMPRIMIR</button>
                         `;
-                        container.prepend(card); // Adiciona o mais novo no topo
+                        container.prepend(card);
                     }
                 });
 
@@ -263,58 +309,40 @@
                     document.getElementById('bell-sound').play();
                     document.getElementById('btn-pedidos-nav').classList.add('new-order');
                 }
-            } catch(e) { /* Silencioso se o arquivo ainda não existir */ }
+            } catch(e) { }
         }
 
-        // --- GESTÃO DE TELAS E NAVEGAÇÃO ---
+        // --- GESTÃO DE TELAS ---
 
-        function showView(viewId, url, btn) {
-            // Esconde todas as panes
+        function showView(viewId, btn) {
             document.querySelectorAll('.view-pane').forEach(v => v.classList.remove('active'));
-            // Desativa botões da nav
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             
-            // Ativa o botão e a tela certa
-            btn.classList.add('active');
-            btn.classList.remove('new-order');
+            const targetView = document.getElementById('view-' + viewId);
+            if(targetView) targetView.classList.add('active');
+            if(btn) {
+                btn.classList.add('active');
+                btn.classList.remove('new-order');
+            }
 
-            if(viewId === 'external') {
-                document.getElementById('view-external').classList.add('active');
-                const iframe = document.getElementById('main-iframe');
-                // Só recarrega se a URL for diferente da atual
-                if(iframe.src !== url) {
-                    iframe.src = url;
-                }
-            } else {
-                document.getElementById('view-' + viewId).classList.add('active');
-                if(viewId === 'producao') {
-                    setTimeout(() => document.getElementById("search-field").focus(), 100);
-                }
+            if(viewId === 'producao') {
+                setTimeout(() => document.getElementById("search-field").focus(), 100);
             }
         }
-
-        // --- INICIALIZAÇÃO E EVENTOS ---
 
         window.onload = function() {
             const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                initTable(JSON.parse(savedData));
-            }
-            // Inicia monitoramento do Make.com a cada 30 segundos
+            if (savedData) initTable(JSON.parse(savedData));
             setInterval(fetchOrders, 30000);
-            fetchOrders(); // Primeira checagem imediata
+            fetchOrders();
             document.getElementById("search-field").focus();
         };
 
-        // Upload de novo CSV (Sobrescreve o anterior)
         document.getElementById('csv-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(!file) return;
-
             Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                encoding: "UTF-8",
+                header: true, skipEmptyLines: true, encoding: "UTF-8",
                 complete: function(results) {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(results.data));
                     initTable(results.data);
@@ -323,16 +351,9 @@
             });
         });
 
-        // Exportação mantendo formato original
         document.getElementById('btn-export').addEventListener('click', function() {
             if (!table) return;
-            const dataToExport = table.getData();
-            const csv = Papa.unparse(dataToExport, {
-                quotes: true,
-                delimiter: ";",
-                newline: "\r\n"
-            });
-
+            const csv = Papa.unparse(table.getData(), { quotes: true, delimiter: ";", newline: "\r\n" });
             const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
