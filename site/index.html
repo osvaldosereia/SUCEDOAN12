@@ -441,66 +441,63 @@
     let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
     // --- FUNÇÃO DE INICIALIZAÇÃO CORRIGIDA ---
-    async function init() {
-        try {
-            // 1. CARREGAR AS CESTAS (Para a página inicial)
-            const cRes = await fetch('produtos-cesta-basica.json');
-            if (cRes.ok) {
-                DB_CESTAS = await cRes.json();
-                renderHome(); // Mostra as cestas na Home imediatamente
-                console.log("Cestas carregadas:", DB_CESTAS.length);
-            } else {
-                console.error("Erro ao carregar produtos-cesta-basica.json");
-            }
-
-            // 2. CARREGAR OS PRODUTOS (Para a personalização)
-            const pRes = await fetch('produtos.json');
-            if (pRes.ok) {
-                let text = await pRes.text();
-                text = text.trim();
-                
-                // Limpeza para garantir que o JSON seja válido
-                if (!text.startsWith('[')) text = '[' + text;
-                if (!text.endsWith(']')) text = text + ']';
-                text = text.replace(/,(\s+)?\]$/, "]"); // Remove vírgula extra no fim
-
-                let rawProd = JSON.parse(text);
-                
-                // Se o Make enviou uma lista dentro de outra lista
-                if (Array.isArray(rawProd) && Array.isArray(rawProd[0])) {
-                    rawProd = rawProd[0];
-                }
-
-                DB_PROD = rawProd
-                    .filter(x => x && x.id && x.situacao === "A")
-                    .map(x => {
-                        const sId = String(x.id);
-                        const sCodigo = x.codigo ? String(x.codigo) : sId;
-                        const primeiraLetra = sCodigo.charAt(0).toUpperCase();
-                        
-                        // Mapeamento de Categorias
-                        const categorias = {
-                            "A": "Mercearia", "B": "Molhos", "C": "Óleos", "D": "Matinais",
-                            "E": "Bebidas", "P": "Higiene Pessoal", "G": "Limpeza",
-                            "H": "Hortifruti", "I": "Açougue"
-                        };
-                        
-                        return {
-                            id: sId,
-                            name: x.nome,
-                            price: parseFloat(x.preco) || 0,
-                            cat: categorias[primeiraLetra] || "Diversos",
-                            stock: x.estoque || 0,
-                            img: x.imagem && x.imagem !== "" ? x.imagem : null
-                        };
-                    });
-                console.log("Produtos carregados:", DB_PROD.length);
-            }
-        } catch (err) { 
-            console.error("Erro crítico no init:", err);
-            document.getElementById('cestas-container').innerHTML = "<p>Erro ao carregar dados. Verifique os arquivos JSON.</p>";
+   async function init() {
+    try {
+        // 1. CARREGAR AS CESTAS (Independente dos produtos)
+        const cRes = await fetch('produtos-cesta-basica.json');
+        if (cRes.ok) {
+            DB_CESTAS = await cRes.json();
+            renderHome(); // Mostra as cestas na Home imediatamente
         }
+
+        // 2. CARREGAR OS PRODUTOS (Com tratamento de erro exato)
+        const pRes = await fetch('produtos.json');
+        if (pRes.ok) {
+            let text = await pRes.text(); // Lemos como texto primeiro
+            
+            // LIMPEZA DE SINTAXE:
+            // Corrige o erro do Make substituindo ": ," por ": null," 
+            // e remove vírgulas sobrando antes do fechamento do JSON.
+            text = text.trim()
+                       .replace(/:\s*,/g, ': null,')
+                       .replace(/:\s*\]/g, ': null]')
+                       .replace(/,(\s+)?\]$/, "]");
+
+            let rawProd = JSON.parse(text); // Agora o JSON está seguro para converter
+            
+            // Correção para listas aninhadas do Make
+            if (Array.isArray(rawProd) && Array.isArray(rawProd[0])) {
+                rawProd = rawProd[0];
+            }
+
+            DB_PROD = rawProd
+                .filter(x => x && x.id && x.situacao === "A")
+                .map(x => {
+                    const sId = String(x.id);
+                    const sCodigo = x.codigo ? String(x.codigo) : sId;
+                    const primeiraLetra = sCodigo.charAt(0).toUpperCase();
+                    
+                    const categorias = {
+                        "A": "Mercearia", "B": "Molhos", "C": "Óleos", "D": "Matinais",
+                        "E": "Bebidas", "P": "Higiene Pessoal", "G": "Limpeza",
+                        "H": "Hortifruti", "I": "Açougue"
+                    };
+                    
+                    return {
+                        id: sId,
+                        name: x.nome,
+                        price: parseFloat(x.preco) || 0,
+                        cat: categorias[primeiraLetra] || "Diversos",
+                        stock: x.estoque || 0,
+                        img: x.imagem && x.imagem !== "" ? x.imagem : null
+                    };
+                });
+            console.log("Produtos carregados com sucesso:", DB_PROD.length);
+        }
+    } catch (err) { 
+        console.error("Erro crítico ao processar arquivos JSON:", err);
     }
+}
 
     // --- NAVEGAÇÃO ---
     function goHome() {
