@@ -1,0 +1,136 @@
+<script>
+        document.getElementById('inputArquivo').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const conteudoHTML = e.target.result;
+                processarHTML(conteudoHTML);
+            };
+
+            reader.readAsText(file);
+        });
+
+        function processarHTML(htmlString) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, 'text/html');
+
+            // --- 1. NÚMERO DO PEDIDO ---
+            const tituloPedido = doc.querySelector('h2') ? doc.querySelector('h2').innerText.trim() : "Sem Número";
+            const numeroPedido = tituloPedido.replace(/\D/g, ''); 
+
+            // --- 2. DATA ---
+            let dataPedido = "Data N/D";
+            const linhasInfo = doc.querySelectorAll('.gridH tr');
+            linhasInfo.forEach(tr => {
+                if(tr.innerText.includes('Data')) {
+                    dataPedido = tr.cells[1].innerText.trim();
+                }
+            });
+
+            // --- 3. DADOS DO CLIENTE (Lógica Melhorada) ---
+            const divCliente = doc.querySelector('.divBorda');
+            let nomeCliente = "Cliente não identificado";
+            let endereco = "";
+            let cidade = "";
+            let celular = "";
+            
+            if (divCliente) {
+                // A. Nome: Pega APENAS o que está dentro da tag <b> (negrito) para evitar a duplicação
+                const elNome = divCliente.querySelector('b');
+                if (elNome) {
+                    nomeCliente = elNome.innerText.trim();
+                }
+
+                // B. Resto dos dados: Vamos converter <br> em quebras de linha reais para separar tudo
+                // Isso evita que textos fiquem colados (ex: SilvaRua)
+                let htmlComQuebras = divCliente.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+                let textoLimpo = htmlComQuebras.replace(/<[^>]+>/g, ''); // Remove as tags HTML sobrando
+                
+                // Cria uma lista de linhas, removendo espaços vazios
+                let linhas = textoLimpo.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+                // C. Busca Inteligente: Procura linhas que pareçam endereço ou telefone
+                linhas.forEach(linha => {
+                    // Ignora linhas que sejam exatamente iguais ao nome (para não repetir)
+                    if (linha === nomeCliente) return;
+
+                    // Procura Endereço (começa com Rua, Av, etc)
+                    if (linha.match(/^(Rua|Av|Avenida|Travessa|Alameda|Rod|Estrada|Logradouro)/i)) {
+                        endereco = linha;
+                    }
+                    // Procura Cidade/CEP (tem formato de CEP 00000-000)
+                    else if (linha.match(/\d{5}-?\d{3}/)) {
+                        cidade = linha;
+                    }
+                    // Procura Celular (tem a palavra Celular ou formato de ddd)
+                    else if (linha.match(/Celular|\(\d{2}\)/i)) {
+                        celular = linha.replace(/^,\s*/, ''); // Remove vírgula inicial se houver
+                    }
+                });
+            }
+
+            // --- 4. ITENS DO PEDIDO ---
+            const tabelaProdutos = doc.querySelector('table.grid');
+            let htmlItens = "";
+
+            if (tabelaProdutos) {
+                const linhasProdutos = tabelaProdutos.querySelectorAll('tbody tr');
+                
+                linhasProdutos.forEach((tr) => {
+                    const celulas = tr.querySelectorAll('td');
+                    // Verifica se é uma linha válida de produto
+                    if (celulas.length > 5) {
+                        const descricao = celulas[0].innerText.trim();
+                        const codigo = celulas[1].innerText.trim();
+                        const localizacao = celulas[3].innerText.trim();
+                        const qtd = celulas[4].innerText.trim();
+
+                        htmlItens += `
+                            <tr class="item-row">
+                                <td style="width: 15%; font-weight:bold;">${parseFloat(qtd.replace(',','.'))}x</td>
+                                <td>
+                                    <span class="item-desc">${descricao}</span>
+                                    <div class="item-meta">
+                                        Cód: ${codigo} ${localizacao ? `| <strong>Loc: ${localizacao}</strong>` : ''}
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+            }
+
+            // --- GERAÇÃO DO HTML FINAL ---
+            const cupomHTML = `
+                <div class="cupom-header">
+                    PEDIDO
+                    <div class="cupom-numero">${numeroPedido}</div>
+                    <small>${dataPedido}</small>
+                </div>
+                
+                <div class="cupom-info">
+                    <p style="font-size: 14px; font-weight: bold; text-transform: uppercase;">${nomeCliente}</p>
+                    ${endereco ? `<p>${endereco}</p>` : ''}
+                    ${cidade ? `<p>${cidade}</p>` : ''}
+                    ${celular ? `<p>${celular}</p>` : ''}
+                </div>
+
+                <div style="margin-bottom: 5px; font-weight: bold; border-bottom: 1px solid black; margin-top: 10px;">ITENS</div>
+                
+                <table class="cupom-items">
+                    ${htmlItens}
+                </table>
+                
+                <div style="margin-top: 20px; text-align: center; font-size: 10px;">
+                    --- Fim do Pedido ---
+                </div>
+            `;
+
+            const areaCupom = document.getElementById('area-cupom');
+            areaCupom.innerHTML = cupomHTML;
+            areaCupom.style.display = 'block';
+        }
+    </script>
