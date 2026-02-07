@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v16 (Restaurado & Seguro)</title>
+    <title>Sucedoan Painel - v18 (Log & Obs Fixed)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
-        /* ESTILO VISUAL (Moderno e Limpo) */
+        /* --- ESTILOS VISUAIS --- */
         :root { --bg-body: #0f172a; --bg-card: #1e293b; --text-primary: #f8fafc; --text-secondary: #94a3b8; --accent: #3b82f6; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --border: #334155; }
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; }
@@ -70,6 +70,7 @@
         /* MODAIS */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-card { background: #1e293b; padding: 0; border-radius: 12px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border); box-shadow: 0 25px 50px rgba(0,0,0,0.5); overflow: hidden; }
+        .modal-card.login { width: 350px; }
         .modal-header { padding: 12px 16px; background: #020617; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; font-size: 14px; }
         .modal-body { padding: 16px; overflow-y: auto; color: #cbd5e1; }
         .close-btn { background: none; border: none; color: #64748b; cursor: pointer; }
@@ -105,24 +106,34 @@
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_final_v16';
+        const STORAGE_KEY = 'sucedoan_data_v18';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
 
     <header>
         <div class="brand">SUCEDOAN <span>PRO</span></div>
-        <button class="nav-btn active" onclick="showSection('products', this)"><i data-lucide="package" size="14"></i> PRODUTOS</button>
-        <button class="nav-btn" onclick="showSection('history', this)"><i data-lucide="scroll-text" size="14"></i> HISTÓRICO</button>
+        <button class="nav-btn active" onclick="showSection('products', this)">
+            <i data-lucide="package" size="14"></i> PRODUTOS
+        </button>
+        <button class="nav-btn" onclick="showSection('history', this)">
+            <i data-lucide="scroll-text" size="14"></i> HISTÓRICO
+        </button>
         <div style="flex-grow:1"></div>
-        <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings" size="14"></i></button>
+        <button class="nav-btn config" onclick="openConfigModal()">
+            <i data-lucide="settings" size="14"></i>
+        </button>
     </header>
 
     <div id="section-products" class="view-section active">
         <div class="toolbar">
-            <button class="nav-btn primary" onclick="importarBling()"><i data-lucide="cloud-download" size="14"></i> BAIXAR BLING</button>
+            <button class="nav-btn primary" onclick="importarBling()">
+                <i data-lucide="cloud-download" size="14"></i> BAIXAR BLING
+            </button>
             <input type="file" id="csv-file" accept=".csv" style="display:none">
-            <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet" size="14"></i> CSV</button>
+            <button class="nav-btn" onclick="document.getElementById('csv-file').click()">
+                <i data-lucide="file-spreadsheet" size="14"></i> IMPORTAR CSV
+            </button>
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
@@ -135,23 +146,23 @@
 
     <div id="section-history" class="view-section">
         <div class="toolbar">
-            <h3 style="margin:0; font-size:14px; color:white;">Histórico de Envios</h3>
+            <h3 style="margin:0; font-size:14px; color:white;">Histórico de Envios para o Bling</h3>
             <button class="nav-btn" onclick="clearHistory()"><i data-lucide="trash-2" size="14"></i> Limpar</button>
         </div>
         <div class="history-container">
             <table class="history-table">
-                <thead><tr><th width="150">DATA</th><th width="120">USUÁRIO</th><th width="100">SKU</th><th>PRODUTO</th><th width="100">STATUS</th></tr></thead>
+                <thead><tr><th width="150">DATA</th><th width="120">USUÁRIO</th><th width="100">SKU</th><th>PRODUTO</th><th>AÇÃO / STATUS</th></tr></thead>
                 <tbody id="history-tbody"></tbody>
             </table>
         </div>
     </div>
 
     <div id="modal-login" class="modal-overlay">
-        <div class="modal-card" style="width:350px">
+        <div class="modal-card login">
             <div class="modal-header"><span>AUTENTICAÇÃO</span><button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button></div>
             <div class="modal-body">
-                <div style="text-align:center; margin-bottom:15px; color: var(--warning);"><i data-lucide="lock" size="32"></i><p style="font-size:12px;">Digite sua senha</p></div>
-                <div class="form-group"><label>Senha</label><input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;"></div>
+                <div style="text-align:center; margin-bottom:15px; color: var(--warning);"><i data-lucide="lock" size="32"></i><p style="font-size:12px; margin-top:5px;">Digite sua senha pessoal</p></div>
+                <div class="form-group"><label>Senha de Acesso</label><input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;"></div>
                 <button class="btn-full" onclick="attemptLogin()">CONFIRMAR</button>
                 <div id="login-error" style="color:var(--danger); font-size:11px; text-align:center; margin-top:10px; display:none;">Senha incorreta!</div>
             </div>
@@ -200,28 +211,18 @@
             if(id === 'history') renderHistory();
         }
 
-        // --- IMPORTAÇÃO CSV (CÓDIGO ORIGINAL DA V11 RESTAURADO) ---
+        // --- IMPORTAÇÃO CSV (V11 RESTAURADA + MAP PARA OBS) ---
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
-            toggleLoader(true, "Lendo CSV (Modo Compatível)...");
+            toggleLoader(true, "Lendo CSV...");
             
             Papa.parse(e.target.files[0], {
-                header: true, 
-                skipEmptyLines: true, 
-                encoding: "ISO-8859-1", 
-                delimiter: ";",
+                header: true, skipEmptyLines: true, encoding: "ISO-8859-1", delimiter: ";",
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // Função helper idêntica à v11 (que funciona!)
-                        const getVal = (keys) => { 
-                            const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
-                            return f ? d[f] : ""; 
-                        };
-                        const getNum = (keys) => { 
-                            const v = getVal(keys); 
-                            return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; 
-                        };
+                        const getVal = (keys) => { const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); return f ? d[f] : ""; };
+                        const getNum = (keys) => { const v = getVal(keys); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
                         
                         const base = {
                             codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome','produto']),
@@ -232,21 +233,20 @@
                             largura: getNum(['largura']), altura: getNum(['altura']), profundidade: getNum(['profundidade']),
                             origem: getVal(['origem']), 
                             
-                            // Adição necessária para segurança (v12) sem quebrar o import
-                            situacao: 'A', formato: 'S', _changed: true
+                            // Mapeia Observações para permitir escrita
+                            observacoes: getVal(['observacoes', 'obs', 'detalhes']),
+                            
+                            // Segurança v12
+                            situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importado CSV"
                         };
                         
-                        // Garante que campos extras do CSV sejam preservados
-                        Object.keys(d).forEach(k => { 
-                            const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); 
-                            if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; 
-                        });
+                        Object.keys(d).forEach(k => { const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; });
                         return base;
                     });
                     
                     products = novos.filter(p => p.codigo || p.nome);
                     saveData(); renderGrid(); toggleLoader(false);
-                    alert(`${products.length} produtos importados com sucesso!`);
+                    alert(`${products.length} produtos importados!`);
                 }
             });
         });
@@ -259,31 +259,45 @@
             else document.getElementById('login-error').style.display='block';
         }
 
-        // --- SYNC ---
+        // --- SYNC (CORRIGIDO LOG E OBS) ---
         function syncBling(sku) { requestLogin(sku); }
         function executeSync(sku) {
             const p = products.find(pr => pr.codigo == sku);
             if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure Webhook!");
             
             toggleLoader(true, `Enviando como ${currentUser}...`);
-            const payload = {...p}; delete payload._changed;
             
-            // Garantias de segurança do Bling (v12)
+            // Corrige nome undefined no log: garante que pega o nome atual do objeto
+            const prodName = p.nome || "Produto sem Nome";
+            const changeType = p._lastChange || "Atualização Geral";
+
+            const payload = {...p}; delete payload._changed; delete payload._lastChange;
+            
             if(!payload.situacao) payload.situacao='A';
             if(!payload.formato) payload.formato='S';
             
-            // Log no Bling
+            // OBSERVAÇÃO NO BLING
             const time = new Date().toLocaleString('pt-BR');
-            payload.observacoes = (payload.observacoes||"") + `\nAlt: ${currentUser} - ${time}`;
+            const logNote = `Alt: ${currentUser} em ${time} - ${changeType}`;
+            // Adiciona nova linha preservando o que já existia
+            payload.observacoes = (p.observacoes || "") + "\n" + logNote;
 
             fetch(MAKE_WEBHOOK_UPDATE, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
             .then(r => { 
                 if(r.ok) { 
-                    p._changed = false; saveData(); addToHistory(sku, p.nome, true); 
+                    // Atualiza localmente a observação para não perder no próximo sync
+                    p.observacoes = payload.observacoes;
+                    p._changed = false; 
+                    p._lastChange = ""; // Limpa status de mudança
+                    saveData(); 
+                    
+                    // Log Interno Correto
+                    addToHistory(sku, prodName, true, changeType); 
+                    
                     renderGrid(document.getElementById('search-input').value); toggleLoader(false); alert("Sucesso!");
                 } else throw new Error();
             })
-            .catch(() => { toggleLoader(false); addToHistory(sku, p.nome, false); alert("Erro!"); })
+            .catch(() => { toggleLoader(false); addToHistory(sku, prodName, false, "Falha Conexão"); alert("Erro!"); })
             .finally(() => { pendingSyncSku = null; currentUser = null; });
         }
 
@@ -324,6 +338,7 @@
                     const j=await res.json(); 
                     products.find(p=>p.codigo==currentEditingId).url_imagem = j.content.download_url;
                     products.find(p=>p.codigo==currentEditingId)._changed = true;
+                    products.find(p=>p.codigo==currentEditingId)._lastChange = "Nova Imagem";
                     saveData(); renderGrid(document.getElementById('search-input').value); toggleLoader(false); closeModal('modal-editor'); alert("Sucesso!");
                 } else throw new Error(res.status);
             } catch(e){ toggleLoader(false); alert("Erro: "+e.message); }
@@ -364,15 +379,36 @@
                 `; grid.appendChild(card);
             }); lucide.createIcons();
         }
-        function updateField(sku, f, v) { const p=products.find(x=>x.codigo==sku); if(p){ if(['preco','estoque'].includes(f)) v=parseFloat(v)||0; p[f]=v; p._changed=true; saveData(); renderGrid(document.getElementById('search-input').value); } }
+        
+        function updateField(sku, f, v) { 
+            const p=products.find(x=>x.codigo==sku); 
+            if(p){ 
+                if(['preco','estoque'].includes(f)) v=parseFloat(v)||0; 
+                p[f]=v; 
+                p._changed=true;
+                // Registra qual foi o último campo alterado para o log
+                p._lastChange = `Alt: ${f.toUpperCase()}`;
+                saveData(); renderGrid(document.getElementById('search-input').value); 
+            } 
+        }
         function searchGoogle(t) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(t)}`, '_blank'); }
         
         // --- HISTORY & MISC ---
-        function addToHistory(sku,nome,ok) { historyLog.unshift({date:new Date().toLocaleString('pt-BR'), user:currentUser, sku, nome, status:ok}); if(historyLog.length>500)historyLog.pop(); localStorage.setItem(HISTORY_KEY,JSON.stringify(historyLog)); }
-        function renderHistory() { const b=document.getElementById('history-tbody'); b.innerHTML=''; historyLog.forEach(h=>{ b.innerHTML+=`<tr><td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.name}</td><td><span class="badge ${h.status?'success':'error'}">${h.status?'OK':'ERRO'}</span></td></tr>`; }); }
+        function addToHistory(sku,nome,ok,obs="Update") { 
+            historyLog.unshift({date:new Date().toLocaleString('pt-BR'), user:currentUser, sku, nome, status:ok, obs}); 
+            if(historyLog.length>500)historyLog.pop(); 
+            localStorage.setItem(HISTORY_KEY,JSON.stringify(historyLog)); 
+        }
+        function renderHistory() { 
+            const b=document.getElementById('history-tbody'); b.innerHTML=''; 
+            historyLog.forEach(h=>{ 
+                b.innerHTML+=`<tr><td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.nome}</td>
+                <td><span class="badge ${h.status?'success':'error'}">${h.status ? h.obs : 'ERRO'}</span></td></tr>`; 
+            }); 
+        }
         function clearHistory() { if(confirm("Apagar?")){ historyLog=[]; localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
         function openDetails(sku) { currentEditingId=sku; const p=products.find(x=>x.codigo==sku); const f=document.getElementById('details-form'); f.innerHTML=''; ['ncm','cest','origem','unidade','pesoBruto','pesoLiquido','largura','altura','profundidade'].forEach(k=>f.innerHTML+=`<div class="form-group"><label>${k}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`); document.getElementById('modal-details').style.display='flex'; }
-        function saveDetails() { const p=products.find(x=>x.codigo==currentEditingId); document.querySelectorAll('#details-form input').forEach(i=>p[i.id.replace('det-','')]=i.value); p._changed=true; saveData(); closeModal('modal-details'); }
+        function saveDetails() { const p=products.find(x=>x.codigo==currentEditingId); document.querySelectorAll('#details-form input').forEach(i=>p[i.id.replace('det-','')]=i.value); p._changed=true; p._lastChange="Alt: Detalhes"; saveData(); closeModal('modal-details'); }
         function openConfigModal() { const c=JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); document.getElementById('cfg-token').value=c.token||''; document.getElementById('cfg-user').value=c.user||''; document.getElementById('cfg-repo').value=c.repo||''; document.getElementById('cfg-path').value=c.path||''; document.getElementById('modal-config').style.display='flex'; }
         function saveConfig() { localStorage.setItem(CONFIG_KEY,JSON.stringify({token:document.getElementById('cfg-token').value, user:document.getElementById('cfg-user').value, repo:document.getElementById('cfg-repo').value, path:document.getElementById('cfg-path').value})); closeModal('modal-config'); }
         function closeModal(id) { document.getElementById(id).style.display='none'; }
