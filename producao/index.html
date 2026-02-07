@@ -158,7 +158,7 @@
             position: relative;
             border: 1px solid var(--border);
             transition: transform 0.2s;
-            min-height: 420px; /* Aumentei um pouco para caber a validade */
+            min-height: 420px;
         }
 
         .card:hover {
@@ -168,8 +168,29 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
 
+        /* ESTADOS DE VALIDADE E SYNC */
         .card.status-synced { border-top: 3px solid var(--success); }
-        .card.status-changed { border-top: 3px solid var(--warning); }
+        .card.status-changed { border-top: 3px solid #cbd5e1; } /* Cinza se alterado mas não crítico */
+        
+        /* Prioridade para Validade */
+        .card.validity-expired { border: 2px solid var(--danger); box-shadow: 0 0 15px rgba(239, 68, 68, 0.15); }
+        .card.validity-warning { border: 2px solid var(--warning); }
+
+        /* Badge de Validade na Imagem */
+        .validity-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            z-index: 5;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .bg-danger { background: var(--danger); }
+        .bg-warning { background: var(--warning); color: #000; }
 
         /* Imagem do Card */
         .card-img-area {
@@ -558,7 +579,6 @@
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        // v27 - Inclui campo validade e lógica de Update aprimorada
         const STORAGE_KEY = 'sucedoan_data_v27';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
@@ -1055,7 +1075,7 @@
         function loadData() { const saved = localStorage.getItem(STORAGE_KEY); if(saved) { products = JSON.parse(saved); renderGrid(); } const hist = localStorage.getItem(HISTORY_KEY); if(hist) historyLog = JSON.parse(hist); }
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
-        // --- ATUALIZADO PARA INCLUIR VALIDADE NA BUSCA E NO CARD ---
+        // --- ATUALIZADO (PASSO 5): LOGICA VISUAL DE VALIDADE ---
         function renderGrid(filter = "") {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
@@ -1069,12 +1089,44 @@
             document.getElementById('total-count').innerText = filtered.length + " produtos";
 
             filtered.forEach(p => {
+                
+                // LÓGICA DE CÁLCULO DE DIAS (NOVA)
+                let validityClass = "";
+                let validityBadge = "";
+                
+                if (p.validade && p.validade.length === 10) { // DD/MM/AAAA
+                    const parts = p.validade.split('/');
+                    // Cria Data: ano, mês (0-11), dia
+                    const vDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    
+                    // Diferença em dias
+                    const diffTime = vDate - today; 
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+                    if (diffDays < 0) {
+                        validityClass = "validity-expired";
+                        validityBadge = `<div class="validity-badge bg-danger">VENCIDO</div>`;
+                    } else if (diffDays <= 30) {
+                        validityClass = "validity-warning";
+                        validityBadge = `<div class="validity-badge bg-warning">VENCE EM ${diffDays}D</div>`;
+                    }
+                }
+
+                // Define classe principal (Prioridade: Expirado > Alterado > Sincronizado)
+                let mainClass = 'status-synced';
+                if (validityClass) mainClass = validityClass;
+                else if (p._changed) mainClass = 'status-changed';
+
                 const card = document.createElement('div');
-                card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
+                card.className = `card ${mainClass}`;
+                
                 const imgSrc = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
 
                 card.innerHTML = `
                     <div class="card-img-area">
+                        ${validityBadge}
                         <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/1e293b/475569?text=ERRO'">
                         <div class="img-overlay">
                             <button class="overlay-btn" onclick="searchGoogle('${p.nome}')"><i data-lucide="search" size="14"></i></button>
