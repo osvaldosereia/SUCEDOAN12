@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Dona Antonia - Pro v4</title>
+    <title>Painel Dona Antonia - v5 Alto Contraste</title>
 
     <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_modern.min.css" rel="stylesheet">
     <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
@@ -12,85 +12,102 @@
 
     <style>
         :root {
-            --primary: #0052cc;
+            --primary: #3b82f6; /* Azul mais claro */
             --success: #22c55e;
+            --warning: #f59e0b;
             --bg: #0f172a;
-            --card: #1e293b;
-            --text-main: #f8fafc;
+            --header-bg: #1e293b;
+            --row-bg: #1e293b;
+            --row-alt: #334155;
+            --text-color: #ffffff;
             --accent: #38bdf8;
             --nav-height: 70px;
         }
 
         /* GERAL */
-        html, body { height: 100%; margin: 0; overflow: hidden; font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-main); }
+        html, body { height: 100%; margin: 0; overflow: hidden; font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-color); }
         
         /* NAV */
-        .global-nav { height: var(--nav-height); background: #0b1120; display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 1px solid #334155; }
-        .logo { color: var(--accent); font-weight: 900; font-size: 18px; margin-right: 20px; letter-spacing: -1px; }
-        .nav-btn { height: 40px; padding: 0 15px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #94a3b8; font-weight: 700; cursor: pointer; font-size: 11px; transition: all 0.2s; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
-        .nav-btn:hover { background: #334155; color: white; }
-        .nav-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .nav-btn.config { margin-left: auto; border-color: #f59e0b; color: #f59e0b; }
+        .global-nav { height: var(--nav-height); background: #020617; display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 2px solid var(--accent); }
+        .logo { color: var(--accent); font-weight: 900; font-size: 20px; margin-right: 20px; letter-spacing: 1px; }
+        .nav-btn { height: 40px; padding: 0 20px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #cbd5e1; font-weight: 700; cursor: pointer; font-size: 12px; transition: all 0.2s; text-transform: uppercase; }
+        .nav-btn:hover { background: #334155; color: white; border-color: white; }
+        .nav-btn.active { background: var(--primary); color: white; border-color: var(--accent); }
+        .nav-btn.config { margin-left: auto; border-color: var(--warning); color: var(--warning); }
 
         /* VIEW */
-        .view-pane { width: 100%; height: calc(100vh - var(--nav-height)); display: none; padding: 20px; box-sizing: border-box; }
+        .view-pane { width: 100%; height: calc(100vh - var(--nav-height)); display: none; padding: 15px; box-sizing: border-box; }
         .view-pane.active { display: block; }
 
-        /* CONTROLS & TABLE */
+        /* CONTROLS */
         .controls-bar { display: flex; gap: 10px; margin-bottom: 15px; }
-        #search-field { flex-grow: 1; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: white; font-size: 16px; outline: none; }
+        #search-field { flex-grow: 1; padding: 12px; border-radius: 6px; border: 2px solid #475569; background: #0f172a; color: white; font-size: 16px; font-weight: bold; outline: none; }
         #search-field:focus { border-color: var(--accent); }
-        .btn-action { padding: 0 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 12px; text-transform: uppercase; }
-        .btn-bling { background: #f59e0b; color: black; }
-        .btn-csv { background: #334155; color: white; }
-        
-        #product-table { height: calc(100% - 60px); border-radius: 8px; overflow: hidden; background: #1e293b; border: 1px solid #334155; }
-        .tabulator-row { background: #1e293b; color: #e2e8f0; border-bottom: 1px solid #334155; }
-        .tabulator-row.tabulator-row-even { background: #253045; }
-        .tabulator-cell { padding: 8px; vertical-align: middle; }
+        .btn-action { padding: 0 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; color: white; }
+        .btn-bling { background: var(--warning); color: black; }
+        .btn-csv { background: #475569; }
 
-        /* BOTÕES INTERNOS DA TABELA */
-        .mini-btn { border: none; border-radius: 4px; padding: 4px 8px; font-size: 10px; font-weight: bold; cursor: pointer; margin-right: 4px; text-transform: uppercase; }
-        .btn-save { background: var(--success); color: white; width: 100%; margin-bottom: 4px; }
-        .btn-photo { background: var(--primary); color: white; }
-        .btn-details { background: #64748b; color: white; }
+        /* --- CORREÇÃO DE VISIBILIDADE DA TABELA --- */
+        #product-table { height: calc(100% - 60px); border-radius: 8px; overflow: hidden; border: 1px solid #475569; background-color: var(--bg); }
+        
+        /* Cabeçalho da Tabela */
+        .tabulator .tabulator-header { background-color: #000 !important; color: var(--accent) !important; font-weight: 900; border-bottom: 2px solid var(--accent) !important; }
+        .tabulator .tabulator-header .tabulator-col { background-color: #000 !important; }
+        
+        /* Linhas da Tabela (ALTO CONTRASTE) */
+        .tabulator .tabulator-row { background-color: var(--row-bg) !important; color: #ffffff !important; border-bottom: 1px solid #475569 !important; }
+        .tabulator .tabulator-row.tabulator-row-even { background-color: var(--row-alt) !important; } /* Zebra */
+        .tabulator .tabulator-row:hover { background-color: #475569 !important; cursor: pointer; }
+        
+        /* Células Editáveis */
+        .tabulator-cell.tabulator-editing { background-color: #ffffff !important; color: #000000 !important; }
+
+        /* --- BOTÕES INTERNOS --- */
+        .btn-grid-group { display: flex; gap: 4px; justify-content: center; }
+        .mini-btn { border: none; border-radius: 4px; padding: 6px 10px; font-size: 11px; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
+        
+        /* Cores dos Botões */
+        .btn-sync { background: var(--success); border: 1px solid #166534; } /* Verde */
+        .btn-photo { background: var(--primary); border: 1px solid #1e40af; } /* Azul */
+        .btn-details { background: #64748b; border: 1px solid #475569; } /* Cinza */
+        
+        .btn-copy-name { background: #8b5cf6; } /* Roxo */
+        .btn-gen-link { background: #ec4899; } /* Rosa */
 
         /* MODAIS */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: none; justify-content: center; align-items: center; }
-        .modal-card { background: #1e293b; padding: 25px; border-radius: 12px; width: 600px; max-width: 95%; max-height: 90vh; overflow-y: auto; border: 1px solid #334155; box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 10px; }
-        .modal-title { font-size: 18px; font-weight: bold; color: white; }
-        .close-btn { background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 20px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; justify-content: center; align-items: center; }
+        .modal-card { background: #1e293b; padding: 25px; border-radius: 12px; width: 650px; max-width: 95%; max-height: 95vh; overflow-y: auto; border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 15px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #475569; padding-bottom: 10px; }
+        .modal-title { font-size: 20px; font-weight: bold; color: white; }
+        .close-btn { background: #ef4444; border: none; color: white; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
-        /* EDITOR DE IMAGEM */
-        .editor-container { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        canvas { background: #000; border: 2px dashed #475569; max-width: 100%; }
-        .editor-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        label { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px; }
-        input[type="range"] { width: 100%; }
-        .status-bar { font-size: 12px; color: var(--accent); text-align: center; height: 15px; }
+        /* EDITOR */
+        .editor-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        canvas { background: #fff; border: 4px solid #475569; max-width: 100%; }
+        .editor-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #0f172a; padding: 10px; border-radius: 8px; }
+        label { font-size: 12px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 5px; }
+        input[type="range"] { width: 100%; cursor: pointer; }
 
-        /* FORMULÁRIO DE DETALHES */
+        /* DETALHES */
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .form-group { display: flex; flex-direction: column; }
-        .form-group input { background: #0f172a; border: 1px solid #334155; color: white; padding: 8px; border-radius: 4px; }
-        .full-width { grid-column: span 2; }
+        .form-group label { color: var(--accent); margin-bottom: 5px; font-size: 12px; text-transform: uppercase; }
+        .form-group input { background: #0f172a; border: 1px solid #475569; color: white; padding: 10px; border-radius: 4px; font-size: 14px; }
+        .form-group input:focus { border-color: var(--accent); outline: none; }
 
         /* LOADER */
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #334155; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
     </style>
 </head>
 <body>
 
     <script>
-        // WEBHOOKS DO MAKE (ATUALIZE AQUI)
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_v4';
+        const STORAGE_KEY = 'sucedoan_data_v5';
         const CONFIG_KEY = 'sucedoan_config';
     </script>
 
@@ -98,12 +115,12 @@
         <div class="logo">DONA ANTONIA</div>
         <button class="nav-btn active" onclick="showView('producao')">📦 PRODUÇÃO</button>
         <button class="nav-btn" onclick="showView('pedidos')">📄 PEDIDOS</button>
-        <button class="nav-btn config" onclick="openConfigModal()">⚙️ CONFIG GITHUB</button>
+        <button class="nav-btn config" onclick="openConfigModal()">⚙️ GITHUB</button>
     </nav>
 
     <div id="view-producao" class="view-pane active">
         <div class="controls-bar">
-            <input type="text" id="search-field" placeholder="🔎 Buscar por Nome, SKU ou EAN..." autofocus>
+            <input type="text" id="search-field" placeholder="🔎 Digite para filtrar...">
             <button class="btn-action btn-bling" onclick="importarBling()">☁ Baixar do Bling</button>
             <input type="file" id="csv-file" accept=".csv" style="display:none">
             <button class="btn-action btn-csv" onclick="document.getElementById('csv-file').click()">📂 CSV</button>
@@ -114,32 +131,29 @@
     <div id="modal-editor" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <span class="modal-title">Editor Rápido (Github)</span>
-                <button class="close-btn" onclick="closeModal('modal-editor')">×</button>
+                <span class="modal-title">Editor de Imagem (Envio GitHub)</span>
+                <button class="close-btn" onclick="closeModal('modal-editor')">FECHAR</button>
             </div>
             
             <div class="editor-container">
                 <canvas id="imageCanvas" width="500" height="500"></canvas>
-                <div class="status-bar" id="editor-status">Cole a imagem (Ctrl+V) aqui...</div>
+                <div style="color:var(--accent); font-size:12px; font-weight:bold;">Ctrl+V para Colar Imagem</div>
 
                 <div class="editor-controls">
                     <div>
-                        <label>Zoom</label>
+                        <label>ZOOM (Aproximar/Afastar)</label>
                         <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
                     </div>
                     <div>
-                        <label>Nitidez (Sharpen)</label>
+                        <label>NITIDEZ (Definição)</label>
                         <input type="range" id="sharpenRange" min="0" max="10" step="1" value="0">
                     </div>
                 </div>
 
                 <div style="display:flex; gap:10px; width:100%">
-                    <button class="btn-action btn-csv" style="flex:1" onclick="document.getElementById('fileInput').click()">📂 Carregar PC</button>
+                    <button class="btn-action btn-csv" style="flex:1" onclick="document.getElementById('fileInput').click()">📂 Do PC</button>
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
-                    <button class="btn-action btn-photo" style="flex:1" onclick="uploadToGithub()">🚀 ENVIAR P/ GITHUB</button>
-                </div>
-                <div style="font-size:10px; color:#64748b; text-align:center;">
-                    Dica: Busque no Google, Copie e dê <b>Ctrl+V</b> aqui dentro.
+                    <button class="btn-action btn-photo" style="flex:1" onclick="uploadToGithub()">🚀 ENVIAR PARA GITHUB</button>
                 </div>
             </div>
         </div>
@@ -148,49 +162,34 @@
     <div id="modal-details" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <span class="modal-title">Detalhes Completos</span>
-                <button class="close-btn" onclick="saveDetailsAndClose()">💾 SALVAR & FECHAR</button>
+                <span class="modal-title">Detalhes do Produto</span>
+                <button class="close-btn" onclick="saveDetailsAndClose()">💾 SALVAR</button>
             </div>
-            <div class="details-grid" id="details-form">
-                </div>
+            <div class="details-grid" id="details-form"></div>
         </div>
     </div>
 
     <div id="modal-config" class="modal-overlay">
-        <div class="modal-card" style="width:400px">
-            <div class="modal-header"><span class="modal-title">Configurar GitHub</span><button class="close-btn" onclick="closeModal('modal-config')">×</button></div>
-            <div class="form-group">
-                <label>GitHub Token (PAT)</label>
-                <input type="password" id="cfg-token" placeholder="ghp_xxxxxxxxxxxx">
-            </div>
-            <div class="form-group">
-                <label>Usuário GitHub</label>
-                <input type="text" id="cfg-user" placeholder="ex: osvaldosereia">
-            </div>
-            <div class="form-group">
-                <label>Repositório</label>
-                <input type="text" id="cfg-repo" placeholder="ex: SUCEDOAN12">
-            </div>
-            <div class="form-group">
-                <label>Pasta (Caminho)</label>
-                <input type="text" id="cfg-path" value="site/img/produtos">
-            </div>
-            <button class="btn-action btn-save" onclick="saveConfig()" style="margin-top:15px">SALVAR CONFIGURAÇÃO</button>
+        <div class="modal-card" style="width:400px; height:auto;">
+            <div class="modal-header"><span class="modal-title">Configurar GitHub</span><button class="close-btn" onclick="closeModal('modal-config')">X</button></div>
+            <div class="form-group"><label>GitHub Token (PAT)</label><input type="password" id="cfg-token"></div>
+            <div class="form-group"><label>Usuário</label><input type="text" id="cfg-user"></div>
+            <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo"></div>
+            <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" value="site/img/produtos"></div>
+            <button class="btn-action btn-sync" onclick="saveConfig()" style="margin-top:15px">SALVAR DADOS</button>
         </div>
     </div>
 
-    <div id="loader"><div class="spinner"></div><span id="loader-msg">Processando...</span></div>
+    <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Processando...</h3></div>
 
     <script>
-        // --- VARIÁVEIS GLOBAIS ---
         var table;
-        var currentEditingRow = null; // Linha sendo editada no momento
+        var currentEditingRow = null;
         var canvas = document.getElementById('imageCanvas');
         var ctx = canvas.getContext('2d');
-        var loadedImage = null; // Imagem crua carregada
+        var loadedImage = null;
         var imageState = { x: 0, y: 0, scale: 1 };
 
-        // --- INICIALIZAÇÃO ---
         window.onload = function() {
             const saved = localStorage.getItem(STORAGE_KEY);
             initTable(saved ? JSON.parse(saved) : []);
@@ -203,112 +202,118 @@
             document.getElementById('loader-msg').innerText = msg || "Processando...";
         }
 
-        // --- 1. TABELA LIMPA E PROFISSIONAL ---
+        // --- DEFINIÇÃO DA TABELA (REVISADA) ---
         function initTable(data) {
             table = new Tabulator("#product-table", {
                 data: data,
                 layout: "fitColumns",
                 height: "100%",
                 reactiveData: true,
+                movableColumns: true, // Permite arrastar colunas
                 columns: [
-                    // AÇÕES (Fixo na esquerda)
-                    {title: "AÇÕES", width: 90, headerSort:false, frozen:true, hozAlign:"center", formatter: function(){
+                    // 1. AÇÕES PRINCIPAIS (Esquerda)
+                    {title: "AÇÕES DO SISTEMA", width: 190, headerSort:false, frozen:true, hozAlign:"center", formatter: function(){
                         return `
-                            <button class="mini-btn btn-save" title="Sincronizar com Bling">☁ SYNC</button>
-                            <button class="mini-btn btn-photo" title="Editor de Foto">📸 FOTO</button>
-                            <button class="mini-btn btn-details" title="Editar Detalhes">📝 +DET</button>
+                            <div class="btn-grid-group">
+                                <button class="mini-btn btn-sync" title="Enviar para o Bling">☁ BLING</button>
+                                <button class="mini-btn btn-photo" title="Abrir Editor">📸 FOTO</button>
+                                <button class="mini-btn btn-details" title="Mais Dados">📝 +DET</button>
+                            </div>
                         `;
                     }, cellClick: function(e, cell){
-                        const btn = e.target;
+                        const t = e.target;
                         const row = cell.getRow();
-                        
-                        if(btn.classList.contains('btn-save')) syncBling(row.getData(), btn);
-                        if(btn.classList.contains('btn-photo')) openPhotoEditor(row);
-                        if(btn.classList.contains('btn-details')) openDetails(row);
+                        if(t.classList.contains('btn-sync')) syncBling(row.getData(), t);
+                        if(t.classList.contains('btn-photo')) openPhotoEditor(row);
+                        if(t.classList.contains('btn-details')) openDetails(row);
                     }},
 
-                    // COLUNAS VISÍVEIS (ESSENCIAIS)
-                    {title: "SKU", field: "codigo", width: 90, headerFilter:"input"},
-                    {title: "PRODUTO", field: "nome", widthGrow:2, headerFilter:"input", editor:"input"},
-                    {title: "ESTOQUE", field: "estoque", width: 80, hozAlign:"center", editor:"number", formatter: "prop", formatterParams:{fontWeight:"bold"}},
-                    {title: "LOCAL", field: "localizacao", width: 90, editor:"input"},
-                    {title: "EAN (GTIN)", field: "gtin", width: 120, editor:"input"},
-                    {title: "NCM", field: "ncm", width: 90, editor:"input"},
+                    // 2. DADOS DO PRODUTO (Meio)
+                    {title: "SKU", field: "codigo", width: 90, headerFilter:"input", cssClass:"font-bold"},
+                    {title: "NOME DO PRODUTO", field: "nome", widthGrow: 2, headerFilter:"input", editor:"input"},
                     
-                    // IMAGEM (Miniatura)
-                    {title: "IMG", field: "url_imagem", width: 60, formatter: "image", formatterParams:{height:"30px", width:"30px"}, cellClick:(e, c)=>window.open(c.getValue())}
+                    // 3. FERRAMENTAS DE IMAGEM (Restaurado: COPIAR e LINK)
+                    {title: "FERRAMENTAS IMG", width: 150, headerSort:false, hozAlign:"center", formatter: function(){
+                        return `
+                            <div class="btn-grid-group">
+                                <button class="mini-btn btn-copy-name" title="Copiar nome slug">📋 NOME</button>
+                                <button class="mini-btn btn-gen-link" title="Gerar Link GitHub">🔗 LINK</button>
+                            </div>
+                        `;
+                    }, cellClick: function(e, cell){
+                        const t = e.target;
+                        const row = cell.getRow();
+                        const data = row.getData();
+
+                        if(t.classList.contains('btn-copy-name')) {
+                            const slug = slugify(data.nome);
+                            navigator.clipboard.writeText(slug);
+                            alert("Copiado: " + slug);
+                        }
+                        if(t.classList.contains('btn-gen-link')) {
+                             const slug = slugify(data.nome);
+                             const urlFinal = `https://github.com/osvaldosereia/SUCEDOAN12/blob/main/site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp?raw=true`;
+                             row.update({url_imagem: urlFinal});
+                             saveData();
+                             alert("Link Gerado!");
+                        }
+                    }},
+
+                    // 4. LINK DA IMAGEM E DADOS EXTRAS
+                    {title: "URL IMAGEM", field: "url_imagem", width: 100, editor:"input", formatter:"link", formatterParams:{label:"ABRIR", target:"_blank"}},
+                    {title: "EST", field: "estoque", width: 70, hozAlign:"center", editor:"number"},
+                    {title: "LOCAL", field: "localizacao", width: 90, editor:"input"},
+                    {title: "EAN", field: "gtin", width: 110, editor:"input"},
+                    {title: "NCM", field: "ncm", width: 90, editor:"input"}
                 ],
                 cellEdited: () => saveData()
             });
 
-            // Filtro Rápido
+            // Filtro
             document.getElementById("search-field").addEventListener("input", function(e){
                 const val = e.target.value;
-                table.setFilter([
-                    [{field:"codigo", type:"like", value:val}, {field:"nome", type:"like", value:val}, {field:"gtin", type:"like", value:val}]
-                ]);
+                table.setFilter([[{field:"codigo", type:"like", value:val}, {field:"nome", type:"like", value:val}, {field:"gtin", type:"like", value:val}]]);
             });
         }
 
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()));
-        }
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData())); }
 
-        // --- 2. EDITOR DE IMAGEM (CANVAS + GITHUB) ---
-
+        // --- EDITOR DE IMAGEM ---
         function openPhotoEditor(row) {
             currentEditingRow = row;
             document.getElementById('modal-editor').style.display = 'flex';
-            
-            // Limpa o canvas e desenha fundo branco
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(0,0, 500, 500);
-            ctx.font = "20px Arial";
-            ctx.fillStyle = "#ccc";
-            ctx.fillText("Cole (Ctrl+V) ou Abra Imagem", 120, 250);
-            
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 500, 500); // Reset
+            ctx.font = "20px Arial"; ctx.fillStyle = "#000"; ctx.fillText("Cole (Ctrl+V) ou Abra", 150, 250);
             loadedImage = null;
-            document.getElementById('editor-status').innerText = "Editando: " + row.getData().nome;
         }
 
         function setupEditorEvents() {
-            // Colar (Paste)
             window.addEventListener('paste', function(e) {
                 if(document.getElementById('modal-editor').style.display !== 'flex') return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for (let index in items) {
-                    const item = items[index];
-                    if (item.kind === 'file') {
-                        const blob = item.getAsFile();
+                for (let i in items) {
+                    if (items[i].kind === 'file') {
                         const reader = new FileReader();
-                        reader.onload = (event) => loadImageToCanvas(event.target.result);
-                        reader.readAsDataURL(blob);
+                        reader.onload = (ev) => loadImageToCanvas(ev.target.result);
+                        reader.readAsDataURL(items[i].getAsFile());
                     }
                 }
             });
-
-            // Input Arquivo
             document.getElementById('fileInput').addEventListener('change', function(e){
-                if(this.files && this.files[0]) {
+                if(this.files[0]) {
                     const reader = new FileReader();
                     reader.onload = (evt) => loadImageToCanvas(evt.target.result);
                     reader.readAsDataURL(this.files[0]);
                 }
             });
-
-            // Controles
             document.getElementById('zoomRange').addEventListener('input', drawImage);
-            document.getElementById('sharpenRange').addEventListener('input', drawImage); // Apenas redesenha, aplica no final ou real time (pode ser pesado)
         }
 
         function loadImageToCanvas(url) {
             const img = new Image();
             img.onload = function() {
                 loadedImage = img;
-                // Centralizar
-                imageState.scale = Math.max(500/img.width, 500/img.height); // Fit cover inicial
-                imageState.x = (500 - img.width * imageState.scale) / 2;
-                imageState.y = (500 - img.height * imageState.scale) / 2;
+                imageState.scale = Math.max(500/img.width, 500/img.height);
                 document.getElementById('zoomRange').value = imageState.scale;
                 drawImage();
             };
@@ -317,198 +322,131 @@
 
         function drawImage() {
             if(!loadedImage) return;
-            
-            // 1. Limpa (Fundo Branco)
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(0,0, 500, 500);
-
-            // 2. Desenha Imagem com Zoom
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 500, 500); // Fundo Branco
             const zoom = parseFloat(document.getElementById('zoomRange').value);
             const w = loadedImage.width * zoom;
             const h = loadedImage.height * zoom;
-            const x = (500 - w) / 2; // Centralizado por padrão (simplificado)
-            
-            // Nota: Para arrastar, precisaria de eventos de mouse. Por enquanto, centraliza automático.
-            ctx.drawImage(loadedImage, x, (500 - h) / 2, w, h);
+            const x = (500 - w) / 2;
+            const y = (500 - h) / 2;
+            ctx.drawImage(loadedImage, x, y, w, h);
         }
 
-        // Função de Upload para o GitHub
         async function uploadToGithub() {
             if(!loadedImage) return alert("Cole uma imagem primeiro!");
-            
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
-            if(!cfg.token) return alert("Configure o Token do GitHub na engrenagem!");
+            if(!cfg.token) return alert("Configure o Token na engrenagem!");
 
-            toggleLoader(true, "Processando e Enviando...");
-
-            // 1. Aplicar Nitidez (Simples) e Gerar Blob WebP
-            // (Nota: Nitidez real no canvas é complexa, vou usar qualidade alta do webp para compensar)
+            toggleLoader(true, "Enviando para GitHub...");
             
-            const quality = 0.8; // Tenta 80%
-            const dataUrl = canvas.toDataURL("image/webp", quality);
+            // Qualidade WebP
+            const dataUrl = canvas.toDataURL("image/webp", 0.8);
             const base64Content = dataUrl.split(',')[1];
-
-            // 2. Gerar Nome (Slug)
+            
+            // Slugify Nome
             const rowData = currentEditingRow.getData();
-            const slug = rowData.nome.toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^\w\s-]/g, '')
-                .replace(/\s+/g, '-') + "-cesta-basica-cuiaba.webp";
-
+            const slug = slugify(rowData.nome) + "-cesta-basica-cuiaba-varzea-grande.webp";
             const path = cfg.path + "/" + slug;
             const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
 
             try {
-                // Verificar se arquivo existe para pegar o SHA (para update)
                 let sha = null;
                 try {
-                    const check = await fetch(apiUrl, { 
-                        headers: { "Authorization": `token ${cfg.token}` } 
-                    });
-                    if(check.ok) {
-                        const json = await check.json();
-                        sha = json.sha;
-                    }
+                    const check = await fetch(apiUrl, { headers: { "Authorization": `token ${cfg.token}` } });
+                    if(check.ok) sha = (await check.json()).sha;
                 } catch(e) {}
-
-                // Upload (PUT)
-                const body = {
-                    message: "Update via Painel Dona Antonia",
-                    content: base64Content
-                };
-                if(sha) body.sha = sha;
 
                 const response = await fetch(apiUrl, {
                     method: 'PUT',
-                    headers: {
-                        "Authorization": `token ${cfg.token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
+                    headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: "Update Painel", content: base64Content, sha: sha })
                 });
 
                 if(response.ok) {
                     const resJson = await response.json();
-                    const rawUrl = resJson.content.download_url; // Link direto
-                    
-                    // Atualiza Tabela
-                    currentEditingRow.update({ url_imagem: rawUrl });
+                    currentEditingRow.update({ url_imagem: resJson.content.download_url });
                     saveData();
-                    
                     toggleLoader(false);
                     closeModal('modal-editor');
-                    alert("Sucesso! Imagem atualizada.");
+                    alert("Imagem atualizada com sucesso!");
                 } else {
                     throw new Error("Erro GitHub: " + response.status);
                 }
-
             } catch(error) {
                 toggleLoader(false);
-                alert("Erro ao enviar: " + error.message);
-                console.error(error);
+                alert("Erro: " + error.message);
             }
         }
 
-        // --- 3. MODAL DE DETALHES (Campos Ocultos) ---
+        // --- AUXILIARES ---
+        function slugify(text) {
+            return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/--+/g, '-').trim();
+        }
+
         function openDetails(row) {
             currentEditingRow = row;
             const data = row.getData();
             const container = document.getElementById('details-form');
             container.innerHTML = "";
-
-            // Lista de campos para editar
             const fields = [
-                {k:'preco', l:'Preço Venda (R$)'}, {k:'precoCusto', l:'Preço Custo (R$)'},
-                {k:'unidade', l:'Unidade (UN/KG)'}, {k:'cest', l:'CEST'},
-                {k:'pesoLiquido', l:'Peso Liq (Kg)'}, {k:'pesoBruto', l:'Peso Bruto (Kg)'},
-                {k:'largura', l:'Largura (cm)'}, {k:'altura', l:'Altura (cm)'}, {k:'profundidade', l:'Profundidade (cm)'}
+                {k:'preco', l:'Preço Venda'}, {k:'unidade', l:'Unidade'},
+                {k:'pesoBruto', l:'Peso Bruto'}, {k:'pesoLiquido', l:'Peso Líq'},
+                {k:'cest', l:'CEST'}, {k:'largura', l:'Largura'}, 
+                {k:'altura', l:'Altura'}, {k:'profundidade', l:'Profundidade'}
             ];
-
             fields.forEach(f => {
-                const div = document.createElement('div');
-                div.className = 'form-group';
-                div.innerHTML = `<label>${f.l}</label><input type="text" id="det-${f.k}" value="${data[f.k] || ''}">`;
-                container.appendChild(div);
+                container.innerHTML += `<div class="form-group"><label>${f.l}</label><input type="text" id="det-${f.k}" value="${data[f.k]||''}"></div>`;
             });
-
             document.getElementById('modal-details').style.display = 'flex';
         }
 
         function saveDetailsAndClose() {
             if(!currentEditingRow) return;
-            const newData = {};
-            
-            // Pega todos os inputs do modal
-            document.querySelectorAll('#details-form input').forEach(input => {
-                const key = input.id.replace('det-', '');
-                newData[key] = input.value; // Salva como string ou converta se precisar
-            });
-
-            currentEditingRow.update(newData);
+            const inputs = document.querySelectorAll('#details-form input');
+            const updateData = {};
+            inputs.forEach(i => updateData[i.id.replace('det-', '')] = i.value);
+            currentEditingRow.update(updateData);
             saveData();
             closeModal('modal-details');
         }
 
-        // --- 4. FUNÇÕES GERAIS ---
-
         function syncBling(data, btn) {
-            // Lógica de envio para o Make (igual ao anterior, mas usando os dados completos da linha)
             if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook UPDATE!");
+            const txt = btn.innerText;
+            btn.innerText = "⏳"; btn.disabled = true;
             
-            const originalText = btn.innerText;
-            btn.innerText = "⏳";
-            btn.disabled = true;
-
-            // Limpeza básica
+            // Sanitização
             const payload = {...data};
-            Object.keys(payload).forEach(k => {
-                if(typeof payload[k] === 'string') payload[k] = payload[k].trim();
-                if(payload[k] === undefined || payload[k] === null) payload[k] = "";
-            });
+            Object.keys(payload).forEach(k => { if(typeof payload[k] === 'string') payload[k] = payload[k].trim(); });
 
             fetch(MAKE_WEBHOOK_UPDATE, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            }).then(res => {
-                if(res.ok) {
-                    btn.innerText = "✅";
-                    setTimeout(()=> { btn.innerText = originalText; btn.disabled = false; }, 2000);
-                } else throw new Error();
-            }).catch(() => {
-                btn.innerText = "❌";
-                btn.disabled = false;
-            });
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+            }).then(r => {
+                if(r.ok) { btn.innerText = "✅"; setTimeout(()=>{btn.innerText=txt; btn.disabled=false}, 2000); }
+                else throw new Error();
+            }).catch(() => { btn.innerText = "❌"; btn.disabled=false; });
         }
 
         function importarBling() {
-            if(MAKE_WEBHOOK_GET.includes("COLE_AQUI")) return alert("Configure o Webhook GET no código!");
-            if(!confirm("Baixar tudo do Bling?")) return;
-            toggleLoader(true);
-            
-            fetch(MAKE_WEBHOOK_GET).then(r => r.json()).then(data => {
+            if(MAKE_WEBHOOK_GET.includes("COLE_AQUI")) return alert("Configure Webhook GET!");
+            if(!confirm("Baixar lista do Bling?")) return;
+            toggleLoader(true, "Baixando...");
+            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(data=>{
                 if(Array.isArray(data)) {
-                    // Mapeamento de segurança
-                    const cleanData = data.map(d => ({
-                       ...d,
-                       preco: parseFloat(d.preco || 0),
-                       estoque: parseFloat(d.estoque || 0)
-                    }));
-                    table.setData(cleanData);
+                    const clean = data.map(d=>({...d, preco: parseFloat(d.preco||0), estoque: parseFloat(d.estoque||0)}));
+                    table.setData(clean);
                     saveData();
                     alert("Importado!");
                 }
-            }).catch(e => alert("Erro ao importar")).finally(() => toggleLoader(false));
+            }).catch(()=>alert("Erro na importação")).finally(()=>toggleLoader(false));
         }
 
-        // Configuração
+        // Config & Modals
         function openConfigModal() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
-            document.getElementById('cfg-token').value = cfg.token || '';
-            document.getElementById('cfg-user').value = cfg.user || '';
-            document.getElementById('cfg-repo').value = cfg.repo || '';
-            document.getElementById('cfg-path').value = cfg.path || 'site/img/produtos';
-            document.getElementById('modal-config').style.display = 'flex';
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
+            document.getElementById('cfg-token').value = cfg.token||'';
+            document.getElementById('cfg-user').value = cfg.user||'';
+            document.getElementById('cfg-repo').value = cfg.repo||'';
+            document.getElementById('modal-config').style.display='flex';
         }
         function saveConfig() {
             const cfg = {
@@ -520,35 +458,20 @@
             localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
             closeModal('modal-config');
         }
-        function loadConfig() {
-            if(!localStorage.getItem(CONFIG_KEY)) alert("Bem vindo! Clique na engrenagem ⚙️ para configurar o GitHub.");
-        }
+        function loadConfig() { if(!localStorage.getItem(CONFIG_KEY)) alert("Configure o GitHub na engrenagem!"); }
+        function closeModal(id) { document.getElementById(id).style.display='none'; }
+        function showView(id) { document.querySelectorAll('.view-pane').forEach(v=>v.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function showView(id) {
-            document.querySelectorAll('.view-pane').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-' + id).classList.add('active');
-        }
-
-        // CSV Import (Mantido do anterior)
         document.getElementById('csv-file').addEventListener('change', function(e) {
-            Papa.parse(e.target.files[0], {
-                header: true, skipEmptyLines: true, encoding: "UTF-8",
-                complete: (results) => {
-                    const parseNum = (val) => val ? parseFloat(val.replace(/\./g, '').replace(',', '.')) : 0;
-                    const map = results.data.map(d => ({
-                        codigo: d["Código"]||d.codigo, nome: d["Descrição"]||d.nome,
-                        preco: parseNum(d["Preço"]||d.preco), estoque: parseNum(d["Estoque"]||d.estoque),
-                        localizacao: d["Localização"]||d.localizacao, gtin: d["GTIN/EAN"]||d.gtin,
-                        ncm: d["NCM"]||d.ncm, url_imagem: d["URL Imagens Externas"]||d.url_imagem
-                        // ... adicione outros se necessário
-                    }));
-                    table.setData(map);
-                    saveData();
-                }
-            });
+            Papa.parse(e.target.files[0], { header:true, skipEmptyLines:true, encoding:"UTF-8", complete: (r) => {
+                const map = r.data.map(d => ({
+                    codigo: d["Código"]||d.codigo, nome: d["Descrição"]||d.nome,
+                    preco: d["Preço"]||d.preco, estoque: d["Estoque"]||d.estoque,
+                    gtin: d["GTIN/EAN"]||d.gtin, ncm: d["NCM"]||d.ncm
+                }));
+                table.setData(map); saveData();
+            }});
         });
-
     </script>
 </body>
 </html>
