@@ -1284,7 +1284,6 @@
             l.download = "produtos.csv"; l.click();
         }
         
-        // NOVA FUNÇÃO: IMPORTAR DO MAKE/BLING
         function importarBling() {
             if (MAKE_WEBHOOK_GET.includes("COLE_AQUI") || MAKE_WEBHOOK_GET.includes("SEU_WEBHOOK")) {
                 return alert("ERRO: Configure o Link do Webhook GET no topo do código!");
@@ -1296,22 +1295,27 @@
             
             fetch(MAKE_WEBHOOK_GET)
             .then(r => r.json())
-            .then(d => {
+            .then(response => {
+                // --- AJUSTE CRÍTICO PARA BLING V3 ---
+                // O Bling V3 devolve { data: [...] }, mas às vezes o Make pode devolver direto.
+                // Esta linha garante que pegamos a lista certa onde quer que ela esteja.
+                const d = response.data ? response.data : response;
+
                 if (Array.isArray(d)) { 
-                    // Mapeamento dos produtos vindos do Make
                     products = d.map(x => ({
+                        // Mapeamento Flexível (Tenta pegar o campo certo)
                         codigo: x.codigo || x.sku || "",
                         nome: x.nome || x.descricao || "",
                         preco: parseFloat(x.preco || x.venda || 0),
-                        estoque: parseFloat(x.estoque || 0),
+                        estoque: parseFloat(x.estoque || x.saldoVirtualTotal || 0), // Ajuste comum no V3
                         localizacao: x.localizacao || "",
                         gtin: x.gtin || x.ean || "",
-                        url_imagem: x.url_imagem || x.imagem || "",
+                        url_imagem: x.imagemURL || x.url_imagem || x.imagem || "", // V3 usa imagemURL
                         
-                        // NOVO CAMPO VALIDADE
-                        validade: x.validade || x.dataValidade || "", 
+                        // A TUA VALIDADE ENCONTRADA (dataValidade)
+                        validade: x.dataValidade || x.validade || "", 
                         
-                        // Campos técnicos
+                        // Outros campos
                         ncm: x.ncm || "",
                         cest: x.cest || "",
                         unidade: x.unidade || "UN",
@@ -1332,9 +1336,10 @@
                     saveData(); 
                     renderGrid(); 
                     toggleLoader(false);
-                    alert(`${products.length} produtos ativos carregados do Bling!`);
+                    alert(`${products.length} produtos importados e atualizados!`);
                 } else {
-                    throw new Error("O Make não retornou uma lista válida.");
+                    console.log("Resposta recebida:", response); // Para debug no console se der erro
+                    throw new Error("O Make não retornou uma lista válida (Array).");
                 }
             })
             .catch(e => { 
