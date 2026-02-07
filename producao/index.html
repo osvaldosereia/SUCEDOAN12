@@ -3,43 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Merchandising - v15 Restaurado</title>
+    <title>Sucedoan Painel - v16 (Restaurado & Seguro)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent: #3b82f6;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --border: #334155;
-        }
-
-        /* RESET */
+        /* ESTILO VISUAL (Moderno e Limpo) */
+        :root { --bg-body: #0f172a; --bg-card: #1e293b; --text-primary: #f8fafc; --text-secondary: #94a3b8; --accent: #3b82f6; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --border: #334155; }
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; }
-
+        
         /* HEADER */
         header { background: #020617; height: 60px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 15px; flex-shrink: 0; }
         .brand { font-weight: 900; font-size: 18px; color: white; margin-right: auto; letter-spacing: -0.5px; }
         .brand span { color: var(--accent); }
-        
         .nav-btn { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 12px; }
         .nav-btn:hover, .nav-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
         .nav-btn.config { color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
-
-        /* VIEWS (Abas) */
+        
         .view-section { display: none; flex-grow: 1; overflow: hidden; flex-direction: column; }
         .view-section.active { display: flex; }
 
-        /* TOOLBAR */
         .toolbar { padding: 12px 24px; display: flex; gap: 12px; background: #0f172a; border-bottom: 1px solid var(--border); flex-shrink: 0; align-items: center; }
         .search-container { flex-grow: 1; position: relative; }
         .search-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: white; padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 14px; outline: none; }
@@ -47,13 +33,11 @@
         .search-icon { position: absolute; left: 10px; top: 10px; color: #64748b; width: 16px; }
         #total-count { font-size: 11px; color: #94a3b8; font-weight: bold; min-width: 80px; text-align: right; }
 
-        /* GRID (CARDS) */
+        /* GRID */
         .product-grid { flex-grow: 1; overflow-y: auto; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; align-content: start; }
-
         .card { background: var(--bg-card); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; position: relative; border: 1px solid var(--border); transition: transform 0.2s; min-height: 380px; }
         .card:hover { transform: translateY(-2px); border-color: var(--accent); z-index: 10; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
-        .card.status-synced { border-top: 3px solid var(--success); }
-        .card.status-changed { border-top: 3px solid var(--warning); }
+        .card.status-synced { border-top: 3px solid var(--success); } .card.status-changed { border-top: 3px solid var(--warning); }
         
         .card-img-area { height: 160px; background: #000; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; border-bottom: 1px solid var(--border); overflow: hidden; }
         .card-img { width: 100%; height: 100%; object-fit: contain; background: white; }
@@ -65,37 +49,30 @@
         .card-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
         .card-sku { font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         .card-title { font-size: 13px; font-weight: 600; color: #ffffff !important; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; min-height: 34px; }
-        
-        /* Stats Grid */
         .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 8px; }
         .stat-box { display: flex; flex-direction: column; }
         .stat-label { font-size: 9px; color: var(--accent); margin-bottom: 3px; font-weight: bold; text-transform: uppercase; }
         .stat-input { width: 100%; padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; font-weight: 600; color: white; background: #0f172a; text-align: center; }
         .stat-input:focus { border-color: var(--accent); outline: none; }
-
         .card-footer { padding: 8px 12px; background: #0f172a; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .btn-text { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-        .btn-text:hover { color: white; }
+        .btn-text { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; } .btn-text:hover { color: white; }
         .btn-sync-mini { background: var(--success); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap:4px; }
 
-        /* HISTÓRICO TABLE */
+        /* HISTÓRICO */
         .history-container { padding: 20px; overflow-y: auto; flex-grow: 1; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .history-table th { text-align: left; padding: 12px; background: #020617; border-bottom: 2px solid var(--border); color: var(--accent); text-transform: uppercase; font-size: 11px; position: sticky; top: 0; }
         .history-table td { padding: 12px; border-bottom: 1px solid var(--border); color: #cbd5e1; }
         .history-table tr:hover { background: #1e293b; }
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-        .badge.success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .badge.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .badge.success { background: rgba(34, 197, 94, 0.2); color: #4ade80; } .badge.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
         /* MODAIS */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-card { background: #1e293b; padding: 0; border-radius: 12px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border); box-shadow: 0 25px 50px rgba(0,0,0,0.5); overflow: hidden; }
-        .modal-card.login { width: 350px; }
         .modal-header { padding: 12px 16px; background: #020617; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; font-size: 14px; }
         .modal-body { padding: 16px; overflow-y: auto; color: #cbd5e1; }
         .close-btn { background: none; border: none; color: #64748b; cursor: pointer; }
-        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .form-group label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; }
         .form-group input, .form-group select { width: 100%; background: #0f172a; border: 1px solid var(--border); padding: 8px; border-radius: 4px; color: white; font-size: 12px; }
@@ -119,21 +96,16 @@
 <body>
 
     <script>
-        // --- 1. USUÁRIOS E SENHAS ---
+        // --- 1. CONFIGURAÇÕES E USUÁRIOS ---
         const USERS = {
-            "090479": "OSVALDO",
-            "170484": "ANDRE",
-            "098765": "CLAUDENIL",
-            "567890": "KELY",
-            "121212": "JOSE",
-            "123456": "ROSINA"
+            "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL",
+            "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
         };
 
-        // --- CONFIGURAÇÃO WEBHOOKS ---
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_v15';
+        const STORAGE_KEY = 'sucedoan_data_final_v16';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
@@ -151,7 +123,6 @@
             <button class="nav-btn primary" onclick="importarBling()"><i data-lucide="cloud-download" size="14"></i> BAIXAR BLING</button>
             <input type="file" id="csv-file" accept=".csv" style="display:none">
             <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet" size="14"></i> CSV</button>
-            
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
@@ -164,38 +135,23 @@
 
     <div id="section-history" class="view-section">
         <div class="toolbar">
-            <h3 style="margin:0; font-size:14px; color:white;">Histórico de Envios para o Bling</h3>
+            <h3 style="margin:0; font-size:14px; color:white;">Histórico de Envios</h3>
             <button class="nav-btn" onclick="clearHistory()"><i data-lucide="trash-2" size="14"></i> Limpar</button>
         </div>
         <div class="history-container">
             <table class="history-table">
-                <thead>
-                    <tr>
-                        <th width="150">DATA / HORA</th>
-                        <th width="120">USUÁRIO</th>
-                        <th width="100">SKU</th>
-                        <th>PRODUTO</th>
-                        <th width="100">STATUS</th>
-                    </tr>
-                </thead>
-                <tbody id="history-tbody">
-                    </tbody>
+                <thead><tr><th width="150">DATA</th><th width="120">USUÁRIO</th><th width="100">SKU</th><th>PRODUTO</th><th width="100">STATUS</th></tr></thead>
+                <tbody id="history-tbody"></tbody>
             </table>
         </div>
     </div>
 
     <div id="modal-login" class="modal-overlay">
-        <div class="modal-card login">
-            <div class="modal-header"><span>AUTENTICAÇÃO NECESSÁRIA</span><button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button></div>
+        <div class="modal-card" style="width:350px">
+            <div class="modal-header"><span>AUTENTICAÇÃO</span><button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button></div>
             <div class="modal-body">
-                <div style="text-align:center; margin-bottom:15px; color: var(--warning);">
-                    <i data-lucide="lock" size="32"></i>
-                    <p style="font-size:12px; margin-top:5px;">Digite sua senha pessoal para sincronizar.</p>
-                </div>
-                <div class="form-group">
-                    <label>Senha de Acesso</label>
-                    <input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;">
-                </div>
+                <div style="text-align:center; margin-bottom:15px; color: var(--warning);"><i data-lucide="lock" size="32"></i><p style="font-size:12px;">Digite sua senha</p></div>
+                <div class="form-group"><label>Senha</label><input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;"></div>
                 <button class="btn-full" onclick="attemptLogin()">CONFIRMAR</button>
                 <div id="login-error" style="color:var(--danger); font-size:11px; text-align:center; margin-top:10px; display:none;">Senha incorreta!</div>
             </div>
@@ -222,217 +178,50 @@
         </div>
     </div>
 
-    <div id="modal-details" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header"><span>Detalhes Técnicos</span><button class="close-btn" onclick="saveDetails()"><i data-lucide="check"></i></button></div>
-            <div class="modal-body">
-                <div class="form-grid" id="details-form"></div>
-                <button class="btn-full" onclick="saveDetails()">SALVAR</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-config" class="modal-overlay">
-        <div class="modal-card" style="width:400px; height:auto">
-            <div class="modal-header"><span>GitHub Config</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x"></i></button></div>
-            <div class="modal-body" style="display:flex; flex-direction:column; gap:15px;">
-                <div class="form-group"><label>Token</label><input type="password" id="cfg-token"></div>
-                <div class="form-group"><label>Usuário</label><input type="text" id="cfg-user"></div>
-                <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo"></div>
-                <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" value="site/img/produtos"></div>
-                <button class="btn-full" onclick="saveConfig()">SALVAR</button>
-            </div>
-        </div>
-    </div>
-
+    <div id="modal-details" class="modal-overlay"><div class="modal-card"><div class="modal-header"><span>Detalhes</span><button class="close-btn" onclick="saveDetails()"><i data-lucide="check"></i></button></div><div class="modal-body"><div class="form-grid" id="details-form"></div><button class="btn-full" onclick="saveDetails()">SALVAR</button></div></div></div>
+    <div id="modal-config" class="modal-overlay"><div class="modal-card" style="width:400px"><div class="modal-header"><span>Config</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x"></i></button></div><div class="modal-body"><div class="form-group"><label>Token</label><input type="password" id="cfg-token"></div><div class="form-group"><label>Usuário</label><input type="text" id="cfg-user"></div><div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo"></div><div class="form-group"><label>Pasta</label><input type="text" id="cfg-path"></div><button class="btn-full" onclick="saveConfig()">SALVAR</button></div></div></div>
     <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
 
     <script>
-        let products = [];
-        let historyLog = [];
-        let currentEditingId = null; 
-        let pendingSyncSku = null;
-        let currentUser = null;
-
-        const canvas = document.getElementById('imageCanvas');
-        const ctx = canvas.getContext('2d');
+        // --- ESTADO ---
+        let products = [], historyLog = [], currentEditingId = null, pendingSyncSku = null, currentUser = null;
+        const canvas = document.getElementById('imageCanvas'), ctx = canvas.getContext('2d');
         let loadedImage = null;
 
         window.onload = function() {
-            lucide.createIcons();
-            loadData();
-            setupEditorEvents();
+            lucide.createIcons(); loadData(); setupEditorEvents();
             document.getElementById('search-input').addEventListener('input', (e) => renderGrid(e.target.value));
         };
 
         function showSection(id, btn) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            document.getElementById('section-' + id).classList.add('active');
-            if(btn) {
-                document.querySelectorAll('header .nav-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            }
+            document.getElementById('section-'+id).classList.add('active');
+            if(btn) { document.querySelectorAll('header .nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
             if(id === 'history') renderHistory();
         }
 
-        // --- AUTH & LOGIN ---
-        function requestLogin(callbackSku) {
-            pendingSyncSku = callbackSku;
-            document.getElementById('login-pass').value = '';
-            document.getElementById('login-error').style.display = 'none';
-            document.getElementById('modal-login').style.display = 'flex';
-            document.getElementById('login-pass').focus();
-        }
-
-        function attemptLogin() {
-            const pass = document.getElementById('login-pass').value;
-            if(USERS[pass]) {
-                currentUser = USERS[pass];
-                closeModal('modal-login');
-                if(pendingSyncSku) executeSync(pendingSyncSku);
-            } else {
-                document.getElementById('login-error').style.display = 'block';
-            }
-        }
-
-        // --- DATA & SYNC ---
-        function loadData() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if(saved) { products = JSON.parse(saved); renderGrid(); }
-            
-            const hist = localStorage.getItem(HISTORY_KEY);
-            if(hist) historyLog = JSON.parse(hist);
-        }
-        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
-
-        function syncBling(sku) {
-            requestLogin(sku);
-        }
-
-        function executeSync(sku) {
-            const p = products.find(pr => pr.codigo == sku);
-            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Webhook não configurado!");
-            
-            toggleLoader(true, `Enviando como ${currentUser}...`);
-
-            // Dados e Log
-            if(!p.situacao) p.situacao='A'; 
-            if(!p.formato) p.formato='S';
-            
-            const payload = {...p};
-            delete payload._changed;
-            
-            const time = new Date().toLocaleString('pt-BR');
-            const logNote = `Ultima alteração por ${currentUser} em ${time}`;
-            payload.observacoes = (payload.observacoes || "") + "\n" + logNote;
-
-            fetch(MAKE_WEBHOOK_UPDATE, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
-            .then(r => {
-                if(r.ok) { 
-                    p._changed = false; saveData(); 
-                    addToHistory(sku, p.nome, true);
-                    renderGrid(document.getElementById('search-input').value); 
-                    toggleLoader(false);
-                    alert(`Sucesso! Registrado para ${currentUser}.`);
-                } else throw new Error();
-            })
-            .catch(() => { 
-                toggleLoader(false); 
-                addToHistory(sku, p.nome, false);
-                alert("Erro ao sincronizar!"); 
-            })
-            .finally(() => { pendingSyncSku = null; currentUser = null; });
-        }
-
-        // --- HISTÓRICO ---
-        function addToHistory(sku, nome, success) {
-            const entry = {
-                date: new Date().toLocaleString('pt-BR'),
-                user: currentUser,
-                sku: sku, name: nome, status: success
-            };
-            historyLog.unshift(entry); if(historyLog.length > 500) historyLog.pop();
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLog));
-        }
-
-        function renderHistory() {
-            const tbody = document.getElementById('history-tbody');
-            tbody.innerHTML = '';
-            historyLog.forEach(h => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.name}</td>
-                    <td><span class="badge ${h.status ? 'success' : 'error'}">${h.status ? 'SUCESSO' : 'ERRO'}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-        function clearHistory() { if(confirm("Apagar histórico?")) { historyLog = []; localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
-
-        // --- GRID RENDER ---
-        function renderGrid(filter = "") {
-            const grid = document.getElementById('product-grid');
-            grid.innerHTML = "";
-            const term = filter.toLowerCase().trim();
-            const filtered = products.filter(p => (p.nome+p.codigo+p.gtin+p.localizacao+p.estoque).toLowerCase().includes(term));
-            document.getElementById('total-count').innerText = filtered.length + " produtos";
-
-            filtered.forEach(p => {
-                const card = document.createElement('div');
-                card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
-                const imgSrc = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
-
-                card.innerHTML = `
-                    <div class="card-img-area">
-                        <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/1e293b/475569?text=ERRO'">
-                        <div class="img-overlay">
-                            <button class="overlay-btn" onclick="searchGoogle('${p.nome}')"><i data-lucide="search" size="14"></i></button>
-                            <button class="overlay-btn" onclick="openPhotoEditor('${p.codigo}')"><i data-lucide="camera" size="14"></i></button>
-                            <button class="overlay-btn" onclick="window.open('${imgSrc}', '_blank')"><i data-lucide="external-link" size="14"></i></button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="card-sku">${p.codigo || 'NOVO'}</div>
-                        <div class="card-title" contenteditable="true" onblur="updateField('${p.codigo}', 'nome', this.innerText)">${p.nome || 'SEM NOME'}</div>
-                        <div class="card-stats">
-                            <div class="stat-box"><label class="stat-label">PREÇO (R$)</label><input type="number" class="stat-input" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
-                            <div class="stat-box"><label class="stat-label">ESTOQUE</label><input type="number" class="stat-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
-                        </div>
-                        <div class="card-stats">
-                            <div class="stat-box"><label class="stat-label">LOCALIZAÇÃO</label><input type="text" class="stat-input" value="${p.localizacao || ''}" onchange="updateField('${p.codigo}', 'localizacao', this.value)"></div>
-                            <div class="stat-box"><label class="stat-label">EAN</label><input type="text" class="stat-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn-text" onclick="openDetails('${p.codigo}')"><i data-lucide="list-plus" size="12"></i> DETALHES</button>
-                        <button class="btn-sync-mini" onclick="syncBling('${p.codigo}')"><i data-lucide="refresh-cw" size="10"></i> SYNC</button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-            lucide.createIcons();
-        }
-
-        function updateField(sku, field, value) {
-            const p = products.find(pr => pr.codigo == sku);
-            if(p) { if(['preco','estoque'].includes(field)) value = parseFloat(value)||0; p[field] = value; p._changed = true; saveData(); renderGrid(document.getElementById('search-input').value); }
-        }
-        function searchGoogle(t) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(t)}`, '_blank'); }
-
-        // --- IMPORT CSV (LÓGICA RESTAURADA DA V11) ---
+        // --- IMPORTAÇÃO CSV (CÓDIGO ORIGINAL DA V11 RESTAURADO) ---
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
-            toggleLoader(true, "Lendo CSV (v11)...");
+            toggleLoader(true, "Lendo CSV (Modo Compatível)...");
             
-            // Usando a configuração EXATA que funcionava na v11
             Papa.parse(e.target.files[0], {
-                header: true, skipEmptyLines: true, encoding: "ISO-8859-1", delimiter: ";",
+                header: true, 
+                skipEmptyLines: true, 
+                encoding: "ISO-8859-1", 
+                delimiter: ";",
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // Função helper idêntica à v11
-                        const getVal = (keys) => { const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); return f ? d[f] : ""; };
-                        const getNum = (keys) => { const v = getVal(keys); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
+                        // Função helper idêntica à v11 (que funciona!)
+                        const getVal = (keys) => { 
+                            const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
+                            return f ? d[f] : ""; 
+                        };
+                        const getNum = (keys) => { 
+                            const v = getVal(keys); 
+                            return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; 
+                        };
                         
                         const base = {
                             codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome','produto']),
@@ -441,23 +230,64 @@
                             url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']), cest: getVal(['cest']),
                             unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
                             largura: getNum(['largura']), altura: getNum(['altura']), profundidade: getNum(['profundidade']),
-                            origem: getVal(['origem']), situacao: 'A', formato: 'S', _changed: true
+                            origem: getVal(['origem']), 
+                            
+                            // Adição necessária para segurança (v12) sem quebrar o import
+                            situacao: 'A', formato: 'S', _changed: true
                         };
-                        // Extra Fields (Mantém todos os dados extras)
-                        Object.keys(d).forEach(k => {
-                            const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                            if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k];
+                        
+                        // Garante que campos extras do CSV sejam preservados
+                        Object.keys(d).forEach(k => { 
+                            const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); 
+                            if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; 
                         });
                         return base;
                     });
+                    
                     products = novos.filter(p => p.codigo || p.nome);
                     saveData(); renderGrid(); toggleLoader(false);
-                    alert(`${products.length} importados!`);
+                    alert(`${products.length} produtos importados com sucesso!`);
                 }
             });
         });
 
-        // --- EDITOR FOTO ---
+        // --- AUTH ---
+        function requestLogin(sku) { pendingSyncSku = sku; document.getElementById('login-pass').value=''; document.getElementById('modal-login').style.display='flex'; document.getElementById('login-pass').focus(); }
+        function attemptLogin() {
+            const p = document.getElementById('login-pass').value;
+            if(USERS[p]) { currentUser = USERS[p]; closeModal('modal-login'); if(pendingSyncSku) executeSync(pendingSyncSku); }
+            else document.getElementById('login-error').style.display='block';
+        }
+
+        // --- SYNC ---
+        function syncBling(sku) { requestLogin(sku); }
+        function executeSync(sku) {
+            const p = products.find(pr => pr.codigo == sku);
+            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure Webhook!");
+            
+            toggleLoader(true, `Enviando como ${currentUser}...`);
+            const payload = {...p}; delete payload._changed;
+            
+            // Garantias de segurança do Bling (v12)
+            if(!payload.situacao) payload.situacao='A';
+            if(!payload.formato) payload.formato='S';
+            
+            // Log no Bling
+            const time = new Date().toLocaleString('pt-BR');
+            payload.observacoes = (payload.observacoes||"") + `\nAlt: ${currentUser} - ${time}`;
+
+            fetch(MAKE_WEBHOOK_UPDATE, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+            .then(r => { 
+                if(r.ok) { 
+                    p._changed = false; saveData(); addToHistory(sku, p.nome, true); 
+                    renderGrid(document.getElementById('search-input').value); toggleLoader(false); alert("Sucesso!");
+                } else throw new Error();
+            })
+            .catch(() => { toggleLoader(false); addToHistory(sku, p.nome, false); alert("Erro!"); })
+            .finally(() => { pendingSyncSku = null; currentUser = null; });
+        }
+
+        // --- EDITOR & UTIL ---
         function openPhotoEditor(sku) {
             currentEditingId = sku; const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
@@ -468,8 +298,7 @@
         function setupEditorEvents() {
             window.addEventListener('paste', e => { if(document.getElementById('modal-editor').style.display==='flex'){ const items=(e.clipboardData||e.originalEvent.clipboardData).items; for(let i of items) if(i.kind==='file'){ const r=new FileReader(); r.onload=ev=>loadImageToCanvas(ev.target.result); r.readAsDataURL(i.getAsFile()); } } });
             document.getElementById('fileInput').addEventListener('change', function(){ if(this.files[0]){ const r=new FileReader(); r.onload=e=>loadImageToCanvas(e.target.result); r.readAsDataURL(this.files[0]); } });
-            document.getElementById('zoomRange').addEventListener('input', drawImage);
-            document.getElementById('sharpenRange').addEventListener('input', drawImage);
+            document.getElementById('zoomRange').addEventListener('input', drawImage); document.getElementById('sharpenRange').addEventListener('input', drawImage);
         }
         function loadImageToCanvas(u) { const i=new Image(); i.onload=()=>{loadedImage=i; document.getElementById('zoomRange').value=Math.max(450/i.width, 450/i.height); drawImage();}; i.src=u; }
         function drawImage() {
@@ -484,7 +313,7 @@
         function downloadImage() { const a=document.createElement('a'); a.download=document.getElementById('file-name-preview').innerText; a.href=canvas.toDataURL("image/webp",0.8); a.click(); }
         async function uploadToGithub() {
             if(!loadedImage) return alert("Sem imagem");
-            const cfg=JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(!cfg.token) return alert("Configure Token!");
+            const cfg=JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(!cfg.token) return alert("Token?");
             toggleLoader(true, "Enviando...");
             const f=document.getElementById('file-name-preview').innerText;
             try {
@@ -500,44 +329,56 @@
             } catch(e){ toggleLoader(false); alert("Erro: "+e.message); }
         }
 
-        // --- DETALHES ---
-        function openDetails(sku) {
-            currentEditingId = sku; const p=products.find(pr=>pr.codigo==sku);
-            const f=document.getElementById('details-form'); f.innerHTML='';
-            ['ncm','cest','origem','unidade','pesoBruto','pesoLiquido','largura','altura','profundidade'].forEach(k=>f.innerHTML+=`<div class="form-group"><label>${k}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`);
-            document.getElementById('modal-details').style.display='flex';
+        // --- DATA & RENDER ---
+        function loadData() { 
+            const s = localStorage.getItem(STORAGE_KEY); if(s) { products=JSON.parse(s); renderGrid(); }
+            const h = localStorage.getItem(HISTORY_KEY); if(h) historyLog=JSON.parse(h);
         }
-        function saveDetails() {
-            const p=products.find(pr=>pr.codigo==currentEditingId);
-            document.querySelectorAll('#details-form input').forEach(i=>p[i.id.replace('det-','')]=i.value);
-            p._changed=true; saveData(); closeModal('modal-details');
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
+        
+        function renderGrid(filter="") {
+            const grid = document.getElementById('product-grid'); grid.innerHTML=""; const t=filter.toLowerCase().trim();
+            const filtered = products.filter(p => (p.nome+p.codigo+p.gtin+p.localizacao+p.estoque).toLowerCase().includes(t));
+            document.getElementById('total-count').innerText = filtered.length;
+            
+            filtered.forEach(p => {
+                const card = document.createElement('div');
+                card.className = `card ${p._changed?'status-changed':'status-synced'}`;
+                const img = (p.url_imagem && p.url_imagem.length>5) ? p.url_imagem : 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
+                card.innerHTML = `
+                    <div class="card-img-area"><img src="${img}" class="card-img" onerror="this.src='https://placehold.co/400?text=ERR'">
+                    <div class="img-overlay">
+                        <button class="overlay-btn" onclick="searchGoogle('${p.nome}')"><i data-lucide="search" size="14"></i></button>
+                        <button class="overlay-btn" onclick="openPhotoEditor('${p.codigo}')"><i data-lucide="camera" size="14"></i></button>
+                        <button class="overlay-btn" onclick="window.open('${img}','_blank')"><i data-lucide="external-link" size="14"></i></button>
+                    </div></div>
+                    <div class="card-body">
+                        <div class="card-sku">${p.codigo}</div>
+                        <div class="card-title" contenteditable="true" onblur="updateField('${p.codigo}','nome',this.innerText)">${p.nome}</div>
+                        <div class="card-stats"><div class="stat-box"><label class="stat-label">PREÇO</label><input type="number" class="stat-input" value="${p.preco}" onchange="updateField('${p.codigo}','preco',this.value)"></div>
+                        <div class="stat-box"><label class="stat-label">ESTOQUE</label><input type="number" class="stat-input" value="${p.estoque}" onchange="updateField('${p.codigo}','estoque',this.value)"></div></div>
+                        <div class="card-stats"><div class="stat-box"><label class="stat-label">LOCAL</label><input type="text" class="stat-input" value="${p.localizacao}" onchange="updateField('${p.codigo}','localizacao',this.value)"></div>
+                        <div class="stat-box"><label class="stat-label">EAN</label><input type="text" class="stat-input" value="${p.gtin}" onchange="updateField('${p.codigo}','gtin',this.value)"></div></div>
+                    </div>
+                    <div class="card-footer"><button class="btn-text" onclick="openDetails('${p.codigo}')"><i data-lucide="list-plus" size="12"></i> DET</button><button class="btn-sync-mini" onclick="syncBling('${p.codigo}')"><i data-lucide="refresh-cw" size="10"></i> SYNC</button></div>
+                `; grid.appendChild(card);
+            }); lucide.createIcons();
         }
-
-        // --- EXPORT/IMPORT ---
-        function importarBling() {
-            if(MAKE_WEBHOOK_GET.includes("COLE")) return alert("Configure Webhook GET!");
-            if(!confirm("Substituir?")) return;
-            toggleLoader(true,"Baixando...");
-            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d=>{ if(Array.isArray(d)) products=d.map(x=>({...x,_changed:false})); saveData(); renderGrid(); toggleLoader(false); }).catch(e=>{toggleLoader(false); alert("Erro: "+e)});
-        }
-        function exportarCSV() {
-            const csv=Papa.unparse(products, {quotes:true, delimiter:";"});
-            const l=document.createElement("a"); l.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'})); l.download="produtos.csv"; l.click();
-        }
-
-        // --- CONFIG ---
-        function openConfigModal() {
-            const c=JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            document.getElementById('cfg-token').value=c.token||''; document.getElementById('cfg-user').value=c.user||'';
-            document.getElementById('cfg-repo').value=c.repo||''; document.getElementById('modal-config').style.display='flex';
-        }
-        function saveConfig() {
-            localStorage.setItem(CONFIG_KEY, JSON.stringify({
-                token:document.getElementById('cfg-token').value, user:document.getElementById('cfg-user').value,
-                repo:document.getElementById('cfg-repo').value, path:document.getElementById('cfg-path').value
-            })); closeModal('modal-config');
-        }
+        function updateField(sku, f, v) { const p=products.find(x=>x.codigo==sku); if(p){ if(['preco','estoque'].includes(f)) v=parseFloat(v)||0; p[f]=v; p._changed=true; saveData(); renderGrid(document.getElementById('search-input').value); } }
+        function searchGoogle(t) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(t)}`, '_blank'); }
+        
+        // --- HISTORY & MISC ---
+        function addToHistory(sku,nome,ok) { historyLog.unshift({date:new Date().toLocaleString('pt-BR'), user:currentUser, sku, nome, status:ok}); if(historyLog.length>500)historyLog.pop(); localStorage.setItem(HISTORY_KEY,JSON.stringify(historyLog)); }
+        function renderHistory() { const b=document.getElementById('history-tbody'); b.innerHTML=''; historyLog.forEach(h=>{ b.innerHTML+=`<tr><td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.name}</td><td><span class="badge ${h.status?'success':'error'}">${h.status?'OK':'ERRO'}</span></td></tr>`; }); }
+        function clearHistory() { if(confirm("Apagar?")){ historyLog=[]; localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
+        function openDetails(sku) { currentEditingId=sku; const p=products.find(x=>x.codigo==sku); const f=document.getElementById('details-form'); f.innerHTML=''; ['ncm','cest','origem','unidade','pesoBruto','pesoLiquido','largura','altura','profundidade'].forEach(k=>f.innerHTML+=`<div class="form-group"><label>${k}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`); document.getElementById('modal-details').style.display='flex'; }
+        function saveDetails() { const p=products.find(x=>x.codigo==currentEditingId); document.querySelectorAll('#details-form input').forEach(i=>p[i.id.replace('det-','')]=i.value); p._changed=true; saveData(); closeModal('modal-details'); }
+        function openConfigModal() { const c=JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); document.getElementById('cfg-token').value=c.token||''; document.getElementById('cfg-user').value=c.user||''; document.getElementById('cfg-repo').value=c.repo||''; document.getElementById('cfg-path').value=c.path||''; document.getElementById('modal-config').style.display='flex'; }
+        function saveConfig() { localStorage.setItem(CONFIG_KEY,JSON.stringify({token:document.getElementById('cfg-token').value, user:document.getElementById('cfg-user').value, repo:document.getElementById('cfg-repo').value, path:document.getElementById('cfg-path').value})); closeModal('modal-config'); }
         function closeModal(id) { document.getElementById(id).style.display='none'; }
+        function exportarCSV() { const csv=Papa.unparse(products,{quotes:true,delimiter:";"}); const l=document.createElement("a"); l.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'})); l.download="produtos.csv"; l.click(); }
+        function importarBling() { if(MAKE_WEBHOOK_GET.includes("COLE"))return alert("Config Webhook!"); if(!confirm("Substituir?"))return; toggleLoader(true,"Baixando..."); fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d=>{if(Array.isArray(d))products=d.map(x=>({...x,_changed:false}));saveData();renderGrid();toggleLoader(false);}).catch(e=>{toggleLoader(false);alert("Erro: "+e)}); }
+        function toggleLoader(s,m) { document.getElementById('loader').style.display=s?'flex':'none'; if(m)document.getElementById('loader-msg').innerText=m; }
     </script>
 </body>
 </html>
