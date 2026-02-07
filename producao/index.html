@@ -261,44 +261,63 @@
 
         // --- SYNC (CORRIGIDO LOG E OBS) ---
         function syncBling(sku) { requestLogin(sku); }
-        function executeSync(sku) {
+      function executeSync(sku) {
             const p = products.find(pr => pr.codigo == sku);
-            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure Webhook!");
+            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook UPDATE!");
             
             toggleLoader(true, `Enviando como ${currentUser}...`);
-            
-            // Corrige nome undefined no log: garante que pega o nome atual do objeto
-            const prodName = p.nome || "Produto sem Nome";
-            const changeType = p._lastChange || "Atualização Geral";
 
-            const payload = {...p}; delete payload._changed; delete payload._lastChange;
+            // Dados base
+            const payload = {...p}; 
+            delete payload._changed;
+            delete payload._lastChange; // Não envia controle interno
             
-            if(!payload.situacao) payload.situacao='A';
-            if(!payload.formato) payload.formato='S';
+            // 1. Garante dados obrigatórios do Bling
+            if(!payload.situacao) payload.situacao = 'A';
+            if(!payload.formato) payload.formato = 'S';
             
-            // OBSERVAÇÃO NO BLING
+            // 2. Lógica do Histórico nas Observações (CORRIGIDA)
             const time = new Date().toLocaleString('pt-BR');
-            const logNote = `Alt: ${currentUser} em ${time} - ${changeType}`;
-            // Adiciona nova linha preservando o que já existia
-            payload.observacoes = (p.observacoes || "") + "\n" + logNote;
+            // MUDANÇA AQUI: Usamos " | " em vez de "\n" para não quebrar o JSON
+            const logNote = `[Alt: ${currentUser} em ${time}]`;
+            
+            const obsAntiga = payload.observacoes || "";
+            // Adiciona no início ou fim, separado por barra vertical
+            payload.observacoes = obsAntiga ? (obsAntiga + " | " + logNote) : logNote;
 
-            fetch(MAKE_WEBHOOK_UPDATE, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+            // 3. Envia para o Make
+            fetch(MAKE_WEBHOOK_UPDATE, {
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(payload)
+            })
             .then(r => { 
                 if(r.ok) { 
-                    // Atualiza localmente a observação para não perder no próximo sync
-                    p.observacoes = payload.observacoes;
+                    // Sucesso: Atualiza localmente
+                    p.observacoes = payload.observacoes; 
                     p._changed = false; 
-                    p._lastChange = ""; // Limpa status de mudança
                     saveData(); 
                     
-                    // Log Interno Correto
-                    addToHistory(sku, prodName, true, changeType); 
+                    addToHistory(sku, p.nome, true, "Atualizado"); // Log na aba Histórico
                     
-                    renderGrid(document.getElementById('search-input').value); toggleLoader(false); alert("Sucesso!");
-                } else throw new Error();
+                    renderGrid(document.getElementById('search-input').value); 
+                    toggleLoader(false); 
+                    
+                    alert(`✅ Sucesso! Alteração registrada.`);
+                } else {
+                    throw new Error("Erro na resposta do Make");
+                }
             })
-            .catch(() => { toggleLoader(false); addToHistory(sku, prodName, false, "Falha Conexão"); alert("Erro!"); })
-            .finally(() => { pendingSyncSku = null; currentUser = null; });
+            .catch((err) => { 
+                console.error(err);
+                toggleLoader(false); 
+                addToHistory(sku, p.nome, false, "Falha"); 
+                alert("❌ Erro ao enviar. Verifique se o Make está ativo."); 
+            })
+            .finally(() => { 
+                pendingSyncSku = null; 
+                currentUser = null; 
+            });
         }
 
         // --- EDITOR & UTIL ---
