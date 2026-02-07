@@ -3,102 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Dona Antonia - v5 Alto Contraste</title>
+    <title>Sucedoan Merchandising - v6 Pro</title>
 
-    <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_modern.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         :root {
-            --primary: #3b82f6; /* Azul mais claro */
+            --bg-body: #0f172a;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a; /* Preto quase absoluto */
+            --text-secondary: #64748b;
+            --accent: #3b82f6;
             --success: #22c55e;
             --warning: #f59e0b;
-            --bg: #0f172a;
-            --header-bg: #1e293b;
-            --row-bg: #1e293b;
-            --row-alt: #334155;
-            --text-color: #ffffff;
-            --accent: #38bdf8;
-            --nav-height: 70px;
+            --danger: #ef4444;
+            --border: #e2e8f0;
         }
 
-        /* GERAL */
-        html, body { height: 100%; margin: 0; overflow: hidden; font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-color); }
+        /* RESET E BASE */
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* NAVEGAÇÃO */
+        header {
+            background: #1e293b; height: 70px; display: flex; align-items: center; padding: 0 24px;
+            border-bottom: 1px solid #334155; gap: 20px; flex-shrink: 0;
+        }
+        .brand { font-weight: 900; font-size: 20px; color: white; letter-spacing: -0.5px; margin-right: auto; }
+        .brand span { color: var(--accent); }
         
-        /* NAV */
-        .global-nav { height: var(--nav-height); background: #020617; display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 2px solid var(--accent); }
-        .logo { color: var(--accent); font-weight: 900; font-size: 20px; margin-right: 20px; letter-spacing: 1px; }
-        .nav-btn { height: 40px; padding: 0 20px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #cbd5e1; font-weight: 700; cursor: pointer; font-size: 12px; transition: all 0.2s; text-transform: uppercase; }
-        .nav-btn:hover { background: #334155; color: white; border-color: white; }
-        .nav-btn.active { background: var(--primary); color: white; border-color: var(--accent); }
-        .nav-btn.config { margin-left: auto; border-color: var(--warning); color: var(--warning); }
+        .nav-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1;
+            padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; gap: 8px; font-size: 13px;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-btn.primary { background: var(--accent); color: white; border: none; }
+        .nav-btn.config { color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
 
-        /* VIEW */
-        .view-pane { width: 100%; height: calc(100vh - var(--nav-height)); display: none; padding: 15px; box-sizing: border-box; }
-        .view-pane.active { display: block; }
+        /* BARRA DE FERRAMENTAS */
+        .toolbar {
+            padding: 16px 24px; display: flex; gap: 12px; background: #0f172a;
+            border-bottom: 1px solid #1e293b; flex-shrink: 0;
+        }
+        .search-container { flex-grow: 1; position: relative; }
+        .search-input {
+            width: 100%; background: #1e293b; border: 1px solid #334155; color: white;
+            padding: 12px 12px 12px 40px; border-radius: 8px; font-size: 15px; outline: none;
+        }
+        .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .search-icon { position: absolute; left: 12px; top: 12px; color: #64748b; }
 
-        /* CONTROLS */
-        .controls-bar { display: flex; gap: 10px; margin-bottom: 15px; }
-        #search-field { flex-grow: 1; padding: 12px; border-radius: 6px; border: 2px solid #475569; background: #0f172a; color: white; font-size: 16px; font-weight: bold; outline: none; }
-        #search-field:focus { border-color: var(--accent); }
-        .btn-action { padding: 0 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; color: white; }
-        .btn-bling { background: var(--warning); color: black; }
-        .btn-csv { background: #475569; }
+        /* GRID DE PRODUTOS (O CARRO CHEFE) */
+        .product-grid {
+            flex-grow: 1; overflow-y: auto; padding: 24px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 20px; align-content: start;
+        }
 
-        /* --- CORREÇÃO DE VISIBILIDADE DA TABELA --- */
-        #product-table { height: calc(100% - 60px); border-radius: 8px; overflow: hidden; border: 1px solid #475569; background-color: var(--bg); }
+        /* CARD DESIGN (PROFISSIONAL) */
+        .card {
+            background: var(--bg-card); border-radius: 12px; overflow: hidden;
+            display: flex; flex-direction: column; position: relative;
+            transition: transform 0.2s, box-shadow 0.2s; border: 1px solid transparent;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); z-index: 10; }
         
-        /* Cabeçalho da Tabela */
-        .tabulator .tabulator-header { background-color: #000 !important; color: var(--accent) !important; font-weight: 900; border-bottom: 2px solid var(--accent) !important; }
-        .tabulator .tabulator-header .tabulator-col { background-color: #000 !important; }
+        /* Status Borders */
+        .card.status-synced { border-top: 4px solid var(--success); }
+        .card.status-changed { border-top: 4px solid var(--warning); }
+        .card.status-error { border-top: 4px solid var(--danger); }
+
+        /* Imagem Area */
+        .card-img-area {
+            height: 200px; background: #f1f5f9; position: relative;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            border-bottom: 1px solid var(--border); overflow: hidden;
+        }
+        .card-img { width: 100%; height: 100%; object-fit: contain; background: white; transition: 0.3s; }
+        .card:hover .card-img { transform: scale(1.05); }
         
-        /* Linhas da Tabela (ALTO CONTRASTE) */
-        .tabulator .tabulator-row { background-color: var(--row-bg) !important; color: #ffffff !important; border-bottom: 1px solid #475569 !important; }
-        .tabulator .tabulator-row.tabulator-row-even { background-color: var(--row-alt) !important; } /* Zebra */
-        .tabulator .tabulator-row:hover { background-color: #475569 !important; cursor: pointer; }
+        /* Botões Flutuantes na Imagem (Aparecem no Hover) */
+        .img-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.4); opacity: 0;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            transition: 0.2s; backdrop-filter: blur(2px);
+        }
+        .card-img-area:hover .img-overlay { opacity: 1; }
         
-        /* Células Editáveis */
-        .tabulator-cell.tabulator-editing { background-color: #ffffff !important; color: #000000 !important; }
+        .overlay-btn {
+            background: white; color: var(--text-primary); border: none; width: 40px; height: 40px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s;
+        }
+        .overlay-btn:hover { transform: scale(1.1); background: var(--accent); color: white; }
 
-        /* --- BOTÕES INTERNOS --- */
-        .btn-grid-group { display: flex; gap: 4px; justify-content: center; }
-        .mini-btn { border: none; border-radius: 4px; padding: 6px 10px; font-size: 11px; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
+        /* Corpo do Card */
+        .card-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
         
-        /* Cores dos Botões */
-        .btn-sync { background: var(--success); border: 1px solid #166534; } /* Verde */
-        .btn-photo { background: var(--primary); border: 1px solid #1e40af; } /* Azul */
-        .btn-details { background: #64748b; border: 1px solid #475569; } /* Cinza */
+        .card-sku { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-title { 
+            font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0; 
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;
+        }
         
-        .btn-copy-name { background: #8b5cf6; } /* Roxo */
-        .btn-gen-link { background: #ec4899; } /* Rosa */
+        /* Grid de Inputs Compactos */
+        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 10px; }
+        .stat-box { display: flex; flex-direction: column; }
+        .stat-label { font-size: 10px; color: var(--text-secondary); margin-bottom: 2px; }
+        .stat-input { 
+            width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; 
+            font-size: 13px; font-weight: 600; color: var(--text-primary);
+        }
+        .stat-input:focus { border-color: var(--accent); outline: none; background: #f8fafc; }
 
-        /* MODAIS */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; justify-content: center; align-items: center; }
-        .modal-card { background: #1e293b; padding: 25px; border-radius: 12px; width: 650px; max-width: 95%; max-height: 95vh; overflow-y: auto; border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 15px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #475569; padding-bottom: 10px; }
-        .modal-title { font-size: 20px; font-weight: bold; color: white; }
-        .close-btn { background: #ef4444; border: none; color: white; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        /* Rodapé do Card */
+        .card-footer {
+            padding: 10px 16px; background: #f8fafc; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .btn-text { background: none; border: none; color: var(--text-secondary); font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .btn-text:hover { color: var(--primary); }
 
-        /* EDITOR */
-        .editor-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        canvas { background: #fff; border: 4px solid #475569; max-width: 100%; }
-        .editor-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #0f172a; padding: 10px; border-radius: 8px; }
-        label { font-size: 12px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 5px; }
-        input[type="range"] { width: 100%; cursor: pointer; }
+        /* MODAIS E LOADER (Mantidos e Estilizados) */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-card { background: #1e293b; padding: 0; border-radius: 16px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); overflow: hidden; }
+        .modal-header { padding: 20px; background: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; font-size: 18px; }
+        .modal-body { padding: 24px; overflow-y: auto; color: #cbd5e1; }
+        .close-btn { background: none; border: none; color: #64748b; cursor: pointer; }
+        .close-btn:hover { color: white; }
 
-        /* DETALHES */
-        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { color: var(--accent); margin-bottom: 5px; font-size: 12px; text-transform: uppercase; }
-        .form-group input { background: #0f172a; border: 1px solid #475569; color: white; padding: 10px; border-radius: 4px; font-size: 14px; }
-        .form-group input:focus { border-color: var(--accent); outline: none; }
+        /* EDITOR STYLES */
+        canvas { background: #fff; max-width: 100%; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin: 0 auto; display: block; }
+        .range-group { margin-top: 15px; }
+        .range-group label { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 5px; }
+        input[type=range] { width: 100%; accent-color: var(--accent); }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-group label { display: block; font-size: 11px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input { width: 100%; background: #020617; border: 1px solid #334155; padding: 10px; border-radius: 6px; color: white; }
+        
+        .btn-full { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; background: var(--accent); color: white; font-size: 14px; }
+        .btn-full:hover { filter: brightness(1.1); }
 
-        /* LOADER */
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
-        .spinner { width: 50px; height: 50px; border: 5px solid #334155; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        #loader { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; justify-content: center; align-items: center; color: white; flex-direction: column; gap: 15px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
@@ -106,54 +159,55 @@
     <script>
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
-        
-        const STORAGE_KEY = 'sucedoan_data_v5';
+        const STORAGE_KEY = 'sucedoan_data_v6';
         const CONFIG_KEY = 'sucedoan_config';
     </script>
 
-    <nav class="global-nav">
-        <div class="logo">DONA ANTONIA</div>
-        <button class="nav-btn active" onclick="showView('producao')">📦 PRODUÇÃO</button>
-        <button class="nav-btn" onclick="showView('pedidos')">📄 PEDIDOS</button>
-        <button class="nav-btn config" onclick="openConfigModal()">⚙️ GITHUB</button>
-    </nav>
+    <header>
+        <div class="brand">SUCEDOAN <span>PRO</span></div>
+        <button class="nav-btn primary" onclick="importarBling()"><i data-lucide="cloud-download"></i> BAIXAR BLING</button>
+        <input type="file" id="csv-file" accept=".csv" style="display:none">
+        <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet"></i> CSV</button>
+        <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings"></i></button>
+    </header>
 
-    <div id="view-producao" class="view-pane active">
-        <div class="controls-bar">
-            <input type="text" id="search-field" placeholder="🔎 Digite para filtrar...">
-            <button class="btn-action btn-bling" onclick="importarBling()">☁ Baixar do Bling</button>
-            <input type="file" id="csv-file" accept=".csv" style="display:none">
-            <button class="btn-action btn-csv" onclick="document.getElementById('csv-file').click()">📂 CSV</button>
+    <div class="toolbar">
+        <div class="search-container">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" class="search-input" id="search-input" placeholder="Pesquisar produto por Nome, SKU ou EAN...">
         </div>
-        <div id="product-table"></div>
+        <button class="nav-btn" onclick="exportarCSV()"><i data-lucide="download"></i> Exportar</button>
     </div>
+
+    <div class="product-grid" id="product-grid">
+        </div>
 
     <div id="modal-editor" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <span class="modal-title">Editor de Imagem (Envio GitHub)</span>
-                <button class="close-btn" onclick="closeModal('modal-editor')">FECHAR</button>
+                <span>Editor de Imagem</span>
+                <button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x"></i></button>
             </div>
-            
-            <div class="editor-container">
+            <div class="modal-body">
                 <canvas id="imageCanvas" width="500" height="500"></canvas>
-                <div style="color:var(--accent); font-size:12px; font-weight:bold;">Ctrl+V para Colar Imagem</div>
-
-                <div class="editor-controls">
-                    <div>
-                        <label>ZOOM (Aproximar/Afastar)</label>
-                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
-                    </div>
-                    <div>
-                        <label>NITIDEZ (Definição)</label>
-                        <input type="range" id="sharpenRange" min="0" max="10" step="1" value="0">
-                    </div>
+                <div style="text-align:center; font-size:12px; color:#94a3b8; margin-top:10px;">
+                    Dica: Copie a imagem no Google e pressione <b>Ctrl+V</b> aqui.
+                </div>
+                
+                <div class="range-group">
+                    <label><span>Zoom</span> <span id="zoom-val">100%</span></label>
+                    <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
                 </div>
 
-                <div style="display:flex; gap:10px; width:100%">
-                    <button class="btn-action btn-csv" style="flex:1" onclick="document.getElementById('fileInput').click()">📂 Do PC</button>
+                <div class="form-grid" style="margin-top:20px;">
+                    <button class="nav-btn" style="justify-content:center" onclick="document.getElementById('fileInput').click()">
+                        <i data-lucide="upload"></i> Carregar do PC
+                    </button>
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
-                    <button class="btn-action btn-photo" style="flex:1" onclick="uploadToGithub()">🚀 ENVIAR PARA GITHUB</button>
+                    
+                    <button class="nav-btn primary" style="justify-content:center" onclick="uploadToGithub()">
+                        <i data-lucide="rocket"></i> ENVIAR GITHUB
+                    </button>
                 </div>
             </div>
         </div>
@@ -162,159 +216,208 @@
     <div id="modal-details" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <span class="modal-title">Detalhes do Produto</span>
-                <button class="close-btn" onclick="saveDetailsAndClose()">💾 SALVAR</button>
+                <span>Detalhes Técnicos</span>
+                <button class="close-btn" onclick="saveDetails()"><i data-lucide="check"></i> SALVAR</button>
             </div>
-            <div class="details-grid" id="details-form"></div>
+            <div class="modal-body">
+                <div class="form-grid" id="details-form">
+                    </div>
+                <button class="btn-full" onclick="saveDetails()">SALVAR ALTERAÇÕES</button>
+            </div>
         </div>
     </div>
 
     <div id="modal-config" class="modal-overlay">
-        <div class="modal-card" style="width:400px; height:auto;">
-            <div class="modal-header"><span class="modal-title">Configurar GitHub</span><button class="close-btn" onclick="closeModal('modal-config')">X</button></div>
-            <div class="form-group"><label>GitHub Token (PAT)</label><input type="password" id="cfg-token"></div>
-            <div class="form-group"><label>Usuário</label><input type="text" id="cfg-user"></div>
-            <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo"></div>
-            <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" value="site/img/produtos"></div>
-            <button class="btn-action btn-sync" onclick="saveConfig()" style="margin-top:15px">SALVAR DADOS</button>
+        <div class="modal-card" style="width:400px; height:auto">
+            <div class="modal-header"><span>Configuração GitHub</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x"></i></button></div>
+            <div class="modal-body" style="display:flex; flex-direction:column; gap:15px;">
+                <div class="form-group"><label>Token (PAT)</label><input type="password" id="cfg-token"></div>
+                <div class="form-group"><label>Usuário</label><input type="text" id="cfg-user"></div>
+                <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo"></div>
+                <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" value="site/img/produtos"></div>
+                <button class="btn-full" onclick="saveConfig()">SALVAR</button>
+            </div>
         </div>
     </div>
 
-    <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Processando...</h3></div>
+    <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
 
     <script>
-        var table;
-        var currentEditingRow = null;
-        var canvas = document.getElementById('imageCanvas');
-        var ctx = canvas.getContext('2d');
-        var loadedImage = null;
-        var imageState = { x: 0, y: 0, scale: 1 };
+        // --- ESTADO DA APLICAÇÃO ---
+        let products = [];
+        let currentEditingId = null; // Usaremos o código SKU como ID
+        
+        // Editor Vars
+        const canvas = document.getElementById('imageCanvas');
+        const ctx = canvas.getContext('2d');
+        let loadedImage = null;
 
+        // --- INICIALIZAÇÃO ---
         window.onload = function() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            initTable(saved ? JSON.parse(saved) : []);
+            lucide.createIcons();
+            loadData();
             setupEditorEvents();
-            loadConfig();
+            
+            // Search Listener
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderGrid(e.target.value);
+            });
         };
 
         function toggleLoader(show, msg) {
-            document.getElementById('loader').style.display = show ? 'flex' : 'none';
-            document.getElementById('loader-msg').innerText = msg || "Processando...";
+            const el = document.getElementById('loader');
+            el.style.display = show ? 'flex' : 'none';
+            if(msg) document.getElementById('loader-msg').innerText = msg;
         }
 
-        // --- DEFINIÇÃO DA TABELA (REVISADA) ---
-        function initTable(data) {
-            table = new Tabulator("#product-table", {
-                data: data,
-                layout: "fitColumns",
-                height: "100%",
-                reactiveData: true,
-                movableColumns: true, // Permite arrastar colunas
-                columns: [
-                    // 1. AÇÕES PRINCIPAIS (Esquerda)
-                    {title: "AÇÕES DO SISTEMA", width: 190, headerSort:false, frozen:true, hozAlign:"center", formatter: function(){
-                        return `
-                            <div class="btn-grid-group">
-                                <button class="mini-btn btn-sync" title="Enviar para o Bling">☁ BLING</button>
-                                <button class="mini-btn btn-photo" title="Abrir Editor">📸 FOTO</button>
-                                <button class="mini-btn btn-details" title="Mais Dados">📝 +DET</button>
-                            </div>
-                        `;
-                    }, cellClick: function(e, cell){
-                        const t = e.target;
-                        const row = cell.getRow();
-                        if(t.classList.contains('btn-sync')) syncBling(row.getData(), t);
-                        if(t.classList.contains('btn-photo')) openPhotoEditor(row);
-                        if(t.classList.contains('btn-details')) openDetails(row);
-                    }},
-
-                    // 2. DADOS DO PRODUTO (Meio)
-                    {title: "SKU", field: "codigo", width: 90, headerFilter:"input", cssClass:"font-bold"},
-                    {title: "NOME DO PRODUTO", field: "nome", widthGrow: 2, headerFilter:"input", editor:"input"},
-                    
-                    // 3. FERRAMENTAS DE IMAGEM (Restaurado: COPIAR e LINK)
-                    {title: "FERRAMENTAS IMG", width: 150, headerSort:false, hozAlign:"center", formatter: function(){
-                        return `
-                            <div class="btn-grid-group">
-                                <button class="mini-btn btn-copy-name" title="Copiar nome slug">📋 NOME</button>
-                                <button class="mini-btn btn-gen-link" title="Gerar Link GitHub">🔗 LINK</button>
-                            </div>
-                        `;
-                    }, cellClick: function(e, cell){
-                        const t = e.target;
-                        const row = cell.getRow();
-                        const data = row.getData();
-
-                        if(t.classList.contains('btn-copy-name')) {
-                            const slug = slugify(data.nome);
-                            navigator.clipboard.writeText(slug);
-                            alert("Copiado: " + slug);
-                        }
-                        if(t.classList.contains('btn-gen-link')) {
-                             const slug = slugify(data.nome);
-                             const urlFinal = `https://github.com/osvaldosereia/SUCEDOAN12/blob/main/site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp?raw=true`;
-                             row.update({url_imagem: urlFinal});
-                             saveData();
-                             alert("Link Gerado!");
-                        }
-                    }},
-
-                    // 4. LINK DA IMAGEM E DADOS EXTRAS
-                    {title: "URL IMAGEM", field: "url_imagem", width: 100, editor:"input", formatter:"link", formatterParams:{label:"ABRIR", target:"_blank"}},
-                    {title: "EST", field: "estoque", width: 70, hozAlign:"center", editor:"number"},
-                    {title: "LOCAL", field: "localizacao", width: 90, editor:"input"},
-                    {title: "EAN", field: "gtin", width: 110, editor:"input"},
-                    {title: "NCM", field: "ncm", width: 90, editor:"input"}
-                ],
-                cellEdited: () => saveData()
-            });
-
-            // Filtro
-            document.getElementById("search-field").addEventListener("input", function(e){
-                const val = e.target.value;
-                table.setFilter([[{field:"codigo", type:"like", value:val}, {field:"nome", type:"like", value:val}, {field:"gtin", type:"like", value:val}]]);
-            });
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if(saved) {
+                products = JSON.parse(saved);
+                renderGrid();
+            }
         }
 
-        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData())); }
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+        }
 
-        // --- EDITOR DE IMAGEM ---
-        function openPhotoEditor(row) {
-            currentEditingRow = row;
+        // --- RENDERIZAÇÃO DO GRID (A MÁGICA UX) ---
+        function renderGrid(filter = "") {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = "";
+            const term = filter.toLowerCase();
+
+            // Filtra
+            const filtered = products.filter(p => 
+                (p.nome && p.nome.toLowerCase().includes(term)) || 
+                (p.codigo && p.codigo.toLowerCase().includes(term)) ||
+                (p.gtin && p.gtin.includes(term))
+            );
+
+            // Renderiza Cards
+            filtered.forEach(p => {
+                const card = document.createElement('div');
+                card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
+                
+                // Lógica de Imagem
+                const hasImg = p.url_imagem && p.url_imagem.length > 5;
+                const imgSrc = hasImg ? p.url_imagem : 'https://placehold.co/400x400/f1f5f9/94a3b8?text=SEM+FOTO';
+                
+                card.innerHTML = `
+                    <div class="card-img-area">
+                        <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/f1f5f9/94a3b8?text=ERRO'">
+                        <div class="img-overlay">
+                            <button class="overlay-btn" title="Buscar no Google" onclick="searchGoogle('${p.nome}')">
+                                <i data-lucide="search"></i>
+                            </button>
+                            <button class="overlay-btn" title="Editor de Foto" onclick="openPhotoEditor('${p.codigo}')">
+                                <i data-lucide="camera"></i>
+                            </button>
+                            <button class="overlay-btn" title="Abrir Link" onclick="window.open('${p.url_imagem}', '_blank')">
+                                <i data-lucide="external-link"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-sku">${p.codigo || 'S/ SKU'}</div>
+                        <div class="card-title" contenteditable="true" onblur="updateField('${p.codigo}', 'nome', this.innerText)">${p.nome || 'Sem Nome'}</div>
+                        
+                        <div class="card-stats">
+                            <div class="stat-box">
+                                <label class="stat-label">PREÇO (R$)</label>
+                                <input type="number" class="stat-input" value="${p.preco}" onchange="updateField('${p.codigo}', 'preco', this.value)">
+                            </div>
+                            <div class="stat-box">
+                                <label class="stat-label">ESTOQUE</label>
+                                <input type="number" class="stat-input" value="${p.estoque}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
+                            </div>
+                        </div>
+                        
+                        <div style="display:flex; gap:10px; margin-top:8px;">
+                            <div class="stat-box" style="flex:1">
+                                <label class="stat-label">LOCAL</label>
+                                <input type="text" class="stat-input" value="${p.localizacao || ''}" onchange="updateField('${p.codigo}', 'localizacao', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-text" onclick="openDetails('${p.codigo}')"><i data-lucide="list-plus" size="14"></i> DETALHES</button>
+                        <button class="nav-btn primary" style="padding: 4px 10px; font-size:10px;" onclick="syncBling('${p.codigo}')">
+                            <i data-lucide="refresh-cw" size="12"></i> SYNC
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // --- LÓGICA DE DADOS ---
+        function updateField(sku, field, value) {
+            const product = products.find(p => p.codigo == sku);
+            if(product) {
+                // Conversão de números
+                if(field === 'preco' || field === 'estoque') value = parseFloat(value) || 0;
+                
+                product[field] = value;
+                product._changed = true; // Marca como alterado visualmente
+                saveData();
+                renderGrid(document.getElementById('search-input').value); // Re-render para atualizar bordas
+            }
+        }
+
+        function searchGoogle(term) {
+            const query = encodeURIComponent(term);
+            window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
+        }
+
+        // --- EDITOR DE FOTO ---
+        function openPhotoEditor(sku) {
+            currentEditingId = sku;
+            const product = products.find(p => p.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
-            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 500, 500); // Reset
-            ctx.font = "20px Arial"; ctx.fillStyle = "#000"; ctx.fillText("Cole (Ctrl+V) ou Abra", 150, 250);
+            
+            // Reset Canvas
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 500, 500);
+            ctx.font = "16px sans-serif"; ctx.fillStyle = "#94a3b8"; 
+            ctx.textAlign = "center";
+            ctx.fillText("Ctrl+V para colar", 250, 250);
+            
             loadedImage = null;
         }
 
         function setupEditorEvents() {
-            window.addEventListener('paste', function(e) {
+            // Paste
+            window.addEventListener('paste', e => {
                 if(document.getElementById('modal-editor').style.display !== 'flex') return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for (let i in items) {
-                    if (items[i].kind === 'file') {
+                for(let item of items) {
+                    if(item.kind === 'file') {
                         const reader = new FileReader();
-                        reader.onload = (ev) => loadImageToCanvas(ev.target.result);
-                        reader.readAsDataURL(items[i].getAsFile());
+                        reader.onload = ev => loadImageToCanvas(ev.target.result);
+                        reader.readAsDataURL(item.getAsFile());
                     }
                 }
             });
-            document.getElementById('fileInput').addEventListener('change', function(e){
+            // File Input
+            document.getElementById('fileInput').addEventListener('change', function(){
                 if(this.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = (evt) => loadImageToCanvas(evt.target.result);
-                    reader.readAsDataURL(this.files[0]);
+                    const r = new FileReader();
+                    r.onload = e => loadImageToCanvas(e.target.result);
+                    r.readAsDataURL(this.files[0]);
                 }
             });
+            // Zoom
             document.getElementById('zoomRange').addEventListener('input', drawImage);
         }
 
         function loadImageToCanvas(url) {
             const img = new Image();
-            img.onload = function() {
+            img.onload = () => {
                 loadedImage = img;
-                imageState.scale = Math.max(500/img.width, 500/img.height);
-                document.getElementById('zoomRange').value = imageState.scale;
+                const scale = Math.max(500/img.width, 500/img.height);
+                document.getElementById('zoomRange').value = scale;
                 drawImage();
             };
             img.src = url;
@@ -322,8 +425,10 @@
 
         function drawImage() {
             if(!loadedImage) return;
-            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 500, 500); // Fundo Branco
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 500, 500);
             const zoom = parseFloat(document.getElementById('zoomRange').value);
+            document.getElementById('zoom-val').innerText = Math.round(zoom*100) + "%";
+            
             const w = loadedImage.width * zoom;
             const h = loadedImage.height * zoom;
             const x = (500 - w) / 2;
@@ -332,121 +437,190 @@
         }
 
         async function uploadToGithub() {
-            if(!loadedImage) return alert("Cole uma imagem primeiro!");
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
-            if(!cfg.token) return alert("Configure o Token na engrenagem!");
-
-            toggleLoader(true, "Enviando para GitHub...");
+            if(!loadedImage) return alert("Nenhuma imagem para enviar.");
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
+            if(!cfg.token) return alert("Configure o Token GitHub!");
             
-            // Qualidade WebP
+            toggleLoader(true, "Enviando para o GitHub...");
+            
+            const product = products.find(p => p.codigo == currentEditingId);
+            const slug = product.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') + "-cesta-basica.webp";
+            
             const dataUrl = canvas.toDataURL("image/webp", 0.8);
             const base64Content = dataUrl.split(',')[1];
             
-            // Slugify Nome
-            const rowData = currentEditingRow.getData();
-            const slug = slugify(rowData.nome) + "-cesta-basica-cuiaba-varzea-grande.webp";
-            const path = cfg.path + "/" + slug;
+            const path = `${cfg.path}/${slug}`;
             const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
 
             try {
+                // Checa se existe (para pegar SHA)
                 let sha = null;
                 try {
                     const check = await fetch(apiUrl, { headers: { "Authorization": `token ${cfg.token}` } });
                     if(check.ok) sha = (await check.json()).sha;
                 } catch(e) {}
 
-                const response = await fetch(apiUrl, {
+                // Upload
+                const res = await fetch(apiUrl, {
                     method: 'PUT',
                     headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: "Update Painel", content: base64Content, sha: sha })
+                    body: JSON.stringify({ message: "Up Painel", content: base64Content, sha: sha })
                 });
 
-                if(response.ok) {
-                    const resJson = await response.json();
-                    currentEditingRow.update({ url_imagem: resJson.content.download_url });
+                if(res.ok) {
+                    const json = await res.json();
+                    product.url_imagem = json.content.download_url;
+                    product._changed = true;
                     saveData();
+                    renderGrid(document.getElementById('search-input').value);
                     toggleLoader(false);
                     closeModal('modal-editor');
-                    alert("Imagem atualizada com sucesso!");
-                } else {
-                    throw new Error("Erro GitHub: " + response.status);
-                }
-            } catch(error) {
+                    alert("Imagem Atualizada!");
+                } else throw new Error(res.status);
+
+            } catch(e) {
                 toggleLoader(false);
-                alert("Erro: " + error.message);
+                alert("Erro GitHub: " + e.message);
             }
         }
 
-        // --- AUXILIARES ---
-        function slugify(text) {
-            return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/--+/g, '-').trim();
-        }
-
-        function openDetails(row) {
-            currentEditingRow = row;
-            const data = row.getData();
-            const container = document.getElementById('details-form');
-            container.innerHTML = "";
+        // --- DETALHES ---
+        function openDetails(sku) {
+            currentEditingId = sku;
+            const p = products.find(pr => pr.codigo == sku);
+            const form = document.getElementById('details-form');
+            form.innerHTML = '';
+            
             const fields = [
-                {k:'preco', l:'Preço Venda'}, {k:'unidade', l:'Unidade'},
-                {k:'pesoBruto', l:'Peso Bruto'}, {k:'pesoLiquido', l:'Peso Líq'},
-                {k:'cest', l:'CEST'}, {k:'largura', l:'Largura'}, 
-                {k:'altura', l:'Altura'}, {k:'profundidade', l:'Profundidade'}
+                {k:'gtin', l:'EAN / GTIN'},
+                {k:'ncm', l:'NCM (Fiscal)'},
+                {k:'cest', l:'CEST'},
+                {k:'unidade', l:'Unidade (UN/KG)'},
+                {k:'pesoLiquido', l:'Peso Líquido'},
+                {k:'pesoBruto', l:'Peso Bruto'},
+                {k:'largura', l:'Largura'},
+                {k:'altura', l:'Altura'},
+                {k:'profundidade', l:'Profundidade'}
             ];
+
             fields.forEach(f => {
-                container.innerHTML += `<div class="form-group"><label>${f.l}</label><input type="text" id="det-${f.k}" value="${data[f.k]||''}"></div>`;
+                form.innerHTML += `
+                    <div class="form-group">
+                        <label>${f.l}</label>
+                        <input type="text" id="det-${f.k}" value="${p[f.k] || ''}">
+                    </div>
+                `;
             });
             document.getElementById('modal-details').style.display = 'flex';
         }
 
-        function saveDetailsAndClose() {
-            if(!currentEditingRow) return;
+        function saveDetails() {
+            const p = products.find(pr => pr.codigo == currentEditingId);
             const inputs = document.querySelectorAll('#details-form input');
-            const updateData = {};
-            inputs.forEach(i => updateData[i.id.replace('det-', '')] = i.value);
-            currentEditingRow.update(updateData);
+            inputs.forEach(i => {
+                const key = i.id.replace('det-', '');
+                p[key] = i.value;
+            });
+            p._changed = true;
             saveData();
             closeModal('modal-details');
         }
 
-        function syncBling(data, btn) {
-            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook UPDATE!");
-            const txt = btn.innerText;
-            btn.innerText = "⏳"; btn.disabled = true;
+        // --- INTEGRAÇÃO BLING ---
+        function syncBling(sku) {
+            // Se SKU vier nulo, é sync unitário do botão. Se não, precisaríamos de lógica bulk.
+            // Aqui faremos unitário
+            const p = products.find(pr => pr.codigo == sku);
+            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure Webhook UPDATE!");
+
+            toggleLoader(true, "Sincronizando com Bling...");
             
             // Sanitização
-            const payload = {...data};
-            Object.keys(payload).forEach(k => { if(typeof payload[k] === 'string') payload[k] = payload[k].trim(); });
-
+            const payload = {...p};
+            delete payload._changed; // Não mandar controle interno
+            
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
             }).then(r => {
-                if(r.ok) { btn.innerText = "✅"; setTimeout(()=>{btn.innerText=txt; btn.disabled=false}, 2000); }
-                else throw new Error();
-            }).catch(() => { btn.innerText = "❌"; btn.disabled=false; });
+                if(r.ok) {
+                    p._changed = false; // Remove marcação de alterado
+                    saveData();
+                    renderGrid(document.getElementById('search-input').value);
+                    toggleLoader(false);
+                } else throw new Error();
+            }).catch(() => {
+                toggleLoader(false);
+                alert("Erro ao sincronizar!");
+            });
         }
 
         function importarBling() {
             if(MAKE_WEBHOOK_GET.includes("COLE_AQUI")) return alert("Configure Webhook GET!");
-            if(!confirm("Baixar lista do Bling?")) return;
-            toggleLoader(true, "Baixando...");
-            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(data=>{
+            if(!confirm("Substituir lista atual pela do Bling?")) return;
+            
+            toggleLoader(true, "Baixando catálogo...");
+            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(data => {
                 if(Array.isArray(data)) {
-                    const clean = data.map(d=>({...d, preco: parseFloat(d.preco||0), estoque: parseFloat(d.estoque||0)}));
-                    table.setData(clean);
+                    // Mapeamento seguro
+                    products = data.map(d => ({
+                        codigo: d.codigo || d["Código"] || "",
+                        nome: d.nome || d["Descrição"] || "",
+                        preco: parseFloat(d.preco || d["Preço"] || 0),
+                        estoque: parseFloat(d.estoque || d["Estoque"] || 0),
+                        localizacao: d.localizacao || d["Localização"] || "",
+                        url_imagem: d.url_imagem || d["URL Imagens Externas"] || "",
+                        gtin: d.gtin || d["GTIN/EAN"] || "",
+                        ncm: d.ncm || d["NCM"] || "",
+                        cest: d.cest || "",
+                        unidade: d.unidade || "UN",
+                        pesoBruto: d.pesoBruto || 0,
+                        pesoLiquido: d.pesoLiquido || 0,
+                        _changed: false
+                    }));
                     saveData();
-                    alert("Importado!");
+                    renderGrid();
+                    toggleLoader(false);
                 }
-            }).catch(()=>alert("Erro na importação")).finally(()=>toggleLoader(false));
+            }).catch(e => {
+                toggleLoader(false);
+                alert("Erro de Importação: " + e);
+            });
+        }
+        
+        // Exportar CSV
+        function exportarCSV() {
+            const csv = Papa.unparse(products, { quotes: true, delimiter: ";", newline: "\r\n" });
+            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "produtos_pro.csv";
+            link.click();
         }
 
-        // Config & Modals
+        // CSV Import
+        document.getElementById('csv-file').addEventListener('change', function(e) {
+            Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, encoding: "UTF-8", complete: (r) => {
+                // Mesclar ou substituir? Vamos substituir para simplificar
+                const novos = r.data.map(d => ({
+                    codigo: d["Código"]||d.codigo, nome: d["Descrição"]||d.nome,
+                    preco: parseFloat(d["Preço"]||d.preco||0), estoque: parseFloat(d["Estoque"]||d.estoque||0),
+                    localizacao: d["Localização"]||d.localizacao, gtin: d["GTIN/EAN"]||d.gtin,
+                    ncm: d["NCM"]||d.ncm, url_imagem: d["URL Imagens Externas"]||d.url_imagem,
+                    _changed: true
+                }));
+                products = novos;
+                saveData();
+                renderGrid();
+            }});
+        });
+
+        // Config UI
         function openConfigModal() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             document.getElementById('cfg-token').value = cfg.token||'';
             document.getElementById('cfg-user').value = cfg.user||'';
             document.getElementById('cfg-repo').value = cfg.repo||'';
-            document.getElementById('modal-config').style.display='flex';
+            document.getElementById('modal-config').style.display = 'flex';
         }
         function saveConfig() {
             const cfg = {
@@ -458,20 +632,8 @@
             localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
             closeModal('modal-config');
         }
-        function loadConfig() { if(!localStorage.getItem(CONFIG_KEY)) alert("Configure o GitHub na engrenagem!"); }
-        function closeModal(id) { document.getElementById(id).style.display='none'; }
-        function showView(id) { document.querySelectorAll('.view-pane').forEach(v=>v.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        document.getElementById('csv-file').addEventListener('change', function(e) {
-            Papa.parse(e.target.files[0], { header:true, skipEmptyLines:true, encoding:"UTF-8", complete: (r) => {
-                const map = r.data.map(d => ({
-                    codigo: d["Código"]||d.codigo, nome: d["Descrição"]||d.nome,
-                    preco: d["Preço"]||d.preco, estoque: d["Estoque"]||d.estoque,
-                    gtin: d["GTIN/EAN"]||d.gtin, ncm: d["NCM"]||d.ncm
-                }));
-                table.setData(map); saveData();
-            }});
-        });
     </script>
 </body>
 </html>
