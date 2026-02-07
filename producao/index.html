@@ -558,7 +558,8 @@
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_v26';
+        // ATUALIZADO PARA v27 (Nova Estrutura com Validade)
+        const STORAGE_KEY = 'sucedoan_data_v27';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
@@ -1209,16 +1210,64 @@
             l.download = "produtos.csv"; l.click();
         }
         
+        // NOVA FUNÇÃO: IMPORTAR DO MAKE/BLING
         function importarBling() {
-            if(MAKE_WEBHOOK_GET.includes("COLE")) return alert("Configure Webhook GET no topo do código!");
-            if(!confirm("Isso substituirá a lista atual. Continuar?")) return;
-            toggleLoader(true, "Baixando do Bling...");
-            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d => {
-                if(Array.isArray(d)) { 
-                    products = d.map(x => ({...x, _changed: false})); 
-                    saveData(); renderGrid(); toggleLoader(false); 
+            if (MAKE_WEBHOOK_GET.includes("COLE_AQUI") || MAKE_WEBHOOK_GET.includes("SEU_WEBHOOK")) {
+                return alert("ERRO: Configure o Link do Webhook GET no topo do código!");
+            }
+            
+            if (!confirm("Isso irá substituir a lista atual pelos produtos ativos do Bling via Make. Continuar?")) return;
+            
+            toggleLoader(true, "Buscando ativos no Bling...");
+            
+            fetch(MAKE_WEBHOOK_GET)
+            .then(r => r.json())
+            .then(d => {
+                if (Array.isArray(d)) { 
+                    // Mapeamento dos produtos vindos do Make
+                    products = d.map(x => ({
+                        codigo: x.codigo || x.sku || "",
+                        nome: x.nome || x.descricao || "",
+                        preco: parseFloat(x.preco || x.venda || 0),
+                        estoque: parseFloat(x.estoque || 0),
+                        localizacao: x.localizacao || "",
+                        gtin: x.gtin || x.ean || "",
+                        url_imagem: x.url_imagem || x.imagem || "",
+                        
+                        // NOVO CAMPO VALIDADE
+                        validade: x.validade || x.dataValidade || "", 
+                        
+                        // Campos técnicos
+                        ncm: x.ncm || "",
+                        cest: x.cest || "",
+                        unidade: x.unidade || "UN",
+                        pesoBruto: x.pesoBruto || "",
+                        pesoLiquido: x.pesoLiquido || "",
+                        largura: x.largura || "",
+                        altura: x.altura || "",
+                        profundidade: x.profundidade || "",
+                        origem: x.origem || "",
+                        observacoes: x.observacoes || "",
+                        
+                        // Controles Internos
+                        situacao: 'A', 
+                        formato: 'S', 
+                        _changed: false
+                    })); 
+                    
+                    saveData(); 
+                    renderGrid(); 
+                    toggleLoader(false);
+                    alert(`${products.length} produtos ativos carregados do Bling!`);
+                } else {
+                    throw new Error("O Make não retornou uma lista válida.");
                 }
-            }).catch(e => { toggleLoader(false); alert("Erro: "+e); });
+            })
+            .catch(e => { 
+                toggleLoader(false); 
+                console.error(e);
+                alert("Erro na importação: " + e.message); 
+            });
         }
 
         function toggleLoader(show, msg) {
