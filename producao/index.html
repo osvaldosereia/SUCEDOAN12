@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v24 (Full System)</title>
+    <title>Sucedoan Painel - v26 (Link Fixo + Super Nitidez)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -554,11 +554,10 @@
             "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
         };
 
-        // Substitua pelo seu Webhook do Make
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_v24';
+        const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
@@ -667,8 +666,8 @@
                         <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
                     </div>
                     <div class="tool-group">
-                        <label><span>Nitidez</span></label>
-                        <input type="range" id="sharpenRange" min="0" max="1" step="0.1" value="0">
+                        <label><span>Nitidez (POWER)</span></label>
+                        <input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0">
                     </div>
                 </div>
 
@@ -744,7 +743,7 @@
         }
 
         // ----------------------------------------------------
-        // IMPORTAÇÃO CSV (LÓGICA V11 PRESERVADA)
+        // IMPORTAÇÃO CSV
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -758,7 +757,6 @@
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // Helpers de leitura
                         const getVal = (keys) => { 
                             const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
                             return f ? d[f] : ""; 
@@ -775,22 +773,12 @@
                             url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']), cest: getVal(['cest']),
                             unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
                             largura: getNum(['largura']), altura: getNum(['altura']), profundidade: getNum(['profundidade']),
-                            origem: getVal(['origem']), 
-                            
-                            // Mapeia Observações para permitir escrita e leitura correta
-                            observacoes: getVal(['observacoes','obs']),
-                            
+                            origem: getVal(['origem']), observacoes: getVal(['observacoes','obs']),
                             situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
                         };
-                        
-                        // Campos extras dinâmicos
-                        Object.keys(d).forEach(k => { 
-                            const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); 
-                            if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; 
-                        });
+                        Object.keys(d).forEach(k => { const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; });
                         return base;
                     });
-                    
                     products = novos.filter(p => p.codigo || p.nome);
                     saveData(); renderGrid(); toggleLoader(false);
                     alert(`${products.length} produtos importados com sucesso!`);
@@ -820,7 +808,7 @@
         }
 
         // ----------------------------------------------------
-        // SINCRONIZAÇÃO (GARANTIA DE URL + CORREÇÃO MAKE)
+        // SINCRONIZAÇÃO (CORREÇÃO V26 - ENVIA O LINK QUE TIVER)
         // ----------------------------------------------------
         function syncBling(sku) {
             requestLogin(sku);
@@ -830,7 +818,6 @@
             const p = products.find(pr => pr.codigo == sku);
             if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook no Código!");
             
-            // Auto-login se vier do fluxo de imagem
             if(!currentUser) currentUser = "SISTEMA";
 
             toggleLoader(true, `Sincronizando...`);
@@ -846,28 +833,20 @@
             if(!payload.situacao) payload.situacao = 'A';
             if(!payload.formato) payload.formato = 'S';
 
-            // 3. RECUPERAÇÃO DE SEGURANÇA DA URL
-            // Se a imagem foi alterada, recria o link matemático para garantir que vá no pacote
-            if(changeType.includes("Imagem")) {
-                const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-                if(cfg.user && cfg.repo) {
-                    const slug = (p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-')+".webp";
-                    const forcedUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${slug}?v=${Date.now()}`;
-                    payload.url_imagem = forcedUrl;
-                    p.url_imagem = forcedUrl; // Salva localmente também
-                }
-            }
+            // --- CORREÇÃO V26: SEM "RECALCULAR LINK" ---
+            // O sistema simplesmente confia no que está salvo em url_imagem
+            // Se estiver vazio, envia string vazia para não dar erro
+            if(!payload.url_imagem) payload.url_imagem = "";
 
-            // 4. LOG E LIMPEZA DE TEXTO (Para não quebrar o Make)
+            // 3. LOG E LIMPEZA DE TEXTO (Para não quebrar o Make)
             const time = new Date().toLocaleString('pt-BR');
             const logNote = `[Alt: ${currentUser} em ${time} - ${changeType}]`;
             
-            // Concatena e substitui "Enters" por " | " e Aspas duplas por simples
             let obs = (payload.observacoes || "") + " | " + logNote;
             obs = obs.replace(/[\r\n]+/g, " | ").replace(/"/g, "'");
             payload.observacoes = obs;
 
-            // 5. ENVIO
+            // 4. ENVIO
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
@@ -875,9 +854,9 @@
             })
             .then(r => { 
                 if(r.ok) { 
-                    p.observacoes = payload.observacoes; // Salva obs atualizada localmente
+                    p.observacoes = payload.observacoes; 
                     p._changed = false; 
-                    p._lastChange = ""; // Limpa status
+                    p._lastChange = ""; 
                     saveData(); 
                     
                     addToHistory(sku, p.nome, true, changeType); 
@@ -885,7 +864,7 @@
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
                     
-                    alert(`✅ Produto atualizado!\nImagem: ${payload.url_imagem ? 'Link Enviado' : 'Sem Link'}`);
+                    alert(`✅ Produto atualizado!\nImagem Enviada: ${payload.url_imagem ? 'SIM' : 'NÃO'}`);
                 } else throw new Error("Erro no Make");
             })
             .catch(() => { 
@@ -900,15 +879,139 @@
         }
 
         // ----------------------------------------------------
-        // GERENCIAMENTO DE DADOS
+        // EDITOR E UPLOAD (CRIA O LINK AQUI E SALVA)
         // ----------------------------------------------------
-        function loadData() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if(saved) { products = JSON.parse(saved); renderGrid(); }
+        function openPhotoEditor(sku) {
+            currentEditingId = sku;
+            const p = products.find(pr => pr.codigo == sku);
+            document.getElementById('modal-editor').style.display = 'flex';
             
-            const hist = localStorage.getItem(HISTORY_KEY);
-            if(hist) historyLog = JSON.parse(hist);
+            const slug = (p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-')+".webp";
+            document.getElementById('file-name-preview').innerText = slug;
+            
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
+            ctx.font = "14px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
+            ctx.fillText("Cole a imagem aqui (Ctrl+V)", 225, 225);
+            loadedImage = null;
         }
+        
+        function setupEditorEvents() {
+            window.addEventListener('paste', e => {
+                if(document.getElementById('modal-editor').style.display !== 'flex') return;
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for(let item of items) { if(item.kind === 'file') { const r = new FileReader(); r.onload = ev => loadImageToCanvas(ev.target.result); r.readAsDataURL(item.getAsFile()); } }
+            });
+            document.getElementById('fileInput').addEventListener('change', function(){ if(this.files[0]) { const r = new FileReader(); r.onload = e => loadImageToCanvas(e.target.result); r.readAsDataURL(this.files[0]); } });
+            document.getElementById('zoomRange').addEventListener('input', drawImage);
+            document.getElementById('sharpenRange').addEventListener('input', drawImage);
+        }
+
+        function loadImageToCanvas(url) {
+            const img = new Image();
+            img.onload = () => { loadedImage = img; document.getElementById('zoomRange').value = Math.max(450/img.width, 450/img.height); drawImage(); };
+            img.src = url;
+        }
+
+        function drawImage() {
+            if(!loadedImage) return;
+            const wC = 450, hC = 450;
+            const zoom = parseFloat(document.getElementById('zoomRange').value);
+            const mix = parseFloat(document.getElementById('sharpenRange').value);
+            
+            const w = loadedImage.width * zoom;
+            const h = loadedImage.height * zoom;
+            const tempC = document.createElement('canvas');
+            tempC.width = wC; tempC.height = hC;
+            const tCtx = tempC.getContext('2d');
+            tCtx.fillStyle = "#FFF"; tCtx.fillRect(0,0,wC,hC);
+            tCtx.drawImage(loadedImage, (wC-w)/2, (hC-h)/2, w, h);
+
+            if(mix > 0) {
+                // ALGORITMO DE NITIDEZ
+                const imgData = tCtx.getImageData(0, 0, wC, hC);
+                const src = imgData.data;
+                const dstData = ctx.createImageData(wC, hC);
+                const dst = dstData.data;
+                const wK = [0, -mix, 0, -mix, 1 + (4*mix), -mix, 0, -mix, 0]; 
+                for (let y=1; y<hC-1; y++) {
+                    for (let x=1; x<wC-1; x++) {
+                        const dstOff = (y*wC + x)*4;
+                        let r=0, g=0, b=0;
+                        for (let ky=0; ky<3; ky++) {
+                            for (let kx=0; kx<3; kx++) {
+                                const srcOff = ((y+ky-1)*wC + (x+kx-1))*4;
+                                const weight = wK[ky*3 + kx];
+                                r += src[srcOff] * weight;
+                                g += src[srcOff+1] * weight;
+                                b += src[srcOff+2] * weight;
+                            }
+                        }
+                        dst[dstOff] = r; dst[dstOff+1] = g; dst[dstOff+2] = b; dst[dstOff+3] = src[dstOff+3]; 
+                    }
+                }
+                ctx.putImageData(dstData, 0, 0);
+            } else {
+                ctx.fillStyle = "#FFF"; ctx.fillRect(0,0,wC,hC);
+                ctx.drawImage(tempC, 0, 0);
+            }
+            const k = Math.round((canvas.toDataURL("image/webp",0.8).length * 0.75) / 1024);
+            document.getElementById('file-size-preview').innerText = `~${k}kb`;
+        }
+
+        function downloadImage() {
+            if(!loadedImage) return alert("Sem imagem");
+            const link = document.createElement('a');
+            link.download = document.getElementById('file-name-preview').innerText;
+            link.href = canvas.toDataURL("image/webp", 0.8);
+            link.click();
+        }
+
+        async function uploadToGithub() {
+            if(!loadedImage) return alert("Sem imagem");
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
+            if(!cfg.token) return alert("Configure o Token!");
+            
+            toggleLoader(true, "Enviando para GitHub...");
+            const f = document.getElementById('file-name-preview').innerText;
+            
+            try {
+                // 1. UPLOAD
+                const u = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}/${f}`;
+                let sha = null;
+                try { const c = await fetch(u, {headers:{"Authorization":`token ${cfg.token}`}}); if(c.ok) sha = (await c.json()).sha; } catch(e){}
+                
+                const r = await fetch(u, {
+                    method: 'PUT',
+                    headers: {"Authorization":`token ${cfg.token}`, "Content-Type":"application/json"},
+                    body: JSON.stringify({message: "Painel Upload", content: canvas.toDataURL("image/webp", 0.8).split(',')[1], sha: sha})
+                });
+
+                if(r.ok) {
+                    // 2. AQUI É O PULO DO GATO (CRIAÇÃO DO LINK DE VERDADE)
+                    // Nós sabemos o usuário, o repo e o nome do arquivo. Criamos o link aqui.
+                    const rawUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
+                    const finalUrl = `${rawUrl}?v=${Date.now()}`; // Anti-cache
+                    
+                    const p = products.find(p => p.codigo == currentEditingId);
+                    p.url_imagem = finalUrl; // Salva no produto
+                    p._changed = true;
+                    p._lastChange = "Alt: Imagem";
+                    
+                    saveData(); // Salva no navegador
+                    
+                    closeModal('modal-editor');
+                    toggleLoader(false); 
+                    
+                    // 3. AGORA SIM, DISPARA O SYNC
+                    // A função executeSync vai pegar o link que acabamos de salvar.
+                    requestLogin(currentEditingId); 
+                    
+                } else throw new Error(r.status);
+            } catch(e) { toggleLoader(false); alert("Erro: "+e.message); }
+        }
+
+        // --- UTILITÁRIOS ---
+        function loadData() { const saved = localStorage.getItem(STORAGE_KEY); if(saved) { products = JSON.parse(saved); renderGrid(); } const hist = localStorage.getItem(HISTORY_KEY); if(hist) historyLog = JSON.parse(hist); }
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
         function renderGrid(filter = "") {
@@ -966,7 +1069,7 @@
                 if(['preco','estoque'].includes(field)) value = parseFloat(value) || 0;
                 p[field] = value;
                 p._changed = true;
-                p._lastChange = `Alt: ${field.toUpperCase()}`; // Rastreio de alteração
+                p._lastChange = `Alt: ${field.toUpperCase()}`; 
                 saveData();
                 renderGrid(document.getElementById('search-input').value);
             }
@@ -1012,109 +1115,8 @@
         }
 
         // ----------------------------------------------------
-        // EDITOR E UPLOAD (COM AUTO-SAVE DE URL)
+        // UTILITÁRIOS
         // ----------------------------------------------------
-        function openPhotoEditor(sku) {
-            currentEditingId = sku;
-            const p = products.find(pr => pr.codigo == sku);
-            document.getElementById('modal-editor').style.display = 'flex';
-            
-            const slug = (p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-')+".webp";
-            document.getElementById('file-name-preview').innerText = slug;
-            
-            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
-            ctx.font = "14px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
-            ctx.fillText("Cole a imagem aqui (Ctrl+V)", 225, 225);
-            loadedImage = null;
-        }
-        
-        function setupEditorEvents() {
-            window.addEventListener('paste', e => {
-                if(document.getElementById('modal-editor').style.display !== 'flex') return;
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for(let item of items) { if(item.kind === 'file') { const r = new FileReader(); r.onload = ev => loadImageToCanvas(ev.target.result); r.readAsDataURL(item.getAsFile()); } }
-            });
-            document.getElementById('fileInput').addEventListener('change', function(){ if(this.files[0]) { const r = new FileReader(); r.onload = e => loadImageToCanvas(e.target.result); r.readAsDataURL(this.files[0]); } });
-            document.getElementById('zoomRange').addEventListener('input', drawImage);
-            document.getElementById('sharpenRange').addEventListener('input', drawImage);
-        }
-
-        function loadImageToCanvas(url) {
-            const img = new Image();
-            img.onload = () => { loadedImage = img; document.getElementById('zoomRange').value = Math.max(450/img.width, 450/img.height); drawImage(); };
-            img.src = url;
-        }
-
-        function drawImage() {
-            if(!loadedImage) return;
-            const wC = 450, hC = 450;
-            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, wC, hC);
-            const zoom = parseFloat(document.getElementById('zoomRange').value);
-            const sharp = parseFloat(document.getElementById('sharpenRange').value);
-            const w = loadedImage.width * zoom;
-            const h = loadedImage.height * zoom;
-            const x = (wC - w) / 2;
-            const y = (hC - h) / 2;
-            
-            if(sharp > 0) { ctx.globalAlpha = 0.5 * sharp; ctx.drawImage(loadedImage, x-0.5, y-0.5, w, h); ctx.globalAlpha = 1.0; }
-            ctx.drawImage(loadedImage, x, y, w, h);
-            const kb = Math.round((canvas.toDataURL("image/webp", 0.8).length * 3 / 4) / 1024);
-            document.getElementById('file-size-preview').innerText = `~${kb}kb`;
-        }
-
-        function downloadImage() {
-            if(!loadedImage) return alert("Sem imagem");
-            const link = document.createElement('a');
-            link.download = document.getElementById('file-name-preview').innerText;
-            link.href = canvas.toDataURL("image/webp", 0.8);
-            link.click();
-        }
-
-        async function uploadToGithub() {
-            if(!loadedImage) return alert("Sem imagem");
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            if(!cfg.token) return alert("Configure o Token!");
-            
-            toggleLoader(true, "Enviando para GitHub...");
-            const f = document.getElementById('file-name-preview').innerText;
-            
-            try {
-                // 1. UPLOAD
-                const u = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}/${f}`;
-                let sha = null;
-                try { const c = await fetch(u, {headers:{"Authorization":`token ${cfg.token}`}}); if(c.ok) sha = (await c.json()).sha; } catch(e){}
-                
-                const r = await fetch(u, {
-                    method: 'PUT',
-                    headers: {"Authorization":`token ${cfg.token}`, "Content-Type":"application/json"},
-                    body: JSON.stringify({message: "Painel Upload", content: canvas.toDataURL("image/webp", 0.8).split(',')[1], sha: sha})
-                });
-
-                if(r.ok) {
-                    // 2. GRAVAÇÃO IMEDIATA DO LINK NO PRODUTO
-                    // Monta o link manualmente pois já sabemos onde ele vai estar
-                    const rawUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
-                    const finalUrl = `${rawUrl}?v=${Date.now()}`; // Anti-cache
-                    
-                    const p = products.find(p => p.codigo == currentEditingId);
-                    p.url_imagem = finalUrl;
-                    p._changed = true;
-                    p._lastChange = "Alt: Imagem";
-                    
-                    saveData(); // Salva no navegador
-                    
-                    // Fecha editor e prepara sync
-                    closeModal('modal-editor');
-                    toggleLoader(false); 
-                    
-                    // 3. DISPARA O SYNC AUTOMÁTICO
-                    requestLogin(currentEditingId); 
-                    
-                } else throw new Error(r.status);
-            } catch(e) { toggleLoader(false); alert("Erro: "+e.message); }
-        }
-
-        // --- UTILITÁRIOS ---
         function openDetails(sku) {
             currentEditingId = sku;
             const p = products.find(pr => pr.codigo == sku);
@@ -1130,7 +1132,7 @@
             const p = products.find(pr => pr.codigo == currentEditingId);
             document.querySelectorAll('#details-form input').forEach(i => p[i.id.replace('det-', '')] = i.value);
             p._changed = true;
-            p._lastChange = "Alt: Detalhes"; // Marca mudança
+            p._lastChange = "Alt: Detalhes"; 
             saveData();
             closeModal('modal-details');
         }
