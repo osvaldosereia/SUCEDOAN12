@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Dona Antonia - Produção Integrada</title>
+    <title>Painel Dona Antonia - Produção Integrada v3</title>
 
     <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_modern.min.css" rel="stylesheet">
     <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
@@ -59,7 +59,7 @@
             width: 100%; padding: 16px; border-radius: 10px; border: 3px solid var(--accent); 
             font-size: 20px; font-weight: 700; outline: none; margin-bottom: 10px; background: white; color: black;
         }
-        #product-table { flex-grow: 1; border-radius: 12px; overflow: hidden; font-size: 14px; background: var(--card); }
+        #product-table { flex-grow: 1; border-radius: 12px; overflow: hidden; font-size: 13px; background: var(--card); }
 
         /* BOTÕES DE AÇÃO */
         .action-btn { 
@@ -131,8 +131,12 @@
 <body>
 
     <script>
-        // COLOQUE AQUI OS SEUS LINKS DO MAKE (WEBHOOKS)
-        const MAKE_WEBHOOK_GET_PRODUCTS = "https://hook.us1.make.com/SEU_LINK_AQUI_GET"; 
+        // --- CONFIGURAÇÃO DOS WEBHOOKS DO MAKE ---
+        
+        // 1. Cole aqui o Webhook do cenário NOVO (Get All Products)
+        const MAKE_WEBHOOK_GET_PRODUCTS = "COLE_AQUI_SEU_WEBHOOK_GET"; 
+        
+        // 2. Cole aqui o Webhook do cenário ATUAL (Update Product)
         const MAKE_WEBHOOK_UPDATE_PRODUCT = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
     </script>
 
@@ -161,7 +165,7 @@
             <header style="display:flex; gap:10px; flex-wrap: wrap;">
                 <input type="text" id="search-field" placeholder="🔎 ESCANEAR CÓDIGO OU BUSCAR PRODUTO..." autofocus style="flex-grow: 1;">
                 
-                <button onclick="importarDoBling()" class="btn-header import-bling">☁ IMPORTAR BLING</button>
+                <button onclick="importarDoBling()" class="btn-header import-bling">☁ BAIXAR TUDO DO BLING</button>
                 
                 <input type="file" id="csv-file" accept=".csv" style="display:none">
                 <button onclick="document.getElementById('csv-file').click()" class="btn-header csv">📂 SUBIR CSV</button>
@@ -195,7 +199,7 @@
     <script>
         var table;
         var pedidosProcessados = [];
-        const STORAGE_KEY = 'sucedoan_kiosk_data';
+        const STORAGE_KEY = 'sucedoan_kiosk_data_v3'; // Chave atualizada para v3
 
         // --- GESTÃO DO MODAL E LOADER ---
 
@@ -220,30 +224,31 @@
         // --- INTEGRAÇÃO MAKE/BLING ---
 
         async function importarDoBling() {
-            if(!confirm("Deseja baixar os produtos do Bling? Isso substituirá a tabela atual.")) return;
+            if(!confirm("Tem certeza? Isso vai carregar a lista oficial do Bling e atualizar a tabela.")) return;
             
-            if(MAKE_WEBHOOK_GET_PRODUCTS.includes("SEU_LINK")) {
-                alert("Configure o link do Webhook no código primeiro!");
+            if(MAKE_WEBHOOK_GET_PRODUCTS.includes("COLE_AQUI")) {
+                alert("ERRO: Configure o link do Webhook GET no código primeiro!");
                 return;
             }
 
-            toggleLoader(true, "Baixando produtos do Bling...");
+            toggleLoader(true, "Baixando lista completa do Bling...");
             
             try {
                 const response = await fetch(MAKE_WEBHOOK_GET_PRODUCTS);
                 const data = await response.json();
                 
-                // O Make deve retornar um JSON que seja um Array de objetos
                 if(Array.isArray(data)) {
+                    // Mapeamento simples para garantir compatibilidade caso o Make mande nomes diferentes
+                    // Mas idealmente o Make já manda: codigo, nome, preco, etc.
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                     table.setData(data);
-                    alert("Importação concluída com sucesso!");
+                    alert("Sucesso! " + data.length + " produtos carregados.");
                 } else {
-                    alert("Formato recebido inválido. Verifique o Make.");
+                    alert("Erro: O Make não retornou uma lista válida.");
                     console.log(data);
                 }
             } catch (error) {
-                alert("Erro ao conectar com o Make.");
+                alert("Erro ao conectar com o Make. Verifique o console.");
                 console.error(error);
             } finally {
                 toggleLoader(false);
@@ -256,25 +261,46 @@
                 return;
             }
 
-            // Função ajudante para limpar "Enters" e espaços extras de qualquer texto
+            // Função ajudante para limpar "Enters"
             const limparTexto = (texto) => {
                 if (!texto) return "";
                 return texto.toString().replace(/[\r\n]+/g, "").trim();
             };
 
             const textoOriginal = btnElement.innerText;
-            btnElement.innerText = "⏳...";
+            btnElement.innerText = "⏳ Enviando...";
             btnElement.disabled = true;
 
             try {
-                // Preparar Payload (Limpando TODOS os campos perigosos)
+                // --- PAYLOAD COMPLETO (AQUI ESTÁ O SEGREDO) ---
+                // Enviamos TUDO de volta para o Make, para ele não apagar nada no Bling.
                 const payload = {
-                    codigo: limparTexto(rowData["Código"]),
-                    descricao: limparTexto(rowData["Descrição"]),
-                    url_imagem: limparTexto(rowData["URL Imagens Externas"]),
-                    estoque: rowData["Estoque"], // Estoque geralmente é número, não precisa limpar
-                    localizacao: rowData["Localização"]
+                    codigo: limparTexto(rowData["codigo"]),
+                    nome: limparTexto(rowData["nome"]),
+                    situacao: rowData["situacao"] || "A",
+                    formato: rowData["formato"] || "S",
+                    tipo: "P",
+                    
+                    // Preços e Pesos (Garantir que são números ou strings válidas)
+                    preco: rowData["preco"],
+                    unidade: rowData["unidade"],
+                    pesoBruto: rowData["pesoBruto"],
+                    pesoLiquido: rowData["pesoLiquido"],
+                    
+                    // Tributação (Essenciais)
+                    ncm: rowData["ncm"],
+                    cest: rowData["cest"],
+                    gtin: rowData["gtin"],
+                    
+                    // Estoque (Módulo 5 do Make)
+                    estoque: rowData["estoque"],
+                    localizacao: rowData["localizacao"],
+                    
+                    // Imagem
+                    url_imagem: limparTexto(rowData["url_imagem"])
                 };
+
+                console.log("Enviando Payload:", payload); // Para debug
 
                 const response = await fetch(MAKE_WEBHOOK_UPDATE_PRODUCT, {
                     method: 'POST',
@@ -283,17 +309,20 @@
                 });
 
                 if(response.ok) {
-                    btnElement.innerText = "✅ OK";
+                    btnElement.innerText = "✅ Salvo";
+                    // Atualiza visualmente a linha para mostrar que está ok
+                    btnElement.parentElement.style.backgroundColor = "#dcfce7";
                     setTimeout(() => { 
                         btnElement.innerText = textoOriginal; 
                         btnElement.disabled = false;
+                        btnElement.parentElement.style.backgroundColor = "";
                     }, 2000);
                 } else {
-                    throw new Error("Erro na resposta");
+                    throw new Error("Erro na resposta do Make");
                 }
 
             } catch (error) {
-                alert("Erro ao enviar para o Bling.");
+                alert("Erro ao atualizar produto.");
                 console.error(error);
                 btnElement.innerText = "❌ Erro";
                 btnElement.disabled = false;
@@ -334,40 +363,52 @@
                 data: data,
                 layout: "fitColumns",
                 height: "100%",
+                clipboard:true, // Permite copiar celulas
                 columns: [
-                    {title: "CÓDIGO", field: "Código", width: 90},
-                    {title: "🔍", width: 50, hozAlign: "center", formatter: () => "🔍", cellClick: (e, cell) => {
-                        openSideModal(cell.getData()["Descrição"]);
+                    // Coluna de Ação Fixa
+                    {title: "AÇÕES", width: 100, headerSort: false, frozen:true, formatter: () => "<button class='action-btn btn-sync' style='width:100%'>☁ SALVAR</button>", hozAlign:"center", cellClick: (e, cell) => {
+                        sincronizarProdutoUnitario(cell.getData(), e.target);
                     }},
-                    {title: "AÇÕES", width: 280, headerSort: false, columns: [
-                        {title: "SYNC", formatter: () => "<button class='action-btn btn-sync'>☁ ATUALIZAR</button>", width: 100, hozAlign:"center", cellClick: (e, cell) => {
-                            // Chama a função de sincronização passando os dados da linha e o botão clicado
-                            sincronizarProdutoUnitario(cell.getData(), e.target);
-                        }},
-                        {title: "EDITOR", formatter: () => "<button class='action-btn btn-copy'>📋 NOME</button>", width: 90, cellClick: (e, cell) => {
-                            const slug = slugify(cell.getData()["Descrição"]);
-                            navigator.clipboard.writeText(slug); 
-                            document.getElementById('iframe-editor').src = "https://donaantonia.com.br/bio/?nome=" + slug;
-                            showView('editor', document.getElementById('btn-editor'));
-                        }},
-                        {title: "LINK GH", formatter: () => "<button class='action-btn btn-link'>🔗 LINK</button>", width: 90, cellClick: (e, cell) => {
-                            const slug = slugify(cell.getData()["Descrição"]);
-                            const urlFinal = `https://github.com/osvaldosereia/SUCEDOAN12/blob/main/site/img/produtos/${slug}-cesta-basica-cuiaba-varzea-grande.webp?raw=true`;
-                            cell.getRow().update({"URL Imagens Externas": urlFinal});
-                            localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()));
-                        }}
-                    ]},
-                    {title: "URL IMAGEM", field: "URL Imagens Externas", width: 180, editor: "input"},
-                    {title: "DESCRIÇÃO", field: "Descrição", widthGrow: 3, editor: "input"},
-                    {title: "ESTOQUE", field: "Estoque", width: 90, editor: "input", hozAlign: "center"},
-                    {title: "LOCAL", field: "Localização", width: 120, editor: "input"},
+                    
+                    // Identificação
+                    {title: "SKU", field: "codigo", width: 90, headerFilter:"input"},
+                    {title: "NOME (DESCRIÇÃO)", field: "nome", widthGrow: 2, editor: "input", headerFilter:"input"},
+                    
+                    // Imagem e Links
+                    {title: "IMAGEM", field: "url_imagem", width: 100, editor: "input", formatter: "link", formatterParams:{label:"Ver", target:"_blank"}},
+                    {title: "🔍", width: 40, hozAlign: "center", headerSort:false, formatter: () => "🔍", cellClick: (e, cell) => {
+                        openSideModal(cell.getData()["nome"]);
+                    }},
+                    
+                    // Dados Comerciais
+                    {title: "R$ PREÇO", field: "preco", width: 90, editor: "number", hozAlign:"right"},
+                    {title: "UN", field: "unidade", width: 60, editor: "input", hozAlign:"center"},
+                    {title: "SIT", field: "situacao", width: 60, editor: "input", hozAlign:"center"},
+                    
+                    // Estoque e Local
+                    {title: "ESTOQUE", field: "estoque", width: 90, editor: "number", hozAlign: "center", formatter:"prop", formatterParams:{fontWeight:"bold"}},
+                    {title: "LOCAL", field: "localizacao", width: 100, editor: "input"},
+
+                    // Dados Fiscais e Logísticos (Importantes para não apagar no Bling)
+                    {title: "NCM", field: "ncm", width: 90, editor: "input"},
+                    {title: "GTIN/EAN", field: "gtin", width: 110, editor: "input"},
+                    {title: "PESO LIQ", field: "pesoLiquido", width: 90, editor: "number"},
+                    {title: "PESO BRU", field: "pesoBruto", width: 90, editor: "number"},
+                    
+                    // Ferramentas Extras
+                    {title: "EDITOR", headerSort:false, formatter: () => "<button class='action-btn btn-copy'>FOTO</button>", width: 70, cellClick: (e, cell) => {
+                        const slug = slugify(cell.getData()["nome"]);
+                        navigator.clipboard.writeText(slug); 
+                        document.getElementById('iframe-editor').src = "https://donaantonia.com.br/bio/?nome=" + slug;
+                        showView('editor', document.getElementById('btn-editor'));
+                    }},
                 ],
                 cellEdited: () => localStorage.setItem(STORAGE_KEY, JSON.stringify(table.getData()))
             });
 
             document.getElementById("search-field").addEventListener("input", (e) => {
                 const val = e.target.value;
-                table.setFilter([[{field:"Código", type:"like", value:val}, {field:"Descrição", type:"like", value:val}]]);
+                table.setFilter([[{field:"codigo", type:"like", value:val}, {field:"nome", type:"like", value:val}]]);
             });
         }
 
@@ -412,30 +453,39 @@
 
         window.onload = function() {
             const saved = localStorage.getItem(STORAGE_KEY);
+            // Se tiver dados salvos, usa. Se não, espera o usuário clicar em Baixar.
             if (saved) initTable(JSON.parse(saved));
+            else initTable([]); // Inicia tabela vazia
+            
             setInterval(fetchOrders, 30000);
             fetchOrders();
             document.getElementById("search-field").focus();
         };
 
+        // Função de CSV (Mantida para backup)
         document.getElementById('csv-file').addEventListener('change', function(e) {
             Papa.parse(e.target.files[0], {
                 header: true, skipEmptyLines: true, encoding: "UTF-8",
                 complete: (results) => {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(results.data));
-                    initTable(results.data);
-                    alert("Dados atualizados!");
+                    // Adaptador simples caso o CSV venha com nomes antigos
+                    const dadosAdaptados = results.data.map(d => ({
+                        codigo: d["Código"] || d.codigo,
+                        nome: d["Descrição"] || d.nome,
+                        estoque: d["Estoque"] || d.estoque,
+                        localizacao: d["Localização"] || d.localizacao,
+                        url_imagem: d["URL Imagens Externas"] || d.url_imagem,
+                        preco: d.preco || 0,
+                        ncm: d.ncm || ""
+                    }));
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(dadosAdaptados));
+                    table.setData(dadosAdaptados);
+                    alert("Dados do CSV carregados!");
                 }
             });
         });
 
         document.getElementById('btn-export').addEventListener('click', function() {
-            const csv = Papa.unparse(table.getData(), { quotes: true, delimiter: ";", newline: "\r\n" });
-            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "estoque_producao.csv";
-            link.click();
+            table.download("csv", "estoque_completo.csv", {delimiter:";"});
         });
     </script>
 </body>
