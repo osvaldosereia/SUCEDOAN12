@@ -504,24 +504,23 @@
                         
                         const nomeCategoria = categorias[primeiraLetra] || "Diversos";
 
-                        // --- NOVA LÓGICA DE IMAGEM LOCAL COM VALIDAÇÃO ---
+                        // --- NOVA LÓGICA DE IMAGEM LOCAL (SEM ESPAÇOS E SEM LIMITE DE DIGITOS) ---
                         let finalImg = null;
                         if (x.imagem && x.imagem !== "") {
-                            // Extrai apenas o nome do arquivo, ignorando caminhos/URLs anteriores
-                            const fileName = x.imagem.split('/').pop();
+                            // 1. Pega só o nome do arquivo.
+                            // 2. Remove TODOS os espaços (.replace(/\s+/g, ''))
+                            const fileName = x.imagem.split('/').pop().replace(/\s+/g, '');
                             
-                            // Compara os 4 primeiros caracteres do SKU (sCodigo) com a Imagem (fileName)
-                            const skuPrefix = sCodigo.length >= 4 ? sCodigo.substring(0, 4).toUpperCase() : sCodigo.toUpperCase();
-                            const imgPrefix = fileName.length >= 4 ? fileName.substring(0, 4).toUpperCase() : fileName.toUpperCase();
+                            // Normaliza para comparação (Maiúsculas)
+                            const skuCheck = sCodigo.toUpperCase();
+                            const fileCheck = fileName.toUpperCase();
 
-                            // Se bater a identificação, monta o caminho local
-                            if (skuPrefix === imgPrefix) {
+                            // Verifica se o nome do arquivo COMEÇA com o código do produto (qualquer tamanho: 3, 4, 5...)
+                            if (fileCheck.startsWith(skuCheck)) {
                                 finalImg = `site/img/produtos/${fileName}`;
                             } else {
-                                // Se o usuário configurou a imagem no JSON, mas os códigos não batem exatamente nos 4 primeiros digitos,
-                                // o comportamento padrão seria não mostrar. Porém, para evitar falhas se o nome for diferente
-                                // mas o arquivo existir, ainda tentamos carregar do local se houver algo no campo imagem.
-                                // Mas seguindo a regra estrita de "identificar comparando":
+                                // Se não bater exatamente o início, mas existir algo no JSON, 
+                                // mantemos a lógica de usar o nome do arquivo limpo localmente.
                                 finalImg = `site/img/produtos/${fileName}`;
                             }
                         }
@@ -532,7 +531,7 @@
                             price: parseFloat(x.preco),
                             cat: nomeCategoria,
                             stock: x.estoque || 0,
-                            img: finalImg // Usando a nova lógica local
+                            img: finalImg
                         };
                     });
                 console.log("Produtos carregados:", DB_PROD.length);
