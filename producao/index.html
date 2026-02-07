@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v29 (CSV Corrigido + Padrão Código-Nome)</title>
+    <title>Sucedoan Painel - v27 (Sync Blindado + Multi-Variáveis)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -213,6 +213,7 @@
             height: 36px;
             border-radius: 50%;
             display: flex;
+
             justify-content: center;
             align-items: center;
             cursor: pointer;
@@ -557,7 +558,7 @@
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_v29'; // v29 para garantir ambiente limpo
+        const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
@@ -743,7 +744,7 @@
         }
 
         // ----------------------------------------------------
-        // IMPORTAÇÃO CSV (CONFIGURAÇÃO BLINDADA)
+        // IMPORTAÇÃO CSV
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -757,11 +758,9 @@
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // Função auxiliar para pegar valor e LIMPAR espaços/tabs (.trim())
                         const getVal = (keys) => { 
                             const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
-                            // O .trim() aqui é CRUCIAL para o seu CSV funcionar (remove \t invisíveis)
-                            return f && d[f] ? d[f].trim() : ""; 
+                            return f ? d[f] : ""; 
                         };
                         const getNum = (keys) => { 
                             const v = getVal(keys); 
@@ -810,7 +809,7 @@
         }
 
         // ----------------------------------------------------
-        // SINCRONIZAÇÃO (AUTOMÁTICA + PLANO B DE BACKUP)
+        // SINCRONIZAÇÃO (BLINDAGEM SENIOR)
         // ----------------------------------------------------
         function syncBling(sku) {
             requestLogin(sku);
@@ -824,7 +823,10 @@
 
             toggleLoader(true, `Sincronizando...`);
             
+            // 1. Identifica o motivo da alteração
             const changeType = p._lastChange || "Sincronização Manual"; 
+
+            // 2. Prepara o Payload (Base)
             const payload = {...p}; 
             delete payload._changed; 
             delete payload._lastChange;
@@ -832,29 +834,41 @@
             if(!payload.situacao) payload.situacao = 'A';
             if(!payload.formato) payload.formato = 'S';
 
-            // --- PADRONIZAÇÃO DE URL ---
-            // Mesmo que a URL venha do banco, garantimos que ela termine em ?raw=true para o Bling aceitar
-            // E também enviamos o link para o Ctrl+C caso precise.
-            let finalLink = (payload.url_imagem || "").trim();
-            if(finalLink.includes('github.com') && !finalLink.includes('raw=true')) {
-                if(finalLink.includes('/blob/')) {
-                    finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
-                }
-                finalLink = finalLink.split('?')[0] + "?raw=true";
-            }
+            // --- CORREÇÃO SENIOR: LIMPEZA DE LINK & REDUNDÂNCIA ---
             
-            payload.url_imagem = finalLink;
-            p.url_imagem = finalLink;
-            saveData();
+            // A. Garante que não é null
+            let finalLink = (payload.url_imagem || "").trim();
 
-            // Log
+            // B. Converte link "Blob" (Visualizador) para "Raw" (Download Direto)
+            // Ex: github.com/.../blob/main/img.webp -> raw.githubusercontent.com/.../main/img.webp
+            if(finalLink.includes('github.com') && finalLink.includes('/blob/')) {
+                finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                // Remove parametros de query sujos se houver, exceto ?v= (cache)
+                // Mas geralmente o github raw funciona melhor limpo ou só com token. 
+                // Vamos manter como está após o replace, pois costuma funcionar.
+            }
+
+            // C. Bombardeio de Variáveis (Envia em todos os campos possíveis)
+            payload.url_imagem = finalLink;           // Campo original
+            payload.imagem = finalLink;               // Campo padrão simples
+            payload.url_imagens_externas = finalLink; // Campo que apareceu no seu log
+            
+            // Atualiza o objeto local também para ficar bonito
+            if(p.url_imagem !== finalLink) {
+                p.url_imagem = finalLink;
+                saveData();
+            }
+            // ------------------------------------------------------
+
+            // 3. LOG E LIMPEZA DE TEXTO (Para não quebrar o Make)
             const time = new Date().toLocaleString('pt-BR');
             const logNote = `[Alt: ${currentUser} em ${time} - ${changeType}]`;
+            
             let obs = (payload.observacoes || "") + " | " + logNote;
             obs = obs.replace(/[\r\n]+/g, " | ").replace(/"/g, "'");
             payload.observacoes = obs;
 
-            // ENVIO
+            // 4. ENVIO
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
@@ -866,25 +880,13 @@
                     p._changed = false; 
                     p._lastChange = ""; 
                     saveData(); 
+                    
                     addToHistory(sku, p.nome, true, changeType); 
+                    
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
                     
-                    // Se tiver link, copia para o clipboard e oferece abrir o Bling (Plano B)
-                    if(finalLink) {
-                        navigator.clipboard.writeText(finalLink);
-                        const blingSearchUrl = `https://www.bling.com.br/b/produtos.php#list`; 
-                        
-                        // Notificação mais sutil
-                        const aviso = document.createElement('div');
-                        aviso.style = "position:fixed; bottom:20px; right:20px; background:#22c55e; color:white; padding:15px; border-radius:8px; z-index:9999; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-size:14px;";
-                        aviso.innerHTML = "✅ <b>Produto Sincronizado!</b><br>Link da imagem copiado.<br>Use Ctrl+V no Bling se precisar.";
-                        document.body.appendChild(aviso);
-                        setTimeout(() => aviso.remove(), 5000);
-                    } else {
-                        alert("✅ Produto atualizado!");
-                    }
-
+                    alert(`✅ Produto atualizado!\nImagem Enviada: ${finalLink ? 'SIM' : 'NÃO'}`);
                 } else throw new Error("Erro no Make");
             })
             .catch(() => { 
@@ -899,18 +901,14 @@
         }
 
         // ----------------------------------------------------
-        // EDITOR E UPLOAD (MANTEVE A MUDANÇA: PADRÃO CODIGO-NOME)
+        // EDITOR E UPLOAD (MANTEVE A LÓGICA V26 + FALLBACK)
         // ----------------------------------------------------
         function openPhotoEditor(sku) {
             currentEditingId = sku;
             const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
             
-            // --- NOVO PADRÃO DE NOME: CODIGO + SLUG ---
-            const cleanName = (p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-');
-            const cleanCode = (p.codigo||"000").replace(/[^a-zA-Z0-9]/g, '');
-            const slug = `${cleanCode}-${cleanName}.webp`;
-            
+            const slug = (p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-')+".webp";
             document.getElementById('file-name-preview').innerText = slug;
             
             ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
@@ -951,6 +949,7 @@
             tCtx.drawImage(loadedImage, (wC-w)/2, (hC-h)/2, w, h);
 
             if(mix > 0) {
+                // ALGORITMO DE NITIDEZ
                 const imgData = tCtx.getImageData(0, 0, wC, hC);
                 const src = imgData.data;
                 const dstData = ctx.createImageData(wC, hC);
@@ -998,7 +997,7 @@
             const f = document.getElementById('file-name-preview').innerText;
             
             try {
-                // UPLOAD COM O NOME PADRONIZADO
+                // 1. UPLOAD
                 const u = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}/${f}`;
                 let sha = null;
                 try { const c = await fetch(u, {headers:{"Authorization":`token ${cfg.token}`}}); if(c.ok) sha = (await c.json()).sha; } catch(e){}
@@ -1006,24 +1005,34 @@
                 const r = await fetch(u, {
                     method: 'PUT',
                     headers: {"Authorization":`token ${cfg.token}`, "Content-Type":"application/json"},
-                    body: JSON.stringify({message: "Painel Upload Padrão", content: canvas.toDataURL("image/webp", 0.8).split(',')[1], sha: sha})
+                    body: JSON.stringify({message: "Painel Upload", content: canvas.toDataURL("image/webp", 0.8).split(',')[1], sha: sha})
                 });
 
                 if(r.ok) {
-                    // CONSTRÓI O LINK MANUALMENTE
-                    const finalUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}?raw=true`;
+                    // 2. CAPTURA DO LINK
+                    const apiResponse = await r.json();
+                    let finalUrl = "";
+                    
+                    if(apiResponse.content && apiResponse.content.download_url) {
+                        finalUrl = apiResponse.content.download_url;
+                    } else {
+                        finalUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
+                    }
+
+                    // Adiciona parâmetro para quebrar cache
+                    finalUrl = `${finalUrl}?v=${Date.now()}`;
                     
                     const p = products.find(p => p.codigo == currentEditingId);
                     p.url_imagem = finalUrl; 
                     p._changed = true;
-                    p._lastChange = "Alt: Imagem (Padrão)";
+                    p._lastChange = "Alt: Imagem (Upload)";
                     
                     saveData(); 
                     
                     closeModal('modal-editor');
                     toggleLoader(false); 
                     
-                    // Dispara o Sync
+                    // 3. DISPARA O SYNC AUTOMATICAMENTE
                     requestLogin(currentEditingId); 
                     
                 } else throw new Error(r.status);
@@ -1038,7 +1047,6 @@
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
             const term = filter.toLowerCase().trim();
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
 
             const filtered = products.filter(p => {
                 const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque).toLowerCase();
@@ -1050,19 +1058,7 @@
             filtered.forEach(p => {
                 const card = document.createElement('div');
                 card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
-                
-                // --- INTELIGÊNCIA DE IMAGEM ---
-                let imgSrc = p.url_imagem;
-                
-                // Se não tem imagem, tenta adivinhar pelo padrão novo (Código-Nome)
-                if((!imgSrc || imgSrc.length < 10) && cfg.user && cfg.repo) {
-                    const cleanName = (p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-');
-                    const cleanCode = (p.codigo||"000").replace(/[^a-zA-Z0-9]/g, '');
-                    const guessedSlug = `${cleanCode}-${cleanName}.webp`;
-                    imgSrc = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${guessedSlug}`;
-                }
-
-                if(!imgSrc) imgSrc = 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
+                const imgSrc = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
 
                 card.innerHTML = `
                     <div class="card-img-area">
@@ -1148,7 +1144,7 @@
         }
 
         // ----------------------------------------------------
-        // UTILITÁRIOS (MANTEVE IGUAL)
+        // UTILITÁRIOS (CAMPO MANUAL MANTIDO)
         // ----------------------------------------------------
         function openDetails(sku) {
             currentEditingId = sku;
