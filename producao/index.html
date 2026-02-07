@@ -560,7 +560,7 @@
         
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        // v27 - Inclui campo validade
+        // v27 - Inclui campo validade e lógica de Update aprimorada
         const STORAGE_KEY = 'sucedoan_data_v27';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
@@ -850,9 +850,6 @@
             // Ex: github.com/.../blob/main/img.webp -> raw.githubusercontent.com/.../main/img.webp
             if(finalLink.includes('github.com') && finalLink.includes('/blob/')) {
                 finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
-                // Remove parametros de query sujos se houver, exceto ?v= (cache)
-                // Mas geralmente o github raw funciona melhor limpo ou só com token. 
-                // Vamos manter como está após o replace, pois costuma funcionar.
             }
 
             // C. Bombardeio de Variáveis (Envia em todos os campos possíveis)
@@ -860,6 +857,12 @@
             payload.imagem = finalLink;               // Campo padrão simples
             payload.url_imagens_externas = finalLink; // Campo que apareceu no seu log
             
+            // D. (Passo 3) Garantia de envio da VALIDADE
+            // Envia como 'validade' e 'dataValidade' para garantir leitura no Make
+            if(payload.validade) {
+                payload.dataValidade = payload.validade; 
+            }
+
             // Atualiza o objeto local também para ficar bonito
             if(p.url_imagem !== finalLink) {
                 p.url_imagem = finalLink;
@@ -893,7 +896,7 @@
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
                     
-                    alert(`✅ Produto atualizado!\nImagem Enviada: ${finalLink ? 'SIM' : 'NÃO'}`);
+                    alert(`✅ Produto atualizado!\nImagem Enviada: ${finalLink ? 'SIM' : 'NÃO'}\nValidade Enviada: ${payload.validade || 'N/A'}`);
                 } else throw new Error("Erro no Make");
             })
             .catch(() => { 
@@ -1171,11 +1174,11 @@
                 </div>
             `;
             
-            // --- CAMPO VALIDADE (NOVO) ---
+            // --- CAMPO VALIDADE (Passo 2) ---
             form.innerHTML += `
                 <div class="form-group" style="grid-column: span 2;">
                     <label style="color:var(--warning)">DATA DE VALIDADE</label>
-                    <input type="text" id="det-validade" value="${p.validade||''}" placeholder="Ex: 30/12/2025" style="border-color:var(--warning); font-weight:bold;">
+                    <input type="text" id="det-validade" value="${p.validade||''}" placeholder="DD/MM/AAAA" style="border-color:var(--warning); font-weight:bold; text-align:center; letter-spacing:1px;">
                 </div>
             `;
             // ---------------------------
