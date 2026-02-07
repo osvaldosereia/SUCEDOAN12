@@ -158,7 +158,7 @@
             position: relative;
             border: 1px solid var(--border);
             transition: transform 0.2s;
-            min-height: 380px;
+            min-height: 420px; /* Aumentei um pouco para caber a validade */
         }
 
         .card:hover {
@@ -555,9 +555,7 @@
             "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
         };
 
-        // COLE AQUI O LINK DO SEU WEBHOOK DO MAKE QUE TRAZ A LISTA DE PRODUTOS
-        const MAKE_WEBHOOK_GET = "https://hook.eu1.make.com/SEU_WEBHOOK_AQUI"; 
-        
+        const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
         // v27 - Inclui campo validade e lógica de Update aprimorada
@@ -593,7 +591,7 @@
             
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
-                <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
+                <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Validade...">
             </div>
             
             <button class="nav-btn" onclick="exportarCSV()">
@@ -1057,13 +1055,14 @@
         function loadData() { const saved = localStorage.getItem(STORAGE_KEY); if(saved) { products = JSON.parse(saved); renderGrid(); } const hist = localStorage.getItem(HISTORY_KEY); if(hist) historyLog = JSON.parse(hist); }
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
+        // --- ATUALIZADO PARA INCLUIR VALIDADE NA BUSCA E NO CARD ---
         function renderGrid(filter = "") {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
             const term = filter.toLowerCase().trim();
 
             const filtered = products.filter(p => {
-                const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque).toLowerCase();
+                const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque + (p.validade||"")).toLowerCase();
                 return searchStr.includes(term);
             });
 
@@ -1094,6 +1093,12 @@
                         <div class="card-stats">
                             <div class="stat-box"><label class="stat-label">LOCAL</label><input type="text" class="stat-input" value="${p.localizacao}" onchange="updateField('${p.codigo}', 'localizacao', this.value)"></div>
                             <div class="stat-box"><label class="stat-label">EAN</label><input type="text" class="stat-input" value="${p.gtin}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
+                        </div>
+                        <div class="card-stats">
+                            <div class="stat-box" style="grid-column: span 2;">
+                                <label class="stat-label" style="color:var(--warning)">VALIDADE</label>
+                                <input type="text" class="stat-input" value="${p.validade||''}" placeholder="DD/MM/AAAA" style="border-color: #f59e0b;" onchange="updateField('${p.codigo}', 'validade', this.value)">
+                            </div>
                         </div>
                     </div>
                     <div class="card-footer">
