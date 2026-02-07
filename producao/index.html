@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Merchandising - v9 Full</title>
+    <title>Sucedoan Merchandising - v11 Turbo</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -27,74 +27,92 @@
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; }
 
         /* HEADER */
-        header { background: #020617; height: 70px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 15px; flex-shrink: 0; }
-        .brand { font-weight: 900; font-size: 20px; color: white; margin-right: auto; letter-spacing: -0.5px; }
+        header { background: #020617; height: 60px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 15px; flex-shrink: 0; }
+        .brand { font-weight: 900; font-size: 18px; color: white; margin-right: auto; letter-spacing: -0.5px; }
         .brand span { color: var(--accent); }
         
-        .nav-btn { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .nav-btn { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 12px; }
         .nav-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
         .nav-btn.primary { background: var(--accent); color: white; border: none; }
         .nav-btn.config { color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
 
         /* TOOLBAR */
-        .toolbar { padding: 16px 24px; display: flex; gap: 12px; background: #0f172a; border-bottom: 1px solid var(--border); flex-shrink: 0; align-items: center; }
+        .toolbar { padding: 12px 24px; display: flex; gap: 12px; background: #0f172a; border-bottom: 1px solid var(--border); flex-shrink: 0; align-items: center; }
         .search-container { flex-grow: 1; position: relative; }
-        .search-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: white; padding: 12px 12px 12px 40px; border-radius: 8px; font-size: 15px; outline: none; }
+        .search-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: white; padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 14px; outline: none; }
         .search-input:focus { border-color: var(--accent); }
-        .search-icon { position: absolute; left: 12px; top: 12px; color: #64748b; }
-        #total-count { font-size: 12px; color: #94a3b8; font-weight: bold; min-width: 100px; text-align: right; }
+        .search-icon { position: absolute; left: 10px; top: 10px; color: #64748b; width: 16px; }
+        #total-count { font-size: 11px; color: #94a3b8; font-weight: bold; min-width: 80px; text-align: right; }
 
         /* GRID (CARDS) */
-        .product-grid { flex-grow: 1; overflow-y: auto; padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; align-content: start; }
+        .product-grid { flex-grow: 1; overflow-y: auto; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; align-content: start; }
 
-        .card { background: var(--bg-card); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; border: 1px solid var(--border); transition: transform 0.2s; min-height: 400px; }
-        .card:hover { transform: translateY(-4px); border-color: var(--accent); z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .card { background: var(--bg-card); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; position: relative; border: 1px solid var(--border); transition: transform 0.2s; min-height: 380px; }
+        .card:hover { transform: translateY(-2px); border-color: var(--accent); z-index: 10; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
         
-        .card.status-synced { border-top: 4px solid var(--success); }
-        .card.status-changed { border-top: 4px solid var(--warning); }
+        .card.status-synced { border-top: 3px solid var(--success); }
+        .card.status-changed { border-top: 3px solid var(--warning); }
         
         /* Imagem */
-        .card-img-area { height: 180px; background: #000; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; border-bottom: 1px solid var(--border); overflow: hidden; }
+        .card-img-area { height: 160px; background: #000; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; border-bottom: 1px solid var(--border); overflow: hidden; }
         .card-img { width: 100%; height: 100%; object-fit: contain; background: white; }
         
-        .img-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.2s; backdrop-filter: blur(2px); }
+        .img-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s; backdrop-filter: blur(2px); }
         .card-img-area:hover .img-overlay { opacity: 1; }
         
-        .overlay-btn { background: white; color: #0f172a; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s; }
+        .overlay-btn { background: white; color: #0f172a; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s; }
         .overlay-btn:hover { transform: scale(1.1); background: var(--accent); color: white; }
 
         /* Corpo do Card */
-        .card-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
-        .card-sku { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .card-title { font-size: 14px; font-weight: 600; color: #ffffff !important; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; min-height: 40px; }
+        .card-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
+        .card-sku { font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-title { font-size: 13px; font-weight: 600; color: #ffffff !important; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; min-height: 34px; }
         
         /* Inputs no Card */
-        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 10px; }
+        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 8px; }
         .stat-box { display: flex; flex-direction: column; }
-        .stat-label { font-size: 10px; color: var(--accent); margin-bottom: 4px; font-weight: bold; text-transform: uppercase; }
-        .stat-input { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; font-weight: 600; color: white; background: #0f172a; text-align: center; }
+        .stat-label { font-size: 9px; color: var(--accent); margin-bottom: 3px; font-weight: bold; text-transform: uppercase; }
+        .stat-input { width: 100%; padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; font-weight: 600; color: white; background: #0f172a; text-align: center; }
         .stat-input:focus { border-color: var(--accent); outline: none; }
 
         /* Footer */
-        .card-footer { padding: 10px 16px; background: #0f172a; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .btn-text { background: none; border: none; color: var(--text-secondary); font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .card-footer { padding: 8px 12px; background: #0f172a; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .btn-text { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
         .btn-text:hover { color: white; }
         .btn-sync-mini { background: var(--success); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap:4px; }
 
         /* MODAIS */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-card { background: #1e293b; padding: 0; border-radius: 12px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border); box-shadow: 0 25px 50px rgba(0,0,0,0.5); overflow: hidden; }
-        .modal-header { padding: 15px 20px; background: #020617; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; font-size: 16px; }
-        .modal-body { padding: 20px; overflow-y: auto; color: #cbd5e1; }
+        
+        /* Modal Editor Específico (Menor) */
+        .modal-card.editor { width: 450px; }
+
+        .modal-header { padding: 12px 16px; background: #020617; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; font-size: 14px; }
+        .modal-body { padding: 16px; overflow-y: auto; color: #cbd5e1; }
         .close-btn { background: none; border: none; color: #64748b; cursor: pointer; }
         .close-btn:hover { color: white; }
 
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .form-group label { display: block; font-size: 11px; color: var(--accent); margin-bottom: 5px; text-transform: uppercase; }
-        .form-group input { width: 100%; background: #0f172a; border: 1px solid var(--border); padding: 10px; border-radius: 6px; color: white; }
-        .btn-full { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; background: var(--accent); color: white; font-size: 14px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-group label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; }
+        .form-group input { width: 100%; background: #0f172a; border: 1px solid var(--border); padding: 8px; border-radius: 4px; color: white; font-size: 12px; }
+        .btn-full { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; background: var(--accent); color: white; font-size: 13px; }
 
-        canvas { background: #fff; max-width: 100%; border: 2px solid var(--border); margin: 0 auto; display: block; }
+        /* EDITOR UI */
+        canvas { background: #fff; max-width: 100%; border: 1px solid var(--border); margin: 0 auto; display: block; height: 300px; width: 300px; object-fit: contain; }
+        .editor-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; background: #0f172a; padding: 10px; border-radius: 6px; }
+        .tool-group label { display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; margin-bottom: 4px; }
+        input[type=range] { width: 100%; accent-color: var(--accent); height: 4px; }
+        
+        .file-info { background: #020617; padding: 8px; border-radius: 4px; margin-top: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border); }
+        .file-name { color: var(--accent); font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px; }
+        .copy-icon { cursor: pointer; color: #64748b; } .copy-icon:hover { color: white; }
+
+        .action-row { display: flex; gap: 8px; margin-top: 15px; }
+        .btn-act { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: #0f172a; color: white; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; }
+        .btn-act:hover { background: #1e293b; border-color: #64748b; }
+        .btn-act.primary { background: var(--accent); border: none; } .btn-act.primary:hover { filter: brightness(1.1); }
+
         #loader { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; justify-content: center; align-items: center; color: white; flex-direction: column; gap: 15px; }
         .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -103,43 +121,68 @@
 <body>
 
     <script>
-        // --- CONFIGURAÇÃO (LINKS) ---
+        // CONFIGURAÇÃO
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
-        const STORAGE_KEY = 'sucedoan_data_v9';
+        const STORAGE_KEY = 'sucedoan_data_v11';
         const CONFIG_KEY = 'sucedoan_config';
     </script>
 
     <header>
         <div class="brand">SUCEDOAN <span>PRO</span></div>
-        <button class="nav-btn primary" onclick="importarBling()"><i data-lucide="cloud-download"></i> BAIXAR BLING</button>
+        <button class="nav-btn primary" onclick="importarBling()"><i data-lucide="cloud-download" size="14"></i> BAIXAR BLING</button>
         <input type="file" id="csv-file" accept=".csv" style="display:none">
-        <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet"></i> IMPORTAR CSV</button>
-        <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings"></i></button>
+        <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet" size="14"></i> CSV</button>
+        <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings" size="14"></i></button>
     </header>
 
     <div class="toolbar">
         <div class="search-container">
             <i data-lucide="search" class="search-icon"></i>
-            <input type="text" class="search-input" id="search-input" placeholder="Pesquisar produto...">
+            <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
         </div>
-        <button class="nav-btn" onclick="exportarCSV()"><i data-lucide="download"></i> Exportar</button>
+        <button class="nav-btn" onclick="exportarCSV()"><i data-lucide="download" size="14"></i> Exportar</button>
         <div id="total-count">0</div>
     </div>
 
     <div class="product-grid" id="product-grid"></div>
 
     <div id="modal-editor" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header"><span>Editor de Imagem</span><button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x"></i></button></div>
+        <div class="modal-card editor">
+            <div class="modal-header"><span>Editor de Imagem</span><button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x" size="16"></i></button></div>
             <div class="modal-body">
-                <canvas id="imageCanvas" width="500" height="500"></canvas>
-                <div style="text-align:center;font-size:12px;color:#94a3b8;margin-top:10px;">Cole a imagem com <b>Ctrl+V</b></div>
-                <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1" style="width:100%;margin-top:10px;accent-color:var(--accent);">
-                <div class="form-grid" style="margin-top:20px;">
-                    <button class="nav-btn" style="justify-content:center" onclick="document.getElementById('fileInput').click()">Carregar PC</button>
+                <canvas id="imageCanvas" width="450" height="450"></canvas>
+                
+                <div class="file-info">
+                    <span id="file-name-preview" class="file-name">produto.webp</span>
+                    <span id="file-size-preview" style="color:#64748b">~0kb</span>
+                    <i data-lucide="copy" size="12" class="copy-icon" onclick="copyFileName()" title="Copiar Nome"></i>
+                </div>
+
+                <div class="editor-tools">
+                    <div class="tool-group">
+                        <label><span>Zoom</span> <span id="zoom-val">100%</span></label>
+                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
+                    </div>
+                    <div class="tool-group">
+                        <label><span>Nitidez</span> <span id="sharp-val">0</span></label>
+                        <input type="range" id="sharpenRange" min="0" max="1" step="0.1" value="0">
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    <button class="btn-act" onclick="document.getElementById('fileInput').click()">
+                        <i data-lucide="upload" size="12"></i> PC
+                    </button>
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
-                    <button class="nav-btn primary" style="justify-content:center" onclick="uploadToGithub()">ENVIAR GITHUB</button>
+                    
+                    <button class="btn-act" onclick="downloadImage()">
+                        <i data-lucide="download" size="12"></i> BAIXAR
+                    </button>
+                    
+                    <button class="btn-act primary" style="flex:2" onclick="uploadToGithub()">
+                        <i data-lucide="rocket" size="12"></i> GITHUB
+                    </button>
                 </div>
             </div>
         </div>
@@ -147,7 +190,7 @@
 
     <div id="modal-details" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header"><span>Detalhes Completos</span><button class="close-btn" onclick="saveDetails()"><i data-lucide="check"></i></button></div>
+            <div class="modal-header"><span>Detalhes Técnicos</span><button class="close-btn" onclick="saveDetails()"><i data-lucide="check" size="16"></i></button></div>
             <div class="modal-body">
                 <div class="form-grid" id="details-form"></div>
                 <button class="btn-full" onclick="saveDetails()">SALVAR ALTERAÇÕES</button>
@@ -157,7 +200,7 @@
 
     <div id="modal-config" class="modal-overlay">
         <div class="modal-card" style="width:400px; height:auto">
-            <div class="modal-header"><span>GitHub Config</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x"></i></button></div>
+            <div class="modal-header"><span>GitHub Config</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x" size="16"></i></button></div>
             <div class="modal-body" style="display:flex; flex-direction:column; gap:15px;">
                 <div class="form-group"><label>Token (PAT)</label><input type="password" id="cfg-token"></div>
                 <div class="form-group"><label>Usuário</label><input type="text" id="cfg-user"></div>
@@ -193,19 +236,22 @@
             const saved = localStorage.getItem(STORAGE_KEY);
             if(saved) { products = JSON.parse(saved); renderGrid(); }
         }
-
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
-        // --- RENDER GRID (VISIBILIDADE SELETIVA) ---
+        // --- BUSCA OMNIBOX ---
         function renderGrid(filter = "") {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
-            const term = filter.toLowerCase();
+            const term = filter.toLowerCase().trim();
 
             const filtered = products.filter(p => {
-                const n = p.nome ? p.nome.toString().toLowerCase() : "";
-                const c = p.codigo ? p.codigo.toString().toLowerCase() : "";
-                return n.includes(term) || c.includes(term);
+                const n = (p.nome || "").toLowerCase();
+                const c = (p.codigo || "").toLowerCase();
+                const g = (p.gtin || "").toString();
+                const l = (p.localizacao || "").toLowerCase();
+                const e = (p.estoque || "").toString();
+
+                return n.includes(term) || c.includes(term) || g.includes(term) || l.includes(term) || (term.length > 0 && e === term);
             });
 
             document.getElementById('total-count').innerText = filtered.length + " produtos";
@@ -214,7 +260,6 @@
                 const card = document.createElement('div');
                 card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
                 
-                // Dados Visíveis
                 const displayName = p.nome || "SEM NOME";
                 const displayCode = p.codigo || "NOVO";
                 const imgSrc = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
@@ -223,9 +268,9 @@
                     <div class="card-img-area">
                         <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/1e293b/475569?text=ERRO'">
                         <div class="img-overlay">
-                            <button class="overlay-btn" title="Buscar Google" onclick="searchGoogle('${displayName}')"><i data-lucide="search"></i></button>
-                            <button class="overlay-btn" title="Editar Foto" onclick="openPhotoEditor('${displayCode}')"><i data-lucide="camera"></i></button>
-                            <button class="overlay-btn" title="Ver Link" onclick="window.open('${imgSrc}', '_blank')"><i data-lucide="external-link"></i></button>
+                            <button class="overlay-btn" title="Buscar Google" onclick="searchGoogle('${displayName}')"><i data-lucide="search" size="14"></i></button>
+                            <button class="overlay-btn" title="Editar Foto" onclick="openPhotoEditor('${displayCode}')"><i data-lucide="camera" size="14"></i></button>
+                            <button class="overlay-btn" title="Ver Link" onclick="window.open('${imgSrc}', '_blank')"><i data-lucide="external-link" size="14"></i></button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -236,15 +281,14 @@
                             <div class="stat-box"><label class="stat-label">PREÇO (R$)</label><input type="number" class="stat-input" value="${p.preco || 0}" onchange="updateField('${displayCode}', 'preco', this.value)"></div>
                             <div class="stat-box"><label class="stat-label">ESTOQUE</label><input type="number" class="stat-input" value="${p.estoque || 0}" onchange="updateField('${displayCode}', 'estoque', this.value)"></div>
                         </div>
-                        
                         <div class="card-stats">
                             <div class="stat-box"><label class="stat-label">LOCALIZAÇÃO</label><input type="text" class="stat-input" value="${p.localizacao || ''}" onchange="updateField('${displayCode}', 'localizacao', this.value)"></div>
                             <div class="stat-box"><label class="stat-label">EAN / GTIN</label><input type="text" class="stat-input" value="${p.gtin || ''}" onchange="updateField('${displayCode}', 'gtin', this.value)"></div>
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button class="btn-text" onclick="openDetails('${displayCode}')"><i data-lucide="list-plus" size="14"></i> + DETALHES</button>
-                        <button class="btn-sync-mini" onclick="syncBling('${displayCode}')"><i data-lucide="refresh-cw" size="12"></i> SYNC</button>
+                        <button class="btn-text" onclick="openDetails('${displayCode}')"><i data-lucide="list-plus" size="12"></i> DETALHES</button>
+                        <button class="btn-sync-mini" onclick="syncBling('${displayCode}')"><i data-lucide="refresh-cw" size="10"></i> SYNC</button>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -252,6 +296,7 @@
             lucide.createIcons();
         }
 
+        // --- FUNÇÕES DE CAMPO ---
         function updateField(sku, field, value) {
             const product = products.find(p => p.codigo == sku);
             if(product) {
@@ -262,101 +307,57 @@
                 renderGrid(document.getElementById('search-input').value);
             }
         }
+        function searchGoogle(term) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(term)}`, '_blank'); }
 
-        function searchGoogle(term) {
-            window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(term)}`, '_blank');
-        }
-
-        // --- IMPORTAÇÃO CSV INTELIGENTE (Puxa tudo, normaliza e guarda) ---
+        // --- IMPORTAÇÃO CSV ---
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
-            toggleLoader(true, "Processando CSV Completo...");
-
+            toggleLoader(true, "Lendo CSV...");
             Papa.parse(e.target.files[0], {
-                header: true,
-                skipEmptyLines: true,
-                encoding: "ISO-8859-1",
-                delimiter: ";",
-                transformHeader: function(h) {
-                    // Normaliza cabeçalho para facilitar mapeamento
-                    return h.replace(/"/g, '').trim(); 
-                },
+                header: true, skipEmptyLines: true, encoding: "ISO-8859-1", delimiter: ";",
+                transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // 1. Cria objeto base com os campos principais
-                        const base = {};
+                        const getVal = (keys) => { const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); return f ? d[f] : ""; };
+                        const getNum = (keys) => { const v = getVal(keys); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
                         
-                        // Helpers
-                        const getVal = (possibleKeys) => {
-                            // Procura chave ignorando case/acentos
-                            const found = Object.keys(d).find(k => {
-                                const normK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                                return possibleKeys.some(pk => normK.includes(pk));
-                            });
-                            return found ? d[found] : "";
+                        const base = {
+                            codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome','produto']),
+                            preco: getNum(['preco','venda']), estoque: getNum(['estoque']),
+                            localizacao: getVal(['localizacao','local']), gtin: getVal(['gtin','ean']),
+                            url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']), cest: getVal(['cest']),
+                            unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
+                            largura: getNum(['largura']), altura: getNum(['altura']), profundidade: getNum(['profundidade']),
+                            origem: getVal(['origem']), situacao: 'A', formato: 'S', _changed: true
                         };
-                        const getNum = (possibleKeys) => {
-                            const val = getVal(possibleKeys);
-                            return val ? parseFloat(val.toString().replace(/\./g, '').replace(',', '.')) || 0 : 0;
-                        };
-
-                        // Mapeamento Principal (Visual)
-                        base.codigo = getVal(['codigo', 'sku']);
-                        base.nome = getVal(['descricao', 'nome', 'produto']);
-                        base.preco = getNum(['preco', 'venda']);
-                        base.estoque = getNum(['estoque']);
-                        base.localizacao = getVal(['localizacao', 'local']);
-                        base.gtin = getVal(['gtin', 'ean']);
-                        base.url_imagem = getVal(['url', 'imagem', 'foto']);
-                        
-                        // Campos "Escondidos" mas Mapeados para Sync
-                        base.ncm = getVal(['ncm']);
-                        base.cest = getVal(['cest']);
-                        base.unidade = getVal(['unidade']) || 'UN';
-                        base.pesoLiquido = getNum(['peso liquido', 'peso liq']);
-                        base.pesoBruto = getNum(['peso bruto', 'peso bru']);
-                        base.largura = getNum(['largura']);
-                        base.altura = getNum(['altura']);
-                        base.profundidade = getNum(['profundidade']);
-                        base.origem = getVal(['origem']); // Importante para fiscal
-                        
-                        // 2. Armazena TODAS as outras colunas do CSV para garantir integridade
-                        // Mescla o objeto CSV original (d) dentro do objeto do produto
-                        // Prioriza os campos já tratados acima, mas mantém o resto
+                        // Extra Fields
                         Object.keys(d).forEach(k => {
-                            // Se a chave não conflitua com as nossas internas, adiciona
-                            const internalKeys = ['codigo','nome','preco','estoque','localizacao','gtin','url_imagem','ncm','cest','unidade','pesoLiquido','pesoBruto','largura','altura','profundidade','origem'];
-                            // Cria uma chave "segura" para dados extras
-                            const safeKey = k.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                            if(!base[safeKey] && !internalKeys.includes(safeKey)) {
-                                base[safeKey] = d[k];
-                            }
+                            const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                            if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k];
                         });
-
-                        base._changed = true;
                         return base;
                     });
-
                     products = novos.filter(p => p.codigo || p.nome);
-                    saveData();
-                    renderGrid();
-                    toggleLoader(false);
-                    alert(`${products.length} produtos importados e mapeados com sucesso!`);
-                },
-                error: (err) => {
-                    toggleLoader(false);
-                    alert("Erro CSV: " + err.message);
+                    saveData(); renderGrid(); toggleLoader(false);
+                    alert(`${products.length} importados!`);
                 }
             });
         });
 
-        // --- EDITOR FOTO ---
+        // --- EDITOR FOTO TURBO ---
         function openPhotoEditor(sku) {
             currentEditingId = sku;
+            const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
-            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 500, 500);
-            ctx.font = "16px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
-            ctx.fillText("Ctrl+V para colar", 250, 250);
+            
+            // Preview Nome
+            const slug = (p.nome||"produto").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') + ".webp";
+            document.getElementById('file-name-preview').innerText = slug;
+            document.getElementById('file-size-preview').innerText = "~0kb";
+
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
+            ctx.font = "14px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
+            ctx.fillText("Ctrl+V", 225, 225);
             loadedImage = null;
         }
 
@@ -364,168 +365,146 @@
             window.addEventListener('paste', e => {
                 if(document.getElementById('modal-editor').style.display !== 'flex') return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for(let item of items) {
-                    if(item.kind === 'file') {
-                        const reader = new FileReader();
-                        reader.onload = ev => loadImageToCanvas(ev.target.result);
-                        reader.readAsDataURL(item.getAsFile());
-                    }
-                }
+                for(let item of items) { if(item.kind === 'file') { const r = new FileReader(); r.onload = ev => loadImageToCanvas(ev.target.result); r.readAsDataURL(item.getAsFile()); } }
             });
-            document.getElementById('fileInput').addEventListener('change', function(){
-                if(this.files[0]) {
-                    const r = new FileReader();
-                    r.onload = e => loadImageToCanvas(e.target.result);
-                    r.readAsDataURL(this.files[0]);
-                }
-            });
+            document.getElementById('fileInput').addEventListener('change', function(){ if(this.files[0]) { const r = new FileReader(); r.onload = e => loadImageToCanvas(e.target.result); r.readAsDataURL(this.files[0]); } });
             document.getElementById('zoomRange').addEventListener('input', drawImage);
+            document.getElementById('sharpenRange').addEventListener('input', drawImage);
         }
 
         function loadImageToCanvas(url) {
             const img = new Image();
-            img.onload = () => {
-                loadedImage = img;
-                const scale = Math.max(500/img.width, 500/img.height);
-                document.getElementById('zoomRange').value = scale;
-                drawImage();
-            };
+            img.onload = () => { loadedImage = img; const s = Math.max(450/img.width, 450/img.height); document.getElementById('zoomRange').value = s; drawImage(); };
             img.src = url;
         }
 
         function drawImage() {
             if(!loadedImage) return;
-            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 500, 500);
+            const wC = 450, hC = 450;
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, wC, hC);
+            
             const zoom = parseFloat(document.getElementById('zoomRange').value);
+            const sharp = parseFloat(document.getElementById('sharpenRange').value);
+            
+            document.getElementById('zoom-val').innerText = Math.round(zoom*100) + "%";
+            document.getElementById('sharp-val').innerText = sharp;
+
+            // Draw
             const w = loadedImage.width * zoom;
             const h = loadedImage.height * zoom;
-            const x = (500 - w) / 2;
-            const y = (500 - h) / 2;
+            const x = (wC - w) / 2;
+            const y = (hC - h) / 2;
+            
+            // Nitidez Simples (Desenha um pouco deslocado para simular contraste se sharp > 0)
+            if(sharp > 0) {
+                ctx.globalAlpha = 0.5 * sharp; // Efeito suave
+                ctx.drawImage(loadedImage, x-0.5, y-0.5, w, h);
+                ctx.globalAlpha = 1.0;
+            }
             ctx.drawImage(loadedImage, x, y, w, h);
+
+            // Update Size Estimate (WebP 80%)
+            const data = canvas.toDataURL("image/webp", 0.8);
+            const kb = Math.round((data.length * 3 / 4) / 1024);
+            document.getElementById('file-size-preview').innerText = `~${kb}kb • 450px`;
+        }
+
+        function downloadImage() {
+            if(!loadedImage) return alert("Sem imagem");
+            const link = document.createElement('a');
+            link.download = document.getElementById('file-name-preview').innerText;
+            link.href = canvas.toDataURL("image/webp", 0.8);
+            link.click();
+        }
+
+        function copyFileName() {
+            const txt = document.getElementById('file-name-preview').innerText;
+            navigator.clipboard.writeText(txt);
+            alert("Nome copiado: " + txt);
         }
 
         async function uploadToGithub() {
-            if(!loadedImage) return alert("Nenhuma imagem!");
+            if(!loadedImage) return alert("Sem imagem");
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            if(!cfg.token) return alert("Configure o Token GitHub!");
-            
+            if(!cfg.token) return alert("Configure Token!");
             toggleLoader(true, "Enviando...");
+            
             const p = products.find(pr => pr.codigo == currentEditingId);
-            const slug = (p.nome || 'produto').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') + ".webp";
-            const dataUrl = canvas.toDataURL("image/webp", 0.8);
+            const fileName = document.getElementById('file-name-preview').innerText;
+            const content = canvas.toDataURL("image/webp", 0.8).split(',')[1];
             
             try {
-                const path = `${cfg.path}/${slug}`;
-                const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}/${fileName}`;
                 let sha = null;
-                try {
-                    const check = await fetch(apiUrl, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) sha = (await check.json()).sha;
-                } catch(e) {}
-
-                const res = await fetch(apiUrl, {
-                    method: 'PUT',
-                    headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: "Up Painel", content: dataUrl.split(',')[1], sha: sha })
+                try { const c = await fetch(url, {headers:{"Authorization":`token ${cfg.token}`}}); if(c.ok) sha = (await c.json()).sha; } catch(e){}
+                
+                const res = await fetch(url, {
+                    method: 'PUT', headers: {"Authorization":`token ${cfg.token}`, "Content-Type":"application/json"},
+                    body: JSON.stringify({message:"Up", content:content, sha:sha})
                 });
 
                 if(res.ok) {
-                    const json = await res.json();
-                    p.url_imagem = json.content.download_url;
-                    p._changed = true;
-                    saveData();
-                    renderGrid(document.getElementById('search-input').value);
-                    toggleLoader(false);
-                    closeModal('modal-editor');
-                    alert("Sucesso!");
+                    const j = await res.json();
+                    p.url_imagem = j.content.download_url; p._changed = true;
+                    saveData(); renderGrid(document.getElementById('search-input').value);
+                    toggleLoader(false); closeModal('modal-editor'); alert("Sucesso!");
                 } else throw new Error(res.status);
-            } catch(e) {
-                toggleLoader(false);
-                alert("Erro: " + e.message);
-            }
+            } catch(e) { toggleLoader(false); alert("Erro: "+e.message); }
         }
 
-        // --- DETALHES (Aqui ficam os campos ocultos) ---
+        // --- DETALHES ---
         function openDetails(sku) {
             currentEditingId = sku;
             const p = products.find(pr => pr.codigo == sku);
             const form = document.getElementById('details-form');
             form.innerHTML = '';
-            
-            const fields = [
-                {k:'ncm', l:'NCM'}, {k:'cest', l:'CEST'}, {k:'origem', l:'ORIGEM'},
-                {k:'unidade', l:'UN'}, {k:'pesoBruto', l:'Peso B.'}, {k:'pesoLiquido', l:'Peso L.'},
-                {k:'largura', l:'Larg'}, {k:'altura', l:'Alt'}, {k:'profundidade', l:'Prof'}
-            ];
-            fields.forEach(f => {
-                form.innerHTML += `<div class="form-group"><label>${f.l}</label><input type="text" id="det-${f.k}" value="${p[f.k] || ''}"></div>`;
-            });
+            const f = [{k:'gtin',l:'EAN'},{k:'ncm',l:'NCM'},{k:'cest',l:'CEST'},{k:'unidade',l:'UN'},{k:'pesoBruto',l:'Peso B'},{k:'pesoLiquido',l:'Peso L'},{k:'largura',l:'Larg'},{k:'altura',l:'Alt'},{k:'profundidade',l:'Prof'}];
+            f.forEach(i => form.innerHTML+=`<div class="form-group"><label>${i.l}</label><input type="text" id="det-${i.k}" value="${p[i.k]||''}"></div>`);
             document.getElementById('modal-details').style.display = 'flex';
         }
-
         function saveDetails() {
             const p = products.find(pr => pr.codigo == currentEditingId);
             document.querySelectorAll('#details-form input').forEach(i => p[i.id.replace('det-', '')] = i.value);
-            p._changed = true;
-            saveData();
-            closeModal('modal-details');
+            p._changed = true; saveData(); closeModal('modal-details');
         }
 
-        // --- SYNC BLING (Envia TUDO) ---
+        // --- SYNC ---
         function syncBling(sku) {
             const p = products.find(pr => pr.codigo == sku);
             if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure Webhook!");
             toggleLoader(true, "Enviando...");
-            
-            // Envia o objeto completo, incluindo os dados extras do CSV
-            const payload = {...p}; 
-            delete payload._changed;
-            
-            fetch(MAKE_WEBHOOK_UPDATE, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
-            .then(r => {
-                if(r.ok) { p._changed = false; saveData(); renderGrid(document.getElementById('search-input').value); toggleLoader(false); }
-                else throw new Error();
-            }).catch(() => { toggleLoader(false); alert("Erro Sync!"); });
+            if(!p.situacao) p.situacao='A'; if(!p.formato) p.formato='S';
+            const pl = {...p}; delete pl._changed;
+            fetch(MAKE_WEBHOOK_UPDATE, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(pl)})
+            .then(r=>{ if(r.ok){ p._changed=false; saveData(); renderGrid(document.getElementById('search-input').value); toggleLoader(false); } else throw new Error(); })
+            .catch(()=>{toggleLoader(false); alert("Erro Sync!");});
         }
-
         function importarBling() {
             if(MAKE_WEBHOOK_GET.includes("COLE_AQUI")) return alert("Configure Webhook GET!");
-            if(!confirm("Substituir lista?")) return;
+            if(!confirm("Substituir?")) return;
             toggleLoader(true, "Baixando...");
-            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(data => {
-                if(Array.isArray(data)) {
-                    // Mantém lógica de baixar dados da API
-                    products = data.map(d => ({...d, _changed: false}));
-                    saveData(); renderGrid(); toggleLoader(false);
-                }
-            }).catch(e => { toggleLoader(false); alert("Erro Import: " + e); });
+            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d=>{ if(Array.isArray(d)) { products=d.map(x=>({...x, _changed:false})); saveData(); renderGrid(); toggleLoader(false); } })
+            .catch(e=>{toggleLoader(false); alert("Erro: "+e);});
         }
-
         function exportarCSV() {
-            const csv = Papa.unparse(products, { quotes: true, delimiter: ";", newline: "\r\n" });
-            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "produtos.csv";
-            link.click();
+            const csv = Papa.unparse(products, {quotes:true, delimiter:";"});
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'}));
+            l.download = "produtos.csv"; l.click();
         }
 
+        // --- CONFIG ---
         function openConfigModal() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            document.getElementById('cfg-token').value = cfg.token||'';
-            document.getElementById('cfg-user').value = cfg.user||'';
-            document.getElementById('cfg-repo').value = cfg.repo||'';
-            document.getElementById('modal-config').style.display = 'flex';
+            const c = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
+            document.getElementById('cfg-token').value = c.token||'';
+            document.getElementById('cfg-user').value = c.user||'';
+            document.getElementById('cfg-repo').value = c.repo||'';
+            document.getElementById('modal-config').style.display='flex';
         }
         function saveConfig() {
             localStorage.setItem(CONFIG_KEY, JSON.stringify({
-                token: document.getElementById('cfg-token').value,
-                user: document.getElementById('cfg-user').value,
-                repo: document.getElementById('cfg-repo').value,
-                path: document.getElementById('cfg-path').value
-            }));
-            closeModal('modal-config');
+                token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value,
+                repo: document.getElementById('cfg-repo').value, path: document.getElementById('cfg-path').value
+            })); closeModal('modal-config');
         }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     </script>
