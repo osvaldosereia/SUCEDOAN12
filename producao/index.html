@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v28 (Padrão Código-Nome)</title>
+    <title>Sucedoan Painel - v29 (CSV Corrigido + Padrão Código-Nome)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -557,7 +557,7 @@
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_v28'; // Mudei para v28 para evitar cache antigo
+        const STORAGE_KEY = 'sucedoan_data_v29'; // v29 para garantir ambiente limpo
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
@@ -743,7 +743,7 @@
         }
 
         // ----------------------------------------------------
-        // IMPORTAÇÃO CSV
+        // IMPORTAÇÃO CSV (CONFIGURAÇÃO BLINDADA)
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -757,9 +757,11 @@
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
+                        // Função auxiliar para pegar valor e LIMPAR espaços/tabs (.trim())
                         const getVal = (keys) => { 
                             const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
-                            return f ? d[f] : ""; 
+                            // O .trim() aqui é CRUCIAL para o seu CSV funcionar (remove \t invisíveis)
+                            return f && d[f] ? d[f].trim() : ""; 
                         };
                         const getNum = (keys) => { 
                             const v = getVal(keys); 
@@ -897,7 +899,7 @@
         }
 
         // ----------------------------------------------------
-        // EDITOR E UPLOAD (A MUDANÇA: PADRÃO CODIGO-NOME)
+        // EDITOR E UPLOAD (MANTEVE A MUDANÇA: PADRÃO CODIGO-NOME)
         // ----------------------------------------------------
         function openPhotoEditor(sku) {
             currentEditingId = sku;
@@ -1008,7 +1010,7 @@
                 });
 
                 if(r.ok) {
-                    // CONSTRÓI O LINK MANUALMENTE (CONVENTION OVER CONFIGURATION)
+                    // CONSTRÓI O LINK MANUALMENTE
                     const finalUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}?raw=true`;
                     
                     const p = products.find(p => p.codigo == currentEditingId);
@@ -1050,10 +1052,9 @@
                 card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
                 
                 // --- INTELIGÊNCIA DE IMAGEM ---
-                // Se o produto tiver URL salva, usa.
-                // Se não tiver, tenta ADIVINHAR o link baseado na regra (Código + Nome)
                 let imgSrc = p.url_imagem;
                 
+                // Se não tem imagem, tenta adivinhar pelo padrão novo (Código-Nome)
                 if((!imgSrc || imgSrc.length < 10) && cfg.user && cfg.repo) {
                     const cleanName = (p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-');
                     const cleanCode = (p.codigo||"000").replace(/[^a-zA-Z0-9]/g, '');
