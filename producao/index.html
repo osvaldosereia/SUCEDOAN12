@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Merchandising - v13 Universal</title>
+    <title>Sucedoan Merchandising - v14 Auto-Detect</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -65,6 +65,8 @@
         .card-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
         .card-sku { font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         .card-title { font-size: 13px; font-weight: 600; color: #ffffff !important; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; min-height: 34px; }
+        
+        /* Stats Grid */
         .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 8px; }
         .stat-box { display: flex; flex-direction: column; }
         .stat-label { font-size: 9px; color: var(--accent); margin-bottom: 3px; font-weight: bold; text-transform: uppercase; }
@@ -131,7 +133,7 @@
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_v13';
+        const STORAGE_KEY = 'sucedoan_data_v14';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
@@ -249,8 +251,8 @@
         let products = [];
         let historyLog = [];
         let currentEditingId = null; 
-        let pendingSyncSku = null; // SKU aguardando login
-        let currentUser = null; // Usuário logado temporariamente
+        let pendingSyncSku = null;
+        let currentUser = null;
 
         const canvas = document.getElementById('imageCanvas');
         const ctx = canvas.getContext('2d');
@@ -273,7 +275,7 @@
             if(id === 'history') renderHistory();
         }
 
-        // --- AUTH & LOGIN ---
+        // --- AUTH ---
         function requestLogin(callbackSku) {
             pendingSyncSku = callbackSku;
             document.getElementById('login-pass').value = '';
@@ -293,19 +295,17 @@
             }
         }
 
-        // --- DATA & SYNC ---
+        // --- DATA ---
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if(saved) { products = JSON.parse(saved); renderGrid(); }
-            
             const hist = localStorage.getItem(HISTORY_KEY);
             if(hist) historyLog = JSON.parse(hist);
         }
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
-        function syncBling(sku) {
-            requestLogin(sku);
-        }
+        // --- SYNC ---
+        function syncBling(sku) { requestLogin(sku); }
 
         function executeSync(sku) {
             const p = products.find(pr => pr.codigo == sku);
@@ -313,13 +313,12 @@
             
             toggleLoader(true, `Enviando como ${currentUser}...`);
 
-            // Dados e Log
             if(!p.situacao) p.situacao='A'; 
             if(!p.formato) p.formato='S';
-            
             const payload = {...p};
             delete payload._changed;
             
+            // Log no Bling
             const time = new Date().toLocaleString('pt-BR');
             const logNote = `Ultima alteração por ${currentUser} em ${time}`;
             payload.observacoes = (payload.observacoes || "") + "\n" + logNote;
@@ -344,11 +343,7 @@
 
         // --- HISTÓRICO ---
         function addToHistory(sku, nome, success) {
-            const entry = {
-                date: new Date().toLocaleString('pt-BR'),
-                user: currentUser,
-                sku: sku, name: nome, status: success
-            };
+            const entry = { date: new Date().toLocaleString('pt-BR'), user: currentUser, sku: sku, name: nome, status: success };
             historyLog.unshift(entry); if(historyLog.length > 500) historyLog.pop();
             localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLog));
         }
@@ -358,16 +353,13 @@
             tbody.innerHTML = '';
             historyLog.forEach(h => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.name}</td>
-                    <td><span class="badge ${h.status ? 'success' : 'error'}">${h.status ? 'SUCESSO' : 'ERRO'}</span></td>
-                `;
+                tr.innerHTML = `<td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.name}</td><td><span class="badge ${h.status ? 'success' : 'error'}">${h.status ? 'SUCESSO' : 'ERRO'}</span></td>`;
                 tbody.appendChild(tr);
             });
         }
         function clearHistory() { if(confirm("Apagar histórico?")) { historyLog = []; localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
 
-        // --- GRID RENDER ---
+        // --- GRID ---
         function renderGrid(filter = "") {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
@@ -417,65 +409,74 @@
         }
         function searchGoogle(t) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(t)}`, '_blank'); }
 
-        // --- IMPORT CSV (UNIVERSAL) ---
-        document.getElementById('csv-file').addEventListener('change', function(e) {
-            if(!e.target.files[0]) return;
-            toggleLoader(true, "Lendo CSV...");
-            
-            // 1. Tenta UTF-8 Primeiro (Padrão Web)
-            Papa.parse(e.target.files[0], {
-                header: true, skipEmptyLines: true, delimiter: ";", encoding: "UTF-8",
-                complete: (res) => processCSV(res.data, "UTF-8")
+        // --- IMPORT CSV (AUTO-DETECT + CLEAN) ---
+        // Função auxiliar para analisar CSV
+        function parseCSV(file, encoding) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    header: true, skipEmptyLines: true, delimiter: ";", encoding: encoding,
+                    transformHeader: h => h.replace(/"/g, '').trim(),
+                    complete: res => resolve(res),
+                    error: err => reject(err)
+                });
             });
-        });
+        }
 
-        function processCSV(data, encodingUsed) {
-            // Verifica se as colunas parecem "quebradas" (ex: CÃ³digo)
-            const headers = Object.keys(data[0] || {});
-            const hasBadChar = headers.some(h => h.includes('Ã') || h.includes(''));
-
-            if(hasBadChar && encodingUsed === "UTF-8") {
-                 // Se deu ruim com UTF-8, tenta ISO-8859-1 reiniciando
-                 // (Como é assíncrono, aqui simplificamos assumindo que o usuário pode tentar de novo ou usamos um hack de reload, 
-                 // mas vamos usar a lógica de "Busca por String" que ignora acentos, então deve funcionar mesmo quebrado!)
+        document.getElementById('csv-file').addEventListener('change', async function(e) {
+            if(!e.target.files[0]) return;
+            toggleLoader(true, "Analisando arquivo...");
+            
+            let file = e.target.files[0];
+            let results;
+            
+            // Tentativa 1: UTF-8
+            try {
+                results = await parseCSV(file, "UTF-8");
+                let h = results.meta.fields || [];
+                // Verifica se leu algo legível (ex: tem 'descri' ou 'nome' ou 'cod')
+                let cleanH = h.map(x => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""));
+                let valid = cleanH.some(x => x.includes("descri") || x.includes("nome") || x.includes("cod"));
+                if(!valid) throw new Error("Encoding mismatch");
+            } catch(err) {
+                // Tentativa 2: ISO-8859-1
+                console.log("Tentando ISO...");
+                results = await parseCSV(file, "ISO-8859-1");
             }
 
-            const clean = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            processData(results.data);
+        });
 
+        function processData(data) {
             const novos = data.map(d => {
-                // Find keys loosely
-                const findK = (targets) => Object.keys(d).find(k => targets.some(t => clean(k).includes(t)));
-                const getVal = (targets) => { const k = findK(targets); return k ? d[k] : ""; }
-                const getNum = (targets) => { const v = getVal(targets); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.')) || 0 : 0; }
+                // Helpers de limpeza
+                const cleanStr = (s) => s ? s.toString().replace(/[\t\r\n]/g, '').trim() : ""; // Remove Tabs
+                
+                const getVal = (ks) => { 
+                    const f = Object.keys(d).find(k => ks.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
+                    return f ? cleanStr(d[f]) : ""; 
+                };
+                const getNum = (ks) => { const v=getVal(ks); return v?parseFloat(v.replace(/\./g,'').replace(',','.'))||0:0; };
 
                 const b = {
-                    codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome','produto']),
-                    preco: getNum(['preco','venda']), estoque: getNum(['estoque']),
-                    localizacao: getVal(['localizacao','local']), gtin: getVal(['gtin','ean']),
-                    url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']), cest: getVal(['cest']),
-                    unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
-                    origem: getVal(['origem']), situacao: 'A', formato: 'S', _changed: true
+                    codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome']), preco: getNum(['preco','venda']),
+                    estoque: getNum(['estoque']), localizacao: getVal(['localizacao','local']), gtin: getVal(['gtin','ean']),
+                    url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']), cest: getVal(['cest']), unidade: getVal(['unidade'])||'UN',
+                    pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']), origem: getVal(['origem']), 
+                    situacao: 'A', formato: 'S', _changed: true
                 };
                 
-                // Save extra fields
+                // Salva campos extras
                 Object.keys(d).forEach(k => {
-                    const sk = clean(k).replace(/[^a-z0-9]/g,'_');
-                    if(!b[sk] && !['codigo','nome'].includes(sk)) b[sk] = d[k];
+                    const sk = k.toLowerCase().replace(/[^a-z0-9]/g,'_');
+                    if(!b[sk] && !['codigo','nome'].includes(sk)) b[sk] = cleanStr(d[k]);
                 });
                 return b;
             });
 
-            const validos = novos.filter(p => p.codigo || p.nome);
-            if(validos.length === 0) {
-                toggleLoader(false);
-                alert("Erro: Nenhum produto encontrado. Verifique se o CSV usa ';' como separador.");
-                return;
-            }
-
-            products = validos;
-            saveData();
-            renderGrid();
-            toggleLoader(false);
+            products = novos.filter(p => p.codigo || p.nome);
+            if(products.length === 0) { toggleLoader(false); alert("Erro: Nenhum produto encontrado."); return; }
+            
+            saveData(); renderGrid(); toggleLoader(false);
             alert(`${products.length} produtos importados!`);
         }
 
