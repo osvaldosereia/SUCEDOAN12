@@ -555,10 +555,12 @@
             "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
         };
 
-        const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
+        // COLE AQUI O LINK DO SEU WEBHOOK DO MAKE QUE TRAZ A LISTA DE PRODUTOS
+        const MAKE_WEBHOOK_GET = "https://hook.eu1.make.com/SEU_WEBHOOK_AQUI"; 
+        
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        // ATUALIZADO PARA v27 (Nova Estrutura com Validade)
+        // v27 - Inclui campo validade
         const STORAGE_KEY = 'sucedoan_data_v27';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
@@ -776,6 +778,10 @@
                             unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
                             largura: getNum(['largura']), altura: getNum(['altura']), profundidade: getNum(['profundidade']),
                             origem: getVal(['origem']), observacoes: getVal(['observacoes','obs']),
+                            
+                            // Mantem validade no CSV se houver
+                            validade: getVal(['validade','vencimento']) || "",
+
                             situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
                         };
                         Object.keys(d).forEach(k => { const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; });
@@ -1162,6 +1168,14 @@
                 <div class="form-group" style="grid-column: span 2;">
                     <label style="color:var(--success)">URL DA IMAGEM (LINK DIRETO)</label>
                     <input type="text" id="det-url_imagem" value="${p.url_imagem||''}" placeholder="https://..." style="border-color:var(--success);">
+                </div>
+            `;
+            
+            // --- CAMPO VALIDADE (NOVO) ---
+            form.innerHTML += `
+                <div class="form-group" style="grid-column: span 2;">
+                    <label style="color:var(--warning)">DATA DE VALIDADE</label>
+                    <input type="text" id="det-validade" value="${p.validade||''}" placeholder="Ex: 30/12/2025" style="border-color:var(--warning); font-weight:bold;">
                 </div>
             `;
             // ---------------------------
